@@ -23,12 +23,16 @@
     </div>
 </div>
 
+<!-- Page body -->
 <div class="page-body">
+    <!-- Container Page -->
     <div class="container-xl">
+
+      <!-- Card -->
       <div class="card card-lg">
+        <!-- Card body -->
         <div class="card-body">
 
-          <!-- Page body -->
           <div class="space-y-4">
 
             <div>
@@ -79,8 +83,13 @@
           </div>
 
         </div>
+        <!-- Card body -->
       </div>
+      <!-- Card -->
+
     </div>
+    <!-- Container Page -->
   </div>
+  <!-- Page body -->
 
 @endsection
