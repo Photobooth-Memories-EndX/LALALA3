@@ -30,6 +30,7 @@
 
           <!-- Page body -->
           <div class="space-y-4">
+
             <div>
               <h2 class="mb-3">1. Introduction</h2>
               <div id="faq-1" class="accordion" role="tablist" aria-multiselectable="true">
@@ -75,8 +76,8 @@
               </div>
             </div>
 
-
           </div>
+
         </div>
       </div>
     </div>
