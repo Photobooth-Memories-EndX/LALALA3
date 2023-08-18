@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Knowledge Management System'),
 
     /*
     |--------------------------------------------------------------------------
@@ -69,7 +69,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Asia/Jakarta',
 
     /*
     |--------------------------------------------------------------------------
@@ -167,6 +167,7 @@ return [
         /*
          * Package Service Providers...
          */
+        Barryvdh\Debugbar\ServiceProvider::class,
 
         /*
          * Application Service Providers...
@@ -192,6 +193,7 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // ...
+        'Debugbar' => Barryvdh\Debugbar\Facades\Debugbar::class,
     ])->toArray(),
 
 ];

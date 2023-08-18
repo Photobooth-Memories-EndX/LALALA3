@@ -26,10 +26,10 @@
 <!-- Page body -->
 <div class="page-body">
     <!-- Container Page -->
-    <div class="container-xl">
+    <div class="container">
 
       <!-- Card -->
-      <div class="card card-lg">
+      <div class="card">
         <!-- Card body -->
         <div class="card-body">
 
