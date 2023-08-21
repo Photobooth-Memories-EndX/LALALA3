@@ -77,7 +77,7 @@
         </div>
         <div class="nav-item dropdown">
           <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
-            <span class="avatar avatar-sm" style="background-image: url(./Tabler/static/avatars/000m.jpg)"></span>
+            <span class="avatar avatar-sm" style="background-image: url({{ asset('Tabler/static/avatars/000m.jpg') }})"></span>
             <div class="d-none d-xl-block ps-2">
               <div>Edi Kusumaedi</div>
               <div class="mt-1 small text-muted" style="font-size: 7pt">Information System Management Team</div>

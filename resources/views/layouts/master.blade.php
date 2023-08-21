@@ -8,7 +8,7 @@
 	@stack('styles')
 </head>
 
-<body class="layout-fluid">
+<body>
     <script src="{{ asset('Tabler/dist/js/demo-theme.min.js') }}"></script>
     <div class="page">
         @include('partials.header')
