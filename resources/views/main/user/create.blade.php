@@ -14,7 +14,7 @@
           <div class="d-flex">
             <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
               <li class="breadcrumb-item"><a href="#">Manage</a></li>
-              <li class="breadcrumb-item"><a href="#">User</a></li>
+              <li class="breadcrumb-item"><a href="{{ route('user.index') }}">User</a></li>
               <li class="breadcrumb-item active" aria-current="page"><a href="#">Create New</a></li>
             </ol>
           </div>

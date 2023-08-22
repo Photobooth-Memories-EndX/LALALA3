@@ -14,8 +14,7 @@
           <div class="d-flex">
             <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
               <li class="breadcrumb-item"><a href="#">Manage</a></li>
-              <li class="breadcrumb-item"><a href="#">User</a></li>
-              <li class="breadcrumb-item active" aria-current="page"><a href="#">List User</a></li>
+              <li class="breadcrumb-item active" aria-current="page"><a href="#">User</a></li>
             </ol>
           </div>
         </div>
@@ -70,6 +69,7 @@
                         <th>Department</th>
                         <th>Division</th>
                         <th>Email</th>
+                        <th width="65px"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -82,6 +82,31 @@
                         <td>{{ $list->department }}</td>
                         <td>{{ $list->division }}</td>
                         <td>{{ $list->email }}</td>
+                        <td>
+                            <div class="d-inline">
+                                <a href="{{ route('user.edit', $list->id) }}" class="btn btn-info btn-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
+                                        <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path>
+                                        <path d="M16 5l3 3"></path>
+                                     </svg>
+                                  </a>
+                            </div>
+
+                            <form action="{{ route('user.destroy',$list->id) }}" method="POST" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M4 7l16 0"></path>
+                                    <path d="M10 11l0 6"></path>
+                                    <path d="M14 11l0 6"></path>
+                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
+                                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
+                                 </svg></button>
+                            </form>
+                        </td>
                     </tr>
                 @endforeach
                 </tbody>

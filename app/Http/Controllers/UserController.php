@@ -69,7 +69,7 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        //
+        return view('main.user.edit', compact('user'));
     }
 
     /**
@@ -81,7 +81,9 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        //
+        $user->update($request->all());
+        return redirect()->route('user.index')
+                        ->with('success','User updated successfully');
     }
 
     /**
@@ -92,6 +94,8 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        //
+        $user->delete();
+        return redirect()->route('user.index')
+                        ->with('success','User deleted successfully');
     }
 }
