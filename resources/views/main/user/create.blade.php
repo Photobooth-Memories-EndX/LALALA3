@@ -29,6 +29,16 @@
     <div class="page page-center">
     <div class="container container-tight py-4">
 
+        <div class="container container-slim py-4 d-none" id="overlay">
+            <div class="text-center">
+
+              <div class="text-muted mb-3">Getting employee data</div>
+              <div class="progress progress-sm">
+                <div class="progress-bar progress-bar-indeterminate"></div>
+              </div>
+            </div>
+          </div>
+
         <form class="card card-md" action="{{ route('user.store') }}" method="post">
         @csrf
         @method('POST')
@@ -80,10 +90,38 @@
 
 @endsection
 
+@section('style')
+<style>
+    #overlay{
+        position: absolute;
+        top: 0rem;
+        right: 0rem;
+        left: 0rem;
+        bottom: 0rem;
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-align-items: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        -webkit-justify-content: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.25rem;
+        z-index: 1000;
+    }
+</style>
+@endsection
+
 @section('script')
 <script>
     $(document).on('click', '#btn-api', function(e) {
         e.preventDefault();
+        $("#overlay").removeClass('d-none');
         var emp_id = $('#id_emp').val();
         $.ajax({
             type: "GET",
@@ -104,6 +142,7 @@
                     $("#id_org_unit").val(response.id_ou);
                     $("#id_user").val(response.id_user);
                 }
+                $("#overlay").addClass('d-none');
             }
         });
     });

@@ -29,16 +29,19 @@
     <div class="container">
 
         @if (session()->has('success'))
-        <div class="page page-center">
-        <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-toggle="toast">
-            <div class="toast-header">
-              <strong class="me-auto">Success</strong>
-              <button type="button" class="ms-2 btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        <div class="alert alert-important alert-success alert-dismissible" role="alert">
+          <div class="d-flex">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                  <path d="M5 12l5 5l10 -10"></path>
+               </svg>
             </div>
-            <div class="toast-body">
-                {{ session('success') }}
+            <div>
+              {{ session('success') }}
             </div>
           </div>
+          <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
         </div>
         @endif
 
