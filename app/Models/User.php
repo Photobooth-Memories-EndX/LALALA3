@@ -12,6 +12,10 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    const ROLE_USER              = 1;
+    const ROLE_ADMIN             = 2;
+    const ROLE_SUPER_ADMIN       = 3;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -47,4 +51,36 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function isAdmin()
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isUser()
+    {
+        return $this->role === self::ROLE_USER;
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->role === self::ROLE_SUPER_ADMIN;
+    }
+
+    public static function roles()
+    {
+        return [
+            static::ROLE_ADMIN         => 'Administrator',
+            static::ROLE_SUPER_ADMIN   => 'Super Admin',
+            static::ROLE_USER          => 'User',
+        ];
+    }
+
+    public function getRoleNameAttribute()
+    {
+        if (!in_array($this->role, array_keys(static::roles()))) {
+            throw new \Exception('Role [' . $this->role . '] is not defined');
+        }
+        return static::roles()[$this->role];
+    }
 }

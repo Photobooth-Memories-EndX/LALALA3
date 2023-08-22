@@ -31,7 +31,6 @@
 
         <div class="container container-slim py-4 d-none" id="overlay">
             <div class="text-center">
-
               <div class="text-muted mb-3">Getting employee data</div>
               <div class="progress progress-sm">
                 <div class="progress-bar progress-bar-indeterminate"></div>
