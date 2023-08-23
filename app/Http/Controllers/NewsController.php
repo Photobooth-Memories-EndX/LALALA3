@@ -83,7 +83,7 @@ class NewsController extends Controller
      */
     public function edit(News $news)
     {
-        //
+        return view('main.news.edit', compact('news'));
     }
 
     /**
@@ -95,7 +95,33 @@ class NewsController extends Controller
      */
     public function update(Request $request, News $news)
     {
-        //
+        $request->validate([
+            'title' => 'required',
+            'description' => 'required',
+            'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        $news->title = $request->input('title');
+        $news->description = $request->input('description');
+
+        if($request->hasfile('image'))
+        {
+            $src = 'storage/news/'.$news->image;
+            if(\File::exists(public_path($src)) && !is_dir($src))
+            {
+                \File::delete(public_path($src));
+            }
+
+            $file = $request->file('image');
+            $extention = $file->getClientOriginalExtension();
+            $filename = time().'.'.$extention;
+            $file->move('storage/news/', $filename);
+            $news->image = $filename;
+        }
+        $news->save();
+
+        return redirect()->route('news.index')
+                        ->with('success','News updated successfully');
     }
 
     /**
