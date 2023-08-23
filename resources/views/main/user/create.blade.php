@@ -39,48 +39,42 @@
             </div>
           </div>
 
-        <form class="card card-md" action="{{ route('user.store') }}" method="post">
+        <x-form class="card card-md" action="{{ route('user.store') }}" method="post">
         @csrf
         @method('POST')
           <div class="card-body">
             <h2 class="card-title text-center mb-4">Create new user</h2>
             <div class="input-group mb-3">
-                <input type="text" class="form-control @error('id_emp')is-invalid @enderror" placeholder="Enter ID Employee" name="id_emp" id="id_emp" required value="{{ old('id_emp') }}">
-                <button class="btn btn-success" type="button" id="btn-api">Get Data</button>
-                @error('id_emp')
-                <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <x-input type="text" class="form-control" placeholder="Enter ID Employee" name="id_emp" id="id_emp" value="{{ old('id_emp') }}" />
+                <x-button class="btn btn-success" type="button" id="btn-api">Get Data</x-button>
             </div>
             <div class="mb-3">
-                <label class="form-label">Name</label>
-                <input type="text" class="form-control" placeholder="Enter name" name="name" id="name" required>
-                <input type="hidden" id="id_org_unit" name="id_org_unit">
-                <input type="hidden" id="id_user" name="id_user">
+                <x-label class="form-label">Name</x-label>
+                <x-input type="text" class="form-control" placeholder="Enter name" name="name" id="name" />
+                <x-input type="hidden" id="id_org_unit" name="id_org_unit" />
+                <x-input type="hidden" id="id_user" name="id_user" />
               </div>
             <div class="mb-3">
-              <label class="form-label">Email address</label>
-              <input type="email" class="form-control @error('email')is-invalid @enderror" placeholder="Enter email" name="email" id="email" required>
-              @error('email')
-              <div class="invalid-feedback">{{ $message }}</div>
-              @enderror
+              <x-label class="form-label">Email address</x-label>
+              <x-input type="email" class="form-control" placeholder="Enter email" name="email" id="email" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Team</label>
-                <input type="text" class="form-control" placeholder="Enter team" name="team" id="team">
+                <x-label class="form-label">Team</x-label>
+                <x-input type="text" class="form-control" placeholder="Enter team" name="team" id="team" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Department</label>
-                <input type="text" class="form-control" placeholder="Enter department" name="department" id="department">
+                <x-label class="form-label">Department</x-label>
+                <x-input type="text" class="form-control" placeholder="Enter department" name="department" id="department" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Division</label>
-                <input type="text" class="form-control" placeholder="Enter division" name="division" id="division">
+                <x-label class="form-label">Division</x-label>
+                <x-input type="text" class="form-control" placeholder="Enter division" name="division" id="division" />
             </div>
             <div class="form-footer">
-              <button type="submit" class="btn btn-primary w-100">Create new account</button>
+              <x-button type="submit" class="btn btn-primary w-100">Create new account</x-button>
             </div>
           </div>
-        </form>
+        </x-form>
     </div>
 
     </div>

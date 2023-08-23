@@ -38,9 +38,12 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'id_emp' => 'required|unique:users'
+            'id_emp' => 'required|unique:users',
+            'name' => 'required'
         ], [
             'id_emp.unique' => 'This employee has been registered',
+            'id_emp.required' => 'ID employee is required',
+            'name.required' => 'Name is required',
         ]);
         $input = $request->all();
         $input['password'] =  Hash::make($request->input('id_emp'));

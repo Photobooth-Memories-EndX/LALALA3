@@ -78,7 +78,7 @@
                         <td>{{ date("d/m/y", strtotime($list->created_at)) }}</td>
                         <td>
                             <div class="d-inline">
-                                <a href="{{ route('news.edit', $list->id) }}" class="btn btn-info btn-icon">
+                                <a href="{{ route('news.edit', $list->slug) }}" class="btn btn-info btn-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                         <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
@@ -88,7 +88,7 @@
                                   </a>
                             </div>
 
-                            <form action="{{ route('news.destroy',$list->id) }}" method="POST" class="d-inline">
+                            <form action="{{ route('news.destroy',$list->slug) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">

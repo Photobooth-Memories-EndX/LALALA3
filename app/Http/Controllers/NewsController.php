@@ -27,7 +27,7 @@ class NewsController extends Controller
      */
     public function create()
     {
-        //
+        return view('main.news.create');
     }
 
     /**
@@ -38,7 +38,31 @@ class NewsController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'title' => 'required',
+            'description' => 'required',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        $news = new News();
+
+        $news->user_id = 4;
+        $news->title = $request->input('title');
+        $news->description = $request->input('description');
+        $news->save();
+
+        if($request->hasfile('image'))
+        {
+            $file = $request->file('image');
+            $extention = $file->getClientOriginalExtension();
+            $filename = $news->slug.'-'.time().'.'.$extention;
+            $file->move('storage/news/', $filename);
+            $news->image = $filename;
+        }
+        $news->save();
+
+        return redirect()->route('news.index')->with('success','News created successfully.');
+
     }
 
     /**
@@ -83,6 +107,14 @@ class NewsController extends Controller
      */
     public function destroy(News $news)
     {
-        //
+        $src = 'storage/news/'.$news->image;
+        if(\File::exists(public_path($src)) && !is_dir($src))
+        {
+            \File::delete(public_path($src));
+        }
+
+        $news->delete();
+        return redirect()->route('news.index')
+                        ->with('success','News deleted successfully');
     }
 }
