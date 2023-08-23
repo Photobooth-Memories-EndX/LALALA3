@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NewsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 
@@ -21,5 +22,6 @@ Route::get('/', function () {
 Route::group(['prefix' => 'manage'], function () {
 
     Route::resource('user', UserController::class);
+    Route::resource('news', NewsController::class);
 
 });
