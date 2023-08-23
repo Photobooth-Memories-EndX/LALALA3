@@ -29,7 +29,7 @@
     <div class="page page-center">
     <div class="container container-tight py-4">
 
-        <div class="container container-slim py-4 d-none" id="overlay">
+        <div class="modal-blur d-none" id="overlay">
             <div class="text-center">
 
               <div class="text-muted mb-3">Getting employee data</div>

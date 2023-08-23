@@ -29,14 +29,14 @@
     <div class="page page-center">
     <div class="container container-tight py-4">
 
-        <div class="container container-slim py-4 d-none" id="overlay">
+        <div class="modal-blur d-none" id="overlay">
             <div class="text-center">
               <div class="text-muted mb-3">Getting employee data</div>
               <div class="progress progress-sm">
                 <div class="progress-bar progress-bar-indeterminate"></div>
               </div>
             </div>
-          </div>
+        </div>
 
         <form class="card card-md" action="{{ route('user.update', $user->id) }}" method="post">
         @csrf
