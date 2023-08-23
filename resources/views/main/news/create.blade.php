@@ -58,7 +58,7 @@
 
           </div>
           <div class="card-footer text-end">
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <x-button type="submit" class="btn btn-primary">Submit</x-button>
           </div>
         </x-form>
     </div>

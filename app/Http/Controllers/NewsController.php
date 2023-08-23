@@ -49,13 +49,12 @@ class NewsController extends Controller
         $news->user_id = 4;
         $news->title = $request->input('title');
         $news->description = $request->input('description');
-        $news->save();
 
         if($request->hasfile('image'))
         {
             $file = $request->file('image');
             $extention = $file->getClientOriginalExtension();
-            $filename = $news->slug.'-'.time().'.'.$extention;
+            $filename = time().'.'.$extention;
             $file->move('storage/news/', $filename);
             $news->image = $filename;
         }
