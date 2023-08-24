@@ -34,7 +34,7 @@
                   </div>
                   {{-- <div class="img-responsive" style="background-image: url({{ asset('storage/news').'/'.$news->image }})"></div> --}}
                   <div class="mb-3 mt-3">
-                    <img src="{{ asset('storage/news').'/'.$news->image }}" alt="$news->slug" class="img-fluid">
+                    <img src="{{ asset('storage/news').'/'.$news->image }}" alt="{{ $news->slug }}" class="img-fluid">
                   </div>
                   <p>{{ $news->description }}</p>
                 </div>
