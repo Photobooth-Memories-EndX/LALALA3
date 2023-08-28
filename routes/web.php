@@ -23,7 +23,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/{slug}', [PagesUserController::class, 'view'])->name('pages.user.view');
+Route::group(['prefix' => 'page'], function () {
+    Route::get('/{slug}', [PagesUserController::class, 'view'])->name('pages.user.view');
+});
 
 Route::group(['prefix' => 'manage'], function () {
 
