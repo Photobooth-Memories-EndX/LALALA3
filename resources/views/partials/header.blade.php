@@ -137,6 +137,9 @@
                   <a class="dropdown-item" href="{{ url('manage/user') }}" rel="noopener">
                     User
                   </a>
+                  <a class="dropdown-item" href="{{ url('manage/pages') }}" rel="noopener">
+                    Page
+                  </a>
                   <a class="dropdown-item" href="{{ url('manage/news') }}" rel="noopener">
                     News
                   </a>

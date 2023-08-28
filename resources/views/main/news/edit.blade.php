@@ -45,7 +45,7 @@
             <div class="mb-3 row">
               <x-label class="col-3 col-form-label required">Description</x-label>
               <div class="col">
-                <x-textarea class="form-control" name="description" rows="6" placeholder="Content description..">{{ $news->description }}</x-textarea>
+                <x-textarea class="form-control" name="description" rows="6" placeholder="Content description.." data-bs-toggle="autosize">{{ $news->description }}</x-textarea>
               </div>
             </div>
             <div class="mb-3 row">
