@@ -12,6 +12,8 @@ class Page extends Model
     use HasFactory;
     use HasSlug;
 
+    protected $fillable = ['title', 'description', 'views'];
+
     public function getSlugOptions() : SlugOptions
     {
         return SlugOptions::create()

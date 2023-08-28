@@ -35,13 +35,6 @@
       <div class="card">
         <div class="card-header">
             <h3 class="card-title">List Pages</h3>
-            {{-- <div class="card-actions">
-                <a href="{{ route('pages.create') }}" class="btn btn-primary">
-                  <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
-                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></svg>
-                  Add page
-                </a>
-              </div> --}}
           </div>
         <div class="card-body">
           <div id="table-default" class="table-responsive">
@@ -49,18 +42,14 @@
             <table class="table table-bordered table-striped" id="MyTable">
                 <thead>
                     <tr>
-                        {{-- <th>No</th> --}}
                         <th>Title</th>
-                        {{-- <th>Created At</th> --}}
                         <th width="65px"></th>
                     </tr>
                 </thead>
                 <tbody>
                 @foreach ($pages as $list)
                     <tr>
-                        {{-- <td>{{ $loop->index + 1 }}</td> --}}
                         <td>{{ $list->title }}</td>
-                        {{-- <td>{{ date("d/m/y", strtotime($list->created_at)) }}</td> --}}
                         <td>
                             <div class="d-inline">
                                 <a href="{{ route('pages.edit', $list->slug) }}" class="btn btn-info btn-icon">
@@ -73,18 +62,6 @@
                                   </a>
                             </div>
 
-                            {{-- <form action="{{ route('pages.destroy', $list->slug) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M4 7l16 0"></path>
-                                    <path d="M10 11l0 6"></path>
-                                    <path d="M14 11l0 6"></path>
-                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
-                                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
-                                 </svg></button>
-                            </form> --}}
                         </td>
                     </tr>
                 @endforeach
@@ -106,25 +83,3 @@
 
 @endsection
 
-{{-- @section('style')
-<!-- DataTables -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-@endsection
-
-@section('script')
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script>
-    // let table = new DataTable('#MyTable');
-    $(function() {
-        $("#MyTable").DataTable({
-            "lengthMenu": [
-                            [10, 25, 50, -1],
-                            [10, 25, 50, 'All'],
-                        ],
-            "pageLength" : 25,
-            "autoWidth": false,
-        });
-    });
-</script>
-@endsection --}}
