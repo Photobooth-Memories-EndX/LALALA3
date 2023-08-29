@@ -18,7 +18,8 @@ class Page extends Model
     {
         return SlugOptions::create()
             ->generateSlugsFrom('title')
-            ->saveSlugsTo('slug');
+            ->saveSlugsTo('slug')
+            ->doNotGenerateSlugsOnUpdate();
     }
 
     public function getRouteKeyName()
