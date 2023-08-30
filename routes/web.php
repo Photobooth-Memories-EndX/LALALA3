@@ -4,9 +4,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PagesController;
-use App\Http\Controllers\PagesUserController;
+use App\Http\Controllers\ContentController;
 use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\NewsImageController;
+use App\Http\Controllers\PagesUserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,11 +35,16 @@ Route::group(['prefix' => 'manage'], function () {
     Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     Route::resource('pages', PagesController::class);
 
+
+
+    Route::resource('content', ContentController::class);
+    Route::post('content/create/upload', [ContentController::class, 'uploadfileajax'])->name('content.uploadfileajax');
+    Route::get('content/create/upload/delete', [ContentController::class, 'deletefileajax'])->name('content.deletefileajax');
+    Route::put('content/delete/{slug}', [ContentDeleteController::class, 'deletecontentajax'])->name('contentdelete.deletecontentajax');
 });
 
 Route::group(['prefix' => 'news'], function () {
 
     Route::get('/', [NewsUserController::class, 'index'])->name('news.user.index');
     Route::get('/{slug}', [NewsUserController::class, 'view'])->name('news.user.view');
-
 });
