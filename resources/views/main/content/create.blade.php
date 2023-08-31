@@ -207,7 +207,7 @@
         //     new Dropzone("#document-dropzone")
         // })
         function typevalue(select) {
-            // You can get the value like you did 
+            // You can get the value like you did
             var value = select.value;
             // console.log(value);
             if (value == "YouTube") {
@@ -306,29 +306,29 @@
             }));
         });
         // @formatter:on
-        $(document).on('click', '#btn-api', function(e) {
-            e.preventDefault();
-            $("#overlay").removeClass('d-none');
-            var emp_id = $('#id_emp').val();
-            $.ajax({
-                type: "GET",
-                url: '{{ config('api.employee.base_url') }}' + emp_id,
-                dataType: "json",
-                success: function(response) {
-                    if (response.status == 404) {
-                        alert(response.message);
-                    } else {
-                        $("#name").val(response.name);
-                        $("#department").val(response.department);
-                        $("#team").val(response.team);
-                        $("#division").val(response.division);
-                        $("#email").val(response.email);
-                        $("#id_org_unit").val(response.id_ou);
-                        $("#id_user").val(response.id_user);
-                    }
-                    $("#overlay").addClass('d-none');
-                }
-            });
-        });
+        // $(document).on('click', '#btn-api', function(e) {
+        //     e.preventDefault();
+        //     $("#overlay").removeClass('d-none');
+        //     var emp_id = $('#id_emp').val();
+        //     $.ajax({
+        //         type: "GET",
+        //         url: '{{ config('api.employee.base_url') }}' + emp_id,
+        //         dataType: "json",
+        //         success: function(response) {
+        //             if (response.status == 404) {
+        //                 alert(response.message);
+        //             } else {
+        //                 $("#name").val(response.name);
+        //                 $("#department").val(response.department);
+        //                 $("#team").val(response.team);
+        //                 $("#division").val(response.division);
+        //                 $("#email").val(response.email);
+        //                 $("#id_org_unit").val(response.id_ou);
+        //                 $("#id_user").val(response.id_user);
+        //             }
+        //             $("#overlay").addClass('d-none');
+        //         }
+        //     });
+        // });
     </script>
 @endsection

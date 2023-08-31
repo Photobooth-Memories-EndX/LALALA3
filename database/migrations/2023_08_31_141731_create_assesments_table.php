@@ -15,6 +15,9 @@ return new class extends Migration
     {
         Schema::create('assesments', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('content_id')->nullable()->constrained('content');
+            //$table->foreignId('trainingplan_id')->nullable()->constrained('trainingplan);
+            $table->string('slug')->nullable();
             $table->string('title')->nullable();
             $table->string('duration')->nullable();
             $table->date('date')->nullable();

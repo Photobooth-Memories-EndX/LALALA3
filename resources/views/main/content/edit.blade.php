@@ -104,7 +104,7 @@
                             <div class="col-xl-6">
                                 <div class="mb-3">
                                     <label class="form-label">Duration</label>
-                                    <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration" value="{{ $content->title ?? '' }}">
+                                    <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration" value="{{ $content->duration ?? '' }}">
                                 </div>
                             </div>
                         </div>

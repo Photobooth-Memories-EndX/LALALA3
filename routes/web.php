@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\NewsUserController;
+use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
 
@@ -34,7 +35,7 @@ Route::group(['prefix' => 'manage'], function () {
     Route::resource('news', NewsController::class);
     Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     Route::resource('pages', PagesController::class);
-
+    Route::resource('assesment', AssesmentController::class);
 
 
     Route::resource('content', ContentController::class);

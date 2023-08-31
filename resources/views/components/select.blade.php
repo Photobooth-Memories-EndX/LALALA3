@@ -4,7 +4,7 @@
 $class = $errors->has($attributes->get('name')) ? ' is-invalid' : '';
 @endphp
 
-<select {{ $disabled ? 'disabled' : '' }} {{ $attributes->merge(['class' => 'form-control'.$class]) }}>
+<select {{ $disabled ? 'disabled' : '' }} {{ $attributes->merge(['class' => 'form-select form-control'.$class]) }}>
 {{ $slot }}
 </select>
 @error($attributes->get('name'))
