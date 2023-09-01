@@ -74,7 +74,8 @@ class AssesmentController extends Controller
      */
     public function edit(Assesment $assesment)
     {
-        return view('main.assesment.edit', compact('page'));
+        $contents = Content::latest()->get();
+        return view('main.assesment.edit', compact('assesment', 'contents'));
     }
 
     /**
