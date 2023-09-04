@@ -27,7 +27,7 @@
 <div class="page-body">
     <!-- Container Page -->
     <div class="page page-center">
-    <div class="container py-4">
+    <div class="container">
 
         <x-form class="card card-md" action="{{ route('assesment.update', $assesment->slug) }}" method="post">
         @csrf

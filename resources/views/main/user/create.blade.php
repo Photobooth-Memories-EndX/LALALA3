@@ -37,7 +37,7 @@
                 <div class="progress-bar progress-bar-indeterminate"></div>
               </div>
             </div>
-          </div>
+        </div>
 
         <x-form class="card card-md" action="{{ route('user.store') }}" method="post">
         @csrf

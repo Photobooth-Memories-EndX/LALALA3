@@ -114,4 +114,5 @@ class AssesmentController extends Controller
         $assesment->delete();
         return to_route('assesment.index')->with('success','Assesment deleted successfully');
     }
+
 }

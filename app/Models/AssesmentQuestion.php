@@ -9,6 +9,8 @@ class AssesmentQuestion extends Model
 {
     use HasFactory;
     protected $casts = [
-        'properties' => 'array'
+        'option' => 'array'
     ];
+
+
 }

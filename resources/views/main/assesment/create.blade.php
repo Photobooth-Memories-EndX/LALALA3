@@ -27,7 +27,7 @@
 <div class="page-body">
     <!-- Container Page -->
     <div class="page page-center">
-    <div class="container py-4">
+    <div class="container">
 
         <x-form class="card card-md" action="{{ route('assesment.store') }}" method="post">
         @csrf
@@ -42,7 +42,7 @@
                 <x-select name="content_id">
                     <option value="">-choose-</option>
                     @foreach ($contents as $item)
-                     <option value="{{ $item->id }}">{{ $item->title }}</option>
+                     <option value="{{ $item->id }}" {{ (old('title') == $item->id) ? 'selected' : ''  }}>{{ $item->title }}</option>
                     @endforeach
                 </x-select>
               </div>

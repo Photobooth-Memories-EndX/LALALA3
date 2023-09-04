@@ -9,6 +9,7 @@ use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
+use App\Http\Controllers\AssesmentQuestionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,7 +37,10 @@ Route::group(['prefix' => 'manage'], function () {
     Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     Route::resource('pages', PagesController::class);
     Route::resource('assesment', AssesmentController::class);
-
+    // Route::get('assesment/question/{assesment}', [AssesmentController::class, 'question'])->name('assesment.question');
+    Route::get('assesment/{assesment}/question', [AssesmentQuestionController::class, 'question'])->name('assesment.question');
+    Route::post('assesment/{assesment}/store', [AssesmentQuestionController::class, 'store'])->name('assesment.question.store');
+    Route::delete('assesment/delete/{assesment}/{id}', [AssesmentQuestionController::class, 'destroy'])->name('assesment.question.destroy');
 
     Route::resource('content', ContentController::class);
     Route::post('content/create/upload', [ContentController::class, 'uploadfileajax'])->name('content.uploadfileajax');
