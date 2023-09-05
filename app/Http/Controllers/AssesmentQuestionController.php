@@ -43,4 +43,28 @@ class AssesmentQuestionController extends Controller
         $assesment_question->delete();
         return to_route('assesment.question', $assesment->slug)->with('success','Assesment question deleted successfully');
     }
+
+    public function edit(Assesment $assesment, $id)
+    {
+        $data = AssesmentQuestion::findOrFail($id);
+        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->latest()->get();
+        return view('main.assesment.question_edit', compact('assesment', 'assesment_question',  'data'));
+    }
+
+    public function update(Request $request, Assesment $assesment, $id)
+    {
+        $request->validate([
+            'question' => 'required',
+            'answer' => 'required',
+            'option' => 'required'
+        ]);
+
+        $assesment_question = AssesmentQuestion::findOrFail($id);
+        $assesment_question->question = $request->input('question');
+        $assesment_question->option = $request->input('option');
+        $assesment_question->answer = $request->input('answer');
+        $assesment_question->save();
+
+        return to_route('assesment.question', $assesment->slug)->with('success','Assesment question updated successfully.');
+    }
 }
