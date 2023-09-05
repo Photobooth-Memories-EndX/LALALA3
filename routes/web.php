@@ -36,8 +36,8 @@ Route::group(['prefix' => 'manage'], function () {
     Route::resource('news', NewsController::class);
     Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     Route::resource('pages', PagesController::class);
+
     Route::resource('assesment', AssesmentController::class);
-    // Route::get('assesment/question/{assesment}', [AssesmentController::class, 'question'])->name('assesment.question');
     Route::get('assesment/{assesment}/question', [AssesmentQuestionController::class, 'question'])->name('assesment.question');
     Route::post('assesment/{assesment}/store', [AssesmentQuestionController::class, 'store'])->name('assesment.question.store');
     Route::delete('assesment/delete/{assesment}/{id}', [AssesmentQuestionController::class, 'destroy'])->name('assesment.question.destroy');
