@@ -9,6 +9,7 @@ use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
+use App\Http\Controllers\TrainingPlanController;
 use App\Http\Controllers\AssesmentQuestionController;
 
 /*
@@ -48,6 +49,9 @@ Route::group(['prefix' => 'manage'], function () {
     Route::post('content/create/upload', [ContentController::class, 'uploadfileajax'])->name('content.uploadfileajax');
     Route::get('content/create/upload/delete', [ContentController::class, 'deletefileajax'])->name('content.deletefileajax');
     Route::put('content/delete/{slug}', [ContentDeleteController::class, 'deletecontentajax'])->name('contentdelete.deletecontentajax');
+
+    Route::get('trainingplan/order/{slug}', [TrainingPlanController::class, 'order'])->name('trainingplan.order');
+    Route::resource('trainingplan', TrainingPlanController::class);
 });
 
 Route::group(['prefix' => 'news'], function () {
