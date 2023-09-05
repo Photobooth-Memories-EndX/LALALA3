@@ -17,6 +17,7 @@ class ContentController extends Controller
             "content" => $content
         ]);
     }
+
     public function create()
     {
         //
@@ -89,7 +90,8 @@ class ContentController extends Controller
         // ]);
         if ($request->type == "YouTube") {
             parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
-            $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
+            // $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
+            $ytid = $ytarray['v'];
         } else {
             $ytid = null;
         }
@@ -175,22 +177,32 @@ class ContentController extends Controller
         // return $request;
         $path = public_path('storage/files/content/' . $request->id . '');
         $arraydoc = array();
-        if (!File::isDirectory($path)) {
-            File::makeDirectory($path, 0777, true, true);
-        }
-        if ($request->has('documents')) {
-            foreach ($request->documents as $doc) {
-                $arraydoc[] = $doc;
-                File::move(public_path('storage/files/tmp') . '/' . $doc, public_path('storage/files/content/' . $request->contentid . '') . '/' . $doc);
-            }
-            // replacecontent
-            $src = 'storage/files/content/' . $request->contentid . '/' . $request->replacecontent;
-            if (File::exists(public_path($src)) && !is_dir($src)) {
-                File::delete(public_path($src));
-            }
+        if ($request->type == "YouTube") {
+            parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
+            // $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
+            $ytid = $ytarray['v'];
             Content::where('id', $request->contentid)
-                ->update(['file' => json_encode($arraydoc)]);
+                ->update(['file' => null]);
+        } else {
+            $ytid = null;
+            if ($request->has('documents')) {
+                if (!File::isDirectory($path)) {
+                    File::makeDirectory($path, 0777, true, true);
+                }
+                foreach ($request->documents as $doc) {
+                    $arraydoc[] = $doc;
+                    File::move(public_path('storage/files/tmp') . '/' . $doc, public_path('storage/files/content/' . $request->contentid . '') . '/' . $doc);
+                }
+                // replacecontent
+                $src = 'storage/files/content/' . $request->contentid . '/' . $request->replacecontent;
+                if (File::exists(public_path($src)) && !is_dir($src)) {
+                    File::delete(public_path($src));
+                }
+                Content::where('id', $request->contentid)
+                    ->update(['file' => json_encode($arraydoc)]);
+            }
         }
+
         // else {
         //     return ($request);
         // }
@@ -232,7 +244,8 @@ class ContentController extends Controller
                 'author' => $request->author,
                 'duration' => $request->duration,
                 'description' => $request->description,
-                'active' => $active
+                'active' => $active,
+                'link' => $ytid
             ]);
 
         // $slug = Content::where('id', $request->contentid)->first()->slug;

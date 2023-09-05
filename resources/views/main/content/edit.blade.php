@@ -3,6 +3,8 @@
     @php
         $url_dropzone_css = asset('Tabler/dist/libs/dropzone/dist/dropzone.css?1684106062');
         $url_dropzone_js = asset('Tabler/dist/libs/dropzone/dist/dropzone-min.js?1684106062');
+        $url_ytplayer_js = asset('Tabler/dist/libs/plyr/dist/plyr.min.js?1684106062');
+        $url_ytplayer_css = asset('Tabler/dist/libs/plyr/dist/plyr.css?1684106062');
         $url_litepicker = asset('Tabler/dist/libs/litepicker/dist/litepicker.js?1684106062');
     @endphp
     {{-- @push('css')
@@ -104,7 +106,7 @@
                             <div class="col-xl-6">
                                 <div class="mb-3">
                                     <label class="form-label">Duration</label>
-                                    <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration" value="{{ $content->duration ?? '' }}">
+                                    <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration" value="{{ $content->title ?? '' }}">
                                 </div>
                             </div>
                         </div>
@@ -171,8 +173,8 @@
                                     <object data="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" width="800px" height="800px" style="text-align: center"></object>
                                     {{-- <embed src="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" width="800px" height="800px" style="text-align: center" /> --}}
                                 @elseif ($content->type == 'YouTube')
-                                    <iframe width="854" height="480" src="{{ $content->link }}">
-                                    </iframe>
+                                    <div id="player-youtube" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
+                                    {{-- <iframe width="854" height="480" src="https://www.youtube.com/embed/{{ $content->link }}"></iframe> --}}
                                 @endif
                                 <br>
                                 @if ($content->type != 'YouTube')
@@ -221,6 +223,7 @@
 
 @section('style')
     <link rel="stylesheet" href="{{ $url_dropzone_css }}">
+    <link rel="stylesheet" href="{{ $url_ytplayer_css }}">
     <style>
         #overlay {
             position: absolute;
@@ -250,11 +253,15 @@
 @section('script')
     <script src={{ $url_dropzone_js }}></script>
     <script src={{ $url_litepicker }}></script>
+    <script src={{ $url_ytplayer_js }}></script>
     <script>
         // @formatter:off
         // document.addEventListener("DOMContentLoaded", function() {
         //     new Dropzone("#document-dropzone")
         // })
+        document.addEventListener("DOMContentLoaded", function() {
+            window.Plyr && (new Plyr('#player-youtube'));
+        });
         $(document).on('click', '.btn-remove-content', function(e) {
             e.preventDefault();
             if (confirm("Are you sure want to delete this media content?")) {

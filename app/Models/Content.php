@@ -21,6 +21,10 @@ class Content extends Model
     {
         return $this->belongsTo(Classification::class, "classification_id", "id");
     }
+    // public function trainingplandetail()
+    // {
+    //     return $this->belongsTo(TrainingPlanDetail::class, "id", "content_id");
+    // }
 
 
     public function getSlugOptions(): SlugOptions

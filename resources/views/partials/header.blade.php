@@ -174,6 +174,9 @@
                             <a class="dropdown-item" href="{{ url('manage/assesment') }}" rel="noopener">
                                 Assesment
                             </a>
+                            <a class="dropdown-item" href="{{ url('manage/trainingplan') }}" rel="noopener">
+                                Training Plan
+                            </a>
                         </div>
                     </li>
 

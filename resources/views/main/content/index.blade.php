@@ -91,12 +91,12 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
-                                            <td>{{ Str::limit($list->title, 25) }}</td>
+                                            <td data-bs-trigger="hover" data-bs-toggle="popover" title="Title" data-bs-content="{{ $list->title }}">{{ Str::limit($list->title, 25) }}</td>
                                             <td>{{ $list->type }}</td>
                                             <td>{{ $list->classification->classification_name ?? '' }}</td>
                                             <td>{{ $list->duration }}</td>
                                             <td>{{ $list->date }}</td>
-                                            <td>{{ Str::limit($list->description, 15) }}</td>
+                                            <td data-bs-trigger="hover" data-bs-toggle="popover" title="Description" data-bs-content="{{ $list->description }}">{{ Str::limit($list->description, 15) }}</td>
                                             <td>{{ $list->author }}</td>
                                             <td style="text-align: center; vertical-align: middle;"><span class="badge bg-{{ $activecolor }}">{{ $list->active }}</span></td>
                                             <td>

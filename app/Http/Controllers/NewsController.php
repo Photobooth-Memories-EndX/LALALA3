@@ -15,8 +15,8 @@ class NewsController extends Controller
     public function index()
     {
         $news = News::with(['user' => function ($query) {
-                            $query->select('id', 'name');
-                        }])->latest()->get();
+            $query->select('id', 'name');
+        }])->latest()->get();
         return view('main.news.index', compact('news'));
     }
 
@@ -50,18 +50,16 @@ class NewsController extends Controller
         $news->title = $request->input('title');
         $news->description = $request->input('description');
 
-        if($request->hasfile('image'))
-        {
+        if ($request->hasfile('image')) {
             $file = $request->file('image');
             $extention = $file->getClientOriginalExtension();
-            $filename = time().'.'.$extention;
+            $filename = time() . '.' . $extention;
             $file->move('storage/news/', $filename);
             $news->image = $filename;
         }
         $news->save();
 
-        return redirect()->route('news.index')->with('success','News created successfully.');
-
+        return redirect()->route('news.index')->with('success', 'News created successfully.');
     }
 
     /**
@@ -83,6 +81,7 @@ class NewsController extends Controller
      */
     public function edit(News $news)
     {
+        return $news;
         return view('main.news.edit', compact('news'));
     }
 
@@ -104,24 +103,22 @@ class NewsController extends Controller
         $news->title = $request->input('title');
         $news->description = $request->input('description');
 
-        if($request->hasfile('image'))
-        {
-            $src = 'storage/news/'.$news->image;
-            if(\File::exists(public_path($src)) && !is_dir($src))
-            {
+        if ($request->hasfile('image')) {
+            $src = 'storage/news/' . $news->image;
+            if (\File::exists(public_path($src)) && !is_dir($src)) {
                 \File::delete(public_path($src));
             }
 
             $file = $request->file('image');
             $extention = $file->getClientOriginalExtension();
-            $filename = time().'.'.$extention;
+            $filename = time() . '.' . $extention;
             $file->move('storage/news/', $filename);
             $news->image = $filename;
         }
         $news->save();
 
         return redirect()->route('news.index')
-                        ->with('success','News updated successfully');
+            ->with('success', 'News updated successfully');
     }
 
     /**
@@ -132,14 +129,13 @@ class NewsController extends Controller
      */
     public function destroy(News $news)
     {
-        $src = 'storage/news/'.$news->image;
-        if(\File::exists(public_path($src)) && !is_dir($src))
-        {
+        $src = 'storage/news/' . $news->image;
+        if (\File::exists(public_path($src)) && !is_dir($src)) {
             \File::delete(public_path($src));
         }
 
         $news->delete();
         return redirect()->route('news.index')
-                        ->with('success','News deleted successfully');
+            ->with('success', 'News deleted successfully');
     }
 }
