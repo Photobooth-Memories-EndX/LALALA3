@@ -61,6 +61,39 @@ class ContentController extends Controller
             }
         }
     }
+
+    public function uploadthumbnailajax(Request $request)
+    {
+        //
+        // $content = Content::all();
+
+        $name = [];
+        $original_name = [];
+        foreach ($request->file('file') as $key => $value) {
+            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . date('YmdHi') . '.' . $value->getClientOriginalExtension();
+            $destinationPath = 'storage/files/tmp/thumb/';
+            $value->move($destinationPath, $image);
+            $name[] = $image;
+            $original_name[] = $value->getClientOriginalName();
+        }
+
+        return response()->json([
+            'name'          => $name,
+            'original_name' => $original_name
+        ]);
+    }
+    public function deletethumbnailajax(Request $request)
+    {
+        //
+        // $content = Content::all();
+
+        if ($request->get('name')) {
+            $src = 'storage/files/tmp/thumb/' . $request->get('name');
+            if (File::exists(public_path($src)) && !is_dir($src)) {
+                File::delete(public_path($src));
+            }
+        }
+    }
     // public function deletecontentajax($slug)
     // {
     //     // $news = News::select('id', 'image')->where('slug', $slug)->first();
@@ -95,7 +128,7 @@ class ContentController extends Controller
         } else {
             $ytid = null;
         }
-
+        // https://img.youtube.com/vi/gfYFmlxrm8A/hqdefault.jpg
         // return $ytid;
         $newcontent = new Content([
             'title' => $request->title,
@@ -114,6 +147,12 @@ class ContentController extends Controller
         if (!File::isDirectory($path)) {
             File::makeDirectory($path, 0777, true, true);
         }
+        if ($request->type == "YouTube") {
+            $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+            $image = file_get_contents($url);
+            $thumbpath = public_path('storage/files/content/' . $newid . '/thumb.jpg');
+            file_put_contents($thumbpath, $image);
+        }
         if ($request->has('documents')) {
             foreach ($request->documents as $doc) {
                 $arraydoc[] = $doc;
@@ -124,12 +163,12 @@ class ContentController extends Controller
                     'file' => json_encode($arraydoc)
                 ]);
         }
-        // if ($request->type == "YouTube") {
-        //     parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
-        //     $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
-        // } else {
-        //     $ytid = null;
-        // }
+        if ($request->has('thumbnail')) {
+            foreach ($request->thumbnail as $thumbnail) {
+                $arraythumbnail[] = $thumbnail;
+                File::move(public_path('storage/files/tmp/thumb') . '/' . $thumbnail, public_path('storage/files/content/' . $newid . '') . '/thumb.jpg');
+            }
+        }
         if ($request->action == "publish") {
             if ($request->documents) {
                 Content::where('id', $newid)
@@ -183,6 +222,12 @@ class ContentController extends Controller
             $ytid = $ytarray['v'];
             Content::where('id', $request->contentid)
                 ->update(['file' => null]);
+            // if ($request->type == "YouTube") {
+            $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+            $image = file_get_contents($url);
+            $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
+            file_put_contents($thumbpath, $image);
+            // }
         } else {
             $ytid = null;
             if ($request->has('documents')) {
@@ -200,6 +245,12 @@ class ContentController extends Controller
                 }
                 Content::where('id', $request->contentid)
                     ->update(['file' => json_encode($arraydoc)]);
+            }
+            if ($request->has('thumbnail')) {
+                foreach ($request->thumbnail as $thumbnail) {
+                    $arraythumbnail[] = $thumbnail;
+                    File::move(public_path('storage/files/tmp/thumb') . '/' . $thumbnail, public_path('storage/files/content/' .  $request->contentid . '') . '/thumb.jpg');
+                }
             }
         }
 

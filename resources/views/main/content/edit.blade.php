@@ -194,6 +194,14 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Upload Thumbnail</label>
+                            <div class="dropzone" id="thumbnail-dropzone">
+                                <div class="fallback">
+                                    {{-- <input name="file" type="file" /> --}}
+                                </div>
+                            </div>
+                        </div>
 
 
                         <div class="form-footer" style="float: right">
@@ -342,6 +350,56 @@
                     }
                 })
                 $('form').find('input[name="documents[]"][value="' + name + '"]').remove()
+            }
+        });
+
+        //----------------------------------------------------------------------------------------
+        let uploadedThumbnailMap = {};
+        Dropzone.autoDiscover = false;
+        let myThumbnailDropzone = new Dropzone("div#thumbnail-dropzone", {
+            url: '{{ route('content.uploadthumbnailajax') }}',
+            autoProcessQueue: true,
+            uploadMultiple: true,
+            addRemoveLinks: true,
+            acceptedFiles: ".jpg",
+            parallelUploads: 2,
+            headers: {
+                'X-CSRF-TOKEN': "{{ csrf_token() }}"
+            },
+            maxFiles: 1,
+            maxFilesize: 1000, //max file size in MB,
+            init: function() {
+                this.on("error", function(file, message) {
+                    alert(message);
+                    this.removeFile(file);
+                });
+            },
+
+            successmultiple: function(data, response) {
+                $.each(response['name'], function(key, val) {
+                    $('form').append('<input type="hidden" name="thumbnail[]" value="' + val + '" required>');
+                    uploadedThumbnailMap[data[key].name] = val;
+                });
+                console.log(response.name);
+            },
+            removedfile: function(file) {
+                file.previewElement.remove()
+                let name = '';
+                if (typeof file.file_name !== 'undefined') {
+                    name = file.file_name;
+                } else {
+                    name = uploadedThumbnailMap[file.name];
+                }
+                $.ajax({
+                    url: "{{ route('content.deletethumbnailajax') }}",
+                    data: {
+                        name: name
+                    },
+                    success: function(data) {
+                        console.log('sukses : ' + data);
+                    }
+                })
+                $('form').find('input[name="thumbnail[]"][value="' + name + '"]').remove()
             }
         });
         // @formatter:off
