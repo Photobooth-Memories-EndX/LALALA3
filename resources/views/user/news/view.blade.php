@@ -36,7 +36,7 @@
                   <div class="mb-3 mt-3">
                     <img src="{{ asset('storage/news').'/'.$news->image }}" alt="{{ $news->slug }}" class="img-fluid">
                   </div>
-                  <p>{{ $news->description }}</p>
+                  <p>{!! nl2br($news->description) !!}</p>
                 </div>
               </div>
             </div>
