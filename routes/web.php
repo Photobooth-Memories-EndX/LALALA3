@@ -11,6 +11,7 @@ use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
 use App\Http\Controllers\TrainingPlanController;
 use App\Http\Controllers\AssesmentQuestionController;
+use App\Http\Controllers\ClassificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,7 @@ Route::group(['prefix' => 'manage'], function () {
     Route::resource('news', NewsController::class);
     Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     Route::resource('pages', PagesController::class);
+    Route::resource('classification', ClassificationController::class);
 
     Route::resource('assesment', AssesmentController::class);
     Route::get('assesment/{assesment}/question', [AssesmentQuestionController::class, 'question'])->name('assesment.question');

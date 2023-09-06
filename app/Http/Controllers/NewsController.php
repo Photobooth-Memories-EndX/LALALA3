@@ -81,7 +81,7 @@ class NewsController extends Controller
      */
     public function edit(News $news)
     {
-        return $news;
+        // return $news;
         return view('main.news.edit', compact('news'));
     }
 

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Classification extends Model
 {
     use HasFactory;
+
     protected $table = 'classification';
     protected $guarded = ['id'];
     public function content()
