@@ -1,18 +1,10 @@
 @extends('layouts.master')
 @section('content')
 
-{{-- <div class="page-header d-print-none">
-    <div class="container-xl">
-      <div class="row g-2 align-items-center">
-        <div class="col">
-          <h2 class="page-title">
-            Home
-          </h2>
-        </div>
-
-      </div>
-    </div>
-</div> --}}
+@php
+    use App\Models\Content;
+    $content = Content::select('id', 'title', 'type', 'slug', 'duration', 'link')->whereIn('type', ['YouTube', 'Video'])->where('active', 'Active')->get();
+@endphp
 
 <div class="page-body">
     <div class="container-xl">
@@ -23,25 +15,58 @@
             <div class="card-body">
               <h2 class="mb-4">TOP VIDEO LEARNING</h2>
 
-              <div class="row row-cards">
 
-                <div class="col-12">
-                  <div class="card card-md">
-                    <div class="card-body p-3">
-                      <div class="row align-items-center">
-                        <div class="col">
-                          <img src="{{ asset('courses.JPG') }}" class="img-fluid">
+            <div class="card card-md">
+                <div class="card-body p-3">
+
+                    <div class="col">
+
+                        <div id="carousel-captions" class="carousel slide c-home" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            @foreach ($content as $item)
+                            <div class="carousel-item {{ ($loop->first) ? 'active' : '' }}">
+
+                              <div class="col-md-3">
+                                <div class="card border-0">
+                                    @if ($item->type == "YouTube")
+                                    <div class="img-responsive img-responsive-4x3" style="background-image: url(http://img.youtube.com/vi/{{ $item->link }}/sddefault.jpg); position:relative;"><div class="ribbon bg-red ribbon-bottom">{{ $item->duration }}</div></div>
+                                    @else
+                                    @php
+                                        $src = 'storage/files/content/'.$item->id.'/thumb.jpg';
+                                    @endphp
+                                        @if (\File::exists(public_path($src)) && !is_dir($src))
+                                        <div class="img-responsive img-responsive-4x3" style="background-image: url({{ asset($src) }});position:relative;"><div class="ribbon bg-red ribbon-bottom">{{ $item->duration }}</div></div>
+                                        @else
+                                        <div class="img-responsive img-responsive-4x3" style="background-image: url(https://via.placeholder.com/640x480.png/7F7F7F/ffffff?text=Default-thumbnail);position:relative;"><div class="ribbon bg-red ribbon-bottom">{{ $item->duration }}</div></div>
+                                        @endif
+
+                                    @endif
+
+                                  <div class="card-body p-2">
+                                    <h3 class="card-title h4"><a href="{{ route('content.user.view', $item->slug) }}">{{ Str::limit($item->title, 60) }}</a></h3>
+                                  </div>
+                                </div>
+                              </div>
+
+                            </div>
+                            @endforeach
+
                         </div>
-                        <div class="col-auto">
-                          {{-- <a href="#" class="btn">
-                            Book a demo
-                          </a> --}}
+                        <a class="carousel-control-prev" href="#carousel-captions" role="button" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </a>
+                        <a class="carousel-control-next" href="#carousel-captions" role="button" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </a>
                         </div>
-                      </div>
+
                     </div>
-                  </div>
+
                 </div>
-              </div>
+            </div>
+
 
               <h2 class="mb-4 mt-5">Training Module</h2>
 
@@ -131,6 +156,43 @@
 
 @section('style')
 <link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet"/>
+<style>
+ @media (max-width: 767px) {
+		.carousel-inner .carousel-item > div {
+			display: none;
+		}
+		.carousel-inner .carousel-item > div:first-child {
+			display: block;
+		}
+
+	}
+
+	.carousel-inner .carousel-item.active,
+	.carousel-inner .carousel-item-next,
+	.carousel-inner .carousel-item-prev {
+		display: flex;
+	}
+
+	/* medium and up screens */
+	@media (min-width: 768px) {
+
+		.carousel-inner .carousel-item-end.active,
+		.carousel-inner .carousel-item-next {
+			transform: translateX(25%);
+		}
+
+		.carousel-inner .carousel-item-start.active,
+		.carousel-inner .carousel-item-prev {
+			transform: translateX(-25%);
+		}
+        .c-home .carousel-control-prev, .c-home .carousel-control-next{width: 5% !important;}
+	}
+
+	.carousel-inner .carousel-item-end,
+	.carousel-inner .carousel-item-start {
+		transform: translateX(0);
+	}
+</style>
 @endsection
 
 @section('script')
@@ -182,5 +244,23 @@
         })).render();
     });
     // @formatter:on
+  </script>
+
+  <script>
+    let items = document.querySelectorAll('.carousel .carousel-item')
+
+    items.forEach((el) => {
+        const minPerSlide = 4
+        let next = el.nextElementSibling
+        for (var i=1; i<minPerSlide; i++) {
+            if (!next) {
+                // wrap carousel by using first child
+                next = items[0]
+            }
+            let cloneChild = next.cloneNode(true)
+            el.appendChild(cloneChild.children[0])
+            next = next.nextElementSibling
+        }
+    })
   </script>
 @endsection

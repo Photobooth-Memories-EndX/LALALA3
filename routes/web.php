@@ -9,9 +9,10 @@ use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
+use App\Http\Controllers\ContentUserController;
 use App\Http\Controllers\TrainingPlanController;
-use App\Http\Controllers\AssesmentQuestionController;
 use App\Http\Controllers\ClassificationController;
+use App\Http\Controllers\AssesmentQuestionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,4 +63,8 @@ Route::group(['prefix' => 'news'], function () {
 
     Route::get('/', [NewsUserController::class, 'index'])->name('news.user.index');
     Route::get('/{slug}', [NewsUserController::class, 'view'])->name('news.user.view');
+});
+
+Route::group(['prefix' => 'content'], function () {
+    Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
 });
