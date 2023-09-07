@@ -153,6 +153,30 @@
                         </div>
                     </li>
 
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M4 4h6v6h-6z"></path>
+                                    <path d="M14 4h6v6h-6z"></path>
+                                    <path d="M4 14h6v6h-6z"></path>
+                                    <path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>
+                                 </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                Category
+                            </span>
+                        </a>
+                        <div class="dropdown-menu">
+                            @foreach ($category as $cat)
+                            <a class="dropdown-item" href="#" rel="noopener">
+                                {{ $cat->classification_name }}
+                            </a>
+                            @endforeach
+                        </div>
+                    </li>
+
                     <li class="nav-item {{ request()->is('news*') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ url('/news') }}">
                             <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/article -->
@@ -209,7 +233,7 @@
                         </div>
                     </li>
 
-                    <li class="nav-item">
+                    {{-- <li class="nav-item">
                         <a class="nav-link" href="{{ url('/Tabler/index.html') }}" target="_blank">
                             <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/checkbox -->
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -249,7 +273,7 @@
                                 Source code
                             </a>
                         </div>
-                    </li>
+                    </li> --}}
                 </ul>
                 <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-first order-md-last">
                     <form action="./" method="get" autocomplete="off" novalidate>

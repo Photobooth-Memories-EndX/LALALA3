@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Classification;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,5 +26,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrapFive();
+        view()->composer('partials.header', function ($view) {
+            $view->with('category', Classification::select('classification_name', 'slug')->get());
+        });
     }
 }
