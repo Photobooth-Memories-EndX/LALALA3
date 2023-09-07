@@ -29,7 +29,7 @@
     <div class="page page-center">
     <div class="container py-4">
 
-        <x-form class="card card-md" action="{{ route('classification.update', $classification->id) }}" method="post">
+        <x-form class="card card-md" action="{{ route('classification.update', $classification->slug) }}" method="post">
         @csrf
         @method('put')
         <div class="card-header">

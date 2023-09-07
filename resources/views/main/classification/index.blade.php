@@ -39,7 +39,7 @@
                 <a href="{{ route('classification.create') }}" class="btn btn-primary">
                   <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
                   <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></svg>
-                  Add classification
+                  Add category
                 </a>
               </div>
           </div>
@@ -61,7 +61,7 @@
                         <td>{{ $list->classification_name }}</td>
                         <td>
                             <div class="d-inline">
-                                <a href="{{ route('classification.edit', $list->id) }}" class="btn btn-info btn-icon">
+                                <a href="{{ route('classification.edit', $list->slug) }}" class="btn btn-info btn-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                         <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
@@ -71,7 +71,7 @@
                                   </a>
                             </div>
 
-                            <form action="{{ route('classification.destroy', $list->id) }}" method="POST" class="d-inline">
+                            <form action="{{ route('classification.destroy', $list->slug) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">

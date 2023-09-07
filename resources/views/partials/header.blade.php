@@ -127,6 +127,32 @@
                         </a>
                     </li>
 
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0"></path>
+                                    <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0"></path>
+                                    <path d="M3 6l0 13"></path>
+                                    <path d="M12 6l0 13"></path>
+                                    <path d="M21 6l0 13"></path>
+                                 </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                My Learning
+                            </span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="#" rel="noopener">
+                                Learning On Going
+                            </a>
+                            <a class="dropdown-item" href="#" rel="noopener">
+                                Learning Record
+                            </a>
+                        </div>
+                    </li>
+
                     <li class="nav-item {{ request()->is('news*') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ url('/news') }}">
                             <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/article -->
@@ -193,7 +219,7 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                Template Example
+                                Template
                             </span>
                         </a>
                     </li>
