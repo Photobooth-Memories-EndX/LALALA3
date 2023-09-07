@@ -29,7 +29,7 @@
                               <div class="col-md-3">
                                 <div class="card border-0">
                                     @if ($item->type == "YouTube")
-                                    <div class="img-responsive img-responsive-4x3" style="background-image: url(http://img.youtube.com/vi/{{ $item->link }}/sddefault.jpg); position:relative;"><div class="ribbon bg-red ribbon-bottom">{{ $item->duration }}</div></div>
+                                    <div class="img-responsive img-responsive-4x3" style="background-image: url(http://img.youtube.com/vi/{{ $item->link }}/mqdefault.jpg); position:relative;"><div class="ribbon bg-red ribbon-bottom">{{ $item->duration }}</div></div>
                                     @else
                                     @php
                                         $src = 'storage/files/content/'.$item->id.'/thumb.jpg';
