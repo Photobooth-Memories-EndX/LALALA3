@@ -1,6 +1,17 @@
 @extends('layouts.master')
 @section('content')
 
+@php
+    $content_video = $content->filter(function ($list){
+                            return in_array($list->type, ['YouTube', 'Video']);
+                    });
+
+    $content_pdf = $content->filter(function ($list){
+                            return $list->type=='Document';
+                            // return in_array($list->type, ['Document']);
+                    });
+@endphp
+
 <div class="page-body">
     <div class="container-xl">
       <div class="card">
@@ -16,7 +27,7 @@
 
                     <div class="col">
 
-                            @foreach ($content as $item)
+                            @foreach ($content_video as $item)
 
                               <div class="col-md-3">
                                 <div class="card border-0">
@@ -53,7 +64,7 @@
             <div class="row row-cards">
                 <div class="card-body border m-2">
 
-                @foreach ($pdf as $item)
+                @foreach ($content_pdf as $item)
 
                   <div class="col-md-3">
                     <div class="card card-md border-0">

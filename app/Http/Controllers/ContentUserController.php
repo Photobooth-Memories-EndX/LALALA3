@@ -19,8 +19,7 @@ class ContentUserController extends Controller
     public function category($slug)
     {
         $category = Classification::findBySlug($slug);
-        $content = Content::where('classification_id', $category->id)->whereIn('type', ['Video', 'YouTube'])->get();
-        $pdf = Content::where('classification_id', $category->id)->whereIn('type', ['Document'])->get();
-        return view('user.content.category', compact('content', 'category', 'pdf'));
+        $content = Content::where('classification_id', $category->id)->get();
+        return view('user.content.category', compact('content', 'category'));
     }
 }
