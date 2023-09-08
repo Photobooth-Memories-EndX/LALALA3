@@ -170,7 +170,7 @@
                         </a>
                         <div class="dropdown-menu">
                             @foreach ($category as $cat)
-                            <a class="dropdown-item" href="#" rel="noopener">
+                            <a class="dropdown-item" href="{{ route('content.user.category', $cat->slug) }}" rel="noopener">
                                 {{ $cat->classification_name }}
                             </a>
                             @endforeach

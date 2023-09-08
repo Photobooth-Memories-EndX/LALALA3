@@ -67,4 +67,5 @@ Route::group(['prefix' => 'news'], function () {
 
 Route::group(['prefix' => 'content'], function () {
     Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
+    Route::get('category/{slug}', [ContentUserController::class, 'category'])->name('content.user.category');
 });

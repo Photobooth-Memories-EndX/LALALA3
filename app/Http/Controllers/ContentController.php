@@ -147,12 +147,12 @@ class ContentController extends Controller
         if (!File::isDirectory($path)) {
             File::makeDirectory($path, 0777, true, true);
         }
-        if ($request->type == "YouTube") {
-            $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
-            $image = file_get_contents($url);
-            $thumbpath = public_path('storage/files/content/' . $newid . '/thumb.jpg');
-            file_put_contents($thumbpath, $image);
-        }
+        // if ($request->type == "YouTube") {
+        //     $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+        //     $image = file_get_contents($url);
+        //     $thumbpath = public_path('storage/files/content/' . $newid . '/thumb.jpg');
+        //     file_put_contents($thumbpath, $image);
+        // }
         if ($request->has('documents')) {
             foreach ($request->documents as $doc) {
                 $arraydoc[] = $doc;
@@ -192,7 +192,7 @@ class ContentController extends Controller
         }
 
 
-        // 
+        //
         return to_route('content.index')->with('success', 'Content successfully saved' . $addmessage . '');
     }
     public function destroy(Content $content)
@@ -223,10 +223,10 @@ class ContentController extends Controller
             Content::where('id', $request->contentid)
                 ->update(['file' => null]);
             // if ($request->type == "YouTube") {
-            $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
-            $image = file_get_contents($url);
-            $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
-            file_put_contents($thumbpath, $image);
+            // $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+            // $image = file_get_contents($url);
+            // $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
+            // file_put_contents($thumbpath, $image);
             // }
         } else {
             $ytid = null;
