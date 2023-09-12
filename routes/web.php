@@ -11,6 +11,7 @@ use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
 use App\Http\Controllers\ContentUserController;
 use App\Http\Controllers\TrainingPlanController;
+use App\Http\Controllers\AssesmentImageController;
 use App\Http\Controllers\ClassificationController;
 use App\Http\Controllers\AssesmentQuestionController;
 
@@ -47,6 +48,7 @@ Route::group(['prefix' => 'manage'], function () {
     Route::delete('assesment/delete/{assesment}/{id}', [AssesmentQuestionController::class, 'destroy'])->name('assesment.question.destroy');
     Route::get('assesment/edit/{assesment}/{id}', [AssesmentQuestionController::class, 'edit'])->name('assesment.question.edit');
     Route::put('assesment/update/{assesment}/{id}', [AssesmentQuestionController::class, 'update'])->name('assesment.question.update');
+    Route::put('assement/delete-image/{id}', [AssesmentImageController::class, 'deleteImage'])->name('assesment.deleteImage');
 
     Route::resource('content', ContentController::class);
     Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');

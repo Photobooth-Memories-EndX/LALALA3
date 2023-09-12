@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Content;
 use App\Models\Assesment;
 use App\Models\AssesmentQuestion;
 use Illuminate\Http\Request;
@@ -24,7 +23,8 @@ class AssesmentQuestionController extends Controller
         $request->validate([
             'question' => 'required',
             'answer' => 'required',
-            'option' => 'required'
+            'option' => 'required',
+            'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $assesment_question = new AssesmentQuestion();
@@ -32,6 +32,13 @@ class AssesmentQuestionController extends Controller
         $assesment_question->question = $request->input('question');
         $assesment_question->option = $request->input('option');
         $assesment_question->answer = $request->input('answer');
+        if ($request->hasfile('image')) {
+            $file = $request->file('image');
+            $extention = $file->getClientOriginalExtension();
+            $filename = time() . '.' . $extention;
+            $file->move('storage/assesment/', $filename);
+            $assesment_question->image = $filename;
+        }
         $assesment_question->save();
 
         return to_route('assesment.question', $assesment->slug)->with('success','Assesment question created successfully.');
@@ -56,13 +63,26 @@ class AssesmentQuestionController extends Controller
         $request->validate([
             'question' => 'required',
             'answer' => 'required',
-            'option' => 'required'
+            'option' => 'required',
+            'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $assesment_question = AssesmentQuestion::findOrFail($id);
         $assesment_question->question = $request->input('question');
         $assesment_question->option = $request->input('option');
         $assesment_question->answer = $request->input('answer');
+        if ($request->hasfile('image')) {
+            $src = 'storage/assesment/' . $assesment_question->image;
+            if (\File::exists(public_path($src)) && !is_dir($src)) {
+                \File::delete(public_path($src));
+            }
+
+            $file = $request->file('image');
+            $extention = $file->getClientOriginalExtension();
+            $filename = time() . '.' . $extention;
+            $file->move('storage/assesment/', $filename);
+            $assesment_question->image = $filename;
+        }
         $assesment_question->save();
 
         return to_route('assesment.question', $assesment->slug)->with('success','Assesment question updated successfully.');

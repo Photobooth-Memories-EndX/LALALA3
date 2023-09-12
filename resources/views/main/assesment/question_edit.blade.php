@@ -31,7 +31,7 @@
 
         <x-alert type='success' />
 
-        <x-form class="card card-md" action="{{ route('assesment.question.update', [$assesment->slug, $data->id]) }}" method="post">
+        <x-form class="card card-md" action="{{ route('assesment.question.update', [$assesment->slug, $data->id]) }}" method="post" enctype="multipart/form-data">
         @csrf
         @method('put')
         <div class="card-header">
@@ -42,6 +42,20 @@
             <div class="mb-3">
                 <x-label class="form-label">Question</x-label>
                 <x-input type="text" class="form-control" name="question" id="question" placeholder="Input question" value="{{ $data->question }}" />
+            </div>
+            <div class="mb-3">
+                <x-label class="form-label">Image</x-label>
+                @if (($data->image != '') or ($data->image != NULL))
+                  <div class="row align-items-center mb-2" id="container-img">
+                    <div class="col-auto"><span class="avatar avatar-2xl" style="background-image: url({{ asset('storage/assesment/') .'/'. $data->image }})"></span>
+                    </div>
+                    <div class="col-auto"><a href="#" data-url="{{ route('assesment.deleteImage', $data->id) }}" class="btn btn-danger btn-remove-img">
+                        Delete Image
+                      </a></div>
+                  </div>
+                  @endif
+                <img id="image-preview" alt="image preview" style="display:none;height:200px;" class="img-fluid mb-2" />
+                <x-input type="file" class="form-control" id="image" name="image" placeholder="Enter image" onchange="previewImage();" />
             </div>
             <div class="mb-3 row">
                 <div class="col-md-6">
@@ -153,14 +167,13 @@
 @section('style')
 <!-- DataTables -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet"/>
 @endsection
 
 @section('script')
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{{ asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062') }}"></script>
 <script>
     // let table = new DataTable('#MyTable');
     $(function() {
@@ -176,25 +189,64 @@
 </script>
 
 <script>
-    $(document).ready(function() {
-        $('#options').select2({
-            // dropdownParent: $('#modal-questions'),
-            theme: 'bootstrap-5',
-            selectionCssClass: 'select2--small',
-            dropdownCssClass: 'select2--small',
-            tags: true
-        });
-        $('#options').on("select2:select", function (e) {
-			var data = e.params.data;
-            $('#answer').append($('<option>', {
-                value: data.id,
-                text: data.text
-            }));
-		});
-		$('#options').on("select2:unselect", function (e) {
-			var data = e.params.data;
-			$("#answer option[value='"+data.id+"']").remove();
-		});
+    document.addEventListener("DOMContentLoaded", function() {
+        var el;
+        window.TomSelect && (new TomSelect(el = document.getElementById('options'), {
+            create: true,
+            copyClassesToDropdown: false,
+            dropdownParent: 'body',
+            controlInput: '<input>',
+            plugins: ['remove_button'],
+            render: {
+                item: function(data, escape) {
+                    if (data.customProperties) {
+                        return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                    }
+                    return '<div>' + escape(data.text) + '</div>';
+                },
+                option: function(data, escape) {
+                    if (data.customProperties) {
+                        return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                    }
+                    return '<div>' + escape(data.text) + '</div>';
+                },
+            },
+            onItemAdd : function(value) {
+                            $('#answer').append($('<option>', {
+                                value: value,
+                                text: value
+                            }));
+                        },
+            onItemRemove : function(value) {
+                            $("#answer option[value='"+value+"']").remove();
+                        }
+        }));
+    });
+
+    function previewImage() {
+        document.getElementById("image-preview").style.display = "block";
+        var oFReader = new FileReader();
+        oFReader.readAsDataURL(document.getElementById("image").files[0]);
+        oFReader.onload = function(oFREvent) {
+            document.getElementById("image-preview").src = oFREvent.target.result;
+        };
+    };
+
+    $(document).on('click', '.btn-remove-img', function(e) {
+        e.preventDefault();
+        if (confirm("Are you sure want to delete this image?")) {
+            var column = $(this).data('column');
+                $.ajax({
+                    type: "PUT",
+                    url: $(this).data('url'),
+                    data: {'_token': '{{ csrf_token() }}'},
+                    success: function(data){
+                        if (data.status == 200) {
+                            $("#container-img").load(" #container-img > *");
+                        }
+                    }
+                });
+        }
     });
 
 

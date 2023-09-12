@@ -31,7 +31,7 @@
 
         <x-alert type='success' />
 
-        <x-form class="card card-md" action="{{ route('assesment.question.store', $assesment->slug) }}" method="post">
+        <x-form class="card card-md" action="{{ route('assesment.question.store', $assesment->slug) }}" method="post" enctype="multipart/form-data">
         @csrf
         @method('POST')
         <div class="card-header">
@@ -47,6 +47,11 @@
             <div class="mb-3">
                 <x-label class="form-label">Question</x-label>
                 <x-input type="text" class="form-control" name="question" id="question" placeholder="Input question" value="{{ old('question') }}" />
+            </div>
+            <div class="mb-3">
+                <x-label class="form-label">Image</x-label>
+                <img id="image-preview" alt="image preview" style="display:none;height:200px;" class="img-fluid mb-2" />
+                <x-input type="file" class="form-control" id="image" name="image" placeholder="Enter image" onchange="previewImage();" />
             </div>
             <div class="mb-3 row">
                 <div class="col-md-6">
@@ -226,6 +231,16 @@
     });
 
 
+</script>
+<script>
+    function previewImage() {
+        document.getElementById("image-preview").style.display = "block";
+        var oFReader = new FileReader();
+        oFReader.readAsDataURL(document.getElementById("image").files[0]);
+        oFReader.onload = function(oFREvent) {
+            document.getElementById("image-preview").src = oFREvent.target.result;
+        };
+    };
 </script>
 @endsection
 
