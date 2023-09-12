@@ -37,7 +37,18 @@
           </div>
           <div class="card-body">
             <div class="mb-3 row">
-              <x-label class="col-3 col-form-label required">Learning Content</x-label>
+                <x-label class="col-3 col-form-label required">Type</x-label>
+                <div class="col">
+                  <x-select name="type">
+                      <option value="">-choose-</option>
+                      <option value="content" {{ ($assesment->type == 'content') ? 'selected' : ''  }}>Assesment for content</option>
+                      <option value="trainingplan" {{ ($assesment->type == 'trainingplan') ? 'selected' : ''  }}>Assesment for playlist</option>
+                      <option value="global" {{ ($assesment->type == 'global') ? 'selected' : ''  }}>Global Assesment</option>
+                  </x-select>
+                </div>
+            </div>
+            <div class="mb-3 row">
+              <x-label class="col-3 col-form-label">Learning Content</x-label>
               <div class="col">
                 <x-select name="content_id">
                     <option value="">-choose-</option>
@@ -47,6 +58,17 @@
                 </x-select>
               </div>
             </div>
+            <div class="mb-3 row">
+                <x-label class="col-3 col-form-label">Training Plan</x-label>
+                <div class="col">
+                  <x-select name="trainingplan_id">
+                      <option value="">-choose-</option>
+                      @foreach ($trainingplan as $item)
+                       <option value="{{ $item->id }}" {{ ($assesment->trainingplan_id == $item->id) ? 'selected' : ''  }}>{{ $item->title }}</option>
+                      @endforeach
+                  </x-select>
+                </div>
+              </div>
             <div class="mb-3 row">
                 <x-label class="col-3 col-form-label required">Title</x-label>
                 <div class="col">

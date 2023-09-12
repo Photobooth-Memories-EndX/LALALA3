@@ -37,16 +37,38 @@
           </div>
           <div class="card-body">
             <div class="mb-3 row">
-              <x-label class="col-3 col-form-label required">Learning Content</x-label>
+              <x-label class="col-3 col-form-label required">Type</x-label>
               <div class="col">
-                <x-select name="content_id">
+                <x-select name="type">
                     <option value="">-choose-</option>
-                    @foreach ($contents as $item)
-                     <option value="{{ $item->id }}" {{ (old('title') == $item->id) ? 'selected' : ''  }}>{{ $item->title }}</option>
-                    @endforeach
+                    <option value="content" {{ (old('type') == 'content') ? 'selected' : ''  }}>Assesment for content</option>
+                    <option value="trainingplan" {{ (old('type') == 'trainingplan') ? 'selected' : ''  }}>Assesment for playlist</option>
+                    <option value="global" {{ (old('type') == 'global') ? 'selected' : ''  }}>Global Assesment</option>
                 </x-select>
               </div>
             </div>
+            <div class="mb-3 row">
+                <x-label class="col-3 col-form-label">Learning Content</x-label>
+                <div class="col">
+                  <x-select name="content_id">
+                      <option value="">-choose-</option>
+                      @foreach ($contents as $item)
+                       <option value="{{ $item->id }}" {{ (old('title') == $item->id) ? 'selected' : ''  }}>{{ $item->title }}</option>
+                      @endforeach
+                  </x-select>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <x-label class="col-3 col-form-label">Training Plan</x-label>
+                <div class="col">
+                  <x-select name="trainingplan_id">
+                      <option value="">-choose-</option>
+                      @foreach ($trainingplan as $item)
+                       <option value="{{ $item->id }}" {{ (old('title') == $item->id) ? 'selected' : ''  }}>{{ $item->title }}</option>
+                      @endforeach
+                  </x-select>
+                </div>
+              </div>
             <div class="mb-3 row">
                 <x-label class="col-3 col-form-label required">Title</x-label>
                 <div class="col">

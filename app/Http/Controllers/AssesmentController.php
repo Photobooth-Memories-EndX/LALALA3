@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Content;
 use App\Models\Assesment;
+use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
 
 class AssesmentController extends Controller
@@ -27,7 +28,8 @@ class AssesmentController extends Controller
     public function create()
     {
         $contents = Content::latest()->get();
-        return view('main.assesment.create', compact('contents'));
+        $trainingplan = TrainingPlan::latest()->get();
+        return view('main.assesment.create', compact('contents', 'trainingplan'));
     }
 
     /**
@@ -40,13 +42,15 @@ class AssesmentController extends Controller
     {
         $request->validate([
             'title' => 'required',
-            'content_id' => 'required',
+            'type' => 'required',
             'duration' => 'required',
             'date' => 'required',
         ]);
 
         $assesment = new Assesment();
+        $assesment->type = $request->input('type');
         $assesment->content_id = $request->input('content_id');
+        $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title = $request->input('title');
         $assesment->duration = $request->input('duration');
         $assesment->date = $request->input('date');
@@ -75,7 +79,8 @@ class AssesmentController extends Controller
     public function edit(Assesment $assesment)
     {
         $contents = Content::latest()->get();
-        return view('main.assesment.edit', compact('assesment', 'contents'));
+        $trainingplan = TrainingPlan::latest()->get();
+        return view('main.assesment.edit', compact('assesment', 'contents', 'trainingplan'));
     }
 
     /**
@@ -89,12 +94,14 @@ class AssesmentController extends Controller
     {
         $request->validate([
             'title' => 'required',
-            'content_id' => 'required',
+            'type' => 'required',
             'duration' => 'required',
             'date' => 'required',
         ]);
 
+        $assesment->type = $request->input('type');
         $assesment->content_id = $request->input('content_id');
+        $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title = $request->input('title');
         $assesment->duration = $request->input('duration');
         $assesment->date = $request->input('date');
