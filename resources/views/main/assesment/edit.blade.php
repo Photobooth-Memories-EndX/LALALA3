@@ -39,7 +39,7 @@
             <div class="mb-3 row">
                 <x-label class="col-3 col-form-label required">Type</x-label>
                 <div class="col">
-                  <x-select name="type">
+                  <x-select name="type" onchange="setRequired(this);">
                       <option value="">-choose-</option>
                       <option value="content" {{ ($assesment->type == 'content') ? 'selected' : ''  }}>Assesment for content</option>
                       <option value="trainingplan" {{ ($assesment->type == 'trainingplan') ? 'selected' : ''  }}>Assesment for playlist</option>
@@ -47,10 +47,10 @@
                   </x-select>
                 </div>
             </div>
-            <div class="mb-3 row">
+            <div class="mb-3 row {{ ($assesment->type == 'trainingplan') || ($assesment->type == 'global') ? 'd-none' : ''  }}" id="content_id_wrapper">
               <x-label class="col-3 col-form-label">Learning Content</x-label>
               <div class="col">
-                <x-select name="content_id">
+                <x-select name="content_id" id="content_id">
                     <option value="">-choose-</option>
                     @foreach ($contents as $item)
                      <option value="{{ $item->id }}" {{ ($assesment->content_id == $item->id) ? 'selected' : ''  }}>{{ $item->title }}</option>
@@ -58,10 +58,10 @@
                 </x-select>
               </div>
             </div>
-            <div class="mb-3 row">
+            <div class="mb-3 row {{ ($assesment->type == 'content') || ($assesment->type == 'global') ? 'd-none' : ''  }}" id="trainingplan_id_wrapper">
                 <x-label class="col-3 col-form-label">Training Plan</x-label>
                 <div class="col">
-                  <x-select name="trainingplan_id">
+                  <x-select name="trainingplan_id" id="trainingplan_id">
                       <option value="">-choose-</option>
                       @foreach ($trainingplan as $item)
                        <option value="{{ $item->id }}" {{ ($assesment->trainingplan_id == $item->id) ? 'selected' : ''  }}>{{ $item->title }}</option>
@@ -137,6 +137,29 @@
     	}));
     });
     // @formatter:on
+
+    function setRequired(that) {
+		if (that.value == "content") {
+            document.getElementById("content_id").setAttribute('required','required');
+			document.getElementById("trainingplan_id").removeAttribute('required');
+            $("#trainingplan_id_wrapper").addClass('d-none');
+            $("#content_id_wrapper").removeClass('d-none');
+            $("#trainingplan_id").val('').change();
+		} else if (that.value == "trainingplan") {
+            document.getElementById("trainingplan_id").setAttribute('required','required');
+			document.getElementById("content_id").removeAttribute('required');
+            $("#content_id_wrapper").addClass('d-none');
+            $("#trainingplan_id_wrapper").removeClass('d-none');
+            $("#content_id").val('').change();
+		} else {
+            document.getElementById("content_id").removeAttribute('required');
+            document.getElementById("trainingplan_id").removeAttribute('required');
+            $("#content_id_wrapper").addClass('d-none');
+            $("#trainingplan_id_wrapper").addClass('d-none');
+            $("#content_id").val('').change();
+            $("#trainingplan_id").val('').change();
+		}
+	}
   </script>
 @endsection
 
