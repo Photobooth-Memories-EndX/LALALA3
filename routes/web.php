@@ -11,6 +11,7 @@ use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
 use App\Http\Controllers\ContentUserController;
 use App\Http\Controllers\TrainingPlanController;
+use App\Http\Controllers\AssesmentUserController;
 use App\Http\Controllers\AssesmentImageController;
 use App\Http\Controllers\ClassificationController;
 use App\Http\Controllers\AssesmentQuestionController;
@@ -62,7 +63,6 @@ Route::group(['prefix' => 'manage'], function () {
 });
 
 Route::group(['prefix' => 'news'], function () {
-
     Route::get('/', [NewsUserController::class, 'index'])->name('news.user.index');
     Route::get('/{slug}', [NewsUserController::class, 'view'])->name('news.user.view');
 });
@@ -70,4 +70,9 @@ Route::group(['prefix' => 'news'], function () {
 Route::group(['prefix' => 'content'], function () {
     Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
     Route::get('category/{slug}', [ContentUserController::class, 'category'])->name('content.user.category');
+});
+
+Route::group(['prefix' => 'assesment'], function () {
+    Route::get('/', [AssesmentUserController::class, 'index'])->name('assesment.user.index');
+    Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
 });

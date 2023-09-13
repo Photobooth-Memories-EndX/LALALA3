@@ -63,7 +63,7 @@
                     <tr>
                         <td>{{ $loop->index + 1 }}</td>
                         <td>{{ $list->type }}</td>
-                        <td>{{ $list->title }}</td>
+                        <td><a href="{{ route('assesment.user.view', $list->slug) }}" class="text-reset">{{ $list->title }}</a></td>
                         <td>{{ $list->duration }}</td>
                         <td>{{ date("d/m/y", strtotime($list->date)) }}</td>
                         <td>{{ $list->status }}</td>
