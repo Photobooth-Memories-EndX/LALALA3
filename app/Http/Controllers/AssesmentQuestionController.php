@@ -14,7 +14,7 @@ class AssesmentQuestionController extends Controller
         //     'status' => 200,
         //     'assesment' => $assesment,
         // ]);
-        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->latest()->get();
+        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->get();
         return view('main.assesment.question', compact('assesment', 'assesment_question'));
     }
 

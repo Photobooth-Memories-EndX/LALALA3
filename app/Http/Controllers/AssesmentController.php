@@ -43,8 +43,8 @@ class AssesmentController extends Controller
         $request->validate([
             'title' => 'required',
             'type' => 'required',
-            'duration' => 'required',
-            'date' => 'required',
+            'fromdate' => 'required',
+            'todate' => 'required',
         ]);
 
         $assesment = new Assesment();
@@ -52,8 +52,8 @@ class AssesmentController extends Controller
         $assesment->content_id = $request->input('content_id');
         $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title = $request->input('title');
-        $assesment->duration = $request->input('duration');
-        $assesment->date = $request->input('date');
+        $assesment->fromdate = $request->input('fromdate');
+        $assesment->todate = $request->input('todate');
         $assesment->save();
 
         return to_route('assesment.index')->with('success','Assesment created successfully.');
@@ -95,16 +95,16 @@ class AssesmentController extends Controller
         $request->validate([
             'title' => 'required',
             'type' => 'required',
-            'duration' => 'required',
-            'date' => 'required',
+            'fromdate' => 'required',
+            'todate' => 'required',
         ]);
 
         $assesment->type = $request->input('type');
         $assesment->content_id = $request->input('content_id');
         $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title = $request->input('title');
-        $assesment->duration = $request->input('duration');
-        $assesment->date = $request->input('date');
+        $assesment->fromdate = $request->input('fromdate');
+        $assesment->todate = $request->input('todate');
         $assesment->save();
 
         return to_route('assesment.index')->with('success','Assesment updated successfully');

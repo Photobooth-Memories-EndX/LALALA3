@@ -52,8 +52,8 @@
                         <th>No</th>
                         <th>Type</th>
                         <th>Title</th>
-                        <th>Duration</th>
-                        <th>Date</th>
+                        <th>From</th>
+                        <th>To</th>
                         <th>Status</th>
                         <th></th>
                     </tr>
@@ -64,8 +64,8 @@
                         <td>{{ $loop->index + 1 }}</td>
                         <td>{{ $list->type }}</td>
                         <td><a href="{{ route('assesment.user.view', $list->slug) }}" class="text-reset">{{ $list->title }}</a></td>
-                        <td>{{ $list->duration }}</td>
-                        <td>{{ date("d/m/y", strtotime($list->date)) }}</td>
+                        <td>{{ date("d/m/y", strtotime($list->fromdate)) }}</td>
+                        <td>{{ date("d/m/y", strtotime($list->todate)) }}</td>
                         <td>{{ $list->status }}</td>
                         <td>
                             <div class="d-inline">

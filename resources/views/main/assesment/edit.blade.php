@@ -76,14 +76,8 @@
                 </div>
               </div>
             <div class="mb-3 row">
-              <x-label class="col-3 col-form-label required">Duration</x-label>
+              <x-label class="col-3 col-form-label required">From Date</x-label>
               <div class="col">
-                <x-input type="text" class="form-control" name="duration" placeholder="Enter duration" value="{{ $assesment->duration }}" />
-              </div>
-
-              <x-label class="col-2 col-form-label required">Date</x-label>
-              <div class="col">
-                {{-- <x-input type="text" class="form-control" name="date" placeholder="Enter date" value="{{ old('date') }}" /> --}}
                 <div class="input-icon">
                     <span class="input-icon-addon">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -96,8 +90,25 @@
                             <path d="M12 15v3" />
                         </svg>
                     </span>
-                    {{-- <x-input class="form-control" placeholder="Select a date" id="datepicker-icon-prepend" name="date" value="{{ date('Y-m-d') }}" required /> --}}
-                    <x-input class="form-control" placeholder="Select a date" id="datepicker-icon-prepend" name="date" value="{{ $assesment->date }}" required />
+                    <x-input class="form-control" placeholder="Select a date" id="datepicker-icon-prepend" name="fromdate" value="{{ $assesment->fromdate }}" required />
+                </div>
+              </div>
+
+              <x-label class="col-2 col-form-label required">To Date</x-label>
+              <div class="col">
+                <div class="input-icon">
+                    <span class="input-icon-addon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
+                            <path d="M16 3v4" />
+                            <path d="M8 3v4" />
+                            <path d="M4 11h16" />
+                            <path d="M11 15h1" />
+                            <path d="M12 15v3" />
+                        </svg>
+                    </span>
+                    <x-input class="form-control" placeholder="Select a date" id="datepicker-icon-prepend2" name="todate" value="{{ $assesment->todate }}" required />
                 </div>
               </div>
             </div>
@@ -127,6 +138,21 @@
     document.addEventListener("DOMContentLoaded", function () {
     	window.Litepicker && (new Litepicker({
     		element: document.getElementById('datepicker-icon-prepend'),
+    		buttonText: {
+    			previousMonth: `<!-- Download SVG icon from http://tabler-icons.io/i/chevron-left -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6" /></svg>`,
+    			nextMonth: `<!-- Download SVG icon from http://tabler-icons.io/i/chevron-right -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>`,
+    		},
+
+    	}));
+    });
+    // @formatter:on
+
+    // @formatter:off
+    document.addEventListener("DOMContentLoaded", function () {
+    	window.Litepicker && (new Litepicker({
+    		element: document.getElementById('datepicker-icon-prepend2'),
     		buttonText: {
     			previousMonth: `<!-- Download SVG icon from http://tabler-icons.io/i/chevron-left -->
     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6" /></svg>`,

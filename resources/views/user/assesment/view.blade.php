@@ -17,6 +17,7 @@
 
                 </div>
 
+                <form action="">
                 @unless(count($assesment_question) == 0)
 
                 <div class="mb-3 col-12">
@@ -48,7 +49,7 @@
                                     @foreach ($options->shuffle()->all() as $option)
                                     <label class="form-selectgroup-item flex-fill">
                                       <input type="radio" name="soal-{{ $step->id }}" value="{{ $option }}" class="form-selectgroup-input">
-                                      <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                      <div class="form-selectgroup-label d-flex align-items-center p-2">
                                         <div class="me-3">
                                           <span class="form-selectgroup-check"></span>
                                         </div>
@@ -71,10 +72,14 @@
                       </div>
                       <!-- SmartWizard html -->
 
-                    </div>
-                    @else
-                    <p>No questions data yet</p>
-                    @endunless
+                </div>
+                @else
+                <p>No questions data yet</p>
+                @endunless
+                <div class="text-end">
+                <button type="submit" class="btn btn-success">Submit Answers</button>
+                </div>
+                </form>
               </div>
             </div>
         </div>
@@ -93,11 +98,16 @@
 <script src="https://cdn.jsdelivr.net/npm/smartwizard@6/dist/js/jquery.smartWizard.min.js" type="text/javascript"></script>
 <script>
  $(function() {
+
     $('#smartwizard').smartWizard({
         selected: 0,
         theme: 'dots',
         enableUrlHash: false,
+        // toolbar: {
+        //     extraHtml: '<button class="btn btn-success float-right text-end">Finish</button>'
+        // }
     });
+
 });
 </script>
 @endsection
