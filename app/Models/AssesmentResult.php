@@ -8,4 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class AssesmentResult extends Model
 {
     use HasFactory;
+    protected $casts = [
+        'user_answer' => 'array'
+    ];
 }

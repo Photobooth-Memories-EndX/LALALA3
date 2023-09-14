@@ -75,4 +75,5 @@ Route::group(['prefix' => 'content'], function () {
 Route::group(['prefix' => 'assesment'], function () {
     Route::get('/', [AssesmentUserController::class, 'index'])->name('assesment.user.index');
     Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
+    Route::post('/{slug}/store', [AssesmentUserController::class, 'store'])->name('assesment.user.store');
 });
