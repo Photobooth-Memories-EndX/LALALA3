@@ -54,10 +54,10 @@
                                         <input type="radio" name="{{ $step->id }}" value="{{ $option }}" class="form-selectgroup-input">
                                         <div class="form-selectgroup-label d-flex align-items-center p-2">
                                             <div class="me-3">
-                                            <span class="form-selectgroup-check"></span>
+                                                <span class="form-selectgroup-check"></span>
                                             </div>
                                             <div>
-                                            {{ $option }}
+                                                {{ $option }}
                                             </div>
                                         </div>
                                         </label>

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('content_id')->nullable()->constrained('content');
             $table->foreignId('trainingplan_id')->nullable()->constrained('trainingplan');
-            $table->enum('type', ['content', 'trainingplan', 'global'])->default('global');
+            // $table->enum('type', ['content', 'trainingplan', 'global'])->default('global');
             $table->string('slug')->nullable();
             $table->string('title')->nullable();
             $table->string('duration')->nullable();

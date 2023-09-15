@@ -113,7 +113,12 @@
                 @foreach ($assesment_question as $list)
                     <tr>
                         <td>{{ $loop->index + 1 }}</td>
-                        <td>{{ $list->question }}</td>
+                        <td>
+                            {{ $list->question }} <br>
+                            @if ($list->image != '')
+                            <img src="{{ asset('storage/assesment').'/'.$list->image }}" class="img-fluid" style="height:90px;">
+                            @endif
+                        </td>
                         <td>{!! implode('<hr class="my-1">', $list->option) !!}</td>
                         {{-- <td></td> --}}
                         <td>{{ $list->answer }}</td>

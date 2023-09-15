@@ -26,7 +26,7 @@
                             @foreach ($content as $item)
                             <div class="carousel-item {{ ($loop->first) ? 'active' : '' }}">
 
-                              <div class="col-md-3">
+                              <div class="col-md-3 p-2">
                                 <div class="card border-0">
                                     @if ($item->type == "YouTube")
                                     <div class="img-responsive img-responsive-4x3" style="background-image: url(http://img.youtube.com/vi/{{ $item->link }}/mqdefault.jpg); position:relative;"><div class="ribbon bg-red ribbon-bottom">{{ $item->duration }}</div></div>
@@ -42,8 +42,8 @@
 
                                     @endif
 
-                                  <div class="card-body p-2">
-                                    <h3 class="card-title h4"><a href="{{ route('content.user.view', $item->slug) }}">{{ Str::limit($item->title, 60) }}</a></h3>
+                                  <div class="card-body py-2 px-0">
+                                    <h3 class="card-title h4"><a href="{{ route('content.user.view', $item->slug) }}">{{ Str::limit($item->title, 70) }}</a></h3>
                                   </div>
                                 </div>
                               </div>
