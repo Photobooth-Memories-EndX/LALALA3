@@ -5,6 +5,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\ContentController;
+use App\Http\Controllers\HomeUserController;
 use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\NewsImageController;
@@ -27,9 +28,10 @@ use App\Http\Controllers\AssesmentQuestionController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route::get('/', function () {
+//     return view('welcome');
+// });
+Route::get('/', [HomeUserController::class, 'index'])->name('home.user.index');
 
 Route::group(['prefix' => 'page'], function () {
     Route::get('/{slug}', [PagesUserController::class, 'view'])->name('pages.user.view');
