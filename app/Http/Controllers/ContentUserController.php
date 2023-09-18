@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Assesment;
 use App\Models\Classification;
 use App\Models\Content;
 use Illuminate\Http\Request;
@@ -13,7 +14,9 @@ class ContentUserController extends Controller
         $content = Content::findBySlug($slug);
         // $content->views += 1;
         // $content->save();
-        return view('user.content.view', compact('content'));
+
+        $assesment = Assesment::where('type', 'content')->where('content_id', $content->id)->first();
+        return view('user.content.view', compact('content', 'assesment'));
     }
 
     public function category($slug)
