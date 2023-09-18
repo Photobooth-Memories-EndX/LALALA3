@@ -92,6 +92,32 @@
 
                 </div>
               </div>
+
+              <div class="mt-5">
+                <div class="row">
+                  <div class="col-auto">
+                    <span class="avatar avatar-md" style="background-image: url({{ asset('Tabler/static/avatars/002m.jpg') }})"></span>
+                  </div>
+                  <div class="col">
+                    <div class="mb-3">
+                        <form action="" method="post">
+                            @csrf
+                            @method('post')
+                            <textarea class="form-control" data-bs-toggle="autosize" placeholder="Enter your thoughts.…" onkeyup="countWord(this)"></textarea>
+                            <div class="row mt-3">
+                                <div class="col">
+                                    <span id="note_remaining" class="text-muted small">500 characters remaining</span>
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-success" type="submit">Submit comment</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
     </div>
@@ -145,7 +171,14 @@
             }
         }
 
-
+        function countWord(val) {
+            var len = val.value.length;
+            if (len >= 500) {
+                $('#note_remaining').text("");
+            } else {
+                $('#note_remaining').text(500 - len + " characters remaining");
+            }
+        };
 
 
     </script>

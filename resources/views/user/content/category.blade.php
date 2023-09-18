@@ -54,7 +54,7 @@
                             @endforeach
                         @else
                         <div class="col">
-                            No video yet at this category
+                            There are no videos in this category yet
                         </div>
                         @endunless
 
@@ -65,7 +65,7 @@
 
             <h2 class="mb-4 mt-5">{{ $category->classification_name }} Documents</h2>
             <div class="row row-cards">
-                <div class="card-body border m-2">
+                <div class="card-body border m-2 p-3">
                 <div class="row">
                 @unless(count($content_pdf) == 0)
                   @foreach ($content_pdf as $item)
@@ -89,7 +89,7 @@
                   @endforeach
                 @else
                 <div class="col">
-                    No document yet at this category
+                    There are no documents in this category yet
                 </div>
                 @endunless
                 </div>

@@ -42,7 +42,7 @@
                                         @if (\File::exists(public_path($src)) && !is_dir($src))
                                         <div class="img-responsive img-responsive-4x3" style="background-image: url({{ asset($src) }});position:relative;"><div class="ribbon bg-red ribbon-bottom">{{ $item->duration }}</div></div>
                                         @else
-                                        <div class="img-responsive img-responsive-4x3" style="background-image: url({{ asset('default-top-vid.png') }});position:relative;"><div class="ribbon bg-red ribbon-bottom">{{ $item->duration }}</div></div>
+                                        <div class="img-responsive img-responsive-4x3" style="background-image: url({{ asset('default-video.jpg') }});position:relative;"><div class="ribbon bg-red ribbon-bottom">{{ $item->duration }}</div></div>
                                         @endif
 
                                     @endif
