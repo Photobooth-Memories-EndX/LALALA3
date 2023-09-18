@@ -85,9 +85,7 @@
 
                     </div>
 
-
                     <p>{!! nl2br($content->description) !!}</p>
-
 
 
                 </div>
@@ -130,56 +128,22 @@
 @endsection
 
 @section('script')
-    <script src={{ $url_ytplayer_js }}></script>
-    <script>
-        // @formatter:off
+<script src={{ $url_ytplayer_js }}></script>
+<script>
+    // @formatter:off
+    document.addEventListener("DOMContentLoaded", function() {
+        window.Plyr && (new Plyr('#player-youtube'));
+    });
 
-        document.addEventListener("DOMContentLoaded", function() {
-            window.Plyr && (new Plyr('#player-youtube'));
-        });
-        $(document).on('click', '.btn-remove-content', function(e) {
-            e.preventDefault();
-            if (confirm("Are you sure want to delete this media content?")) {
-                var column = $(this).data('column');
-                $.ajax({
-                    type: "PUT",
-                    url: $(this).data('url'),
-                    data: {
-                        '_token': '{{ csrf_token() }}'
-                    },
-                    success: function(data) {
-                        console.log(data);
-                        if (data.status == 200) {
-                            $("#contentContainer").load(" #contentContainer > *");
-                        }
-                    }
-                });
-            }
-        });
-
-        var gettype = document.getElementById("type").value;
-        if (gettype == "YouTube") {
-            document.getElementById("linkrow").style.display = "block";
+    function countWord(val) {
+        var len = val.value.length;
+        if (len >= 500) {
+            $('#note_remaining').text("");
+        } else {
+            $('#note_remaining').text(500 - len + " characters remaining");
         }
-
-        function typevalue(select) {
-            var value = select.value;
-            if (value == "YouTube") {
-                document.getElementById("linkrow").style.display = "block";
-            } else {
-                document.getElementById("linkrow").style.display = "none";
-            }
-        }
-
-        function countWord(val) {
-            var len = val.value.length;
-            if (len >= 500) {
-                $('#note_remaining').text("");
-            } else {
-                $('#note_remaining').text(500 - len + " characters remaining");
-            }
-        };
+    };
 
 
-    </script>
+</script>
 @endsection
