@@ -41,7 +41,7 @@
                 <div>
                   <div class="row">
                     <div class="col-auto">
-                      <span class="avatar">JL</span>
+                      <span class="avatar">{{ substr($list->user->initials, 0, 2) }}</span>
                     </div>
                     <div class="col">
                       <div class="text-truncate">

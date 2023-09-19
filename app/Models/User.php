@@ -83,4 +83,9 @@ class User extends Authenticatable
         }
         return static::roles()[$this->role];
     }
+
+    public function getInitialsAttribute(): string
+    {
+        return \Illuminate\Support\Str::initials($this->name);
+    }
 }
