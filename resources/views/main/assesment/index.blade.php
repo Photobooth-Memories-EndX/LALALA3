@@ -63,7 +63,18 @@
                     <tr>
                         <td>{{ $loop->index + 1 }}</td>
                         <td>{{ $list->type }}</td>
-                        <td><a href="{{ route('assesment.user.view', $list->slug) }}" class="text-reset">{{ $list->title }}</a></td>
+                        <td>
+                            <a href="{{ route('assesment.user.view', $list->slug) }}" class="text-reset link">
+                                {{ $list->title }}
+                            </a>
+                            <button class="btn text-end btn-icon btn-copy" data-clipboard-text="{{ route('assesment.user.view', $list->slug) }}" data-bs-trigger="click" data-bs-toggle="tooltip" title="Copied!" data-bs-placement="bottom">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                                 </svg>
+                            </button>
+                        </td>
                         <td>{{ date("d/m/y", strtotime($list->fromdate)) }}</td>
                         <td>{{ date("d/m/y", strtotime($list->todate)) }}</td>
                         <td>{{ $list->status }}</td>
@@ -137,6 +148,7 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
 <script>
     // let table = new DataTable('#MyTable');
     $(function() {
@@ -152,6 +164,16 @@
 </script>
 
 <script>
+    function hideTooltip() {
+        setTimeout(function() {
+            $('.btn-copy').tooltip('hide');
+        }, 500);
+    }
+
+    var clipboard = new ClipboardJS('.btn');
+    clipboard.on('success', function(e) {
+        hideTooltip();
+    });
 
     //question form
     $(document).on('click', '.btn-question', function(e) {

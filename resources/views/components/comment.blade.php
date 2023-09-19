@@ -72,6 +72,5 @@
             $('#note_remaining').text(1000 - len + " characters remaining");
         }
     };
-
 </script>
 @endpush
