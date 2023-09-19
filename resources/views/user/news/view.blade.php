@@ -42,6 +42,9 @@
             </div>
           </div>
     </div>
+
+    <x-comment :content="$news" :comment="$comment" type="news" />
+
   </div>
 
 @endsection

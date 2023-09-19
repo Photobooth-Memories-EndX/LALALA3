@@ -1,0 +1,63 @@
+@props(['content', 'comment'])
+
+@php
+    $url = '';
+    if ($attributes->get('type') == 'content')
+    {
+        $url = route('content.comment.store', $content->slug);
+    } else {
+        $url = route('news.comment.store', $content->slug);
+    }
+@endphp
+
+<div class="container-xl mt-4">
+    <div class="card card-lg">
+        <div class="card-body py-5">
+
+            <div class="row">
+              <div class="col-auto">
+                <span class="avatar avatar-md" style="background-image: url({{ asset('Tabler/static/avatars/002m.jpg') }})"></span>
+              </div>
+              <div class="col">
+                    <form action="{{ $url }}" method="post">
+                        @csrf
+                        @method('post')
+                        <textarea class="form-control" name="description" data-bs-toggle="autosize" placeholder="Enter your thoughts.…" onkeyup="countWord(this)" maxlength="500" cols="500"></textarea>
+                        <div class="row mt-3">
+                            <div class="col">
+                                <span id="note_remaining" class="text-muted small">500 characters remaining</span>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-success" type="submit">Submit comment</button>
+                            </div>
+                        </div>
+                    </form>
+              </div>
+            </div>
+
+            @unless(count($comment) == 0)
+            <div class="divide-y mt-5" id="comment_list">
+                @foreach ($comment as $list)
+                <div>
+                  <div class="row">
+                    <div class="col-auto">
+                      <span class="avatar">JL</span>
+                    </div>
+                    <div class="col">
+                      <div class="text-truncate">
+                        <strong>{{ $list->user->name }}</strong>
+                      </div>
+                      <div class="text-muted">{!! nl2br($list->description) !!}</div>
+                    </div>
+                    <div class="col-auto">
+                      <div class="text-muted">{{  \Carbon\Carbon::parse($list->created_at)->diffForHumans() }}</div>
+                    </div>
+                  </div>
+                </div>
+                @endforeach
+            </div>
+            @endunless
+
+        </div>
+    </div>
+</div>

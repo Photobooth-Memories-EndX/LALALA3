@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PagesController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\HomeUserController;
 use App\Http\Controllers\NewsUserController;
@@ -67,11 +68,13 @@ Route::group(['prefix' => 'manage'], function () {
 Route::group(['prefix' => 'news'], function () {
     Route::get('/', [NewsUserController::class, 'index'])->name('news.user.index');
     Route::get('/{slug}', [NewsUserController::class, 'view'])->name('news.user.view');
+    Route::post('/{slug}/comment/store', [CommentController::class, 'storenews'])->name('news.comment.store');
 });
 
 Route::group(['prefix' => 'content'], function () {
     Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
     Route::get('category/{slug}', [ContentUserController::class, 'category'])->name('content.user.category');
+    Route::post('/{slug}/comment/store', [CommentController::class, 'storecontent'])->name('content.comment.store');
 });
 
 Route::group(['prefix' => 'assesment'], function () {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\News;
+use App\Models\Comment;
 use Illuminate\Http\Request;
 
 class NewsUserController extends Controller
@@ -18,6 +19,7 @@ class NewsUserController extends Controller
         $news = News::findBySlug($slug);
         $news->views += 1;
         $news->save();
-        return view('user.news.view', compact('news'));
+        $comment = Comment::with('user')->where('type', 'news')->where('news_id', $news->id)->latest()->get();
+        return view('user.news.view', compact('news', 'comment'));
     }
 }
