@@ -170,7 +170,7 @@
         }, 500);
     }
 
-    var clipboard = new ClipboardJS('.btn');
+    var clipboard = new ClipboardJS('.btn-copy');
     clipboard.on('success', function(e) {
         hideTooltip();
     });
