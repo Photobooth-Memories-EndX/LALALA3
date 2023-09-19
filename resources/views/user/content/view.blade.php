@@ -133,19 +133,8 @@
 @section('script')
 <script src={{ $url_ytplayer_js }}></script>
 <script>
-    // @formatter:off
     document.addEventListener("DOMContentLoaded", function() {
         window.Plyr && (new Plyr('#player-youtube'));
     });
-
-    function countWord(val) {
-        var len = val.value.length;
-        if (len >= 500) {
-            $('#note_remaining').text("");
-        } else {
-            $('#note_remaining').text(500 - len + " characters remaining");
-        }
-    };
-
 </script>
 @endsection

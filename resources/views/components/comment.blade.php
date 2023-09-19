@@ -19,19 +19,19 @@
                 <span class="avatar avatar-md" style="background-image: url({{ asset('Tabler/static/avatars/002m.jpg') }})"></span>
               </div>
               <div class="col">
-                    <form action="{{ $url }}" method="post">
-                        @csrf
-                        @method('post')
-                        <textarea class="form-control" name="description" data-bs-toggle="autosize" placeholder="Enter your thoughts.…" onkeyup="countWord(this)" maxlength="500" cols="500"></textarea>
-                        <div class="row mt-3">
-                            <div class="col">
-                                <span id="note_remaining" class="text-muted small">500 characters remaining</span>
-                            </div>
-                            <div class="col-auto">
-                                <button class="btn btn-success" type="submit">Submit comment</button>
-                            </div>
+                <form action="{{ $url }}" method="post">
+                    @csrf
+                    @method('post')
+                    <textarea class="form-control" name="description" data-bs-toggle="autosize" placeholder="Enter your thoughts.…" onkeyup="countWord(this)" maxlength="1000" cols="1000"></textarea>
+                    <div class="row mt-3">
+                        <div class="col">
+                            <span id="note_remaining" class="text-muted small">1000 characters remaining</span>
                         </div>
-                    </form>
+                        <div class="col-auto">
+                            <button class="btn btn-success" type="submit">Submit comment</button>
+                        </div>
+                    </div>
+                </form>
               </div>
             </div>
 
@@ -61,3 +61,17 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    function countWord(val) {
+        var len = val.value.length;
+        if (len >= 1000) {
+            $('#note_remaining').text("");
+        } else {
+            $('#note_remaining').text(1000 - len + " characters remaining");
+        }
+    };
+
+</script>
+@endpush

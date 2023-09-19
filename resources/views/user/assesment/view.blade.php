@@ -72,12 +72,14 @@
                         <!-- SmartWizard html -->
 
                     </div>
-                @else
-                    <p>No questions data yet</p>
-                @endunless
+
                     <div class="text-end">
                         <button type="submit" class="btn btn-success">Submit Answers</button>
                     </div>
+                @else
+                    <p>No questions data yet</p>
+                @endunless
+
                 </x-form>
               </div>
             </div>
