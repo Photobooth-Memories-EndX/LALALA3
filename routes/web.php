@@ -7,6 +7,7 @@ use App\Http\Controllers\PagesController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\HomeUserController;
+use App\Http\Controllers\LearningController;
 use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\NewsImageController;
@@ -75,6 +76,11 @@ Route::group(['prefix' => 'content'], function () {
     Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
     Route::get('category/{slug}', [ContentUserController::class, 'category'])->name('content.user.category');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storecontent'])->name('content.comment.store');
+});
+
+Route::group(['prefix' => 'learning'], function () {
+    Route::get('on-going', [LearningController::class, 'ongoing'])->name('learning.ongoing');
+    Route::get('record', [LearningController::class, 'record'])->name('learning.record');
 });
 
 Route::group(['prefix' => 'assesment'], function () {
