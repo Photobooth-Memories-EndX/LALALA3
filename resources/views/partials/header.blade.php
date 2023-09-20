@@ -144,10 +144,10 @@
                             </span>
                         </a>
                         <div class="dropdown-menu">
-                            <a class="dropdown-item" href="#" rel="noopener">
+                            <a class="dropdown-item" href="{{ url('learning/on-going') }}" rel="noopener">
                                 Learning On Going
                             </a>
-                            <a class="dropdown-item" href="#" rel="noopener">
+                            <a class="dropdown-item" href="{{ url('learning/record') }}" rel="noopener">
                                 Learning Record
                             </a>
                         </div>
