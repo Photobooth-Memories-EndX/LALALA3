@@ -30,8 +30,6 @@
     <div class="container py-4">
 
         <x-form class="card card-md" action="{{ route('classification.store') }}" method="post">
-        @csrf
-        @method('POST')
         <div class="card-header">
             <h3 class="card-title">Create Category</h3>
           </div>
@@ -39,13 +37,13 @@
             <div class="mb-3 row">
               <x-label class="col-3 col-form-label required">Name</x-label>
               <div class="col">
-                <x-input type="text" class="form-control" name="classification_name" placeholder="Enter category name" value="{{ old('classification_name') }}" />
+                <x-input type="text" name="classification_name" placeholder="Enter category name" value="{{ old('classification_name') }}" />
               </div>
             </div>
 
           </div>
           <div class="card-footer text-end">
-            <x-button type="submit" class="btn btn-primary">Submit</x-button>
+            <x-button>Submit</x-button>
           </div>
         </x-form>
     </div>

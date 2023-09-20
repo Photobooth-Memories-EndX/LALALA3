@@ -29,9 +29,7 @@
     <div class="page page-center">
     <div class="container py-4">
 
-        <x-form class="card card-md" action="{{ route('pages.update', $page->slug) }}" method="post" enctype="multipart/form-data">
-        @csrf
-        @method('put')
+        <x-form class="card card-md" action="{{ route('pages.update', $page->slug) }}" method="put" enctype="multipart/form-data">
         <div class="card-header">
             <h3 class="card-title">Update Page</h3>
           </div>
@@ -39,19 +37,19 @@
             <div class="mb-3 row">
               <x-label class="col-3 col-form-label required">Title</x-label>
               <div class="col">
-                <x-input type="text" class="form-control" name="title" placeholder="Enter title" value="{{ $page->title }}" />
+                <x-input type="text" name="title" placeholder="Enter title" value="{{ $page->title }}" />
               </div>
             </div>
             <div class="mb-3 row">
               <x-label class="col-3 col-form-label required">Description</x-label>
               <div class="col">
-                <x-textarea class="form-control" name="description" rows="6" placeholder="Content description.."  id="tinymce-mytextarea">{{ $page->description }}</x-textarea>
+                <x-textarea name="description" rows="6" placeholder="Content description.."  id="tinymce-mytextarea">{{ $page->description }}</x-textarea>
               </div>
             </div>
 
           </div>
           <div class="card-footer text-end">
-            <x-button type="submit" class="btn btn-primary">Update</x-button>
+            <x-button>Update</x-button>
           </div>
         </x-form>
     </div>

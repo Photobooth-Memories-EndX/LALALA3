@@ -19,10 +19,10 @@
                 <span class="avatar avatar-md" style="background-image: url({{ asset('Tabler/static/avatars/002m.jpg') }})"></span>
               </div>
               <div class="col">
-                <form action="{{ $url }}" method="post">
+                <x-form action="{{ $url }}" method="post">
                     @csrf
                     @method('post')
-                    <textarea class="form-control" name="description" data-bs-toggle="autosize" placeholder="Enter your thoughts.…" onkeyup="countWord(this)" maxlength="1000" cols="1000"></textarea>
+                    <x-textarea class="form-control" name="description" data-bs-toggle="autosize" placeholder="Enter your thoughts.…" onkeyup="countWord(this)" maxlength="1000" cols="1000"></x-textarea>
                     <div class="row mt-3">
                         <div class="col">
                             <span id="note_remaining" class="text-muted small">1000 characters remaining</span>
@@ -31,7 +31,7 @@
                             <button class="btn btn-success" type="submit">Submit comment</button>
                         </div>
                     </div>
-                </form>
+                </x-form>
               </div>
             </div>
 

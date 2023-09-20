@@ -30,8 +30,6 @@
     <div class="container py-4">
 
         <x-form class="card card-md" action="{{ route('pages.store') }}" method="post">
-        @csrf
-        @method('POST')
         <div class="card-header">
             <h3 class="card-title">Create Page</h3>
           </div>
@@ -39,19 +37,19 @@
             <div class="mb-3 row">
               <x-label class="col-3 col-form-label required">Title</x-label>
               <div class="col">
-                <x-input type="text" class="form-control" name="title" placeholder="Enter title" value="{{ old('title') }}" />
+                <x-input type="text" name="title" placeholder="Enter title" value="{{ old('title') }}" />
               </div>
             </div>
             <div class="mb-3 row">
               <x-label class="col-3 col-form-label required">Description</x-label>
               <div class="col">
-                <x-textarea class="form-control" name="description" rows="6" placeholder="Content description.." data-bs-toggle="autosize">{{ old('description') }}</x-textarea>
+                <x-textarea name="description" rows="6" placeholder="Content description.." data-bs-toggle="autosize">{{ old('description') }}</x-textarea>
               </div>
             </div>
 
           </div>
           <div class="card-footer text-end">
-            <x-button type="submit" class="btn btn-primary">Submit</x-button>
+            <x-button>Submit</x-button>
           </div>
         </x-form>
     </div>

@@ -41,7 +41,7 @@
 
             <div class="mb-3">
                 <x-label class="form-label">Question</x-label>
-                <x-input type="text" class="form-control" name="question" id="question" placeholder="Input question" value="{{ $data->question }}" />
+                <x-input type="text" name="question" id="question" placeholder="Input question" value="{{ $data->question }}" />
             </div>
             <div class="mb-3">
                 <x-label class="form-label">Image</x-label>
@@ -55,12 +55,12 @@
                   </div>
                   @endif
                 <img id="image-preview" alt="image preview" style="display:none;height:200px;" class="img-fluid mb-2" />
-                <x-input type="file" class="form-control" id="image" name="image" placeholder="Enter image" onchange="previewImage();" />
+                <x-input type="file" id="image" name="image" placeholder="Enter image" onchange="previewImage();" />
             </div>
             <div class="mb-3 row">
                 <div class="col-md-6">
                     <div class="form-label">Options</div>
-                    <x-select class="form-select small" name="option[]" id="options" multiple="multiple">
+                    <x-select class="small" name="option[]" id="options" multiple="multiple">
                         @foreach ( $data->option as $answer )
                          <option value="{{ $answer }}" selected>{{ $answer }}</option>
                         @endforeach
@@ -68,7 +68,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-label">Answer</div>
-                    <x-select class="form-select" name="answer" id="answer">
+                    <x-select name="answer" id="answer">
                         <option value="">-choose-</option>
                         @foreach ( $data->option as $answer )
                          <option value="{{ $answer }}" {{ ($data->answer == $answer) ? 'selected' : ''  }}>{{ $answer }}</option>
@@ -79,7 +79,7 @@
 
           </div>
           <div class="card-footer text-end">
-            <x-button type="submit" class="btn btn-primary">Update</x-button>
+            <x-button>Update</x-button>
           </div>
         </x-form>
 

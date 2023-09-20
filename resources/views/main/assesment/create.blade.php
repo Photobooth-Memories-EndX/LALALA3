@@ -30,8 +30,6 @@
     <div class="container">
 
         <x-form class="card card-md" action="{{ route('assesment.store') }}" method="post">
-        @csrf
-        @method('POST')
         <div class="card-header">
             <h3 class="card-title">Create Assesment</h3>
           </div>
@@ -72,7 +70,7 @@
             <div class="mb-3 row">
                 <x-label class="col-3 col-form-label required">Title</x-label>
                 <div class="col">
-                  <x-input type="text" class="form-control" name="title" placeholder="Enter title" value="{{ old('title') }}" />
+                  <x-input type="text" name="title" placeholder="Enter title" value="{{ old('title') }}" />
                 </div>
               </div>
             <div class="mb-3 row">
@@ -90,7 +88,7 @@
                             <path d="M12 15v3" />
                         </svg>
                     </span>
-                    <x-input class="form-control " placeholder="Select a date" id="datepicker-icon-prepend" name="fromdate" value="{{ date('Y-m-d') }}" required />
+                    <x-input placeholder="Select a date" id="datepicker-icon-prepend" name="fromdate" value="{{ date('Y-m-d') }}" required />
                 </div>
               </div>
 
@@ -108,14 +106,14 @@
                             <path d="M12 15v3" />
                         </svg>
                     </span>
-                    <x-input class="form-control" placeholder="Select a date" id="datepicker-icon-prepend2" name="todate" value="{{ date('Y-m-d') }}" required />
+                    <x-input placeholder="Select a date" id="datepicker-icon-prepend2" name="todate" value="{{ date('Y-m-d') }}" required />
                 </div>
               </div>
             </div>
 
           </div>
           <div class="card-footer text-end">
-            <x-button type="submit" class="btn btn-primary">Submit</x-button>
+            <x-button>Submit</x-button>
           </div>
         </x-form>
     </div>

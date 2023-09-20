@@ -40,38 +40,36 @@
         </div>
 
         <x-form class="card card-md" action="{{ route('user.store') }}" method="post">
-        @csrf
-        @method('POST')
           <div class="card-body">
             <h2 class="card-title text-center mb-4">Create new user</h2>
             <div class="input-group mb-3">
-                <x-input type="text" class="form-control" placeholder="Enter ID Employee" name="id_emp" id="id_emp" value="{{ old('id_emp') }}" />
+                <x-input type="text" placeholder="Enter ID Employee" name="id_emp" id="id_emp" value="{{ old('id_emp') }}" />
                 <x-button class="btn btn-success" type="button" id="btn-api">Get Data</x-button>
             </div>
             <div class="mb-3">
                 <x-label class="form-label">Name</x-label>
-                <x-input type="text" class="form-control" placeholder="Enter name" name="name" id="name" />
+                <x-input type="text" placeholder="Enter name" name="name" id="name" />
                 <x-input type="hidden" id="id_org_unit" name="id_org_unit" />
                 <x-input type="hidden" id="id_user" name="id_user" />
               </div>
             <div class="mb-3">
               <x-label class="form-label">Email address</x-label>
-              <x-input type="email" class="form-control" placeholder="Enter email" name="email" id="email" />
+              <x-input type="email" placeholder="Enter email" name="email" id="email" />
             </div>
             <div class="mb-3">
                 <x-label class="form-label">Team</x-label>
-                <x-input type="text" class="form-control" placeholder="Enter team" name="team" id="team" />
+                <x-input type="text" placeholder="Enter team" name="team" id="team" />
             </div>
             <div class="mb-3">
                 <x-label class="form-label">Department</x-label>
-                <x-input type="text" class="form-control" placeholder="Enter department" name="department" id="department" />
+                <x-input type="text" placeholder="Enter department" name="department" id="department" />
             </div>
             <div class="mb-3">
                 <x-label class="form-label">Division</x-label>
-                <x-input type="text" class="form-control" placeholder="Enter division" name="division" id="division" />
+                <x-input type="text" placeholder="Enter division" name="division" id="division" />
             </div>
             <div class="form-footer">
-              <x-button type="submit" class="btn btn-primary w-100">Create new account</x-button>
+              <x-button class="w-100">Create new account</x-button>
             </div>
           </div>
         </x-form>

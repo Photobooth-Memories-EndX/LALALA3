@@ -41,27 +41,27 @@
 
             {{-- <div class="mb-3">
                 <x-label class="form-label">Assesment</x-label>
-                <x-input type="text" class="form-control" disabled value="{{ $assesment->title }}" />
+                <x-input type="text" disabled value="{{ $assesment->title }}" />
             </div> --}}
 
             <div class="mb-3">
                 <x-label class="form-label">Question</x-label>
-                <x-input type="text" class="form-control" name="question" id="question" placeholder="Input question" value="{{ old('question') }}" />
+                <x-input type="text" name="question" id="question" placeholder="Input question" value="{{ old('question') }}" />
             </div>
             <div class="mb-3">
                 <x-label class="form-label">Image</x-label>
                 <img id="image-preview" alt="image preview" style="display:none;height:200px;" class="img-fluid mb-2" />
-                <x-input type="file" class="form-control" id="image" name="image" placeholder="Enter image" onchange="previewImage();" />
+                <x-input type="file" id="image" name="image" placeholder="Enter image" onchange="previewImage();" />
             </div>
             <div class="mb-3 row">
                 <div class="col-md-6">
                     <div class="form-label">Options</div>
-                    <x-select class="form-select" name="option[]" id="options" multiple="multiple">
+                    <x-select name="option[]" id="options" multiple="multiple">
                     </x-select>
                 </div>
                 <div class="col-md-6">
                     <div class="form-label">Answer</div>
-                    <x-select class="form-select" name="answer" id="answer">
+                    <x-select name="answer" id="answer">
                         <option value="">-choose-</option>
                     </x-select>
                 </div>
@@ -69,7 +69,7 @@
 
           </div>
           <div class="card-footer text-end">
-            <x-button type="submit" class="btn btn-primary">Submit</x-button>
+            <x-button>Submit</x-button>
           </div>
         </x-form>
 
