@@ -91,31 +91,6 @@
                 </div>
               </div>
 
-              {{-- <div class="mt-5">
-                <div class="row">
-                  <div class="col-auto">
-                    <span class="avatar avatar-md" style="background-image: url({{ asset('Tabler/static/avatars/002m.jpg') }})"></span>
-                  </div>
-                  <div class="col">
-                    <div class="mb-3">
-                        <form action="{{ route('content.comment.store', $content->slug) }}" method="post">
-                            @csrf
-                            @method('post')
-                            <textarea class="form-control" name="description" data-bs-toggle="autosize" placeholder="Enter your thoughts.…" onkeyup="countWord(this)" maxlength="500" cols="500"></textarea>
-                            <div class="row mt-3">
-                                <div class="col">
-                                    <span id="note_remaining" class="text-muted small">500 characters remaining</span>
-                                </div>
-                                <div class="col-auto">
-                                    <button class="btn btn-success" type="submit">Submit comment</button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                  </div>
-                </div>
-              </div> --}}
-
             </div>
           </div>
     </div>
