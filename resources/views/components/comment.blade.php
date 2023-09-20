@@ -20,8 +20,6 @@
               </div>
               <div class="col">
                 <x-form action="{{ $url }}" method="post">
-                    @csrf
-                    @method('post')
                     <x-textarea class="form-control" name="description" data-bs-toggle="autosize" placeholder="Enter your thoughts.…" onkeyup="countWord(this)" maxlength="1000" cols="1000"></x-textarea>
                     <div class="row mt-3">
                         <div class="col">
