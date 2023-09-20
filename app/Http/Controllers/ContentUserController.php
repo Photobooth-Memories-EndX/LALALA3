@@ -6,6 +6,7 @@ use App\Models\Assesment;
 use App\Models\Classification;
 use App\Models\Comment;
 use App\Models\Content;
+use App\Models\ContentUser;
 use Illuminate\Http\Request;
 
 class ContentUserController extends Controller
@@ -16,8 +17,14 @@ class ContentUserController extends Controller
         // $content->views += 1;
         // $content->save();
 
+        //add content to user learning on going if not exist yet
+        $content_user = ContentUser::firstOrCreate([
+            'user_id' => '1', 'content_id' => $content->id
+        ]);
+
         $assesment = Assesment::where('type', 'content')->where('content_id', $content->id)->first();
         $comment = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
+
         return view('user.content.view', compact('content', 'assesment', 'comment'));
     }
 
