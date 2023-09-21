@@ -70,7 +70,7 @@
                             }
                         @endphp
                         @if ($content->type == 'Video')
-                            <video width="854" height="480" controls style="{{ $displaycontent }}" style="display: block; margin-left: auto; margin-right: auto;">
+                            <video id="player" width="854" height="480" playsinline controls style="{{ $displaycontent }}" style="display: block; margin-left: auto; margin-right: auto;">
                                 <source src="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" type="video/mp4">
                                 Your browser does not support the video tag.
                                 <input type="hidden" name="replacecontent" id="replacecontent" value="{{ $getcontentfile }}">
@@ -78,7 +78,7 @@
                         @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
                             <object data="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" width="800px" height="800px" style="text-align: center"></object>
                         @elseif ($content->type == 'YouTube')
-                            <div id="player-youtube" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
+                            <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
                         @endif
 
                      </div>
@@ -109,7 +109,22 @@
 <script src={{ $url_ytplayer_js }}></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        window.Plyr && (new Plyr('#player-youtube'));
+        // window.Plyr && (new Plyr('#player'));
+        const player = new Plyr('#player');
+        window.player = player;
+
+
+        player.on('ready', function() {
+            // player.currentTime = 10;
+        })
+
+        player.on('pause', function() {
+            console.log(player.currentTime)
+        })
+
+        player.on('ended', function() {
+            console.log(player.currentTime)
+        })
     });
 </script>
 @endsection

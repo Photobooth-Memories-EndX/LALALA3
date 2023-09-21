@@ -92,16 +92,16 @@
         e.preventDefault();
         if (confirm("Are you sure want to delete this image?")) {
             var column = $(this).data('column');
-                $.ajax({
-                    type: "PUT",
-                    url: $(this).data('url'),
-                    data: {'_token': '{{ csrf_token() }}'},
-                    success: function(data){
-                        if (data.status == 200) {
-                            $("#container-img").load(" #container-img > *");
-                        }
+            $.ajax({
+                type: "PUT",
+                url: $(this).data('url'),
+                data: {'_token': '{{ csrf_token() }}'},
+                success: function(data){
+                    if (data.status == 200) {
+                        $("#container-img").load(" #container-img > *");
                     }
-                });
+                }
+            });
         }
     });
 </script>
