@@ -12,7 +12,7 @@ class CommentController extends Controller
     public function storecontent(Request $request, $slug)
     {
         $request->validate([
-            'description' => "required|string|max:500"
+            'description' => "required|string|max:1000"
         ]);
 
         $content = Content::findBySlug($slug);
@@ -30,7 +30,7 @@ class CommentController extends Controller
     public function storenews(Request $request, $slug)
     {
         $request->validate([
-            'description' => "required|string|max:500"
+            'description' => "required|string|max:1000"
         ]);
 
         $news = News::findBySlug($slug);

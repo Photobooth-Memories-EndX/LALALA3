@@ -60,7 +60,7 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
-                                            <td>{{ $list->content->title }}</td>
+                                            <td><a href="{{ route('content.user.view', $list->content->slug) }}" class="text-reset">{{ $list->content->title }}</a></td>
                                             <td>{{ $list->content->classification->classification_name ?? '' }}</td>
                                             <td>{{ $list->content->duration }}</td>
                                             <td>{{ $list->content->date }}</td>
