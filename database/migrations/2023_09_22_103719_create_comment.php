@@ -15,9 +15,10 @@ return new class extends Migration
     {
         Schema::create('comments', function (Blueprint $table) {
             $table->id();
-            $table->enum('type', ['news', 'content'])->default('content');
+            $table->enum('type', ['news', 'content', 'eventphoto'])->default('content');
             $table->foreignId('content_id')->nullable()->constrained('content');
             $table->foreignId('news_id')->nullable()->constrained('news');
+            $table->foreignId('eventphoto_id')->nullable()->constrained('eventphoto');
             $table->foreignId('user_id')->constrained();
             $table->text('description');
             $table->timestamps();

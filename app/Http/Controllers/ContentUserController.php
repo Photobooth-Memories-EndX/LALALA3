@@ -19,7 +19,7 @@ class ContentUserController extends Controller
 
         //add content to user learning on going if not exist yet
         $content_user = ContentUser::firstOrCreate([
-            'user_id' => '1', 'content_id' => $content->id
+            'user_id' => auth()->user()->id, 'content_id' => $content->id
         ]);
 
         $assesment = Assesment::where('type', 'content')->where('content_id', $content->id)->first();

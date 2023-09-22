@@ -20,11 +20,11 @@ class CommentController extends Controller
         $comment = new Comment();
         $comment->content_id = $content->id;
         $comment->type = 'content';
-        $comment->user_id = '1';
+        $comment->user_id = auth()->user()->id;
         $comment->description = $request->input('description');
         $comment->save();
 
-        return to_route('content.user.view', $slug)->with('success','Comment posted successfully.');
+        return to_route('content.user.view', $slug)->with('success', 'Comment posted successfully.');
     }
 
     public function storenews(Request $request, $slug)
@@ -38,10 +38,10 @@ class CommentController extends Controller
         $comment = new Comment();
         $comment->news_id = $news->id;
         $comment->type = 'news';
-        $comment->user_id = '1';
+        $comment->user_id = auth()->user()->id;
         $comment->description = $request->input('description');
         $comment->save();
 
-        return to_route('news.user.view', $slug)->with('success','Comment posted successfully.');
+        return to_route('news.user.view', $slug)->with('success', 'Comment posted successfully.');
     }
 }

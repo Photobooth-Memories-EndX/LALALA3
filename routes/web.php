@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ContentController;
@@ -12,7 +13,9 @@ use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
+use App\Http\Controllers\EventPhotoController;
 use App\Http\Controllers\ContentUserController;
+use App\Http\Controllers\GalleryUserController;
 use App\Http\Controllers\TrainingPlanController;
 use App\Http\Controllers\AssesmentUserController;
 use App\Http\Controllers\AssesmentImageController;

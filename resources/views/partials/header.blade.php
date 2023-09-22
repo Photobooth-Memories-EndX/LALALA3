@@ -94,13 +94,16 @@
                 <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
                     <span class="avatar avatar-sm" style="background-image: url({{ asset('Tabler/static/avatars/000m.jpg') }})"></span>
                     <div class="d-none d-xl-block ps-2">
-                        <div>Edi Kusumaedi</div>
-                        <div class="mt-1 small text-muted" style="font-size: 7pt">Information System Management Team</div>
+                        <div>{{ auth()->user()->name ?? '' }}</div>
+                        <div class="mt-1 small text-muted" style="font-size: 7pt">{{ auth()->user()->team ?? '' }}</div>
                     </div>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                     <a href="./settings.html" class="dropdown-item">Status</a>
-                    <a href="./sign-in.html" class="dropdown-item">Logout</a>
+                    <form action="{{ route('logoutpage') }}" method="POST">
+                        @csrf
+                        <input type="submit" class="dropdown-item" value="Logout">
+                    </form>
                 </div>
             </div>
         </div>
@@ -137,7 +140,7 @@
                                     <path d="M3 6l0 13"></path>
                                     <path d="M12 6l0 13"></path>
                                     <path d="M21 6l0 13"></path>
-                                 </svg>
+                                </svg>
                             </span>
                             <span class="nav-link-title">
                                 My Learning
@@ -162,7 +165,7 @@
                                     <path d="M14 4h6v6h-6z"></path>
                                     <path d="M4 14h6v6h-6z"></path>
                                     <path d="M17 17m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"></path>
-                                 </svg>
+                                </svg>
                             </span>
                             <span class="nav-link-title">
                                 Category
@@ -170,9 +173,9 @@
                         </a>
                         <div class="dropdown-menu">
                             @foreach ($category as $cat)
-                            <a class="dropdown-item" href="{{ route('content.user.category', $cat->slug) }}" rel="noopener">
-                                {{ $cat->classification_name }}
-                            </a>
+                                <a class="dropdown-item" href="{{ route('content.user.category', $cat->slug) }}" rel="noopener">
+                                    {{ $cat->classification_name }}
+                                </a>
                             @endforeach
                         </div>
                     </li>
@@ -190,6 +193,21 @@
                             </span>
                             <span class="nav-link-title">
                                 News
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item {{ request()->is('gallery*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ url('/gallery') }}">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/article -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-camera-heart" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M10.5 20h-5.5a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v2"></path>
+                                    <path d="M14.41 11.212a3 3 0 1 0 -4.15 4.231"></path>
+                                    <path d="M18 22l3.35 -3.284a2.143 2.143 0 0 0 .005 -3.071a2.242 2.242 0 0 0 -3.129 -.006l-.224 .22l-.223 -.22a2.242 2.242 0 0 0 -3.128 -.006a2.143 2.143 0 0 0 -.006 3.071l3.355 3.296z"></path>
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                Gallery
                             </span>
                         </a>
                     </li>
@@ -229,6 +247,9 @@
                             </a>
                             <a class="dropdown-item" href="{{ url('manage/trainingplan') }}" rel="noopener">
                                 Training Plan
+                            </a>
+                            <a class="dropdown-item" href="{{ url('manage/eventphoto') }}" rel="noopener">
+                                Event Photo Gallery
                             </a>
                         </div>
                     </li>
