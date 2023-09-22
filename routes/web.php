@@ -33,13 +33,13 @@ use App\Http\Controllers\AssesmentQuestionController;
 // Route::get('/', function () {
 //     return view('welcome');
 // });
-Route::get('/', [HomeUserController::class, 'index'])->name('home.user.index');
+Route::get('/', [HomeUserController::class, 'index'])->name('home.user.index')->middleware('auth');
 
 Route::group(['prefix' => 'page'], function () {
     Route::get('/{slug}', [PagesUserController::class, 'view'])->name('pages.user.view');
 });
 
-Route::group(['prefix' => 'manage'], function () {
+Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::resource('user', UserController::class);
     Route::resource('news', NewsController::class);
@@ -64,27 +64,40 @@ Route::group(['prefix' => 'manage'], function () {
 
     Route::get('trainingplan/order/{slug}', [TrainingPlanController::class, 'order'])->name('trainingplan.order');
     Route::resource('trainingplan', TrainingPlanController::class);
+    Route::resource('eventphoto', EventPhotoController::class);
+    Route::post('eventphoto/create/upload', [EventPhotoController::class, 'uploadfileajax'])->name('eventphoto.uploadfileajax');
+    Route::post('eventphoto/delete', [EventPhotoController::class, 'deleteImage'])->name('eventphoto.deleteImage');
 });
 
-Route::group(['prefix' => 'news'], function () {
+Route::group(['prefix' => 'news', 'middleware' => 'auth'], function () {
     Route::get('/', [NewsUserController::class, 'index'])->name('news.user.index');
     Route::get('/{slug}', [NewsUserController::class, 'view'])->name('news.user.view');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storenews'])->name('news.comment.store');
 });
 
-Route::group(['prefix' => 'content'], function () {
+Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
     Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
     Route::get('category/{slug}', [ContentUserController::class, 'category'])->name('content.user.category');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storecontent'])->name('content.comment.store');
 });
 
-Route::group(['prefix' => 'learning'], function () {
+Route::group(['prefix' => 'learning', 'middleware' => 'auth'], function () {
     Route::get('on-going', [LearningController::class, 'ongoing'])->name('learning.ongoing');
     Route::get('record', [LearningController::class, 'record'])->name('learning.record');
 });
 
-Route::group(['prefix' => 'assesment'], function () {
+Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
     Route::get('/', [AssesmentUserController::class, 'index'])->name('assesment.user.index');
     Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
     Route::post('/{slug}/store', [AssesmentUserController::class, 'store'])->name('assesment.user.store');
 });
+Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
+
+    Route::get('/', [GalleryUserController::class, 'index'])->name('gallery.user.index');
+    Route::get('/{slug}', [GalleryUserController::class, 'view'])->name('gallery.user.view');
+    // Route::get('/{slug}', [GalleryUserController::class, 'view'])->name('gallery.user.view');
+});
+Route::get('/login', [LoginController::class, 'index'])->name('loginpage')->middleware('guest');
+Route::post('/login', [LoginController::class, 'authenticate'])->name('authuser');
+Route::get('/sso', [LoginController::class, 'checksso'])->name('checksso');
+Route::post('/logout', [LoginController::class, 'logout'])->name('logoutpage');

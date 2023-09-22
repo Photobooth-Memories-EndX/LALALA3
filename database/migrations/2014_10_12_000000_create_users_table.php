@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('team');
             $table->string('department');
             $table->string('division');
+            $table->string('ssohash');
             $table->enum('role', ['1', '2', '3']);
             $table->rememberToken();
             $table->timestamps();

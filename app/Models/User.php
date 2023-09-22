@@ -30,7 +30,8 @@ class User extends Authenticatable
         'division',
         'department',
         'id_emp',
-        'id_user'
+        'id_user',
+        'ssohash'
     ];
 
     /**

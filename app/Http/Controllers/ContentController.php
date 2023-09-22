@@ -20,9 +20,6 @@ class ContentController extends Controller
 
     public function create()
     {
-        //
-        // $content = Content::all();
-
         $classification = Classification::all();
         return view('main.content.create', [
             "title" =>  "Add Content",
@@ -31,9 +28,6 @@ class ContentController extends Controller
     }
     public function uploadfileajax(Request $request)
     {
-        //
-        // $content = Content::all();
-
         $name = [];
         $original_name = [];
         foreach ($request->file('file') as $key => $value) {
@@ -51,8 +45,7 @@ class ContentController extends Controller
     }
     public function deletefileajax(Request $request)
     {
-        //
-        // $content = Content::all();
+
 
         if ($request->get('name')) {
             $src = 'storage/files/tmp/' . $request->get('name');
@@ -64,9 +57,6 @@ class ContentController extends Controller
 
     public function uploadthumbnailajax(Request $request)
     {
-        //
-        // $content = Content::all();
-
         $name = [];
         $original_name = [];
         foreach ($request->file('file') as $key => $value) {
@@ -84,9 +74,6 @@ class ContentController extends Controller
     }
     public function deletethumbnailajax(Request $request)
     {
-        //
-        // $content = Content::all();
-
         if ($request->get('name')) {
             $src = 'storage/files/tmp/thumb/' . $request->get('name');
             if (File::exists(public_path($src)) && !is_dir($src)) {
@@ -94,21 +81,7 @@ class ContentController extends Controller
             }
         }
     }
-    // public function deletecontentajax($slug)
-    // {
-    //     // $news = News::select('id', 'image')->where('slug', $slug)->first();
-    //     $content = Content::findBySlug($slug);
 
-    //     $src = 'storage/files/content/' . $content->id . '/' . $content->slug;
-    //     if (File::exists(public_path($src)) && !is_dir($src)) {
-    //         File::delete(public_path($src));
-    //     }
-
-    //     $content->file = '';
-    //     $content->save();
-
-    //     return response()->json(['success' => 'Content deleted successfully', 'status' => 200]);
-    // }
     public function store(Request $request)
     {
         //
@@ -128,8 +101,6 @@ class ContentController extends Controller
         } else {
             $ytid = null;
         }
-        // https://img.youtube.com/vi/gfYFmlxrm8A/hqdefault.jpg
-        // return $ytid;
         $newcontent = new Content([
             'title' => $request->title,
             'type' => $request->type,
@@ -147,12 +118,12 @@ class ContentController extends Controller
         if (!File::isDirectory($path)) {
             File::makeDirectory($path, 0777, true, true);
         }
-        // if ($request->type == "YouTube") {
-        //     $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
-        //     $image = file_get_contents($url);
-        //     $thumbpath = public_path('storage/files/content/' . $newid . '/thumb.jpg');
-        //     file_put_contents($thumbpath, $image);
-        // }
+        if ($request->type == "YouTube") {
+            $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+            $image = file_get_contents($url);
+            $thumbpath = public_path('storage/files/content/' . $newid . '/thumb.jpg');
+            file_put_contents($thumbpath, $image);
+        }
         if ($request->has('documents')) {
             foreach ($request->documents as $doc) {
                 $arraydoc[] = $doc;
@@ -192,18 +163,16 @@ class ContentController extends Controller
         }
 
 
-        //
+        // 
         return to_route('content.index')->with('success', 'Content successfully saved' . $addmessage . '');
     }
     public function destroy(Content $content)
     {
-        // $content = Content::find($id);
         $content->delete();
         return to_route('content.index')->with('success', 'Content successfully deleted');
     }
     public function edit(Content $content)
     {
-        // $content = Content::with('classification')->find($id);
         $classification = Classification::all();
         return view('main.content.edit', [
             "title" =>  "Edit Content",
@@ -213,21 +182,17 @@ class ContentController extends Controller
     }
     public function update(Request $request, Content $content)
     {
-        // return $request;
         $path = public_path('storage/files/content/' . $request->id . '');
         $arraydoc = array();
         if ($request->type == "YouTube") {
             parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
-            // $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
             $ytid = $ytarray['v'];
             Content::where('id', $request->contentid)
                 ->update(['file' => null]);
-            // if ($request->type == "YouTube") {
-            // $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
-            // $image = file_get_contents($url);
-            // $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
-            // file_put_contents($thumbpath, $image);
-            // }
+            $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+            $image = file_get_contents($url);
+            $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
+            file_put_contents($thumbpath, $image);
         } else {
             $ytid = null;
             if ($request->has('documents')) {
@@ -254,9 +219,6 @@ class ContentController extends Controller
             }
         }
 
-        // else {
-        //     return ($request);
-        // }
         $getcontent = Content::firstWhere('id', $request->contentid);
         if ($request->action == "publish") {
             if ($getcontent->file) {
@@ -299,8 +261,6 @@ class ContentController extends Controller
                 'link' => $ytid
             ]);
 
-        // $slug = Content::where('id', $request->contentid)->first()->slug;
-        // return to_route('content.edit', $getcontent->slug)->with('success', 'Content successfully saved' . $addmessage . '');
         return to_route('content.edit', $getcontent->slug)->with('success', $message)->with($redir, $redirmessage);
     }
 }
