@@ -113,13 +113,13 @@
         const player = new Plyr('#player');
         window.player = player;
 
-
         player.on('ready', function() {
             // player.currentTime = 10;
         })
 
         player.on('pause', function() {
             console.log(player.currentTime)
+            // console.log(player.duration)
         })
 
         player.on('ended', function() {
