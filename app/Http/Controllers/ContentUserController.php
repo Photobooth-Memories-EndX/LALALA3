@@ -14,8 +14,8 @@ class ContentUserController extends Controller
     public function view($slug)
     {
         $content = Content::findBySlug($slug);
-        // $content->views += 1;
-        // $content->save();
+        $content->views += 1;
+        $content->save();
 
         //add content to user learning on going if not exist yet
         $content_user = ContentUser::firstOrCreate([
@@ -25,7 +25,7 @@ class ContentUserController extends Controller
         $assesment = Assesment::where('type', 'content')->where('content_id', $content->id)->first();
         $comment = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
 
-        return view('user.content.view', compact('content', 'assesment', 'comment'));
+        return view('user.content.view', compact('content', 'assesment', 'comment', 'content_user'));
     }
 
     public function category($slug)
