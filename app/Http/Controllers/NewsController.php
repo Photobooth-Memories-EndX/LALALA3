@@ -46,7 +46,7 @@ class NewsController extends Controller
 
         $news = new News();
 
-        $news->user_id = 4;
+        $news->user_id = auth()->user()->id;
         $news->title = $request->input('title');
         $news->description = $request->input('description');
 

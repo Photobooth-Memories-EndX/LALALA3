@@ -29,7 +29,7 @@ class AssesmentUserController extends Controller
         dd($request->except(['_token', '_method']));
 
         // $assesment_result = new AssesmentResult();
-        // $assesment_result->user_id = 1;
+        // $assesment_result->user_id = auth()->user()->id;
         // $assesment_result->assesment_id = $assesment->id;
         // $assesment_result->user_answer = $request->except(['_token', '_method']);
         // $assesment_result->save();
