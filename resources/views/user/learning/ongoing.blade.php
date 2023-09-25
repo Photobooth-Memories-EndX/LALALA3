@@ -68,12 +68,12 @@
                             <table class="table table-bordered table-striped" id="MyTable">
                                 <thead>
                                     <tr>
-                                        <th>No</th>
+                                        <th>#</th>
                                         <th>Title</th>
                                         <th>Classification</th>
                                         <th>Duration</th>
                                         <th>Date</th>
-                                        <th>Progress</th>
+                                        <th width="10%">Progress</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -124,7 +124,12 @@
                                             <td>{{ $list->content->duration }}</td>
                                             <td>{{ $list->content->date }}</td>
 
-                                            <td>{{ $list->progress }}%</td>
+                                            <td>
+                                                {{ $list->progress }}%
+                                                <div class="progress progress-xs">
+                                                    <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
+                                                  </div>
+                                            </td>
                                             <td>
                                                 <div class="d-inline">
                                                     <a href="" class="btn btn-info btn-icon">

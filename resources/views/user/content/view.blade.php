@@ -121,7 +121,7 @@
             var progression = $('#player_progress').val();
             var current_player_time = (progression * player.duration) / 100;
 
-            if(current_player_time < duration){
+            if(current_player_time < player.duration){
                 player.currentTime = current_player_time;
             }
         })

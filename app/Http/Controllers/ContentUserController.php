@@ -55,6 +55,7 @@ class ContentUserController extends Controller
         } else {
 
             return response()->json(['success'=>'Watching again', 'status'=>200]);
+
         }
 
     }

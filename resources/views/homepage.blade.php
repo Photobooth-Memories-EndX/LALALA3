@@ -218,8 +218,8 @@
                         <div class="card-body p-3">
                             <div class="row align-items-center">
                             <div class="col">
-                                <h2 class="h3">Training</h2>
-                                <img src="https://via.placeholder.com/700x500.png/7F7F7F/333333?text=Training Img" class="img-fluid">
+                                <h2 class="h3">Latest Gallery</h2>
+                                <a href="{{ route('gallery.user.view', $eventphoto->slug) }}" class="d-block" title="{{ $eventphoto->title }}"><img src="{{ asset('/storage/gallery/photo') }}/{{ $eventphoto->id }}/{{ $eventphoto->thumbnail }}" class="img-fluid"></a>
                             </div>
                             </div>
                         </div>
