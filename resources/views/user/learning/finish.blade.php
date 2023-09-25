@@ -40,7 +40,7 @@
                             <table class="table table-bordered table-striped" id="MyTable">
                                 <thead>
                                     <tr>
-                                        <th>No</th>
+                                        <th>#</th>
                                         <th>Title</th>
                                         <th>Classification</th>
                                         <th>Duration</th>
@@ -60,7 +60,38 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
-                                            <td>{{ $list->content->title }}</td>
+                                            <td>
+                                                <div class="row align-items-center">
+                                                    <div class="col-auto">
+                                                      @if (in_array($list->content->type, ['Video','YouTube']))
+                                                      <span class="bg-red-lt avatar">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-video" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                            <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"></path>
+                                                            <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                                                         </svg>
+                                                      </span>
+                                                      @else
+                                                      <span class="bg-yellow-lt avatar">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-type-pdf" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                            <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                                                            <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"></path>
+                                                            <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6"></path>
+                                                            <path d="M17 18h2"></path>
+                                                            <path d="M20 15h-3v6"></path>
+                                                            <path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z"></path>
+                                                        </svg>
+                                                      </span>
+                                                      @endif
+
+                                                    </div>
+                                                    <div class="col">
+                                                        <a href="{{ route('content.user.view', $list->content->slug) }}" class="text-reset">{{ $list->content->title }}</a>
+                                                    </div>
+                                                  </div>
+
+                                            </td>
                                             <td>{{ $list->content->classification->classification_name ?? '' }}</td>
                                             <td>{{ $list->content->duration }}</td>
                                             <td>{{ $list->content->date }}</td>

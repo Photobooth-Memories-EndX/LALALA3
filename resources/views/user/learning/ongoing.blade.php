@@ -65,7 +65,7 @@
                 <div class="card-body">
                     <div id="table-default" class="table-responsive">
                         @unless (count($content_user) == 0)
-                            <table class="table table-bordered table-striped" id="MyTable">
+                            <table class="table table-bordered table-striped table-vcenter" id="MyTable">
                                 <thead>
                                     <tr>
                                         <th>#</th>
@@ -125,10 +125,9 @@
                                             <td>{{ $list->content->date }}</td>
 
                                             <td>
-                                                {{ $list->progress }}%
-                                                <div class="progress progress-xs">
+                                                <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
                                                     <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
-                                                  </div>
+                                                </div>
                                             </td>
                                             <td>
                                                 <div class="d-inline">
