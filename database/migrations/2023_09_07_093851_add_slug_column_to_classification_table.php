@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('classification', function (Blueprint $table) {
             $table->after('classification_name', function (Blueprint $table) {
-                $table->string('slug');
+                $table->string('slug')->nullable();
             });
         });
     }

@@ -5,8 +5,10 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PagesController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ContentController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\HomeUserController;
 use App\Http\Controllers\LearningController;
 use App\Http\Controllers\NewsUserController;
@@ -18,6 +20,7 @@ use App\Http\Controllers\ContentUserController;
 use App\Http\Controllers\GalleryUserController;
 use App\Http\Controllers\TrainingPlanController;
 use App\Http\Controllers\AssesmentUserController;
+use App\Http\Controllers\ContentDeleteController;
 use App\Http\Controllers\AssesmentImageController;
 use App\Http\Controllers\ClassificationController;
 use App\Http\Controllers\AssesmentQuestionController;
@@ -37,6 +40,11 @@ use App\Http\Controllers\AssesmentQuestionController;
 //     return view('welcome');
 // });
 Route::get('/', [HomeUserController::class, 'index'])->name('home.user.index')->middleware('auth');
+Route::get('/myprofile', [ProfileController::class, 'index'])->name('user.profile')->middleware('auth');
+Route::post('/myprofile', [ProfileController::class, 'update'])->name('user.updateprofile')->middleware('auth');
+Route::get('/myprofile/deleteavatar', [ProfileController::class, 'deleteavatar'])->name('user.deleteavatar')->middleware('auth');
+Route::get('/mycomment', [ProfileController::class, 'comment'])->name('user.comment')->middleware('auth');
+Route::get('/search/{searchtype}', [SearchController::class, 'index'])->name('search')->middleware('auth');
 
 Route::group(['prefix' => 'page'], function () {
     Route::get('/{slug}', [PagesUserController::class, 'view'])->name('pages.user.view');
@@ -99,6 +107,7 @@ Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
 
     Route::get('/', [GalleryUserController::class, 'index'])->name('gallery.user.index');
     Route::get('/{slug}', [GalleryUserController::class, 'view'])->name('gallery.user.view');
+    Route::post('/{slug}/comment/store', [CommentController::class, 'storeeventphoto'])->name('gallery.comment.store');
     // Route::get('/{slug}', [GalleryUserController::class, 'view'])->name('gallery.user.view');
 });
 Route::get('/login', [LoginController::class, 'index'])->name('loginpage')->middleware('guest');

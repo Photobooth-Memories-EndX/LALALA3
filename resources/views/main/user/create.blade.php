@@ -70,6 +70,7 @@
                             <x-input type="text" class="form-control" placeholder="Enter division" name="division" id="division" />
                         </div>
                         <input type="hidden" name="ssohash" id="ssohash" />
+                        <input type="hidden" name="sap_code" id="sap_code" />
 
                         <div class="form-footer">
                             <x-button type="submit" class="btn btn-primary w-100">Create new account</x-button>
@@ -126,6 +127,7 @@
                         alert(response.message);
                     } else {
 
+                        $("#sap_code").val(response.sap_code);
                         $("#ssohash").val(response.newhash);
                         $("#name").val(response.name);
                         $("#department").val(response.department);

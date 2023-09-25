@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('assesment_id')->constrained()->onDelete('cascade');
             $table->text('question')->nullable();
-            $table->string('image', 255)->nullable();
+            // $table->string('image', 255)->nullable();
             $table->json('option');
             $table->string('answer')->nullable();
             $table->enum('status', ['0', '1'])->default('1');

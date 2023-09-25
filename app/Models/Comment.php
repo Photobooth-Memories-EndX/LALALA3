@@ -13,4 +13,16 @@ class Comment extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function content()
+    {
+        return $this->belongsTo(Content::class);
+    }
+    public function eventphoto()
+    {
+        return $this->belongsTo(EventPhoto::class);
+    }
+    public function news()
+    {
+        return $this->belongsTo(News::class);
+    }
 }

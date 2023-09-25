@@ -26,6 +26,8 @@ return new class extends Migration
             $table->string('department');
             $table->string('division');
             $table->string('ssohash');
+            $table->string('sap_code');
+            $table->string('avatar')->nullable();
             $table->enum('role', ['1', '2', '3']);
             $table->rememberToken();
             $table->timestamps();

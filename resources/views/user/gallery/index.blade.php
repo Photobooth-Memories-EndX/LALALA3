@@ -49,9 +49,9 @@
                                         <div class="card-body">
                                             <h2>{{ $list->title }}</h2>
                                             <div class="d-flex align-items-center">
-                                                <span class="avatar me-3 rounded" style="background-image: url({{ asset('/storage/profile') }}/23.png)"></span>
+                                                {{-- <span class="avatar me-3 rounded" style="background-image: url({{ asset('/storage/profile') }}/23.png)"></span> --}}
                                                 <div>
-                                                    <div>{{ $list->uploader }}</div>
+                                                    <div>by {{ $list->uploader }}</div>
                                                     <div class="text-muted">
                                                         Posted
                                                         {{ $posted }}

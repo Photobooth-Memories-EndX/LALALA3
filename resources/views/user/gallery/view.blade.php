@@ -36,6 +36,7 @@
             </div>
         </div>
     </div>
+    <x-comment :content="$eventphoto" :comment="$comment" type="eventphoto" />
 @endsection
 @section('script')
     <script src={{ $url_lightbox_js }}></script>

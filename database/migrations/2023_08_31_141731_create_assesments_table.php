@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('assesments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('content_id')->nullable()->constrained('content');
-            $table->foreignId('trainingplan_id')->nullable()->constrained('trainingplan');
+            // $table->foreignId('trainingplan_id')->nullable()->constrained('trainingplan');
             // $table->enum('type', ['content', 'trainingplan', 'global'])->default('global');
             $table->string('slug')->nullable();
             $table->string('title')->nullable();

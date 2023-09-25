@@ -31,7 +31,8 @@ class User extends Authenticatable
         'department',
         'id_emp',
         'id_user',
-        'ssohash'
+        'ssohash',
+        'sap_code'
     ];
 
     /**

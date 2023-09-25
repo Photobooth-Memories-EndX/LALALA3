@@ -92,14 +92,14 @@
             </div>
             <div class="nav-item dropdown">
                 <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
-                    <span class="avatar avatar-sm" style="background-image: url({{ asset('Tabler/static/avatars/000m.jpg') }})"></span>
+                    <span class="avatar avatar-sm" style="background-image: url({{ asset('storage/profile') }}/{{ auth()->user()->avatar ?? 'default.jpg' }})"></span>
                     <div class="d-none d-xl-block ps-2">
                         <div>{{ auth()->user()->name ?? '' }}</div>
                         <div class="mt-1 small text-muted" style="font-size: 7pt">{{ auth()->user()->team ?? '' }}</div>
                     </div>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <a href="./settings.html" class="dropdown-item">Status</a>
+                    <a href="{{ route('user.profile') }}" class="dropdown-item">Profile</a>
                     <form action="{{ route('logoutpage') }}" method="POST">
                         @csrf
                         <input type="submit" class="dropdown-item" value="Logout">
@@ -297,7 +297,7 @@
                     </li>
                 </ul>
                 <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-first order-md-last">
-                    <form action="./" method="get" autocomplete="off" novalidate>
+                    <form action="{{ route('search', 'all') }}" method="get" autocomplete="off" novalidate>
                         <div class="input-icon">
                             <span class="input-icon-addon">
                                 <!-- Download SVG icon from http://tabler-icons.io/i/search -->
@@ -307,7 +307,7 @@
                                     <path d="M21 21l-6 -6" />
                                 </svg>
                             </span>
-                            <input type="text" value="" class="form-control" placeholder="Search…" aria-label="Search in website">
+                            <input type="text" name="s" class="form-control" placeholder="Search…" aria-label="Search in website">
                         </div>
                     </form>
                 </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\Content;
+use App\Models\EventPhoto;
 use App\Models\News;
 use Illuminate\Http\Request;
 
@@ -43,5 +44,21 @@ class CommentController extends Controller
         $comment->save();
 
         return to_route('news.user.view', $slug)->with('success', 'Comment posted successfully.');
+    }
+    public function storeeventphoto(Request $request, $slug)
+    {
+        $request->validate([
+            'description' => "required|string|max:1000"
+        ]);
+
+        $eventphoto = EventPhoto::findBySlug($slug);
+        $comment = new Comment();
+        $comment->eventphoto_id = $eventphoto->id;
+        $comment->type = 'eventphoto';
+        $comment->user_id = auth()->user()->id;
+        $comment->description = $request->input('description');
+        $comment->save();
+
+        return to_route('gallery.user.view', $slug)->with('success', 'Comment posted successfully.');
     }
 }
