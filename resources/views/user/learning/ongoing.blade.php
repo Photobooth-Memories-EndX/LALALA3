@@ -28,7 +28,6 @@
         <!-- Container Page -->
         <div class="container">
 
-
             <!-- Card -->
             <div class="card">
                 <div class="card-header">
@@ -92,7 +91,7 @@
                                             <td>
                                                 <div class="row align-items-center">
                                                     <div class="col-auto">
-                                                      @if (in_array($list->content->type, ['Video','Youtube']))
+                                                      @if (in_array($list->content->type, ['Video','YouTube']))
                                                       <span class="bg-red-lt avatar">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-video" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>

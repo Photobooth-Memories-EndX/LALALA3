@@ -81,6 +81,10 @@
                             <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
                         @endif
 
+                        @if ($content->type == 'Video' || $content->type == 'YouTube')
+                        <input type="hidden" id="player_progress" value="{{ $content_user->progress }}">
+                        <input type="hidden" data-url="{{ route('content.user.progress', $content->slug) }}" id="player_paused">
+                        @endif
                      </div>
 
                     </div>
@@ -114,17 +118,25 @@
         window.player = player;
 
         player.on('ready', function() {
-            // player.currentTime = 10;
+            var progression = $('#player_progress').val();
+            var current_player_time = (progression * player.duration) / 100;
+
+            if(current_player_time < duration){
+                player.currentTime = current_player_time;
+            }
         })
 
         player.on('pause', function() {
-            console.log(player.currentTime)
-            // console.log(player.duration)
+            $.ajax({
+                type: "PUT",
+                url: $('#player_paused').data('url'),
+                data: {'current_time': player.currentTime, 'duration': player.duration, '_token': '{{ csrf_token() }}' },
+                success: function(data){
+                    console.log(data.success)
+                }
+            });
         })
 
-        player.on('ended', function() {
-            console.log(player.currentTime)
-        })
     });
 </script>
 @endsection
