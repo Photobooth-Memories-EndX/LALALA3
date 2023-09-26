@@ -199,11 +199,11 @@
 
                 <div class="row">
                     <div class="col-auto">
-                        <span class="avatar rounded">EK</span>
+                        <span class="avatar rounded">{{ substr(auth()->user()->initials, 0, 2) }}</span>
                     </div>
                     <div class="col">
-                        <div class="font-weight-medium">Edi Kusumaedi</div>
-                        <div class="text-muted small" style="font-size: 8pt">Information System Management Team</div>
+                        <div class="font-weight-medium">{{ auth()->user()->name ?? '' }}</div>
+                        <div class="text-muted small" style="font-size: 8pt">{{ auth()->user()->team ?? '' }}</div>
                     </div>
                 </div>
 
