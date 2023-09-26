@@ -30,11 +30,25 @@
                                                     <div class="text-truncate">
                                                         <strong>{{ $list->user->name }}</strong> on <strong>{{ $commenttype[$list->type] }}</strong>
                                                         <br>
-                                                        <a href="
-                                                            @if ($list->type == 'content') {{ route('content.user.view', $list->content->slug) }} 
-                                                            @elseif($list->type == 'news') {{ route('news.user.view', $list->news->slug) }}
-                                                            @elseif($list->type == 'eventphoto') {{ route('gallery.user.view', $list->eventphoto->slug) }} @endif
-                                                            ">{{ $list->content->title ?? ($list->eventphoto->title ?? $list->news->title) }}</a>
+                                                        @php
+                                                        $url = '';
+                                                        $judul = '';
+                                                        if ($list->type == 'content')
+                                                        {
+                                                            $url = route('content.user.view', $list->content->slug);
+                                                            $judul = $list->content->title;
+
+                                                        } elseif($list->type == 'news')
+                                                        {
+                                                            $url = route('news.user.view', $list->news->slug) ;
+                                                            $judul = $list->news->title;
+
+                                                        } elseif($list->type == 'eventphoto') {
+                                                            $url =  route('gallery.user.view', $list->eventphoto->slug);
+                                                            $judul = $list->eventphoto->title;
+                                                        }
+                                                        @endphp
+                                                        <a class="text-reset" href="{{ $url }}#comment-{{ $list->id }}">{{ $judul }}</a>
                                                     </div>
                                                     <div class="text-muted">{!! nl2br($list->description) !!}</div>
                                                 </div>

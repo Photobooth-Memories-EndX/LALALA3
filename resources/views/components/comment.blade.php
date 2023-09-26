@@ -47,7 +47,7 @@
                                     <div class="text-truncate">
                                         <strong>{{ $list->user->name }}</strong>
                                     </div>
-                                    <div class="text-muted">{!! nl2br($list->description) !!}</div>
+                                    <div class="text-muted" id="comment-{{ $list->id }}">{!! nl2br($list->description) !!}</div>
                                 </div>
                                 <div class="col-auto">
                                     <div class="text-muted">{{ \Carbon\Carbon::parse($list->created_at)->diffForHumans() }}</div>
