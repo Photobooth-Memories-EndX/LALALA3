@@ -38,7 +38,7 @@ class ContentUserController extends Controller
     public function progress(Request $request, $slug)
     {
         $content = Content::findBySlug($slug);
-        $content_user = ContentUser::where('user_id', 1)->where('content_id', $content->id)->first();
+        $content_user = ContentUser::where('user_id', auth()->user()->id)->where('content_id', $content->id)->first();
 
         if($content_user->progress != 100) {
             $progression = ((float) $request->current_time / (float) $request->duration) * 100;
