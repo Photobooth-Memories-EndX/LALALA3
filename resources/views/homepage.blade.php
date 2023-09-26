@@ -202,7 +202,7 @@
                         <span class="avatar rounded">{{ substr(auth()->user()->initials, 0, 2) }}</span>
                     </div>
                     <div class="col">
-                        <div class="font-weight-medium">{{ auth()->user()->name ?? '' }}</div>
+                        <div class="font-weight-medium">{{ ucwords(strtolower(auth()->user()->name ?? '')) }}</div>
                         <div class="text-muted small" style="font-size: 8pt">{{ auth()->user()->team ?? '' }}</div>
                     </div>
                 </div>
