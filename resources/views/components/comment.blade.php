@@ -12,7 +12,7 @@
 @endphp
 
 <div class="container-xl mt-4">
-    <div class="card card-lg">
+    <div class="card card-lg" id="comment">
         <div class="card-body py-5">
 
             <div class="row">

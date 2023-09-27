@@ -28,4 +28,8 @@ class EventPhoto extends Model
     {
         return 'slug';
     }
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'eventphoto_id', 'id');
+    }
 }

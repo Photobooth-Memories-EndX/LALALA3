@@ -18,9 +18,6 @@
                 </div>
 
                 <x-form action="{{ route('assesment.user.store', $assesment->slug) }}" method="post">
-                @csrf
-                @method('POST')
-
                 @unless(count($assesment_question) == 0)
 
                     <div class="mb-3 col-12">

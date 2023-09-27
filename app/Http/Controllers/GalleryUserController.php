@@ -10,7 +10,7 @@ class GalleryUserController extends Controller
 {
     public function index()
     {
-        $eventphoto = EventPhoto::where('active', 'Active')->orderBy('id', 'desc')->get();
+        $eventphoto = EventPhoto::withCount('comments')->where('active', 'Active')->orderBy('id', 'desc')->get();
         return view('user.gallery.index', [
             "eventphoto" => $eventphoto
         ]);
