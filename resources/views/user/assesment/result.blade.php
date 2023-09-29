@@ -54,6 +54,14 @@
 </div>
 @endsection
 
+@section('style')
+<style>
+[data-bs-theme=dark] .apexcharts-text {
+    fill : #f6f8fb !important;
+}
+</style>
+@endsection
+
 @section('script')
 <script src="{{ asset('Tabler/dist/libs/apexcharts/dist/apexcharts.min.js?1684106062') }}" defer></script>
 <script>
