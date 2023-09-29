@@ -28,7 +28,6 @@ class AssesmentUserController extends Controller
         $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
         $assesment_question_count = count($assesment_question);
         // dd($assesment_question);
-
         $user_answers = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
         // dd(array_diff($assesment_question, $user_answers));
 
@@ -42,10 +41,20 @@ class AssesmentUserController extends Controller
         $wrong_answer_count = count($wrong_answer);
         $right_answer_count = $assesment_question_count - $wrong_answer_count;
         $score = ((int)$right_answer_count / (int)$assesment_question_count) * 100;
-        dd($score);
+        // dd((int)$score);
         //process score
 
         $assesment_result->score = $score;
         $assesment_result->save();
+
+        return to_route('assesment.user.result', $slug)->with('score', $score);
+    }
+
+    public function result($slug)
+    {
+        $assesment = Assesment::findBySlug($slug);
+        $assesment_result = AssesmentResult::where('user_id', auth()->user()->id)->where('assesment_id', $assesment->id)->latest()->first();
+        // dd($assesment_result );
+        return view('user.assesment.result', compact('assesment', 'assesment_result'));
     }
 }
