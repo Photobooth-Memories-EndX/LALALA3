@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function() {
     var options = {
         series: [{{ (int)$assesment_result->score }}],
         chart: {
-        height: 350,
+        height: 200,
         type: 'radialBar',
     },
     plotOptions: {
