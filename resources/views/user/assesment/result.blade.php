@@ -31,35 +31,54 @@
                 </div>
                 <!-- chart -->
                 <div class="d-flex justify-content-center">
-
+                    <div id="chart"></div>
                 </div>
                 <!-- text -->
                 <div class="mt-3">
-                  <span>Your Score: <span class="text-dark">{{ $assesment_result->score }}</span></span><br>
-                  <span class="mt-2 d-block">Passing Score: <span class="text-dark">80%</span></span>
+                  <span>Your Score: <span>{{ $assesment_result->score }}</span></span><br>
+                  <span class="mt-2 d-block">Passing Score: <span>80</span></span>
                 </div>
+
                 <!-- btn -->
+                @if ($assesment_result->score < 80)
                 <div class="mt-5">
-                  <a href="#" class="btn btn-primary">Finish</a>
-                  <a href="#" class="btn btn-outline-secondary ms-2">Share <i class="fe fe-external-link"></i></a>
+                  <a href="{{ route('assesment.user.view', $assesment->slug) }}" class="btn btn-danger">Retry</a>
                 </div>
-            </div>
+                @endif
+             </div>
 
-            </div>
-
-
+           </div>
 
         </div>
     </div>
-  </div>
-
-@endsection
-
-@section('style')
+</div>
 @endsection
 
 @section('script')
+<script src="{{ asset('Tabler/dist/libs/apexcharts/dist/apexcharts.min.js?1684106062') }}" defer></script>
 <script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    var options = {
+        series: [{{ (int)$assesment_result->score }}],
+        chart: {
+        height: 350,
+        type: 'radialBar',
+    },
+    plotOptions: {
+        radialBar: {
+        hollow: {
+            size: '70%',
+        }
+        },
+    },
+    colors: [tabler.getColor("primary"), tabler.getColor("primary", 0.8), tabler.getColor("primary", 0.6), tabler.getColor("gray-300")],
+    labels: ['Score'],
+    };
+
+    var chart = new ApexCharts(document.querySelector("#chart"), options);
+    chart.render();
+});
 
 </script>
 @endsection
