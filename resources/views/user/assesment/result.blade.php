@@ -22,7 +22,7 @@
               <div class="p-10 text-center">
                 <!-- text -->
                 <div class="mb-4 ">
-                    @if ($assesment_result->score > 80)
+                    @if ($assesment_result->score >= 80)
                     <h2>🎉 Congratulations. You passed!</h2>
                     @else
                     <h2>Sorry, you have not passed this test</h2>
