@@ -75,9 +75,17 @@ document.addEventListener("DOMContentLoaded", function() {
     },
     plotOptions: {
         radialBar: {
-        hollow: {
-            size: '70%',
-        }
+          hollow: {
+              size: '70%',
+          },
+          dataLabels: {
+              name: {
+                show: false
+              },
+              value: {
+                fontSize: '22px', fontFamily:void 0,fontWeight:600,color:void 0,offsetY:7
+              }
+            }
         },
     },
     colors: [tabler.getColor("primary"), tabler.getColor("primary", 0.8), tabler.getColor("primary", 0.6), tabler.getColor("gray-300")],

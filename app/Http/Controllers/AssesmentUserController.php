@@ -29,15 +29,18 @@ class AssesmentUserController extends Controller
         $assesment_question_count = count($assesment_question);
         // dd($assesment_question);
         $user_answers = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
-        // dd(array_diff($assesment_question, $user_answers));
+        // $user_answers = $request->except(['_token', '_method']);
+        // dd($user_answers);
+        // dd(array_diff_assoc($assesment_question, $user_answers));
 
-        $assesment_result = new AssesmentResult();
-        $assesment_result->user_id = auth()->user()->id;
-        $assesment_result->assesment_id = $assesment->id;
+        // $assesment_result = new AssesmentResult();
+        // $assesment_result->user_id = auth()->user()->id;
+        // $assesment_result->assesment_id = $assesment->id;
+        $assesment_result = AssesmentResult::firstOrCreate(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id]);
         $assesment_result->user_answer = $request->except(['_token', '_method']);
 
         //process score
-        $wrong_answer = array_diff($assesment_question, $user_answers);
+        $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
         $wrong_answer_count = count($wrong_answer);
         $right_answer_count = $assesment_question_count - $wrong_answer_count;
         $score = ((int)$right_answer_count / (int)$assesment_question_count) * 100;

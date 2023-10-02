@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class AssesmentResult extends Model
 {
     use HasFactory;
+    protected $fillable = ['user_id', 'assesment_id'];
     protected $casts = [
         'user_answer' => 'array'
     ];
