@@ -100,9 +100,11 @@ Route::group(['prefix' => 'learning', 'middleware' => 'auth'], function () {
 
 Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
     Route::get('/', [AssesmentUserController::class, 'index'])->name('assesment.user.index');
-    Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
-    Route::post('/{slug}/store', [AssesmentUserController::class, 'store'])->name('assesment.user.store');
-    Route::get('/{slug}/result', [AssesmentUserController::class, 'result'])->name('assesment.user.result');
+    Route::group(['middleware' => 'prevent-back-button'], function () {
+        Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
+        Route::post('/{slug}/store', [AssesmentUserController::class, 'store'])->name('assesment.user.store');
+        Route::get('/{slug}/result', [AssesmentUserController::class, 'result'])->name('assesment.user.result');
+    });
 });
 Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
 
