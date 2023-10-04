@@ -76,6 +76,8 @@
                 <input type="text" class="form-control" placeholder="Enter division" name="division" id="division" value="{{ $user->division }}">
             </div>
             <div class="form-footer">
+                <input type="hidden" name="ssohash" id="ssohash" />
+                <input type="hidden" name="sap_code" id="sap_code" />
               <button type="submit" class="btn btn-primary w-100">Update Data</button>
             </div>
           </div>
@@ -133,6 +135,8 @@
                 }
                 else
                 {
+                    $("#sap_code").val(response.sap_code);
+                    $("#ssohash").val(response.newhash);
                     $("#name").val(response.name);
                     $("#department").val(response.department);
                     $("#team").val(response.team);

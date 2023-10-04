@@ -39,8 +39,6 @@
                 </div>
 
                 <x-form class="card card-md" action="{{ route('user.store') }}" method="post">
-                    @csrf
-                    @method('POST')
                     <div class="card-body">
                         <h2 class="card-title text-center mb-4">Create new user</h2>
                         <div class="input-group mb-3">

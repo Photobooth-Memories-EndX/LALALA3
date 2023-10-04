@@ -8,15 +8,12 @@
               <div class="row g-4">
                 <div class="col-12 markdown">
                   <h1 class="mb-2">{{ $assesment->title }}</h1>
-
                   <div class="d-flex align-items-center">
                     <div>
                       <div class="text-muted">{{ date('d F Y', strtotime($assesment->created_at)) }}</div>
                     </div>
                   </div>
-
                 </div>
-
               </div>
 
               <div class="p-10 text-center">
@@ -27,7 +24,6 @@
                     @else
                     <h2>Sorry, you have not passed this test</h2>
                     @endif
-
                 </div>
                 <!-- chart -->
                 <div class="d-flex justify-content-center">
