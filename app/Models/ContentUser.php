@@ -19,4 +19,8 @@ class ContentUser extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function assesment()
+    {
+        return $this->hasOne(Assesment::class, 'content_id', 'content_id');
+    }
 }

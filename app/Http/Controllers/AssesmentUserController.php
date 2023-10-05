@@ -36,7 +36,7 @@ class AssesmentUserController extends Controller
         // $assesment_result = new AssesmentResult();
         // $assesment_result->user_id = auth()->user()->id;
         // $assesment_result->assesment_id = $assesment->id;
-        $assesment_result = AssesmentResult::firstOrCreate(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id]);
+        $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id]);
         $assesment_result->user_answer = $request->except(['_token', '_method']);
 
         //process score

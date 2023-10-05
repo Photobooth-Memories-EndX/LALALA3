@@ -23,4 +23,9 @@ class Assesment extends Model
     {
         return 'slug';
     }
+
+    public function scores()
+    {
+        return $this->hasMany(AssesmentResult::class);
+    }
 }

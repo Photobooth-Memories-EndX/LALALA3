@@ -28,7 +28,6 @@
         <!-- Container Page -->
         <div class="container">
 
-
             <!-- Card -->
             <div class="card">
                 <div class="card-header">
@@ -96,7 +95,21 @@
                                             <td>{{ $list->content->duration }}</td>
                                             <td>{{ $list->content->date }}</td>
 
-                                            <td></td>
+                                            <td>
+                                                @if (!blank($list->assesment))
+                                                    @if (!blank($datas = $list->assesment->scores))
+                                                        @php
+                                                            $filter = $datas->filter(function ($assesment_result) use($list) {
+                                                                                return $assesment_result->user_id==$list->user_id;
+                                                                            })->first();
+                                                        @endphp
+                                                        @if (!blank($filter))
+                                                            {{ $filter->score }}
+                                                        @endif
+                                                    @endif
+                                                @endif
+                                            </td>
+
                                             <td>
                                                 <div class="d-inline">
                                                     <a href="" class="btn btn-info btn-icon">
