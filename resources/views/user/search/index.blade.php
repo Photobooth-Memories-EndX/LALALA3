@@ -5,11 +5,27 @@
         <div class="page-header d-print-none">
             <div class="container-xl">
                 <div class="row g-2 align-items-center">
-                    <div class="col">
+
+                    <div class="col-3">
                         <h2 class="page-title">
                             Search results
                         </h2>
                         <div class="text-muted mt-1">{{ $totalcontent + $totalnews + $totaleventphoto }} result</div>
+                    </div>
+                    <div class="col">
+                        <form action="{{ route('search', 'all') }}" method="get" autocomplete="off" novalidate>
+                            <div class="input-icon">
+                                <span class="input-icon-addon">
+                                    <!-- Download SVG icon from http://tabler-icons.io/i/search -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+                                        <path d="M21 21l-6 -6" />
+                                    </svg>
+                                </span>
+                                <input type="text" name="s" class="form-control" placeholder="Search…" aria-label="Search in website" value="{{ app('request')->input('s') }}">
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -74,28 +90,30 @@
                                                 $posted = $showdate . ' days ago';
                                             }
                                         @endphp
-                                        <div class="ribbon bg-red">{{ $list->searchlabel }}</div>
+
                                         @if ($list->searchtype == 'eventphoto')
-                                            <a href="#" class="d-block"><img src="{{ asset('/storage/gallery/photo') }}/{{ $list->id }}/{{ $list->thumbnail }}" class="card-img-top cropped-ofp"></a>
+                                            <div class="ribbon bg-orange">{{ $list->searchlabel }}</div>
+                                            <a href="{{ route('gallery.user.view', $list->slug) }}" class="d-block"><img src="{{ asset('/storage/gallery/photo') }}/{{ $list->id }}/{{ $list->thumbnail }}" class="card-img-top cropped-ofp"></a>
                                         @elseif($list->searchtype == 'news')
-                                            <a href="#" class="d-block"><img src="{{ asset('storage/news') . '/' . $list->image }}" class="card-img-top cropped-ofp"></a>
+                                            <div class="ribbon bg-lime">{{ $list->searchlabel }}</div>
+                                            <a href="{{ route('news.user.view', $list->slug) }}" class="d-block"><img src="{{ asset('storage/news') . '/' . $list->image }}" class="card-img-top cropped-ofp"></a>
                                         @elseif($list->searchtype == 'content')
+                                            <div class="ribbon bg-cyan">{{ $list->searchlabel }}</div>
                                             @if ($list->type == 'YouTube')
-                                                <a href="#" class="d-block"><img src="http://img.youtube.com/vi/{{ $list->link }}/mqdefault.jpg" class="card-img-top cropped-ofp"></a>
+                                                <a href="{{ route('content.user.view', $list->slug) }}" class="d-block"><img src="http://img.youtube.com/vi/{{ $list->link }}/mqdefault.jpg" class="card-img-top cropped-ofp"></a>
                                             @else
                                                 @php
                                                     $src = 'storage/files/content/' . $list->id . '/thumb.jpg';
                                                 @endphp
                                                 @if (\File::exists(public_path($src)) && !is_dir($src))
-                                                    <a href="#" class="d-block"><img src="{{ asset($src) }}" class="card-img-top cropped-ofp"></a>
+                                                    <a href="{{ route('content.user.view', $list->slug) }}" class="d-block"><img src="{{ asset($src) }}" class="card-img-top cropped-ofp"></a>
                                                 @else
-                                                    <a href="#" class="d-block"><img src="{{ asset('default-video.jpg') }}" class="card-img-top cropped-ofp"></a>
+                                                    <a href="{{ route('content.user.view', $list->slug) }}" class="d-block"><img src="{{ asset('default-video.jpg') }}" class="card-img-top cropped-ofp"></a>
                                                 @endif
                                             @endif
                                         @endif
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <span class="avatar me-3 rounded" style="background-image: url(./static/avatars/000m.jpg)"></span>
                                                 <div>
                                                     <div>{{ $list->title }}</div>
                                                     <div class="text-muted"> Posted

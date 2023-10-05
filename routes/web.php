@@ -71,6 +71,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::get('content/thumbnail/upload/delete', [ContentController::class, 'deletethumbnailajax'])->name('content.deletethumbnailajax');
     Route::post('content/create/upload', [ContentController::class, 'uploadfileajax'])->name('content.uploadfileajax');
     Route::get('content/create/upload/delete', [ContentController::class, 'deletefileajax'])->name('content.deletefileajax');
+    Route::get('content/list/ongoing', [ContentController::class, 'ongoingcontent'])->name('content.ongoing');
     Route::put('content/delete/{slug}', [ContentDeleteController::class, 'deletecontentajax'])->name('contentdelete.deletecontentajax');
 
     Route::get('trainingplan/order/{slug}', [TrainingPlanController::class, 'order'])->name('trainingplan.order');
@@ -100,11 +101,8 @@ Route::group(['prefix' => 'learning', 'middleware' => 'auth'], function () {
 
 Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
     Route::get('/', [AssesmentUserController::class, 'index'])->name('assesment.user.index');
-    Route::group(['middleware' => 'prevent-back-button'], function () {
-        Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
-        Route::post('/{slug}/store', [AssesmentUserController::class, 'store'])->name('assesment.user.store');
-        Route::get('/{slug}/result', [AssesmentUserController::class, 'result'])->name('assesment.user.result');
-    });
+    Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
+    Route::post('/{slug}/store', [AssesmentUserController::class, 'store'])->name('assesment.user.store');
 });
 Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
 

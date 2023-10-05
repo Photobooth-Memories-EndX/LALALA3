@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use Illuminate\Http\Request;
 use App\Models\Classification;
+use App\Models\ContentUser;
 use Illuminate\Support\Facades\File;
 
 class ContentController extends Controller
@@ -13,6 +14,16 @@ class ContentController extends Controller
     {
         $content = Content::with('classification')->get();
         return view('main.content.index', [
+            "title" =>  "Content List",
+            "content" => $content
+        ]);
+    }
+    public function ongoingcontent()
+    {
+        // return "aaaa";
+        $content = ContentUser::with('user')->get();
+        // return $content;
+        return view('main.content.ongoing', [
             "title" =>  "Content List",
             "content" => $content
         ]);

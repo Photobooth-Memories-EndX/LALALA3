@@ -143,12 +143,18 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                My Learning
+                                My Learning @if ($mylearningongoing >= 1)
+                                    <span class="badge bg-red"></span>
+                                @endif
                             </span>
                         </a>
                         <div class="dropdown-menu">
                             <a class="dropdown-item" href="{{ url('learning/on-going') }}" rel="noopener">
                                 Learning On Going
+                                @if ($mylearningongoing >= 1)
+                                    <span class="badge bg-red ms-2">{{ $mylearningongoing }}</span>
+                                @endif
+
                             </a>
                             <a class="dropdown-item" href="{{ url('learning/record') }}" rel="noopener">
                                 Learning Record
@@ -314,4 +320,5 @@
             </div>
         </div>
     </div>
+
 </header>
