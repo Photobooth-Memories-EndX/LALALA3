@@ -54,6 +54,8 @@ class ContentUserController extends Controller
 
         } else {
 
+            $content_user->finish = "1";
+            $content_user->save();
             return response()->json(['success'=>'Watching again', 'status'=>200]);
 
         }

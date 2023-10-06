@@ -12,5 +12,4 @@ class AssesmentQuestion extends Model
         'option' => 'array'
     ];
 
-
 }

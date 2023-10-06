@@ -25,8 +25,6 @@ class Content extends Model
     // {
     //     return $this->belongsTo(TrainingPlanDetail::class, "id", "content_id");
     // }
-
-
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
