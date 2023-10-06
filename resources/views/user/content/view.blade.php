@@ -119,7 +119,15 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         // window.Plyr && (new Plyr('#player'));
-        const player = new Plyr('#player');
+        const player = new Plyr('#player', {
+                            listeners: { //disable fast forward
+                                seek (e) {
+                                    e.preventDefault();
+                                    console.log('prevented');
+                                    return false;
+                                }
+                            }
+                        });
         window.player = player;
 
         player.on('ready', function() {
