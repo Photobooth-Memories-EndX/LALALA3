@@ -64,11 +64,13 @@
                 </div>
                 <div class="card-body">
                     <div id="table-default" class="table-responsive">
+                        {{-- {{ $content }} --}}
                         @unless (count($content) == 0)
                             <table class="table table-bordered table-striped table-vcenter" id="MyTable">
                                 <thead>
                                     <tr>
                                         <th>#</th>
+                                        <th>Status</th>
                                         <th>Name</th>
                                         <th>Title</th>
                                         <th>Classification</th>
@@ -89,6 +91,7 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
+                                            <td>{{ $list->status }}</td>
                                             <td>{{ $list->user->name }}</td>
                                             <td>
                                                 <div class="row align-items-center">

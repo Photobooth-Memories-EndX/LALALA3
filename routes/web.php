@@ -73,7 +73,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::get('content/create/upload/delete', [ContentController::class, 'deletefileajax'])->name('content.deletefileajax');
     Route::get('content/list/ongoing', [ContentController::class, 'ongoingcontent'])->name('content.ongoing');
     Route::put('content/delete/{slug}', [ContentDeleteController::class, 'deletecontentajax'])->name('contentdelete.deletecontentajax');
-
+    Route::post('content/assign', [ContentController::class, 'assign'])->name('content.assign');
     Route::get('trainingplan/order/{slug}', [TrainingPlanController::class, 'order'])->name('trainingplan.order');
     Route::resource('trainingplan', TrainingPlanController::class);
     Route::resource('eventphoto', EventPhotoController::class);

@@ -6,6 +6,7 @@ use App\Models\Content;
 use Illuminate\Http\Request;
 use App\Models\Classification;
 use App\Models\ContentUser;
+use App\Models\User;
 use Illuminate\Support\Facades\File;
 
 class ContentController extends Controller
@@ -185,10 +186,12 @@ class ContentController extends Controller
     public function edit(Content $content)
     {
         $classification = Classification::all();
+        $user = User::all();
         return view('main.content.edit', [
             "title" =>  "Edit Content",
             "classification" => $classification,
-            "content" => $content
+            "content" => $content,
+            "user" => $user
         ]);
     }
     public function update(Request $request, Content $content)
@@ -273,5 +276,27 @@ class ContentController extends Controller
             ]);
 
         return to_route('content.edit', $getcontent->slug)->with('success', $message)->with($redir, $redirmessage);
+    }
+    public function assign(Request $request)
+    {
+        $employee = $request->employee;
+        foreach ($employee as $id) {
+            $contentuser = ContentUser::where('content_id', $request->content_id)->firstWhere('user_id', $id);
+            if ($contentuser) {
+                // $arrayexist[] = $contentuser->progress;
+                $content_user = ContentUser::where('id', $contentuser->id)->Update([
+                    'status' => 'mandatory'
+                ]);
+            } else {
+                $content_user = ContentUser::Create([
+                    'user_id' => $id, 'content_id' => $request->content_id, 'status' => 'mandatory'
+                ]);
+            }
+        }
+        return to_route('content.edit', $request->slug)->with('success', 'Content successfully assigned');
+
+
+
+        // return $arrayexist;
     }
 }

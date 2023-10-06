@@ -6,6 +6,10 @@
         $url_ytplayer_js = asset('Tabler/dist/libs/plyr/dist/plyr.min.js?1684106062');
         $url_ytplayer_css = asset('Tabler/dist/libs/plyr/dist/plyr.css?1684106062');
         $url_litepicker = asset('Tabler/dist/libs/litepicker/dist/litepicker.js?1684106062');
+        
+        $url_select = asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062');
+        $url_vendor = asset('Tabler/dist/css/tabler-vendors.min.css?1684106062');
+        
     @endphp
     {{-- @push('css')
         <link rel="stylesheet" href="{{ $url_dropzone_css }}">
@@ -53,6 +57,35 @@
                 {{-- <form class="card card-md" action="{{ route('content.store') }}" method="post"> --}}
                 <x-alert type='success' />
                 <x-alert type='warning' />
+                <form class="card card-md" action="{{ route('content.assign', $content->slug) }}" method="post" autocomplete="off">
+                    @csrf
+                    @method('POST')
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">Assign Content to Employee</h2>
+                        <div class="row">
+                            <div class="col-xl-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Employee</label>
+                                    {{-- <input type="text" class="form-control" placeholder="Enter Type" name="type"
+                                        id="type" required> --}}
+                                    <select type="text" class="form-select" id="select-user" name="employee[]" value="" multiple>
+                                        @unless (count($user) == 0)
+                                            @foreach ($user as $list)
+                                                <option value="{{ $list->id }}">{{ $list->id_emp }} - {{ $list->name }}</option>
+                                            @endforeach
+                                        @else
+                                            <option value="">No content available</option>
+                                        @endunless
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="content_id" value="{{ $content->id }}">
+                        <input type="hidden" name="slug" value="{{ $content->slug }}">
+                        <button type="submit" class="btn btn-primary" name="action" value="assign">Assign</button>
+                    </div>
+                </form>
+                <br>
                 <form class="card card-md" action="{{ route('content.update', $content->slug) }}" method="post" autocomplete="off">
                     @csrf
                     @method('PUT')
@@ -232,6 +265,7 @@
 @section('style')
     <link rel="stylesheet" href="{{ $url_dropzone_css }}">
     <link rel="stylesheet" href="{{ $url_ytplayer_css }}">
+    <link rel="stylesheet" href="{{ $url_vendor }}" />
     <style>
         #overlay {
             position: absolute;
@@ -262,6 +296,7 @@
     <script src={{ $url_dropzone_js }}></script>
     <script src={{ $url_litepicker }}></script>
     <script src={{ $url_ytplayer_js }}></script>
+    <script src={{ $url_select }}></script>
     <script>
         // @formatter:off
         // document.addEventListener("DOMContentLoaded", function() {
@@ -413,30 +448,28 @@
                 },
             }));
         });
-        // @formatter:on
-        // $(document).on('click', '#btn-api', function(e) {
-        //     e.preventDefault();
-        //     $("#overlay").removeClass('d-none');
-        //     var emp_id = $('#id_emp').val();
-        //     $.ajax({
-        //         type: "GET",
-        //         url: '{{ config('api.employee.base_url') }}' + emp_id,
-        //         dataType: "json",
-        //         success: function(response) {
-        //             if (response.status == 404) {
-        //                 alert(response.message);
-        //             } else {
-        //                 $("#name").val(response.name);
-        //                 $("#department").val(response.department);
-        //                 $("#team").val(response.team);
-        //                 $("#division").val(response.division);
-        //                 $("#email").val(response.email);
-        //                 $("#id_org_unit").val(response.id_ou);
-        //                 $("#id_user").val(response.id_user);
-        //             }
-        //             $("#overlay").addClass('d-none');
-        //         }
-        //     });
-        // });
+        document.addEventListener("DOMContentLoaded", function() {
+            var el;
+            window.TomSelect && (new TomSelect(el = document.getElementById('select-user'), {
+                copyClassesToDropdown: false,
+                dropdownParent: 'body',
+                controlInput: '<input>',
+                plugins: ['remove_button'],
+                render: {
+                    item: function(data, escape) {
+                        if (data.customProperties) {
+                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                        }
+                        return '<div>' + escape(data.text) + '</div>';
+                    },
+                    option: function(data, escape) {
+                        if (data.customProperties) {
+                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                        }
+                        return '<div>' + escape(data.text) + '</div>';
+                    },
+                },
+            }));
+        });
     </script>
 @endsection
