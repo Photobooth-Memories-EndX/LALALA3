@@ -72,7 +72,13 @@
                 <div class="col">
                   <x-input type="text" name="title" placeholder="Enter title" value="{{ $assesment->title }}" />
                 </div>
-              </div>
+            </div>
+            <div class="mb-3 row">
+                <x-label class="col-3 col-form-label required">Passing Grade</x-label>
+                <div class="col">
+                  <x-input type="number" name="passing_grade" placeholder="Enter passing grade" value="{{ $assesment->passing_grade }}" />
+                </div>
+            </div>
             <div class="mb-3 row">
               <x-label class="col-3 col-form-label required">From Date</x-label>
               <div class="col">

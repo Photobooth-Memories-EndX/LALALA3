@@ -52,6 +52,7 @@
                         <th>No</th>
                         <th>Type</th>
                         <th>Title</th>
+                        <th>PG</th>
                         <th>From</th>
                         <th>To</th>
                         <th>Status</th>
@@ -75,6 +76,7 @@
                                  </svg>
                             </button>
                         </td>
+                        <td>{{ $list->passing_grade }}</td>
                         <td>{{ date("d/m/y", strtotime($list->fromdate)) }}</td>
                         <td>{{ date("d/m/y", strtotime($list->todate)) }}</td>
                         <td>{{ $list->status }}</td>

@@ -19,7 +19,7 @@
               <div class="p-10 text-center">
                 <!-- text -->
                 <div class="mb-4 ">
-                    @if ($assesment_result->score >= 80)
+                    @if ($assesment_result->score >= $assesment->passing_grade)
                     <h2>🎉 Congratulations. You passed!</h2>
                     @else
                     <h2>Sorry, you have not passed this test</h2>
@@ -32,11 +32,11 @@
                 <!-- text -->
                 <div class="mt-3">
                   <span>Your Score: <span>{{ $assesment_result->score }}</span></span><br>
-                  <span class="mt-2 d-block">Passing Score: <span>80</span></span>
+                  <span class="mt-2 d-block">Passing Score: <span>$assesment->passing_grade</span></span>
                 </div>
 
                 <!-- btn -->
-                @if ($assesment_result->score < 80)
+                @if ($assesment_result->score < $assesment->passing_grade)
                 <div class="mt-5">
                   <a href="{{ route('assesment.user.view', $assesment->slug) }}" class="btn btn-danger">Retry</a>
                 </div>

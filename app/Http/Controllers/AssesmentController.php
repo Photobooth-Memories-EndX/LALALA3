@@ -45,6 +45,7 @@ class AssesmentController extends Controller
             'type' => 'required',
             'fromdate' => 'required',
             'todate' => 'required',
+            'passing_grade' => 'required',
         ]);
 
         $assesment = new Assesment();
@@ -52,6 +53,7 @@ class AssesmentController extends Controller
         $assesment->content_id = $request->input('content_id');
         $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title = $request->input('title');
+        $assesment->passing_grade = $request->input('passing_grade');
         $assesment->fromdate = $request->input('fromdate');
         $assesment->todate = $request->input('todate');
         $assesment->save();
@@ -97,12 +99,14 @@ class AssesmentController extends Controller
             'type' => 'required',
             'fromdate' => 'required',
             'todate' => 'required',
+            'passing_grade' => 'required',
         ]);
 
         $assesment->type = $request->input('type');
         $assesment->content_id = $request->input('content_id');
         $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title = $request->input('title');
+        $assesment->passing_grade = $request->input('passing_grade');
         $assesment->fromdate = $request->input('fromdate');
         $assesment->todate = $request->input('todate');
         $assesment->save();
