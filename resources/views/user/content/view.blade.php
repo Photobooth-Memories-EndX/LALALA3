@@ -81,7 +81,84 @@
                                 <input type="hidden" name="replacecontent" id="replacecontent" value="{{ $getcontentfile }}">
                             </video>
                         @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
-                            <object data="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" width="800px" height="800px" style="text-align: center"></object>
+                                <div class="row pdfviewer p-0 row h-100">
+                                    <div class="pdftoolbar text-center row m-0 p-0">
+                                      <div class="col-12 col-lg-6 my-1">
+                                        <button class="btn btn-secondary btn-sm btn-first" onclick="pdfViewer.first()"><i class="material-icons-outlined">skip_previous</i></button>
+                                        <button class="btn btn-secondary btn-sm btn-prev" onclick="pdfViewer.prev(); return false;"><i class="material-icons-outlined">navigate_before</i></button>
+                                        <span class="pageno"></span>
+                                        <button class="btn btn-secondary btn-sm btn-next" onclick="pdfViewer.next(); return false;"><i class="material-icons-outlined">navigate_next</i></button>
+                                        <button class="btn btn-secondary btn-sm btn-last" onclick="pdfViewer.last()"><i class="material-icons-outlined">skip_next</i></button>
+                                      </div>
+                                      <div class="col-12 col-lg-6 my-1">
+                                        <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('out')"><i class="material-icons-outlined">zoom_out</i></button>
+                                        <span class="zoomval">100%</span>
+                                        <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('in')"><i class="material-icons-outlined">zoom_in</i></button>
+                                        <button class="btn btn-secondary btn-sm ms-3" onclick="pdfViewer.setZoom('width')"><i class="material-icons-outlined">swap_horiz</i></button>
+                                        <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('height')"><i class="material-icons-outlined">swap_vert</i></button>
+                                        <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('fit')"><i class="material-icons-outlined">fit_screen</i></button>
+                                      </div>
+                                    </div>
+                                    <div class="pdfjs-viewer h-100"></div>
+                                  </div>
+
+                                  @push('styles')
+                                  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+                                  <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
+                                  <style>
+                                  .pdftoolbar,
+                                  .pdftoolbar i {
+                                      font-size: 14px;
+                                  }
+                                  .pdftoolbar span {
+                                      margin-right: 0.5em;
+                                      margin-left: 0.5em;
+                                      width: 4em !important;
+                                      font-size: 12px;
+                                  }
+                                  .pdftoolbar .btn-sm {
+                                      padding: 0.12rem 0.25rem;
+                                  }
+                                  .pdfjs-viewer {
+                                      height: 720px !important;
+                                  }
+                                  .pdftoolbar {
+                                      width: 100%;
+                                      height: auto;
+                                      background: #ddd;
+                                      z-index: 100;
+                                  }
+                                  </style>
+                                  @endpush
+
+                                  @push('scripts')
+
+                                    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+                                    <script src="https://cdn.jsdelivr.net/gh/dealfonso/pdfjs-viewer@1.0.0/pdfjs-viewer.min.js"></script>
+                                    <script>
+                                    var pdfjsLib = window["pdfjs-dist/build/pdf"];
+                                    pdfjsLib.GlobalWorkerOptions.workerSrc =
+                                    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js";
+
+                                    let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
+                                                            onZoomChange: function (zoom) {
+                                                                zoom = parseInt(zoom * 10000) / 100;
+                                                                $(".zoomval").text(zoom + "%");
+                                                            },
+                                                            onActivePageChanged: function (page, pageno) {
+                                                                $(".pageno").text(pageno + "/" + this.getPageCount());
+                                                            }
+                                                        });
+                                    pdfViewer
+                                    .loadDocument("{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}")
+                                    .then(function () {
+                                        pdfViewer.setZoom("width");
+                                    });
+
+                                    </script>
+
+                                  @endpush
+
                         @elseif ($content->type == 'YouTube')
                             <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
                         @endif
@@ -112,6 +189,7 @@
 
 @section('style')
 <link rel="stylesheet" href="{{ $url_ytplayer_css }}">
+</style>
 @endsection
 
 @section('script')
@@ -152,4 +230,5 @@
 
     });
 </script>
+
 @endsection

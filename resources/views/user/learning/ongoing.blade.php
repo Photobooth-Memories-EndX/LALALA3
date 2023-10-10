@@ -65,7 +65,7 @@
                 <div class="card-body">
                     <div id="table-default" class="table-responsive">
                         @unless (count($content_user) == 0)
-                            <table class="table table-bordered table-striped table-vcenter" id="MyTable">
+                            <table class="table table-bordered table-vcenter" id="MyTable">
                                 <thead>
                                     <tr>
                                         <th>#</th>
@@ -74,7 +74,7 @@
                                         <th>Duration</th>
                                         <th>Date</th>
                                         <th width="10%">Progress</th>
-                                        <th>Action</th>
+                                        {{-- <th>Action</th> --}}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -125,11 +125,19 @@
                                             <td>{{ $list->content->date }}</td>
 
                                             <td>
-                                                <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
+                                                {{-- <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
                                                     <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
+                                                </div> --}}
+                                                <div class="progressbg">
+                                                    <div class="progress progressbg-progress">
+                                                      <div class="progress-bar bg-info-lt" style="width: {{ $list->progress }}%" role="progressbar" aria-valuenow="{{ $list->progress }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $list->progress }}%">
+                                                        <span class="visually-hidden">{{ $list->progress }}%</span>
+                                                      </div>
+                                                    </div>
+                                                    <div class="progressbg-text">{{ $list->progress }}%</div>
                                                 </div>
                                             </td>
-                                            <td>
+                                            {{-- <td>
                                                 <div class="d-inline">
                                                     <a href="" class="btn btn-info btn-icon">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -143,7 +151,7 @@
                                                     </a>
                                                 </div>
 
-                                            </td>
+                                            </td> --}}
                                         </tr>
                                     @endforeach
                                 </tbody>
