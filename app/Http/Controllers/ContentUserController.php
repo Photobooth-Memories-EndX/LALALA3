@@ -44,7 +44,7 @@ class ContentUserController extends Controller
             $progression = ((float) $request->current_time / (float) $request->duration) * 100;
             $content_user->progress = $progression;
 
-            if($progression == 100){
+            if($content_user->progress == 100){
                 $content_user->finish = "1";
             }
 

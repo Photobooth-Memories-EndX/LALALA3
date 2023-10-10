@@ -141,14 +141,30 @@
                                     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js";
 
                                     let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
-                                                            onZoomChange: function (zoom) {
-                                                                zoom = parseInt(zoom * 10000) / 100;
-                                                                $(".zoomval").text(zoom + "%");
-                                                            },
-                                                            onActivePageChanged: function (page, pageno) {
-                                                                $(".pageno").text(pageno + "/" + this.getPageCount());
-                                                            }
-                                                        });
+                                                          onDocumentReady: () => {
+                                                              var progression = $('#player_progress').val();
+                                                              var current_page = (progression * pdfViewer.getPageCount()) / 100;
+
+                                                              if(current_page < pdfViewer.getPageCount()){
+                                                                pdfViewer.scrollToPage(current_page);
+                                                              }
+                                                          },
+                                                          onZoomChange: function (zoom) {
+                                                              zoom = parseInt(zoom * 10000) / 100;
+                                                              $(".zoomval").text(zoom + "%");
+                                                          },
+                                                          onActivePageChanged: function (page, pageno) {
+                                                              $(".pageno").text(pageno + "/" + this.getPageCount());
+                                                              $.ajax({
+                                                                  type: "PUT",
+                                                                  url: $('#player_paused').data('url'),
+                                                                  data: {'current_time': pageno, 'duration': this.getPageCount(), '_token': '{{ csrf_token() }}' },
+                                                                  success: function(data){
+                                                                      console.log(data.success)
+                                                                  }
+                                                              });
+                                                          }
+                                                    });
                                     pdfViewer
                                     .loadDocument("{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}")
                                     .then(function () {
@@ -163,10 +179,9 @@
                             <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
                         @endif
 
-                        @if ($content->type == 'Video' || $content->type == 'YouTube')
                         <input type="hidden" id="player_progress" value="{{ $content_user->progress }}">
                         <input type="hidden" data-url="{{ route('content.user.progress', $content->slug) }}" id="player_paused">
-                        @endif
+
                      </div>
 
                     </div>
