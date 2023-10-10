@@ -73,6 +73,7 @@
                                         <th>Classification</th>
                                         <th>Duration</th>
                                         <th>Date</th>
+                                        <th>Status</th>
                                         <th width="10%">Progress</th>
                                         {{-- <th>Action</th> --}}
                                     </tr>
@@ -123,7 +124,7 @@
                                             <td>{{ $list->content->classification->classification_name ?? '' }}</td>
                                             <td>{{ $list->content->duration }}</td>
                                             <td>{{ $list->content->date }}</td>
-
+                                            <td>{{ $list->status }}</td>
                                             <td>
                                                 {{-- <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
                                                     <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
