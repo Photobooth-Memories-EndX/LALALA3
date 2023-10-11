@@ -43,8 +43,9 @@ class AssesmentController extends Controller
         $request->validate([
             'title' => 'required',
             'type' => 'required',
-            'fromdate' => 'required',
-            'todate' => 'required',
+            'timer' => 'required',
+            'fromdate' => 'required_if:timer,y',
+            'todate' => 'required_if:timer,y',
             'passing_grade' => 'required',
         ]);
 
@@ -54,6 +55,7 @@ class AssesmentController extends Controller
         $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title = $request->input('title');
         $assesment->passing_grade = $request->input('passing_grade');
+        $assesment->timer = $request->input('timer');
         $assesment->fromdate = $request->input('fromdate');
         $assesment->todate = $request->input('todate');
         $assesment->save();
@@ -97,8 +99,9 @@ class AssesmentController extends Controller
         $request->validate([
             'title' => 'required',
             'type' => 'required',
-            'fromdate' => 'required',
-            'todate' => 'required',
+            'timer' => 'required',
+            'fromdate' => 'required_if:timer,y',
+            'todate' => 'required_if:timer,y',
             'passing_grade' => 'required',
         ]);
 
@@ -107,6 +110,7 @@ class AssesmentController extends Controller
         $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title = $request->input('title');
         $assesment->passing_grade = $request->input('passing_grade');
+        $assesment->timer = $request->input('timer');
         $assesment->fromdate = $request->input('fromdate');
         $assesment->todate = $request->input('todate');
         $assesment->save();

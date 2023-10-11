@@ -78,8 +78,17 @@
                 <div class="col">
                   <x-input type="number" name="passing_grade" placeholder="Enter passing grade" value="{{ old('passing_grade') }}" />
                 </div>
+
+                <x-label class="col-2 col-form-label required">Time Limit?</x-label>
+                <div class="col">
+                    <x-select name="timer" onchange="setRequiredDate(this);">
+                        <option value="">-choose-</option>
+                        <option value="y" {{ (old('timer') == 'y') ? 'selected' : ''  }}>Yes</option>
+                        <option value="n" {{ (old('timer') == 'n') ? 'selected' : ''  }}>No</option>
+                    </x-select>
+                </div>
             </div>
-            <div class="mb-3 row">
+            <div class="mb-3 row" id="date_wrapper">
               <x-label class="col-3 col-form-label required">From Date</x-label>
               <div class="col">
                 <div class="input-icon">
@@ -94,7 +103,7 @@
                             <path d="M12 15v3" />
                         </svg>
                     </span>
-                    <x-input placeholder="Select a date" id="datepicker-icon-prepend" name="fromdate" value="{{ date('Y-m-d') }}" required />
+                    <x-input placeholder="Select a date" id="datepicker-fromdate" name="fromdate" value="" required class="input-date"/>
                 </div>
               </div>
 
@@ -112,7 +121,7 @@
                             <path d="M12 15v3" />
                         </svg>
                     </span>
-                    <x-input placeholder="Select a date" id="datepicker-icon-prepend2" name="todate" value="{{ date('Y-m-d') }}" required />
+                    <x-input placeholder="Select a date" id="datepicker-todate" name="todate" value="" required class="input-date"/>
                 </div>
               </div>
             </div>
@@ -133,38 +142,18 @@
 
 @section('style')
 <link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
 @endsection
 
 @section('script')
-<script src="{{ asset('Tabler/dist/libs/litepicker/dist/litepicker.js?1684106062') }}" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
-    // @formatter:off
-    document.addEventListener("DOMContentLoaded", function () {
-    	window.Litepicker && (new Litepicker({
-    		element: document.getElementById('datepicker-icon-prepend'),
-    		buttonText: {
-    			previousMonth: `<!-- Download SVG icon from http://tabler-icons.io/i/chevron-left -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6" /></svg>`,
-    			nextMonth: `<!-- Download SVG icon from http://tabler-icons.io/i/chevron-right -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>`,
-    		},
-    	}));
-    });
-    // @formatter:on
 
-    // @formatter:off
-    document.addEventListener("DOMContentLoaded", function () {
-    	window.Litepicker && (new Litepicker({
-    		element: document.getElementById('datepicker-icon-prepend2'),
-    		buttonText: {
-    			previousMonth: `<!-- Download SVG icon from http://tabler-icons.io/i/chevron-left -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6" /></svg>`,
-    			nextMonth: `<!-- Download SVG icon from http://tabler-icons.io/i/chevron-right -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>`,
-    		},
-    	}));
+    $(".input-date").flatpickr({
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
     });
-    // @formatter:on
 
     function setRequired(that) {
 		if (that.value == "content") {
@@ -186,6 +175,20 @@
             $("#trainingplan_id_wrapper").addClass('d-none');
             $("#content_id").val('').change();
             $("#trainingplan_id").val('').change();
+		}
+	}
+
+    function setRequiredDate(that) {
+		if (that.value == "y") {
+            document.getElementById("datepicker-fromdate").setAttribute('required','required');
+            document.getElementById("datepicker-todate").setAttribute('required','required');
+            $("#date_wrapper").removeClass('d-none');
+		} else{
+			document.getElementById("datepicker-fromdate").removeAttribute('required');
+            document.getElementById("datepicker-todate").removeAttribute('required');
+            $("#date_wrapper").addClass('d-none');
+            $("#datepicker-fromdate").val('').change();
+            $("#datepicker-todate").val('').change();
 		}
 	}
   </script>
