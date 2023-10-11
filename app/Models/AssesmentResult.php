@@ -12,4 +12,8 @@ class AssesmentResult extends Model
     protected $casts = [
         'user_answer' => 'array'
     ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

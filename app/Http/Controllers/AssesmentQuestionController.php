@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assesment;
 use App\Models\AssesmentQuestion;
+use App\Models\AssesmentResult;
 use Illuminate\Http\Request;
 
 class AssesmentQuestionController extends Controller
@@ -86,5 +87,11 @@ class AssesmentQuestionController extends Controller
         $assesment_question->save();
 
         return to_route('assesment.question', $assesment->slug)->with('success','Assesment question updated successfully.');
+    }
+
+    public function result(Assesment $assesment)
+    {
+        $assesment_result = AssesmentResult::with('user')->where('assesment_id', $assesment->id)->get();
+        return view('main.assesment.result', compact('assesment', 'assesment_result'));
     }
 }
