@@ -270,7 +270,6 @@
 		}
 
 	}
-
 	.carousel-inner .carousel-item.active,
 	.carousel-inner .carousel-item-next,
 	.carousel-inner .carousel-item-prev {
@@ -319,7 +318,7 @@
             fill: {
                 opacity: 1,
             },
-            series: [45, 55],
+            series: [{{ $content_user->where('finish', '0')->count() }}, {{ $content_user->where('finish', '1')->count() }}],
             labels: ["On Going Course", "Completed Course"],
             tooltip: {
                 theme: 'dark'
