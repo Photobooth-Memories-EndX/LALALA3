@@ -18,9 +18,16 @@ class AssesmentUserController extends Controller
     public function view($slug)
     {
         $assesment = Assesment::findBySlug($slug);
-        if ($assesment === null) {
+        if ($assesment === null or $assesment->status == "NOT") {
             abort(404);
         }
+
+        $assesment_result = AssesmentResult::where('user_id', auth()->user()->id)->where('assesment_id', $assesment->id)->where('batch', $assesment->batch)->first();
+        if($assesment_result ){
+            //abort(404);
+            return view('user.assesment.done', compact('assesment', 'assesment_result'));
+        }
+
         $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
         return view('user.assesment.view', compact('assesment', 'assesment_question'));
     }
