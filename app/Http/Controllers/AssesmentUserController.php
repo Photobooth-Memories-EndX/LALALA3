@@ -18,6 +18,9 @@ class AssesmentUserController extends Controller
     public function view($slug)
     {
         $assesment = Assesment::findBySlug($slug);
+        if ($assesment === null) {
+            abort(404);
+        }
         $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
         return view('user.assesment.view', compact('assesment', 'assesment_question'));
     }
@@ -25,6 +28,9 @@ class AssesmentUserController extends Controller
     public function store(Request $request, $slug)
     {
         $assesment = Assesment::findBySlug($slug);
+        if ($assesment === null) {
+            abort(404);
+        }
         $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
         $assesment_question_count = count($assesment_question);
         // dd($assesment_question);
@@ -56,6 +62,9 @@ class AssesmentUserController extends Controller
     public function result($slug)
     {
         $assesment = Assesment::findBySlug($slug);
+        if ($assesment === null) {
+            abort(404);
+        }
         $assesment_result = AssesmentResult::where('user_id', auth()->user()->id)->where('assesment_id', $assesment->id)->latest()->first();
         // dd($assesment_result );
         return view('user.assesment.result', compact('assesment', 'assesment_result'));

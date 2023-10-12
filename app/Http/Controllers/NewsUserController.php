@@ -17,6 +17,9 @@ class NewsUserController extends Controller
     public function view($slug)
     {
         $news = News::findBySlug($slug);
+        if ($news === null) {
+            abort(404);
+        }
         $news->views += 1;
         $news->save();
         $comment = Comment::with('user')->where('type', 'news')->where('news_id', $news->id)->latest()->get();

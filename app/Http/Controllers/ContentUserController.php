@@ -14,6 +14,9 @@ class ContentUserController extends Controller
     public function view($slug)
     {
         $content = Content::findBySlug($slug);
+        if ($content === null) {
+            abort(404);
+        }
         $content->views += 1;
         $content->save();
 
@@ -31,6 +34,9 @@ class ContentUserController extends Controller
     public function category($slug)
     {
         $category = Classification::findBySlug($slug);
+        if ($category === null) {
+            abort(404);
+        }
         $content = Content::where('classification_id', $category->id)->get();
         return view('user.content.category', compact('content', 'category'));
     }
@@ -38,6 +44,9 @@ class ContentUserController extends Controller
     public function progress(Request $request, $slug)
     {
         $content = Content::findBySlug($slug);
+        if ($content === null) {
+            abort(404);
+        }
         $content_user = ContentUser::where('user_id', auth()->user()->id)->where('content_id', $content->id)->first();
 
         if($content_user->progress != 100) {

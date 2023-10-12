@@ -10,6 +10,9 @@ class PagesUserController extends Controller
     public function view($slug)
     {
         $page = Page::findBySlug($slug);
+        if ($page === null) {
+            abort(404);
+        }
         $page->views += 1;
         $page->save();
         return view('user.page.view', compact('page'));
