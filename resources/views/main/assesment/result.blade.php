@@ -48,9 +48,9 @@
                         <th>Name</th>
                         <th>Team</th>
                         <th>Department</th>
-                        <th>Division</th>
                         <th>Score</th>
                         <th>Batch</th>
+                        <th>Result</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,9 +61,15 @@
                         <td>{{ $list->user->name }}</td>
                         <td>{{ $list->user->team }}</td>
                         <td>{{ $list->user->department }}</td>
-                        <td>{{ $list->user->division }}</td>
                         <td class="text-center">{{ $list->score }}</td>
                         <td class="text-center">{{ $list->batch }}</td>
+                        <td class="text-center">
+                            @if ($list->pass)
+                            <span class="badge bg-green">Pass</span>
+                            @else
+                            <span class="badge bg-red">Failed</span>
+                            @endif
+                        </td>
                     </tr>
                 @endforeach
                 </tbody>

@@ -42,7 +42,7 @@ class AssesmentUserController extends Controller
         // $assesment_result = new AssesmentResult();
         // $assesment_result->user_id = auth()->user()->id;
         // $assesment_result->assesment_id = $assesment->id;
-        $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id]);
+        $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
         $assesment_result->user_answer = $request->except(['_token', '_method']);
 
         //process score
@@ -55,6 +55,14 @@ class AssesmentUserController extends Controller
 
         $assesment_result->score = $score;
         $assesment_result->batch = $assesment->batch;
+
+        // if ($score < $assesment->passing_grade) {
+        //     $assesment_result->pass = 0;
+        // } else {
+        //     $assesment_result->pass = 1;
+        // }
+        $assesment_result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
+
         $assesment_result->save();
 
         return to_route('assesment.user.result', $slug)->with('score', $score);

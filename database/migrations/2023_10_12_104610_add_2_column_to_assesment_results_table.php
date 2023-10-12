@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::table('assesment_results', function (Blueprint $table) {
             $table->after('score', function (Blueprint $table) {
                 $table->integer('batch');
+                $table->integer('pass');
             });
         });
     }
