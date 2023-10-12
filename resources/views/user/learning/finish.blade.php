@@ -101,7 +101,7 @@
                                                         @php
                                                             $filter = $datas->filter(function ($assesment_result) use($list) {
                                                                                 return $assesment_result->user_id==$list->user_id;
-                                                                            })->first();
+                                                                            })->sortByDesc('batch')->first();
                                                         @endphp
                                                         @if (!blank($filter))
                                                             {{ $filter->score }}
