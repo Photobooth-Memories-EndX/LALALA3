@@ -130,4 +130,13 @@ class AssesmentController extends Controller
         return to_route('assesment.index')->with('success','Assesment deleted successfully');
     }
 
+    public function changestatus(Request $request)
+    {
+        $assesment = Assesment::findOrFail($request->id);
+        $assesment->status = $request->status;
+        $assesment->save();
+
+        return response()->json(['success'=>'Status change successfully.']);
+    }
+
 }

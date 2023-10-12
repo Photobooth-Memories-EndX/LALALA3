@@ -66,6 +66,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::put('assesment/update/{assesment}/{id}', [AssesmentQuestionController::class, 'update'])->name('assesment.question.update');
     Route::put('assement/delete-image/{id}', [AssesmentImageController::class, 'deleteImage'])->name('assesment.deleteImage');
     Route::get('assesment/{assesment}/result', [AssesmentQuestionController::class, 'result'])->name('assesment.result');
+    Route::post('assesment/changestatus', [AssesmentController::class, 'changestatus'])->name('assesment.changestatus');
 
     Route::resource('content', ContentController::class);
     Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');

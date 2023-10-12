@@ -210,7 +210,7 @@
 @section('script')
 <script src={{ $url_ytplayer_js }}></script>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    $(document).ready(function() {
         // window.Plyr && (new Plyr('#player'));
         const player = new Plyr('#player', {
                             listeners: { //disable fast forward
@@ -221,9 +221,8 @@
                                 }
                             }
                         });
-        window.player = player;
 
-        player.on('ready', function() {
+        player.on('ready', function() { //alert(player.duration);
             var progression = $('#player_progress').val();
             var current_player_time = (progression * player.duration) / 100;
 

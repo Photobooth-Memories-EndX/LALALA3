@@ -53,8 +53,7 @@
                         <th>Type</th>
                         <th>Title</th>
                         <th>PG</th>
-                        <th>From</th>
-                        <th>To</th>
+                        <th>Datetime</th>
                         <th>Status</th>
                         <th width="10%"></th>
                     </tr>
@@ -70,16 +69,21 @@
                             </a>
                             <button class="btn text-end btn-icon btn-copy" data-clipboard-text="{{ route('assesment.user.view', $list->slug) }}" data-bs-trigger="click" data-bs-toggle="tooltip" title="Copied!" data-bs-placement="bottom">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
-                                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path><path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
                                  </svg>
                             </button>
                         </td>
                         <td>{{ $list->passing_grade }}</td>
-                        <td>{{ date("d/m/y", strtotime($list->fromdate)) }}</td>
-                        <td>{{ date("d/m/y", strtotime($list->todate)) }}</td>
-                        <td>{{ $list->status }}</td>
+
+                        @if($list->timer == 'y')
+                        <td class="text-end">From : {{ date("d/m/y H:i", strtotime($list->fromdate)) }} <br>To : {{ date("d/m/y H:i", strtotime($list->todate)) }}</td>
+                        @else
+                        <td class="text-center">-</td>
+                        @endif
+
+                        <td>
+                            <input data-id="{{ $list->id }}" data-toggle="toggle" class="toggle-class" type="checkbox" data-onstyle="success" data-offstyle="secondary"  data-on="OK" data-off="NOT" data-size="small" data-width="40" {{ $list->status == 'OK' ? 'checked' : '' }}>
+                        </td>
                         <td>
                             <div class="d-inline">
                                 <a href="{{ route('assesment.edit', $list->slug) }}" class="btn btn-info btn-icon mb-1" title="Edit">
@@ -136,15 +140,14 @@
 @section('style')
 <!-- DataTables -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
 @endsection
 
 @section('script')
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
+<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
 <script>
     // let table = new DataTable('#MyTable');
     $(function() {
@@ -171,37 +174,24 @@
         hideTooltip();
     });
 
-    //question form
-    $(document).on('click', '.btn-question', function(e) {
-        e.preventDefault();
-        $('#options').select2({
-            dropdownParent: $('#modal-questions'),
-            theme: 'bootstrap-5',
-            selectionCssClass: 'select2--small',
-            dropdownCssClass: 'select2--small',
-        })
-        $("#overlay").removeClass('d-none');
-        $('#modal-questions').modal('show');
-        $.ajax({
-            type: "GET",
-            url: $(this).data('url'),
-            dataType: "json",
-            success: function(response) {
-                if (response.status == 404) {
-                    alert(response.message);
-                    $('#modal-questions').modal('hide');
-                } else {
+    $('.toggle-class').change(function() {
+          var status = $(this).prop('checked') == true ? 'OK' : 'NOT';
+          var assesment_id = $(this).data('id');
 
-                    $('#title').text(response.assesment.title);
-                    $("#overlay").addClass('d-none');
-
-                }
-            }
-        });
-
-        $("#overlay").addClass('d-none');
-
-    });
+          $.ajax({
+              type: "POST",
+              dataType: "JSON",
+              url: '{{ route("assesment.changestatus") }}',
+              data: {
+                "status": status,
+                "id": assesment_id,
+                "_token": "{{ csrf_token() }}",
+              },
+              success: function(data){
+                console.log(data.success);
+              },
+          });
+      })
 
 </script>
 @endsection
