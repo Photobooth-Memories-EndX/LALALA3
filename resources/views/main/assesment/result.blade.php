@@ -50,6 +50,7 @@
                         <th>Department</th>
                         <th>Division</th>
                         <th>Score</th>
+                        <th>Batch</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,6 +63,7 @@
                         <td>{{ $list->user->department }}</td>
                         <td>{{ $list->user->division }}</td>
                         <td class="text-center">{{ $list->score }}</td>
+                        <td class="text-center">{{ $list->batch }}</td>
                     </tr>
                 @endforeach
                 </tbody>

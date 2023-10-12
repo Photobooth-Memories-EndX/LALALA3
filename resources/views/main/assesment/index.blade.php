@@ -55,7 +55,7 @@
                         <th>PG</th>
                         <th>Datetime</th>
                         <th>Status</th>
-                        <th width="10%"></th>
+                        <th width="12%"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -89,6 +89,14 @@
                                 <a href="{{ route('assesment.edit', $list->slug) }}" class="btn btn-info btn-icon mb-1" title="Edit">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path>
+                                     </svg>
+                                </a>
+                            </div>
+
+                            <div class="d-inline">
+                                <a class="btn btn-secondary btn-icon btn-newlink mb-1" href="{{ route('assesment.newlink', $list->slug) }}" title="Generate new link">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-refresh" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"></path><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"></path>
                                      </svg>
                                 </a>
                             </div>
@@ -135,12 +143,89 @@
   </div>
   <!-- Page body -->
 
+<!-- Modal Question -->
+<div class="modal modal-blur fade" id="modal-newlink" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+      <div class="modal-content">
+        <div class="d-none modal-blur" id="overlay">
+            <div class="text-center">
+              <div class="text-muted mb-3">Getting assesment data</div>
+              <div class="progress">
+                <div class="progress-bar progress-bar-indeterminate"></div>
+              </div>
+            </div>
+        </div>
+        <div class="modal-header">
+          <h5 class="modal-title">Generate New Assement Link</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <x-form action="" method="put">
+
+                    <div class="mb-3 row">
+                        <x-label class="col-3 col-form-label required">Title</x-label>
+                        <div class="col">
+                          <x-input type="text" name="title" placeholder="Enter title" id="title" />
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <x-label class="col-3 col-form-label required">Passing Grade</x-label>
+                        <div class="col">
+                          <x-input type="number" name="passing_grade" placeholder="Enter passing grade" id="passing_grade" />
+                        </div>
+                        <x-label class="col-2 col-form-label required">Time Limit?</x-label>
+                        <div class="col">
+                            <x-select name="timer" id="timer" onchange="setRequiredDate(this);">
+                                <option value="">-choose-</option>
+                                <option value="y">Yes</option>
+                                <option value="n">No</option>
+                            </x-select>
+                        </div>
+                    </div>
+                    <div class="mb-3 row" id="date_wrapper">
+                      <x-label class="col-3 col-form-label required">From Date</x-label>
+                      <div class="col">
+                        <div class="input-icon">
+                            <span class="input-icon-addon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M11 15h1" /><path d="M12 15v3" />
+                                </svg>
+                            </span>
+                            <x-input placeholder="Select a date" id="datepicker-fromdate" name="fromdate" required class="input-date" />
+                        </div>
+                      </div>
+
+                      <x-label class="col-2 col-form-label required">To Date</x-label>
+                      <div class="col">
+                        <div class="input-icon">
+                            <span class="input-icon-addon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M11 15h1" /><path d="M12 15v3" />
+                                </svg>
+                            </span>
+                            <x-input placeholder="Select a date" id="datepicker-todate" name="todate" required class="input-date" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <x-button>Submit</x-button>
+                </x-form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 @endsection
 
 @section('style')
 <!-- DataTables -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+<style>
+    #overlay{position: absolute;top: 0rem;right: 0rem;left: 0rem;bottom: 0rem;display: -webkit-box;display: -webkit-flex;display: -ms-flexbox;display: flex;-webkit-align-items: center;-webkit-box-align: center;-ms-flex-align: center;align-items: center;-webkit-box-pack: center;-ms-flex-pack: center;-webkit-justify-content: center;justify-content: center;overflow: hidden;border-radius: 0.25rem;z-index: 1000;}
+</style>
 @endsection
 
 @section('script')
@@ -191,7 +276,8 @@
                 console.log(data.success);
               },
           });
-      })
+    })
+
 
 </script>
 @endsection

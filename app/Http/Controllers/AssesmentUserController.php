@@ -54,6 +54,7 @@ class AssesmentUserController extends Controller
         //process score
 
         $assesment_result->score = $score;
+        $assesment_result->batch = $assesment->batch;
         $assesment_result->save();
 
         return to_route('assesment.user.result', $slug)->with('score', $score);

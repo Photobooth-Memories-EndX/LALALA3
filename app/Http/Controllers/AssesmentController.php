@@ -139,4 +139,29 @@ class AssesmentController extends Controller
         return response()->json(['success'=>'Status change successfully.']);
     }
 
+    public function newlink(Assesment $assesment)
+    {
+        return view('main.assesment.newlink', compact('assesment'));
+    }
+
+    public function updatelink(Request $request, Assesment $assesment)
+    {
+        $request->validate([
+            'slug' => 'required',
+            'batch' => 'required',
+            'timer' => 'required',
+            'fromdate' => 'required_if:timer,y',
+            'todate' => 'required_if:timer,y',
+        ]);
+
+        $assesment->slug = $request->input('slug');
+        $assesment->timer = $request->input('timer');
+        $assesment->fromdate = $request->input('fromdate');
+        $assesment->todate = $request->input('todate');
+        $assesment->batch = $request->input('batch');
+        $assesment->save();
+
+        return to_route('assesment.index')->with('success','Assesment updated successfully');
+    }
+
 }
