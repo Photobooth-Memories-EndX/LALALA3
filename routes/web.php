@@ -18,6 +18,7 @@ use App\Http\Controllers\PagesUserController;
 use App\Http\Controllers\EventPhotoController;
 use App\Http\Controllers\ContentUserController;
 use App\Http\Controllers\GalleryUserController;
+use App\Http\Controllers\PlaylistUserController;
 use App\Http\Controllers\TrainingPlanController;
 use App\Http\Controllers\AssesmentUserController;
 use App\Http\Controllers\ContentDeleteController;
