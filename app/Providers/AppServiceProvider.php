@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Models\ContentUser;
 use Illuminate\Support\Str;
 use App\Models\Classification;
-use App\Models\ContentUser;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -39,5 +41,12 @@ class AppServiceProvider extends ServiceProvider
         Str::macro('initials', fn ($value, $sep = ' ', $glue = '') => trim(collect(explode($sep, $value))->map(function ($segment) {
             return $segment[0] ?? '';
         })->join($glue)));
+
+        Gate::Define('admin', function (User $user) { //use on 'can'/'canany' blade
+            return $user->role === '2';
+        });
+        Gate::Define('superadmin', function (User $user) {
+            return $user->role === '3';
+        });
     }
 }

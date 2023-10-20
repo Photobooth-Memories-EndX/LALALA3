@@ -129,8 +129,26 @@
                             </span>
                         </a>
                     </li>
+                    <li class="nav-item {{ request()->is('content*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('content.user.index') }}">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/home -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-list-details" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M13 5h8"></path>
+                                    <path d="M13 9h5"></path>
+                                    <path d="M13 15h8"></path>
+                                    <path d="M13 19h5"></path>
+                                    <path d="M3 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path>
+                                    <path d="M3 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path>
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                All Content
+                            </span>
+                        </a>
+                    </li>
 
-                    <li class="nav-item dropdown">
+                    <li class="nav-item dropdown {{ request()->is('learning*') ? 'active' : '' }}">
                         <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
                             <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -162,7 +180,7 @@
                         </div>
                     </li>
 
-                    <li class="nav-item dropdown">
+                    <li class="nav-item dropdown {{ request()->is('category*') ? 'active' : '' }}">
                         <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
                             <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -186,6 +204,23 @@
                         </div>
                     </li>
 
+                    <li class="nav-item {{ request()->is('playlist*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ url('/playlist') }}">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/article -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-subtask" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M6 9l6 0"></path>
+                                    <path d="M4 5l4 0"></path>
+                                    <path d="M6 5v11a1 1 0 0 0 1 1h5"></path>
+                                    <path d="M12 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"></path>
+                                    <path d="M12 15m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"></path>
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                Playlist
+                            </span>
+                        </a>
+                    </li>
                     <li class="nav-item {{ request()->is('news*') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ url('/news') }}">
                             <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/article -->
@@ -217,93 +252,98 @@
                             </span>
                         </a>
                     </li>
+                    @can('admin')
+                        <li class="nav-item dropdown {{ request()->is('manage*') ? 'active' : '' }}">
+                            <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M12 6m-8 0a8 3 0 1 0 16 0a8 3 0 1 0 -16 0"></path>
+                                        <path d="M4 6v6a8 3 0 0 0 16 0v-6"></path>
+                                        <path d="M4 12v6a8 3 0 0 0 16 0v-6"></path>
+                                    </svg>
+                                </span>
+                                <span class="nav-link-title">
+                                    Manage
+                                </span>
+                            </a>
+                            <div class="dropdown-menu">
 
-                    <li class="nav-item dropdown {{ request()->is('manage*') ? 'active' : '' }}">
-                        <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
-                            <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M12 6m-8 0a8 3 0 1 0 16 0a8 3 0 1 0 -16 0"></path>
-                                    <path d="M4 6v6a8 3 0 0 0 16 0v-6"></path>
-                                    <path d="M4 12v6a8 3 0 0 0 16 0v-6"></path>
-                                </svg>
-                            </span>
-                            <span class="nav-link-title">
-                                Manage
-                            </span>
-                        </a>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="{{ url('manage/content/list/ongoing') }}" rel="noopener">
-                                Ongoing Learning
-                            </a>
-                            <a class="dropdown-item" href="{{ url('manage/user') }}" rel="noopener">
-                                User
-                            </a>
-                            <a class="dropdown-item" href="{{ url('manage/pages') }}" rel="noopener">
-                                Page
-                            </a>
-                            <a class="dropdown-item" href="{{ url('manage/news') }}" rel="noopener">
-                                News
-                            </a>
-                            <a class="dropdown-item" href="{{ url('manage/content') }}" rel="noopener">
-                                Content
-                            </a>
-                            <a class="dropdown-item" href="{{ url('manage/classification') }}" rel="noopener">
-                                Category
-                            </a>
-                            <a class="dropdown-item" href="{{ url('manage/assesment') }}" rel="noopener">
-                                Assesment
-                            </a>
-                            <a class="dropdown-item" href="{{ url('manage/trainingplan') }}" rel="noopener">
-                                Training Plan
-                            </a>
-                            <a class="dropdown-item" href="{{ url('manage/eventphoto') }}" rel="noopener">
-                                Event Photo Gallery
-                            </a>
-                        </div>
-                    </li>
+                                <a class="dropdown-item" href="{{ url('manage/learning') }}" rel="noopener">
+                                    Learning
+                                </a>
+                                <a class="dropdown-item" href="{{ url('manage/user') }}" rel="noopener">
+                                    User
+                                </a>
+                                <a class="dropdown-item" href="{{ url('manage/pages') }}" rel="noopener">
+                                    Page
+                                </a>
+                                <a class="dropdown-item" href="{{ url('manage/news') }}" rel="noopener">
+                                    News
+                                </a>
+                                <a class="dropdown-item" href="{{ url('manage/content') }}" rel="noopener">
+                                    Content
+                                </a>
+                                <a class="dropdown-item" href="{{ url('manage/classification') }}" rel="noopener">
+                                    Category
+                                </a>
+                                <a class="dropdown-item" href="{{ url('manage/assesment') }}" rel="noopener">
+                                    Assesment
+                                </a>
+                                <a class="dropdown-item" href="{{ url('manage/trainingplan') }}" rel="noopener">
+                                    Playlist
+                                </a>
+                                <a class="dropdown-item" href="{{ url('manage/eventphoto') }}" rel="noopener">
+                                    Event Photo Gallery
+                                </a>
+                            </div>
+                        </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url('/Tabler/index.html') }}" target="_blank">
-                            <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/checkbox -->
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M9 11l3 3l8 -8" />
-                                    <path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9" />
-                                </svg>
-                            </span>
-                            <span class="nav-link-title">
-                                Template
-                            </span>
-                        </a>
-                    </li>
+                        {{-- <li class="nav-item">
+                            <a class="nav-link" href="{{ url('/Tabler/index.html') }}" target="_blank">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/checkbox -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M9 11l3 3l8 -8" />
+                                        <path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9" />
+                                    </svg>
+                                </span>
+                                <span class="nav-link-title">
+                                    Template
+                                </span>
+                            </a>
+                        </li> --}}
 
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
-                            <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/lifebuoy -->
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
-                                    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                                    <path d="M15 15l3.35 3.35" />
-                                    <path d="M9 15l-3.35 3.35" />
-                                    <path d="M5.65 5.65l3.35 3.35" />
-                                    <path d="M18.35 5.65l-3.35 3.35" />
-                                </svg>
-                            </span>
-                            <span class="nav-link-title">
-                                Help
-                            </span>
-                        </a>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="https://tabler.io/docs" target="_blank" rel="noopener">
-                                Documentation <span class="badge badge-sm bg-green-lt text-uppercase ms-auto">New</span>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/lifebuoy -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+                                        <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                                        <path d="M15 15l3.35 3.35" />
+                                        <path d="M9 15l-3.35 3.35" />
+                                        <path d="M5.65 5.65l3.35 3.35" />
+                                        <path d="M18.35 5.65l-3.35 3.35" />
+                                    </svg>
+                                </span>
+                                <span class="nav-link-title">
+                                    Help
+                                </span>
                             </a>
-                            <a class="dropdown-item" href="https://github.com/tabler/tabler" target="_blank" rel="noopener">
-                                Source code
-                            </a>
-                        </div>
-                    </li>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="https://tabler.io/docs" target="_blank" rel="noopener">
+                                    Documentation <span class="badge badge-sm bg-green-lt text-uppercase ms-auto">New</span>
+                                </a>
+                                <a class="dropdown-item" href="https://github.com/tabler/tabler" target="_blank" rel="noopener">
+                                    Source code
+                                </a>
+                                <a class="dropdown-item" href="{{ url('/Tabler/index.html') }}" target="_blank" rel="noopener">
+                                    Template
+                                </a>
+                            </div>
+                        </li>
+                    @endcan
                 </ul>
                 <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-first order-md-last">
                     <form action="{{ route('search', 'all') }}" method="get" autocomplete="off" novalidate>

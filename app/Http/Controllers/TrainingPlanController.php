@@ -34,7 +34,7 @@ class TrainingPlanController extends Controller
 
         // return $trainingplan;
         return view('main.trainingplan.index', [
-            "title" =>  "Training Plan List",
+            "title" =>  "Playlist",
             "trainingplan" => $trainingplan
         ]);
         // return "aaa";
@@ -49,7 +49,7 @@ class TrainingPlanController extends Controller
         // return json_encode($activecontent);
         // return $trainingplandetail;
         return view('main.trainingplan.order', [
-            "title" =>  "Edit Training Plan",
+            "title" =>  "Edit Playlist",
             "slug" =>  $trainingplan->slug,
             "trainingplandetail" =>  $trainingplandetail,
             "content" =>  $content
@@ -66,7 +66,7 @@ class TrainingPlanController extends Controller
 
 
     //     return redirect()->route('trainingplan.edit', $trainingplan->slug)
-    //     ->with('success', 'Training plan updated successfully');
+    //     ->with('success', 'Playlist updated successfully');
     // }
 
     /**
@@ -79,7 +79,7 @@ class TrainingPlanController extends Controller
         $content = Content::where('deleted_at', NULL)->where('active', 'Active')->get();
         // return $content[0]->id;
         return view('main.trainingplan.create', [
-            "title" =>  "Add Training Plan",
+            "title" =>  "Add Playlist",
             "content" => $content
         ]);
     }
@@ -117,7 +117,7 @@ class TrainingPlanController extends Controller
             $newtrainingplandetail->save();
             // echo "$value<br>";
         }
-        return to_route('trainingplan.edit', $newtrainingplan->slug)->with('success', 'Training plan successfully saved ' . $addmessage);
+        return to_route('trainingplan.edit', $newtrainingplan->slug)->with('success', 'Playlist successfully saved ' . $addmessage);
     }
 
     /**
@@ -148,7 +148,7 @@ class TrainingPlanController extends Controller
 
         // return json_encode($activecontent);
         return view('main.trainingplan.edit', [
-            "title" =>  "Edit Training Plan",
+            "title" =>  "Edit Playlist",
             "trainingplan" =>  $trainingplan,
             "content" =>  $content,
             "activecontent" =>  $activecontent
@@ -191,7 +191,7 @@ class TrainingPlanController extends Controller
                         'active' => 'Inactive'
                     ]);
                 return redirect()->route('trainingplan.edit', $trainingplan->slug)
-                    ->with('success', 'Training plan updated successfully');
+                    ->with('success', 'Playlist updated successfully');
             }
 
             $trainingplan->save();
@@ -232,7 +232,7 @@ class TrainingPlanController extends Controller
             }
         }
         return redirect()->route('trainingplan.edit', $trainingplan->slug)
-            ->with('success', 'Training plan updated successfully');
+            ->with('success', 'Playlist updated successfully');
     }
 
     /**
@@ -250,6 +250,6 @@ class TrainingPlanController extends Controller
         // } else {
         //     return "not success";
         // }
-        return to_route('trainingplan.index')->with('success', 'Training plan successfully deleted');
+        return to_route('trainingplan.index')->with('success', 'Playlist successfully deleted');
     }
 }

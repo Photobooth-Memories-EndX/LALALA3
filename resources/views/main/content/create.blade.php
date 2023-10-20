@@ -101,7 +101,7 @@
                             </div>
                             <div class="col-xl-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Duration</label>
+                                    <label class="form-label">Duration (mm:ss)</label>
                                     <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration">
                                 </div>
                             </div>

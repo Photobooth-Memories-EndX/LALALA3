@@ -39,13 +39,13 @@
     <div class="page page-center">
         <div class="container container-tight py-4">
             <div class="text-center mb-4">
-                <a href="." class="navbar-brand navbar-brand-autodark"><img src="Tabler/static/logo.svg" height="36" alt=""></a>
+                <a href="." class="navbar-brand navbar-brand-autodark"><img src="books.png" height="70" alt=""></a>
             </div>
             <div class="card card-md">
                 <div class="card-body">
                     <x-alert type='success' />
                     <x-alert type='warning' />
-                    <h2 class="h2 text-center mb-4">Knowledge Managament System</h2>
+                    <h2 class="h2 text-center mb-4">Knowledge Management System</h2>
                     <form action="{{ route('authuser') }}" method="post" autocomplete="off" novalidate>
                         @csrf
                         <div class="mb-3">

@@ -3,10 +3,16 @@
 @php
     $url = '';
     if ($attributes->get('type') == 'content') {
+        $hiddenplaylistslug = '';
         $url = route('content.comment.store', $content->slug);
     } elseif ($attributes->get('type') == 'news') {
+        $hiddenplaylistslug = '';
         $url = route('news.comment.store', $content->slug);
+    } elseif ($attributes->get('type') == 'contentplaylist') {
+        $hiddenplaylistslug = $attributes->get('playlistslug');
+        $url = route('contentplaylist.comment.store', $content->slug);
     } else {
+        $hiddenplaylistslug = '';
         $url = route('gallery.comment.store', $content->slug);
     }
 @endphp
@@ -22,6 +28,8 @@
                 <div class="col">
                     <x-form action="{{ $url }}" method="post">
                         <x-textarea class="form-control" name="description" data-bs-toggle="autosize" placeholder="Enter your thoughts.…" onkeyup="countWord(this)" maxlength="1000" cols="1000"></x-textarea>
+                        {{-- {{ $hiddenplaylistslug }} --}}
+                        <input type="hidden" value="{{ $hiddenplaylistslug }}" name="playlistslug">
                         <div class="row mt-3">
                             <div class="col">
                                 <span id="note_remaining" class="text-muted small">1000 characters remaining</span>

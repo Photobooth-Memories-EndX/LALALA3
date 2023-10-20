@@ -14,7 +14,7 @@
                     <div class="d-flex">
                         <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
                             <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                            <li class="breadcrumb-item"><a href="#">Training Plan</a></li>
+                            <li class="breadcrumb-item"><a href="#">Playlist</a></li>
                             <li class="breadcrumb-item active" aria-current="page"><a href="#">{{ $title }}</a>
                             </li>
                         </ol>
@@ -58,7 +58,7 @@
                                 <path d="M12 5l0 14"></path>
                                 <path d="M5 12l14 0"></path>
                             </svg>
-                            Add new Training Plan
+                            Add new Playlist
                         </a>
                     </div>
                 </div>
@@ -98,7 +98,7 @@
                                             <td>{{ Str::limit($list->title, 25) }}</td>
                                             <td data-bs-trigger="hover" data-bs-toggle="popover" title="Content List" data-bs-html="true" data-bs-content="{{ $listcontent }}">
                                                 @foreach ($list->trainingplandetail->take(3) as $detail)
-                                                    {{ $detail->content->id }} - {{ $detail->content->title }}<br>
+                                                    - {{ $detail->content->title }}<br>
                                                 @endforeach
                                                 @if (count($list->trainingplandetail) >= 4)
                                                     - ......
@@ -139,7 +139,7 @@
                                 </tbody>
                             </table>
                         @else
-                            <p>No training plan data found</p>
+                            <p>No Playlist data found</p>
                         @endunless
                     </div>
                 </div>

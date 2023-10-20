@@ -20,8 +20,8 @@
                     <div class="d-flex">
                         <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
                             <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('trainingplan.index') }}">Training Plan</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('trainingplan.edit', $slug) }}">Edit Training Plan</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('trainingplan.index') }}">Playlist</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('trainingplan.edit', $slug) }}">Edit Playlist</a></li>
                             <li class="breadcrumb-item active" aria-current="page"><a href="#">{{ $title }}</a>
                             </li>
                         </ol>

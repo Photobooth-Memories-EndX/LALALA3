@@ -23,7 +23,7 @@
                     <div class="d-flex">
                         <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
                             <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('trainingplan.index') }}">Training Plan</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('trainingplan.index') }}">Playlist</a></li>
                             <li class="breadcrumb-item active" aria-current="page"><a href="#">{{ $title }}</a>
                             </li>
                         </ol>
@@ -72,7 +72,7 @@
                     @method('PUT')
                     <input type="hidden" name="savetype" value="update">
                     <div class="card-body">
-                        <h2 class="card-title text-center mb-4">Edit Training Plan</h2>
+                        <h2 class="card-title text-center mb-4">Edit Playlist</h2>
                         <div class="row">
                             <div class="col-xl-6">
                                 <div class="mb-3">
@@ -137,7 +137,7 @@
                             <button type="submit" class="btn btn-primary" name="action" value="publish">Save & Publish</button> --}}
 
                             @if ($trainingplan->active == 'Active')
-                                <button type="submit" class="btn btn-warning" name="action" value="unpublish">Unpublish This Training Plan</button>
+                                <button type="submit" class="btn btn-warning" name="action" value="unpublish">Unpublish This Playlist</button>
                             @else
                                 <a type="button" class="btn btn-info" href="{{ route('trainingplan.order', $trainingplan->slug) }}">Re-order Content</a>
                                 <button type="submit" class="btn btn-success" name="action" value="save" formnovalidate>Save</button>

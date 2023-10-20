@@ -31,12 +31,59 @@
             <!-- Card -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Learning On Going</h3>
+                    <h3 class="card-title">{{ $title }}</h3>
                     <div class="card-actions row">
                         <!-- Page title actions -->
                         <div class="col-auto ms-auto d-print-none">
                             <div class="d-flex">
-                                <div class="me-3 row">
+                                @php
+                                    $arrayyear = ['all', '2023', '2024', '2025'];
+                                    $arraystatus = ['all' => 'All', 'mandatory' => 'Mandatory Learning', 'optional' => 'Optional Learning'];
+                                @endphp
+
+                                <form name="form1" id="form1">
+                                    <table class="tbffff">
+                                        <tr>
+                                            <td><x-label class="col-form-label">Learning Program:</x-label></td>
+                                            <td><x-select name="status" class="col">
+                                                    @foreach ($arraystatus as $key => $value)
+                                                        <option value="{{ $key }}" @if (request('status') == $key) selected @endif>{{ $value }}</option>
+                                                    @endforeach
+                                                </x-select></td>
+                                            <td><x-select name="year" class="col">
+                                                    @foreach ($arrayyear as $year)
+                                                        <option value="{{ $year }}" @if (request('year') == $year) selected @endif>{{ $year }}</option>
+                                                    @endforeach
+                                                </x-select></td>
+                                            <td><x-button class="btn-icon" onclick="submitForm('{{ url()->current() }}')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
+                                                        <path d="M21 21l-6 -6"></path>
+                                                    </svg>
+                                                </x-button></td>
+                                            <td><x-button class="btn-icon btn-green" onclick="submitForm('{{ route('manage.learning.download') }}')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>
+                                                        <path d="M7 11l5 5l5 -5"></path>
+                                                        <path d="M12 4l0 12"></path>
+                                                    </svg>
+                                                </x-button></td>
+                                        </tr>
+                                        {{-- {{ count(request()->segments()) }} --}}
+                                        <input type="hidden" name="type" value="{{ request()->segment(3) }}">
+                                        <input type="hidden" name="slug" value="{{ $downloadslug }}">
+                                    </table>
+                                </form>
+                                {{-- <form action="{{ route('manage.learning.download') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="status" value="mandatory">
+                                    <input type="hidden" name="year" value="all">
+                                    <input type="hidden" name="type" value="all">
+                                    <input type="submit">
+                                </form> --}}
+                                {{-- <div class="me-3 row">
                                     <x-label class="col-6 col-form-label">Learning Program: </x-label>
                                     <x-select name="status" class="col">
                                         <option value="">-choose-</option>
@@ -57,13 +104,14 @@
                                         <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
                                         <path d="M21 21l-6 -6"></path>
                                     </svg>
-                                </x-button>
+                                </x-button> --}}
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
                     <div id="table-default" class="table-responsive">
+
                         {{-- {{ $content }} --}}
                         @unless (count($content) == 0)
                             <table class="table table-bordered table-striped table-vcenter" id="MyTable">
@@ -92,7 +140,7 @@
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
                                             <td>{{ $list->status }}</td>
-                                            <td>{{ $list->user->name }}</td>
+                                            <td><a href="{{ route('user.manage.profile', $list->user->ssohash) }}">{{ $list->user->name }}</a></td>
                                             <td>
                                                 <div class="row align-items-center">
                                                     <div class="col-auto">
@@ -120,14 +168,14 @@
 
                                                     </div>
                                                     <div class="col">
-                                                        <a href="{{ route('content.user.view', $list->content->slug) }}" class="text-reset">{{ $list->content->title }}</a>
+                                                        <a href="{{ route('learning.manage.content', $list->content->slug) }}" class="text-reset">{{ $list->content->title }}</a>
                                                     </div>
                                                 </div>
 
                                             </td>
-                                            <td>{{ $list->content->classification->classification_name ?? '' }}</td>
+                                            <td><a href="{{ route('learning.manage.category', $list->content->classification->slug) }}" class="text-reset">{{ $list->content->classification->classification_name ?? '' }}</a></td>
                                             <td>{{ $list->content->duration }}</td>
-                                            <td>{{ $list->content->date }}</td>
+                                            <td>{{ $list->created_at }}</td>
 
                                             <td>
                                                 <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
@@ -170,12 +218,25 @@
 
 @section('style')
     <!-- DataTables -->
+    <style>
+        .tbffff tr td {
+            padding-left: 10px;
+            /* border: 1px solid black; */
+        }
+    </style>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 @endsection
 
 @section('script')
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript">
+        function submitForm(action) {
+            var form = document.getElementById('form1');
+            form.action = action;
+            form.submit();
+        }
+    </script>
     <script>
         // let table = new DataTable('#MyTable');
         $(function() {

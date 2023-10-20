@@ -16,9 +16,9 @@ class Classification extends Model
     protected $guarded = ['id'];
     public function content()
     {
-        // return $this->hasMany(Content::class);
+        return $this->hasMany(Content::class);
     }
-    public function getSlugOptions() : SlugOptions
+    public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
             ->generateSlugsFrom('classification_name')

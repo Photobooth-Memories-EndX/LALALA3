@@ -11,6 +11,11 @@ use Illuminate\Http\Request;
 
 class ContentUserController extends Controller
 {
+    public function index()
+    {
+        $content = Content::all();
+        return view('user.content.index', compact('content'));
+    }
     public function view($slug)
     {
         $content = Content::findBySlug($slug);
@@ -49,25 +54,22 @@ class ContentUserController extends Controller
         }
         $content_user = ContentUser::where('user_id', auth()->user()->id)->where('content_id', $content->id)->first();
 
-        if($content_user->progress != 100) {
+        if ($content_user->progress != 100) {
             $progression = ((float) $request->current_time / (float) $request->duration) * 100;
             $content_user->progress = $progression;
 
-            if($content_user->progress == 100){
+            if ($content_user->progress == 100) {
                 $content_user->finish = "1";
             }
 
             $content_user->save();
 
-            return response()->json(['success'=>'Progress saved', 'status'=>200]);
-
+            return response()->json(['success' => 'Progress saved', 'status' => 200]);
         } else {
 
             $content_user->finish = "1";
             $content_user->save();
-            return response()->json(['success'=>'Watching again', 'status'=>200]);
-
+            return response()->json(['success' => 'Watching again', 'status' => 200]);
         }
-
     }
 }

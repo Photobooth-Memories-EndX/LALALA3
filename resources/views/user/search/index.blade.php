@@ -58,6 +58,10 @@
                                     Gallery
                                     <small class="text-muted ms-auto">{{ $totaleventphoto }}</small>
                                 </a>
+                                <a class="list-group-item list-group-item-action d-flex align-items-center {{ request()->is('search/playlist*') ? 'active' : '' }}" href="{{ route('search', 'playlist') }}?s={{ request('s') }}">
+                                    Playlist
+                                    <small class="text-muted ms-auto">{{ $totalplaylist }}</small>
+                                </a>
                             </div>
 
 
@@ -78,7 +82,7 @@
                                             }
                                         </style>
                                         @php
-                                            
+
                                             $now = time(); // or your date as well
                                             $datediff = $now - strtotime($list->created_at);
                                             $showdate = round($datediff / (60 * 60 * 24));
@@ -111,6 +115,24 @@
                                                     <a href="{{ route('content.user.view', $list->slug) }}" class="d-block"><img src="{{ asset('default-video.jpg') }}" class="card-img-top cropped-ofp"></a>
                                                 @endif
                                             @endif
+                                        @elseif($list->searchtype == 'playlist')
+                                            <div class="ribbon bg-purple">{{ $list->searchlabel }}</div>
+                                            <a href="{{ route('playlist.user.view', [$list->slug, $list->trainingplandetail[0]->content->slug]) }}" class="d-block">
+                                                @if ($list->trainingplandetail[0]->content->type == 'YouTube')
+                                                    <img src="http://img.youtube.com/vi/{{ $list->trainingplandetail[0]->content->link }}/mqdefault.jpg" class="card-img-top cropped-ofp">
+                                                @else
+                                                    @php
+                                                        $src = 'storage/files/content/' . $list->trainingplandetail[0]->content->id . '/thumb.jpg';
+                                                    @endphp
+                                                    @if (\File::exists(public_path($src)) && !is_dir($src))
+                                                        <img src="{{ asset($src) }}" class="card-img-top cropped-ofp">
+                                                    @else
+                                                        <img src="{{ asset('default-video.jpg') }}" class="card-img-top cropped-ofp">
+                                                    @endif
+                                                @endif
+                                                {{-- <img src="{{ asset('storage/news') . '/' . $list->trainingplandetail[0]->content }}" class="card-img-top cropped-ofp"> --}}
+
+                                            </a>
                                         @endif
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">

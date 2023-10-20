@@ -20,7 +20,7 @@ class TrainingPlan extends Model
     {
         // return $this->belongsTo(trainingplandetail::class,  'id', 'trainingplan_id');
         // return $this->belongsTo(trainingplandetail::class,  'trainingplan_id', 'id');
-        return $this->hasMany(trainingplandetail::class,  'trainingplan_id', 'id');
+        return $this->hasMany(TrainingPlanDetail::class,  'trainingplan_id', 'id');
     }
     public function getSlugOptions(): SlugOptions
     {

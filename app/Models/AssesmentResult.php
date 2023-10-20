@@ -16,4 +16,8 @@ class AssesmentResult extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function assesment()
+    {
+        return $this->belongsTo(Assesment::class);
+    }
 }

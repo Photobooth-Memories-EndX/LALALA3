@@ -19,16 +19,16 @@ class ContentController extends Controller
             "content" => $content
         ]);
     }
-    public function ongoingcontent()
-    {
-        // return "aaaa";
-        $content = ContentUser::with('user')->get();
-        // return $content;
-        return view('main.content.ongoing', [
-            "title" =>  "Content List",
-            "content" => $content
-        ]);
-    }
+    // public function ongoingcontent()
+    // {
+    //     // return "aaaa";
+    //     $content = ContentUser::with('user')->get();
+    //     // return $content;
+    //     return view('main.content.ongoing', [
+    //         "title" =>  "Content List",
+    //         "content" => $content
+    //     ]);
+    // }
 
     public function create()
     {

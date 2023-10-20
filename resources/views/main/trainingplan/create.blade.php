@@ -23,7 +23,7 @@
                     <div class="d-flex">
                         <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
                             <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('trainingplan.index') }}">Training Plan</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('trainingplan.index') }}">Playlist</a></li>
                             <li class="breadcrumb-item active" aria-current="page"><a href="#">{{ $title }}</a>
                             </li>
                         </ol>
@@ -55,7 +55,7 @@
                     @csrf
                     @method('POST')
                     <div class="card-body">
-                        <h2 class="card-title text-center mb-4">Create new Training Plan</h2>
+                        <h2 class="card-title text-center mb-4">Create new Playlist</h2>
                         <div class="row">
                             <div class="col-xl-6">
                                 <div class="mb-3">

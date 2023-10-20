@@ -4,7 +4,7 @@
         $url_lightbox_js = asset('Tabler/dist/libs/fslightbox/index.js?1684106062');
         $search = ['[', ']', '"'];
         $arraypic = explode(',', $eventphoto->photos);
-        
+
     @endphp
     <div class="page-header d-print-none">
         <div class="container-xl">
@@ -14,7 +14,9 @@
                         {{ $eventphoto->title }}
                     </h2>
                     <div class="text-muted mt-1">
-                        {{ count($arraypic) }} photos (ifadmin)<a href="{{ route('eventphoto.edit', $eventphoto->slug) }}">Manage</a>(/ifadmin)
+                        {{ count($arraypic) }} photos @can('admin')
+                            <a href="{{ route('eventphoto.edit', $eventphoto->slug) }}">Manage</a>
+                        @endcan
                     </div>
                 </div>
             </div>
