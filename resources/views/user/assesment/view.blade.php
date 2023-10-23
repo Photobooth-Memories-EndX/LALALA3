@@ -3,10 +3,12 @@
 
 <div class="page-body">
     <div class="container-xl">
+        @if ($assesment->timer == 'y')
         <div class="row g-2 align-items-center">
             <div class="col"></div>
             <div class="col-auto ms-auto d-print-none h1" id="timer"></div>
         </div>
+        @endif
 
         <div class="card card-lg">
             <div class="card-body ">
@@ -38,11 +40,16 @@
                                 @endforeach
                             </ul>
 
+                            <!-- Include optional progressbar HTML -->
+                            <div class="progress" style="display: none;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+
                             <div class="tab-content">
                                 @foreach ($assesment_question as $step)
                                 <div id="step-{{ $step->id }}" class="tab-pane" role="tabpanel" aria-labelledby="step-{{ $step->id }}">
                                     <div class="mb-3">
-                                        <label class="form-label">{{ $step->question }}</label>
+                                        <label class="form-label h2">{{ $step->question }}</label>
                                         @if ($step->image != '')
                                         <img src="{{ asset('storage/assesment').'/'.$step->image }}" class="img-fluid">
                                         @endif
@@ -93,6 +100,26 @@
 
 @section('style')
 <link href="https://cdn.jsdelivr.net/npm/smartwizard@6/dist/css/smart_wizard_all.min.css" rel="stylesheet" type="text/css" />
+<style>
+@media all and (min-width:569px) and (max-width: 768px) {
+  #smartwizard .nav{display: none;}
+  #smartwizard .progress{display: block !important;}
+}
+@media all and (min-width:481px) and (max-width: 568px) {
+  #smartwizard .nav{display: none;}
+  #smartwizard .progress{display: block !important;}
+}
+
+@media all and (min-width:321px) and (max-width: 480px) {
+  #smartwizard .nav{display: none;}
+  #smartwizard .progress{display: block !important;}
+}
+
+@media all and (min-width:0px) and (max-width: 320px) {
+  #smartwizard .nav{display: none;}
+  #smartwizard .progress{display: block !important;}
+}
+</style>
 @endsection
 
 @section('script')
@@ -111,28 +138,29 @@
 
 });
 </script>
-
-<script>
-    // Set the date we're counting down to
-    var countDownDate = new Date("{{ $assesment->todate }}").getTime();
-    // Update the count down every 1 second
-    var x = setInterval(function() {
-      // Get today's date and time
-      var now = new Date().getTime();
-      // Find the distance between now and the count down date
-      var distance = countDownDate - now;
-      // Time calculations for hours, minutes and seconds
-      var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-      // Display the result in the element with id="timer"
-      document.getElementById("timer").innerHTML = hours + "h "
-      + minutes + "m " + seconds + "s ";
-      // If the count down is finished, write some text
-      if (distance < 0) {
-        clearInterval(x);
-        document.getElementById("timer").innerHTML = "EXPIRED";
-      }
-    }, 1000);
+    @if ($assesment->timer == 'y')
+    <script>
+        // Set the date we're counting down to
+        var countDownDate = new Date("{{ $assesment->todate }}").getTime();
+        // Update the count down every 1 second
+        var x = setInterval(function() {
+        // Get today's date and time
+        var now = new Date().getTime();
+        // Find the distance between now and the count down date
+        var distance = countDownDate - now;
+        // Time calculations for hours, minutes and seconds
+        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        // Display the result in the element with id="timer"
+        document.getElementById("timer").innerHTML = hours + "h "
+        + minutes + "m " + seconds + "s ";
+        // If the count down is finished, write some text
+        if (distance < 0) {
+            clearInterval(x);
+            document.getElementById("timer").innerHTML = "EXPIRED";
+        }
+        }, 1000);
     </script>
+    @endif
 @endsection
