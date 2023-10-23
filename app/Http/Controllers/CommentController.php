@@ -25,7 +25,7 @@ class CommentController extends Controller
         $comment->description = $request->input('description');
         $comment->save();
 
-        return to_route('content.user.view', $slug)->with('success', 'Comment posted successfully.');
+        return to_route('content.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');
     }
     public function storecontentplaylist(Request $request, $slug)
     {
@@ -42,7 +42,7 @@ class CommentController extends Controller
         $comment->description = $request->input('description');
         $comment->save();
 
-        return to_route('playlist.user.view', [$request->playlistslug, $slug])->with('success', 'Comment posted successfully.');
+        return to_route('playlist.user.view', [$request->playlistslug, $slug])->with('success', 'Comment posted successfully.')->withFragment('comment');
     }
 
     public function storenews(Request $request, $slug)
@@ -60,7 +60,7 @@ class CommentController extends Controller
         $comment->description = $request->input('description');
         $comment->save();
 
-        return to_route('news.user.view', $slug)->with('success', 'Comment posted successfully.');
+        return to_route('news.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');
     }
     public function storeeventphoto(Request $request, $slug)
     {
@@ -76,6 +76,6 @@ class CommentController extends Controller
         $comment->description = $request->input('description');
         $comment->save();
 
-        return to_route('gallery.user.view', $slug)->with('success', 'Comment posted successfully.');
+        return to_route('gallery.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');
     }
 }
