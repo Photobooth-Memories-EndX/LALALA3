@@ -147,14 +147,14 @@ class AssesmentController extends Controller
     public function updatelink(Request $request, Assesment $assesment)
     {
         $request->validate([
-            'slug' => 'required|unique:assesments,slug',
+            // 'slug' => 'required|unique:assesments,slug',
             'batch' => 'required',
             'timer' => 'required',
             'fromdate' => 'required_if:timer,y',
             'todate' => 'required_if:timer,y',
         ]);
 
-        $assesment->slug = $request->input('slug');
+        // $assesment->slug = $request->input('slug');
         $assesment->timer = $request->input('timer');
         $assesment->fromdate = $request->input('fromdate');
         $assesment->todate = $request->input('todate');

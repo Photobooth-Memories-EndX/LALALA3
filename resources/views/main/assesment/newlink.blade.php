@@ -34,13 +34,13 @@
             <h3 class="card-title">New Link Assesment</h3>
           </div>
           <div class="card-body">
-            <div class="mb-3 row">
+            {{-- <div class="mb-3 row">
                 <x-label class="col-2 col-form-label required">Link</x-label>
                 <div class="col">
                   <x-input type="text" name="slug" placeholder="Enter new link" value="{{ $assesment->slug }}" />
                     <small class="form-hint">No space and symbol allowed</small>
                 </div>
-            </div>
+            </div> --}}
             <div class="mb-3 row">
                 <x-label class="col-2 col-form-label required">Batch No</x-label>
                 <div class="col">
