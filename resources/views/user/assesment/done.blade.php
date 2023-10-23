@@ -61,6 +61,15 @@
 </div>
 @endsection
 
+@php
+    $color = '';
+    if($assesment_result->pass){
+        $color = 'tabler.getColor("primary"), tabler.getColor("primary", 0.8), tabler.getColor("primary", 0.6), tabler.getColor("gray-300")';
+    } else {
+        $color = 'tabler.getColor("danger"), tabler.getColor("danger", 0.8), tabler.getColor("danger", 0.6), tabler.getColor("gray-300")';
+    }
+@endphp
+
 @section('style')
 <style>
 [data-bs-theme=dark] .apexcharts-text {
@@ -95,7 +104,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         },
     },
-    colors: [tabler.getColor("primary"), tabler.getColor("primary", 0.8), tabler.getColor("primary", 0.6), tabler.getColor("gray-300")],
+    colors: [{!! $color !!}],
     labels: ['Score'],
     };
 

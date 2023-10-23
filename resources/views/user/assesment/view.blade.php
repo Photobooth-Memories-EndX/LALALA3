@@ -101,21 +101,7 @@
 @section('style')
 <link href="https://cdn.jsdelivr.net/npm/smartwizard@6/dist/css/smart_wizard_all.min.css" rel="stylesheet" type="text/css" />
 <style>
-@media all and (min-width:569px) and (max-width: 768px) {
-  #smartwizard .nav{display: none;}
-  #smartwizard .progress{display: block !important;}
-}
-@media all and (min-width:481px) and (max-width: 568px) {
-  #smartwizard .nav{display: none;}
-  #smartwizard .progress{display: block !important;}
-}
-
-@media all and (min-width:321px) and (max-width: 480px) {
-  #smartwizard .nav{display: none;}
-  #smartwizard .progress{display: block !important;}
-}
-
-@media all and (min-width:0px) and (max-width: 320px) {
+@media all and (min-width:0px) and (max-width: 768px) {
   #smartwizard .nav{display: none;}
   #smartwizard .progress{display: block !important;}
 }
@@ -144,22 +130,22 @@
         var countDownDate = new Date("{{ $assesment->todate }}").getTime();
         // Update the count down every 1 second
         var x = setInterval(function() {
-        // Get today's date and time
-        var now = new Date().getTime();
-        // Find the distance between now and the count down date
-        var distance = countDownDate - now;
-        // Time calculations for hours, minutes and seconds
-        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        // Display the result in the element with id="timer"
-        document.getElementById("timer").innerHTML = hours + "h "
-        + minutes + "m " + seconds + "s ";
-        // If the count down is finished, write some text
-        if (distance < 0) {
-            clearInterval(x);
-            document.getElementById("timer").innerHTML = "EXPIRED";
-        }
+            // Get today's date and time
+            var now = new Date().getTime();
+            // Find the distance between now and the count down date
+            var distance = countDownDate - now;
+            // Time calculations for hours, minutes and seconds
+            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            // Display the result in the element with id="timer"
+            document.getElementById("timer").innerHTML = hours + "h "
+            + minutes + "m " + seconds + "s ";
+            // If the count down is finished, write some text
+            if (distance < 0) {
+                clearInterval(x);
+                document.getElementById("timer").innerHTML = "EXPIRED";
+            }
         }, 1000);
     </script>
     @endif

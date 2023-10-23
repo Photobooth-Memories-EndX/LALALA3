@@ -24,8 +24,6 @@ class AssesmentUserController extends Controller
 
         $today = date("Y-m-d H:i:s");
 
-
-
         if (!auth()->user()->isAdmin())
         {
             if ($assesment === null or $assesment->status == "NOT") {
