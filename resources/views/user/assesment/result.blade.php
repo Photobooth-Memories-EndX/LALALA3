@@ -41,6 +41,11 @@
                   <a href="{{ route('assesment.user.view', $assesment->slug) }}" class="btn btn-danger">Retry</a>
                 </div>
                 @endif --}}
+
+                <div class="mt-5">
+                    <a href="{{ url('/') }}" class="btn btn-success">Return to home</a>
+                </div>
+
              </div>
 
            </div>
