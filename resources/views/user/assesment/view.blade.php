@@ -24,7 +24,7 @@
 
                 </div>
 
-                <x-form action="{{ route('assesment.user.store', $assesment->slug) }}" method="post">
+                <x-form action="{{ route('assesment.user.store', $assesment->slug) }}" method="post" id="formAssesment">
                 @unless(count($assesment_question) == 0)
 
                     <div class="mb-3 col-12">
@@ -55,12 +55,14 @@
                                         @endif
                                     </div>
                                     <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
-                                        @php
-                                            $options = collect($step->option);
-                                        @endphp
+                                    @php
+                                        $options = collect($step->option);
+                                        $jawaban_temp = $assesment_result_draft->user_answer[$step->id] ?? null;
+                                    @endphp
+
                                         @foreach ($options->shuffle()->all() as $option)
                                         <label class="form-selectgroup-item flex-fill">
-                                        <input type="radio" name="{{ $step->id }}" value="{{ $option }}" class="form-selectgroup-input">
+                                        <input type="radio" name="{{ $step->id }}" value="{{ $option }}" class="form-selectgroup-input" {{ ($jawaban_temp == $option) ? 'checked' : ''  }}>
                                         <div class="form-selectgroup-label d-flex align-items-center p-2">
                                             <div class="me-3">
                                                 <span class="form-selectgroup-check"></span>
@@ -117,11 +119,27 @@
         selected: 0,
         theme: 'dots',
         enableUrlHash: false,
-        // toolbar: {
-        //     extraHtml: '<button type="submit" class="btn btn-success">Submit Answers</button>'
-        // }
     });
 
+    $(document).on('click', '.sw-btn', function(e) {
+        let formData = new FormData($('#formAssesment')[0]);
+        $.ajax({
+            type: "POST",
+            url: "{{ route('assesment.user.autosave', $assesment->slug) }}",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (response) {
+                if (response.status== 200)
+                {
+                    console.log(response.message);
+                }
+                else{
+                    console.log('Gagal Autosave');
+                }
+            }
+        });
+    });
 });
 </script>
     @if ($assesment->timer == 'y')

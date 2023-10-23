@@ -127,6 +127,7 @@ Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
         Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
         Route::post('/{slug}/store', [AssesmentUserController::class, 'store'])->name('assesment.user.store');
         Route::get('/{slug}/result', [AssesmentUserController::class, 'result'])->name('assesment.user.result');
+        Route::post('/{slug}/autosave', [AssesmentUserController::class, 'autosave'])->name('assesment.user.autosave');
     });
 });
 Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
