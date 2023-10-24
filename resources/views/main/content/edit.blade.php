@@ -6,10 +6,10 @@
         $url_ytplayer_js = asset('Tabler/dist/libs/plyr/dist/plyr.min.js?1684106062');
         $url_ytplayer_css = asset('Tabler/dist/libs/plyr/dist/plyr.css?1684106062');
         $url_litepicker = asset('Tabler/dist/libs/litepicker/dist/litepicker.js?1684106062');
-        
+
         $url_select = asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062');
         $url_vendor = asset('Tabler/dist/css/tabler-vendors.min.css?1684106062');
-        
+
     @endphp
     {{-- @push('css')
         <link rel="stylesheet" href="{{ $url_dropzone_css }}">
@@ -89,8 +89,10 @@
                 <form class="card card-md" action="{{ route('content.update', $content->slug) }}" method="post" autocomplete="off">
                     @csrf
                     @method('PUT')
+                    <div class="card-header">
+                        <h3 class="card-title">Edit content</h3>
+                    </div>
                     <div class="card-body">
-                        <h2 class="card-title text-center mb-4">Edit content</h2>
                         <div class="row">
                             <div class="col-xl-6">
                                 <div class="mb-3">
@@ -139,7 +141,8 @@
                             <div class="col-xl-6">
                                 <div class="mb-3">
                                     <label class="form-label">Duration (mm:ss)</label>
-                                    <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration" value="{{ $content->duration ?? '' }}">
+                                    <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration" value="{{ $content->duration ?? '' }}" data-mask="00:00" data-mask-visible="true" placeholder="00:00" autocomplete="off">
+                                    <small class="form-hint">Format mm:ss. Required if video and youtube content for progress status</small>
                                 </div>
                             </div>
                         </div>

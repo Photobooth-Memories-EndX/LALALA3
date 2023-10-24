@@ -52,8 +52,10 @@
                 <form class="card card-md" action="{{ route('content.store') }}" method="post" autocomplete="off">
                     @csrf
                     @method('POST')
+                    <div class="card-header">
+                        <h3 class="card-title">Create new content</h3>
+                    </div>
                     <div class="card-body">
-                        <h2 class="card-title text-center mb-4">Create new content</h2>
                         <div class="row">
                             <div class="col-xl-6">
                                 <div class="mb-3">
@@ -102,7 +104,8 @@
                             <div class="col-xl-6">
                                 <div class="mb-3">
                                     <label class="form-label">Duration (mm:ss)</label>
-                                    <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration">
+                                    <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration" data-mask="00:00" data-mask-visible="true" placeholder="00:00" autocomplete="off">
+                                    <small class="form-hint">Format mm:ss. Required if video and youtube content for progress status</small>
                                 </div>
                             </div>
                         </div>

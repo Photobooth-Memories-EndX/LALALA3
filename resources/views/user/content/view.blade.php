@@ -142,11 +142,11 @@
 
                                     let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
                                                           onDocumentReady: () => {
-                                                              var progression = $('#player_progress').val();
+                                                              var progression = {{ (int)$content_user->progress }};
                                                               var current_page = (progression * pdfViewer.getPageCount()) / 100;
 
-                                                              if(current_page < pdfViewer.getPageCount()){
-                                                                pdfViewer.scrollToPage(current_page);
+                                                              if(parseInt(current_page) < pdfViewer.getPageCount()){
+                                                                pdfViewer.scrollToPage(parseInt(current_page));
                                                               }
                                                           },
                                                           onZoomChange: function (zoom) {
@@ -169,6 +169,7 @@
                                     .loadDocument("{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}")
                                     .then(function () {
                                         pdfViewer.setZoom("width");
+
                                     });
 
                                     </script>

@@ -13,7 +13,7 @@ class ContentController extends Controller
 {
     public function index()
     {
-        $content = Content::with('classification')->get();
+        $content = Content::with('classification')->latest()->get();
         return view('main.content.index', [
             "title" =>  "Content List",
             "content" => $content
@@ -175,7 +175,7 @@ class ContentController extends Controller
         }
 
 
-        // 
+        //
         return to_route('content.index')->with('success', 'Content successfully saved' . $addmessage . '');
     }
     public function destroy(Content $content)
