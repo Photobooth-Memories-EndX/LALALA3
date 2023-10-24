@@ -18,7 +18,7 @@ class AssesmentResultController extends Controller
     public function result($slug)
     {
         $result = AssesmentResult::with('user')->whereHas('assesment', function ($query) use ($slug) {
-            $query->where('slug', $slug);
+            $query->where('slug', $slug)->whereFinal(1);
         })->get();
         // return $result;
         return view('main.assesment.result', compact('result'));

@@ -91,7 +91,7 @@ class AssesmentQuestionController extends Controller
 
     public function result(Assesment $assesment)
     {
-        $assesment_result = AssesmentResult::with('user')->where('assesment_id', $assesment->id)->get();
+        $assesment_result = AssesmentResult::with('user')->where('assesment_id', $assesment->id)->whereFinal(1)->get();
         return view('main.assesment.result', compact('assesment', 'assesment_result'));
     }
 }
