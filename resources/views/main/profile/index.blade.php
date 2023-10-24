@@ -264,9 +264,10 @@
 @endsection
 
 @section('script')
-    <script src="{{ asset('Tabler/dist/libs/apexcharts/dist/apexcharts.min.js?1684106062"') }} defer"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    @if (count($content) > 0)
+    <script src="{{ asset('Tabler/dist/libs/apexcharts/dist/apexcharts.min.js?1684106062"') }} defer"></script>
     <script>
         // @formatter:off
         document.addEventListener("DOMContentLoaded", function() {
@@ -315,6 +316,7 @@
         });
         // @formatter:on
     </script>
+    @endif
     <script>
         // let table = new DataTable('#MyTable');
         $(function() {
