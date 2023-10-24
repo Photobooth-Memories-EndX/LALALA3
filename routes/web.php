@@ -49,6 +49,8 @@ Route::post('/myprofile', [ProfileController::class, 'update'])->name('user.upda
 Route::get('/myprofile/deleteavatar', [ProfileController::class, 'deleteavatar'])->name('user.deleteavatar')->middleware('auth');
 Route::get('/mycomment', [ProfileController::class, 'comment'])->name('user.comment')->middleware('auth');
 Route::get('/search/{searchtype}', [SearchController::class, 'index'])->name('search')->middleware('auth');
+Route::get('/change-password', [ProfileController::class, 'changePassword'])->name('user.changepassword')->middleware('auth');
+Route::post('/change-password', [ProfileController::class, 'updatePassword'])->name('user.updatepassword')->middleware('auth');
 
 Route::group(['prefix' => 'page'], function () {
     Route::get('/{slug}', [PagesUserController::class, 'view'])->name('pages.user.view');

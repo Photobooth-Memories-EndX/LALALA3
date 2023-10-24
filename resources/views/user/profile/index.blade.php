@@ -11,6 +11,7 @@
                             <div class="list-group list-group-transparent">
                                 <a href="{{ route('user.profile') }}" class="list-group-item list-group-item-action d-flex align-items-center active">My Account</a>
                                 <a href="{{ route('user.comment') }}" class="list-group-item list-group-item-action d-flex align-items-center">My Comment</a>
+                                <a href="{{ route('user.changepassword') }}" class="list-group-item list-group-item-action d-flex align-items-center">Change Password</a>
                             </div>
                         </div>
                     </div>
