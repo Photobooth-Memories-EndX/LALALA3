@@ -6,7 +6,7 @@
             <x-alert type='warning' />
             <div class="card">
                 <div class="row g-0">
-                    <div class="col-3 d-none d-md-block border-end">
+                    <div class="col-3 d-md-block border-end">
                         <div class="card-body">
                             <div class="list-group list-group-transparent">
                                 <a href="{{ route('user.profile') }}" class="list-group-item list-group-item-action d-flex align-items-center active">My Account</a>
