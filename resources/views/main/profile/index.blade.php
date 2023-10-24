@@ -36,7 +36,9 @@
                 @endphp
             @endforeach
             @php
+            if(count($content) > 0) {
                 $percentage = round(($totalpercentage / (count($content) * 100)) * 100, 2);
+            }
             @endphp
 
             <!-- Card -->
@@ -57,6 +59,7 @@
                                     <div class="text-muted">
                                         {{ $profile->team }}
                                     </div>
+                                    @if (count($content) > 0)
                                     <div class="mt-3">
                                         <div class="row g-2 align-items-center">
                                             <div class="col-auto">
@@ -72,6 +75,7 @@
 
                                         </div>
                                     </div>
+                                    @endif
                                     <div class="text-muted">
                                         @unless (count($content) == 0)
                                             @php
