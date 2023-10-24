@@ -114,34 +114,40 @@
 <script src="https://cdn.jsdelivr.net/npm/smartwizard@6/dist/js/jquery.smartWizard.min.js" type="text/javascript"></script>
 <script>
  $(function() {
-
     $('#smartwizard').smartWizard({
         selected: 0,
         theme: 'dots',
         enableUrlHash: false,
     });
-
-    $(document).on('click', '.sw-btn', function(e) {
-        let formData = new FormData($('#formAssesment')[0]);
-        $.ajax({
-            type: "POST",
-            url: "{{ route('assesment.user.autosave', $assesment->slug) }}",
-            data: formData,
-            contentType: false,
-            processData: false,
-            success: function (response) {
-                if (response.status== 200)
-                {
-                    console.log(response.message);
-                }
-                else{
-                    console.log('Gagal Autosave');
-                }
-            }
-        });
-    });
 });
 </script>
+
+@if (!auth()->user()->isAdmin())
+<script>
+    $(function() {
+       $(document).on('click', '.sw-btn', function(e) {
+           let formData = new FormData($('#formAssesment')[0]);
+           $.ajax({
+               type: "POST",
+               url: "{{ route('assesment.user.autosave', $assesment->slug) }}",
+               data: formData,
+               contentType: false,
+               processData: false,
+               success: function (response) {
+                   if (response.status== 200)
+                   {
+                       console.log(response.message);
+                   }
+                   else{
+                       console.log('Gagal Autosave');
+                   }
+               }
+           });
+       });
+   });
+</script>
+@endif
+
     @if ($assesment->timer == 'y')
     <script>
         // Set the date we're counting down to
