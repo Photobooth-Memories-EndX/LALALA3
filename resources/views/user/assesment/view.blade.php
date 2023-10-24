@@ -163,6 +163,11 @@
             if (distance < 0) {
                 clearInterval(x);
                 document.getElementById("timer").innerHTML = "EXPIRED";
+
+                @if (!auth()->user()->isAdmin())
+                document.getElementById("formAssesment").submit();
+                @endif
+
             }
         }, 1000);
     </script>

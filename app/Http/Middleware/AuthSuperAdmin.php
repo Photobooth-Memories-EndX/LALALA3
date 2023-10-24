@@ -16,7 +16,7 @@ class AuthSuperAdmin
      */
     public function handle(Request $request, Closure $next)
     {
-        if (auth()->user()->role !== '3') {
+        if (auth()->user()->role != '3') {
             abort(403);
         }
         return $next($request);
