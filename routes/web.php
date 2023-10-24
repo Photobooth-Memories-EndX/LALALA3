@@ -9,6 +9,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\HomeUserController;
 use App\Http\Controllers\LearningController;
 use App\Http\Controllers\NewsUserController;
@@ -77,6 +78,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::post('assesment/changestatus', [AssesmentController::class, 'changestatus'])->name('assesment.changestatus');
     Route::get('assesment/{assesment}/newlink', [AssesmentController::class, 'newlink'])->name('assesment.newlink');
     Route::put('assesment/{assesment}/updatelink', [AssesmentController::class, 'updatelink'])->name('assesment.updatelink');
+    Route::post('assesment/download', [DownloadController::class, 'assessmentdownload'])->name('assesment.result.download');
 
 
     Route::resource('content', ContentController::class);

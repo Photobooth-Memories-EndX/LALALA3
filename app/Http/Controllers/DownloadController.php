@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AssessmentExport;
 use App\Models\ContentUser;
 use Illuminate\Http\Request;
 use App\Exports\LearningExport;
@@ -23,5 +24,9 @@ class DownloadController extends Controller
         //     "downloadslug" => $slug,
         //     "content" => $content
         // ]);
+    }
+    public function assessmentdownload(Request $request)
+    {
+        return Excel::download(new AssessmentExport($request->assessment_id), now() . '_' . $request->slug . '_assessment.xlsx');
     }
 }
