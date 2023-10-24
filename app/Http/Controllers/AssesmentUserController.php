@@ -77,7 +77,6 @@ class AssesmentUserController extends Controller
         $assesment_result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
 
         $assesment_result->final = 1;
-
         $assesment_result->save();
 
         return to_route('assesment.user.result', $slug)->with('score', $score);
@@ -117,7 +116,6 @@ class AssesmentUserController extends Controller
 
         //belum final answer, masih berupa draft
         $assesment_result->final = 0;
-
         $assesment_result->save();
 
         return response()->json([

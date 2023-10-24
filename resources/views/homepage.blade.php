@@ -219,7 +219,9 @@
                             <div class="row align-items-center">
                             <div class="col">
                                 <h2 class="h3">Latest Gallery</h2>
+                                @if ($eventphoto)
                                 <a href="{{ route('gallery.user.view', $eventphoto->slug) }}" class="d-block" title="{{ $eventphoto->title }}"><img src="{{ asset('/storage/gallery/photo') }}/{{ $eventphoto->id }}/{{ $eventphoto->thumbnail }}" class="img-fluid"></a>
+                                @endif
                             </div>
                             </div>
                         </div>
