@@ -41,7 +41,8 @@
 
             <div class="mb-3">
                 <x-label class="form-label">Question</x-label>
-                <x-input type="text" name="question" id="question" placeholder="Input question" value="{{ $data->question }}" />
+                {{-- <x-input type="text" name="question" id="question" placeholder="Input question" value="{{ $data->question }}" /> --}}
+                    <x-textarea name="question" rows="6" placeholder="Input question.." data-bs-toggle="autosize">{{ $data->question }}</x-textarea>
             </div>
             <div class="mb-3">
                 <x-label class="form-label">Image</x-label>

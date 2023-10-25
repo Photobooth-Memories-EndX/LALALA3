@@ -46,7 +46,8 @@
 
             <div class="mb-3">
                 <x-label class="form-label">Question</x-label>
-                <x-input type="text" name="question" id="question" placeholder="Input question" value="{{ old('question') }}" />
+                {{-- <x-input type="text" name="question" id="question" placeholder="Input question" value="{{ old('question') }}" /> --}}
+                <x-textarea name="question" rows="6" placeholder="Input question.." data-bs-toggle="autosize">{{ old('question') }}</x-textarea>
             </div>
             <div class="mb-3">
                 <x-label class="form-label">Image</x-label>
@@ -180,26 +181,6 @@
 </script>
 
 <script>
-    // $(document).ready(function() {
-    //     $('#options').select2({
-    //         // dropdownParent: $('#modal-questions'),
-    //         theme: 'bootstrap-5',
-    //         selectionCssClass: 'select2--small',
-    //         dropdownCssClass: 'select2--small',
-    //         tags: true
-    //     });
-    //     $('#options').on("select2:select", function (e) {
-	// 		var data = e.params.data;
-    //         $('#answer').append($('<option>', {
-    //             value: data.id,
-    //             text: data.text
-    //         }));
-	// 	});
-	// 	$('#options').on("select2:unselect", function (e) {
-	// 		var data = e.params.data;
-	// 		$("#answer option[value='"+data.id+"']").remove();
-	// 	});
-    // });
 
     document.addEventListener("DOMContentLoaded", function() {
         var el;

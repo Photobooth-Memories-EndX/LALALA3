@@ -13,12 +13,12 @@
         <div class="card card-lg">
             <div class="card-body ">
               <div class="row g-4">
-                <div class="col-12 markdown">
+                <div class="col-12 markdown mb-3">
                   <h1 class="mb-2">{{ $assesment->title }}</h1>
 
                   <div class="d-flex align-items-center">
                     <div>
-                      <div class="text-muted">{{ date('d F Y', strtotime($assesment->created_at)) }}</div>
+                      <div class="text-muted">{{ date('d F Y', strtotime(now())) }}</div>
                     </div>
                   </div>
 
@@ -49,7 +49,8 @@
                                 @foreach ($assesment_question as $step)
                                 <div id="step-{{ $step->id }}" class="tab-pane" role="tabpanel" aria-labelledby="step-{{ $step->id }}">
                                     <div class="mb-3">
-                                        <label class="form-label h2">{{ $step->question }}</label>
+                                        {{-- <label class="form-label h2">{{ $step->question }}</label> --}}
+                                        <p class="form-label h3">{!! nl2br($step->question) !!}</p>
                                         @if ($step->image != '')
                                         <img src="{{ asset('storage/assesment').'/'.$step->image }}" class="img-fluid">
                                         @endif
