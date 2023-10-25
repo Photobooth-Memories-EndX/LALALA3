@@ -104,7 +104,7 @@
 
 .sw > .nav .nav-link {
     display: block;
-    padding: 0.5rem 1rem;
+    padding: 0rem 1rem;
     text-decoration: none;
 }
 
@@ -261,7 +261,7 @@
 
 .sw-theme-dots > .nav .nav-link {
     position: relative;
-    margin-top: 40px;
+    margin-top: 30px;
 }
 
 @media screen and (max-width: 640px) {
@@ -298,7 +298,7 @@
 }
 
 .sw-theme-dots > .nav .nav-link > .num {
-    font-size: 0.9em;
+    font-size: 0.8em;
     position: absolute;
     display: block;
     left: 0;
