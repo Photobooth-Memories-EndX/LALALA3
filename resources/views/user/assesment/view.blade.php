@@ -101,13 +101,14 @@
 @endsection
 
 @section('style')
-<link href="https://cdn.jsdelivr.net/npm/smartwizard@6/dist/css/smart_wizard_all.min.css" rel="stylesheet" type="text/css" />
+<link href="https://cdn.jsdelivr.net/npm/smartwizard@6/dist/css/smart_wizard.min.css" rel="stylesheet" type="text/css" />
 <style>
 @media all and (min-width:0px) and (max-width: 768px) {
   #smartwizard .nav{display: none;}
   #smartwizard .progress{display: block !important;}
 }
 </style>
+<link href="{{ asset('smart_wizard_dots.css') }}" rel="stylesheet" type="text/css" />
 @endsection
 
 @section('script')
