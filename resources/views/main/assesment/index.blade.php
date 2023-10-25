@@ -257,39 +257,20 @@
 
 @section('style')
     <!-- DataTables -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
+    <link href="{{ asset('css/bootstrap-toggle.min.css') }}" rel="stylesheet">
     <style>
         #overlay {
-            position: absolute;
-            top: 0rem;
-            right: 0rem;
-            left: 0rem;
-            bottom: 0rem;
-            display: -webkit-box;
-            display: -webkit-flex;
-            display: -ms-flexbox;
-            display: flex;
-            -webkit-align-items: center;
-            -webkit-box-align: center;
-            -ms-flex-align: center;
-            align-items: center;
-            -webkit-box-pack: center;
-            -ms-flex-pack: center;
-            -webkit-justify-content: center;
-            justify-content: center;
-            overflow: hidden;
-            border-radius: 0.25rem;
-            z-index: 1000;
+            position: absolute;top: 0rem;right: 0rem;left: 0rem;bottom: 0rem;display: -webkit-box;display: -webkit-flex;display: -ms-flexbox;display: flex;-webkit-align-items: center;-webkit-box-align: center;-ms-flex-align: center;align-items: center;-webkit-box-pack: center;-ms-flex-pack: center;-webkit-justify-content: center;justify-content: center;overflow: hidden;border-radius: 0.25rem;z-index: 1000;
         }
     </style>
 @endsection
 
 @section('script')
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
-    <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+    <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('js/clipboard.min.js') }}"></script>
+    <script src="{{ asset('js/bootstrap-toggle.min.js') }}"></script>
     <script>
         // let table = new DataTable('#MyTable');
         $(function() {

@@ -109,12 +109,12 @@
 
 @section('style')
 <link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+<link rel="stylesheet" href="{{ asset('css/flatpickr.min.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ asset('css/dark.css') }}">
 @endsection
 
 @section('script')
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="{{ asset('js/flatpickr.js') }}"></script>
 <script>
     $(".input-date").flatpickr({
         enableTime: true,
