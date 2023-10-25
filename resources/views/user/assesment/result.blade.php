@@ -10,7 +10,8 @@
                   <h1 class="mb-2">{{ $assesment->title }}</h1>
                   <div class="d-flex align-items-center">
                     <div>
-                      <div class="text-muted">{{ date('d F Y', strtotime($assesment->created_at)) }}</div>
+                      {{-- <div class="text-muted">{{ date('d F Y', strtotime($assesment->created_at)) }}</div> --}}
+                      <div class="text-muted">{{ date('d F Y', strtotime(now())) }}</div>
                     </div>
                   </div>
                 </div>
