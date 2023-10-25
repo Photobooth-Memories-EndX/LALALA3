@@ -4,6 +4,6 @@
 @endphp
 
 <!-- Tabler -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+<script src="{{ asset('js/jquery.min.js') }}"></script>
 <script src={{ $url_tabler }}></script>
 <script src={{ $url_demo }}></script>

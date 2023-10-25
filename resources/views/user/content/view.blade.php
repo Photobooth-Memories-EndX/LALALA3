@@ -133,12 +133,12 @@
 
                                   @push('scripts')
 
-                                    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
-                                    <script src="https://cdn.jsdelivr.net/gh/dealfonso/pdfjs-viewer@1.0.0/pdfjs-viewer.min.js"></script>
+                                    <script src="{{ asset('js/pdf.min.js') }}"></script>
+                                    <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
                                     <script>
                                     var pdfjsLib = window["pdfjs-dist/build/pdf"];
                                     pdfjsLib.GlobalWorkerOptions.workerSrc =
-                                    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js";
+                                    "{{ asset('js/pdf.worker.min.js') }}";
 
                                     let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
                                                           onDocumentReady: () => {
