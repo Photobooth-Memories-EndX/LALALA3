@@ -18,7 +18,7 @@
 
                   <div class="d-flex align-items-center">
                     <div>
-                      <div class="text-muted">{{ date('d F Y', strtotime(now())) }}</div>
+                      <div class="text-muted">{{ date('d F Y', strtotime(now)) }}</div>
                     </div>
                   </div>
 
@@ -102,7 +102,7 @@
 @endsection
 
 @section('style')
-<link href="https://cdn.jsdelivr.net/npm/smartwizard@6/dist/css/smart_wizard.min.css" rel="stylesheet" type="text/css" />
+<link href="{{ asset('smart_wizard.min.css') }}" rel="stylesheet" type="text/css" />
 <style>
 @media all and (min-width:0px) and (max-width: 768px) {
   #smartwizard .nav{display: none;}
@@ -113,7 +113,7 @@
 @endsection
 
 @section('script')
-<script src="https://cdn.jsdelivr.net/npm/smartwizard@6/dist/js/jquery.smartWizard.min.js" type="text/javascript"></script>
+<script src="{{ asset('jquery.smartWizard.min.js') }}" type="text/javascript"></script>
 <script>
  $(function() {
     $('#smartwizard').smartWizard({
