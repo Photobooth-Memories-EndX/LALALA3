@@ -42,7 +42,7 @@
             <div class="mb-3">
                 <x-label class="form-label">Question</x-label>
                 {{-- <x-input type="text" name="question" id="question" placeholder="Input question" value="{{ $data->question }}" /> --}}
-                    <x-textarea name="question" rows="6" placeholder="Input question.." data-bs-toggle="autosize">{{ $data->question }}</x-textarea>
+                    <x-textarea name="question" rows="6" placeholder="Input question.." data-bs-toggle="autosize" id="tinymce-mytextarea">{{ $data->question }}</x-textarea>
             </div>
             <div class="mb-3">
                 <x-label class="form-label">Image</x-label>
@@ -254,9 +254,30 @@
                 });
         }
     });
-
-
 </script>
+<script src="{{ asset('Tabler/dist/libs/tinymce/tinymce.min.js') }}" defer></script>
+<script>
+    // @formatter:off
+    document.addEventListener("DOMContentLoaded", function () {
+      let options = {
+        selector: '#tinymce-mytextarea',
+        height: 300,
+        menubar: false,
+        statusbar: false,
+        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
+        toolbar: 'undo redo | formatselect | ' +
+          'bold italic underline forecolor backcolor | bullist numlist outdent indent | ' +
+          'removeformat | table',
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }'
+      }
+      if (localStorage.getItem("tablerTheme") === 'dark') {
+        options.skin = 'oxide-dark';
+        options.content_css = 'dark';
+      }
+      tinyMCE.init(options);
+    })
+    // @formatter:on
+  </script>
 @endsection
 
 

@@ -98,19 +98,17 @@ class AssesmentQuestionController extends Controller
 
     public function clone(Assesment $assesment)
     {
-        //dd($assesment->questions);
+        //clone assesment
         $newAssesment = $assesment->replicate();
         $newAssesment->created_at = Carbon::now();
-
-        //add relationship clone
         $newAssesment->push();
 
-        //gathering master question, then clone to new
+        //add relationship clone
+        //gathering old assesment question, then clone to new
         foreach($assesment->questions as $question)
         {
             $newAssesment->questions()->create($question->toArray());
         }
-
         $newAssesment->save();
 
         return to_route('assesment.index', $assesment->slug)->with('success','Assesment question clone successfully.');
