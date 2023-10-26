@@ -107,6 +107,7 @@
 @section('style')
 <link href="{{ asset('css/smart_wizard.min.css') }}" rel="stylesheet" type="text/css" />
 <style>
+#smartwizard table tr td {border: 1px solid #000 !important; padding:0.2rem;}
 @media all and (min-width:0px) and (max-width: 768px) {
   #smartwizard .nav{display: none;}
   #smartwizard .progress{display: block !important;}
