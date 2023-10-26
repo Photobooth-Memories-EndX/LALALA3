@@ -89,7 +89,7 @@
                     </div>
 
                     <div class="text-end">
-                        <button type="submit" class="btn btn-success">Submit Answers</button>
+                        <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure want to finish the assesment and submit all the answer?')">Finish & Submit Answers</button>
                     </div>
                 @else
                     <p>No questions data yet</p>
@@ -111,16 +111,6 @@
   #smartwizard .nav{display: none;}
   #smartwizard .progress{display: block !important;}
 }
-$display-font-sizes: (
-  1: 5rem,
-  2: 4.5rem,
-  3: 4rem,
-  4: 3.5rem,
-  5: 3rem,
-  6: 2.5rem,
-  7: 2rem,
-  8: 1.5rem
-);
 </style>
 <link href="{{ asset('css/smart_wizard_dots.css') }}" rel="stylesheet" type="text/css" />
 @endsection
@@ -133,6 +123,9 @@ $display-font-sizes: (
         selected: 0,
         theme: 'dots',
         enableUrlHash: false,
+        // toolbar: {
+        //     extraHtml: '<button type="submit" class="btn btn-success btn-finish text-end" onclick="return confirm(\'Are you sure want to finish the assesment and submit all the answer?\')">Submit Answers</button>'
+        // }
     });
 });
 </script>
