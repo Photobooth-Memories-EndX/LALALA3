@@ -50,7 +50,10 @@
                                 <div id="step-{{ $step->id }}" class="tab-pane" role="tabpanel" aria-labelledby="step-{{ $step->id }}">
                                     <div class="mb-3">
                                         {{-- <label class="form-label h2">{{ $step->question }}</label> --}}
-                                        <p class="form-label h3">{!! nl2br($step->question) !!}</p>
+                                        {{-- <p class="form-label h3">{!! nl2br($step->question) !!}</p> --}}
+                                        <div class="display-6" style="font-size: 1.2rem !important">
+                                            {!! $step->question !!}
+                                        </div>
                                         @if ($step->image != '')
                                         <img src="{{ asset('storage/assesment').'/'.$step->image }}" class="img-fluid">
                                         @endif
@@ -108,6 +111,16 @@
   #smartwizard .nav{display: none;}
   #smartwizard .progress{display: block !important;}
 }
+$display-font-sizes: (
+  1: 5rem,
+  2: 4.5rem,
+  3: 4rem,
+  4: 3.5rem,
+  5: 3rem,
+  6: 2.5rem,
+  7: 2rem,
+  8: 1.5rem
+);
 </style>
 <link href="{{ asset('css/smart_wizard_dots.css') }}" rel="stylesheet" type="text/css" />
 @endsection

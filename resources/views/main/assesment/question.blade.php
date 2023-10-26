@@ -98,7 +98,7 @@
                     <tr>
                         <td>{{ $loop->index + 1 }}</td>
                         <td>
-                            {{ $list->question }} <br>
+                            {!! $list->question !!} <br>
                             @if ($list->image != '')
                             <img src="{{ asset('storage/assesment').'/'.$list->image }}" class="img-fluid" style="height:90px;">
                             @endif
