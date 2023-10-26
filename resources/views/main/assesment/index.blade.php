@@ -115,7 +115,7 @@
                                                 <form action="{{ route('assesment.destroy', $list->slug) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-icon mb-1" onclick="return confirm('Are you sure want to delete this data?')" title="Delete?"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <button type="submit" class="btn btn-danger btn-icon mb-1" onclick="return confirm('Are you sure want to delete {{ $list->title }}?')" title="Delete?"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                             <path d="M4 7l16 0"></path>
                                                             <path d="M10 11l0 6"></path>
@@ -135,6 +135,19 @@
                                                             <path d="M9 17h.01"></path>
                                                             <path d="M12 16l1 1l3 -3"></path>
                                                         </svg>
+                                                    </a>
+                                                </div>
+
+                                                <div class="d-inline">
+                                                    <a href="{{ route('assesment.clone', $list->slug) }}" class="btn btn-warning btn-icon mb-1" title="Clone" onclick="return confirm('Are you sure want to clone {{ $list->title }}?')">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-stack" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                            <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                                                            <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"></path>
+                                                            <path d="M5 21h14"></path>
+                                                            <path d="M5 18h14"></path>
+                                                            <path d="M5 15h14"></path>
+                                                         </svg>
                                                     </a>
                                                 </div>
 

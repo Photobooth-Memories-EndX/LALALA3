@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Assesment;
-use App\Models\AssesmentQuestion;
-use App\Models\AssesmentResult;
 use Illuminate\Http\Request;
+use App\Models\AssesmentResult;
+use App\Models\AssesmentQuestion;
 
 class AssesmentQuestionController extends Controller
 {
@@ -93,5 +94,25 @@ class AssesmentQuestionController extends Controller
     {
         $assesment_result = AssesmentResult::with('user')->where('assesment_id', $assesment->id)->whereFinal(1)->get();
         return view('main.assesment.result', compact('assesment', 'assesment_result'));
+    }
+
+    public function clone(Assesment $assesment)
+    {
+        //dd($assesment->questions);
+        $newAssesment = $assesment->replicate();
+        $newAssesment->created_at = Carbon::now();
+
+        //add relationship clone
+        $newAssesment->push();
+
+        //gathering master question, then clone to new
+        foreach($assesment->questions as $question)
+        {
+            $newAssesment->questions()->create($question->toArray());
+        }
+
+        $newAssesment->save();
+
+        return to_route('assesment.index', $assesment->slug)->with('success','Assesment question clone successfully.');
     }
 }

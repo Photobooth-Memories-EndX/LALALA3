@@ -73,6 +73,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::put('assesment/update/{assesment}/{id}', [AssesmentQuestionController::class, 'update'])->name('assesment.question.update');
     Route::put('assement/delete-image/{id}', [AssesmentImageController::class, 'deleteImage'])->name('assesment.deleteImage');
     Route::get('assesment/{assesment}/result', [AssesmentQuestionController::class, 'result'])->name('assesment.result');
+    Route::get('assesment/{assesment}/clone', [AssesmentQuestionController::class, 'clone'])->name('assesment.clone');
     Route::get('assesmentresult', [AssesmentResultController::class, 'index'])->name('assesment.result.all');
     Route::get('assesment/result/{slug}', [AssesmentResultController::class, 'result'])->name('assesment.result.result');
     Route::post('assesment/changestatus', [AssesmentController::class, 'changestatus'])->name('assesment.changestatus');

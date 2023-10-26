@@ -44,7 +44,7 @@
             <div class="mb-3 row">
                 <x-label class="col-2 col-form-label required">Batch No</x-label>
                 <div class="col">
-                  <x-input type="number" name="batch" placeholder="Enter batch no" required value="" />
+                  <x-input type="number" name="batch" placeholder="Enter batch no" required value="{{ $assesment->batch }}" />
                 </div>
                 <x-label class="col-2 col-form-label required">Time Limit?</x-label>
                 <div class="col">
