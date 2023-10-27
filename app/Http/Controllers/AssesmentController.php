@@ -155,12 +155,14 @@ class AssesmentController extends Controller
             'todate' => 'required_if:timer,y',
         ]);
 
-        $assesment->slug = $request->input('slug');
+        
         $assesment->timer = $request->input('timer');
         $assesment->fromdate = $request->input('fromdate');
         $assesment->todate = $request->input('todate');
         $assesment->batch = $request->input('batch');
         $assesment->save();
+        $assesment->slug = $request->input('slug');
+        $assesment->update();
 
         return to_route('assesment.index')->with('success','Assesment updated successfully');
     }
