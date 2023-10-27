@@ -41,7 +41,7 @@
                             </ul>
 
                             <!-- Include optional progressbar HTML -->
-                            <div class="progress">
+                            <div class="progress mb-2">
                                 <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
 
