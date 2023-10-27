@@ -41,7 +41,7 @@
                             </ul>
 
                             <!-- Include optional progressbar HTML -->
-                            <div class="progress" style="display: none;">
+                            <div class="progress">
                                 <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
 
@@ -109,8 +109,8 @@
 <style>
 #smartwizard table tr td {border: 1px solid #000 !important; padding:0.2rem;}
 @media all and (min-width:0px) and (max-width: 768px) {
-  #smartwizard .nav{display: none;}
-  #smartwizard .progress{display: block !important;}
+  /* #smartwizard .nav{display: none;}
+  #smartwizard .progress{display: block !important;} */
 }
 </style>
 <link href="{{ asset('css/smart_wizard_dots.css') }}" rel="stylesheet" type="text/css" />
