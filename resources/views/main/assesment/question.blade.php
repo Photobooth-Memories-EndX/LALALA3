@@ -183,6 +183,7 @@
         var el;
         window.TomSelect && (new TomSelect(el = document.getElementById('options'), {
             create: true,
+            delimiter: ';',
             copyClassesToDropdown: false,
             dropdownParent: 'body',
             controlInput: '<input>',
