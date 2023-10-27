@@ -55,7 +55,7 @@
                                             {!! $step->question !!}
                                         </div>
                                         @if ($step->image != '')
-                                        <img src="{{ asset('storage/assesment').'/'.$step->image }}" class="img-fluid">
+                                        <img src="{{ asset('storage/assesment').'/'.$step->image }}" class="img-fluid mt-2">
                                         @endif
                                     </div>
                                     <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
