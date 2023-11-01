@@ -13,7 +13,7 @@ class ContentUserController extends Controller
 {
     public function index()
     {
-        $content = Content::all();
+        $content = Content::whereActive('Active')->get();
         return view('user.content.index', compact('content'));
     }
     public function view($slug)
@@ -42,7 +42,7 @@ class ContentUserController extends Controller
         if ($category === null) {
             abort(404);
         }
-        $content = Content::where('classification_id', $category->id)->get();
+        $content = Content::where('classification_id', $category->id)->whereActive('Active')->get();
         return view('user.content.category', compact('content', 'category'));
     }
 
