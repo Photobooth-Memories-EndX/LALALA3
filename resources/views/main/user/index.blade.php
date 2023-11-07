@@ -31,6 +31,10 @@
             <x-alert type='success' />
             <x-alert type='warning' />
 
+            @if($errors->any())
+                {{ implode('', $errors->all('<div>:message</div>')) }}
+            @endif
+
             <!-- Card -->
             <div class="card">
                 <div class="card-header">
@@ -60,7 +64,7 @@
                                         <th>Department</th>
                                         <th>Division</th>
                                         <th>Email</th>
-                                        <th width="65px"></th>
+                                        <th width="80px"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -73,30 +77,36 @@
                                             <td>{{ $list->department }}</td>
                                             <td>{{ $list->division }}</td>
                                             <td>{{ $list->email }}</td>
-                                            <td>
+                                            <td class="text-left">
                                                 <div class="d-inline">
-                                                    <a href="{{ route('user.edit', $list->id) }}" class="btn btn-info btn-icon">
+                                                    <a href="{{ route('user.edit', $list->id) }}" class="btn btn-info btn-icon mb-1" title="Edit">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                            <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
-                                                            <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path>
-                                                            <path d="M16 5l3 3"></path>
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path>
                                                         </svg>
                                                     </a>
                                                 </div>
 
+                                                <form action="{{ route('user.resetpassword', $list->id) }}" method="post" class="d-inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <button type="submit" class="btn btn-warning btn-icon mb-1" title="Reset Password" onclick="return confirm('Are you sure want to reset {{ $list->name }} password?')">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-lock-open" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 11m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"></path><path d="M12 16m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M8 11v-5a4 4 0 0 1 8 0"></path>
+                                                         </svg>
+                                                    </button>
+                                                </form>
+
                                                 <form action="{{ route('user.destroy', $list->id) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                            <path d="M4 7l16 0"></path>
-                                                            <path d="M10 11l0 6"></path>
-                                                            <path d="M14 11l0 6"></path>
-                                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
-                                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
-                                                        </svg></button>
+                                                    <button type="submit" title="Delete" class="btn btn-danger btn-icon mb-1" onclick="return confirm('Are you sure want to delete this data?')">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 7l16 0"></path><path d="M10 11l0 6"></path><path d="M14 11l0 6"></path><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
+                                                        </svg>
+                                                    </button>
                                                 </form>
+
+                                                <input data-id="{{ $list->id }}" data-toggle="toggle" class="toggle-class" type="checkbox" data-onstyle="success" data-offstyle="secondary" data-on="ON" data-off="OFF" data-size="small" data-width="40" {{ $list->status == 'OK' ? 'checked' : '' }}>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -120,11 +130,13 @@
 @section('style')
     <!-- DataTables -->
     <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
+    <link href="{{ asset('css/bootstrap-toggle.min.css') }}" rel="stylesheet">
 @endsection
 
 @section('script')
     <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('js/bootstrap-toggle.min.js') }}"></script>
     <script>
         // let table = new DataTable('#MyTable');
         $(function() {
@@ -137,5 +149,24 @@
                 "autoWidth": false,
             });
         });
+
+        $('.toggle-class').change(function() {
+            var status = $(this).prop('checked') == true ? 'Active' : 'Not Active';
+            var user_id = $(this).data('id');
+
+            $.ajax({
+                type: "POST",
+                dataType: "JSON",
+                url: '',
+                data: {
+                    "status": status,
+                    "id": user_id,
+                    "_token": "{{ csrf_token() }}",
+                },
+                success: function(data) {
+                    console.log(data.success);
+                },
+            });
+        })
     </script>
 @endsection

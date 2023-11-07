@@ -100,4 +100,13 @@ class UserController extends Controller
         return redirect()->route('user.index')
             ->with('success', 'User deleted successfully');
     }
+
+    public function resetpassword(User $user)
+    {
+
+        User::whereId($user->id)->update([
+            'password' => Hash::make($user->id_emp)
+        ]);
+        return redirect()->route('user.index')->with('success', 'User reset password successfully');
+    }
 }
