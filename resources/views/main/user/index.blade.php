@@ -106,7 +106,7 @@
                                                     </button>
                                                 </form>
 
-                                                <input data-id="{{ $list->id }}" data-toggle="toggle" class="toggle-class" type="checkbox" data-onstyle="success" data-offstyle="secondary" data-on="ON" data-off="OFF" data-size="small" data-width="40" {{ $list->status == 'OK' ? 'checked' : '' }}>
+                                                <input data-id="{{ $list->id }}" data-toggle="toggle" class="toggle-class" type="checkbox" data-onstyle="success" data-offstyle="secondary" data-on="ON" data-off="OFF" data-size="small" data-width="40" {{ $list->active == 1 ? 'checked' : '' }}>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -151,15 +151,15 @@
         });
 
         $('.toggle-class').change(function() {
-            var status = $(this).prop('checked') == true ? 'Active' : 'Not Active';
+            var active = $(this).prop('checked') == true ? '1' : '0';
             var user_id = $(this).data('id');
 
             $.ajax({
                 type: "POST",
                 dataType: "JSON",
-                url: '',
+                url: '{{ route('user.changestatus') }}',
                 data: {
-                    "status": status,
+                    "active": active,
                     "id": user_id,
                     "_token": "{{ csrf_token() }}",
                 },

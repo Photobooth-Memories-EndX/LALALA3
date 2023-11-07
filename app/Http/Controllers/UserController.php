@@ -109,4 +109,13 @@ class UserController extends Controller
         ]);
         return redirect()->route('user.index')->with('success', 'User reset password successfully');
     }
+
+    public function changestatus(Request $request)
+    {
+        $user = User::findOrFail($request->id);
+        $user->active = $request->active;
+        $user->save();
+
+        return response()->json(['success'=>'Status change successfully.']);
+    }
 }

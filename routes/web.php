@@ -61,6 +61,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
 
     Route::resource('user', UserController::class);
     Route::put('user/{user}/resetpassword', [UserController::class, 'resetpassword'])->name('user.resetpassword');
+    Route::post('user/changestatus', [UserController::class, 'changestatus'])->name('user.changestatus');
     Route::resource('news', NewsController::class);
     Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     Route::resource('pages', PagesController::class);
