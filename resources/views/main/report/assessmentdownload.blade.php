@@ -9,6 +9,7 @@
             <th>Score</th>
             <th>Batch</th>
             <th>Result</th>
+            <th>Date</th>
         </tr>
     </thead>
     <tbody>
@@ -27,6 +28,9 @@
                     @else
                         <span class="badge bg-red">Failed</span>
                     @endif
+                </td>
+                <td>
+                    {{ date("d/m/y", strtotime($list->created_at)) }}
                 </td>
             </tr>
         @endforeach

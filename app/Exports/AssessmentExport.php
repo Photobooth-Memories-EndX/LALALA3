@@ -42,7 +42,7 @@ class AssessmentExport implements FromView, ShouldAutoSize, WithStyles
                 ],
             ],
         ];
-        $sheet->getStyle('A1:H1')->getFont()->setBold(true);
-        $sheet->getStyle('A1:H' . $this->total + 1)->applyFromArray($styleArray);
+        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:I' . $this->total + 1)->applyFromArray($styleArray);
     }
 }

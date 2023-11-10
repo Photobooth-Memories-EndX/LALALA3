@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->after('role', function (Blueprint $table) {
-                $table->integer('active')->default(1);
+                $table->integer('active')->default(0);
             });
         });
     }
