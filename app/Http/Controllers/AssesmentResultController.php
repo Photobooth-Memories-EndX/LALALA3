@@ -33,13 +33,13 @@ class AssesmentResultController extends Controller
         $assesment_result = AssesmentResult::select('user_answer')->where('id', $id)->first();
         $user_answers = $assesment_result->user_answer;
 
-        $wrong_answer = array_diff_assoc($user_answers, $assesment_question);
-        //dd($user_answers);
+        $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
+
 
         $format_answer = [];
         foreach($wrong_answer as $key => $value){
             $data = AssesmentQuestion::findOrFail($key);
-            array_push($format_answer, ['question' => $data->question, 'answer' => $data->answer, 'user_answer' => $value]);
+            array_push($format_answer, ['question' => $data->question, 'answer' => $data->answer, 'user_answer' => ($user_answers[$key]) ?? '']);
         }
 
         return response()->json([
