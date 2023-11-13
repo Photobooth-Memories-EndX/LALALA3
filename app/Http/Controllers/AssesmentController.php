@@ -155,7 +155,7 @@ class AssesmentController extends Controller
             'todate' => 'required_if:timer,y',
         ]);
 
-        
+
         $assesment->timer = $request->input('timer');
         $assesment->fromdate = $request->input('fromdate');
         $assesment->todate = $request->input('todate');

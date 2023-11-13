@@ -85,11 +85,13 @@
                                             <td class="text-center">{{ $list->score }}</td>
                                             <td class="text-center">{{ $list->batch }}</td>
                                             <td class="text-center">
+                                                <a href="#" class="wrongcheck" title="click to check wrong answers" data-url="{{ route('assesment.wrong', ['slug' => $assesment->slug, 'id' => $list->id]) }}">
                                                 @if ($list->pass)
                                                     <span class="badge bg-green">Pass</span>
                                                 @else
                                                     <span class="badge bg-red">Failed</span>
                                                 @endif
+                                                </a>
                                             </td>
                                             <td>{{ date("d/m/y", strtotime($list->created_at)) }}</td>
                                         </tr>
@@ -108,6 +110,32 @@
         <!-- Container Page -->
     </div>
     <!-- Page body -->
+
+    <!-- Modal Check Wrong Answers -->
+    <div class="modal modal-blur fade" id="modal-answer" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="d-none modal-blur" id="overlay">
+                    <div class="text-center">
+                        <div class="text-muted mb-3">Getting data</div>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-indeterminate"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-header">
+                    <h5 class="modal-title">Wrong Answer List</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="result"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 @endsection
 
@@ -130,6 +158,38 @@
                 "pageLength": 25,
                 "autoWidth": false,
             });
+        });
+    </script>
+
+    <script>
+        //modal wrong answers
+        $(document).on('click', '.wrongcheck', function(e) {
+            e.preventDefault();
+            $("#overlay").removeClass('d-none');
+            $('#modal-answer').modal('show');
+            var col = '';
+            $.ajax({
+                type: "GET",
+                url: $(this).data('url'),
+                dataType: "json",
+                success: function(response) {
+                    if (response.status == 404) {
+                        alert(response.message);
+                        $('#modal-questions').modal('hide');
+                    } else {
+                        //$('#title').text(response.assesment.title);
+                        $.each(response.wrong_answer, function(i, item) {
+
+                            col = col + '<div class="row border-bottom mb-2"><div class="col-md-8">'+item.question+'</div>'+'<div class="col-md-2 text-primary">'+item.answer+'</div>'+'<div class="col-md-2 text-danger">'+item.user_answer+'</div></div>';
+
+                        });
+                        $('#result').html(col);
+
+                        $("#overlay").addClass('d-none');
+                    }
+                }
+            });
+            $("#overlay").addClass('d-none');
         });
     </script>
 @endsection
