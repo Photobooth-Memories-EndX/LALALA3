@@ -118,6 +118,12 @@
   /* #smartwizard .nav{display: none;}
   #smartwizard .progress{display: block !important;} */
 }
+.sw-theme-dots > .nav .nav-link.error.done {
+    color: #FF8C85 !important;
+}
+.sw-theme-dots > .nav .nav-link.error.done::after {
+    background-color:  #FF8C85 !important;
+}
 </style>
 <link href="{{ asset('css/smart_wizard_dots.css') }}" rel="stylesheet" type="text/css" />
 @endsection
