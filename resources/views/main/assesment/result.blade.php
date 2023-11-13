@@ -115,19 +115,20 @@
     <div class="modal modal-blur fade" id="modal-answer" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content">
-                <div class="d-none modal-blur" id="overlay">
-                    <div class="text-center">
-                        <div class="text-muted mb-3">Getting data</div>
-                        <div class="progress">
-                            <div class="progress-bar progress-bar-indeterminate"></div>
-                        </div>
-                    </div>
-                </div>
+
                 <div class="modal-header">
                     <h5 class="modal-title">Wrong Answer List</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="d-none modal-blur" id="overlay">
+                        <div class="text-center mb-3">
+                            <div class="text-muted mb-3">Getting data</div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-indeterminate"></div>
+                            </div>
+                        </div>
+                    </div>
                     <div id="result"></div>
                 </div>
                 <div class="modal-footer">
@@ -189,7 +190,7 @@
                     }
                 }
             });
-            $("#overlay").addClass('d-none');
+            //$("#overlay").addClass('d-none');
         });
     </script>
 @endsection
