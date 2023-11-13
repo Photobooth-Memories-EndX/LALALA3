@@ -35,8 +35,8 @@ class AssesmentResultController extends Controller
 
         $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
 
-
         $format_answer = [];
+        ksort($wrong_answer);
         foreach($wrong_answer as $key => $value){
             $data = AssesmentQuestion::findOrFail($key);
             array_push($format_answer, ['question' => $data->question, 'answer' => $data->answer, 'user_answer' => ($user_answers[$key]) ?? '<i>Empty Answer</i>']);
