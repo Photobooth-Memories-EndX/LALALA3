@@ -39,7 +39,7 @@ class AssesmentResultController extends Controller
         $format_answer = [];
         foreach($wrong_answer as $key => $value){
             $data = AssesmentQuestion::findOrFail($key);
-            array_push($format_answer, ['question' => $data->question, 'answer' => $data->answer, 'user_answer' => ($user_answers[$key]) ?? '']);
+            array_push($format_answer, ['question' => $data->question, 'answer' => $data->answer, 'user_answer' => ($user_answers[$key]) ?? '<i>Empty Answer</i>']);
         }
 
         return response()->json([
