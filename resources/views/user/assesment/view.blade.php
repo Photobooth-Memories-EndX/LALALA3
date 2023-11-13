@@ -46,7 +46,13 @@
                             </div>
 
                             <div class="tab-content">
+                                @php
+                                    $i = 0;
+                                @endphp
                                 @foreach ($assesment_question as $step)
+                                @php
+                                    $i = $i+1;
+                                @endphp
                                 <div id="step-{{ $step->id }}" class="tab-pane" role="tabpanel" aria-labelledby="step-{{ $step->id }}">
                                     <div class="mb-3">
                                         {{-- <label class="form-label h2">{{ $step->question }}</label> --}}
@@ -66,7 +72,7 @@
 
                                         @foreach ($options->shuffle()->all() as $option)
                                         <label class="form-selectgroup-item flex-fill">
-                                        <input type="radio" name="{{ $step->id }}" value="{{ $option }}" class="form-selectgroup-input" {{ ($jawaban_temp == $option) ? 'checked' : ''  }}>
+                                        <input type="radio" name="{{ $step->id }}" value="{{ $option }}" class="form-selectgroup-input {{ $i }}" {{ ($jawaban_temp == $option) ? 'checked' : ''  }}>
                                         <div class="form-selectgroup-label d-flex align-items-center p-2">
                                             <div class="me-3">
                                                 <span class="form-selectgroup-check"></span>
@@ -128,6 +134,26 @@
         //     extraHtml: '<button type="submit" class="btn btn-success btn-finish text-end" onclick="return confirm(\'Are you sure want to finish the assesment and submit all the answer?\')">Submit Answers</button>'
         // }
     });
+
+    // Leave step event is used for validating the forms
+    $("#smartwizard").on("leaveStep", function(e, anchorObject, currentStepIdx, nextStepIdx, stepDirection) {
+
+        let radios = document.getElementsByClassName((currentStepIdx + 1));
+        var checked = false;
+        for (var i = 0, length = radios.length; i < length; i++) {
+            if (radios[i].checked) {
+                checked = true;
+                $('#smartwizard').smartWizard("unsetState", [currentStepIdx], 'error');
+                break;
+            }
+        }
+        if(!checked)
+        {
+          $('#smartwizard').smartWizard("setState", [currentStepIdx], 'error');
+        }
+
+    });
+
 });
 </script>
 
