@@ -85,7 +85,7 @@
                                             <td class="text-center">{{ $list->score }}</td>
                                             <td class="text-center">{{ $list->batch }}</td>
                                             <td class="text-center">
-                                                <a href="#" class="wrongcheck" title="click to check wrong answers" data-url="{{ route('assesment.wrong', ['slug' => $assesment->slug, 'id' => $list->id]) }}">
+                                                <a href="#" class="wrongcheck" data-bs-toggle="tooltip" data-bs-placement="top" title="click to check wrong answers" data-url="{{ route('assesment.wrong', ['slug' => $assesment->slug, 'id' => $list->id]) }}">
                                                 @if ($list->pass)
                                                     <span class="badge bg-green">Pass</span>
                                                 @else
