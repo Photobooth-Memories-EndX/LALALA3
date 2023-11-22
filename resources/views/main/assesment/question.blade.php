@@ -78,7 +78,28 @@
       <div class="card mt-3">
         <div class="card-header">
             <h3 class="card-title">{{ $assesment->title }}</h3>
-          </div>
+            <div class="card-actions row">
+                <!-- Page title actions -->
+                <div class="col-auto ms-auto d-print-none">
+                    <div class="d-flex">
+                        <form name="form1" id="form1" method="POST" action="{{ route('assesment.question.download') }}">
+                            @csrf
+                            <input type="hidden" name="assessment_id" id="assessment_id" value="{{ $assesment->id }}">
+                            <input type="hidden" name="slug" id="slug" value="{{ $assesment->slug }}">
+                            <x-button class="btn-icon btn-green">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>
+                                    <path d="M7 11l5 5l5 -5"></path>
+                                    <path d="M12 4l0 12"></path>
+                                </svg>
+                            </x-button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
         <div class="card-body">
           <div id="table-default" class="table-responsive">
             @unless(count($assesment_question) == 0)

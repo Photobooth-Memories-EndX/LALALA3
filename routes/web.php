@@ -82,6 +82,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::get('assesment/{assesment}/newlink', [AssesmentController::class, 'newlink'])->name('assesment.newlink');
     Route::put('assesment/{assesment}/updatelink', [AssesmentController::class, 'updatelink'])->name('assesment.updatelink');
     Route::post('assesment/download', [DownloadController::class, 'assessmentdownload'])->name('assesment.result.download');
+    Route::post('assesment/question/download', [DownloadController::class, 'assessmentquestiondownload'])->name('assesment.question.download');
     Route::get('assesment/wrong/{slug}/{id}', [AssesmentResultController::class, 'wrong'])->name('assesment.wrong');
 
 
