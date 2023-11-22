@@ -12,7 +12,7 @@
             <tr>
                 <td>{{ $loop->index + 1 }}</td>
                 <td>{{ $list->question }}</td>
-                <td>{!! implode(' | ', $list->option) !!}</td>
+                <td>{!! htmlspecialchars(implode(' | ', $list->option)) !!}</td>
                 <td>{{ $list->answer }}</td>
             </tr>
         @endforeach
