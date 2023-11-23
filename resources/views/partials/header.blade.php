@@ -116,6 +116,9 @@
                             <a class="dropdown-item" href="{{ url('learning/record') }}" rel="noopener">
                                 Learning Record
                             </a>
+                            <a class="dropdown-item" href="{{ url('learning/assesment') }}" rel="noopener">
+                                Assesment Result
+                            </a>
                         </div>
                     </li>
 

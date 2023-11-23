@@ -128,6 +128,7 @@ Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
 Route::group(['prefix' => 'learning', 'middleware' => 'auth'], function () {
     Route::get('on-going', [LearningController::class, 'ongoing'])->name('learning.ongoing');
     Route::get('record', [LearningController::class, 'record'])->name('learning.record');
+    Route::get('assesment', [LearningController::class, 'assesment'])->name('learning.assesment');
 });
 
 Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
