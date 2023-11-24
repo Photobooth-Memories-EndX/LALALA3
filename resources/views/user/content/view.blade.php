@@ -180,13 +180,15 @@
                             <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
                         @endif
 
+                        @if (($content->type == 'Video') || ($content->type == 'YouTube'))
                         @php
                             $time_duration = explode(':', $content->duration);
                             $minutes = (int)$time_duration[0];
                             $seconds = (int)$time_duration[1];
                         @endphp
-                        <input type="hidden" id="player_progress" value="{{ $content_user->progress }}">
                         <input type="hidden" id="player_duration" value="{{ ($minutes*60)+$seconds }}">
+                        @endif
+                        <input type="hidden" id="player_progress" value="{{ $content_user->progress }}">
                         <input type="hidden" data-url="{{ route('content.user.progress', $content->slug) }}" id="player_paused">
 
                      </div>
