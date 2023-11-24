@@ -96,7 +96,7 @@
                                             <td>{{ $list->classification->classification_name ?? '' }}</td>
                                             <td>{{ $list->duration }}</td>
                                             <td>{{ $list->date }}</td>
-                                            <td data-bs-trigger="hover" data-bs-toggle="popover" title="Description" data-bs-content="{{ $list->description }}">{{ Str::limit($list->description, 15) }}</td>
+                                            <td data-bs-trigger="hover" data-bs-toggle="popover" title="Description" data-bs-html="true" data-bs-content="{!! nl2br($list->description) !!}">{{ Str::limit($list->description, 15) }}</td>
                                             <td>{{ $list->author }}</td>
                                             <td style="text-align: center; vertical-align: middle;"><span class="badge bg-{{ $activecolor }}">{{ $list->active }}</span></td>
                                             <td>

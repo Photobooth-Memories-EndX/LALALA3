@@ -103,7 +103,7 @@
                                                     <div class="col">
                                                         <h4><a href="{{ route('content.user.view', $list->slug) }}" class="text-reset">{{ $list->title }}</a></h4>
                                                         <div class="text-muted">
-                                                            {{ $list->description }}
+                                                            {!! nl2br($list->description) !!}
                                                         </div>
                                                     </div>
                                                 </div>
