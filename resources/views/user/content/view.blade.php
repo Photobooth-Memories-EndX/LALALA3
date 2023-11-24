@@ -180,7 +180,13 @@
                             <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
                         @endif
 
+                        @php
+                            $time_duration = explode(':', $content->duration);
+                            $minutes = (int)$time_duration[0];
+                            $seconds = (int)$time_duration[1];
+                        @endphp
                         <input type="hidden" id="player_progress" value="{{ $content_user->progress }}">
+                        <input type="hidden" id="player_duration" value="{{ ($minutes*60)+$seconds }}">
                         <input type="hidden" data-url="{{ route('content.user.progress', $content->slug) }}" id="player_paused">
 
                      </div>
@@ -225,9 +231,10 @@
 
         player.on('ready', function() { //alert(player.duration);
             var progression = $('#player_progress').val();
-            var current_player_time = (progression * player.duration) / 100;
+            var durasi = $('#player_duration').val();
+            var current_player_time = (progression * durasi) / 100;
 
-            if(current_player_time < player.duration){
+            if(current_player_time < durasi){
                 player.currentTime = current_player_time;
             }
         })
