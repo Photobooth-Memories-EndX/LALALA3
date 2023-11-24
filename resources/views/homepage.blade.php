@@ -155,9 +155,9 @@
                                             $src = 'storage/files/content/'.$pdf->id.'/thumb.jpg';
                                         @endphp
                                             @if (\File::exists(public_path($src)) && !is_dir($src))
-                                            <div class="img-responsive img-responsive-3x4" style="background-image: url({{ asset($src) }});position:relative;height:150px"></div>
+                                            <div class="img-responsive img-responsive-4x3" style="background-image: url({{ asset($src) }});position:relative;height:150px"></div>
                                             @else
-                                            <div class="img-responsive img-responsive-3x4" style="background-image: url({{ asset('pdf.png') }});position:relative;height:150px"></div>
+                                            <div class="img-responsive img-responsive-4x3" style="background-image: url({{ asset('pdf.png') }});position:relative;height:150px"></div>
                                             @endif
 
                                       <div class="card-body py-2 px-0">
