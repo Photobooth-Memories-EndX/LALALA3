@@ -216,6 +216,7 @@
 </style>
 @endsection
 
+@if (($content->type == 'Video') || ($content->type == 'YouTube'))
 @section('script')
 <script src={{ $url_ytplayer_js }}></script>
 <script>
@@ -254,5 +255,5 @@
 
     });
 </script>
-
 @endsection
+@endif
