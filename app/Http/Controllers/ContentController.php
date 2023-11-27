@@ -106,6 +106,7 @@ class ContentController extends Controller
         //     'duration' => 'required',
         //     'description' => 'required'
         // ]);
+        // return $request;
         if ($request->type == "YouTube") {
             parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
             // $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
@@ -121,6 +122,7 @@ class ContentController extends Controller
             'author' => $request->author,
             'duration' => $request->duration,
             'description' => $request->description,
+            'playlistonly' => $request->playlistonly,
             'link' => $ytid
         ]);
         $newcontent->save();
@@ -271,6 +273,7 @@ class ContentController extends Controller
                 'author' => $request->author,
                 'duration' => $request->duration,
                 'description' => $request->description,
+                'playlistonly' => $request->playlistonly,
                 'active' => $active,
                 'link' => $ytid
             ]);

@@ -136,6 +136,20 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row">
+
+                            <div class="col-xl-6">
+                                <div class="mb-3">
+                                    <label class="form-check">
+                                        <input type="hidden" name="playlistonly" value="N">
+                                        <input class="form-check-input" type="checkbox" name="playlistonly" value="Y">
+                                        <span class="form-check-label">Only show this content on Playlist</span>
+
+                                    </label>
+
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="mb-3">
                             <label class="form-label">Content Description</label>

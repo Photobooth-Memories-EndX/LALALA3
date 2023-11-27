@@ -13,7 +13,7 @@ class ContentUserController extends Controller
 {
     public function index()
     {
-        $content = Content::whereActive('Active')->get();
+        $content = Content::where('playlistonly', 'N')->whereActive('Active')->get();
         return view('user.content.index', compact('content'));
     }
     public function view($slug)
