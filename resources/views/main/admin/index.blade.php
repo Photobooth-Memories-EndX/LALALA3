@@ -98,6 +98,7 @@
                                 <option value="{{ $list->id }}">{{ $list->name }}</option>
                                 @endforeach
                               </x-select>
+                              <small class="form-hint">Add user if not exist yet at above list.</small>
                             </div>
                           </div>
 
