@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\SearchController;
@@ -66,6 +67,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     Route::resource('pages', PagesController::class);
     Route::resource('classification', ClassificationController::class);
+    Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);
 
     Route::resource('assesment', AssesmentController::class);
     Route::get('assesment/{assesment}/question', [AssesmentQuestionController::class, 'question'])->name('assesment.question');
