@@ -69,16 +69,16 @@
                 <div class="row">
                 @unless(count($content_pdf) == 0)
                   @foreach ($content_pdf as $item)
-                  <div class="col-md-2">
+                  <div class="col-md-3">
                     <div class="card card-md border-0">
 
                         @php
                             $src = 'storage/files/content/'.$item->id.'/thumb.jpg';
                         @endphp
                             @if (\File::exists(public_path($src)) && !is_dir($src))
-                            <div class="img-responsive img-responsive-3x4" style="background-image: url({{ asset($src) }});position:relative;"></div>
+                            <div class="img-responsive img-responsive-4x3" style="background-image: url({{ asset($src) }});position:relative;"></div>
                             @else
-                            <div class="img-responsive img-responsive-3x4" style="background-image: url({{ asset('pdf.png') }});position:relative;"></div>
+                            <div class="img-responsive img-responsive-4x3" style="background-image: url({{ asset('pdf.png') }});position:relative;"></div>
                             @endif
 
                       <div class="card-body py-2 px-0">
