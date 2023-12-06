@@ -89,15 +89,116 @@
                                             <input type="hidden" name="replacecontent" id="replacecontent" value="{{ $getcontentfile }}">
                                         </video>
                                     @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
-                                        <object data="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" width="800px" height="800px" style="text-align: center"></object>
+                                        <div class="row pdfviewer p-0 row h-100">
+                                            <div class="pdftoolbar text-center row m-0 p-0">
+                                            <div class="col-12 col-lg-6 my-1">
+                                                <button class="btn btn-secondary btn-sm btn-first" onclick="pdfViewer.first()"><i class="material-icons-outlined">skip_previous</i></button>
+                                                <button class="btn btn-secondary btn-sm btn-prev" onclick="pdfViewer.prev(); return false;"><i class="material-icons-outlined">navigate_before</i></button>
+                                                <span class="pageno"></span>
+                                                <button class="btn btn-secondary btn-sm btn-next" onclick="pdfViewer.next(); return false;"><i class="material-icons-outlined">navigate_next</i></button>
+                                                <button class="btn btn-secondary btn-sm btn-last" onclick="pdfViewer.last()"><i class="material-icons-outlined">skip_next</i></button>
+                                            </div>
+                                            <div class="col-12 col-lg-6 my-1">
+                                                <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('out')"><i class="material-icons-outlined">zoom_out</i></button>
+                                                <span class="zoomval">100%</span>
+                                                <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('in')"><i class="material-icons-outlined">zoom_in</i></button>
+                                                <button class="btn btn-secondary btn-sm ms-3" onclick="pdfViewer.setZoom('width')"><i class="material-icons-outlined">swap_horiz</i></button>
+                                                <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('height')"><i class="material-icons-outlined">swap_vert</i></button>
+                                                <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('fit')"><i class="material-icons-outlined">fit_screen</i></button>
+                                            </div>
+                                            </div>
+                                            <div class="pdfjs-viewer h-100"></div>
+                                        </div>
+
+                                        @push('styles')
+                                        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+                                        <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
+                                        <style>
+                                        .pdftoolbar,
+                                        .pdftoolbar i {
+                                            font-size: 14px;
+                                        }
+                                        .pdftoolbar span {
+                                            margin-right: 0.5em;
+                                            margin-left: 0.5em;
+                                            width: 4em !important;
+                                            font-size: 12px;
+                                        }
+                                        .pdftoolbar .btn-sm {
+                                            padding: 0.12rem 0.25rem;
+                                        }
+                                        .pdfjs-viewer {
+                                            height: 720px !important;
+                                        }
+                                        .pdftoolbar {
+                                            width: 100%;
+                                            height: auto;
+                                            background: #ddd;
+                                            z-index: 100;
+                                        }
+                                        </style>
+                                        @endpush
+
+                                        @push('scripts')
+
+                                            <script src="{{ asset('js/pdf.min.js') }}"></script>
+                                            <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
+                                            <script>
+                                            var pdfjsLib = window["pdfjs-dist/build/pdf"];
+                                            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                                            "{{ asset('js/pdf.worker.min.js') }}";
+
+                                            let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
+                                                                onDocumentReady: () => {
+                                                                    var progression = {{ (int)$content_user->progress }};
+                                                                    var current_page = (progression * pdfViewer.getPageCount()) / 100;
+
+                                                                    if(parseInt(current_page) < pdfViewer.getPageCount()){
+                                                                        pdfViewer.scrollToPage(parseInt(current_page));
+                                                                    }
+                                                                },
+                                                                onZoomChange: function (zoom) {
+                                                                    zoom = parseInt(zoom * 10000) / 100;
+                                                                    $(".zoomval").text(zoom + "%");
+                                                                },
+                                                                onActivePageChanged: function (page, pageno) {
+                                                                    $(".pageno").text(pageno + "/" + this.getPageCount());
+                                                                    $.ajax({
+                                                                        type: "PUT",
+                                                                        url: $('#player_paused').data('url'),
+                                                                        data: {'current_time': pageno, 'duration': this.getPageCount(), '_token': '{{ csrf_token() }}' },
+                                                                        success: function(data){
+                                                                            console.log(data.success)
+                                                                        }
+                                                                    });
+                                                                }
+                                                            });
+                                            pdfViewer
+                                            .loadDocument("{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}")
+                                            .then(function () {
+                                                pdfViewer.setZoom("width");
+
+                                            });
+
+                                            </script>
+
+                                        @endpush
+
                                     @elseif ($content->type == 'YouTube')
                                         <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
                                     @endif
 
-                                    @if ($content->type == 'Video' || $content->type == 'YouTube')
-                                        <input type="hidden" id="player_progress" value="{{ $content_user->progress }}">
-                                        <input type="hidden" data-url="{{ route('content.user.progress', $content->slug) }}" id="player_paused">
+                                    @if (($content->type == 'Video') || ($content->type == 'YouTube'))
+                                    @php
+                                        $time_duration = explode(':', $content->duration);
+                                        $minutes = (int)$time_duration[0];
+                                        $seconds = (int)$time_duration[1];
+                                    @endphp
+                                    <input type="hidden" id="player_duration" value="{{ ($minutes*60)+$seconds }}">
                                     @endif
+                                    <input type="hidden" id="player_progress" value="{{ $content_user->progress }}">
+                                    <input type="hidden" data-url="{{ route('content.user.progress', $content->slug) }}" id="player_paused">
+
                                 </div>
 
                             </div>
@@ -284,25 +385,34 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             // window.Plyr && (new Plyr('#player'));
-            const player = new Plyr('#player');
-            window.player = player;
+            const player = new Plyr('#player', {
+                            listeners: { //disable fast forward
+                                seek (e) {
+                                    e.preventDefault();
+                                    console.log('prevented');
+                                    return false;
+                                }
+                            }
+                        });
 
             player.on('ready', function() {
                 var progression = $('#player_progress').val();
-                var current_player_time = (progression * player.duration) / 100;
+                var durasi = $('#player_duration').val();
+                var current_player_time = (progression * durasi) / 100;
 
-                if (current_player_time < player.duration) {
+                if (current_player_time < durasi) {
                     player.currentTime = current_player_time;
                 }
             })
 
             player.on('pause', function() {
+                var durasi = $('#player_duration').val();
                 $.ajax({
                     type: "PUT",
                     url: $('#player_paused').data('url'),
                     data: {
                         'current_time': player.currentTime,
-                        'duration': player.duration,
+                        'duration': durasi,
                         '_token': '{{ csrf_token() }}'
                     },
                     success: function(data) {

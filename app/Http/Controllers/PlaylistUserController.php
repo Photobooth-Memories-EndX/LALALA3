@@ -43,9 +43,8 @@ class PlaylistUserController extends Controller
 
         $trainingplan = TrainingPlan::findBySlug($slug);
         $content = Content::findBySlug($vidslug);
-
-        // $content->views += 1;
-        // $content->save();
+        $content->views += 1;
+        $content->save();
 
         //add content to user learning on going if not exist yet
         $content_user = ContentUser::firstOrCreate([
