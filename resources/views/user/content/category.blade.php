@@ -46,7 +46,7 @@
                                 @endif
 
                                 <div class="card-body py-2 px-0">
-                                <h3 class="card-title h4"><a href="{{ route('content.user.view', $item->slug) }}">{{ Str::limit($item->title, 100) }}</a></h3>
+                                  <h3 class="card-title h4"><a href="{{ route('content.user.view', $item->slug) }}">{{ Str::limit($item->title, 100) }}</a></h3>
                                 </div>
                             </div>
                             </div>
