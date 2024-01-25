@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Knowledge Management System'),
+    'name' => env('APP_NAME', 'Online Knowledge Learning'),
 
     /*
     |--------------------------------------------------------------------------

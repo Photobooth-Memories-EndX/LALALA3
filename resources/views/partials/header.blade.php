@@ -6,8 +6,8 @@
         </button>
         <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
             <a href="{{ url('/') }}">
-                {{-- <img src="{{ asset('Tabler/static/logo.svg') }}" width="110" height="32" alt="Knowledge Management System" class="navbar-brand-image"> --}}
-                Knowledge Management System
+                <img src="{{ asset('owl.png') }}" width="110" height="32" alt="Online Knowledge Learning" class="navbar-brand-image">
+                <span class="text-warning">O</span>nline Kno<span class="text-warning">W</span>ledge <span class="text-warning">L</span>earning
             </a>
         </h1>
         <div class="navbar-nav flex-row order-md-last">

@@ -14,7 +14,7 @@
     {{-- <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" /> --}}
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Sign in - Knowledge Management System</title>
+    <title>Sign in - Online Knowledge Learning</title>
     <!-- CSS files -->
     <link href="Tabler/dist/css/tabler.min.css?1684106062" rel="stylesheet" />
     <link href="Tabler/dist/css/tabler-flags.min.css?1684106062" rel="stylesheet" />
@@ -39,13 +39,13 @@
     <div class="page page-center">
         <div class="container container-tight py-4">
             <div class="text-center mb-4">
-                <a href="." class="navbar-brand navbar-brand-autodark"><img src="books.png" height="70" alt=""></a>
+                <a href="." class="navbar-brand navbar-brand-autodark"><img src="owl.png" height="150" alt=""></a>
             </div>
             <div class="card card-md">
                 <div class="card-body">
                     <x-alert type='success' />
                     <x-alert type='warning' />
-                    <h2 class="h2 text-center mb-4">Knowledge Management System</h2>
+                    <h2 class="h2 text-center mb-4">Online Knowledge Learning</h2>
                     <form action="{{ route('authuser') }}" method="post" autocomplete="off" novalidate>
                         @csrf
                         <div class="mb-3">
