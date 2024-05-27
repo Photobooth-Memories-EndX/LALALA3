@@ -58,15 +58,26 @@
                                         <tr>
                                             @php
                                                 $listcontent = '';
+
+                                                $vidSlug    = '';
+
                                                 foreach ($list->trainingplandetail as $detail) {
-                                                    $listcontent .= '- ' . $detail->content->title . '<br>';
+                                                    if ($detail->content != null) {
+                                                        $listcontent .= '- ' . $detail->content->title . '<br>';
+
+                                                        $vidSlug    = $detail->content->slug;
+                                                    }
                                                 }
                                             @endphp
                                             <td>{{ $loop->index + 1 }}</td>
-                                            <td><a href="{{ route('playlist.user.view', [$list->slug, $list->trainingplandetail[0]->content->slug]) }}">{{ $list->title }}</a></td>
+                                            <td>
+                                                <a href="{{ route('playlist.user.view', [$list->slug, $vidSlug]) }}">{{ $list->title }}</a>
+                                            </td>
                                             <td data-bs-trigger="hover" data-bs-toggle="popover" title="Content List" data-bs-html="true" data-bs-content="{{ $listcontent }}">
                                                 @foreach ($list->trainingplandetail->take(3) as $detail)
-                                                    - {{ $detail->content->title }}<br>
+                                                    @if ($detail->content != null)
+                                                        - {{ $detail->content->title }}<br>
+                                                    @endif
                                                 @endforeach
                                                 @if (count($list->trainingplandetail) >= 4)
                                                     - ......
