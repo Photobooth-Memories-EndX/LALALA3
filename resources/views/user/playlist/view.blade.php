@@ -212,66 +212,64 @@
                             {{-- <div style="overflow: auto"> --}}
                             <div class="list-group list-group-flush list-group-hoverable overflow-auto" style="max-height: 20rem">
                                 @foreach ($content_all as $list)
-                                    <div class="list-group-item" @if ($content->slug == $list->content->slug) style="background-color: #ededed" @endif>
-                                        <div class="row align-items-center">
-                                            {{-- <div class="col-auto"><span class="badge bg-red"></span></div> --}}
+                                    @if ($list->content != null)
+                                        <div class="list-group-item" @if ($content->slug == $list->content->slug) style="background-color: #ededed" @endif>
+                                            <div class="row align-items-center">
+                                                {{-- <div class="col-auto"><span class="badge bg-red"></span></div> --}}
 
 
-                                            <div class="col-auto">
-                                                {{-- <a href="#">
-                                                  <span class="avatar" style="background-image: url(./static/avatars/000m.jpg)"></span>
-                                              </a> --}}
-                                                @if ($list->content->type == 'YouTube')
-                                                    <span class="avatar" style="background-image: url(http://img.youtube.com/vi/{{ $list->content->link }}/mqdefault.jpg)"></span>
-                                                @else
-                                                    @php
-                                                        $src = 'storage/files/content/' . $list->content->id . '/thumb.jpg';
-                                                    @endphp
-                                                    @if (\File::exists(public_path($src)) && !is_dir($src))
-                                                        <span class="avatar" style="background-image: url({{ asset($src) }})"></span>
+                                                <div class="col-auto">
+                                                    {{-- <a href="#">
+                                                    <span class="avatar" style="background-image: url(./static/avatars/000m.jpg)"></span>
+                                                </a> --}}
+                                                    @if ($list->content->type == 'YouTube')
+                                                        <span class="avatar" style="background-image: url(http://img.youtube.com/vi/{{ $list->content->link }}/mqdefault.jpg)"></span>
                                                     @else
-                                                        <span class="avatar" style="background-image: url({{ asset('default-video.jpg') }})"></span>
+                                                        @php
+                                                            $src = 'storage/files/content/' . $list->content->id . '/thumb.jpg';
+                                                        @endphp
+                                                        @if (\File::exists(public_path($src)) && !is_dir($src))
+                                                            <span class="avatar" style="background-image: url({{ asset($src) }})"></span>
+                                                        @else
+                                                            <span class="avatar" style="background-image: url({{ asset('default-video.jpg') }})"></span>
+                                                        @endif
                                                     @endif
-                                                @endif
-                                            </div>
-                                            <div class="col text-truncate">
-                                                <a href="{{ route('playlist.user.view', [$playlist->slug, $list->content->slug]) }}" class="text-reset d-block">{{ $list->content->title }}</a>
-                                                <div class="d-block text-muted text-truncate mt-n1">{{ $list->content->description }}</div>
-                                            </div>
-                                            {{-- <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
-                                                    <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
-                                                </div> --}}
-                                            <div class="col-auto">
-                                                @if ($content->slug == $list->content->slug)
-                                                    <div class="now playing" id="music">
-                                                        <span class="bar n1">A</span>
-                                                        <span class="bar n2">B</span>
-                                                        <span class="bar n3">c</span>
-                                                        <span class="bar n4">D</span>
-                                                        {{-- <span class="bar n5">E</span>
-                                                      <span class="bar n6">F</span>
-                                                      <span class="bar n7">G</span>
-                                                      <span class="bar n8">H</span> --}}
-                                                    </div>
-                                                    {{-- Now Playing --}}
-                                                @endif
-                                                {{-- <a href="#" class="list-group-item-actions"><!-- Download SVG icon from http://tabler-icons.io/i/star -->
-                                                  <svg xmlns="http://www.w3.org/2000/svg" class="icon text-muted" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                      <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z" />
-                                                  </svg>
-                                              </a> --}}
+                                                </div>
+                                                <div class="col text-truncate">
+                                                    <a href="{{ route('playlist.user.view', [$playlist->slug, $list->content->slug]) }}" class="text-reset d-block">{{ $list->content->title }}</a>
+                                                    <div class="d-block text-muted text-truncate mt-n1">{{ $list->content->description }}</div>
+                                                </div>
+                                                {{-- <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
+                                                        <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
+                                                    </div> --}}
+                                                <div class="col-auto">
+                                                    @if ($content->slug == $list->content->slug)
+                                                        <div class="now playing" id="music">
+                                                            <span class="bar n1">A</span>
+                                                            <span class="bar n2">B</span>
+                                                            <span class="bar n3">c</span>
+                                                            <span class="bar n4">D</span>
+                                                            {{-- <span class="bar n5">E</span>
+                                                        <span class="bar n6">F</span>
+                                                        <span class="bar n7">G</span>
+                                                        <span class="bar n8">H</span> --}}
+                                                        </div>
+                                                        {{-- Now Playing --}}
+                                                    @endif
+                                                    {{-- <a href="#" class="list-group-item-actions"><!-- Download SVG icon from http://tabler-icons.io/i/star -->
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-muted" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                        <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z" />
+                                                    </svg>
+                                                </a> --}}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @endif
                                 @endforeach
                             </div>
-
-
-
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
