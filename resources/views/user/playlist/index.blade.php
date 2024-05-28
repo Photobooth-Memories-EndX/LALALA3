@@ -71,6 +71,7 @@
                                             @endphp
                                             <td>{{ $loop->index + 1 }}</td>
                                             <td>
+                                                {{-- <a href="{{ route('playlist.user.view', [$list->slug, $list->trainingplandetail[0]->content->slug]) }}">{{ $list->title }}</a> --}}
                                                 <a href="{{ route('playlist.user.view', [$list->slug, $vidSlug]) }}">{{ $list->title }}</a>
                                             </td>
                                             <td data-bs-trigger="hover" data-bs-toggle="popover" title="Content List" data-bs-html="true" data-bs-content="{{ $listcontent }}">

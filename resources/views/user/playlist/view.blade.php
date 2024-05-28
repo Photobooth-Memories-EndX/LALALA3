@@ -144,42 +144,45 @@
                                             <script src="{{ asset('js/pdf.min.js') }}"></script>
                                             <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
                                             <script>
-                                            var pdfjsLib = window["pdfjs-dist/build/pdf"];
-                                            pdfjsLib.GlobalWorkerOptions.workerSrc =
-                                            "{{ asset('js/pdf.worker.min.js') }}";
+                                                let fileName        = "{{ "$getcontentfile" }}";
+                                                let fileNameFixed   = fileName.replaceAll(' ', '%20').replaceAll('&amp;', '&');
+                                                let fileLocation    = "{{ asset('storage/files/content/' . $content->id . '/' . ':fileContent' . '') }}";
+                                                let pdfFile         = fileLocation.replace(':fileContent', fileNameFixed);
+                                                
+                                                var pdfjsLib = window["pdfjs-dist/build/pdf"];
+                                                pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
 
-                                            let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
-                                                                onDocumentReady: () => {
-                                                                    var progression = {{ (int)$content_user->progress }};
-                                                                    var current_page = (progression * pdfViewer.getPageCount()) / 100;
+                                                let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
+                                                    onDocumentReady: () => {
+                                                        var progression = {{ (int)$content_user->progress }};
+                                                        var current_page = (progression * pdfViewer.getPageCount()) / 100;
 
-                                                                    if(parseInt(current_page) < pdfViewer.getPageCount()){
-                                                                        pdfViewer.scrollToPage(parseInt(current_page));
-                                                                    }
-                                                                },
-                                                                onZoomChange: function (zoom) {
-                                                                    zoom = parseInt(zoom * 10000) / 100;
-                                                                    $(".zoomval").text(zoom + "%");
-                                                                },
-                                                                onActivePageChanged: function (page, pageno) {
-                                                                    $(".pageno").text(pageno + "/" + this.getPageCount());
-                                                                    $.ajax({
-                                                                        type: "PUT",
-                                                                        url: $('#player_paused').data('url'),
-                                                                        data: {'current_time': pageno, 'duration': this.getPageCount(), '_token': '{{ csrf_token() }}' },
-                                                                        success: function(data){
-                                                                            console.log(data.success)
-                                                                        }
-                                                                    });
-                                                                }
-                                                            });
-                                            pdfViewer
-                                            .loadDocument("{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}")
-                                            .then(function () {
-                                                pdfViewer.setZoom("width");
+                                                        if(parseInt(current_page) < pdfViewer.getPageCount()){
+                                                            pdfViewer.scrollToPage(parseInt(current_page));
+                                                        }
+                                                    },
+                                                    onZoomChange: function (zoom) {
+                                                        zoom = parseInt(zoom * 10000) / 100;
+                                                        $(".zoomval").text(zoom + "%");
+                                                    },
+                                                    onActivePageChanged: function (page, pageno) {
+                                                        $(".pageno").text(pageno + "/" + this.getPageCount());
+                                                        $.ajax({
+                                                            type: "PUT",
+                                                            url: $('#player_paused').data('url'),
+                                                            data: {'current_time': pageno, 'duration': this.getPageCount(), '_token': '{{ csrf_token() }}' },
+                                                            success: function(data){
+                                                                console.log(data.success)
+                                                            }
+                                                        });
+                                                    }
+                                                });
 
-                                            });
-
+                                                pdfViewer
+                                                .loadDocument(pdfFile)
+                                                .then(function () {
+                                                    pdfViewer.setZoom("width");
+                                                });
                                             </script>
 
                                         @endpush
@@ -212,7 +215,7 @@
                             {{-- <div style="overflow: auto"> --}}
                             <div class="list-group list-group-flush list-group-hoverable overflow-auto" style="max-height: 20rem">
                                 @foreach ($content_all as $list)
-                                    @if ($list->content != null)
+                                    @if ($list->content->slug != null)
                                         <div class="list-group-item" @if ($content->slug == $list->content->slug) style="background-color: #ededed" @endif>
                                             <div class="row align-items-center">
                                                 {{-- <div class="col-auto"><span class="badge bg-red"></span></div> --}}
