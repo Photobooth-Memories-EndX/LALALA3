@@ -8,7 +8,7 @@
     <div class="page-body">
         <div class="container-xl">
             <div class="card card-lg">
-                <div class="card-body ">
+                <div class="card-body p-5">
                     <div class="row g-4">
                         <div class="col-12 markdown">
                             <h2 class="mb-2">{{ $playlist->title }}</h2>
@@ -19,7 +19,7 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-8">
+                                <div class="col-9">
                                     <div class="mt-3">
                                         @php
                                             $contentfile = json_decode($content->file);
@@ -203,22 +203,16 @@
 
                                     <p>{!! nl2br($content->description) !!}</p>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-3">
                                     <div class="card-header">
                                         <h3 class="card-title">On This Playlist</h3>
                                     </div>
                                     <div class="list-group list-group-flush list-group-hoverable overflow-auto" style="max-height: 40rem">
                                         @foreach ($content_all as $list)
                                             @if ($list->content->slug != null)
-                                                <div class="list-group-item" @if ($content->slug == $list->content->slug) style="background-color: #ededed" @endif>
+                                                <div class="list-group-item" @if ($content->slug == $list->content->slug) style="background-color: #ededed" @endif data-bs-trigger="hover" data-bs-toggle="popover" title="{{ $list->content->title }}" data-bs-html="true" data-bs-content="{{ $list->content->description }}">
                                                     <div class="row align-items-center">
-                                                        {{-- <div class="col-auto"><span class="badge bg-red"></span></div> --}}
-        
-        
                                                         <div class="col-auto">
-                                                            {{-- <a href="#">
-                                                            <span class="avatar" style="background-image: url(./static/avatars/000m.jpg)"></span>
-                                                        </a> --}}
                                                             @if ($list->content->type == 'YouTube')
                                                                 <span class="avatar" style="background-image: url(http://img.youtube.com/vi/{{ $list->content->link }}/mqdefault.jpg)"></span>
                                                             @else
@@ -237,8 +231,8 @@
                                                             <div class="d-block text-muted text-truncate mt-n1">{{ $list->content->description }}</div>
                                                         </div>
                                                         {{-- <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
-                                                                <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
-                                                            </div> --}}
+                                                            <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
+                                                        </div> --}}
                                                         <div class="col-auto">
                                                             @if ($content->slug == $list->content->slug)
                                                                 <div class="now playing" id="music">
@@ -247,9 +241,9 @@
                                                                     <span class="bar n3">c</span>
                                                                     <span class="bar n4">D</span>
                                                                     {{-- <span class="bar n5">E</span>
-                                                                <span class="bar n6">F</span>
-                                                                <span class="bar n7">G</span>
-                                                                <span class="bar n8">H</span> --}}
+                                                                    <span class="bar n6">F</span>
+                                                                    <span class="bar n7">G</span>
+                                                                    <span class="bar n8">H</span> --}}
                                                                 </div>
                                                                 {{-- Now Playing --}}
                                                             @endif
