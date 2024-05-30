@@ -227,8 +227,8 @@
                                                             @endif
                                                         </div>
                                                         <div class="col text-truncate">
-                                                            <a href="{{ route('playlist.user.view', [$playlist->slug, $list->content->slug]) }}" class="text-reset d-block">{{ $list->content->title }}</a>
-                                                            <div class="d-block text-muted text-truncate mt-n1">{{ $list->content->description }}</div>
+                                                            <a href="{{ route('playlist.user.view', [$playlist->slug, $list->content->slug]) }}" class="text-reset d-block" style="font-size: 1.75vh;">{{ $list->content->title }}</a>
+                                                            <div class="d-block text-muted text-truncate mt-n1" style="font-size: 1.75vh;">{{ $list->content->description }}</div>
                                                         </div>
                                                         {{-- <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
                                                             <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
