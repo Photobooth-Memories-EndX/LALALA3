@@ -80,80 +80,80 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($content_user as $list)
-                                        @php
-                                            if ($list->active == 'Active') {
-                                                $activecolor = 'green';
-                                            } else {
-                                                $activecolor = 'orange';
-                                            }
-                                        @endphp
-                                        <tr>
-                                            <td>{{ $loop->index + 1 }}</td>
-                                            <td>
-                                                <div class="row align-items-center">
-                                                    <div class="col-auto">
-                                                      @if (in_array($list->content->type, ['Video','YouTube']))
-                                                      <span class="bg-red-lt avatar">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-video" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                            <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"></path>
-                                                            <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
-                                                         </svg>
-                                                      </span>
-                                                      @else
-                                                      <span class="bg-yellow-lt avatar">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-type-pdf" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                            <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                                            <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"></path>
-                                                            <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6"></path>
-                                                            <path d="M17 18h2"></path>
-                                                            <path d="M20 15h-3v6"></path>
-                                                            <path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z"></path>
-                                                        </svg>
-                                                      </span>
-                                                      @endif
-
+                                        @if ($list->content != null)
+                                            @php
+                                                if ($list->active == 'Active') {
+                                                    $activecolor = 'green';
+                                                } else {
+                                                    $activecolor = 'orange';
+                                                }
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $loop->index + 1 }}</td>
+                                                <td>
+                                                    <div class="row align-items-center">
+                                                        <div class="col-auto">
+                                                            @if (in_array($list->content->type, ['Video','YouTube']))
+                                                                <span class="bg-red-lt avatar">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-video" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                                        <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"></path>
+                                                                        <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                                                                    </svg>
+                                                                </span>
+                                                            @else
+                                                                <span class="bg-yellow-lt avatar">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-type-pdf" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                                        <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                                                                        <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"></path>
+                                                                        <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6"></path>
+                                                                        <path d="M17 18h2"></path>
+                                                                        <path d="M20 15h-3v6"></path>
+                                                                        <path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z"></path>
+                                                                    </svg>
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                        <div class="col">
+                                                            <a href="{{ route('content.user.view', $list->content->slug) }}" class="text-reset">{{ $list->content->title }}</a>
+                                                        </div>
                                                     </div>
-                                                    <div class="col">
-                                                        <a href="{{ route('content.user.view', $list->content->slug) }}" class="text-reset">{{ $list->content->title }}</a>
+                                                </td>
+                                                <td>{{ $list->content->classification->classification_name ?? '' }}</td>
+                                                <td>{{ $list->content->duration }}</td>
+                                                <td>{{ $list->content->date }}</td>
+                                                <td>{{ $list->status }}</td>
+                                                <td>
+                                                    {{-- <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
+                                                        <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
+                                                    </div> --}}
+                                                    <div class="progressbg">
+                                                        <div class="progress progressbg-progress">
+                                                        <div class="progress-bar bg-info-lt" style="width: {{ $list->progress }}%" role="progressbar" aria-valuenow="{{ $list->progress }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $list->progress }}%">
+                                                            <span class="visually-hidden">{{ $list->progress }}%</span>
+                                                        </div>
+                                                        </div>
+                                                        <div class="progressbg-text">{{ $list->progress }}%</div>
                                                     </div>
-                                                  </div>
-
-                                            </td>
-                                            <td>{{ $list->content->classification->classification_name ?? '' }}</td>
-                                            <td>{{ $list->content->duration }}</td>
-                                            <td>{{ $list->content->date }}</td>
-                                            <td>{{ $list->status }}</td>
-                                            <td>
-                                                {{-- <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
-                                                    <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
-                                                </div> --}}
-                                                <div class="progressbg">
-                                                    <div class="progress progressbg-progress">
-                                                      <div class="progress-bar bg-info-lt" style="width: {{ $list->progress }}%" role="progressbar" aria-valuenow="{{ $list->progress }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $list->progress }}%">
-                                                        <span class="visually-hidden">{{ $list->progress }}%</span>
-                                                      </div>
+                                                </td>
+                                                {{-- <td>
+                                                    <div class="d-inline">
+                                                        <a href="" class="btn btn-info btn-icon">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                                <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                                                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
+                                                                <path d="M9 9l1 0"></path>
+                                                                <path d="M9 13l6 0"></path>
+                                                                <path d="M9 17l6 0"></path>
+                                                            </svg>
+                                                        </a>
                                                     </div>
-                                                    <div class="progressbg-text">{{ $list->progress }}%</div>
-                                                </div>
-                                            </td>
-                                            {{-- <td>
-                                                <div class="d-inline">
-                                                    <a href="" class="btn btn-info btn-icon">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                            <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                                            <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
-                                                            <path d="M9 9l1 0"></path>
-                                                            <path d="M9 13l6 0"></path>
-                                                            <path d="M9 17l6 0"></path>
-                                                         </svg>
-                                                    </a>
-                                                </div>
 
-                                            </td> --}}
-                                        </tr>
+                                                </td> --}}
+                                            </tr>
+                                        @endif
                                     @endforeach
                                 </tbody>
                             </table>
