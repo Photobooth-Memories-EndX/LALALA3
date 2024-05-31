@@ -205,10 +205,12 @@ class ContentController extends Controller
             $ytid = $ytarray['v'];
             Content::where('id', $request->contentid)
                 ->update(['file' => null]);
-            $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
-            $image = file_get_contents($url);
-            $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
-            file_put_contents($thumbpath, $image);
+            if ($request->action != 'unpublish') {
+                $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+                $image = file_get_contents($url);
+                $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
+                file_put_contents($thumbpath, $image);
+            }
         } else {
             $ytid = null;
             if ($request->has('documents')) {
