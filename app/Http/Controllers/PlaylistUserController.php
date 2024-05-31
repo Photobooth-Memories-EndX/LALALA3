@@ -19,13 +19,14 @@ class PlaylistUserController extends Controller
             'trainingplandetail' => function ($query) {
                 $query->orderBy('content_order');
             }, 'trainingplandetail.content'
-        ])->get();
+        ])->where('active', 'Active')->get();
 
         return view('user.playlist.index', [
             "title" =>  "Playlist",
             "trainingplan" => $trainingplan
         ]);
     }
+
     public function view($slug, $vidslug)
     {
         // return $vidslug;
