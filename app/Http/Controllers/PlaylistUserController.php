@@ -29,21 +29,8 @@ class PlaylistUserController extends Controller
 
     public function view($slug, $vidslug)
     {
-        // return $vidslug;
-        // $trainingplan = TrainingPlan::findBySlug($slug)->with('trainingplandetail')->get();
-        // $trainingplan = TrainingPlan::findBySlug($slug)->with([
-        //     'trainingplandetail', 'trainingplandetail.content' => function ($query) use ($vidslug) {
-        //         $query->firstWhere('slug', $vidslug);
-        //     }
-        // ])->get();
-        // $trainingplan = TrainingPlan::findBySlug($slug)->with([
-        //     'trainingplandetail' => function ($query) {
-        //         $query->orderBy('content_order');
-        //     }, 'trainingplandetail.content'
-        // ])->get();
-
-        $trainingplan = TrainingPlan::findBySlug($slug);
-        $content = Content::findBySlug($vidslug);
+        $trainingplan   = TrainingPlan::findBySlug($slug);
+        $content        = Content::findBySlug($vidslug);
         $content->views += 1;
         $content->save();
 
@@ -51,12 +38,11 @@ class PlaylistUserController extends Controller
         $content_user = ContentUser::firstOrCreate([
             'user_id' => auth()->user()->id, 'content_id' => $content->id
         ]);
-        $content_user_all = ContentUser::where('user_id', auth()->user()->id)->get();
-        $content_all = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)->with('content')->get();
-        $assesment = Assesment::where('type', 'content')->where('content_id', $content->id)->first();
-        $comment = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
-        // return $content_user_all;
-        // dd($trainingplan);
+
+        $content_user_all   = ContentUser::where('user_id', auth()->user()->id)->get();
+        $content_all        = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)->with('content')->get();
+        $assesment          = Assesment::where('type', 'trainingplan')->where('trainingplan_id', $trainingplan->id)->first();
+        $comment            = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
 
         return view('user.playlist.view', [
             "playlist" => $trainingplan,
