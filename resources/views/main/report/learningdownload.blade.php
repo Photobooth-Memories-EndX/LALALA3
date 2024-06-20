@@ -3,6 +3,7 @@
         <tr>
             <th>#</th>
             <th>Status</th>
+            <th>Employee ID</th>
             <th>Name</th>
             <th>Title</th>
             <th>Classification</th>
@@ -16,6 +17,7 @@
             <tr>
                 <td>{{ $loop->index + 1 }}</td>
                 <td>{{ $list->status }}</td>
+                <td>{{ $list->user->id_emp }}</td>
                 <td>{{ $list->user->name }}</td>
                 <td>{{ $list->content->title }}</td>
                 <td>{{ $list->content->classification->classification_name ?? '' }}</td>
