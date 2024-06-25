@@ -83,17 +83,17 @@
                                                         </svg>
                                                       </span>
                                                       @endif
-
+                                                   
                                                     </div>
                                                     <div class="col">
-                                                        <a href="{{ route('content.user.view', $list->content->slug) }}" class="text-reset">{{ $list->content->title }}</a>
+                                                        <a href="{{ route('content.user.view', $list->content->slug ?? '') }}" class="text-reset">{{ $list->content->title ?? '' }}</a>
                                                     </div>
                                                   </div>
 
                                             </td>
                                             <td>{{ $list->content->classification->classification_name ?? '' }}</td>
-                                            <td>{{ $list->content->duration }}</td>
-                                            <td>{{ $list->content->date }}</td>
+                                            <td>{{ $list->content->duration ?? '' }}</td>
+                                            <td>{{ $list->content->date ?? '' }}</td>
 
                                             <td>
                                                 @if (!blank($list->assesment))

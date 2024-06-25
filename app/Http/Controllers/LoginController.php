@@ -38,8 +38,24 @@ class LoginController extends Controller
         Auth::logout();
         $getid = explode('$', request('ses'));
         $userget = User::firstWhere('ssohash', $getid[1]);
+        
+        //return $userget;
         if ($userget) {
             if (Auth::loginUsingId($userget->id)) {
+                //if($userget->id_user==2315){
+                    //return config('api.employee.base_url_hash') . $getid[1];
+                    $employee = Http::get(config('api.employee.base_url_hash') . $getid[1] . '')->object();
+                    foreach ($employee as $key => $value) {
+                        $arrays[$key] = $value;
+                    }
+                    
+                    $userget->update([
+                        'team' => $arrays["team"],
+                        'department' => $arrays["department"],
+                        'division' => $arrays["division"],
+                        'id_org_unit' => $arrays["id_ou"]
+                    ]);
+                //}
                 return redirect()->intended('/');
             } else {
                 return back()->with('loginError', 'SSO failed, user not found');

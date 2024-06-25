@@ -385,15 +385,32 @@
                             }
                         });
 
-            player.on('ready', function() {
+            // player.on('ready', function() {
+            //     var progression = $('#player_progress').val();
+            //     var durasi = $('#player_duration').val();
+            //     var current_player_time = (progression * durasi) / 100;
+
+            //     if (current_player_time < durasi) {
+            //         player.currentTime = current_player_time;
+            //     }
+            // })
+
+            player.on('loadeddata', onDataLoaded)
+            function onDataLoaded () {
+
                 var progression = $('#player_progress').val();
                 var durasi = $('#player_duration').val();
                 var current_player_time = (progression * durasi) / 100;
 
-                if (current_player_time < durasi) {
+                if(current_player_time < durasi){
                     player.currentTime = current_player_time;
                 }
-            })
+
+                if (current_player_time <= player.duration) {
+                player.off('loadeddata', onDataLoaded)
+                player.currentTime = current_player_time
+                }
+            }
 
             player.on('pause', function() {
                 var durasi = $('#player_duration').val();
