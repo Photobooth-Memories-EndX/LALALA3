@@ -41,6 +41,21 @@ class PlaylistUserController extends Controller
 
         $content_user_all   = ContentUser::where('user_id', auth()->user()->id)->get();
         $content_all        = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)->with('content')->get();
+        $assessmentAccess   = false;
+        $progressContent    = 0;
+
+        foreach ($content_all as $ca) {
+            $contentUser    = ContentUser::where('user_id', auth()->user()->id)->where('content_id', $ca->content->id)->first()->progress ?? 0;
+
+            $progressContent    += $contentUser;
+        }
+
+        $percentageProgressPlaylist = $progressContent / count($content_all);
+
+        if ($percentageProgressPlaylist >= 100) {
+            $assessmentAccess   = true;
+        }
+
         $assesment          = Assesment::where('type', 'trainingplan')->where('trainingplan_id', $trainingplan->id)->first();
         $comment            = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
 
@@ -51,7 +66,8 @@ class PlaylistUserController extends Controller
             "content_user_all" => $content_user_all,
             "content_user" => $content_user,
             "assesment" => $assesment,
-            "comment" => $comment
+            "comment" => $comment,
+            "assessmentAccess" => $assessmentAccess,
         ]);
     }
 }
