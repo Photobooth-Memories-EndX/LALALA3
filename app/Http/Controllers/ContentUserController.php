@@ -54,21 +54,21 @@ class ContentUserController extends Controller
         }
         $content_user = ContentUser::where('user_id', auth()->user()->id)->where('content_id', $content->id)->first();
 
-        if ($content_user->progress != 100) {
+        if ($content_user->progress < 100) {
             $progression = ((float) $request->current_time / (float) $request->duration) * 100;
-            $content_user->progress = $progression;
+            $content_user->progress = $progression >= 100 ? 100 : $progression;
 
-            if ($content_user->progress == 100) {
-                $content_user->finish = "1";
+            if ($content_user->progress >= 100) {
+                $content_user->finish = true;
             }
 
             $content_user->save();
 
             return response()->json(['success' => 'Progress saved', 'status' => 200]);
         } else {
-
-            $content_user->finish = "1";
+            $content_user->finish = true;
             $content_user->save();
+
             return response()->json(['success' => 'Watching again', 'status' => 200]);
         }
     }
