@@ -59,14 +59,14 @@ class ContentUserController extends Controller
             $content_user->progress = $progression >= 100 ? 100 : $progression;
 
             if ($content_user->progress >= 100) {
-                $content_user->finish = true;
+                $content_user->finish = "1";
             }
 
             $content_user->save();
 
             return response()->json(['success' => 'Progress saved', 'status' => 200]);
         } else {
-            $content_user->finish = true;
+            $content_user->finish = "1";
             $content_user->save();
 
             return response()->json(['success' => 'Watching again', 'status' => 200]);
