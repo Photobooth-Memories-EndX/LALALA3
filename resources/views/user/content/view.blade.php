@@ -222,6 +222,9 @@
 <script>
     $(document).ready(function() {
         // window.Plyr && (new Plyr('#player'));
+        @if ($content_user->progress >= 100)
+        const player = new Plyr('#player');
+        @else
         const player = new Plyr('#player', {
                             listeners: { //disable fast forward
                                 seek (e) {
@@ -231,6 +234,7 @@
                                 }
                             }
                         });
+        @endif
 
         // player.on('ready', function() { //alert(player.duration);
         //     var progression = $('#player_progress').val();

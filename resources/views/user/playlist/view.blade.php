@@ -16,7 +16,7 @@
 
                             <div class="d-flex align-items-center justify-content-between fs-5">
                                 <div class="text-muted">{{ date('d F Y', strtotime($content->created_at)) }} by {{ $content->author }}. <span class="badge bg-blue text-blue-fg">{{ $content->classification->classification_name }}</span></div>
-                                
+
                                 @if ($assesment)
                                     <a href="{{ route('assesment.user.view', $assesment->slug) }}" class="btn btn-primary {{ $assessmentAccess == false ? 'disabled' : '' }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -78,7 +78,7 @@
                                                     </div>
                                                     <div class="pdfjs-viewer h-100"></div>
                                                 </div>
-        
+
                                                 @push('styles')
                                                 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
                                                 <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
@@ -107,9 +107,9 @@
                                                 }
                                                 </style>
                                                 @endpush
-        
+
                                                 @push('scripts')
-        
+
                                                     <script src="{{ asset('js/pdf.min.js') }}"></script>
                                                     <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
                                                     <script>
@@ -117,15 +117,15 @@
                                                         let fileNameFixed   = fileName.replaceAll(' ', '%20').replaceAll('&amp;', '&');
                                                         let fileLocation    = "{{ asset('storage/files/content/' . $content->id . '/' . ':fileContent' . '') }}";
                                                         let pdfFile         = fileLocation.replace(':fileContent', fileNameFixed);
-                                                        
+
                                                         var pdfjsLib = window["pdfjs-dist/build/pdf"];
                                                         pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
-        
+
                                                         let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
                                                             onDocumentReady: () => {
                                                                 var progression = {{ (int)$content_user->progress }};
                                                                 var current_page = (progression * pdfViewer.getPageCount()) / 100;
-        
+
                                                                 if(parseInt(current_page) < pdfViewer.getPageCount()){
                                                                     pdfViewer.scrollToPage(parseInt(current_page));
                                                                 }
@@ -146,20 +146,20 @@
                                                                 });
                                                             }
                                                         });
-        
+
                                                         pdfViewer
                                                         .loadDocument(pdfFile)
                                                         .then(function () {
                                                             pdfViewer.setZoom("width");
                                                         });
                                                     </script>
-        
+
                                                 @endpush
-        
+
                                             @elseif ($content->type == 'YouTube')
                                                 <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
                                             @endif
-        
+
                                             @if (($content->type == 'Video') || ($content->type == 'YouTube'))
                                             @php
                                                 $time_duration = explode(':', $content->duration);
@@ -170,7 +170,7 @@
                                             @endif
                                             <input type="hidden" id="player_progress" value="{{ $content_user->progress }}">
                                             <input type="hidden" data-url="{{ route('content.user.progress', $content->slug) }}" id="player_paused">
-        
+
                                         </div>
                                     </div>
 
@@ -186,7 +186,7 @@
                                                     </svg>
                                                     {{ $content->views }}
                                                 </a>
-            
+
                                                 <a href="#comment" class="btn text-muted border-0 shadow-none">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-message-circle" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -375,15 +375,19 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             // window.Plyr && (new Plyr('#player'));
+            @if ($content_user->progress >= 100)
+            const player = new Plyr('#player');
+            @else
             const player = new Plyr('#player', {
-                            listeners: { //disable fast forward
-                                seek (e) {
-                                    e.preventDefault();
-                                    console.log('prevented');
-                                    return false;
+                                listeners: { //disable fast forward
+                                    seek (e) {
+                                        e.preventDefault();
+                                        console.log('prevented');
+                                        return false;
+                                    }
                                 }
-                            }
-                        });
+                            });
+            @endif
 
             // player.on('ready', function() {
             //     var progression = $('#player_progress').val();
