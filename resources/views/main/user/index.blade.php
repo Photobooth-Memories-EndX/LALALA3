@@ -54,7 +54,38 @@
                 <div class="card-body">
                     <div id="table-default" class="table-responsive">
                         @unless (count($user) == 0)
-                            <table class="table table-bordered table-striped" id="MyTable">
+                            <form action="{{ route('user.search') }}" method="get" class="mt-1" id="form-filter-data-user">
+                                <div class="row justify-content-between">
+                                    <div class="col-md-3">
+                                        <div class="d-flex align-items-center">
+                                            <label class="me-2">Show</label>
+                                            <select name="show_entries" id="show-entries" class="form-select" style="width: 75px">
+                                                <option value="10" {{ $entries == 10 ? 'selected' : '' }}>10</option>
+                                                <option value="25" {{ $entries == 25 ? 'selected' : '' }}>25</option>
+                                                <option value="50" {{ $entries == 50 ? 'selected' : '' }}>50</option>
+                                                <option value="100" {{ $entries == 100 ? 'selected' : '' }}>100</option>
+                                            </select>
+                                            <label class="ms-2">Entries</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group mb-3">
+                                            <input type="text" name="search_user" class="form-control" placeholder="Search User" aria-label="Search User" aria-describedby="button-addon2" value="{{ $search }}">
+                                            <button class="btn btn-outline-primary" type="submit" id="button-addon2">
+                                                <svg  xmlns="http://www.w3.org/2000/svg" class="mx-0"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-user-search">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                                    <path d="M6 21v-2a4 4 0 0 1 4 -4h1.5" />
+                                                    <path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                                                    <path d="M20.2 20.2l1.8 1.8" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <table class="table table-bordered table-striped">
                                 <thead>
                                     <tr>
                                         <th>No</th>
@@ -70,7 +101,7 @@
                                 <tbody>
                                     @foreach ($user as $list)
                                         <tr>
-                                            <td>{{ $loop->index + 1 }}</td>
+                                            <td>{{ ++$no }}</td>
                                             <td>{{ $list->id_emp }}</td>
                                             <td><a href="{{ route('user.manage.profile', $list->ssohash) }}">{{ $list->name }}</a></td>
                                             <td>{{ $list->team }}</td>
@@ -112,6 +143,44 @@
                                     @endforeach
                                 </tbody>
                             </table>
+
+                            @if ($user->total() <= $entries)
+                                <div class="mt-3" style="width: 100%">
+                                    <div class="row justify-content-between">
+                                        <div class="col-md-3">
+                                            <p class="small text-muted">Showing <span class="fw-semibold">1</span> to <span class="fw-semibold">{{ $user->count() }}</span> of <span class="fw-semibold">{{ $user->count() }}</span> results</p>
+                                        </div>
+                                        <div class="col-md-9">
+                                            <ul class="pagination float-end">
+                                                <li class="page-item disabled">
+                                                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                                                        <!-- Download SVG icon from http://tabler-icons.io/i/chevron-left -->
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                            <path d="M15 6l-6 6l6 6" />
+                                                        </svg>
+                                                    </a>
+                                                </li>
+                                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                                <li class="page-item disabled">
+                                                    <a class="page-link" href="#">
+                                                        <!-- Download SVG icon from http://tabler-icons.io/i/chevron-right -->
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                            <path d="M9 6l6 6l-6 6" />\
+                                                        </svg>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="mt-3">
+                                    {{ $user->links('pagination::bootstrap-5') }}
+                                </div>
+                            @endif
+
                         @else
                             <p>No user data found</p>
                         @endunless
@@ -168,5 +237,9 @@
                 },
             });
         })
+
+        $('#show-entries').on('change', function() {
+            $('#form-filter-data-user').submit();
+        });
     </script>
 @endsection
