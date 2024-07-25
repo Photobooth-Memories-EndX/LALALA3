@@ -15,8 +15,11 @@ class UserController extends Controller
      */
     public function index()
     {
-        $user = User::get();
-        return view('main.user.index', compact('user'));
+        $entries    = 25;
+        $user       = User::paginate($entries)->withQueryString();
+        $search     = "";
+
+        return view('main.user.index', compact('user', 'search', 'entries'))->with('no', (request('page', 1) - 1) * $entries);
     }
 
     /**
@@ -117,5 +120,19 @@ class UserController extends Controller
         $user->save();
 
         return response()->json(['success'=>'Status change successfully.']);
+    }
+
+    public function searchUser(Request $request)
+    {
+        $entries    = $request->show_entries;
+        $search     = $request->search_user;
+        $user = User::where('name', 'LIKE', "%$search%")
+            ->orWhere('id_emp', 'LIKE', "%$search%")
+            ->orWhere('team', 'LIKE', "%$search%")
+            ->orWhere('department', 'LIKE', "%$search%")
+            ->orWhere('division', 'LIKE', "%$search%")
+            ->paginate($entries)->withQueryString();
+
+        return view('main.user.index', compact('user', 'search', 'entries'))->with('no', (request('page', 1) - 1) * $entries);
     }
 }
