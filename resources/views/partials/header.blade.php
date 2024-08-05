@@ -32,8 +32,8 @@
             <div class="nav-item dropdown">
                 <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
                     <span class="avatar avatar-sm" style="background-image: url({{ asset('storage/profile') }}/{{ auth()->user()->avatar ?? 'default.jpg' }})"></span>
-                    <div class="d-none d-xl-block ps-2">
-                        <div>{{ ucwords(strtolower(auth()->user()->name ?? '')) }}</div>
+                    <div class="ps-2">
+                        <div>{{ ucwords(strtolower(auth()->user()->name ?? '')) . " (" . auth()->user()->id_emp . ")" }}</div>
                         <div class="mt-1 small text-muted" style="font-size: 7pt">{{ auth()->user()->team ?? '' }}</div>
                     </div>
                 </a>
