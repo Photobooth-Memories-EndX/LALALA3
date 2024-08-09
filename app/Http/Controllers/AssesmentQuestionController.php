@@ -90,10 +90,27 @@ class AssesmentQuestionController extends Controller
         return to_route('assesment.question', $assesment->slug)->with('success','Assesment question updated successfully.');
     }
 
-    public function result(Assesment $assesment)
+    public function result(Assesment $assesment, Request $request)
     {
-        $assesment_result = AssesmentResult::with('user')->where('assesment_id', $assesment->id)->whereFinal(1)->get();
-        return view('main.assesment.result', compact('assesment', 'assesment_result'));
+        $entries    = $request->show_entries ?? 25;
+        $search     = $request->search_user ?? "";
+        $query      = AssesmentResult::select('assesment_results.*', 'users.id_emp', 'users.name', 'users.team', 'users.department')
+            ->join('users', 'assesment_results.user_id', '=', 'users.id')
+            ->where('assesment_id', $assesment->id)
+            ->whereFinal(1);
+
+        if ($search)
+            $query->where(function ($query) use ($search) {
+                $query->where('users.id_emp', 'LIKE', '%' . $search . '%')
+                    ->orWhere('users.name', 'LIKE', '%' . $search . '%')
+                    ->orWhere('users.team', 'LIKE', '%' . $search . '%')
+                    ->orWhere('users.department', 'LIKE', '%' . $search . '%');
+            });
+
+        $assesment_result   = $query->paginate($entries)->withQueryString();
+
+        return view('main.assesment.result', compact('assesment', 'entries', 'assesment_result', 'search'))
+            ->with('no', (request('page', 1) - 1) * $entries);
     }
 
     public function clone(Assesment $assesment)
