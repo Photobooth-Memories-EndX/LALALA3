@@ -36,12 +36,12 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
         $requeststatus = $this->status;
         $requesttype = $this->type;
         $requestslug = $this->slug;
-        if ($requesttype == 'all') {
-            if ($requeststatus == 'all' && $requestyear == 'all') {
+        if ($requesttype == '') {
+            if ($requeststatus == '' && $requestyear == '') {
                 $content = ContentUser::with(['user', 'content', 'content.classification'])->get();
-            } else if ($requeststatus == 'all') {
+            } else if ($requeststatus == '') {
                 $content = ContentUser::with(['user', 'content', 'content.classification'])->whereYear('created_at', $requestyear)->get();
-            } else if ($requestyear == 'all') {
+            } else if ($requestyear == '') {
                 $content = ContentUser::with(['user', 'content', 'content.classification'])->where('status', $requeststatus)->get();
             } else {
                 $content = ContentUser::with(['user', 'content', 'content.classification'])->where('status', $requeststatus)->whereYear('created_at', $requestyear)->get();
@@ -49,15 +49,15 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
         } else if ($requesttype == 'category') {
             $classification = Classification::firstWhere('slug', $requestslug);
             $classification_id = $classification->id;
-            if ($requeststatus == 'all' && $requestyear == 'all') {
+            if ($requeststatus == '' && $requestyear == '') {
                 $content = ContentUser::with(['user', 'content.classification'])->whereHas('content', function ($query) use ($classification_id) {
                     $query->where('classification_id', $classification_id);
                 })->get();
-            } else if ($requeststatus == 'all') {
+            } else if ($requeststatus == '') {
                 $content = ContentUser::with(['user', 'content.classification'])->whereYear('created_at', $requestyear)->whereHas('content', function ($query) use ($classification_id) {
                     $query->where('classification_id', $classification_id);
                 })->get();
-            } else if ($requestyear == 'all') {
+            } else if ($requestyear == '') {
                 $content = ContentUser::with(['user', 'content.classification'])->where('status', $requeststatus)->whereHas('content', function ($query) use ($classification_id) {
                     $query->where('classification_id', $classification_id);
                 })->get();
@@ -67,15 +67,15 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
                 })->get();
             }
         } else if ($requesttype == 'content') {
-            if ($requeststatus == 'all' && $requestyear == 'all') {
+            if ($requeststatus == '' && $requestyear == '') {
                 $content = ContentUser::with(['user', 'content.classification'])->whereHas('content', function ($query) use ($requestslug) {
                     $query->where('slug', $requestslug);
                 })->get();
-            } else if ($requeststatus == 'all') {
+            } else if ($requeststatus == '') {
                 $content = ContentUser::with(['user', 'content.classification'])->whereYear('created_at', $requestyear)->whereHas('content', function ($query) use ($requestslug) {
                     $query->where('slug', $requestslug);
                 })->get();
-            } else if ($requestyear == 'all') {
+            } else if ($requestyear == '') {
                 $content = ContentUser::with(['user', 'content.classification'])->where('status', $requeststatus)->whereHas('content', function ($query) use ($requestslug) {
                     $query->where('slug', $requestslug);
                 })->get();
@@ -100,7 +100,7 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
                 ],
             ],
         ];
-        $sheet->getStyle('A1:H1')->getFont()->setBold(true);
-        $sheet->getStyle('A1:H' . $this->total + 1)->applyFromArray($styleArray);
+        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:I' . $this->total + 1)->applyFromArray($styleArray);
     }
 }
