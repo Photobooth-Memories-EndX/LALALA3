@@ -21,6 +21,7 @@ class LearningManageController extends Controller
             "classification" => $classification
         ]);
     }
+
     public function all()
     {
         if (request('status') && request('year')) {
@@ -45,43 +46,45 @@ class LearningManageController extends Controller
             "content" => $content
         ]);
     }
-    public function category($slug)
-    {
-        $classification = Classification::firstWhere('slug', $slug);
-        $classification_id = $classification->id;
-        if (request('status') && request('year')) {
-            $requestyear = request('year');
-            $requeststatus = request('status');
 
-            if (request('status') == 'all' && request('year') == 'all') {
-                $content = ContentUser::with(['user', 'content.classification'])->whereHas('content', function ($query) use ($classification_id) {
-                    $query->where('classification_id', $classification_id);
-                })->get();
-            } else if (request('status') == 'all') {
-                $content = ContentUser::with(['user', 'content.classification'])->whereYear('created_at', $requestyear)->whereHas('content', function ($query) use ($classification_id) {
-                    $query->where('classification_id', $classification_id);
-                })->get();
-            } else if (request('year') == 'all') {
-                $content = ContentUser::with(['user', 'content.classification'])->where('status', $requeststatus)->whereHas('content', function ($query) use ($classification_id) {
-                    $query->where('classification_id', $classification_id);
-                })->get();
-            } else {
-                $content = ContentUser::with(['user', 'content.classification'])->where('status', $requeststatus)->whereYear('created_at', $requestyear)->whereHas('content', function ($query) use ($classification_id) {
-                    $query->where('classification_id', $classification_id);
-                })->get();
-            }
-        } else {
-            $content = ContentUser::with(['user', 'content.classification'])->whereHas('content', function ($query) use ($classification_id) {
-                $query->where('classification_id', $classification_id);
-            })->get();
-        }
+    public function category($slug, Request $request)
+    {
+        $classification     = Classification::firstWhere('slug', $slug);
+        $classification_id  = $classification->id;
+
+        $status     = $request->status ?? "";
+        $year       = $request->year ?? "";
+        $entries    = $request->show_entries ?? 25;
+        $search     = $request->search ?? "";
+
+        $query      = ContentUser::with(['user', 'content']);
+
+        if ($status)
+            $query->where('status', $status);
+
+        if ($year)
+            $query->whereYear('created_at', $year);
+
+        if ($search)
+            $query->whereHas('user', function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%');
+            })->orWhereHas('content', function ($query) use ($search) {
+                $query->where('title', 'like', '%' . $search . '%');
+            });
+
+        $content    = $query->whereHas('content', function ($query) use ($classification_id) {
+            $query->where('classification_id', $classification_id);
+        })->paginate($entries)->withQueryString();
 
         return view('main.learning.all', [
-            "title" =>  'Classification: ' . $classification->classification_name,
-            "downloadslug" => $slug,
-            "content" => $content
-        ]);
+            "title"         => 'Classification: ' . $classification->classification_name,
+            "downloadslug"  => $slug,
+            "content"       => $content,
+            'entries'       => $entries,
+            'search'        => $search,
+        ])->with('no', (request('page', 1) - 1) * $entries);
     }
+
     public function content($slug)
     {
         if (request('status') && request('year')) {

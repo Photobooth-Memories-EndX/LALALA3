@@ -1,15 +1,12 @@
 @extends('layouts.master')
-@section('content')
 
+@section('content')
     <div class="page-header d-print-none">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
-                    <h2 class="page-title">
-                        Manage Assesment
-                    </h2>
+                    <h2 class="page-title">Manage Assesment</h2>
                 </div>
-                <!-- Page title actions -->
                 <div class="col-auto ms-auto d-print-none">
                     <div class="d-flex">
                         <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
@@ -23,21 +20,16 @@
         </div>
     </div>
 
-    <!-- Page body -->
     <div class="page-body">
-        <!-- Container Page -->
         <div class="container">
 
-            {{-- alert component   --}}
             <x-alert type='success' />
             <x-alert type='warning' />
 
-            <!-- Card -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Assesment Result: {{ $assesment->title }}</h3>
                     <div class="card-actions row">
-                        <!-- Page title actions -->
                         <div class="col-auto ms-auto d-print-none">
                             <div class="d-flex">
                                 <form name="form1" id="form1" method="POST" action="{{ route('assesment.result.download') }}">
@@ -60,7 +52,38 @@
                 <div class="card-body">
                     <div id="table-default" class="table-responsive">
                         @unless (count($assesment_result) == 0)
-                            <table class="table table-bordered table-striped" id="MyTable">
+                            <form action="{{ route('assesment.result', $assesment) }}" method="get" class="mt-1" id="form-filter-data-assessment-result">
+                                <div class="row justify-content-between">
+                                    <div class="col-md-3">
+                                        <div class="d-flex align-items-center">
+                                            <label class="me-2">Show</label>
+                                            <select name="show_entries" id="show-entries" class="form-select form-select-sm" style="width: 75px">
+                                                <option value="10" {{ $entries == 10 ? 'selected' : '' }}>10</option>
+                                                <option value="25" {{ $entries == 25 ? 'selected' : '' }}>25</option>
+                                                <option value="50" {{ $entries == 50 ? 'selected' : '' }}>50</option>
+                                                <option value="100" {{ $entries == 100 ? 'selected' : '' }}>100</option>
+                                            </select>
+                                            <label class="ms-2">Entries</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group mb-3">
+                                            <input type="text" name="search_user" class="form-control form-control-sm" placeholder="Search User" aria-label="Search User" aria-describedby="button-addon2" value="{{ $search }}">
+                                            <button class="btn btn-outline-primary" type="submit" id="button-addon2">
+                                                <svg  xmlns="http://www.w3.org/2000/svg" class="mx-0"  width="9"  height="9"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-user-search">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                                    <path d="M6 21v-2a4 4 0 0 1 4 -4h1.5" />
+                                                    <path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                                                    <path d="M20.2 20.2l1.8 1.8" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <table class="table table-bordered table-striped">
                                 <thead>
                                     <tr>
                                         <th>No</th>
@@ -77,7 +100,7 @@
                                 <tbody>
                                     @foreach ($assesment_result as $list)
                                         <tr>
-                                            <td>{{ $loop->index + 1 }}</td>
+                                            <td>{{ ++$no }}</td>
                                             <td>{{ $list->user->id_emp }}</td>
                                             <td>{{ $list->user->name }}</td>
                                             <td>{{ $list->user->team }}</td>
@@ -86,11 +109,11 @@
                                             <td class="text-center">{{ $list->batch }}</td>
                                             <td class="text-center">
                                                 <a href="#" class="wrongcheck" data-bs-toggle="tooltip" data-bs-placement="top" title="click to check wrong answers" data-url="{{ route('assesment.wrong', ['slug' => $assesment->slug, 'id' => $list->id]) }}">
-                                                @if ($list->pass)
-                                                    <span class="badge bg-green">Pass</span>
-                                                @else
-                                                    <span class="badge bg-red">Failed</span>
-                                                @endif
+                                                    @if ($list->pass)
+                                                        <span class="badge bg-green">Pass</span>
+                                                    @else
+                                                        <span class="badge bg-red">Failed</span>
+                                                    @endif
                                                 </a>
                                             </td>
                                             <td>{{ date("d/m/y", strtotime($list->created_at)) }}</td>
@@ -98,24 +121,27 @@
                                     @endforeach
                                 </tbody>
                             </table>
+
+                            @if ($assesment_result->total() <= $entries)
+                                <x-page.pagination-first count='{{ $assesment_result->count() }}' />
+                            @else
+                                <div class="mt-3">
+                                    {{ $assesment_result->links('pagination::bootstrap-5') }}
+                                </div>
+                            @endif
                         @else
                             <p>No assesment score data found</p>
                         @endunless
                     </div>
                 </div>
             </div>
-            <!-- Card -->
-
         </div>
-        <!-- Container Page -->
     </div>
-    <!-- Page body -->
 
     <!-- Modal Check Wrong Answers -->
     <div class="modal modal-blur fade" id="modal-answer" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content">
-
                 <div class="modal-header">
                     <h5 class="modal-title">Wrong Answer List</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -149,16 +175,8 @@
     <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
     <script>
-        // let table = new DataTable('#MyTable');
-        $(function() {
-            $("#MyTable").DataTable({
-                "lengthMenu": [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, 'All'],
-                ],
-                "pageLength": 25,
-                "autoWidth": false,
-            });
+        $('#show-entries').on('change', function() {
+            $('#form-filter-data-assessment-result').submit();
         });
     </script>
 
@@ -178,11 +196,8 @@
                         alert(response.message);
                         $('#modal-questions').modal('hide');
                     } else {
-                        //$('#title').text(response.assesment.title);
                         $.each(response.wrong_answer, function(i, item) {
-
                             col = col + '<div class="row border-bottom mb-2"><div class="col-md-8">'+item.question+'</div>'+'<div class="col-md-2 text-primary">'+item.answer+'</div>'+'<div class="col-md-2 text-danger">'+item.user_answer+'</div></div>';
-
                         });
                         $('#result').html(col);
 
@@ -190,7 +205,6 @@
                     }
                 }
             });
-            //$("#overlay").addClass('d-none');
         });
     </script>
 @endsection
