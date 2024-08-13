@@ -8,7 +8,7 @@
                     <h3 class="card-title mb-0">{{ $title }}</h3>
                 </div>
                 <div class="card-body">
-                    <form name="form1" id="form1" class="ms-auto">
+                    <form action="{{ url()->current() }}" method="GET" class="ms-auto" id="form1">
                         <div class="row justify-content-end">
                             <div class="col-7">
                                 <div class="d-flex">
@@ -47,15 +47,17 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="d-flex">
+                                    <input type="hidden" name="type" value="{{ request()->segment(3) }}">
+                                    <input type="hidden" name="slug" value="{{ $downloadslug }}">
                                     <input type="text" name="search" class="form-control me-1" placeholder="Search..." aria-label="Search" aria-describedby="button-addon2" value="{{ $search }}">
-                                    <x-button class="btn-icon me-1" onclick="submitForm('{{ url()->current() }}')">
+                                    <x-button class="btn-icon me-1" name="action" value="search" type="submit">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                             <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
                                             <path d="M21 21l-6 -6"></path>
                                         </svg>
                                     </x-button>
-                                    <x-button class="btn-icon btn-green" onclick="submitForm('{{ route('manage.learning.download') }}')">
+                                    <x-button class="btn-icon btn-green" name="action" value="download" type="submit" formTarget="_blank">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                             <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>
@@ -63,8 +65,6 @@
                                             <path d="M12 4l0 12"></path>
                                         </svg>
                                     </x-button>
-                                    <input type="hidden" name="type" value="{{ request()->segment(3) }}">
-                                    <input type="hidden" name="slug" value="{{ $downloadslug }}">
                                 </div>
                             </div>
                         </div>
@@ -190,25 +190,6 @@
 
         $('#show-entries').on('change', function() {
             $('#form1').submit();
-        });
-    </script>
-    <script type="text/javascript">
-        function submitForm(action) {
-            var form = document.getElementById('form1');
-            form.action = action;
-            form.submit();
-        }
-    </script>
-    <script>
-        $(function () {
-            $("#MyTable").DataTable({
-                "lengthMenu": [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, 'All'],
-                ],
-                "pageLength": 25,
-                "autoWidth": false,
-            });
         });
     </script>
 @endsection

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\LearningExport;
 use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LearningManageController extends Controller
 {
@@ -56,8 +58,16 @@ class LearningManageController extends Controller
         $year       = $request->year ?? "";
         $entries    = $request->show_entries ?? 25;
         $search     = $request->search ?? "";
+        $type       = $request->type ?? "";
+        $slug       = $request->slug ?? "";
+        
+        if ($request->action == 'download') {
+            return Excel::download(new LearningExport($type, $status, $year, $slug), now() . '_learning.xlsx');
+        }
 
-        $query      = ContentUser::with(['user', 'content']);
+        $query      = ContentUser::with(['user', 'content'])->whereHas('content', function ($query) use ($classification_id) {
+                $query->where('classification_id', $classification_id);
+            });
 
         if ($status)
             $query->where('status', $status);
@@ -68,13 +78,9 @@ class LearningManageController extends Controller
         if ($search)
             $query->whereHas('user', function ($query) use ($search) {
                 $query->where('name', 'like', '%' . $search . '%');
-            })->orWhereHas('content', function ($query) use ($search) {
-                $query->where('title', 'like', '%' . $search . '%');
             });
 
-        $content    = $query->whereHas('content', function ($query) use ($classification_id) {
-            $query->where('classification_id', $classification_id);
-        })->paginate($entries)->withQueryString();
+        $content    = $query->paginate($entries)->withQueryString();
 
         return view('main.learning.all', [
             "title"         => 'Classification: ' . $classification->classification_name,
