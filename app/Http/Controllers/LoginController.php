@@ -18,18 +18,19 @@ class LoginController extends Controller
     }
     public function authenticate(Request $request)
     {
-
-        // return "aa";
-
         $credentials = $request->validate([
-            'id_emp' => 'required',
-            'password' => 'required'
+            'id_emp'    => 'required',
+            'password'  => 'required',
+        ], [
+            'id_emp.required'   => 'Employee ID field is required!',
+            'password.required' => 'Password field is required!',
         ]);
-        // return  $credentials;
+
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
             return redirect()->intended('/');
         }
+
         return back()->with('warning', 'Login failed');
     }
 
