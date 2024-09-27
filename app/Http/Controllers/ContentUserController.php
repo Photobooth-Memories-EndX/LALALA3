@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assesment;
+use App\Models\AssesmentResult;
 use App\Models\Classification;
 use App\Models\Comment;
 use App\Models\Content;
 use App\Models\ContentUser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ContentUserController extends Controller
 {
@@ -30,10 +32,25 @@ class ContentUserController extends Controller
             'user_id' => auth()->user()->id, 'content_id' => $content->id
         ]);
 
-        $assesment = Assesment::where('type', 'content')->where('content_id', $content->id)->first();
+        $queryAssessment = Assesment::where('type', 'content');
+            
+        $assesment          = $queryAssessment->where('content_id', $content->id)->first();
+        // $assessmentScores   = $queryAssessment->with('scores')
+        //     ->whereHas('scores',
+        //     function ($query) use ($assesment) {
+        //         $query->where('user_id', auth()->user()->id)
+        //             ->where('assesment_id', $assesment->id);
+        //         })
+        //     ->get();
+        $assessmentScores   = AssesmentResult::with('user', 'assesment')
+            ->where('user_id', Auth::user()->id)
+            ->where('assesment_id', $assesment->id)
+            ->latest()->first();
+        // dd($assessmentScores);
+
         $comment = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
 
-        return view('user.content.view', compact('content', 'assesment', 'comment', 'content_user'));
+        return view('user.content.view', compact('content', 'assesment', 'assessmentScores', 'comment', 'content_user'));
     }
 
     public function category($slug)

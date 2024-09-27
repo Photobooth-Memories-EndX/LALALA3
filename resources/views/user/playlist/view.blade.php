@@ -26,7 +26,7 @@
                                             <path d="M9 9l1 0"></path>
                                             <path d="M9 13l6 0"></path>
                                             <path d="M9 17l6 0"></path>
-                                        </svg> Evaluation
+                                        </svg> Playlist Assessment
                                     </a>
                                 @endif
                             </div>
