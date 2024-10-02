@@ -35,22 +35,17 @@ class ContentUserController extends Controller
         $queryAssessment = Assesment::where('type', 'content');
             
         $assesment          = $queryAssessment->where('content_id', $content->id)->first();
-        // $assessmentScores   = $queryAssessment->with('scores')
-        //     ->whereHas('scores',
-        //     function ($query) use ($assesment) {
-        //         $query->where('user_id', auth()->user()->id)
-        //             ->where('assesment_id', $assesment->id);
-        //         })
-        //     ->get();
-        $assessmentScores   = AssesmentResult::with('user', 'assesment')
+
+        $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
             ->where('user_id', Auth::user()->id)
-            ->where('assesment_id', $assesment->id)
-            ->latest()->first();
-        // dd($assessmentScores);
+            ->where('assesment_id', $assesment->id);
+
+        $assessmentCount        = $queryAssessmentResult->count();
+        $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
 
         $comment = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
 
-        return view('user.content.view', compact('content', 'assesment', 'assessmentScores', 'comment', 'content_user'));
+        return view('user.content.view', compact('content', 'assesment', 'assessmentCount', 'assessmentLatestScores', 'comment', 'content_user'));
     }
 
     public function category($slug)

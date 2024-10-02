@@ -62,7 +62,14 @@ class AssesmentUserController extends Controller
         // dd($user_answers);
         // dd(array_diff_assoc($assesment_question, $user_answers));
 
-        $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
+        if ($assesment->type == 'global') {
+            $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
+        } else {
+            $assesment_result = new AssesmentResult;
+            $assesment_result->user_id      =  auth()->user()->id;
+            $assesment_result->assesment_id = $assesment->id;
+            $assesment_result->batch        = $assesment->batch;
+        }
         $assesment_result->user_answer = $request->except(['_token', '_method']);
 
         //process score

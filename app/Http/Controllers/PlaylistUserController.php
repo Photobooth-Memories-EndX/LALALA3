@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Comment;
 use App\Models\Content;
 use App\Models\Assesment;
+use App\Models\AssesmentResult;
 use App\Models\ContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PlaylistUserController extends Controller
 {
@@ -59,6 +61,13 @@ class PlaylistUserController extends Controller
         $assesment          = Assesment::where('type', 'trainingplan')->where('trainingplan_id', $trainingplan->id)->first();
         $comment            = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
 
+        $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
+            ->where('user_id', Auth::user()->id)
+            ->where('assesment_id', $assesment->id);
+
+        $assessmentCount        = $queryAssessmentResult->count();
+        $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
+
         return view('user.playlist.view', [
             "playlist" => $trainingplan,
             "content" => $content,
@@ -68,6 +77,8 @@ class PlaylistUserController extends Controller
             "assesment" => $assesment,
             "comment" => $comment,
             "assessmentAccess" => $assessmentAccess,
+            "assessmentCount" => $assessmentCount,
+            "assessmentLatestScores" => $assessmentLatestScores,
         ]);
     }
 }
