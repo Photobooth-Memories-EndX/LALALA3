@@ -24,6 +24,11 @@ class Assesment extends Model
         return 'slug';
     }
 
+    public function assesments_assigned()
+    {
+        return $this->hasMany(AssesmentAssigned::class);
+    }
+
     public function scores()
     {
         return $this->hasMany(AssesmentResult::class);

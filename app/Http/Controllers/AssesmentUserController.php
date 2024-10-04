@@ -6,6 +6,7 @@ use App\Models\Assesment;
 use Illuminate\Http\Request;
 use App\Models\AssesmentQuestion;
 use App\Models\AssesmentResult;
+use Illuminate\Support\Facades\Auth;
 
 class AssesmentUserController extends Controller
 {
@@ -23,6 +24,18 @@ class AssesmentUserController extends Controller
         //jika bukan ADMIN
         if (!auth()->user()->isAdmin())
         {
+            // Check Assigned Users
+            if ($assesment->assesments_assigned->count() > 0) {
+                $assignedAssesments = [];
+                foreach ($assesment->assesments_assigned as $assign) {
+                    $assignedAssesments[] = $assign->assigned_description;
+                }
+
+                if ((in_array(Auth::user()->name, $assignedAssesments) || in_array(Auth::user()->team, $assignedAssesments) || in_array(Auth::user()->department, $assignedAssesments)) == false) {
+                    abort(403);
+                }
+            }
+
             //jika status assesment tidak aktif, atau assesment link tidak valid
             if ($assesment === null or $assesment->status == "NOT") {
                 abort(404);

@@ -87,6 +87,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::post('assesment/download', [DownloadController::class, 'assessmentdownload'])->name('assesment.result.download');
     Route::post('assesment/question/download', [DownloadController::class, 'assessmentquestiondownload'])->name('assesment.question.download');
     Route::get('assesment/wrong/{slug}/{id}', [AssesmentResultController::class, 'wrong'])->name('assesment.wrong');
+    Route::get('assesment/assign-users/{slug}', [AssesmentController::class, 'assignUsersIndex'])->name('assesment.assign.users.index');
+    Route::post('assesment/assign-users-process/{slug}', [AssesmentController::class, 'assignUserProcess'])->name('assesment.assign.users.process');
 
 
     Route::resource('content', ContentController::class);
