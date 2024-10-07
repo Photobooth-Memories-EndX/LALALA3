@@ -30,6 +30,7 @@ use App\Http\Controllers\ClassificationController;
 use App\Http\Controllers\LearningManageController;
 use App\Http\Controllers\AssesmentResultController;
 use App\Http\Controllers\AssesmentQuestionController;
+use App\Http\Controllers\QuestionBankController;
 
 /*
 |--------------------------------------------------------------------------
@@ -90,6 +91,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::get('assesment/assign-users/{slug}', [AssesmentController::class, 'assignUsersIndex'])->name('assesment.assign.users.index');
     Route::post('assesment/assign-users-process/{slug}', [AssesmentController::class, 'assignUserProcess'])->name('assesment.assign.users.process');
 
+    // Question Bank
+    Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question.bank.index');
 
     Route::resource('content', ContentController::class);
     Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');

@@ -235,6 +235,7 @@
                                 <a class="dropdown-item" href="{{ url('manage/assesment') }}" rel="noopener">
                                     Assesment
                                 </a>
+                                <a class="dropdown-item" href="{{ url('manage/question-bank') }}" rel="noopener">Question Bank</a>
                                 <a class="dropdown-item" href="{{ url('manage/trainingplan') }}" rel="noopener">
                                     Playlist
                                 </a>
