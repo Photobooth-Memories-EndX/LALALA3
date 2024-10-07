@@ -61,9 +61,14 @@ class PlaylistUserController extends Controller
         $assesment          = Assesment::where('type', 'trainingplan')->where('trainingplan_id', $trainingplan->id)->first();
         $comment            = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
 
-        $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
-            ->where('user_id', Auth::user()->id)
-            ->where('assesment_id', $assesment->id);
+        if (isset($assesment)) {
+            $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
+                ->where('user_id', Auth::user()->id)
+                ->where('assesment_id', $assesment->id);
+        } else {
+            $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
+                ->where('user_id', Auth::user()->id);
+        }
 
         $assessmentCount        = $queryAssessmentResult->count();
         $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
