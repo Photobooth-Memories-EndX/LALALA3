@@ -93,6 +93,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
 
     // Question Bank
     Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question.bank.index');
+    Route::get('question-bank/create', [QuestionBankController::class, 'create'])->name('question.bank.create');
+    Route::post('question-bank/store', [QuestionBankController::class, 'store'])->name('question.bank.store');
 
     Route::resource('content', ContentController::class);
     Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');
