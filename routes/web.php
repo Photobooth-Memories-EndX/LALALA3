@@ -31,6 +31,7 @@ use App\Http\Controllers\LearningManageController;
 use App\Http\Controllers\AssesmentResultController;
 use App\Http\Controllers\AssesmentQuestionController;
 use App\Http\Controllers\QuestionBankController;
+use App\Http\Controllers\QuestionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +96,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question.bank.index');
     Route::get('question-bank/create', [QuestionBankController::class, 'create'])->name('question.bank.create');
     Route::post('question-bank/store', [QuestionBankController::class, 'store'])->name('question.bank.store');
+    Route::get('question-bank/create-question/{question_bank_slug}', [QuestionController::class, 'create'])->name('question.bank.create.question');
+    Route::post('question-bank/store-question/{question_bank_slug}', [QuestionController::class, 'store'])->name('question.bank.store.question');
 
     Route::resource('content', ContentController::class);
     Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');
