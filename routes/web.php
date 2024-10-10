@@ -98,6 +98,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::post('question-bank/store', [QuestionBankController::class, 'store'])->name('question.bank.store');
     Route::get('question-bank/create-question/{question_bank_slug}', [QuestionController::class, 'create'])->name('question.bank.create.question');
     Route::post('question-bank/store-question/{question_bank_slug}', [QuestionController::class, 'store'])->name('question.bank.store.question');
+    Route::get('question-bank/edit-question/{question_bank_slug}/{question_id}', [QuestionController::class, 'edit'])->name('question.bank.edit.question');
+    Route::get('question-bank/delete-question-image/{question_id}', [QuestionController::class, 'deleteQuestionImage'])->name('question.bank.delete.question.image');
+    Route::put('question-bank/update-question/{question_bank_slug}/{question_id}', [QuestionController::class, 'update'])->name('question.bank.update.question');
 
     Route::resource('content', ContentController::class);
     Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Question;
 use App\Models\QuestionBank;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class QuestionController extends Controller
 {
@@ -43,5 +44,66 @@ class QuestionController extends Controller
         $question->save();
 
         return redirect()->route('question.bank.create.question', $questionBank->slug)->with('success', 'Question has already been created successfully.');
+    }
+
+    public function edit($question_bank_slug, $question_id)
+    {
+        $questionBank = QuestionBank::findBySlug($question_bank_slug);
+        $question     = Question::findOrFail($question_id);
+        $questions    = Question::latest()->get();
+
+        return view('main.question_bank.questions.edit', compact('questionBank', 'question', 'questions'));
+    }
+
+    public function deleteQuestionImage($question_id) 
+    {
+        $question = Question::findorFail($question_id);
+
+        $src = 'storage/question_bank/image/' . $question->question_image;
+        if(File::exists(public_path($src)) && !is_dir($src))
+        {
+            File::delete(public_path($src));
+        }
+
+        $question->question_image = null;
+        $question->save();
+
+        return response()->json([
+            'status'  =>200,
+            'message' =>'Image question deleted successfully', 
+        ]);
+    }
+
+    public function update(Request $request, $question_bank_slug, $question_id)
+    {
+        $request->validate([
+            'question' => 'required',
+            'answer'   => 'required',
+            'option'   => 'required',
+            'image'    => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        $questionBank = QuestionBank::findBySlug($question_bank_slug);
+
+        $question = Question::findOrFail($question_id);
+        $question->question = $request->input('question');
+        $question->option   = $request->input('option');
+        $question->answer   = $request->input('answer');
+        if ($request->hasfile('image')) {
+            $src = 'storage/question_bank/image/' . $question->question_image;
+
+            if (File::exists(public_path($src)) && !is_dir($src)) {
+                File::delete(public_path($src));
+            }
+
+            $file      = $request->file('image');
+            $extention = $file->getClientOriginalExtension();
+            $filename  = 'id_' . $questionBank->id . '_' . time() . '.' . $extention;
+            $file->move('storage/question_bank/image/', $filename);
+            $question->question_image = $filename;
+        }
+        $question->save();
+
+        return redirect()->route('question.bank.create.question', $questionBank->slug)->with('warning', "Qustion has already updated successfully.");
     }
 }

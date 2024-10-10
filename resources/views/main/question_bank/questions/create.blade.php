@@ -35,6 +35,7 @@
                     <div class="card-body p-3">
     
                         <x-alert type='success' />
+                        <x-alert type='warning' />
     
                         <x-form action="{{ route('question.bank.store.question', $questionBank->id) }}" method="post" enctype="multipart/form-data">
                             @csrf
@@ -125,7 +126,7 @@
                                             <td class="text-center">{{ $question->status == true ? 'Aktif' : 'Non Aktif' }}</td>
                                             <td class="text-center">
                                                 <div class="d-inline">
-                                                    <a href="#" class="btn btn-info btn-icon">
+                                                    <a href="{{ route('question.bank.edit.question', ['question_bank_slug' => $questionBank->slug, 'question_id' => $question->id]) }}" class="btn btn-info btn-icon">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                             <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
