@@ -159,7 +159,7 @@
                                                     </a>
                                                 </div>
 
-                                                <form action="" method="POST" class="d-inline">
+                                                <form action="{{ route('question.bank.delete.question', ['question_bank_slug' => $questionBank->slug, 'question_id' => $question->id]) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">

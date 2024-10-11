@@ -106,4 +106,12 @@ class QuestionController extends Controller
 
         return redirect()->route('question.bank.create.question', $questionBank->slug)->with('warning', "Qustion has already updated successfully.");
     }
+
+    public function destroy($question_bank_slug, $question_id)
+    {
+        $question = Question::findOrFail($question_id);
+        $question->delete();
+
+        return redirect()->route('question.bank.create.question', $question_bank_slug)->with('danger', "The question deleted successfully!");
+    }
 }
