@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\QuestionBankQuestionsExport;
 use App\Models\Question;
 use App\Models\QuestionBank;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Maatwebsite\Excel\Facades\Excel;
 
 class QuestionController extends Controller
 {
@@ -113,5 +115,12 @@ class QuestionController extends Controller
         $question->delete();
 
         return redirect()->route('question.bank.create.question', $question_bank_slug)->with('danger', "The question deleted successfully!");
+    }
+
+    public function downloadQuestions($question_bank_id)
+    {
+        $questionBank = QuestionBank::findOrFail($question_bank_id);
+
+        return Excel::download(new QuestionBankQuestionsExport($questionBank->id), 'Questions of ' . $questionBank->title . '.xlsx');
     }
 }

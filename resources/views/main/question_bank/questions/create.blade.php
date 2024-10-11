@@ -82,19 +82,14 @@
                         <div class="card-actions row">
                             <div class="col-auto ms-auto d-print-none">
                                 <div class="d-flex">
-                                    <form name="form1" id="form1" method="POST" action="#">
-                                        @csrf
-                                        <input type="hidden" name="question_bank_id" id="question-bank-id" value="{{ $questionBank->id }}">
-                                        <input type="hidden" name="slug" id="slug" value="{{ $questionBank->slug }}">
-                                        <x-button class="btn-icon btn-green">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>
-                                                <path d="M7 11l5 5l5 -5"></path>
-                                                <path d="M12 4l0 12"></path>
-                                            </svg>
-                                        </x-button>
-                                    </form>
+                                    <a href="{{ route('question.bank.download.question', ['question_bank_id' => $questionBank->id]) }}" class="btn btn-success btn-icon" target="_blank">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>
+                                            <path d="M7 11l5 5l5 -5"></path>
+                                            <path d="M12 4l0 12"></path>
+                                        </svg>
+                                    </a>
                                 </div>
                             </div>
                         </div>
