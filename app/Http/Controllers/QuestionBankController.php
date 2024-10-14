@@ -56,4 +56,12 @@ class QuestionBankController extends Controller
 
         return redirect()->route('question.bank.index')->with('warning',  "Question Bank has already successfully updated.");
     }
+
+    public function destroy($id)
+    {
+        $questionBank = QuestionBank::findOrFail($id);
+        $questionBank->delete();
+
+        return redirect()->route('question.bank.index')->with('danger',  $questionBank->title . " has already successfully deleted!");
+    }
 }

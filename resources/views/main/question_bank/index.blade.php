@@ -46,6 +46,7 @@
 
                     <x-alert type='success' />
                     <x-alert type='warning' />
+                    <x-alert type='danger' />
 
                     <div class="table-responsive">
                         <table class="table table-striped table-bordered table-hovered" id="table-question-bank">
@@ -83,7 +84,7 @@
                                                     <path d="M12 12v4" />
                                                 </svg>
                                             </a>
-                                            <a href="#" class="btn btn-danger btn-icon btn-sm" title="Delete">
+                                            <a href="javascript:void(0)" class="btn btn-danger btn-icon btn-sm btn-delete-question-bank" title="Delete" data-title="{{ $questionBank->title }}" data-id="{{$questionBank->id}}">
                                                 <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-trash">
                                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                                     <path d="M4 7l16 0" />
@@ -112,6 +113,41 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal Delete Confirmation --}}
+    <div class="modal fade" id="modal-delete-question-bank" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-status bg-danger"></div>
+                <div class="modal-body text-center py-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M12 9v2m0 4v.01" />
+                        <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
+                    </svg>
+                    <h3>Are you sure?</h3>
+                    <div class="text-secondary">Do you really want to delete <strong id="delete-title-question-bank"></strong> ?</div>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <div class="row">
+                            <div class="col">
+                                <a href="javascript:void(0)" class="btn w-100" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cancel</a>
+                            </div>
+                            <div class="col">
+                                <form method="post" id="form-delete-question-bank">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger w-100"><i class="fas fa-trash-alt me-2"></i>Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -122,4 +158,18 @@
     </script>
 
     <script src="{{ asset('js/bootstrap-toggle.min.js') }}"></script>
+
+    <script>
+        $('.btn-delete-question-bank').on('click', function () {
+            let id         = $(this).data('id');
+            let title      = $(this).data('title');
+            let route      = "{{ route('question.bank.delete', ':id') }}";
+            let routeFixed = route.replace(':id', id);
+
+            $('#delete-title-question-bank').html(title);
+            $('#form-delete-question-bank').prop('action', routeFixed);
+
+            $('#modal-delete-question-bank').modal('show');
+        });
+    </script>
 @endpush
