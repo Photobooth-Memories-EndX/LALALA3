@@ -85,7 +85,7 @@
 
                             <table class="table table-bordered table-striped">
                                 <thead>
-                                    <tr>
+                                    <tr class="text-center">
                                         <th>No</th>
                                         <th>ID</th>
                                         <th>Name</th>
@@ -94,20 +94,21 @@
                                         <th>Score</th>
                                         <th>Batch</th>
                                         <th>Result</th>
-                                        <th>Date</th>
+                                        <th style="width: 135px;">Start Date Time</th>
+                                        <th style="width: 135px;">Finish Date Time</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($assesment_result as $list)
-                                        <tr>
-                                            <td>{{ ++$no }}</td>
-                                            <td>{{ $list->user->id_emp }}</td>
-                                            <td>{{ $list->user->name }}</td>
-                                            <td>{{ $list->user->team }}</td>
-                                            <td>{{ $list->user->department }}</td>
-                                            <td class="text-center">{{ $list->score }}</td>
-                                            <td class="text-center">{{ $list->batch }}</td>
-                                            <td class="text-center">
+                                        <tr class="fs-5">
+                                            <td class="p-2 text-center">{{ ++$no }}</td>
+                                            <td class="p-2">{{ $list->user->id_emp }}</td>
+                                            <td class="p-2">{{ $list->user->name }}</td>
+                                            <td class="p-2">{{ $list->user->team }}</td>
+                                            <td class="p-2">{{ $list->user->department }}</td>
+                                            <td class="text-center p-2">{{ $list->score }}</td>
+                                            <td class="text-center p-2">{{ $list->batch }}</td>
+                                            <td class="text-center p-2">
                                                 <a href="#" class="wrongcheck" data-bs-toggle="tooltip" data-bs-placement="top" title="click to check wrong answers" data-url="{{ route('assesment.wrong', ['slug' => $assesment->slug, 'id' => $list->id]) }}">
                                                     @if ($list->pass)
                                                         <span class="badge bg-green">Pass</span>
@@ -116,7 +117,8 @@
                                                     @endif
                                                 </a>
                                             </td>
-                                            <td>{{ date("d/m/y", strtotime($list->created_at)) }}</td>
+                                            <td class="text-end p-2">{{ date("d/m/y H:i:s", strtotime($list->created_at)) }}</td>
+                                            <td class="text-end p-2">{{ date("d/m/y H:i:s", strtotime($list->updated_at)) }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
