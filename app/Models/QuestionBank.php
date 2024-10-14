@@ -26,4 +26,9 @@ class QuestionBank extends Model
     {
         return 'slug';
     }
+
+    public function questions()
+    {
+        return $this->hasMany(Question::class, 'question_bank_id');
+    }
 }

@@ -96,6 +96,10 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question.bank.index');
     Route::get('question-bank/create', [QuestionBankController::class, 'create'])->name('question.bank.create');
     Route::post('question-bank/store', [QuestionBankController::class, 'store'])->name('question.bank.store');
+    Route::get('question-bank/edit/{slug}', [QuestionBankController::class, 'edit'])->name('question.bank.edit');
+    Route::put('question-bank/update/{id}', [QuestionBankController::class, 'update'])->name('question.bank.update');
+
+    // Questions of Questions Bank
     Route::get('question-bank/create-question/{question_bank_slug}', [QuestionController::class, 'create'])->name('question.bank.create.question');
     Route::post('question-bank/store-question/{question_bank_slug}', [QuestionController::class, 'store'])->name('question.bank.store.question');
     Route::get('question-bank/edit-question/{question_bank_slug}/{question_id}', [QuestionController::class, 'edit'])->name('question.bank.edit.question');

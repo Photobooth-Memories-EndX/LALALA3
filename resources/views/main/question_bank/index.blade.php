@@ -45,6 +45,7 @@
                 <div class="card-body">
 
                     <x-alert type='success' />
+                    <x-alert type='warning' />
 
                     <div class="table-responsive">
                         <table class="table table-striped table-bordered table-hovered" id="table-question-bank">
@@ -62,10 +63,10 @@
                                     <tr class="fs-5">
                                         <td class="align-middle text-center">{{ $loop->iteration }}</td>
                                         <td class="align-middle">{{ $questionBank->title }}</td>
-                                        <td class="align-middle">-</td>
+                                        <td class="align-middle text-center">{{ count($questionBank->questions) }}</td>
                                         <td class="align-middle">{{ $questionBank->created_date }}</td>
                                         <td class="align-middle text-center">
-                                            <a href="#" class="btn btn-warning btn-icon btn-sm" title="Edit">
+                                            <a href="{{ route('question.bank.edit', $questionBank->slug) }}" class="btn btn-warning btn-icon btn-sm" title="Edit">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                     <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
