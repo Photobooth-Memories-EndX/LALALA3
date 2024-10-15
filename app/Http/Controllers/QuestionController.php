@@ -14,7 +14,7 @@ class QuestionController extends Controller
     public function create($question_bank_slug)
     {
         $questionBank = QuestionBank::findBySlug($question_bank_slug);
-        $questions    = Question::latest()->get();
+        $questions    = Question::where('question_bank_id', $questionBank->id)->latest()->get();
 
         return view('main.question_bank.questions.create', compact('questionBank', 'questions'));
     }

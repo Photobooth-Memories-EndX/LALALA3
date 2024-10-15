@@ -94,7 +94,7 @@
                                                     <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
                                                 </svg>
                                             </a>
-                                            <a href="#" class="btn btn-secondary btn-icon btn-sm" title="Clone">
+                                            <a href="{{ route('question.bank.clone', $questionBank->slug) }}" data-title="{{$questionBank->title}}" onclick="return confirm('Are you sure want to clone/duplicate ' + $(this).data('title') + '?')" class="btn btn-secondary btn-icon btn-sm" title="Clone">
                                                 <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-library-plus">
                                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                                     <path d="M7 3m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
