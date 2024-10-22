@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use App\Models\Assesment;
 use App\Models\AssesmentAssigned;
+use App\Models\AssesmentQuestionBank;
+use App\Models\QuestionBank;
 use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -46,14 +48,20 @@ class AssesmentController extends Controller
         $assesment->todate = $request->input('todate');
         $assesment->save();
 
-        return to_route('assesment.index')->with('success','Assesment created successfully.');
+        return redirect()->route('assesment.edit', $assesment->slug)->with('success','Assesment created successfully.');
     }
 
     public function edit(Assesment $assesment)
     {
-        $contents = Content::latest()->get();
-        $trainingplan = TrainingPlan::latest()->get();
-        return view('main.assesment.edit', compact('assesment', 'contents', 'trainingplan'));
+        $contents      = Content::latest()->get();
+        $trainingplan  = TrainingPlan::latest()->get();
+        $questionBanks = QuestionBank::get();
+
+        $totalQuestions          = 0;
+        $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get();
+        $totalQuestions          = $assessmentQuestionBanks->sum('questions_amount');
+
+        return view('main.assesment.edit', compact('assesment', 'contents', 'trainingplan', 'questionBanks', 'assessmentQuestionBanks', 'totalQuestions'));
     }
 
     public function update(Request $request, Assesment $assesment)

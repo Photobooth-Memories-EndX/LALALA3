@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assesment;
 use Illuminate\Http\Request;
 use App\Models\AssesmentQuestion;
+use App\Models\AssesmentQuestionBank;
 use App\Models\AssesmentResult;
 use Illuminate\Support\Facades\Auth;
 
@@ -57,7 +58,15 @@ class AssesmentUserController extends Controller
         //cek jawaban draft (autosave) jika pengisian sebelumnya ada kendala (untuk di load ke option, jawaban sebelumnya ke ceklis)
         $assesment_result_draft = AssesmentResult::select('user_answer')->where('user_id', auth()->user()->id)->where('assesment_id', $assesment->id)->where('batch', $assesment->batch)->whereFinal(0)->first();
 
-        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
+        $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
+
+        if ($checkAssesmentQuestionBanks) {
+            $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
+            $assesment_question      = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->limit($assessmentQuestionBanks)->get();
+        } else {
+            $assesment_question      = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
+        }
+
         return view('user.assesment.view', compact('assesment', 'assesment_question', 'assesment_result_draft'));
     }
 
@@ -69,11 +78,7 @@ class AssesmentUserController extends Controller
         }
         $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
         $assesment_question_count = count($assesment_question);
-        // dd($assesment_question);
         $user_answers = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
-        // $user_answers = $request->except(['_token', '_method']);
-        // dd($user_answers);
-        // dd(array_diff_assoc($assesment_question, $user_answers));
 
         if ($assesment->type == 'global') {
             $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
@@ -109,7 +114,7 @@ class AssesmentUserController extends Controller
             abort(404);
         }
         $assesment_result = AssesmentResult::where('user_id', auth()->user()->id)->where('assesment_id', $assesment->id)->whereFinal(1)->latest()->first();
-        // dd($assesment_result );
+
         return view('user.assesment.result', compact('assesment', 'assesment_result'));
     }
 

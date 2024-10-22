@@ -26,6 +26,7 @@ use App\Http\Controllers\TrainingPlanController;
 use App\Http\Controllers\AssesmentUserController;
 use App\Http\Controllers\ContentDeleteController;
 use App\Http\Controllers\AssesmentImageController;
+use App\Http\Controllers\AssesmentQuestionBankController;
 use App\Http\Controllers\ClassificationController;
 use App\Http\Controllers\LearningManageController;
 use App\Http\Controllers\AssesmentResultController;
@@ -72,13 +73,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::resource('classification', ClassificationController::class);
     Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);
 
+    // Assessment
     Route::resource('assesment', AssesmentController::class);
-    Route::get('assesment/{assesment}/question', [AssesmentQuestionController::class, 'question'])->name('assesment.question');
-    Route::post('assesment/{assesment}/store', [AssesmentQuestionController::class, 'store'])->name('assesment.question.store');
-    Route::delete('assesment/delete/{assesment}/{id}', [AssesmentQuestionController::class, 'destroy'])->name('assesment.question.destroy');
-    Route::get('assesment/edit/{assesment}/{id}', [AssesmentQuestionController::class, 'edit'])->name('assesment.question.edit');
-    Route::put('assesment/update/{assesment}/{id}', [AssesmentQuestionController::class, 'update'])->name('assesment.question.update');
-    Route::put('assement/delete-image/{id}', [AssesmentImageController::class, 'deleteImage'])->name('assesment.deleteImage');
+    Route::post('assessment/{assessment}/store-question-bank', [AssesmentQuestionBankController::class, 'storeAssessmentQuestionBank'])->name('assessment.store.question.bank');
     Route::get('assesment/{assesment}/result', [AssesmentQuestionController::class, 'result'])->name('assesment.result');
     Route::get('assesment/{assesment}/clone', [AssesmentQuestionController::class, 'clone'])->name('assesment.clone');
     Route::get('assesmentresult', [AssesmentResultController::class, 'index'])->name('assesment.result.all');
@@ -91,6 +88,14 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::get('assesment/wrong/{slug}/{id}', [AssesmentResultController::class, 'wrong'])->name('assesment.wrong');
     Route::get('assesment/assign-users/{slug}', [AssesmentController::class, 'assignUsersIndex'])->name('assesment.assign.users.index');
     Route::post('assesment/assign-users-process/{slug}', [AssesmentController::class, 'assignUserProcess'])->name('assesment.assign.users.process');
+
+    // Assessment Questions
+    Route::get('assesment/{assesment}/question', [AssesmentQuestionController::class, 'question'])->name('assesment.question');
+    Route::post('assesment/{assesment}/store', [AssesmentQuestionController::class, 'store'])->name('assesment.question.store');
+    Route::delete('assesment/delete/{assesment}/{id}', [AssesmentQuestionController::class, 'destroy'])->name('assesment.question.destroy');
+    Route::get('assesment/edit/{assesment}/{id}', [AssesmentQuestionController::class, 'edit'])->name('assesment.question.edit');
+    Route::put('assesment/update/{assesment}/{id}', [AssesmentQuestionController::class, 'update'])->name('assesment.question.update');
+    Route::put('assement/delete-image/{id}', [AssesmentImageController::class, 'deleteImage'])->name('assesment.deleteImage');
 
     // Question Bank
     Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question.bank.index');
