@@ -51,4 +51,25 @@ class AssesmentQuestionBankController extends Controller
             'message' => 'Assessment Question have already added successfully',
         ]);
     }
+
+    public function syncronizeQuestions($id_assessment_question_bank)
+    {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrFail($id_assessment_question_bank);
+        $questions = Question::where('question_bank_id', $assessmentQuestionBank->question_bank_id)->get();
+
+        foreach ($questions as $question) {
+            $assesmentQuestion = AssesmentQuestion::firstOrNew([
+                'assesment_id'     => $assessmentQuestionBank->assesment_id,
+                'question_bank_id' => $assessmentQuestionBank->question_bank_id,
+                'question_id'      => $question->id,
+            ]);
+            $assesmentQuestion->question = $question->question;
+            $assesmentQuestion->image    = $question->question_image;
+            $assesmentQuestion->option   = $question->option;
+            $assesmentQuestion->answer   = $question->answer;
+            $assesmentQuestion->save();
+        }
+
+        return redirect()->back()->with('success-syncronized', $assessmentQuestionBank->question_bank->title . " synchronized successfully.");
+    }
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\AssesmentQuestion;
 use App\Models\AssesmentQuestionBank;
 use App\Models\AssesmentResult;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class AssesmentUserController extends Controller
@@ -61,8 +62,17 @@ class AssesmentUserController extends Controller
         $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
 
         if ($checkAssesmentQuestionBanks) {
-            $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
-            $assesment_question      = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->limit($assessmentQuestionBanks)->get();
+            $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get();
+            $sumOfquestionsAmount    = $assessmentQuestionBanks->sum('questions_amount');
+
+            $assesment_question = new Collection();
+
+            foreach ($assessmentQuestionBanks as $aqb) {
+                $assessmentQuestions = AssesmentQuestion::where('assesment_id', $assesment->id)
+                    ->where('question_bank_id', $aqb->question_bank_id)->inRandomOrder()->limit($aqb->questions_amount)->get();
+                
+                $assesment_question = $assesment_question->merge($assessmentQuestions);
+            }
         } else {
             $assesment_question      = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
         }

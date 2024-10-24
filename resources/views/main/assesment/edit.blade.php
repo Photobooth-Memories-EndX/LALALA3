@@ -28,6 +28,14 @@
                         <h3 class="card-title">Edit Assesment</h3>
                     </div>
                     <div class="card-body">
+
+                        @if (session()->has('success-syncronized'))
+                            <div class="alert alert-success py-2 alert-dismissible" role="alert">
+                                {{ session('success-syncronized') }}
+                                <a class="btn-close pt-1" data-bs-dismiss="alert" aria-label="close"></a>
+                            </div>
+                        @endif
+
                         <x-form class="" action="{{ route('assesment.update', $assesment->slug) }}" id="form-update-assessment" method="put">
 
                             <x-alert type='success' />
@@ -179,12 +187,17 @@
                                                 </thead>
                                                 <tbody>
                                                     @forelse ($assessmentQuestionBanks as $aqb)
+                                                        @php
+                                                            $assesmentQuestions = App\Models\AssesmentQuestion::where('question_bank_id', $aqb->question_bank_id)->get();
+                                                        @endphp
                                                         <tr>
                                                             <td class="p-2 text-center">{{ $loop->iteration }}</td>
                                                             <td class="p-2">{{ $aqb->question_bank->title }}</td>
-                                                            <td class="p-2 text-center">{{ count($aqb->question_bank->questions) }}</td>
+                                                            <td class="p-2 text-center">{{ count($assesmentQuestions) }}</td>
                                                             <td class="p-2 text-center">{{ $aqb->questions_amount }}</td>
-                                                            <td class="p-2 text-center">Action</td>
+                                                            <td class="p-2 text-center">
+                                                                <a href="{{ route('assessment.syncronize.question.bank', $aqb->id) }}" class="btn btn-primary btn-sm" title="Syncronize"><i class="fas fa-sync-alt"></i></a>
+                                                            </td>
                                                         </tr>
                                                     @empty
                                                         <tr>

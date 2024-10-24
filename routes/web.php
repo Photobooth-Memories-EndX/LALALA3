@@ -76,6 +76,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     // Assessment
     Route::resource('assesment', AssesmentController::class);
     Route::post('assessment/{assessment}/store-question-bank', [AssesmentQuestionBankController::class, 'storeAssessmentQuestionBank'])->name('assessment.store.question.bank');
+    Route::get('assessment/{id_assessment_question_bank}/syncronize-questions', [AssesmentQuestionBankController::class, 'syncronizeQuestions'])->name('assessment.syncronize.question.bank');
     Route::get('assesment/{assesment}/result', [AssesmentQuestionController::class, 'result'])->name('assesment.result');
     Route::get('assesment/{assesment}/clone', [AssesmentQuestionController::class, 'clone'])->name('assesment.clone');
     Route::get('assesmentresult', [AssesmentResultController::class, 'index'])->name('assesment.result.all');

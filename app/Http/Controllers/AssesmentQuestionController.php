@@ -12,11 +12,8 @@ class AssesmentQuestionController extends Controller
 {
     public function question(Assesment $assesment)
     {
-        // return response()->json([
-        //     'status' => 200,
-        //     'assesment' => $assesment,
-        // ]);
         $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->get();
+
         return view('main.assesment.question', compact('assesment', 'assesment_question'));
     }
 
