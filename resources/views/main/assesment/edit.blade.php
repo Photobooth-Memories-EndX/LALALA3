@@ -36,6 +36,13 @@
                             </div>
                         @endif
 
+                        @if (session()->has('warning'))
+                            <div class="alert alert-warning py-2 alert-dismissible" role="alert">
+                                {{ session('warning') }}
+                                <a class="btn-close pt-1" data-bs-dismiss="alert" aria-label="close"></a>
+                            </div>
+                        @endif
+
                         <x-form class="" action="{{ route('assesment.update', $assesment->slug) }}" id="form-update-assessment" method="put">
 
                             <x-alert type='success' />
@@ -197,6 +204,7 @@
                                                             <td class="p-2 text-center">{{ $aqb->questions_amount }}</td>
                                                             <td class="p-2 text-center">
                                                                 <a href="{{ route('assessment.syncronize.question.bank', $aqb->id) }}" class="btn btn-primary btn-sm" title="Syncronize"><i class="fas fa-sync-alt"></i></a>
+                                                                <a href="javascript:void(0)" class="btn btn-warning btn-sm btn-edit-assessment-question-bank" data-id-assessment-question-bank="{{ $aqb->id }}" title="Edit"><i class="fas fa-edit"></i></a>
                                                             </td>
                                                         </tr>
                                                     @empty
@@ -254,6 +262,59 @@
                     </svg>
                     <h3>Question Bank already exist!</h3>
                     <div class="text-secondary" id="message-added-question-bank"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-edit-assessment-question-bank" tabindex="-1">
+        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-status bg-warning"></div>
+                <div class="modal-body py-4">
+                    <h3 class="text-center">Edit Question Bank.</h3>
+                    <form method="post" id="form-edit-assessment-question-bank">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="id_assessment_question_bank" id="id-assessment-question-bank">
+                        <div class="row mb-3">
+                            <div class="col-3">
+                                <div class="d-flex justify-content-between">
+                                    <label for="edit-title" >Title</label>
+                                    <span>:</span>
+                                </div>
+                            </div>
+                            <div class="col-9">
+                                <p class="mb-0" id="edit-title"></p>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-3">
+                                <div class="d-flex justify-content-between">
+                                    <label for="edit-total-questions" >Total Questions</label>
+                                    <span>:</span>
+                                </div>
+                            </div>
+                            <div class="col-9">
+                                <p class="mb-0" id="edit-total-questions"></p>
+                            </div>
+                        </div>
+                        <div class="row align-items-center mb-3">
+                            <div class="col-3">
+                                <div class="d-flex justify-content-between">
+                                    <label for="edit-question-per-bank" >Question/Bank</label>
+                                    <span>:</span>
+                                </div>
+                            </div>
+                            <div class="col-9">
+                                <input type="number" min="1" name="edit_question_per_bank" id="edit-question-per-bank" class="form-control" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-warning btn-sm px-5"><i class="fas fa-edit me-2"></i>Update</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -330,8 +391,6 @@
             let routeAddQuestion = "{{ route('assessment.store.question.bank', ':slug') }}";
             routeAddQuestion = routeAddQuestion.replace(':slug', assessmentSlug);
 
-            console.log(totalQuestions);
-
             if (idQuestionBank != "" && amountQuestion > 0 && amountQuestion <= totalQuestions) {
                 $.ajax({
                     url: routeAddQuestion,
@@ -365,6 +424,32 @@
                     alert('Please select question bank and fill amount of question min 1, and maks ' + totalQuestions + '.');
                 }
             }
+        });
+    </script>
+    
+    {{-- Edit and Update Script Assessment Question Bank --}}
+    <script>
+        $('.btn-edit-assessment-question-bank').on('click', function() {
+            let idAssessmentQuestionBank = $(this).data('id-assessment-question-bank');
+            let routeEdit                = "{{ route('assessment.edit.question.bank', ':id') }}";
+            
+            $.ajax({
+                url: routeEdit.replace(':id', idAssessmentQuestionBank),
+                type: "GET",
+                cache: false,
+                success: function(response) {
+                    $('#edit-title').html(response.data.question_bank_title);
+                    $('#edit-id-assessment-question-bank').val(idAssessmentQuestionBank);
+                    $('#edit-total-questions').html(response.data.total_questions);
+                    $('#edit-question-per-bank').val(response.data.question_per_bank);
+                    $('#edit-question-per-bank').attr('max', response.data.total_questions);
+
+                    let routeUpdate = "{{ route('assessment.update.question.bank', ':id') }}";
+                    $('#form-edit-assessment-question-bank').attr('action', routeUpdate.replace(':id', idAssessmentQuestionBank) );
+
+                    $('#modal-edit-assessment-question-bank').modal('show');
+                }
+            })
         });
     </script>
 @endsection

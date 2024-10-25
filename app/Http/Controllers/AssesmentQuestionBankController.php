@@ -72,4 +72,28 @@ class AssesmentQuestionBankController extends Controller
 
         return redirect()->back()->with('success-syncronized', $assessmentQuestionBank->question_bank->title . " synchronized successfully.");
     }
+
+    public function edit($id)
+    {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
+
+        $data = [
+            'question_bank_title' => $assessmentQuestionBank->question_bank->title,
+            'total_questions'     => count($assessmentQuestionBank->question_bank->questions),
+            'question_per_bank'   => $assessmentQuestionBank->questions_amount,
+        ];
+
+        return response()->json([
+            'status' => 200,
+            'data'   => $data,
+        ]);
+    }
+
+    public function update($id) {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
+        $assessmentQuestionBank->questions_amount = request()->edit_question_per_bank;
+        $assessmentQuestionBank->save();
+
+        return redirect()->back()->with('warning', 'Question/Bank of ' . $assessmentQuestionBank->question_bank->title . " updated successfully.");
+    }
 }
