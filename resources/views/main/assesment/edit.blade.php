@@ -43,6 +43,13 @@
                             </div>
                         @endif
 
+                        @if (session()->has('danger'))
+                            <div class="alert alert-danger py-2 alert-dismissible" role="alert">
+                                {{ session('danger') }}
+                                <a class="btn-close pt-1" data-bs-dismiss="alert" aria-label="close"></a>
+                            </div>
+                        @endif
+
                         <x-form class="" action="{{ route('assesment.update', $assesment->slug) }}" id="form-update-assessment" method="put">
 
                             <x-alert type='success' />
@@ -205,6 +212,9 @@
                                                             <td class="p-2 text-center">
                                                                 <a href="{{ route('assessment.syncronize.question.bank', $aqb->id) }}" class="btn btn-primary btn-sm" title="Syncronize"><i class="fas fa-sync-alt"></i></a>
                                                                 <a href="javascript:void(0)" class="btn btn-warning btn-sm btn-edit-assessment-question-bank" data-id-assessment-question-bank="{{ $aqb->id }}" title="Edit"><i class="fas fa-edit"></i></a>
+                                                                @if (count($aqb->assessment->scores) < 1)
+                                                                    <a href="javascript:void(0)" class="btn btn-danger btn-sm btn-delete-assessment-question-bank" data-question-bank-title="{{ $aqb->question_bank->title }}" data-id-assessment-question-bank="{{ $aqb->id }}" title="Delete"><i class="fas fa-trash-alt"></i></a>
+                                                                @endif
                                                             </td>
                                                         </tr>
                                                     @empty
@@ -253,9 +263,9 @@
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                <div class="modal-status bg-danger"></div>
+                <div class="modal-status bg-warning"></div>
                 <div class="modal-body text-center py-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-warning icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                         <path d="M12 9v2m0 4v.01" />
                         <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
@@ -315,6 +325,38 @@
                             <button type="submit" class="btn btn-warning btn-sm px-5"><i class="fas fa-edit me-2"></i>Update</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-delete-question-bank" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-status bg-danger"></div>
+                <div class="modal-body text-center py-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M12 9v2m0 4v.01" />
+                        <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
+                    </svg>
+                    <h3>Are you sure?</h3>
+                    <div class="text-secondary">Want to delete <span id="question-bank-title"></span>.</div>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <div class="row">
+                            <div class="col">
+                                <a href="javascript:void(0)" class="btn w-100" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cancel</a>
+                            </div>
+                            <div class="col">
+                                <form method="get" id="form-delete-assessment-question-bank">
+                                    <button type="submit" class="btn btn-danger w-100"><i class="fas fa-trash-alt me-2"></i>Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -450,6 +492,19 @@
                     $('#modal-edit-assessment-question-bank').modal('show');
                 }
             })
+        });
+    </script>
+
+    {{-- Delete Assessment Question Bank --}}
+    <script>
+        $('.btn-delete-assessment-question-bank').on('click', function () { 
+            let idAssessmentQuestionBank = $(this).data('id-assessment-question-bank');
+            let routeDelete              = "{{ route('assessment.delete.question.bank', ':id') }}";
+
+            $('#question-bank-title').html($(this).data('question-bank-title'));
+            $('#form-delete-assessment-question-bank').attr('action', routeDelete.replace(':id', idAssessmentQuestionBank));
+
+            $('#modal-delete-question-bank').modal('show');
         });
     </script>
 @endsection

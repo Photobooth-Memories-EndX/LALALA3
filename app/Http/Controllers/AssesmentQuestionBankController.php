@@ -96,4 +96,16 @@ class AssesmentQuestionBankController extends Controller
 
         return redirect()->back()->with('warning', 'Question/Bank of ' . $assessmentQuestionBank->question_bank->title . " updated successfully.");
     }
+
+    public function delete($id) {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
+        
+        foreach ($assessmentQuestionBank->assessment_questions as $assessmentQuestion) {
+            $assessmentQuestion->delete();
+        }
+
+        $assessmentQuestionBank->delete();
+
+        return redirect()->back()->with('danger', 'Question Bank ' . $assessmentQuestionBank->question_bank->title . " deleted successfully.");
+    }
 }

@@ -16,4 +16,14 @@ class AssesmentQuestionBank extends Model
     {
         return $this->belongsTo(QuestionBank::class, 'question_bank_id', 'id');
     }
+
+    public function assessment()
+    {
+        return $this->belongsTo(Assesment::class, 'assesment_id', 'id');
+    }
+
+    public function assessment_questions()
+    {
+        return $this->hasMany(AssesmentQuestion::class, 'question_bank_id', 'question_bank_id');
+    }
 }
