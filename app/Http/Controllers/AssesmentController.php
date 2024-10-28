@@ -16,6 +16,7 @@ class AssesmentController extends Controller
     public function index()
     {
         $assesment = Assesment::latest()->get();
+
         return view('main.assesment.index', compact('assesment'));
     }
 

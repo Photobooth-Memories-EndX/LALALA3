@@ -52,6 +52,7 @@
                                         <th class="text-center">No</th>
                                         <th class="text-center">Type</th>
                                         <th class="text-center">Title</th>
+                                        <th class="text-center">Total <br> Questions</th>
                                         <th class="text-center">PG</th>
                                         <th class="text-center">Datetime</th>
                                         <th class="text-center">Status</th>
@@ -75,6 +76,13 @@
                                                         <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
                                                     </svg>
                                                 </button>
+                                            </td>
+                                            <td class="text-center">
+                                                @if (count($list->assessment_question_banks) > 0)
+                                                    {{ $list->assessment_question_banks->sum('questions_amount') }}
+                                                @else
+                                                    {{ count($list->questions) }}
+                                                @endif
                                             </td>
                                             <td class="text-center">{{ $list->passing_grade }}</td>
                                             @if ($list->timer == 'y')

@@ -38,4 +38,9 @@ class Assesment extends Model
     {
         return $this->hasMany(AssesmentQuestion::class);
     }
+
+    public function assessment_question_banks()
+    {
+        return $this->hasMany(AssesmentQuestionBank::class);
+    }
 }

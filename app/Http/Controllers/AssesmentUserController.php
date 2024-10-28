@@ -89,10 +89,15 @@ class AssesmentUserController extends Controller
         }
 
         // counting total questions from total of questions amount of assessment qyuestion bank.
-        $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
+        $assessmentQuestionBank      = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
+        $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
 
-        $assesment_question       = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
-        $assesment_question_count = $assessmentQuestionBank;
+        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
+        if ($checkAssesmentQuestionBanks) {
+            $assesment_question_count = $assessmentQuestionBank;
+        } else {
+            $assesment_question_count = count($assesment_question);
+        }
         $user_answers             = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
 
         if ($assesment->type == 'global') {
@@ -132,7 +137,7 @@ class AssesmentUserController extends Controller
          */
         $score = $amountOfRightAnswer * $formulaScorePerQuestion;
 
-        $assesment_result->score = $score;
+        $assesment_result->score = $score >= 100 ? 100 : $score;
         $assesment_result->batch = $assesment->batch;
         $assesment_result->pass  = ($score < $assesment->passing_grade) ? 0 : 1;
 
@@ -158,10 +163,15 @@ class AssesmentUserController extends Controller
         $assesment = Assesment::findBySlug($slug);
 
         // counting total questions from total of questions amount of assessment qyuestion bank.
-        $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
+        $assessmentQuestionBank      = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
+        $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
 
-        $assesment_question       = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
-        $assesment_question_count = $assessmentQuestionBank;
+        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
+        if ($checkAssesmentQuestionBanks) {
+            $assesment_question_count = $assessmentQuestionBank;
+        } else {
+            $assesment_question_count = count($assesment_question);
+        }
         $user_answers             = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
 
         $assesment_result              = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
@@ -193,7 +203,7 @@ class AssesmentUserController extends Controller
          */
         $score = $amountOfRightAnswer * $formulaScorePerQuestion;
 
-        $assesment_result->score = $score;
+        $assesment_result->score = $score >= 100 ? 100 : $score;
         $assesment_result->batch = $assesment->batch;
         $assesment_result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
 
