@@ -11,16 +11,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class AssessmentExport implements FromView, ShouldAutoSize, WithStyles
 {
-    /**
-     * @return \Illuminate\Support\Collection
-     */
-    public function collection()
-    {
-        //
-    }
+    public $id;
+    public $total;
+
     function __construct($id)
     {
-        $this->id = $id;
+        $this->id    = $id;
         $this->total = 0;
     }
     public function view(): View
@@ -42,7 +38,7 @@ class AssessmentExport implements FromView, ShouldAutoSize, WithStyles
                 ],
             ],
         ];
-        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
-        $sheet->getStyle('A1:I' . $this->total + 1)->applyFromArray($styleArray);
+        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:J' . $this->total + 1)->applyFromArray($styleArray);
     }
 }

@@ -1,15 +1,16 @@
 <table class="tb">
     <thead>
         <tr>
-            <th>No</th>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Team</th>
-            <th>Department</th>
-            <th>Score</th>
-            <th>Batch</th>
-            <th>Result</th>
-            <th>Date</th>
+            <th style="text-align: center">No</th>
+            <th style="text-align: center">ID</th>
+            <th style="text-align: center">Name</th>
+            <th style="text-align: center">Team</th>
+            <th style="text-align: center">Department</th>
+            <th style="text-align: center">Score</th>
+            <th style="text-align: center">Batch</th>
+            <th style="text-align: center">Result</th>
+            <th style="text-align: center">Start Date Time</th>
+            <th style="text-align: center">Finish Date Time</th>
         </tr>
     </thead>
     <tbody>
@@ -29,9 +30,8 @@
                         <span class="badge bg-red">Failed</span>
                     @endif
                 </td>
-                <td>
-                    {{ date("d/m/y", strtotime($list->created_at)) }}
-                </td>
+                <td>{{ date("d/m/y H:i:s", strtotime($list->created_at)) }}</td>
+                <td>{{ date("d/m/y H:i:s", strtotime($list->updated_at)) }}</td>
             </tr>
         @endforeach
     </tbody>
