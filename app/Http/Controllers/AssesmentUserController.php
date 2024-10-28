@@ -71,7 +71,7 @@ class AssesmentUserController extends Controller
                 $assessmentQuestions = AssesmentQuestion::where('assesment_id', $assesment->id)
                     ->where('question_bank_id', $aqb->question_bank_id)->inRandomOrder()->limit($aqb->questions_amount)->get();
                 
-                $assesment_question = $assesment_question->merge($assessmentQuestions);
+                $assesment_question = $assesment_question->merge($assessmentQuestions)->shuffle();
             }
         } else {
             $assesment_question      = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
@@ -83,12 +83,17 @@ class AssesmentUserController extends Controller
     public function store(Request $request, $slug)
     {
         $assesment = Assesment::findBySlug($slug);
+
         if ($assesment === null) {
             abort(404);
         }
-        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
-        $assesment_question_count = count($assesment_question);
-        $user_answers = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
+
+        // counting total questions from total of questions amount of assessment qyuestion bank.
+        $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
+
+        $assesment_question       = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
+        $assesment_question_count = $assessmentQuestionBank;
+        $user_answers             = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
 
         if ($assesment->type == 'global') {
             $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
@@ -98,18 +103,38 @@ class AssesmentUserController extends Controller
             $assesment_result->assesment_id = $assesment->id;
             $assesment_result->batch        = $assesment->batch;
         }
+
         $assesment_result->user_answer = $request->except(['_token', '_method']);
 
-        //process score
-        $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
-        $wrong_answer_count = count($wrong_answer);
-        $right_answer_count = $assesment_question_count - $wrong_answer_count;
-        $score = ((int)$right_answer_count / (int)$assesment_question_count) * 100;
-        // dd((int)$score);
+        // Old Process of Score Calculation
+        // $wrong_answer       = array_diff_assoc($assesment_question, $user_answers);
+        // $wrong_answer_count = count($wrong_answer);
+        // $right_answer_count = $assesment_question_count - $wrong_answer_count;
+        // $score              = ((int)$right_answer_count / (int)$assesment_question_count) * 100;
+
+        // New Process of Score Calculation 
+        /**
+         * First Step is set up the value / score per question.
+         * Score formula per question and 100 is the perfect score.
+         */ 
+        $formulaScorePerQuestion = 100 / $assesment_question_count;
+
+        /**
+         * Second Step is counting right/correct answer.
+         */
+        $wrong_answer        = array_diff_assoc($assesment_question, $user_answers);
+        $wrong_answer_count  = count($wrong_answer);
+        $right_answer_count  = count($assesment_question) - $wrong_answer_count;
+        $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
+
+        /**
+         * Last Step is counting the score.
+         */
+        $score = $amountOfRightAnswer * $formulaScorePerQuestion;
 
         $assesment_result->score = $score;
         $assesment_result->batch = $assesment->batch;
-        $assesment_result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
+        $assesment_result->pass  = ($score < $assesment->passing_grade) ? 0 : 1;
 
         $assesment_result->final = 1;
         $assesment_result->save();
@@ -132,18 +157,41 @@ class AssesmentUserController extends Controller
     {
         $assesment = Assesment::findBySlug($slug);
 
-        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
-        $assesment_question_count = count($assesment_question);
-        $user_answers = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
+        // counting total questions from total of questions amount of assessment qyuestion bank.
+        $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
 
-        $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
+        $assesment_question       = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
+        $assesment_question_count = $assessmentQuestionBank;
+        $user_answers             = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
+
+        $assesment_result              = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
         $assesment_result->user_answer = $request->except(['_token', '_method']);
 
-        //process score
-        $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
-        $wrong_answer_count = count($wrong_answer);
-        $right_answer_count = $assesment_question_count - $wrong_answer_count;
-        $score = ((int)$right_answer_count / (int)$assesment_question_count) * 100;
+        // Old Process of Score Calculation
+        // $wrong_answer       = array_diff_assoc($assesment_question, $user_answers);
+        // $wrong_answer_count = count($wrong_answer);
+        // $right_answer_count = $assesment_question_count - $wrong_answer_count;
+        // $score              = ((int)$right_answer_count / (int)$assesment_question_count) * 100;
+
+        // New Process of Score Calculation 
+        /**
+         * First Step is set up the value / score per question.
+         * Score formula per question and 100 is the perfect score.
+         */ 
+        $formulaScorePerQuestion = 100 / $assesment_question_count;
+
+        /**
+         * Second Step is counting right/correct answer.
+         */
+        $wrong_answer        = array_diff_assoc($assesment_question, $user_answers);
+        $wrong_answer_count  = count($wrong_answer);
+        $right_answer_count  = count($assesment_question) - $wrong_answer_count;
+        $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
+
+        /**
+         * Last Step is counting the score.
+         */
+        $score = $amountOfRightAnswer * $formulaScorePerQuestion;
 
         $assesment_result->score = $score;
         $assesment_result->batch = $assesment->batch;
