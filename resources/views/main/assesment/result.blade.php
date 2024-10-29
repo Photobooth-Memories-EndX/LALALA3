@@ -142,10 +142,10 @@
 
     <!-- Modal Check Wrong Answers -->
     <div class="modal modal-blur fade" id="modal-answer" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Wrong Answer List</h5>
+                    <h5 class="modal-title">Answer List <span id="amount-of-answer"></span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -157,7 +157,19 @@
                             </div>
                         </div>
                     </div>
-                    <div id="result"></div>
+                    <table class="table table-striped table-bordered" style="width: 100%">
+                        <thead>
+                            <tr class="text-center">
+                                <th>Question</th>
+                                <th>Correct Answer</th>
+                                <th>User Answer</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="result">
+                        </tbody>
+                    </table>
+                    {{-- <div id="result"></div> --}}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn" data-bs-dismiss="modal">Close</button>
@@ -198,8 +210,17 @@
                         alert(response.message);
                         $('#modal-questions').modal('hide');
                     } else {
+                        $('#amount-of-answer').html(response.amountOfAnswer);
+
                         $.each(response.wrong_answer, function(i, item) {
-                            col = col + '<div class="row border-bottom mb-2"><div class="col-md-8">'+item.question+'</div>'+'<div class="col-md-2 text-primary">'+item.answer+'</div>'+'<div class="col-md-2 text-danger">'+item.user_answer+'</div></div>';
+                            let badge = '';
+                            if (item.answer == item.user_answer) {
+                                badge = '<span class="badge bg-success">Correct</span>';
+                            } else {
+                                badge = '<span class="badge bg-danger">Wrong</span>';
+                            }
+                            // col = col + '<div class="row border-bottom mb-2"><div class="col-md-8">'+item.question+'</div>'+'<div class="col-md-2 text-primary">'+item.answer+'</div>'+'<div class="col-md-2 text-danger">'+item.user_answer+'</div></div>';
+                            col = col + '<tr><td class="p-2">'+item.question+'</td><td class="p-2">'+item.answer+'</td><td class="p-2">'+item.user_answer+'</td><td class="text-center p-2">'+badge+'</td></tr>';
                         });
                         $('#result').html(col);
 
