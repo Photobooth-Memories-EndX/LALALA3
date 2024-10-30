@@ -43,4 +43,9 @@ class Assesment extends Model
     {
         return $this->hasMany(AssesmentQuestionBank::class);
     }
+
+    public function contents()
+    {
+        return $this->hasMany(Content::class, 'id', 'content_id');
+    }
 }

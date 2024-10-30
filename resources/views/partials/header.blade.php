@@ -100,24 +100,18 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                My Learning @if ($mylearningongoing >= 1)
-                                    <span class="badge bg-red"></span>
-                                @endif
+                                My Learning @if ($mylearningongoing >= 1) <span class="badge bg-red"></span> @endif
                             </span>
                         </a>
                         <div class="dropdown-menu">
                             <a class="dropdown-item" href="{{ url('learning/on-going') }}" rel="noopener">
-                                Learning On Going
-                                @if ($mylearningongoing >= 1)
-                                    <span class="badge bg-red ms-2">{{ $mylearningongoing }}</span>
-                                @endif
-
+                                Learning On Going @if ($mylearningongoing >= 1) <span class="badge bg-red ms-2">{{ $mylearningongoing }}</span> @endif
                             </a>
                             <a class="dropdown-item" href="{{ url('learning/record') }}" rel="noopener">
                                 Learning Record
                             </a>
                             <a class="dropdown-item" href="{{ url('learning/assesment') }}" rel="noopener">
-                                Assesment Result
+                                My Assessment
                             </a>
                         </div>
                     </li>
@@ -244,36 +238,6 @@
                                 </a>
                             </div>
                         </li>
-
-                        {{-- <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/lifebuoy -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
-                                        <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                                        <path d="M15 15l3.35 3.35" />
-                                        <path d="M9 15l-3.35 3.35" />
-                                        <path d="M5.65 5.65l3.35 3.35" />
-                                        <path d="M18.35 5.65l-3.35 3.35" />
-                                    </svg>
-                                </span>
-                                <span class="nav-link-title">
-                                    Help
-                                </span>
-                            </a>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="https://tabler.io/docs" target="_blank" rel="noopener">
-                                    Documentation <span class="badge badge-sm bg-green-lt text-uppercase ms-auto">New</span>
-                                </a>
-                                <a class="dropdown-item" href="https://github.com/tabler/tabler" target="_blank" rel="noopener">
-                                    Source code
-                                </a>
-                                <a class="dropdown-item" href="{{ url('/Tabler/index.html') }}" target="_blank" rel="noopener">
-                                    Template
-                                </a>
-                            </div>
-                        </li> --}}
                     @endcan
                 </ul>
                 <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-first order-md-last">
