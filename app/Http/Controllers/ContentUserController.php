@@ -13,11 +13,36 @@ use Illuminate\Support\Facades\Auth;
 
 class ContentUserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $content = Content::where('playlistonly', 'N')->whereActive('Active')->get();
-        return view('user.content.index', compact('content'));
+        $filterType           = $request->type;
+        $filterClassification = $request->classification;
+        $filterDateOrder      = $request->date_order;
+
+        $contentType           = Content::select('type')->where('playlistonly', 'N')->whereActive('Active')->get()->unique('type');
+        $contentClassification = Content::select('classification_id')->where('playlistonly', 'N')->whereActive('Active')->get()->unique('classification_id');
+
+        $queryContent = Content::where('playlistonly', 'N')->whereActive('Active');
+
+        if ($filterType)
+            $queryContent->where('type', $filterType);
+        if ($filterClassification)
+            $queryContent->where('classification_id', $filterClassification);
+        if ($filterDateOrder == 'newest')
+            $queryContent->orderBy('created_at', 'desc');
+        if ($filterDateOrder == 'oldest')
+            $queryContent->orderBy('created_at', 'asc');
+
+        $content = $queryContent->get();
+
+        return view('user.content.index', compact(
+            'filterType', 'contentType', 
+            'filterClassification', 'contentClassification',
+            'filterDateOrder',
+            'content',
+        ));
     }
+
     public function view($slug)
     {
         $content = Content::findBySlug($slug);

@@ -1,40 +1,42 @@
 @extends('layouts.master')
+
 @section('content')
-
-    {{-- <div class="page-header d-print-none">
-        <div class="container-xl">
-            <div class="row g-2 align-items-center">
-                <div class="col">
-                    <h2 class="page-title">
-                        Learning On Going
-                    </h2>
-                </div>
-                <!-- Page title actions -->
-                <div class="col-auto ms-auto d-print-none">
-                    <div class="d-flex">
-                        <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-                            <li class="breadcrumb-item"><a href="#">Learning</a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><a href="#">On Going</a>
-                            </li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> --}}
-
-    <!-- Page body -->
     <div class="page-body">
-        <!-- Container Page -->
         <div class="container">
-
-            <!-- Card -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">All Content</h3>
-
                 </div>
                 <div class="card-body">
+
+                    <form action="{{ route('content.user.index') }}" method="get">
+                        <div class="input-group mb-2">
+                            <span class="input-group-text">
+                                Filter By
+                            </span>
+                            <select name="type" id="type" class="form-select">
+                                <option value="">- Choose Type -</option>
+                                @foreach ($contentType as $type)
+                                    <option value="{{ $type->type }}" {{ $type->type == $filterType ? 'selected' : '' }}>{{ $type->type }}</option>
+                                @endforeach
+                            </select>
+                            <select name="classification" id="classification" class="form-select">
+                                <option value="">- Choose Type -</option>
+                                @foreach ($contentClassification as $contentClass)
+                                    <option value="{{ $contentClass->classification_id }}" {{ $contentClass->classification_id == $filterClassification ? 'selected' : '' }}>{{ $contentClass->classification->classification_name }}</option>
+                                @endforeach
+                            </select>
+                            <select name="date_order" id="date-order" class="form-select">
+                                <option value="">- Choose Date Order -</option>
+                                <option value="newest" {{ $filterDateOrder == 'newest' ? 'selected' : '' }}>Newest</option>
+                                <option value="oldest" {{ $filterDateOrder == 'oldest' ? 'selected' : '' }}>Oldest</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i></button>
+                        </div>
+                    </form>
+
+                    <hr class="my-2">
+
                     <div id="table-default" class="table-responsive">
                         @unless (count($content) == 0)
                             <table class="table table-bordered table-striped table-vcenter" id="MyTable">
@@ -43,6 +45,7 @@
                                         <th>#</th>
                                         <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
                                         <th>Title</th>
+                                        <th>Type</th>
                                         <th>Classification</th>
                                         <th>Duration</th>
                                         <th>Date</th>
@@ -53,7 +56,6 @@
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
                                             <td>
-
                                                 @if ($list->type == 'YouTube')
                                                     {{-- <img src="http://img.youtube.com/vi/{{ $list->link }}/mqdefault.jpg" class="w-7 h-7 object-cover card-img-start" alt="Beautiful blonde woman relaxing with a can of coke on a tree stump by the beach" /> --}}
                                                     <div class="img-responsive img-responsive-4x3 rounded" style="background-image: url(http://img.youtube.com/vi/{{ $list->link }}/mqdefault.jpg); position:relative;">
@@ -98,24 +100,19 @@
                                                                 </svg>
                                                             </span>
                                                         @endif
-
                                                     </div>
                                                     <div class="col">
-                                                        <h4><a href="{{ route('content.user.view', $list->slug) }}" class="text-reset">{{ $list->title }}</a></h4>
+                                                        <h4 class="mb-0"><a href="{{ route('content.user.view', $list->slug) }}" class="text-reset">{{ $list->title }}</a></h4>
                                                         <div class="text-muted">
                                                             {!! nl2br($list->description) !!}
                                                         </div>
                                                     </div>
                                                 </div>
-
                                             </td>
-
+                                            <td>{{ $list->type }}</td>
                                             <td><a href="{{ route('content.user.category', $list->classification->slug) }}">{{ $list->classification->classification_name ?? '' }}</a></td>
                                             <td>{{ $list->duration }}</td>
                                             <td>{{ $list->date }}</td>
-
-
-
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -126,13 +123,8 @@
                     </div>
                 </div>
             </div>
-            <!-- Card -->
-
         </div>
-        <!-- Container Page -->
     </div>
-    <!-- Page body -->
-
 @endsection
 
 @section('style')
