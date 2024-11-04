@@ -15,6 +15,7 @@ use App\Http\Controllers\HomeUserController;
 use App\Http\Controllers\LearningController;
 use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
+use App\Http\Controllers\AssesmentEditScoreController;
 use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
 use App\Http\Controllers\EventPhotoController;
@@ -92,6 +93,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::get('assesment/wrong/{slug}/{id}', [AssesmentResultController::class, 'wrong'])->name('assesment.wrong');
     Route::get('assesment/assign-users/{slug}', [AssesmentController::class, 'assignUsersIndex'])->name('assesment.assign.users.index');
     Route::post('assesment/assign-users-process/{slug}', [AssesmentController::class, 'assignUserProcess'])->name('assesment.assign.users.process');
+
+    Route::group(['prefix' => 'assessment'], function() {
+        Route::group(['prefix' => 'edit-score'], function () {
+            Route::get('/', [AssesmentEditScoreController::class, 'index'])->name('assesment.edit.score.index');
+            Route::post('/update-score', [AssesmentEditScoreController::class, 'updateScore'])->name('assesment.edit.score.update');
+        });
+    });
 
     // Assessment Questions
     Route::get('assesment/{assesment}/question', [AssesmentQuestionController::class, 'question'])->name('assesment.question');
