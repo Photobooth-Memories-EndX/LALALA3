@@ -59,7 +59,7 @@ class ContentUserController extends Controller
 
         $queryAssessment = Assesment::where('type', 'content');
             
-        $assesment          = $queryAssessment->where('content_id', $content->id)->first();
+        $assesment = $queryAssessment->where('content_id', $content->id)->first();
 
         if (isset($assesment)) {
             $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
@@ -73,7 +73,7 @@ class ContentUserController extends Controller
         $assessmentCount        = $queryAssessmentResult->count();
         $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
 
-        $comment = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
+        $comment = Comment::with('user')->where('parent_id', null)->where('type', 'content')->where('content_id', $content->id)->latest()->get();
 
         return view('user.content.view', compact('content', 'assesment', 'assessmentCount', 'assessmentLatestScores', 'comment', 'content_user'));
     }

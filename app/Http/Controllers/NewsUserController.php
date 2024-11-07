@@ -11,6 +11,7 @@ class NewsUserController extends Controller
     public function index()
     {
         $news = News::latest()->paginate(15);
+
         return view('user.news.index', compact('news'));
     }
 
@@ -22,7 +23,9 @@ class NewsUserController extends Controller
         }
         $news->views += 1;
         $news->save();
-        $comment = Comment::with('user')->where('type', 'news')->where('news_id', $news->id)->latest()->get();
+
+        $comment = Comment::with('user')->where('parent_id', null)->where('type', 'news')->where('news_id', $news->id)->latest()->get();
+
         return view('user.news.view', compact('news', 'comment'));
     }
 }
