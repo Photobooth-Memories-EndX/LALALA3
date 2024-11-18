@@ -13,7 +13,9 @@ class AssesmentQuestionBankController extends Controller
 {
     public function storeAssessmentQuestionBank(Request $request)
     {
-        $checkAssessmentQuestionBank = AssesmentQuestionBank::where('question_bank_id', $request->id_question_bank)->first();
+        $assessment                  = Assesment::findBySlug($request->assessment_slug);
+        $checkAssessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assessment->id)
+            ->where('question_bank_id', $request->id_question_bank)->first();
 
         if ($checkAssessmentQuestionBank) {
             return response()->json([
@@ -22,7 +24,6 @@ class AssesmentQuestionBankController extends Controller
             ]);
         }
 
-        $assessment     = Assesment::findBySlug($request->assessment_slug);
         $questionBank   = QuestionBank::find($request->id_question_bank);
         $amountQuestion = $request->amount_question;
         $questions      = Question::where('question_bank_id', $questionBank->id)->get();

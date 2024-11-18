@@ -60,15 +60,15 @@
                                             <td class="p-2">
                                                 @if ($assessment->type == 'content' && $assessment->content_id == $assessment->contents->first()->id)
                                                     @if ($newCollectionScore->sortByDesc('score')->first() != null && $newCollectionScore->sortByDesc('score')->first()->final == 1)
-                                                        Finished
+                                                        <span class="badge bg-success">Finished</span>
                                                     @else
-                                                        Haven't done it yet
+                                                        <span class="badge bg-danger">Haven't done it yet</span>
                                                     @endif
                                                 @elseif ($assessment->type != 'content')
                                                     @if ($assessment->scores->where('assesment_id', $assessment->id)->where('user_id', Auth::user()->id)->first() != null && $assessment->scores->where('assesment_id', $assessment->id)->where('user_id', Auth::user()->id)->first()->final == 1)
-                                                        Finished
+                                                        <span class="badge bg-success">Finished</span>
                                                     @else
-                                                        Haven't done it yet
+                                                        <span class="badge bg-danger">Haven't done it yet</span>
                                                     @endif
                                                 @endif
                                             </td>
