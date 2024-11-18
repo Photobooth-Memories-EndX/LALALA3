@@ -93,6 +93,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::get('assesment/wrong/{slug}/{id}', [AssesmentResultController::class, 'wrong'])->name('assesment.wrong');
     Route::get('assesment/assign-users/{slug}', [AssesmentController::class, 'assignUsersIndex'])->name('assesment.assign.users.index');
     Route::post('assesment/assign-users-process/{slug}', [AssesmentController::class, 'assignUserProcess'])->name('assesment.assign.users.process');
+    Route::delete('assesment/delete-assigned-user/{id}', [AssesmentController::class, 'deleteAssignedUser'])->name('assesment.assign.users.delete');
 
     Route::group(['prefix' => 'assessment'], function() {
         Route::group(['prefix' => 'edit-score'], function () {

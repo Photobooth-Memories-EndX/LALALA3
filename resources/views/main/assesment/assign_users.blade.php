@@ -31,6 +31,7 @@
                     {{-- alert component --}}
                     <x-alert type='success' />
                     <x-alert type='warning' />
+                    <x-alert type='danger' />
 
                     <div class="card">
                         <div class="card-body p-3">
@@ -91,6 +92,7 @@
                                             <th class="py-2">ID</th>
                                             <th class="py-2">Assign Type</th>
                                             <th class="py-2">Description</th>
+                                            <th class="py-2">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -100,6 +102,13 @@
                                                 <td class="py-2">{{ $assign->assigned_id }}</td>
                                                 <td class="py-2">{{ ucwords($assign->assigned_type) }}</td>
                                                 <td class="py-2">{{ $assign->assigned_description }}</td>
+                                                <td class="py-2 text-center">
+                                                    <form action="{{ route('assesment.assign.users.delete', ['id' => $assign->id]) }}" method="post">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></button>
+                                                    </form>
+                                                </td>
                                             </tr>
                                         @empty
                                             <tr class="fs-5">

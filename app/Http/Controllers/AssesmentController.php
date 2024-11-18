@@ -214,4 +214,13 @@ class AssesmentController extends Controller
 
         return redirect()->back()->with('success', "The users assignment was successful.");
     }
+
+    public function deleteAssignedUser($id)
+    {
+        $assignedUser = AssesmentAssigned::findOrFail($id);
+        $assignedUser->delete();
+
+        session()->flash('danger', $assignedUser->assigned_description . ' was successfully removed from the list of assigned users!');
+        return redirect()->back();
+    }
 }
