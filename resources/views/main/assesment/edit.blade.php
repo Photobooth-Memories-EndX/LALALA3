@@ -152,12 +152,6 @@
                                 <input type="hidden" id="assessment-slug" value="{{ $assesment->slug }}">
                                 <div class="mb-3 row align-items-end">
                                     <div class="col-11">
-                                        <div class="row align-items-center mb-3">
-                                            <x-label class="col-2 form-label mb-0 required">Total Questions</x-label>
-                                            <div class="col-10">
-                                                <input type="text" name="total_questions" id="total-questions" value="{{ $totalQuestions }}" class="form-control w-25" readonly>
-                                            </div>
-                                        </div>
                                         <div class="row align-items-center">
                                             <x-label class="col-2 form-label mb-0 required">Question Bank</x-label>
                                             <div class="col-6">
@@ -189,14 +183,14 @@
                                             <table class="table table-bordered table-striped w-100">
                                                 <thead>
                                                     <tr>
-                                                        <th colspan="5" class="text-center">List of Questions Bank</th>
+                                                        <th colspan="5" class="text-center p-2">List of Questions Bank</th>
                                                     </tr>
                                                     <tr class="text-center">
-                                                        <th>No</th>
-                                                        <th>Question Bank</th>
-                                                        <th>Total Questions</th>
-                                                        <th>Question/Bank</th>
-                                                        <th>Action</th>
+                                                        <th class="p-2">No</th>
+                                                        <th class="p-2">Question Bank</th>
+                                                        <th class="p-2">Total Questions</th>
+                                                        <th class="p-2">Question/Bank</th>
+                                                        <th class="p-2">Action</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -205,11 +199,11 @@
                                                             $assesmentQuestions = App\Models\AssesmentQuestion::where('question_bank_id', $aqb->question_bank_id)->get();
                                                         @endphp
                                                         <tr>
-                                                            <td class="p-2 text-center">{{ $loop->iteration }}</td>
-                                                            <td class="p-2">{{ $aqb->question_bank->title }}</td>
-                                                            <td class="p-2 text-center">{{ count($assesmentQuestions) }}</td>
-                                                            <td class="p-2 text-center">{{ $aqb->questions_amount }}</td>
-                                                            <td class="p-2 text-center">
+                                                            <td class="p-1 text-center">{{ $loop->iteration }}</td>
+                                                            <td class="p-1">{{ $aqb->question_bank->title }}</td>
+                                                            <td class="p-1 text-center">{{ count($assesmentQuestions) }}</td>
+                                                            <td class="p-1 text-center">{{ $aqb->questions_amount }}</td>
+                                                            <td class="p-1 text-center">
                                                                 <a href="{{ route('assessment.syncronize.question.bank', $aqb->id) }}" class="btn btn-primary btn-sm" title="Syncronize"><i class="fas fa-sync-alt"></i></a>
                                                                 <a href="javascript:void(0)" class="btn btn-warning btn-sm btn-edit-assessment-question-bank" data-id-assessment-question-bank="{{ $aqb->id }}" title="Edit"><i class="fas fa-edit"></i></a>
                                                                 @if (count($aqb->assessment->scores) < 1)
@@ -223,6 +217,15 @@
                                                         </tr>
                                                     @endforelse
                                                 </tbody>
+                                                @isset($assessmentQuestionBanks)
+                                                    <tfoot>
+                                                        <tr class="fw-bold">
+                                                            <td class="p-1 text-end" colspan="3">Total Assessment Questions</td>
+                                                            <td class="p-1 text-center">{{ $totalQuestions }}</td>
+                                                            <td class="p-1"></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                @endisset
                                             </table>
                                         </div>
                                     </div>
