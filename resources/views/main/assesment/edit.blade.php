@@ -154,7 +154,7 @@
                                     <div class="col-11">
                                         <div class="row align-items-center">
                                             <x-label class="col-2 form-label mb-0 required">Question Bank</x-label>
-                                            <div class="col-6">
+                                            <div class="col-5">
                                                 <x-select name="id_question_bank" id="id-question-bank" class="select2 m-0">
                                                     <option value="" data-total-questions="0">- Choose Question Bank -</option>
                                                     @foreach ($questionBanks as $questionBank)
@@ -163,7 +163,7 @@
                                                 </x-select>
                                                 <div class="invalid-feedback d-none" id="invalid-id-question-bank"></div>
                                             </div>
-                                            <x-label class="col-2 form-label text-end mb-0 required">Question/Bank</x-label>
+                                            <x-label class="col-3 form-label text-end mb-0 required">Total Question Used/Bank</x-label>
                                             <div class="col-2">
                                                 <input type="number" min="0" name="amount_question" id="amount-question" value="0" class="form-control m-0">
                                                 <div class="invalid-feedback d-none" id="invalid-amount-question"></div>
@@ -188,8 +188,8 @@
                                                     <tr class="text-center">
                                                         <th class="p-2">No</th>
                                                         <th class="p-2">Question Bank</th>
-                                                        <th class="p-2">Total Questions</th>
-                                                        <th class="p-2">Question/Bank</th>
+                                                        <th class="p-2">Total Questions in the Bank</th>
+                                                        <th class="p-2">Total Question Used/Bank</th>
                                                         <th class="p-2">Action</th>
                                                     </tr>
                                                 </thead>
