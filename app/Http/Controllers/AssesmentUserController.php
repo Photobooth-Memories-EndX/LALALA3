@@ -44,8 +44,10 @@ class AssesmentUserController extends Controller
             }
 
             //hanya tampilkan asesment sesuai jadwal yg diinput
-            if(!($today >= $assesment->fromdate and $today <= $assesment->todate)){
-                abort(404);
+            if (($assesment->fromdate && $assesment->todate) != null) {
+                if(!($today >= $assesment->fromdate and $today <= $assesment->todate)){
+                    abort(404);
+                }
             }
 
             //cek apakah user sebelumnya sudah mengikuti ujian di batch berjalan, juga apakah sudah pernah mengisi jawaban dan jawaban tsb sudah disubmit

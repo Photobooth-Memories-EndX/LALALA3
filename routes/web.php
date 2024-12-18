@@ -65,6 +65,9 @@ Route::group(['prefix' => 'page'], function () {
 Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
 
     Route::resource('user', UserController::class);
+    Route::get('user-outsourcing/create', [UserController::class, 'createOutsourcing'])->name('manage.create.user.outsourcing');
+    Route::post('user-outsourcing/store', [UserController::class, 'storeOutsourcing'])->name('manage.store.user.outsourcing');
+    Route::put('user-outsourcing/{user}/update', [UserController::class, 'updateOutsourcing'])->name('manage.update.user.outsourcing');
     Route::put('user/{user}/resetpassword', [UserController::class, 'resetpassword'])->name('user.resetpassword');
     Route::post('user/changestatus', [UserController::class, 'changestatus'])->name('user.changestatus');
     Route::get('user-search', [UserController::class, 'searchUser'])->name('user.search');
