@@ -9,23 +9,18 @@
                     <div class="col-auto ms-auto d-print-none h1" id="timer"></div>
                 </div>
             @endif
-
             <div class="card card-lg">
                 <div class="card-body ">
                     <div class="row g-4">
                         <div class="col-12 markdown mb-3">
                             <h1 class="mb-2">{{ $assesment->title }}</h1>
-
                             <div class="d-flex align-items-center">
                                 <div>
                                     <div class="text-muted">{{ date('d F Y', strtotime(now())) }}</div>
                                 </div>
                             </div>
-
                         </div>
-
                         <x-form action="{{ route('assesment.user.store', $assesment->slug) }}" method="post" id="formAssesment">
-
                             @unless(count($assesment_question) == 0)
                                 <div class="mb-3 col-12">
                                     <!-- SmartWizard html -->
@@ -39,12 +34,10 @@
                                                 </li>
                                             @endforeach
                                         </ul>
-
                                         <!-- Include optional progressbar HTML -->
                                         <div class="progress mb-2">
                                             <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
-
                                         <div class="tab-content">
                                             @php
                                                 $i = 0;
@@ -55,8 +48,6 @@
                                                 @endphp
                                                 <div id="step-{{ $step->id }}" class="tab-pane" role="tabpanel" aria-labelledby="step-{{ $step->id }}">
                                                     <div class="mb-3">
-                                                        {{-- <label class="form-label h2">{{ $step->question }}</label> --}}
-                                                        {{-- <p class="form-label h3">{!! nl2br($step->question) !!}</p> --}}
                                                         <div class="display-6" style="font-size: 1.2rem !important">
                                                             {!! $step->question !!}
                                                         </div>
@@ -69,7 +60,6 @@
                                                             $options = collect($step->option);
                                                             $jawaban_temp = $assesment_result_draft->user_answer[$step->id] ?? null;
                                                         @endphp
-
                                                         @foreach ($options->shuffle()->all() as $option)
                                                             <label class="form-selectgroup-item flex-fill">
                                                                 <input type="radio" name="{{ $step->id }}" value="{{ $option }}" class="form-selectgroup-input {{ $i }}" {{ ($jawaban_temp == $option) ? 'checked' : ''  }}>
@@ -79,6 +69,17 @@
                                                                     </div>
                                                                     <div>
                                                                         {{ $option }}
+                                                                        @if (Auth::user()->id_emp == '106596')
+                                                                            @if ($step->answer == $option)
+                                                                                <span class="badge bg-success">
+                                                                                    <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-checks">
+                                                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                                                        <path d="M7 12l5 5l10 -10" />
+                                                                                        <path d="M2 12l5 5m5 -5l5 -5" />
+                                                                                    </svg>
+                                                                                </span>
+                                                                            @endif
+                                                                        @endif
                                                                     </div>
                                                                 </div>
                                                             </label>
@@ -88,15 +89,14 @@
                                             @endforeach
                                         </div>
                                     </div>
+                                    <!-- SmartWizard html -->
                                 </div>
-
                                 <div class="text-end">
                                     <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure want to finish the assesment and submit all the answer?')">Finish & Submit Answers</button>
                                 </div>
                             @else
                                 <p>No questions data yet</p>
                             @endunless
-
                         </x-form>
                     </div>
                 </div>
@@ -209,7 +209,6 @@
                     @if(!auth()->user()->isAdmin())
                         document.getElementById("formAssesment").submit();
                     @endif
-
                 }
             }, 1000);
         </script>
