@@ -1,0 +1,112 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Assesment;
+use App\Models\AssesmentQuestion;
+use App\Models\AssesmentQuestionBank;
+use App\Models\Question;
+use App\Models\QuestionBank;
+use Illuminate\Http\Request;
+
+class AssesmentQuestionBankController extends Controller
+{
+    public function storeAssessmentQuestionBank(Request $request)
+    {
+        $assessment                  = Assesment::findBySlug($request->assessment_slug);
+        $checkAssessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assessment->id)
+            ->where('question_bank_id', $request->id_question_bank)->first();
+
+        if ($checkAssessmentQuestionBank) {
+            return response()->json([
+                'status' => 422,
+                'message' => 'Question Bank already exist!',
+            ]);
+        }
+
+        $questionBank   = QuestionBank::find($request->id_question_bank);
+        $amountQuestion = $request->amount_question;
+        $questions      = Question::where('question_bank_id', $questionBank->id)->get();
+
+        $assessmentQuestionBank = new AssesmentQuestionBank;
+        $assessmentQuestionBank->assesment_id     = $assessment->id;
+        $assessmentQuestionBank->question_bank_id = $questionBank->id;
+        $assessmentQuestionBank->questions_amount = $amountQuestion;
+        $assessmentQuestionBank->save();
+
+        foreach ($questions as $question) {
+            $assesmentQuestion = new AssesmentQuestion;
+            $assesmentQuestion->assesment_id     = $assessment->id;
+            $assesmentQuestion->question_bank_id = $questionBank->id;
+            $assesmentQuestion->question_id      = $question->id;
+            $assesmentQuestion->question         = $question->question;
+            $assesmentQuestion->image            = $question->question_image;
+            $assesmentQuestion->option           = $question->option;
+            $assesmentQuestion->answer           = $question->answer;
+            $assesmentQuestion->status           = true;
+            $assesmentQuestion->save();
+        }
+
+        return response()->json([
+            'status'  => 200,
+            'message' => 'Assessment Question have already added successfully',
+        ]);
+    }
+
+    public function syncronizeQuestions($id_assessment_question_bank)
+    {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrFail($id_assessment_question_bank);
+        $questions = Question::where('question_bank_id', $assessmentQuestionBank->question_bank_id)->get();
+
+        foreach ($questions as $question) {
+            $assesmentQuestion = AssesmentQuestion::firstOrNew([
+                'assesment_id'     => $assessmentQuestionBank->assesment_id,
+                'question_bank_id' => $assessmentQuestionBank->question_bank_id,
+                'question_id'      => $question->id,
+            ]);
+            $assesmentQuestion->question = $question->question;
+            $assesmentQuestion->image    = $question->question_image;
+            $assesmentQuestion->option   = $question->option;
+            $assesmentQuestion->answer   = $question->answer;
+            $assesmentQuestion->save();
+        }
+
+        return redirect()->back()->with('success-syncronized', $assessmentQuestionBank->question_bank->title . " synchronized successfully.");
+    }
+
+    public function edit($id)
+    {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
+
+        $data = [
+            'question_bank_title' => $assessmentQuestionBank->question_bank->title,
+            'total_questions'     => count($assessmentQuestionBank->question_bank->questions),
+            'question_per_bank'   => $assessmentQuestionBank->questions_amount,
+        ];
+
+        return response()->json([
+            'status' => 200,
+            'data'   => $data,
+        ]);
+    }
+
+    public function update($id) {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
+        $assessmentQuestionBank->questions_amount = request()->edit_question_per_bank;
+        $assessmentQuestionBank->save();
+
+        return redirect()->back()->with('warning', 'Question/Bank of ' . $assessmentQuestionBank->question_bank->title . " updated successfully.");
+    }
+
+    public function delete($id) {
+        $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
+        
+        foreach ($assessmentQuestionBank->assessment_questions as $assessmentQuestion) {
+            $assessmentQuestion->delete();
+        }
+
+        $assessmentQuestionBank->delete();
+
+        return redirect()->back()->with('danger', 'Question Bank ' . $assessmentQuestionBank->question_bank->title . " deleted successfully.");
+    }
+}

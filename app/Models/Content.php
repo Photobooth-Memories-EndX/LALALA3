@@ -21,14 +21,12 @@ class Content extends Model
     {
         return $this->belongsTo(Classification::class, "classification_id", "id");
     }
+
     public function contentuser()
     {
         return $this->hasMany(ContentUser::class);
     }
-    // public function trainingplandetail()
-    // {
-    //     return $this->belongsTo(TrainingPlanDetail::class, "id", "content_id");
-    // }
+
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()

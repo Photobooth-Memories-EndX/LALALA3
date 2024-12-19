@@ -1,6 +1,6 @@
 @extends('layouts.master')
-@section('content')
 
+@section('content')
     <div class="page-header d-print-none">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
@@ -9,7 +9,6 @@
                         Manage Assesment
                     </h2>
                 </div>
-                <!-- Page title actions -->
                 <div class="col-auto ms-auto d-print-none">
                     <div class="d-flex">
                         <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
@@ -22,20 +21,26 @@
         </div>
     </div>
 
-    <!-- Page body -->
     <div class="page-body">
-        <!-- Container Page -->
         <div class="container">
 
             {{-- alert component   --}}
             <x-alert type='success' />
             <x-alert type='warning' />
 
-            <!-- Card -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">List Assesment</h3>
                     <div class="card-actions">
+                        <a href="{{ route('assesment.edit.score.index') }}" class="btn btn-warning">
+                            <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-file-pencil">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+                                <path d="M10 18l5 -5a1.414 1.414 0 0 0 -2 -2l-5 5v2h2z" />
+                            </svg>
+                            Edit Score
+                        </a>
                         <a href="{{ route('assesment.create') }}" class="btn btn-primary">
                             <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -53,25 +58,27 @@
                             <table class="table table-bordered table-striped table-vcenter" id="MyTable">
                                 <thead>
                                     <tr>
-                                        <th>No</th>
-                                        <th>Type</th>
-                                        <th>Title</th>
-                                        <th>PG</th>
-                                        <th>Datetime</th>
-                                        <th>Status</th>
-                                        <th width="12%"></th>
+                                        <th class="text-center">No</th>
+                                        <th class="text-center">Type</th>
+                                        <th class="text-center">Title</th>
+                                        <th class="text-center">Total <br> Questions</th>
+                                        <th class="text-center">PG</th>
+                                        <th class="text-center">Datetime</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center" width="12%">Actions</th>
+                                        <th class="text-center">Assign</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($assesment as $list)
-                                        <tr>
-                                            <td>{{ $loop->index + 1 }}</td>
+                                        <tr class="fs-5">
+                                            <td class="text-center">{{ $loop->index + 1 }}</td>
                                             <td>{{ $list->type }}</td>
                                             <td>
                                                 <a href="{{ route('assesment.user.view', $list->slug) }}" class="text-reset link">
                                                     {{ $list->title }}
                                                 </a>
-                                                <button class="btn text-end btn-icon btn-copy" data-clipboard-text="{{ route('assesment.user.view', $list->slug) }}" data-bs-trigger="click" data-bs-toggle="tooltip" title="Copied!" data-bs-placement="bottom">
+                                                <button class="btn text-end btn-icon btn-copy btn-sm" data-clipboard-text="{{ route('assesment.user.view', $list->slug) }}" data-bs-trigger="click" data-bs-toggle="tooltip" title="Copied!" data-bs-placement="bottom">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                         <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
@@ -79,20 +86,25 @@
                                                     </svg>
                                                 </button>
                                             </td>
-                                            <td>{{ $list->passing_grade }}</td>
-
+                                            <td class="text-center">
+                                                @if (count($list->assessment_question_banks) > 0)
+                                                    {{ $list->assessment_question_banks->sum('questions_amount') }}
+                                                @else
+                                                    {{ count($list->questions) }}
+                                                @endif
+                                            </td>
+                                            <td class="text-center">{{ $list->passing_grade }}</td>
                                             @if ($list->timer == 'y')
                                                 <td class="text-end">From : {{ date('d/m/y H:i', strtotime($list->fromdate)) }} <br>To : {{ date('d/m/y H:i', strtotime($list->todate)) }}</td>
                                             @else
                                                 <td class="text-center">-</td>
                                             @endif
-
                                             <td>
                                                 <input data-id="{{ $list->id }}" data-toggle="toggle" class="toggle-class" type="checkbox" data-onstyle="success" data-offstyle="secondary" data-on="OK" data-off="NOT" data-size="small" data-width="40" {{ $list->status == 'OK' ? 'checked' : '' }}>
                                             </td>
-                                            <td>
+                                            <td class="text-center">
                                                 <div class="d-inline">
-                                                    <a href="{{ route('assesment.edit', $list->slug) }}" class="btn btn-info btn-icon mb-1" title="Edit">
+                                                    <a href="{{ route('assesment.edit', $list->slug) }}" class="btn btn-info btn-icon mb-1 btn-sm" title="Edit">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                             <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
@@ -103,7 +115,7 @@
                                                 </div>
 
                                                 <div class="d-inline">
-                                                    <a class="btn btn-secondary btn-icon btn-newlink mb-1" href="{{ route('assesment.newlink', $list->slug) }}" title="Generate new link">
+                                                    <a class="btn btn-secondary btn-icon btn-newlink mb-1 btn-sm" href="{{ route('assesment.newlink', $list->slug) }}" title="Generate new link">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-refresh" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                             <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"></path>
@@ -115,18 +127,20 @@
                                                 <form action="{{ route('assesment.destroy', $list->slug) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-icon mb-1" onclick="return confirm('Are you sure want to delete {{ $list->title }}?')" title="Delete?"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <button type="submit" class="btn btn-danger btn-icon mb-1 btn-sm" onclick="return confirm('Are you sure want to delete {{ $list->title }}?')" title="Delete?">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                             <path d="M4 7l16 0"></path>
                                                             <path d="M10 11l0 6"></path>
                                                             <path d="M14 11l0 6"></path>
                                                             <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
                                                             <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
-                                                        </svg></button>
+                                                        </svg>
+                                                    </button>
                                                 </form>
 
                                                 <div class="d-inline">
-                                                    <a href="{{ route('assesment.question', $list->slug) }}" class="btn btn-success btn-icon mb-1" title="Question List">
+                                                    <a href="{{ route('assesment.question', $list->slug) }}" class="btn btn-success btn-icon mb-1 btn-sm" title="Question List">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-checkup-list" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                             <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"></path>
@@ -139,7 +153,7 @@
                                                 </div>
 
                                                 <div class="d-inline">
-                                                    <a href="{{ route('assesment.clone', $list->slug) }}" class="btn btn-warning btn-icon mb-1" title="Clone" onclick="return confirm('Are you sure want to clone {{ $list->title }}?')">
+                                                    <a href="{{ route('assesment.clone', $list->slug) }}" class="btn btn-warning btn-icon mb-1 btn-sm" title="Clone" onclick="return confirm('Are you sure want to clone {{ $list->title }}?')">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-stack" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                             <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
@@ -147,12 +161,12 @@
                                                             <path d="M5 21h14"></path>
                                                             <path d="M5 18h14"></path>
                                                             <path d="M5 15h14"></path>
-                                                         </svg>
+                                                        </svg>
                                                     </a>
                                                 </div>
 
                                                 <div class="d-inline">
-                                                    <a href="{{ route('assesment.result', $list->slug) }}" class="btn btn-primary btn-icon mb-1" title="User Score">
+                                                    <a href="{{ route('assesment.result', $list->slug) }}" class="btn btn-primary btn-icon mb-1 btn-sm" title="User Score">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user-check" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                             <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path>
@@ -161,6 +175,19 @@
                                                         </svg>
                                                     </a>
                                                 </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="{{ route('assesment.assign.users.index', $list->slug) }}" class="btn btn-secondary btn-sm" title="Assign Users">
+                                                    <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round" stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-users-group">
+                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                        <path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                                        <path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" />
+                                                        <path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                                        <path d="M17 10h2a2 2 0 0 1 2 2v1" />
+                                                        <path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                                        <path d="M3 13v-1a2 2 0 0 1 2 -2h2" />
+                                                    </svg>
+                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -171,14 +198,10 @@
                         @endunless
                     </div>
                 </div>
-
             </div>
-            <!-- Card -->
 
         </div>
-        <!-- Container Page -->
     </div>
-    <!-- Page body -->
 
     <!-- Modal Question -->
     <div class="modal modal-blur fade" id="modal-newlink" role="dialog" aria-hidden="true">
@@ -198,7 +221,6 @@
                 </div>
                 <div class="modal-body">
                     <x-form action="" method="put">
-
                         <div class="mb-3 row">
                             <x-label class="col-3 col-form-label required">Title</x-label>
                             <div class="col">
@@ -234,7 +256,8 @@
                                             <path d="M12 15v3" />
                                         </svg>
                                     </span>
-                                    <x-input placeholder="Select a date" id="datepicker-fromdate" name="fromdate" required class="input-date" />
+                                    <x-input placeholder="Select a date" id="datepicker-fromdate" name="fromdate" required
+                                        class="input-date" />
                                 </div>
                             </div>
 
@@ -242,9 +265,12 @@
                             <div class="col">
                                 <div class="input-icon">
                                     <span class="input-icon-addon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
+                                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                            stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
+                                            <path
+                                                d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
                                             <path d="M16 3v4" />
                                             <path d="M8 3v4" />
                                             <path d="M4 11h16" />
@@ -256,7 +282,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <x-button>Submit</x-button>
                     </x-form>
                 </div>
@@ -274,7 +299,26 @@
     <link href="{{ asset('css/bootstrap-toggle.min.css') }}" rel="stylesheet">
     <style>
         #overlay {
-            position: absolute;top: 0rem;right: 0rem;left: 0rem;bottom: 0rem;display: -webkit-box;display: -webkit-flex;display: -ms-flexbox;display: flex;-webkit-align-items: center;-webkit-box-align: center;-ms-flex-align: center;align-items: center;-webkit-box-pack: center;-ms-flex-pack: center;-webkit-justify-content: center;justify-content: center;overflow: hidden;border-radius: 0.25rem;z-index: 1000;
+            position: absolute;
+            top: 0rem;
+            right: 0rem;
+            left: 0rem;
+            bottom: 0rem;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 0.25rem;
+            z-index: 1000;
         }
     </style>
 @endsection
@@ -286,7 +330,7 @@
     <script src="{{ asset('js/bootstrap-toggle.min.js') }}"></script>
     <script>
         // let table = new DataTable('#MyTable');
-        $(function() {
+        $(function () {
             $("#MyTable").DataTable({
                 "lengthMenu": [
                     [10, 25, 50, -1],
@@ -300,17 +344,17 @@
 
     <script>
         function hideTooltip() {
-            setTimeout(function() {
+            setTimeout(function () {
                 $('.btn-copy').tooltip('hide');
             }, 500);
         }
 
         var clipboard = new ClipboardJS('.btn-copy');
-        clipboard.on('success', function(e) {
+        clipboard.on('success', function (e) {
             hideTooltip();
         });
 
-        $('.toggle-class').change(function() {
+        $('.toggle-class').change(function () {
             var status = $(this).prop('checked') == true ? 'OK' : 'NOT';
             var assesment_id = $(this).data('id');
 
@@ -323,11 +367,10 @@
                     "id": assesment_id,
                     "_token": "{{ csrf_token() }}",
                 },
-                success: function(data) {
+                success: function (data) {
                     console.log(data.success);
                 },
             });
         })
     </script>
-
 @endsection

@@ -19,14 +19,16 @@ class CommentController extends Controller
         $content = Content::findBySlug($slug);
 
         $comment = new Comment();
-        $comment->content_id = $content->id;
-        $comment->type = 'content';
-        $comment->user_id = auth()->user()->id;
+        $comment->content_id  = $content->id;
+        $comment->type        = 'content';
+        $comment->user_id     = auth()->user()->id;
+        $comment->parent_id   = $request->parent_id;
         $comment->description = $request->input('description');
         $comment->save();
 
         return to_route('content.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');
     }
+
     public function storecontentplaylist(Request $request, $slug)
     {
         $request->validate([
@@ -36,9 +38,10 @@ class CommentController extends Controller
         $content = Content::findBySlug($slug);
 
         $comment = new Comment();
-        $comment->content_id = $content->id;
-        $comment->type = 'content';
-        $comment->user_id = auth()->user()->id;
+        $comment->content_id  = $content->id;
+        $comment->type        = 'content';
+        $comment->user_id     = auth()->user()->id;
+        $comment->parent_id   = $request->parent_id;
         $comment->description = $request->input('description');
         $comment->save();
 
@@ -54,14 +57,16 @@ class CommentController extends Controller
         $news = News::findBySlug($slug);
 
         $comment = new Comment();
-        $comment->news_id = $news->id;
-        $comment->type = 'news';
-        $comment->user_id = auth()->user()->id;
+        $comment->news_id     = $news->id;
+        $comment->type        = 'news';
+        $comment->user_id     = auth()->user()->id;
+        $comment->parent_id   = $request->parent_id;
         $comment->description = $request->input('description');
         $comment->save();
 
         return to_route('news.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');
     }
+
     public function storeeventphoto(Request $request, $slug)
     {
         $request->validate([
@@ -71,9 +76,10 @@ class CommentController extends Controller
         $eventphoto = EventPhoto::findBySlug($slug);
         $comment = new Comment();
         $comment->eventphoto_id = $eventphoto->id;
-        $comment->type = 'eventphoto';
-        $comment->user_id = auth()->user()->id;
-        $comment->description = $request->input('description');
+        $comment->type          = 'eventphoto';
+        $comment->user_id       = auth()->user()->id;
+        $comment->parent_id     = $request->parent_id;
+        $comment->description   = $request->input('description');
         $comment->save();
 
         return to_route('gallery.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');

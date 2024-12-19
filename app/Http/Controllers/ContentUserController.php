@@ -3,19 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assesment;
+use App\Models\AssesmentResult;
 use App\Models\Classification;
 use App\Models\Comment;
 use App\Models\Content;
 use App\Models\ContentUser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ContentUserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $content = Content::where('playlistonly', 'N')->whereActive('Active')->get();
-        return view('user.content.index', compact('content'));
+        $filterType           = $request->type;
+        $filterClassification = $request->classification;
+        $filterDateOrder      = $request->date_order;
+
+        $contentType           = Content::select('type')->where('playlistonly', 'N')->whereActive('Active')->get()->unique('type');
+        $contentClassification = Content::select('classification_id')->where('playlistonly', 'N')->whereActive('Active')->get()->unique('classification_id');
+
+        $queryContent = Content::where('playlistonly', 'N')->whereActive('Active');
+
+        if ($filterType)
+            $queryContent->where('type', $filterType);
+        if ($filterClassification)
+            $queryContent->where('classification_id', $filterClassification);
+        if ($filterDateOrder == 'newest')
+            $queryContent->orderBy('created_at', 'desc');
+        if ($filterDateOrder == 'oldest')
+            $queryContent->orderBy('created_at', 'asc');
+
+        $content = $queryContent->get();
+
+        return view('user.content.index', compact(
+            'filterType', 'contentType', 
+            'filterClassification', 'contentClassification',
+            'filterDateOrder',
+            'content',
+        ));
     }
+
     public function view($slug)
     {
         $content = Content::findBySlug($slug);
@@ -30,10 +57,25 @@ class ContentUserController extends Controller
             'user_id' => auth()->user()->id, 'content_id' => $content->id
         ]);
 
-        $assesment = Assesment::where('type', 'content')->where('content_id', $content->id)->first();
-        $comment = Comment::with('user')->where('type', 'content')->where('content_id', $content->id)->latest()->get();
+        $queryAssessment = Assesment::where('type', 'content');
+            
+        $assesment = $queryAssessment->where('content_id', $content->id)->first();
 
-        return view('user.content.view', compact('content', 'assesment', 'comment', 'content_user'));
+        if (isset($assesment)) {
+            $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
+                ->where('user_id', Auth::user()->id)
+                ->where('assesment_id', $assesment->id);
+        } else {
+            $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
+                ->where('user_id', Auth::user()->id);
+        }
+
+        $assessmentCount        = $queryAssessmentResult->count();
+        $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
+
+        $comment = Comment::with('user')->where('parent_id', null)->where('type', 'content')->where('content_id', $content->id)->latest()->get();
+
+        return view('user.content.view', compact('content', 'assesment', 'assessmentCount', 'assessmentLatestScores', 'comment', 'content_user'));
     }
 
     public function category($slug)

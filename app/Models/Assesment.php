@@ -24,6 +24,11 @@ class Assesment extends Model
         return 'slug';
     }
 
+    public function assesments_assigned()
+    {
+        return $this->hasMany(AssesmentAssigned::class);
+    }
+
     public function scores()
     {
         return $this->hasMany(AssesmentResult::class);
@@ -32,5 +37,15 @@ class Assesment extends Model
     public function questions()
     {
         return $this->hasMany(AssesmentQuestion::class);
+    }
+
+    public function assessment_question_banks()
+    {
+        return $this->hasMany(AssesmentQuestionBank::class);
+    }
+
+    public function contents()
+    {
+        return $this->hasMany(Content::class, 'id', 'content_id');
     }
 }

@@ -8,11 +8,6 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
         $entries    = 25;
@@ -22,22 +17,16 @@ class UserController extends Controller
         return view('main.user.index', compact('user', 'search', 'entries'))->with('no', (request('page', 1) - 1) * $entries);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         return view('main.user.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    public function createOutsourcing()
+    {
+        return view('main.user.create_outsourcing');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -55,35 +44,52 @@ class UserController extends Controller
         return redirect()->route('user.index')->with('success', 'New user created successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
+    public function storeOutsourcing(Request $request)
+    {
+        $request->validate([
+            'company_name' => 'required',
+            'id_employee'  => 'required|unique:users,id_emp',
+            'name'         => 'required',
+            'email'        => 'required|unique:users,email',
+        ], [
+            'company_name.required' => 'The Company Name is required.',
+            'id_employee.required'  => 'The ID Employee is required.',
+            'id_employee.unique'    => 'The ID Employee has been registered.',
+            'name.required'         => 'The Name is required.',
+            'email.required'        => 'The Email is required.',
+            'email.unique'          => 'The Email has been registered.',
+        ]);
+
+        $user = new User;
+        $user->company_name = $request->company_name;
+        $user->id_emp       = 'ex' . $request->id_employee;
+        $user->name         = $request->name;
+        $user->email        = $request->email;
+        $user->password     = Hash::make('ex' . $request->id_employee);
+        $user->team         = 'ZZZZZZZZZZ';
+        $user->department   = 'ZZZZZZZZZZ';
+        $user->division     = 'ZZZZZZZZZZ';
+        $user->ssohash      = 'ZZZZZZZZZZ';
+        $user->sap_code     = 'ZZZZZZZZZZ';
+        $user->save();
+
+        return redirect()->route('user.index')->with('success', 'New Outsourcing User created successfully.');
+    }
+
     public function show(User $user)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
     public function edit(User $user)
     {
-        return view('main.user.edit', compact('user'));
+        if (substr($user->id_emp, 0, 2) == 'ex') {
+            return view('main.user.edit_outsourcing', compact('user'));
+        } else {
+            return view('main.user.edit', compact('user'));
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, User $user)
     {
         $user->update($request->all());
@@ -91,12 +97,41 @@ class UserController extends Controller
             ->with('success', 'User updated successfully');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
+    public function updateOutsourcing(Request $request, User $user)
+    {
+        $request->merge([
+            'id_employee' => 'ex' . $request->id_employee,
+        ]);
+
+        $request->validate([
+            'company_name' => 'required',
+            'id_employee'  => 'required|unique:users,id_emp,' . $user->id,
+            'name'         => 'required',
+            'email'        => 'required|unique:users,email,' . $user->id,
+        ], [
+            'company_name.required' => 'The Company Name is required.',
+            'id_employee.required'  => 'The ID Employee is required.',
+            'id_employee.unique'    => 'The ID Employee has been registered.',
+            'name.required'         => 'The Name is required.',
+            'email.required'        => 'The Email is required.',
+            'email.unique'          => 'The Email has been registered.',
+        ]);
+
+        $user->company_name = $request->company_name;
+        $user->id_emp       = $request->id_employee;
+        $user->name         = $request->name;
+        $user->email        = $request->email;
+        $user->password     = Hash::make($request->id_employee);
+        $user->team         = 'ZZZZZZZZZZ';
+        $user->department   = 'ZZZZZZZZZZ';
+        $user->division     = 'ZZZZZZZZZZ';
+        $user->ssohash      = 'ZZZZZZZZZZ';
+        $user->sap_code     = 'ZZZZZZZZZZ';
+        $user->save();
+
+        return redirect()->route('user.index')->with('success', 'User updated successfully');
+    }
+
     public function destroy(User $user)
     {
         $user->delete();

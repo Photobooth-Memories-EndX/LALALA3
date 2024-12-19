@@ -42,29 +42,7 @@
                 </div>
             </div>
 
-            @unless (count($comment) == 0)
-                <div class="divide-y mt-5" id="comment_list">
-                    @foreach ($comment as $list)
-                        <div>
-                            <div class="row">
-                                <div class="col-auto">
-                                    {{-- <span class="avatar">{{ substr($list->user->initials, 0, 2) }}</span> --}}
-                                    <span class="avatar" style="background-image: url({{ asset('storage/profile') }}/{{ $list->user->avatar ?? 'default.jpg' }})"></span>
-                                </div>
-                                <div class="col">
-                                    <div class="text-truncate">
-                                        <strong>{{ $list->user->name }}</strong>
-                                    </div>
-                                    <div class="text-muted" id="comment-{{ $list->id }}">{!! nl2br($list->description) !!}</div>
-                                </div>
-                                <div class="col-auto">
-                                    <div class="text-muted">{{ \Carbon\Carbon::parse($list->created_at)->diffForHumans() }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endunless
+            @include('components.commentDisplay', ['comments' => $comment])
 
         </div>
     </div>

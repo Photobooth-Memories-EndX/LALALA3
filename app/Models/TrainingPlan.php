@@ -13,15 +13,16 @@ class TrainingPlan extends Model
     use HasFactory;
     use SoftDeletes;
     use HasSlug;
+
     protected $table = 'trainingplan';
     protected $guarded = ['id'];
     protected $dates = ['deleted_at'];
+
     public function trainingplandetail()
     {
-        // return $this->belongsTo(trainingplandetail::class,  'id', 'trainingplan_id');
-        // return $this->belongsTo(trainingplandetail::class,  'trainingplan_id', 'id');
         return $this->hasMany(TrainingPlanDetail::class,  'trainingplan_id', 'id');
     }
+
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
