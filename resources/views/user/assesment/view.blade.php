@@ -55,30 +55,33 @@
                                                             <img src="{{ asset('storage/assesment').'/'.$step->image }}" class="img-fluid mt-2">
                                                         @endif
                                                     </div>
-                                                    <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
-                                                        @php
-                                                            $options = collect($step->option);
-                                                            $jawaban_temp = $assesment_result_draft->user_answer[$step->id] ?? null;
-                                                        @endphp
-                                                        @foreach ($options->shuffle()->all() as $option)
-                                                            <label class="form-selectgroup-item flex-fill">
-                                                                <input type="radio" name="{{ $step->id }}" value="{{ $option }}" class="form-selectgroup-input {{ $i }}" {{ ($jawaban_temp == $option) ? 'checked' : ''  }}>
-                                                                <div class="form-selectgroup-label d-flex align-items-center p-2">
-                                                                    <div class="me-3">
-                                                                        <span class="form-selectgroup-check"></span>
-                                                                    </div>
-                                                                    <div>
-                                                                        {{ $option }}
-                                                                        @if (Auth::user()->id_emp == '106596')
-                                                                            @if ($step->answer == $option)
-                                                                                <span class="badge bg-success">
-                                                                                    <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-checks">
-                                                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                                                        <path d="M7 12l5 5l10 -10" />
-                                                                                        <path d="M2 12l5 5m5 -5l5 -5" />
-                                                                                    </svg>
-                                                                                </span>
-                                                                            @endif
+                                                    @if ($step->image != '')
+                                                        <img src="{{ asset('storage/assesment').'/'.$step->image }}" class="img-fluid mt-2">
+                                                    @endif
+                                                </div>
+                                                <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+                                                    @php
+                                                        $options = collect($step->option);
+                                                        $jawaban_temp = $assesment_result_draft->user_answer[$step->id] ?? null;
+                                                    @endphp
+                                                    @foreach ($options->shuffle()->all() as $option)
+                                                        <label class="form-selectgroup-item flex-fill">
+                                                            <input type="radio" name="{{ $step->id }}" value="{{ $option }}" class="form-selectgroup-input {{ $i }}" {{ ($jawaban_temp == $option) ? 'checked' : ''  }}>
+                                                            <div class="form-selectgroup-label d-flex align-items-center p-2">
+                                                                <div class="me-3">
+                                                                    <span class="form-selectgroup-check"></span>
+                                                                </div>
+                                                                <div>
+                                                                    {{ $option }}
+                                                                    @if (Auth::user()->id_emp == ('106596' || '121964'))
+                                                                        @if ($step->answer == $option)
+                                                                            <span class="badge bg-success">
+                                                                                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-checks">
+                                                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                                                    <path d="M7 12l5 5l10 -10" />
+                                                                                    <path d="M2 12l5 5m5 -5l5 -5" />
+                                                                                </svg>
+                                                                            </span>
                                                                         @endif
                                                                     </div>
                                                                 </div>
