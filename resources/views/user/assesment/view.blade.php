@@ -1,59 +1,60 @@
 @extends('layouts.master')
-
 @section('content')
-    <div class="page-body">
-        <div class="container-xl">
-            @if ($assesment->timer == 'y')
-                <div class="row g-2 align-items-center">
-                    <div class="col"></div>
-                    <div class="col-auto ms-auto d-print-none h1" id="timer"></div>
-                </div>
-            @endif
-            <div class="card card-lg">
-                <div class="card-body ">
-                    <div class="row g-4">
-                        <div class="col-12 markdown mb-3">
-                            <h1 class="mb-2">{{ $assesment->title }}</h1>
-                            <div class="d-flex align-items-center">
-                                <div>
-                                    <div class="text-muted">{{ date('d F Y', strtotime(now())) }}</div>
-                                </div>
+
+<div class="page-body">
+    <div class="container-xl">
+        @if ($assesment->timer == 'y')
+            <div class="row g-2 align-items-center">
+                <div class="col"></div>
+                <div class="col-auto ms-auto d-print-none h1" id="timer"></div>
+            </div>
+        @endif
+
+        <div class="card card-lg">
+            <div class="card-body ">
+                <div class="row g-4">
+                    <div class="col-12 markdown mb-3">
+                        <h1 class="mb-2">{{ $assesment->title }}</h1>
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <div class="text-muted">{{ date('d F Y', strtotime(now())) }}</div>
                             </div>
                         </div>
-                        <x-form action="{{ route('assesment.user.store', $assesment->slug) }}" method="post" id="formAssesment">
-                            @unless(count($assesment_question) == 0)
-                                <div class="mb-3 col-12">
-                                    <!-- SmartWizard html -->
-                                    <div id="smartwizard">
-                                        <ul class="nav">
-                                            @foreach ($assesment_question as $step)
-                                                <li class="nav-item">
-                                                    <a class="nav-link" href="#step-{{ $step->id }}">
-                                                        <div class="num">{{ $loop->index + 1 }}</div>
-                                                    </a>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                        <!-- Include optional progressbar HTML -->
-                                        <div class="progress mb-2">
-                                            <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <div class="tab-content">
+                    </div>
+
+                    <x-form action="{{ route('assesment.user.store', $assesment->slug) }}" method="post" id="formAssesment">
+                        @unless(count($assesment_question) == 0)
+
+                            <div class="mb-3 col-12">
+                                <!-- SmartWizard html -->
+                                <div id="smartwizard">
+                                    <ul class="nav">
+                                        @foreach ($assesment_question as $step)
+                                            <li class="nav-item">
+                                                <a class="nav-link" href="#step-{{ $step->id }}">
+                                                    <div class="num">{{ $loop->index + 1 }}</div>
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+
+                                    <!-- Include optional progressbar HTML -->
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+
+                                    <div class="tab-content">
+                                        @php
+                                            $i = 0;
+                                        @endphp
+                                        @foreach ($assesment_question as $step)
                                             @php
-                                                $i = 0;
+                                                $i = $i+1;
                                             @endphp
-                                            @foreach ($assesment_question as $step)
-                                                @php
-                                                    $i = $i+1;
-                                                @endphp
-                                                <div id="step-{{ $step->id }}" class="tab-pane" role="tabpanel" aria-labelledby="step-{{ $step->id }}">
-                                                    <div class="mb-3">
-                                                        <div class="display-6" style="font-size: 1.2rem !important">
-                                                            {!! $step->question !!}
-                                                        </div>
-                                                        @if ($step->image != '')
-                                                            <img src="{{ asset('storage/assesment').'/'.$step->image }}" class="img-fluid mt-2">
-                                                        @endif
+                                            <div id="step-{{ $step->id }}" class="tab-pane" role="tabpanel" aria-labelledby="step-{{ $step->id }}">
+                                                <div class="mb-3">
+                                                    <div class="display-6" style="font-size: 1.2rem !important">
+                                                        {!! $step->question !!}
                                                     </div>
                                                     @if ($step->image != '')
                                                         <img src="{{ asset('storage/assesment').'/'.$step->image }}" class="img-fluid mt-2">
@@ -73,7 +74,7 @@
                                                                 </div>
                                                                 <div>
                                                                     {{ $option }}
-                                                                    @if (Auth::user()->id_emp == ('106596' || '121964'))
+                                                                    @if (Auth::user()->id_emp == '106596' || Auth::user()->id_emp == '121964')
                                                                         @if ($step->answer == $option)
                                                                             <span class="badge bg-success">
                                                                                 <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-checks">
@@ -83,29 +84,31 @@
                                                                                 </svg>
                                                                             </span>
                                                                         @endif
-                                                                    </div>
+                                                                    @endif
                                                                 </div>
-                                                            </label>
-                                                        @endforeach
-                                                    </div>
+                                                            </div>
+                                                        </label>
+                                                    @endforeach
                                                 </div>
-                                            @endforeach
-                                        </div>
+                                            </div>
+                                        @endforeach
                                     </div>
-                                    <!-- SmartWizard html -->
                                 </div>
-                                <div class="text-end">
-                                    <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure want to finish the assesment and submit all the answer?')">Finish & Submit Answers</button>
-                                </div>
-                            @else
-                                <p>No questions data yet</p>
-                            @endunless
-                        </x-form>
-                    </div>
+                                <!-- SmartWizard html -->
+                            </div>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure want to finish the assesment and submit all the answer?')">Finish & Submit Answers</button>
+                            </div>
+                        @else
+                            <p>No questions data yet</p>
+                        @endunless
+                    </x-form>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
 @endsection
 
 @section('style')
@@ -146,7 +149,8 @@
             });
 
             // Leave step event is used for validating the forms
-            $("#smartwizard").on("leaveStep", function (e, anchorObject, currentStepIdx, nextStepIdx, stepDirection) {
+            $("#smartwizard").on("leaveStep", function (e, anchorObject, currentStepIdx, nextStepIdx,
+            stepDirection) {
 
                 let radios = document.getElementsByClassName((currentStepIdx + 1));
                 var checked = false;
@@ -160,7 +164,9 @@
                 if (!checked) {
                     $('#smartwizard').smartWizard("setState", [currentStepIdx], 'error');
                 }
+
             });
+
         });
     </script>
 
@@ -175,7 +181,7 @@
                         data: formData,
                         contentType: false,
                         processData: false,
-                        success: function (response) {                            
+                        success: function (response) {
                             if (response.status == 200) {
                                 console.log(response.message);
                             } else {
@@ -203,7 +209,8 @@
                 var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 var seconds = Math.floor((distance % (1000 * 60)) / 1000);
                 // Display the result in the element with id="timer"
-                document.getElementById("timer").innerHTML = hours + "h " + minutes + "m " + seconds + "s ";
+                document.getElementById("timer").innerHTML = hours + "h " +
+                    minutes + "m " + seconds + "s ";
                 // If the count down is finished, write some text
                 if (distance < 0) {
                     clearInterval(x);
