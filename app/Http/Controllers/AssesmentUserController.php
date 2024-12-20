@@ -51,11 +51,19 @@ class AssesmentUserController extends Controller
             }
 
             //cek apakah user sebelumnya sudah mengikuti ujian di batch berjalan, juga apakah sudah pernah mengisi jawaban dan jawaban tsb sudah disubmit
-            $assesment_result = AssesmentResult::where('user_id', auth()->user()->id)->where('assesment_id', $assesment->id)->where('batch', $assesment->batch)->whereFinal(1)->first();
-            if($assesment_result ){
+            // $assesment_result = AssesmentResult::where('user_id', auth()->user()->id)
+            //     ->where('assesment_id', $assesment->id)
+            //     ->where('batch', $assesment->batch)
+            //     ->whereFinal(1)->first();
+            $queryAssessmentResult = AssesmentResult::where('user_id', auth()->user()->id)
+                ->where('assesment_id', $assesment->id)
+                ->whereFinal(1);
+            $assessmentResultCount = $queryAssessmentResult->count();
+            $assesment_result      = $queryAssessmentResult->orderBy('score', 'desc')->first();
+
+            if($assessmentResultCount >= 3 || $assesment_result->score >= $assesment->passing_grade  ){
                 return view('user.assesment.done', compact('assesment', 'assesment_result'));
             }
-
         }
 
         //cek jawaban draft (autosave) jika pengisian sebelumnya ada kendala (untuk di load ke option, jawaban sebelumnya ke ceklis)
@@ -76,7 +84,7 @@ class AssesmentUserController extends Controller
                 $assesment_question = $assesment_question->merge($assessmentQuestions)->shuffle();
             }
         } else {
-            $assesment_question      = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
+            $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
         }
 
         return view('user.assesment.view', compact('assesment', 'assesment_question', 'assesment_result_draft'));
@@ -102,14 +110,14 @@ class AssesmentUserController extends Controller
         }
         $user_answers             = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
 
-        if ($assesment->type == 'global') {
-            $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
-        } else {
-            $assesment_result = new AssesmentResult;
-            $assesment_result->user_id      =  auth()->user()->id;
-            $assesment_result->assesment_id = $assesment->id;
-            $assesment_result->batch        = $assesment->batch;
-        }
+        $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch, 'final' => 0]);
+        // if ($assesment->type == 'global') {
+        // } else {
+        //     $assesment_result = new AssesmentResult;
+        //     $assesment_result->user_id      =  auth()->user()->id;
+        //     $assesment_result->assesment_id = $assesment->id;
+        //     $assesment_result->batch        = $assesment->batch;
+        // }
 
         $assesment_result->user_answer = $request->except(['_token', '_method']);
 
@@ -146,7 +154,7 @@ class AssesmentUserController extends Controller
         $assesment_result->final = 1;
         $assesment_result->save();
 
-        return to_route('assesment.user.result', $slug)->with('score', $score);
+        return to_route('assesment.user.result', $slug)->with('assesmentResultId', $assesment_result->id);
     }
 
     public function result($slug)
@@ -155,7 +163,7 @@ class AssesmentUserController extends Controller
         if ($assesment === null) {
             abort(404);
         }
-        $assesment_result = AssesmentResult::where('user_id', auth()->user()->id)->where('assesment_id', $assesment->id)->whereFinal(1)->latest()->first();
+        $assesment_result = AssesmentResult::findOrFail(session('assesmentResultId'));
 
         return view('user.assesment.result', compact('assesment', 'assesment_result'));
     }
@@ -176,7 +184,7 @@ class AssesmentUserController extends Controller
         }
         $user_answers             = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
 
-        $assesment_result              = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch]);
+        $assesment_result              = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch, 'final' => 0]);
         $assesment_result->user_answer = $request->except(['_token', '_method']);
 
         // Old Process of Score Calculation

@@ -74,15 +74,9 @@
                                                                 </div>
                                                                 <div>
                                                                     {{ $option }}
-                                                                    @if (Auth::user()->id_emp == '106596' || Auth::user()->id_emp == '121964')
+                                                                    @if (Auth::user()->id_emp == '106596' || Auth::user()->id_emp == '121964' || Auth::user()->id_emp == '128466')
                                                                         @if ($step->answer == $option)
-                                                                            <span class="badge bg-success">
-                                                                                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-checks">
-                                                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                                                    <path d="M7 12l5 5l10 -10" />
-                                                                                    <path d="M2 12l5 5m5 -5l5 -5" />
-                                                                                </svg>
-                                                                            </span>
+                                                                            <span class="text-success">_</span>
                                                                         @endif
                                                                     @endif
                                                                 </div>
