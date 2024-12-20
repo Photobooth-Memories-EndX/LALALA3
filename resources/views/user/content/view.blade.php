@@ -138,26 +138,21 @@
                                             <script src="{{ asset('js/pdf.min.js') }}"></script>
                                             <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
                                             <script>
-                                                let fileName = "{{ " $getcontentfile " }}";
-                                                let fileNameFixed = fileName.replaceAll(' ', '%20').replaceAll('&amp;', '&');
-                                                let fileLocation = "{{ asset('storage/files/content/' . $content->id . '/' . ':fileContent' . '') }}";
-                                                let pdfFile = fileLocation.replace(':fileContent', fileNameFixed);
-
+                                                let fileName        = "{{ "$getcontentfile" }}";
+                                                let fileNameFixed   = fileName.replaceAll(' ', '%20').replaceAll('&amp;', '&');
+                                                let fileLocation    = "{{ asset('storage/files/content/' . $content->id . '/' . ':fileContent' . '') }}";
+                                                let pdfFile         = fileLocation.replace(':fileContent', fileNameFixed);
+        
                                                 var pdfjsLib = window["pdfjs-dist/build/pdf"];
                                                 pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
-
+        
                                                 let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
                                                     onDocumentReady: () => {
-                                                        var progression = {
-                                                            {
-                                                                (int) $content_user - > progress
-                                                            }
-                                                        };
-                                                        var current_page = (progression * pdfViewer.getPageCount()) /
-                                                            100;
+                                                        var progression = {{ (int)$content_user->progress }};
+                                                        var current_page = (progression * pdfViewer.getPageCount()) / 100;
 
-                                                        if (parseInt(current_page) < pdfViewer.getPageCount()) {
-                                                            pdfViewer.scrollToPage(parseInt(current_page));
+                                                        if(parseInt(current_page) < pdfViewer.getPageCount()){
+                                                        pdfViewer.scrollToPage(parseInt(current_page));
                                                         }
                                                     },
                                                     onZoomChange: function (zoom) {
@@ -169,23 +164,19 @@
                                                         $.ajax({
                                                             type: "PUT",
                                                             url: $('#player_paused').data('url'),
-                                                            data: {
-                                                                'current_time': pageno,
-                                                                'duration': this.getPageCount(),
-                                                                '_token': '{{ csrf_token() }}'
-                                                            },
-                                                            success: function (data) {
+                                                            data: {'current_time': pageno, 'duration': this.getPageCount(), '_token': '{{ csrf_token() }}' },
+                                                            success: function(data){
                                                                 console.log(data.success)
                                                             }
                                                         });
                                                     }
                                                 });
-
+        
                                                 pdfViewer
-                                                    .loadDocument(pdfFile)
-                                                    .then(function () {
-                                                        pdfViewer.setZoom("width");
-                                                    });
+                                                .loadDocument(pdfFile)
+                                                .then(function () {
+                                                    pdfViewer.setZoom("width");
+                                                });
                                             </script>
                                         @endpush
                                     @elseif ($content->type == 'YouTube')
