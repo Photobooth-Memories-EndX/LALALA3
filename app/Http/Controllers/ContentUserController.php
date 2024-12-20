@@ -70,7 +70,7 @@ class ContentUserController extends Controller
                 ->where('user_id', Auth::user()->id);
         }
 
-        $assessmentCount        = $queryAssessmentResult->count();
+        $assessmentCount        = $queryAssessmentResult->where('final', 1)->count();
         $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
 
         $comment = Comment::with('user')->where('parent_id', null)->where('type', 'content')->where('content_id', $content->id)->latest()->get();
