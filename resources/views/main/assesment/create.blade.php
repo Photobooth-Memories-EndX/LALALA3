@@ -119,6 +119,17 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="mb-3 row">
+                                <x-label class="col-3 col-form-label required">Total Remedials</x-label>
+                                <div class="col-3">
+                                    <input type="number" name="total_remedials" id="total-remedials" class="form-control @error('total_remedials') is-invalid @enderror" placeholder="0" value="{{ old('total_remedials') }}">
+                                    @error('total_remedials')
+                                        <div class="invalid-feedback d-block">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
                             <div class="d-flex justify-content-end">
                                 <x-button class="px-5">Submit</x-button>
                             </div>

@@ -30,23 +30,25 @@ class AssesmentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required',
-            'type' => 'required',
-            'timer' => 'required',
-            'fromdate' => 'required_if:timer,y',
-            'todate' => 'required_if:timer,y',
-            'passing_grade' => 'required',
+            'title'           => 'required',
+            'type'            => 'required',
+            'timer'           => 'required',
+            'fromdate'        => 'required_if:timer,y',
+            'todate'          => 'required_if:timer,y',
+            'passing_grade'   => 'required',
+            'total_remedials' => 'required',
         ]);
 
         $assesment = new Assesment();
-        $assesment->type = $request->input('type');
-        $assesment->content_id = $request->input('content_id');
+        $assesment->type            = $request->input('type');
+        $assesment->content_id      = $request->input('content_id');
         $assesment->trainingplan_id = $request->input('trainingplan_id');
-        $assesment->title = $request->input('title');
-        $assesment->passing_grade = $request->input('passing_grade');
-        $assesment->timer = $request->input('timer');
-        $assesment->fromdate = $request->input('fromdate');
-        $assesment->todate = $request->input('todate');
+        $assesment->title           = $request->input('title');
+        $assesment->passing_grade   = $request->input('passing_grade');
+        $assesment->timer           = $request->input('timer');
+        $assesment->fromdate        = $request->input('fromdate');
+        $assesment->todate          = $request->input('todate');
+        $assesment->total_remedials = $request->input('total_remedials');
         $assesment->save();
 
         return redirect()->route('assesment.edit', $assesment->slug)->with('success','Assesment created successfully.');
@@ -68,22 +70,24 @@ class AssesmentController extends Controller
     public function update(Request $request, Assesment $assesment)
     {
         $request->validate([
-            'title' => 'required',
-            'type' => 'required',
-            'timer' => 'required',
-            'fromdate' => 'required_if:timer,y',
-            'todate' => 'required_if:timer,y',
-            'passing_grade' => 'required',
+            'title'           => 'required',
+            'type'            => 'required',
+            'timer'           => 'required',
+            'fromdate'        => 'required_if:timer,y',
+            'todate'          => 'required_if:timer,y',
+            'passing_grade'   => 'required',
+            'total_remedials' => 'required',
         ]);
 
-        $assesment->type = $request->input('type');
-        $assesment->content_id = $request->input('content_id');
+        $assesment->type            = $request->input('type');
+        $assesment->content_id      = $request->input('content_id');
         $assesment->trainingplan_id = $request->input('trainingplan_id');
-        $assesment->title = $request->input('title');
-        $assesment->passing_grade = $request->input('passing_grade');
-        $assesment->timer = $request->input('timer');
-        $assesment->fromdate = $request->input('fromdate');
-        $assesment->todate = $request->input('todate');
+        $assesment->title           = $request->input('title');
+        $assesment->passing_grade   = $request->input('passing_grade');
+        $assesment->timer           = $request->input('timer');
+        $assesment->fromdate        = $request->input('fromdate');
+        $assesment->todate          = $request->input('todate');
+        $assesment->total_remedials = $request->input('total_remedials');
         $assesment->save();
 
         return to_route('assesment.index')->with('success','Assesment updated successfully');
