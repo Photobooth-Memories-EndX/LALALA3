@@ -46,14 +46,20 @@ class UserController extends Controller
 
     public function storeOutsourcing(Request $request)
     {
+        // Change request value before validation
+        $request->merge([
+            'id_employee' => 'ex' . $request->id_employee,
+        ]);
+
         $request->validate([
             'company_name' => 'required',
-            'id_employee'  => 'required|unique:users,id_emp',
+            'id_employee'  => 'required|max:10|unique:users,id_emp',
             'name'         => 'required',
             'email'        => 'required|unique:users,email',
         ], [
             'company_name.required' => 'The Company Name is required.',
             'id_employee.required'  => 'The ID Employee is required.',
+            'id_employee.max'       => 'The ID Employee must not exceed 10 characters.',
             'id_employee.unique'    => 'The ID Employee has been registered.',
             'name.required'         => 'The Name is required.',
             'email.required'        => 'The Email is required.',
@@ -62,7 +68,7 @@ class UserController extends Controller
 
         $user = new User;
         $user->company_name = $request->company_name;
-        $user->id_emp       = 'ex' . $request->id_employee;
+        $user->id_emp       = $request->id_employee;
         $user->name         = $request->name;
         $user->email        = $request->email;
         $user->password     = Hash::make('ex' . $request->id_employee);
@@ -105,12 +111,13 @@ class UserController extends Controller
 
         $request->validate([
             'company_name' => 'required',
-            'id_employee'  => 'required|unique:users,id_emp,' . $user->id,
+            'id_employee'  => 'required|max:10|unique:users,id_emp,' . $user->id,
             'name'         => 'required',
             'email'        => 'required|unique:users,email,' . $user->id,
         ], [
             'company_name.required' => 'The Company Name is required.',
             'id_employee.required'  => 'The ID Employee is required.',
+            'id_employee.max'       => 'The ID Employee must not be greater than 10 characters',
             'id_employee.unique'    => 'The ID Employee has been registered.',
             'name.required'         => 'The Name is required.',
             'email.required'        => 'The Email is required.',

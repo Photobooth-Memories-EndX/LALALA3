@@ -33,7 +33,7 @@
                             <label class="form-label">ID Employee</label>
                             <div class="input-icon">
                                 <span class="input-icon-addon">ex</span>
-                                <input type="text" class="form-control @error('id_employee') is-invalid @enderror" placeholder="ID Employee" name="id_employee" id="id-employee" value="{{ substr($user->id_emp, 2, 12) }}" />
+                                <input type="text" class="form-control @error('id_employee') is-invalid @enderror" placeholder="ID Employee" name="id_employee" id="id-employee" value="{{ substr(old('id_employee', $user->id_emp), 2, 12) }}" />
                             </div>
                             @error('id_employee')
                                 <div class="invalid-feedback d-block">
