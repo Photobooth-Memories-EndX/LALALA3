@@ -100,7 +100,7 @@
                                                 <td class="text-center">-</td>
                                             @endif
                                             <td>
-                                                <input data-id="{{ $list->id }}" data-toggle="toggle" class="toggle-class" type="checkbox" data-onstyle="success" data-offstyle="secondary" data-on="OK" data-off="NOT" data-size="small" data-width="40" {{ $list->status == 'OK' ? 'checked' : '' }}>
+                                                <input data-id="{{ $list->id }}" data-toggle="toggle" class="toggle-class" type="checkbox" data-onstyle="success" data-offstyle="secondary" data-on="ON" data-off="OFF" data-size="small" data-width="40" {{ $list->status == 'OK' ? 'checked' : '' }}>
                                             </td>
                                             <td class="text-center">
                                                 <div class="d-inline">
