@@ -43,7 +43,7 @@
                                             @endif
                                             <td class="p-2">
                                                 @if ($assessment->type == 'content' && $assessment->content_id == $assessment->contents->first()->id)
-                                                    @if ($newCollectionScore->sortByDesc('score')->first() != null && $newCollectionScore->sortByDesc('score')->first()->final == 1)
+                                                    @if ($newCollectionScore->sortByDesc('score')->where('final', 1)->first() != null && $newCollectionScore->sortByDesc('score')->where('final', 1)->first()->score >= $assessment->passing_grade)
                                                         {{ $assessment->title }}
                                                     @else
                                                         <a href="{{ route('assesment.user.view', $assessment->slug) }}" class="text-reset link">{{ $assessment->title }}</a>
@@ -59,7 +59,7 @@
                                             <td class="p-2">{{ $assessment->type }}</td>
                                             <td class="p-2">
                                                 @if ($assessment->type == 'content' && $assessment->content_id == $assessment->contents->first()->id)
-                                                    @if ($newCollectionScore->sortByDesc('score')->first() != null && $newCollectionScore->sortByDesc('score')->first()->final == 1)
+                                                    @if ($newCollectionScore->sortByDesc('score')->where('final', 1)->first() != null && $newCollectionScore->sortByDesc('score')->where('final', 1)->first()->score >= $assessment->passing_grade)
                                                         <span class="badge bg-success">Finished</span>
                                                     @else
                                                         <span class="badge bg-danger">Haven't done it yet</span>
