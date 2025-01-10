@@ -62,7 +62,7 @@ class AssesmentUserController extends Controller
             $assesment_result      = $queryAssessmentResult->orderBy('score', 'desc')->first();
 
             if ($assesment_result) {
-                if($assessmentResultCount >= 3 || $assesment_result->score >= $assesment->passing_grade  ){
+                if($assessmentResultCount >= 1 + $assesment->total_remedials || $assesment_result->score >= $assesment->passing_grade  ){
                     return view('user.assesment.done', compact('assesment', 'assesment_result'));
                 }
             }
