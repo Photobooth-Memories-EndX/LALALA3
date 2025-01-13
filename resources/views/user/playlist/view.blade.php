@@ -8,6 +8,7 @@
 @section('content')
     <div class="page-body">
         <div class="container-xl">
+            <a href="{{ url()->previous() }}" class="btn btn-secondary mb-3"><i class="fas fa-caret-left me-2"></i>Back</a>
             <div class="card card-lg">
                 <div class="card-body p-5">
                     <div class="row g-4">
