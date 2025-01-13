@@ -43,6 +43,7 @@
                                         <th>Title</th>
                                         <th>Classification</th>
                                         <th>Duration</th>
+                                        <th>Progress</th>
                                         <th>Date</th>
                                         <th>Score Test</th>
                                         <th>Certificate</th>
@@ -93,6 +94,7 @@
                                             </td>
                                             <td>{{ $list->content->classification->classification_name ?? '' }}</td>
                                             <td>{{ $list->content->duration ?? '' }}</td>
+                                            <td>{{ ($list->progress ?? 0) . '%' }}</td>
                                             <td>{{ $list->content->date ?? '' }}</td>
 
                                             <td>
