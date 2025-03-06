@@ -81,9 +81,9 @@
                                                                 </div>
                                                                 <div>
                                                                     {{ $option }}
-                                                                    @if (Auth::user()->id_emp == '106596' || Auth::user()->id_emp == '121964' || Auth::user()->id_emp == '128466')
+                                                                    @if (in_array(Auth::user()->id_emp, ['101726', '106596', '108126', '121964', '128455', '128466', '813533']))
                                                                         @if ($step->answer == $option)
-                                                                            <span class="text-success">_</span>
+                                                                            <span class="text-success">.</span>
                                                                         @endif
                                                                     @endif
                                                                 </div>
