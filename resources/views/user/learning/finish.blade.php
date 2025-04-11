@@ -39,14 +39,15 @@
                             <table class="table table-bordered table-striped" id="MyTable">
                                 <thead>
                                     <tr>
-                                        <th>#</th>
-                                        <th>Title</th>
-                                        <th>Classification</th>
-                                        <th>Duration</th>
-                                        <th>Progress</th>
-                                        <th>Date</th>
-                                        <th>Score Test</th>
-                                        <th>Certificate</th>
+                                        <th class="text-center">#</th>
+                                        <th class="text-center">Type</th>
+                                        <th class="text-center">Title</th>
+                                        <th class="text-center">Classification</th>
+                                        <th class="text-center">Duration</th>
+                                        <th class="text-center">Progress</th>
+                                        <th class="text-center">Finish Date</th>
+                                        <th class="text-center">Score Test</th>
+                                        <th class="text-center">Certificate</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -60,6 +61,21 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
+                                            <td>
+                                                @if ($list->assesment != null)
+                                                    Content
+                                                @elseif ($list->assesmentPlaylist != null)
+                                                    @if ($list->assesmentPlaylist->where('content_id', $list->content_id)->first()->trainingplan->deleted_at == null)
+                                                        <div class="badge bg-green-lt">Playlist active</div>
+                                                        <div style="font-size: 1.75vh;">{{ $list->assesmentPlaylist->where('content_id', $list->content_id)->first()->trainingplan->title ?? '#N/A' }}</div>
+                                                    @else
+                                                        <div class="badge bg-red-lt">Playlist has been deleted</div>
+                                                        <div style="font-size: 1.75vh;">{{ $list->assesmentPlaylist->where('content_id', $list->content_id)->first()->trainingplan->title ?? '#N/A' }}</div>
+                                                    @endif
+                                                @else
+                                                    #N/A
+                                                @endif
+                                            </td>
                                             <td>
                                                 <div class="row align-items-center">
                                                     <div class="col-auto">
@@ -92,18 +108,24 @@
                                                   </div>
 
                                             </td>
-                                            <td>{{ $list->content->classification->classification_name ?? '' }}</td>
+                                            <td>{{ $list->id }}{{ $list->content->classification->classification_name ?? '' }}</td>
                                             <td>{{ $list->content->duration ?? '' }}</td>
                                             <td>{{ ($list->progress ?? 0) . '%' }}</td>
-                                            <td>{{ $list->content->date ?? '' }}</td>
-
+                                            <td>
+                                                @if ($list->progress >= 100)
+                                                    {{ $list->created_at }}
+                                                @else
+                                                    #N/A
+                                                @endif
+                                            </td>
                                             <td>
                                                 @if (!blank($list->assesment))
                                                     @if (!blank($datas = $list->assesment->scores))
                                                         @php
                                                             $filter = $datas->filter(function ($assesment_result) use($list) {
                                                                                 return $assesment_result->user_id==$list->user_id;
-                                                                            })->sortByDesc('batch')->first();
+                                                                            // })->sortByDesc('batch')->first();
+                                                                            })->sortByDesc('score')->first();
                                                         @endphp
                                                         @if (!blank($filter))
                                                             {{ $filter->score }}

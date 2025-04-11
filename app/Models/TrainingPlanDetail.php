@@ -14,7 +14,7 @@ class TrainingPlanDetail extends Model
 
     public function trainingplan()
     {
-        return $this->belongsTo(TrainingPlan::class,  'id', 'trainingplan_id');
+        return $this->belongsTo(TrainingPlan::class,  'trainingplan_id', 'id')->withTrashed();
     }
 
     public function content()

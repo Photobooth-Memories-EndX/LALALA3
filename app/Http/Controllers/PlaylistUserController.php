@@ -59,17 +59,21 @@ class PlaylistUserController extends Controller
         $assesment = Assesment::where('type', 'trainingplan')->where('trainingplan_id', $trainingplan->id)->first();
         $comment   = Comment::with('user')->where('parent_id', null)->where('type', 'content')->where('content_id', $content->id)->latest()->get();
 
-        if (isset($assesment)) {
-            $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
-                ->where('user_id', Auth::user()->id)
-                ->where('assesment_id', $assesment->id);
-        } else {
-            $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
-                ->where('user_id', Auth::user()->id);
-        }
+        $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
+            ->where('user_id', Auth::user()->id)
+            ->where('assesment_id', $assesment->id ?? '');
 
         $assessmentCount        = $queryAssessmentResult->count();
         $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
+        
+        // Assessment Content
+        $assessmentContent = Assesment::where('type', 'content')->where('content_id', $content->id)->first();
+        $queryAssessmentContentResult = AssesmentResult::with('user', 'assesment')
+            ->where('user_id', Auth::user()->id)
+            ->where('assesment_id', $assessmentContent->id ?? '');
+
+        $assessmentContentCount        = $queryAssessmentContentResult->count();
+        $assessmentContentLatestScores = $queryAssessmentContentResult->latest()->first()->score ?? 0;
 
         return view('user.playlist.view', [
             "playlist" => $trainingplan,
@@ -82,6 +86,10 @@ class PlaylistUserController extends Controller
             "assessmentAccess" => $assessmentAccess,
             "assessmentCount" => $assessmentCount,
             "assessmentLatestScores" => $assessmentLatestScores,
+            "percentageProgressPlaylist" => $percentageProgressPlaylist,
+            "assessmentContent" => $assessmentContent,
+            "assessmentContentCount" => $assessmentContentCount,
+            "assessmentContentLatestScores" => $assessmentContentLatestScores,
         ]);
     }
 }
