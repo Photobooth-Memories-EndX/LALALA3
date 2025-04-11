@@ -18,7 +18,7 @@ class LearningController extends Controller
 
     public function record()
     {
-        $content_user = ContentUser::with('content.classification', 'assesment.scores')->where('user_id', auth()->user()->id)->where('finish', '1')->get();
+        $content_user = ContentUser::with('content.classification', 'assesment.scores')->where('user_id', auth()->user()->id)->where('finish', '1')->latest()->get();
 
         return view('user.learning.finish', compact('content_user'));
     }
@@ -39,7 +39,7 @@ class LearningController extends Controller
             })->orWhereHas('scores', function($query) {
                 return $query->where('user_id', Auth::user()->id);
             })->latest()->get();
-        $result      = AssesmentResult::with(['assesment'])->where('user_id', auth()->user()->id)->whereFinal(1)->get();
+        $result      = AssesmentResult::with(['assesment'])->where('user_id', auth()->user()->id)->whereFinal(1)->latest()->get();
 
         return view('user.learning.result', compact('result', 'assessments'));
     }

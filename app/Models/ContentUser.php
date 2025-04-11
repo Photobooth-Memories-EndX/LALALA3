@@ -23,4 +23,9 @@ class ContentUser extends Model
     {
         return $this->hasOne(Assesment::class, 'content_id', 'content_id');
     }
+
+    public function assesmentPlaylist()
+    {
+        return $this->hasOne(TrainingPlanDetail::class, 'content_id', 'content_id');
+    }
 }

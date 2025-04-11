@@ -51,12 +51,26 @@
                                                 @elseif ($assessment->type != 'content')
                                                     @if ($assessment->scores->where('assesment_id', $assessment->id)->where('user_id', Auth::user()->id)->first() != null && $assessment->scores->where('assesment_id', $assessment->id)->where('user_id', Auth::user()->id)->first()->final == 1)
                                                         {{ $assessment->title }}
+                                                        @if ($assessment->type == 'trainingplan')
+                                                            <div class="card">
+                                                                <div class="card-body p-1">
+                                                                    <div class="badge bg-info-lt mb-1" style="font-size: 1.75vh;">Playlist Assessment</div>
+                                                                    <div style="font-size: 1.75vh;">{{ $assessment->trainingplan->title }}</div>
+                                                                </div>
+                                                            </div>
+                                                        @endif
                                                     @else
                                                         <a href="{{ route('assesment.user.view', $assessment->slug) }}" class="text-reset link">{{ $assessment->title }}</a>
                                                     @endif
                                                 @endif
                                             </td>
-                                            <td class="p-2">{{ $assessment->type }}</td>
+                                            <td class="p-2">
+                                                @if ($assessment->type == 'trainingplan')
+                                                            Playlist
+                                                @else
+                                                    {{ ucwords(str_replace('_', ' ', $assessment->type)) }}
+                                                @endif
+                                            </td>
                                             <td class="p-2">
                                                 @if ($assessment->type == 'content' && $assessment->content_id == $assessment->contents->first()->id)
                                                     @if ($newCollectionScore->sortByDesc('score')->where('final', 1)->first() != null && $newCollectionScore->sortByDesc('score')->where('final', 1)->first()->score >= $assessment->passing_grade)
@@ -96,8 +110,9 @@
                                 <thead>
                                     <tr>
                                         <th class="text-center">No</th>
-                                        <th class="text-center">Date</th>
+                                        <th class="text-center">Datetime</th>
                                         <th class="text-center">Assesment</th>
+                                        <th class="text-center">Type</th>
                                         <th class="text-center">Score</th>
                                         <th class="text-center">Batch</th>
                                         <th class="text-center">Result</th>
@@ -107,8 +122,25 @@
                                     @foreach ($result as $list)
                                         <tr>
                                             <td class=" p-2 text-center">{{ $loop->index + 1 }}</td>
-                                            <td class=" p-2 ">{{ date("d/m/y", strtotime($list->created_at)) }}</td>
-                                            <td class=" p-2 ">{{ $list->assesment->title }}</td>
+                                            <td class=" p-2 ">{{ date("d/m/y H:i:s", strtotime($list->created_at)) }}</td>
+                                            <td class=" p-2 ">
+                                                {{ $list->assesment->title }}
+                                                @if ($list->assesment->type == 'trainingplan')
+                                                    <div class="card">
+                                                        <div class="card-body p-1">
+                                                            <div class="badge bg-info-lt mb-1" style="font-size: 1.75vh;">Playlist Assessment</div>
+                                                            <div style="font-size: 1.75vh;">{{ $list->assesment->trainingplan->title }}</div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            <td class=" p-2 ">
+                                                @if ($list->assesment->type == 'trainingplan')
+                                                    Playlist
+                                                @else
+                                                    {{ ucwords(str_replace('_', ' ', $list->assesment->type)) }}
+                                                @endif
+                                            </td>
                                             <td class=" p-2 text-center">{{ $list->score }}</td>
                                             <td class=" p-2 text-center">{{ $list->batch }}</td>
                                             <td class=" p-2 text-center">
