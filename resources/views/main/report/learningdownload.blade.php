@@ -5,6 +5,8 @@
             <th>Status</th>
             <th>Employee ID</th>
             <th>Name</th>
+            <th>Department</th>
+            <th>Team</th>
             <th>Title</th>
             <th>Classification</th>
             <th>Duration</th>
@@ -19,6 +21,8 @@
                 <td>{{ $list->status }}</td>
                 <td>{{ $list->user->id_emp }}</td>
                 <td>{{ $list->user->name }}</td>
+                <td>{{ $list->user->department }}</td>
+                <td>{{ $list->user->team }}</td>
                 <td>{{ $list->content->title }}</td>
                 <td>{{ $list->content->classification->classification_name ?? '' }}</td>
                 <td>{{ $list->content->duration }}</td>

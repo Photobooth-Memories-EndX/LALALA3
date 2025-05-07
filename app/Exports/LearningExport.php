@@ -12,30 +12,28 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class LearningExport implements FromView, ShouldAutoSize, WithStyles
 {
-    /**
-     * @return \Illuminate\Support\Collection
-     */
     protected $type;
     protected $status;
     protected $year;
     protected $slug;
     protected $total;
-    // public $total;
 
     function __construct($type, $status, $year, $slug)
     {
-        $this->type = $type;
+        $this->type   = $type;
         $this->status = $status;
-        $this->year = $year;
-        $this->slug = $slug;
-        $this->total = 0;
+        $this->year   = $year;
+        $this->slug   = $slug;
+        $this->total  = 0;
     }
+
     public function view(): View
     {
         $requestyear =  $this->year;
         $requeststatus = $this->status;
         $requesttype = $this->type;
         $requestslug = $this->slug;
+
         if ($requesttype == '') {
             if ($requeststatus == '' && $requestyear == '') {
                 $content = ContentUser::with(['user', 'content', 'content.classification'])->get();
@@ -47,8 +45,9 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
                 $content = ContentUser::with(['user', 'content', 'content.classification'])->where('status', $requeststatus)->whereYear('created_at', $requestyear)->get();
             }
         } else if ($requesttype == 'category') {
-            $classification = Classification::firstWhere('slug', $requestslug);
+            $classification    = Classification::firstWhere('slug', $requestslug);
             $classification_id = $classification->id;
+
             if ($requeststatus == '' && $requestyear == '') {
                 $content = ContentUser::with(['user', 'content.classification'])->whereHas('content', function ($query) use ($classification_id) {
                     $query->where('classification_id', $classification_id);
@@ -85,11 +84,12 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
                 })->get();
             }
         }
+
         $this->total = count($content);
-        return view('main.report.learningdownload', [
-            'content' => $content
-        ]);
+
+        return view('main.report.learningdownload', [ 'content' => $content ]);
     }
+
     public function styles(Worksheet $sheet)
     {
         $styleArray = [
@@ -100,7 +100,8 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
                 ],
             ],
         ];
-        $sheet->getStyle('A1:I1')->getFont()->setBold(true);
-        $sheet->getStyle('A1:I' . $this->total + 1)->applyFromArray($styleArray);
+
+        $sheet->getStyle('A1:K1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:K' . $this->total + 1)->applyFromArray($styleArray);
     }
 }
