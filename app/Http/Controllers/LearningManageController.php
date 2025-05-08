@@ -51,21 +51,21 @@ class LearningManageController extends Controller
 
     public function category($slug, Request $request)
     {
-        $classification     = Classification::firstWhere('slug', $slug);
-        $classification_id  = $classification->id;
+        $classification    = Classification::firstWhere('slug', $slug);
+        $classification_id = $classification->id;
 
-        $status     = $request->status ?? "";
-        $year       = $request->year ?? "";
-        $entries    = $request->show_entries ?? 25;
-        $search     = $request->search ?? "";
-        $type       = $request->type ?? "";
-        $slug       = $request->slug ?? "";
+        $status  = $request->status ?? "";
+        $year    = $request->year ?? "";
+        $entries = $request->show_entries ?? 25;
+        $search  = $request->search ?? "";
+        $type    = $request->type ?? "";
+        $slug    = $request->slug ?? "";
         
         if ($request->action == 'download') {
             return Excel::download(new LearningExport($type, $status, $year, $slug), now() . '_learning.xlsx');
         }
 
-        $query      = ContentUser::with(['user', 'content'])->whereHas('content', function ($query) use ($classification_id) {
+        $query = ContentUser::with(['user', 'content'])->whereHas('content', function ($query) use ($classification_id) {
                 $query->where('classification_id', $classification_id);
             });
 
@@ -80,7 +80,7 @@ class LearningManageController extends Controller
                 $query->where('name', 'like', '%' . $search . '%');
             });
 
-        $content    = $query->paginate($entries)->withQueryString();
+        $content = $query->paginate($entries)->withQueryString();
 
         return view('main.learning.all', [
             "title"         => 'Classification: ' . $classification->classification_name,
