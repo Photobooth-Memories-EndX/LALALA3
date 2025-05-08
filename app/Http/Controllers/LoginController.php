@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Assesment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Session;
 
 class LoginController extends Controller
 {
@@ -18,20 +20,47 @@ class LoginController extends Controller
     }
     public function authenticate(Request $request)
     {
-        $credentials = $request->validate([
-            'id_emp'    => 'required',
-            'password'  => 'required',
-        ], [
-            'id_emp.required'   => 'Employee ID field is required!',
-            'password.required' => 'Password field is required!',
-        ]);
+        Session::flash('submit-type', $request->submit_type);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            return redirect()->intended('/');
+        if ($request->submit_type == 'login') {
+            $validateUniqueCode = 'nullable';
+        } else {
+            $validateUniqueCode = 'required';
         }
 
-        return back()->with('warning', 'Login failed');
+        $request->validate([
+            'id_emp'      => 'required',
+            'password'    => 'required',
+            'unique_code' => $validateUniqueCode,
+        ]);
+
+        if ($request->submit_type == 'login') {
+            if (Auth::attempt(['id_emp' => $request->id_emp, 'password' => $request->password])) {
+                $request->session()->regenerate();
+
+                return redirect()->intended('/');
+            }
+
+            return back()->with('warning', 'Login failed');
+        } else {
+            Session::flash('id-emp', $request->id_emp);
+            Session::flash('unique-code', $request->unique_code);
+
+            if (Auth::attempt(['id_emp' => $request->id_emp, 'password' => $request->password])) {
+                $request->session()->regenerate();
+                $assessment = Assesment::where('unique_code', $request->unique_code)->first();
+
+                if ($assessment) {
+                    return redirect()->route('assesment.user.view', ['slug' => $assessment->slug]);
+                } else {
+                    Auth::logout();
+
+                    return redirect()->route('loginpage')->with('warning', 'Your Assessment Unique Code is invalid!');
+                }
+            }
+
+            return back()->with('warning', 'Employee ID or Password is not valid!');
+        }
     }
 
     public function checksso()

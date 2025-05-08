@@ -18,6 +18,24 @@
 
                     <div class="col d-flex flex-column border-end">
                         <div class="card-body">
+                            <div class="d-md-none">
+                                <h2 class="mb-0">ASSESSMENT ACCESS</h2>
+                                <div class="text-info">
+                                    <i class="fas fa-info-circle me-1"></i> Please input the unique code to access the assessment.
+                                </div>
+                                <form action="{{ route('home.user.access.assessment.by.unique.code') }}" method="POST" class="mb-3">
+                                    @csrf
+                                    <div class="input-group">
+                                        <input type="text" name="unique_code" id="unique-code" class="form-control" placeholder="Input unique code" autocomplete="off" value="{{ old('unique_code') }}">
+                                        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+                                    </div>
+                                    @error('unique_code')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </form>
+                                <hr class="my-2">
+                            </div>
+
                             <h2 class="mb-4">TOP VIDEO LEARNING</h2>
 
                             <div class="card card-md">
@@ -235,7 +253,33 @@
                                 </div>
                             </div>
 
-                            <div class="row mt-5">
+                            <div class="row">
+                                <hr class="my-3">
+                                <h4 class="mb-0">ASSESSMENT ACCESS</h4>
+                                <div class="text-info" style="font-size: 9pt;">
+                                    <i class="fas fa-info-circle me-1"></i> Please input the unique code to access the assessment.
+                                </div>
+                                <form action="{{ route('home.user.access.assessment.by.unique.code') }}" method="POST" >
+                                    @csrf
+                                    <div class="input-group">
+                                        <input type="text" name="unique_code" id="unique-code" class="form-control" placeholder="Input unique code" autocomplete="off" @if (session()->has('unique_code'))
+                                            value="{{ session('unique_code') }}"
+                                        @else
+                                            value="{{ old('unique_code') }}"
+                                        @endif>
+                                        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+                                    </div>
+                                    @error('unique_code')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                    @if (session()->has('error'))
+                                        <div class="invalid-feedback d-block">{{ session('error') }}</div>
+                                    @endif
+                                </form>
+                                <hr class="my-3">
+                            </div>
+
+                            <div class="row">
                                 <div id="chart-demo-pie"></div>
                             </div>
 

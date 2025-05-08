@@ -3,3 +3,4 @@
 <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Online Knowledge Learning</title>
+<link rel="shortcut icon" href="{{ asset('owl.png') }}" type="image/x-icon">
