@@ -18,21 +18,8 @@
 
                     <div class="col d-flex flex-column border-end">
                         <div class="card-body">
-                            <div class="d-md-none">
-                                <h2 class="mb-0">ASSESSMENT ACCESS</h2>
-                                <div class="text-info">
-                                    <i class="fas fa-info-circle me-1"></i> Please input the unique code to access the assessment.
-                                </div>
-                                <form action="{{ route('home.user.access.assessment.by.unique.code') }}" method="POST" class="mb-3">
-                                    @csrf
-                                    <div class="input-group">
-                                        <input type="text" name="unique_code" id="unique-code" class="form-control" placeholder="Input unique code" autocomplete="off" value="{{ old('unique_code') }}">
-                                        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
-                                    </div>
-                                    @error('unique_code')
-                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                </form>
+                            <div class="">
+                                <a href="javascript:;" class="btn btn-warning px-5" id="btn-assessment-access"><i class="fas fa-clipboard-list me-2"></i>Assessment Access</a>
                                 <hr class="my-2">
                             </div>
 
@@ -254,32 +241,6 @@
                             </div>
 
                             <div class="row">
-                                <hr class="my-3">
-                                <h4 class="mb-0">ASSESSMENT ACCESS</h4>
-                                <div class="text-info" style="font-size: 9pt;">
-                                    <i class="fas fa-info-circle me-1"></i> Please input the unique code to access the assessment.
-                                </div>
-                                <form action="{{ route('home.user.access.assessment.by.unique.code') }}" method="POST" >
-                                    @csrf
-                                    <div class="input-group">
-                                        <input type="text" name="unique_code" id="unique-code" class="form-control" placeholder="Input unique code" autocomplete="off" @if (session()->has('unique_code'))
-                                            value="{{ session('unique_code') }}"
-                                        @else
-                                            value="{{ old('unique_code') }}"
-                                        @endif>
-                                        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
-                                    </div>
-                                    @error('unique_code')
-                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                    @enderror
-                                    @if (session()->has('error'))
-                                        <div class="invalid-feedback d-block">{{ session('error') }}</div>
-                                    @endif
-                                </form>
-                                <hr class="my-3">
-                            </div>
-
-                            <div class="row">
                                 <div id="chart-demo-pie"></div>
                             </div>
 
@@ -340,6 +301,29 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Assessment Access --}}
+    <div class="modal fade" id="modal-assessment-access" tabindex="-1">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">ASSESSMENT ACCESS</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-info">
+                        <i class="fas fa-info-circle me-1"></i> Please input the unique code to access the assessment.
+                    </div>
+                    <input type="text" name="unique_code" id="unique-code" class="form-control" placeholder="Input unique code" autocomplete="off">
+                    <div class="invalid-feedback d-none" id="invalid-text-unique-code">dasf</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal"><i class="fa fa-times me-2"></i>Cancel</button>
+                    <button type="button" onclick="submitAssessmentAccess()" class="btn btn-primary"><i class="fas fa-clipboard-list me-2"></i>Submit</button>
                 </div>
             </div>
         </div>
@@ -499,5 +483,48 @@
                 next_playlist = next_playlist.nextElementSibling
             }
         })
+    </script>
+
+    <script>
+        $('#btn-assessment-access').on('click', () => {
+            $('#unique-code').val('');
+            $('#invalid-text-unique-code').html('');
+            $('#invalid-text-unique-code').removeClass('d-block');
+            $('#invalid-text-unique-code').addClass('d-none');
+
+            $('#modal-assessment-access').modal('show');
+        });
+
+        let submitAssessmentAccess = () => {
+            let unique_code = $('#unique-code').val();
+
+            $.ajax({
+                url: "{{ route('home.user.access.assessment.by.unique.code') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    unique_code: unique_code,
+                },
+                success: function (response) {
+                    let routeAssessment = "{{ route('assesment.user.view', ':slug') }}";
+                    let routeAssessmentFixed = routeAssessment.replace(':slug', response.assessment_slug);
+                    
+                    window.location.replace(routeAssessmentFixed);
+                },
+                error: function (error) {                    
+                    if (error.responseJSON.unique_code) {
+                        $('#invalid-text-unique-code').html(error.responseJSON.unique_code[0]);
+                        $('#invalid-text-unique-code').removeClass('d-none');
+                        $('#invalid-text-unique-code').addClass('d-block');
+                    }
+
+                    if (error.responseJSON.error_message) {
+                        $('#invalid-text-unique-code').html(error.responseJSON.error_message);
+                        $('#invalid-text-unique-code').removeClass('d-none');
+                        $('#invalid-text-unique-code').addClass('d-block');
+                    }
+                }
+            });
+        }
     </script>
 @endsection

@@ -69,7 +69,7 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <x-label class="col-3 col-form-label required">Unique Code</x-label>
+                                <x-label class="col-3 col-form-label">Unique Code (Optional)</x-label>
                                 <div class="col">
                                     <x-input type="text" name="unique_code" placeholder="Enter unique code" value="{{ old('unique_code') }}" />
                                 </div>

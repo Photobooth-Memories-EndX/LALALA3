@@ -11,6 +11,7 @@ use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
 
 class HomeUserController extends Controller
 {
@@ -28,19 +29,24 @@ class HomeUserController extends Controller
 
     public function accessAssessmentByUniqueCode(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'unique_code' => 'required',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
         $assessment = Assesment::where('unique_code', $request->unique_code)->first();
 
         if ($assessment) {
-            return redirect()->route('assesment.user.view', ['slug' => $assessment->slug]);
+            return response()->json([
+                'assessment_slug' => $assessment->slug,
+            ], 200);
         } else {
-            Session::flash('unique_code', $request->unique_code);
-            Session::flash('error', 'The unique assessment code is not found.');
-
-            return redirect()->back();
+            return response()->json([
+                'error_message' => 'The assessment with unique code ' . $request->unique_code . ' is not found!',
+            ], 422);
         }
     }
 }
