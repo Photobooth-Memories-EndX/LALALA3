@@ -31,7 +31,7 @@ class AssesmentController extends Controller
     {
         $request->validate([
             'title'           => 'required',
-            'unique_code'     => 'required|max:8|alpha_dash|unique:assesments,unique_code',
+            'unique_code'     => 'nullable|max:8|alpha_dash|unique:assesments,unique_code',
             'type'            => 'required',
             'timer'           => 'required',
             'fromdate'        => 'required_if:timer,y',
@@ -73,7 +73,7 @@ class AssesmentController extends Controller
     {
         $request->validate([
             'title'           => 'required',
-            'unique_code'     => 'required|max:8|alpha_dash|unique:assesments,unique_code,' . $assesment->id,
+            'unique_code'     => 'nullable|max:8|alpha_dash|unique:assesments,unique_code,' . $assesment->id,
             'type'            => 'required',
             'timer'           => 'required',
             'fromdate'        => 'required_if:timer,y',

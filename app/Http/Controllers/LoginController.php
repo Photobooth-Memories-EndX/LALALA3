@@ -18,6 +18,12 @@ class LoginController extends Controller
             "title" => 'Login'
         ]);
     }
+
+    public function assessmentAccess()
+    {
+        return view('login.assessment_access');
+    }
+
     public function authenticate(Request $request)
     {
         Session::flash('submit-type', $request->submit_type);
@@ -55,7 +61,7 @@ class LoginController extends Controller
                 } else {
                     Auth::logout();
 
-                    return redirect()->route('loginpage')->with('warning', 'Your Assessment Unique Code is invalid!');
+                    return redirect()->back()->with('warning', 'Your Assessment Unique Code is invalid!');
                 }
             }
 
@@ -104,6 +110,7 @@ class LoginController extends Controller
             }
         }
     }
+
     public function logout(Request $request)
     {
         Auth::logout();
