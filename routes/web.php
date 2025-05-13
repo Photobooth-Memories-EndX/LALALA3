@@ -50,6 +50,7 @@ use App\Http\Controllers\QuestionController;
 //     return view('welcome');
 // });
 Route::get('/', [HomeUserController::class, 'index'])->name('home.user.index')->middleware('auth');
+Route::post('/assessment-access-by-unique-code', [HomeUserController::class, 'accessAssessmentByUniqueCode'])->name('home.user.access.assessment.by.unique.code')->middleware('auth');
 Route::get('/myprofile', [ProfileController::class, 'index'])->name('user.profile')->middleware('auth');
 Route::post('/myprofile', [ProfileController::class, 'update'])->name('user.updateprofile')->middleware('auth');
 Route::get('/myprofile/deleteavatar', [ProfileController::class, 'deleteavatar'])->name('user.deleteavatar')->middleware('auth');
@@ -198,6 +199,7 @@ Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
     Route::get('/{slug}/{vidslug}', [PlaylistUserController::class, 'view'])->name('playlist.user.view');
 });
 Route::get('/login', [LoginController::class, 'index'])->name('loginpage')->middleware('guest');
+Route::get('/assessment-access', [LoginController::class, 'assessmentAccess'])->name('assessment.access')->middleware('guest');
 Route::post('/login', [LoginController::class, 'authenticate'])->name('authuser');
 Route::get('/sso', [LoginController::class, 'checksso'])->name('checksso');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logoutpage');

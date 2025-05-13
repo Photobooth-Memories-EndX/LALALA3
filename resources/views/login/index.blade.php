@@ -14,6 +14,8 @@
     <link href="Tabler/dist/css/tabler-payments.min.css?1684106062" rel="stylesheet" />
     <link href="Tabler/dist/css/tabler-vendors.min.css?1684106062" rel="stylesheet" />
     <link href="Tabler/dist/css/demo.min.css?1684106062" rel="stylesheet" />
+    <link rel="shortcut icon" href="{{ asset('owl.png') }}" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         @import url('https://rsms.me/inter/inter.css');
 
@@ -38,23 +40,29 @@
             </div>
             <div class="card card-md">
                 <div class="card-body">
+
                     <x-alert type='success' />
                     <x-alert type='warning' />
+
                     <h2 class="h2 text-center mb-4">Online Knowledge Learning</h2>
-                    <form action="{{ route('authuser') }}" method="post" autocomplete="off" novalidate>
+                    <form action="{{ route('authuser') }}" id="form-authentication" method="post" autocomplete="off" novalidate>
                         @csrf
+                        <input type="hidden" name="submit_type" id="submit-type">
                         <div class="mb-3">
-                            <label class="form-label">Employee ID</label>
-                            <input type="text" name="id_emp" class="form-control" placeholder="Employee ID" value="{{ old('id_emp') }}" autocomplete="off">
+                            <label for="id-emp" class="form-label">Employee ID</label>
+                            <input type="text" name="id_emp" class="form-control" id="id-emp" placeholder="Employee ID" @if (session()->has('id-emp'))
+                                value="{{ session('id-emp') }}"
+                            @else
+                                value="{{ old('id_emp') }}"
+                            @endif autocomplete="off">
                             @error('id_emp')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label">Password</label>
-
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
                             <div class="input-group input-group-flat">
-                                <input type="password" name="password" class="form-control" placeholder="Your password"
+                                <input type="password" name="password" class="form-control" id="password" placeholder="Your password"
                                     autocomplete="off">
                                 <span class="input-group-text">
                                     <a href="javascript:void(0)" id="show-hide-password" class="link-secondary" title="Show / Hide" data-bs-toggle="tooltip" data-bs-placement="top">
@@ -71,9 +79,39 @@
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
+                        <div class="mb-3 @if (session()->has('submit-type') && session('submit-type') == 'assessment')
+                                d-block
+                            @else
+                                d-none
+                            @endif" id="unique-code-field">
+                            <label for="unique-code" class="form-label">Assessment Unique Code</label>
+                            <input type="text" name="unique_code" class="form-control" id="unique-code" placeholder="Unique Code" @if (session()->has('id-emp'))
+                                value="{{ session('unique-code') }}"
+                            @else
+                                value="{{ old('unique_code') }}"
+                            @endif autocomplete="off">
+                            @error('unique_code')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
 
-                        <div class="form-footer">
-                            <button type="submit" class="btn btn-primary w-100">Sign in</button>
+                        <div class="form-footer mt-0">
+                            <div class="d-flex gap-2 @if (session()->has('submit-type') && session('submit-type') == 'assessment')
+                                d-none
+                            @else
+                                d-block
+                            @endif" id="button-submit-field">
+                                <button type="button" onclick="submitFormAuthentication('login')" class="btn btn-primary w-50"><i class="fas fa-sign-in-alt me-2"></i>Sign in</button>
+                                <button type="button" onclick="submitFormAuthentication('assessment')" class="btn btn-warning w-50"><i class="fas fa-clipboard-list me-2"></i>Assessment</button>
+                            </div>
+                            <div class="d-flex gap-2 @if (session()->has('submit-type') && session('submit-type') == 'assessment')
+                                d-block
+                            @else
+                                d-none
+                            @endif" id="button-assessment-field">
+                                <button type="button" onclick="submitAssessment('cancel')" class="btn btn-secondary w-50"><i class="fas fa-times me-2"></i>Cancel</button>
+                                <button type="button" onclick="submitAssessment('assessment')" class="btn btn-warning w-50"><i class="fas fa-clipboard-list me-2"></i>Assessment</button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -84,7 +122,6 @@
 
     <script src="Tabler/dist/js/tabler.min.js?1684106062" defer></script>
     <script src="Tabler/dist/js/demo.min.js?1684106062" defer></script>
-
     <script>
         $('#show-hide-password').on('click', function () {
             var passwordInput = $('input[name="password"]');
@@ -95,6 +132,47 @@
                 passwordInput.attr('type', 'password');
             }
         });
+    </script>
+    <script>
+        let submitFormAuthentication = (type) => {
+            if (type == 'login') {
+                $('#submit-type').val('login');
+                
+                $('#form-authentication').submit();
+            } else {
+                $('#submit-type').val('');
+                $('#unique-code').val('');
+
+                $('.invalid-feedback').addClass('d-none');
+                $('.invalid-feedback').removeClass('d-block');
+                $('#unique-code-field').removeClass('d-none');
+                $('#unique-code-field').addClass('d-block');
+                $('#button-submit-field').addClass('d-none');
+                $('#button-submit-field').removeClass('d-block');
+                $('#button-assessment-field').removeClass('d-none');
+                $('#button-assessment-field').addClass('d-block');
+            }
+        }
+
+        let submitAssessment = (type) => {
+            if (type == 'cancel') {
+                $('#submit-type').val('');
+                $('#unique-code').val('');
+
+                $('.invalid-feedback').addClass('d-none');
+                $('.invalid-feedback').removeClass('d-block');
+                $('#unique-code-field').removeClass('d-block');
+                $('#unique-code-field').addClass('d-none');
+                $('#button-submit-field').addClass('d-block');
+                $('#button-submit-field').removeClass('d-none');
+                $('#button-assessment-field').removeClass('d-block');
+                $('#button-assessment-field').addClass('d-none');
+            } else {
+                $('#submit-type').val('assessment');
+                
+                $('#form-authentication').submit();
+            }
+        }
     </script>
 </body>
 

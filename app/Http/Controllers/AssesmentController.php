@@ -31,6 +31,7 @@ class AssesmentController extends Controller
     {
         $request->validate([
             'title'           => 'required',
+            'unique_code'     => 'nullable|max:8|alpha_dash|unique:assesments,unique_code',
             'type'            => 'required',
             'timer'           => 'required',
             'fromdate'        => 'required_if:timer,y',
@@ -44,6 +45,7 @@ class AssesmentController extends Controller
         $assesment->content_id      = $request->input('content_id');
         $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title           = $request->input('title');
+        $assesment->unique_code     = $request->input('unique_code');
         $assesment->passing_grade   = $request->input('passing_grade');
         $assesment->timer           = $request->input('timer');
         $assesment->fromdate        = $request->input('fromdate');
@@ -71,6 +73,7 @@ class AssesmentController extends Controller
     {
         $request->validate([
             'title'           => 'required',
+            'unique_code'     => 'nullable|max:8|alpha_dash|unique:assesments,unique_code,' . $assesment->id,
             'type'            => 'required',
             'timer'           => 'required',
             'fromdate'        => 'required_if:timer,y',
@@ -83,6 +86,7 @@ class AssesmentController extends Controller
         $assesment->content_id      = $request->input('content_id');
         $assesment->trainingplan_id = $request->input('trainingplan_id');
         $assesment->title           = $request->input('title');
+        $assesment->unique_code     = $request->input('unique_code');
         $assesment->passing_grade   = $request->input('passing_grade');
         $assesment->timer           = $request->input('timer');
         $assesment->fromdate        = $request->input('fromdate');

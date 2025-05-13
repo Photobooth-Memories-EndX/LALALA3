@@ -85,6 +85,8 @@
                                                         <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
                                                     </svg>
                                                 </button>
+                                                <hr class="my-2">
+                                                Unique Code: {{ $list->unique_code ?? '#N/A' }}
                                             </td>
                                             <td class="text-center">
                                                 @if (count($list->assessment_question_banks) > 0)
