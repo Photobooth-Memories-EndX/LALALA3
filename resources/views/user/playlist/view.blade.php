@@ -21,7 +21,7 @@
 
                                 <div class="d-flex align-items-center gap-2">
                                     @if ($assessmentContent)
-                                        <a href="{{ route('assesment.user.view', $assessmentContent->slug) }}" class="btn btn-primary {{ ($assessmentContentCount == 3 && $assessmentContentLatestScores < $assessmentContent->passing_grade) || $assessmentContentLatestScores >= $assessmentContent->passing_grade ? 'disabled' : '' }}">
+                                        <a href="{{ route('assesment.user.view', $assessmentContent->slug) }}" class="btn btn-primary {{ $content_user->progress < 100 || ($assessmentContentCount >= 1 + $assessmentContent->total_remedials && $assessmentContentLatestScores < $assessmentContent->passing_grade) || $assessmentContentLatestScores >= $assessmentContent->passing_grade ? 'disabled' : '' }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                 <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
@@ -33,7 +33,7 @@
                                         </a>
                                     @endif
                                     @if ($assesment)
-                                        <a href="{{ route('assesment.user.view', $assesment->slug) }}" class="btn btn-primary {{ $assessmentAccess == false || ($assessmentCount == 3 && $assessmentLatestScores < $assesment->passing_grade) || $assessmentLatestScores >= $assesment->passing_grade ? 'disabled' : '' }}">
+                                        <a href="{{ route('assesment.user.view', $assesment->slug) }}" class="btn btn-primary {{ $assessmentAccess == false || ($assessmentCount >= 1 + $assesment->total_remedials && $assessmentLatestScores < $assesment->passing_grade) || $assessmentLatestScores >= $assesment->passing_grade ? 'disabled' : '' }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                 <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
@@ -44,26 +44,6 @@
                                             </svg> Playlist Assessment
                                         </a>
                                     @endif
-                                    {{-- <a href="javascript:;" class="btn btn-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                            <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
-                                            <path d="M9 9l1 0"></path>
-                                            <path d="M9 13l6 0"></path>
-                                            <path d="M9 17l6 0"></path>
-                                        </svg> Content Assessment
-                                    </a>
-                                    <a href="javascript:;" class="btn btn-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                            <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
-                                            <path d="M9 9l1 0"></path>
-                                            <path d="M9 13l6 0"></path>
-                                            <path d="M9 17l6 0"></path>
-                                        </svg> Playlist Assessment
-                                    </a> --}}
                                 </div>
                             </div>
 
