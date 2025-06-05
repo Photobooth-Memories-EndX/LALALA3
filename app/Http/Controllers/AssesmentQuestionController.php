@@ -112,18 +112,31 @@ class AssesmentQuestionController extends Controller
 
     public function clone(Assesment $assesment)
     {
-        //clone assesment
+        // Clone assesment
         $newAssesment = $assesment->replicate();
-        $newAssesment->created_at = Carbon::now();
+        $newAssesment->created_at  = Carbon::now();
+        $newAssesment->updated_at  = Carbon::now();
+        $newAssesment->unique_code = null;
         $newAssesment->push();
+        
+        // Clone Question Banks
+        foreach ($assesment->assessment_question_banks as $questionBank) {
+            $newQuestionBank = $questionBank->replicate();
+            $newQuestionBank->assesment_id = $newAssesment->id;
+            $newQuestionBank->created_at   = Carbon::now();
+            $newQuestionBank->updated_at   = Carbon::now();
+            $newQuestionBank->push();
 
-        //add relationship clone
-        //gathering old assesment question, then clone to new
-        foreach($assesment->questions as $question)
-        {
-            $newAssesment->questions()->create($question->toArray());
+            // Clone Assessment Questions
+            foreach ($questionBank->assessment_questions->where('assesment_id', $assesment->id) as $question) {
+                $newQuestion = AssesmentQuestion::create(
+                    $question->toArray()
+                );
+                $newQuestion->assesment_id = $newQuestionBank->assesment_id;
+                $newQuestion->question_bank_id = $newQuestionBank->question_bank_id;
+                $newQuestion->save();
+            }
         }
-        $newAssesment->save();
 
         return to_route('assesment.index', $assesment->slug)->with('success','Assesment question clone successfully.');
     }
