@@ -182,7 +182,7 @@
                                             </div>
                                             <x-label class="col-3 form-label text-end mb-0 required">Total Question Used/Bank</x-label>
                                             <div class="col-2">
-                                                <input type="number" min="0" name="amount_question" id="amount-question" value="0" class="form-control m-0">
+                                                <input type="number" min="0" name="amount_question" id="amount-question" value="" class="form-control m-0">
                                                 <div class="invalid-feedback d-none" id="invalid-amount-question"></div>
                                             </div>
                                         </div>
@@ -212,13 +212,10 @@
                                                 </thead>
                                                 <tbody>
                                                     @forelse ($assessmentQuestionBanks as $aqb)
-                                                        @php
-                                                            $assesmentQuestions = App\Models\AssesmentQuestion::where('question_bank_id', $aqb->question_bank_id)->get();
-                                                        @endphp
                                                         <tr>
                                                             <td class="p-1 text-center">{{ $loop->iteration }}</td>
                                                             <td class="p-1">{{ $aqb->question_bank->title }}</td>
-                                                            <td class="p-1 text-center">{{ count($assesmentQuestions) }}</td>
+                                                            <td class="p-1 text-center">{{ count($aqb->question_bank->questions) }}</td>
                                                             <td class="p-1 text-center">{{ $aqb->questions_amount }}</td>
                                                             <td class="p-1 text-center">
                                                                 <a href="{{ route('assessment.syncronize.question.bank', $aqb->id) }}" class="btn btn-primary btn-sm" title="Syncronize"><i class="fas fa-sync-alt"></i></a>
@@ -448,43 +445,43 @@
         $('#btn-store-qeustion-bank').on('click', function() {
             let assessmentSlug   = $('#assessment-slug').val();
             let idQuestionBank   = $('#id-question-bank').val();
-            let amountQuestion   = $('#amount-question').val();
-            let totalQuestions   = $('#id-question-bank option:selected').attr('data-total-questions');
+            let amountQuestion   = parseInt($('#amount-question').val() == '' ? 0 : $('#amount-question').val());
+            let totalQuestions   = parseInt($('#id-question-bank option:selected').attr('data-total-questions'));            
             let routeAddQuestion = "{{ route('assessment.store.question.bank', ':slug') }}";
             routeAddQuestion = routeAddQuestion.replace(':slug', assessmentSlug);
 
-            if (idQuestionBank != "" && amountQuestion > 0 && amountQuestion <= totalQuestions) {
-                $.ajax({
-                    url: routeAddQuestion,
-                    type: "POST",
-                    cache: false,
-                    data: {
-                        "_token" : "{{ csrf_token() }}",
-                        "assessment_slug" : assessmentSlug,
-                        "id_question_bank" : idQuestionBank,
-                        "amount_question" : amountQuestion,
-                    },
-                    success: function(data) {
-                        if (data.status == 422) {
-                            $('#modal-added-question-bank').modal('show');
-                            $('#message-added-question-bank').html(data.message);
-                        } else {
-                            $('#modal-add-question-bank').modal('show');
-                            $('#message-add-question-bank').html(data.message);
-        
-                            setInterval(() => {
-                                $('#modal-add-question-bank').modal('hide');
-                                location.reload();
-                            }, 2000);
-                        }
-                    }
-                });
-            } else {
-                if (idQuestionBank == "") {
-                    alert('Please select question bank and fill amount of question min 1.');
+            if (idQuestionBank != "" && amountQuestion > 0 ) {
+                if (amountQuestion > totalQuestions) {
+                    alert('Please fill amount of questions max ' + totalQuestions + '.');
                 } else {
-                    alert('Please select question bank and fill amount of question min 1, and maks ' + totalQuestions + '.');
+                    $.ajax({
+                        url: routeAddQuestion,
+                        type: "POST",
+                        cache: false,
+                        data: {
+                            "_token" : "{{ csrf_token() }}",
+                            "assessment_slug" : assessmentSlug,
+                            "id_question_bank" : idQuestionBank,
+                            "amount_question" : amountQuestion,
+                        },
+                        success: function(data) {
+                            if (data.status == 422) {
+                                $('#modal-added-question-bank').modal('show');
+                                $('#message-added-question-bank').html(data.message);
+                            } else {
+                                $('#modal-add-question-bank').modal('show');
+                                $('#message-add-question-bank').html(data.message);
+            
+                                setInterval(() => {
+                                    $('#modal-add-question-bank').modal('hide');
+                                    location.reload();
+                                }, 2000);
+                            }
+                        }
+                    });
                 }
+            } else {
+                alert('Please select question bank and fill amount of question min 1.');
             }
         });
     </script>
