@@ -57,6 +57,7 @@ class AssesmentUserController extends Controller
             //     ->whereFinal(1)->first();
             $queryAssessmentResult = AssesmentResult::where('user_id', auth()->user()->id)
                 ->where('assesment_id', $assesment->id)
+                ->where('batch', $assesment->batch)
                 ->whereFinal(1);
             $assessmentResultCount = $queryAssessmentResult->count();
             $assesment_result      = $queryAssessmentResult->orderBy('score', 'desc')->first();
