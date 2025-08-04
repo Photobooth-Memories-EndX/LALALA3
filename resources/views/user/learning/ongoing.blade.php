@@ -1,15 +1,13 @@
 @extends('layouts.master')
+
 @section('content')
 
     {{-- <div class="page-header d-print-none">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
-                    <h2 class="page-title">
-                        Learning On Going
-                    </h2>
+                    <h2 class="page-title">Learning On Going</h2>
                 </div>
-                <!-- Page title actions -->
                 <div class="col-auto ms-auto d-print-none">
                     <div class="d-flex">
                         <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
@@ -23,44 +21,39 @@
         </div>
     </div> --}}
 
-    <!-- Page body -->
     <div class="page-body">
-        <!-- Container Page -->
         <div class="container">
-
-            <!-- Card -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Learning On Going</h3>
                     <div class="card-actions row">
-                        <!-- Page title actions -->
                         <div class="col-auto ms-auto d-print-none">
-                          <div class="d-flex">
-                            <div class="me-3 row">
-                              <x-label class="col-6 col-form-label">Learning Program: </x-label>
-                              <x-select name="status" class="col">
-                                <option value="">-choose-</option>
-                                <option value="mandatory">Mandatory Learning</option>
-                                <option value="optional">Optional Learning</option>
-                              </x-select>
+                            <div class="d-flex">
+                                <div class="me-3 row">
+                                    <x-label class="col-6 col-form-label">Learning Program: </x-label>
+                                    <x-select name="status" class="col">
+                                        <option value="">-choose-</option>
+                                        <option value="mandatory">Mandatory Learning</option>
+                                        <option value="optional">Optional Learning</option>
+                                    </x-select>
+                                </div>
+                                <div class="me-3">
+                                    <x-select name="year" class="col">
+                                        <option value="2023">2023</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2025">2025</option>
+                                    </x-select>
+                                </div>
+                                <x-button class="btn-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
+                                        <path d="M21 21l-6 -6"></path>
+                                    </svg>
+                                </x-button>
                             </div>
-                            <div class="me-3">
-                                <x-select name="year" class="col">
-                                  <option value="2023">2023</option>
-                                  <option value="2024">2024</option>
-                                  <option value="2025">2025</option>
-                                </x-select>
-                              </div>
-                              <x-button class="btn-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
-                                    <path d="M21 21l-6 -6"></path>
-                                </svg>
-                            </x-button>
-                          </div>
                         </div>
-                      </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div id="table-default" class="table-responsive">
@@ -75,7 +68,6 @@
                                         <th>Latest Date</th>
                                         <th>Status</th>
                                         <th width="10%">Progress</th>
-                                        {{-- <th>Action</th> --}}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -125,9 +117,6 @@
                                                 <td>{{ $list->updated_at }}</td>
                                                 <td>{{ $list->status }}</td>
                                                 <td>
-                                                    {{-- <div class="progress progress-xs" data-bs-toggle="tooltip" title="{{ $list->progress }}%" data-bs-placement="top">
-                                                        <div class="progress-bar bg-primary" style="width: {{ $list->progress }}%"></div>
-                                                    </div> --}}
                                                     <div class="progressbg">
                                                         <div class="progress progressbg-progress">
                                                         <div class="progress-bar bg-info-lt" style="width: {{ $list->progress }}%" role="progressbar" aria-valuenow="{{ $list->progress }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $list->progress }}%">
@@ -137,21 +126,6 @@
                                                         <div class="progressbg-text">{{ $list->progress }}%</div>
                                                     </div>
                                                 </td>
-                                                {{-- <td>
-                                                    <div class="d-inline">
-                                                        <a href="" class="btn btn-info btn-icon">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                                <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
-                                                                <path d="M9 9l1 0"></path>
-                                                                <path d="M9 13l6 0"></path>
-                                                                <path d="M9 17l6 0"></path>
-                                                            </svg>
-                                                        </a>
-                                                    </div>
-
-                                                </td> --}}
                                             </tr>
                                         @endif
                                     @endforeach
@@ -163,17 +137,11 @@
                     </div>
                 </div>
             </div>
-            <!-- Card -->
-
         </div>
-        <!-- Container Page -->
     </div>
-    <!-- Page body -->
-
 @endsection
 
 @section('style')
-    <!-- DataTables -->
     <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 @endsection
 
@@ -181,9 +149,9 @@
     <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
     <script>
-        // let table = new DataTable('#MyTable');
         $(function() {
             $("#MyTable").DataTable({
+                "ordering": false,
                 "lengthMenu": [
                     [10, 25, 50, -1],
                     [10, 25, 50, 'All'],

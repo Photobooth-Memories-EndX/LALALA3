@@ -6,13 +6,18 @@ use App\Models\Assesment;
 use App\Models\ContentUser;
 use Illuminate\Http\Request;
 use App\Models\AssesmentResult;
+use App\Models\Content;
 use Illuminate\Support\Facades\Auth;
 
 class LearningController extends Controller
 {
     public function ongoing()
     {
-        $content_user = ContentUser::with('content.classification')->where('user_id', auth()->user()->id)->where('finish', '0')->get();
+        $content_user = ContentUser::with('content')
+            ->where('user_id', auth()->user()->id)
+            ->where('finish', '0')
+            ->orderBy('created_at', 'desc')->get();
+
         return view('user.learning.ongoing', compact('content_user'));
     }
 
