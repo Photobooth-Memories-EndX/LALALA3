@@ -191,31 +191,39 @@
                                         <div class="tab-pane" id="tabs-playlist">
                                             <div class="card-body p-3 px-0">
                                                 <div class="col">
-                                                    <div id="carousel-playlist" class="carousel slide c-home" data-bs-ride="carousel">
-                                                        <div class="carousel-inner">
-                                                            @foreach ($playlist as $list)
-                                                                <div class="carousel-item {{ ($loop->first) ? 'active' : '' }}">
-                                                                    <div class="col-md-3 p-2">
-                                                                        <div class="card border-0">
-                                                                            Playlist {{ $loop->iteration }}
-                                                                            <div class="card-body py-2 px-0">
-                                                                                <h3 class="card-title h4">
-                                                                                    <a href="{{ route('playlist.user.view', [$list->slug, $list->trainingplandetail[0]->content->slug]) }}">{{ Str::limit($list->title, 70) }}</a>
-                                                                                </h3>
+                                                    <div class="d-flex">
+                                                        <div style="width: 5%;">
+                                                            <a class="carousel-control-prev" style="width: 5% !important;" href="#carousel-playlist" role="button" data-bs-slide="prev">
+                                                                <span class="carousel-control-prev-icon bg-dark" aria-hidden="true"></span>
+                                                                <span class="visually-hidden">Previous</span>
+                                                            </a>
+                                                        </div>
+                                                        <div style="width: 90%;">
+                                                            <div id="carousel-playlist" class="carousel slide c-home" data-bs-ride="carousel">
+                                                                <div class="carousel-inner">
+                                                                    @foreach ($playlist as $list)
+                                                                        <div class="carousel-item {{ ($loop->first) ? 'active' : '' }}">
+                                                                            <div class="col-md-4 p-2">
+                                                                                <div class="card border-0">
+                                                                                    Playlist {{ $loop->iteration }}
+                                                                                    <div class="card-body py-2 px-0">
+                                                                                        <h3 class="card-title h4">
+                                                                                            <a href="{{ route('playlist.user.view', [$list->slug, $list->trainingplandetail[0]->content->slug]) }}">{{ Str::limit($list->title, 70) }}</a>
+                                                                                        </h3>
+                                                                                    </div>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
-                                                                    </div>
+                                                                    @endforeach
                                                                 </div>
-                                                            @endforeach
+                                                            </div>
                                                         </div>
-                                                        <a class="carousel-control-prev" href="#carousel-playlist" role="button" data-bs-slide="prev">
-                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                                            <span class="visually-hidden">Previous</span>
-                                                        </a>
-                                                        <a class="carousel-control-next" href="#carousel-playlist" role="button" data-bs-slide="next">
-                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                                            <span class="visually-hidden">Next</span>
-                                                        </a>
+                                                        <div style="width: 5%;">
+                                                            <a class="carousel-control-next" style="width: 5% !important;" href="#carousel-playlist" role="button" data-bs-slide="next">
+                                                                <span class="carousel-control-next-icon bg-dark" aria-hidden="true"></span>
+                                                                <span class="visually-hidden">Next</span>
+                                                            </a>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -472,7 +480,7 @@
         })
 
         item_playlist.forEach((el) => {
-            const minPlaylistPerSlide = 4
+            const minPlaylistPerSlide = 3
             let next_playlist = el.nextElementSibling
             for (var i=1; i < minPlaylistPerSlide; i++) {
                 if (!next_playlist) {
