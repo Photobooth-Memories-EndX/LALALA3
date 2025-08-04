@@ -9,36 +9,20 @@ use Illuminate\Http\Request;
 
 class TrainingPlanController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        //
-        // $trainingplan = TrainingPlan::with([
-        //     'trainingplandetail' => function ($query) {
-        //         $query->select('id', 'content_id');
-        //     },
-        //     'trainingplandetail.content'
-        //     => function ($query) {
-        //         $query->select('id', 'title');
-        //     }
-        // ])->get();
         $trainingplan = TrainingPlan::with([
             'trainingplandetail' => function ($query) {
                 $query->orderBy('content_order');
             }, 'trainingplandetail.content'
-        ])->get();
+        ])->orderBy('created_at', 'desc')->get();
 
-        // return $trainingplan;
         return view('main.trainingplan.index', [
             "title" =>  "Playlist",
             "trainingplan" => $trainingplan
         ]);
-        // return "aaa";
     }
+
     public function order($slug)
     {
         $content = Content::where('deleted_at', NULL)->where('active', 'Active')->get();

@@ -1,22 +1,18 @@
 @extends('layouts.master')
-@section('content')
 
+@section('content')
     <div class="page-header d-print-none">
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
-                    <h2 class="page-title">
-                        {{ $title }}
-                    </h2>
+                    <h2 class="page-title">{{ $title }}</h2>
                 </div>
-                <!-- Page title actions -->
                 <div class="col-auto ms-auto d-print-none">
                     <div class="d-flex">
                         <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
                             <li class="breadcrumb-item"><a href="#">Manage</a></li>
                             <li class="breadcrumb-item"><a href="#">Playlist</a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><a href="#">{{ $title }}</a>
-                            </li>
+                            <li class="breadcrumb-item active" aria-current="page"><a href="#">{{ $title }}</a></li>
                         </ol>
                     </div>
                 </div>
@@ -24,9 +20,7 @@
         </div>
     </div>
 
-    <!-- Page body -->
     <div class="page-body">
-        <!-- Container Page -->
         <div class="container">
 
             @if (session()->has('success'))
@@ -46,7 +40,6 @@
                 </div>
             @endif
 
-            <!-- Card -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">{{ $title }}</h3>
@@ -75,6 +68,7 @@
                                         <th>Title</th>
                                         <th>Content</th>
                                         <th>Status</th>
+                                        <th>Created At</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -106,8 +100,9 @@
                                                 @endif
                                             </td>
                                             <td style="text-align: center; vertical-align: middle;"><span class="badge bg-{{ $activecolor }}">{{ $list->active }}</span></td>
+                                            <td class="text-center">{{ date_format(date_create($list->created_at), 'Y-m-d') }}</td>
                                             <td>
-                                                <div class="d-inline">
+                                                <div class="d-flex gap-2">
                                                     <a href="{{ route('trainingplan.edit', $list->slug) }}" class="btn btn-info btn-icon">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -118,22 +113,22 @@
                                                             <path d="M16 5l3 3"></path>
                                                         </svg>
                                                     </a>
+
+                                                    <form action="{{ route('trainingplan.destroy', $list->slug) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                                <path d="M4 7l16 0"></path>
+                                                                <path d="M10 11l0 6"></path>
+                                                                <path d="M14 11l0 6"></path>
+                                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
+                                                                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
+                                                            </svg>
+                                                        </button>
+                                                    </form>
                                                 </div>
-
-                                                <form action="{{ route('trainingplan.destroy', $list->slug) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                            <path d="M4 7l16 0"></path>
-                                                            <path d="M10 11l0 6"></path>
-                                                            <path d="M14 11l0 6"></path>
-                                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
-                                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
-                                                        </svg></button>
-                                                </form>
                                             </td>
-
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -144,17 +139,11 @@
                     </div>
                 </div>
             </div>
-            <!-- Card -->
-
         </div>
-        <!-- Container Page -->
     </div>
-    <!-- Page body -->
-
 @endsection
 
 @section('style')
-    <!-- DataTables -->
     <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 @endsection
 
@@ -162,7 +151,6 @@
     <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
     <script>
-        // let table = new DataTable('#MyTable');
         $(function() {
             $("#MyTable").DataTable({
                 "lengthMenu": [

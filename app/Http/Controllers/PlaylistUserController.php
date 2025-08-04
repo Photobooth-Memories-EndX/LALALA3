@@ -19,7 +19,7 @@ class PlaylistUserController extends Controller
         $trainingplan = TrainingPlan::with(['trainingplandetail' => function ($query) {
                 $query->orderBy('content_order');
             }, 'trainingplandetail.content'
-        ])->where('active', 'Active')->get();
+        ])->where('active', 'Active')->orderBy('created_at', 'desc')->get();
 
         return view('user.playlist.index', [
             "title" =>  "Playlist",
