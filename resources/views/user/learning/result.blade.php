@@ -1,4 +1,5 @@
 @extends('layouts.master')
+
 @section('content')
     <div class="page-body">
         <div class="container">
@@ -55,7 +56,7 @@
                                                             <div class="card">
                                                                 <div class="card-body p-1">
                                                                     <div class="badge bg-info-lt mb-1" style="font-size: 1.75vh;">Playlist Assessment</div>
-                                                                    <div style="font-size: 1.75vh;">{{ $assessment->trainingplan->title }}</div>
+                                                                    <div style="font-size: 1.75vh;">{{ $assessment->trainingplan->title ?? '#N/A' }}</div>
                                                                 </div>
                                                             </div>
                                                         @endif
@@ -129,7 +130,7 @@
                                                     <div class="card">
                                                         <div class="card-body p-1">
                                                             <div class="badge bg-info-lt mb-1" style="font-size: 1.75vh;">Playlist Assessment</div>
-                                                            <div style="font-size: 1.75vh;">{{ $list->assesment->trainingplan->title }}</div>
+                                                            <div style="font-size: 1.75vh;">{{ $list->assesment->trainingplan->title ?? '#N/A' }}</div>
                                                         </div>
                                                     </div>
                                                 @endif

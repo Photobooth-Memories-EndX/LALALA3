@@ -52,6 +52,6 @@ class Assesment extends Model
     
     public function trainingplan()
     {
-        return $this->belongsTo(TrainingPlan::class, 'trainingplan_id', 'id');
+        return $this->belongsTo(TrainingPlan::class, 'trainingplan_id', 'id')->withTrashed()->withDefault();
     }
 }
