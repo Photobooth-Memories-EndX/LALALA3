@@ -28,10 +28,10 @@ class ContentUserController extends Controller
             $queryContent->where('type', $filterType);
         if ($filterClassification)
             $queryContent->where('classification_id', $filterClassification);
-        if ($filterDateOrder == 'newest')
-            $queryContent->orderBy('created_at', 'desc');
         if ($filterDateOrder == 'oldest')
             $queryContent->orderBy('created_at', 'asc');
+        if ($filterDateOrder == 'newest' || $filterDateOrder == '')
+            $queryContent->orderBy('created_at', 'desc');
 
         $content = $queryContent->get();
 
