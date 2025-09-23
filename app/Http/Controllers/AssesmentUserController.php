@@ -82,8 +82,10 @@ class AssesmentUserController extends Controller
 
             foreach ($assessmentQuestionBanks as $aqb) {
                 $assessmentQuestions = AssesmentQuestion::where('assesment_id', $assesment->id)
-                    ->where('question_bank_id', $aqb->question_bank_id)->inRandomOrder()->limit($aqb->questions_amount)->get();
-                
+                    ->where('question_bank_id', $aqb->question_bank_id)
+                    ->where('is_used', true)
+                    ->inRandomOrder()->limit($aqb->questions_amount)->get();
+
                 $assesment_question = $assesment_question->merge($assessmentQuestions)->shuffle();
             }
         } else {

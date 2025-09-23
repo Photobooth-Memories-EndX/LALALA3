@@ -47,6 +47,16 @@ class AssesmentQuestionBankController extends Controller
             $assesmentQuestion->save();
         }
 
+        // Set Random used question
+        $randomizeQuestions = AssesmentQuestion::where('assesment_id', $assessment->id)
+            ->where('question_bank_id', $questionBank->id)
+            ->inRandomOrder()->limit($amountQuestion)->get();
+
+        foreach ($randomizeQuestions as $randomQuestion) {
+            $randomQuestion->is_used = true;
+            $randomQuestion->save();
+        }
+
         return response()->json([
             'status'  => 200,
             'message' => 'Assessment Question have already added successfully',
@@ -64,11 +74,22 @@ class AssesmentQuestionBankController extends Controller
                 'question_bank_id' => $assessmentQuestionBank->question_bank_id,
                 'question_id'      => $question->id,
             ]);
+            $assesmentQuestion->is_used  = false;
             $assesmentQuestion->question = $question->question;
             $assesmentQuestion->image    = $question->question_image;
             $assesmentQuestion->option   = $question->option;
             $assesmentQuestion->answer   = $question->answer;
             $assesmentQuestion->save();
+        }
+
+        // Set Random used question
+        $randomizeQuestions = AssesmentQuestion::where('assesment_id', $assessmentQuestionBank->assesment_id)
+            ->where('question_bank_id', $assessmentQuestionBank->question_bank_id)
+            ->inRandomOrder()->limit($assessmentQuestionBank->questions_amount)->get();
+
+        foreach ($randomizeQuestions as $randomQuestion) {
+            $randomQuestion->is_used = true;
+            $randomQuestion->save();
         }
 
         return redirect()->back()->with('success-syncronized', $assessmentQuestionBank->question_bank->title . " synchronized successfully.");
@@ -94,6 +115,22 @@ class AssesmentQuestionBankController extends Controller
         $assessmentQuestionBank = AssesmentQuestionBank::findOrfail($id);
         $assessmentQuestionBank->questions_amount = request()->edit_question_per_bank;
         $assessmentQuestionBank->save();
+
+        // Reset is used to false
+        foreach ($assessmentQuestionBank->assessment_questions as $question) {
+            $question->is_used = false;
+            $question->save();
+        }
+
+        // Set Random used question
+        $randomizeQuestions = AssesmentQuestion::where('assesment_id', $assessmentQuestionBank->assesment_id)
+            ->where('question_bank_id', $assessmentQuestionBank->question_bank_id)
+            ->inRandomOrder()->limit($assessmentQuestionBank->questions_amount)->get();
+
+        foreach ($randomizeQuestions as $randomQuestion) {
+            $randomQuestion->is_used = true;
+            $randomQuestion->save();
+        }
 
         return redirect()->back()->with('warning', 'Question/Bank of ' . $assessmentQuestionBank->question_bank->title . " updated successfully.");
     }
