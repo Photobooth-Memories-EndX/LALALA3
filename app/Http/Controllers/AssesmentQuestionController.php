@@ -136,6 +136,16 @@ class AssesmentQuestionController extends Controller
                 $newQuestion->question_bank_id = $newQuestionBank->question_bank_id;
                 $newQuestion->save();
             }
+
+            // Set Random used question
+            $randomizeQuestions = AssesmentQuestion::where('assesment_id', $newQuestionBank->assesment_id)
+                ->where('question_bank_id', $newQuestionBank->question_bank_id)
+                ->inRandomOrder()->limit($newQuestionBank->questions_amount)->get();
+
+            foreach ($randomizeQuestions as $randomQuestion) {
+                $randomQuestion->is_used = true;
+                $randomQuestion->save();
+            }
         }
 
         return to_route('assesment.index', $assesment->slug)->with('success','Assesment question clone successfully.');
