@@ -13,7 +13,6 @@
                             <div class="col-7">
                                 <div class="d-flex">
                                     @php
-                                        $arrayyear = ['' => 'All', 2023 => 2023, 2024 => 2024, 2025 => 2025];
                                         $arraystatus = ['' => 'All', 'mandatory' => 'Mandatory Learning', 'optional' => 'Optional Learning'];
                                     @endphp
                                     
@@ -24,8 +23,9 @@
                                         @endforeach
                                     </x-select>
                                     <x-select name="year" class="col me-1" id="learn-year">
-                                        @foreach ($arrayyear as $key => $year)
-                                            <option value="{{ $key }}" @if (request('year') == $key) selected @endif>{{ $year }}</option>
+                                        <option value="">All</option>
+                                        @foreach ($years as $year)
+                                            <option value="{{ $year }}" @if (request('year') == $year) selected @endif>{{ $year }}</option>
                                         @endforeach
                                     </x-select>
                                 </div>

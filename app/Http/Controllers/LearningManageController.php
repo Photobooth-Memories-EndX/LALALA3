@@ -13,7 +13,6 @@ class LearningManageController extends Controller
 {
     public function index()
     {
-
         $ongoing = ContentUser::with('user')->where('finish', '0')->count();
         $finish = ContentUser::with('user')->where('finish', '1')->count();
         $classification = Classification::withCount('content')->with('content.contentuser')->get();
@@ -51,15 +50,16 @@ class LearningManageController extends Controller
 
     public function category($slug, Request $request)
     {
-        $classification    = Classification::firstWhere('slug', $slug);
+        $classification = Classification::firstWhere('slug', $slug);
         $classification_id = $classification->id;
+        $years = range(date('Y'), date('Y') - 4, 1);
 
-        $status  = $request->status ?? "";
-        $year    = $request->year ?? "";
+        $status = $request->status ?? "";
+        $year = $request->year ?? "";
         $entries = $request->show_entries ?? 25;
-        $search  = $request->search ?? "";
-        $type    = $request->type ?? "";
-        $slug    = $request->slug ?? "";
+        $search = $request->search ?? "";
+        $type = $request->type ?? "";
+        $slug = $request->slug ?? "";
         
         if ($request->action == 'download') {
             return Excel::download(new LearningExport($type, $status, $year, $slug), now() . '_learning.xlsx');
@@ -83,11 +83,12 @@ class LearningManageController extends Controller
         $content = $query->paginate($entries)->withQueryString();
 
         return view('main.learning.all', [
-            "title"         => 'Classification: ' . $classification->classification_name,
-            "downloadslug"  => $slug,
-            "content"       => $content,
-            'entries'       => $entries,
-            'search'        => $search,
+            "title" => 'Classification: ' . $classification->classification_name,
+            "downloadslug" => $slug,
+            "content" => $content,
+            'entries' => $entries,
+            'search' => $search,
+            'years' => $years,
         ])->with('no', (request('page', 1) - 1) * $entries);
     }
 
