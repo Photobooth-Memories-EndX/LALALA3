@@ -42,74 +42,69 @@
                             <table class="table table-bordered table-striped table-vcenter" id="MyTable">
                                 <thead>
                                     <tr>
-                                        <th>#</th>
-                                        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
-                                        <th>Title</th>
-                                        <th>Type</th>
-                                        <th>Classification</th>
-                                        <th>Duration</th>
-                                        <th>Date</th>
+                                        <th class="text-center">#</th>
+                                        <th class="text-center" style="width: 30vw !important;">Title</th>
+                                        <th class="text-center">Type</th>
+                                        <th class="text-center">Classification</th>
+                                        <th class="text-center">Duration</th>
+                                        <th class="text-center">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($content as $list)
                                         <tr>
-                                            <td>{{ $loop->index + 1 }}</td>
+                                            <td class="text-center">{{ $loop->iteration }}</td>
                                             <td>
-                                                @if ($list->type == 'YouTube')
-                                                    {{-- <img src="http://img.youtube.com/vi/{{ $list->link }}/mqdefault.jpg" class="w-7 h-7 object-cover card-img-start" alt="Beautiful blonde woman relaxing with a can of coke on a tree stump by the beach" /> --}}
-                                                    <div class="img-responsive img-responsive-4x3 rounded" style="background-image: url(http://img.youtube.com/vi/{{ $list->link }}/mqdefault.jpg); position:relative;">
-                                                        {{-- <div class="ribbon bg-red ribbon-bottom">{{ $list->duration }}</div> --}}
-                                                    </div>
-                                                @else
-                                                    @php
-                                                        $src = 'storage/files/content/' . $list->id . '/thumb.jpg';
-                                                    @endphp
-                                                    @if (\File::exists(public_path($src)) && !is_dir($src))
-                                                        <div class="img-responsive img-responsive-4x3 rounded" style="background-image: url({{ asset($src) }});position:relative;">
-                                                            {{-- <div class="ribbon bg-red ribbon-bottom">{{ $list->duration }}</div> --}}
-                                                        </div>
-                                                    @else
-                                                        <div class="img-responsive img-responsive-4x3 rounded" style="background-image: url({{ asset('default-video.jpg') }});position:relative;">
-                                                            {{-- <div class="ribbon bg-red ribbon-bottom">{{ $list->duration }}</div> --}}
-                                                        </div>
-                                                    @endif
-                                                @endif
-                                                {{-- <span class="avatar avatar-sm" style="background-image: url({{ asset('storage/profile') }}/{{ auth()->user()->avatar ?? 'default.jpg' }})"></span></td> --}}
-                                            <td>
-                                                <div class="row align-items-center">
-                                                    <div class="col-auto">
-                                                        @if (in_array($list->type, ['Video', 'YouTube']))
-                                                            <span class="bg-red-lt avatar">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-video" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                                    <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"></path>
-                                                                    <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
-                                                                </svg>
-                                                            </span>
+                                                <div class="d-flex gap-3">
+                                                    <div style="width: 30% !important;">
+                                                        @if ($list->type == 'YouTube')
+                                                            <img class="rounded object-cover" src="http://img.youtube.com/vi/{{ $list->link }}/mqdefault.jpg" style="height: 7vw !important; width: 10vw; !important" alt="{{ $list->title }}">
                                                         @else
-                                                            <span class="bg-yellow-lt avatar">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-type-pdf" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                                    <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                                                    <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"></path>
-                                                                    <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6"></path>
-                                                                    <path d="M17 18h2"></path>
-                                                                    <path d="M20 15h-3v6"></path>
-                                                                    <path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z"></path>
-                                                                </svg>
-                                                            </span>
+                                                            @php
+                                                                $src = 'storage/files/content/' . $list->id . '/thumb.jpg';
+                                                            @endphp
+
+                                                            @if (\File::exists(public_path($src)) && !is_dir($src))
+                                                                <img class="rounded object-cover" src="{{ asset($src) }}" style="height: 7vw !important; width: 10vw; !important" alt="{{ $list->title }}">
+                                                            @else
+                                                                <img class="rounded object-cover" src="{{ asset('default-video.jpg') }}" style="height: 7vw !important; width: 10vw; !important" alt="{{ $list->title }}">
+                                                            @endif
                                                         @endif
                                                     </div>
-                                                    <div class="col">
+                                                    <div style="width: 70% !important;">
                                                         <h4 class="mb-0"><a href="{{ route('content.user.view', $list->slug) }}" class="text-reset">{{ $list->title }}</a></h4>
-                                                        <div class="text-muted">
-                                                            {!! nl2br($list->description) !!}
+                                                        <div class="text-muted ">
+                                                            {{ strlen($list->description) >= 100 ? substr($list->description, 0, 100) . '...' : $list->description }}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>{{ $list->type }}</td>
+                                            <td>
+                                                <div class="text-center">
+                                                    @if (in_array($list->type, ['Video', 'YouTube']))
+                                                        <div class="bg-red-lt avatar">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-video" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                                <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"></path>
+                                                                <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                                                            </svg>
+                                                        </div>
+                                                    @else
+                                                        <div class="bg-yellow-lt avatar">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-type-pdf" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                                <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                                                                <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"></path>
+                                                                <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6"></path>
+                                                                <path d="M17 18h2"></path>
+                                                                <path d="M20 15h-3v6"></path>
+                                                                <path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z"></path>
+                                                            </svg>
+                                                        </div>
+                                                    @endif
+                                                    <h4 class="mb-0">{{ $list->type }}</h4>
+                                                </div>
+                                            </td>
                                             <td><a href="{{ route('content.user.category', $list->classification->slug) }}">{{ $list->classification->classification_name ?? '' }}</a></td>
                                             <td>{{ $list->duration }}</td>
                                             <td>{{ $list->date }}</td>
@@ -128,7 +123,6 @@
 @endsection
 
 @section('style')
-    <!-- DataTables -->
     <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 @endsection
 
@@ -136,7 +130,6 @@
     <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
     <script>
-        // let table = new DataTable('#MyTable');
         $(function() {
             $("#MyTable").DataTable({
                 "lengthMenu": [
