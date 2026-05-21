@@ -1,4 +1,4 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 @section('content')
 
     {{--  <link href="./dist/css/tabler-flags.min.css?1684106062" rel="stylesheet"/>

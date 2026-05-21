@@ -1,4 +1,4 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 
 @php
     $url_ytplayer_js = asset('Tabler/dist/libs/plyr/dist/plyr.min.js?1684106062');

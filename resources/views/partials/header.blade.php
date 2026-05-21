@@ -55,7 +55,6 @@
                             </a>
                         </div>
                     </li>
-
                     <li class="nav-item dropdown {{ request()->is('content/category*') ? 'active' : '' }}">
                         <a class="nav-link dropdown-toggle" href="#sidebar-category" data-bs-toggle="dropdown">
                             <span class="nav-link-icon"><i class="ti ti-category-2"></i></span>

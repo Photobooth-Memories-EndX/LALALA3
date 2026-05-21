@@ -1,8 +1,7 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 @section('content')
-    <div class="page-wrapper">
-        <!-- Page header -->
-        <div class="page-header d-print-none">
+    <!-- Page header -->
+    <div class="page-header d-print-none">
             <div class="container-xl">
                 <div class="row g-2 align-items-center">
 
@@ -151,6 +150,4 @@
                 </div>
             </div>
         </div>
-
-    </div>
 @endsection

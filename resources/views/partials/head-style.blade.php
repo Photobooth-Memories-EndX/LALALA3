@@ -117,6 +117,64 @@
     body[data-bs-theme="dark"] .navbar-vertical .dropdown-item .ti {
         color: #f9fafb !important;
     }
+
+       .app-topbar {
+        background: var(--tblr-bg-surface, #ffffff);
+        border-bottom: 1px solid var(--tblr-border-color, #e6e7e9);
+    }
+
+    .app-topbar .ti,
+    .app-topbar .nav-link {
+        color: var(--tblr-body-color);
+    }
+
+    .topbar-search {
+        max-width: 520px;
+        min-width: 260px;
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .topbar-search .form-control {
+        background: var(--tblr-bg-surface);
+        color: var(--tblr-body-color);
+        border-color: var(--tblr-border-color);
+    }
+
+    .topbar-search .form-control::placeholder {
+        color: var(--tblr-muted);
+    }
+
+    .topbar-search .input-icon-addon {
+        color: var(--tblr-muted);
+    }
+
+    .badge-notification {
+        position: absolute;
+        top: 2px;
+        right: -6px;
+        min-width: 16px;
+        height: 16px;
+        padding: 2px 5px;
+        font-size: 10px;
+        line-height: 12px;
+        border-radius: 999px;
+    }
+
+    .avatar-default-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--tblr-primary-lt);
+        color: var(--tblr-primary);
+        font-size: 18px;
+    }
+
+    @media (max-width: 767.98px) {
+        .topbar-search {
+            display: none !important;
+        }
+    }
 </style>
 
 {{-- Select2 --}}

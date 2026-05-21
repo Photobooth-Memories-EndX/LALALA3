@@ -1,4 +1,4 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 @section('content')
     @php
         $url_lightbox_js = asset('Tabler/dist/libs/fslightbox/index.js?1684106062');

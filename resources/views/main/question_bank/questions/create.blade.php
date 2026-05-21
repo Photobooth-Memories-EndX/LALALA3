@@ -1,4 +1,4 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">

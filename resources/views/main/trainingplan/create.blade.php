@@ -1,4 +1,4 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}">

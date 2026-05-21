@@ -1,4 +1,4 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 @section('content')
 
 <div class="page-header d-print-none">

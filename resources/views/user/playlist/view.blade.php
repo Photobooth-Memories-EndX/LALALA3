@@ -3,7 +3,7 @@
     $url_ytplayer_css = asset('Tabler/dist/libs/plyr/dist/plyr.css?1684106062');
 @endphp
 
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 
 @section('content')
     <div class="page-body">
