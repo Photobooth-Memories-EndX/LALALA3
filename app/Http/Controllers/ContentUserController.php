@@ -13,33 +13,77 @@ use Illuminate\Support\Facades\Auth;
 
 class ContentUserController extends Controller
 {
+
     public function index(Request $request)
     {
-        $filterType           = $request->type;
+        $filterSearch = $request->s;
+        $filterType = $request->type;
         $filterClassification = $request->classification;
-        $filterDateOrder      = $request->date_order;
+        $filterDateOrder = $request->date_order ?? 'newest';
+        $filterAuthor = $request->author;
+        $filterViewOrder = $request->view_order;
 
-        $contentType           = Content::select('type')->where('playlistonly', 'N')->whereActive('Active')->get()->unique('type');
-        $contentClassification = Content::select('classification_id')->where('playlistonly', 'N')->whereActive('Active')->get()->unique('classification_id');
+        $classifications = Classification::select('id', 'classification_name', 'slug')
+            ->orderBy('classification_name', 'asc')
+            ->get()
+            ->unique('classification_name')
+            ->values();
 
-        $queryContent = Content::where('playlistonly', 'N')->whereActive('Active');
+        $authors = Content::select('author')
+            ->whereNotNull('author')
+            ->where('author', '!=', '')
+            ->distinct()
+            ->orderBy('author', 'asc')
+            ->pluck('author');
 
-        if ($filterType)
+        $queryContent = Content::with('classification')
+            ->where('playlistonly', 'N')
+            ->where('active', 'Active');
+
+        if ($filterSearch) {
+            $queryContent->where(function ($query) use ($filterSearch) {
+                $query->where('title', 'like', '%' . $filterSearch . '%')
+                    ->orWhere('description', 'like', '%' . $filterSearch . '%')
+                    ->orWhere('author', 'like', '%' . $filterSearch . '%');
+            });
+        }
+
+        if ($filterType) {
             $queryContent->where('type', $filterType);
-        if ($filterClassification)
-            $queryContent->where('classification_id', $filterClassification);
-        if ($filterDateOrder == 'oldest')
-            $queryContent->orderBy('created_at', 'asc');
-        if ($filterDateOrder == 'newest' || $filterDateOrder == '')
-            $queryContent->orderBy('created_at', 'desc');
+        }
 
-        $content = $queryContent->get();
+        if ($filterClassification) {
+            $queryContent->where('classification_id', $filterClassification);
+        }
+
+        if ($filterAuthor) {
+            $queryContent->where('author', $filterAuthor);
+        }
+
+        if ($filterViewOrder === 'most_viewed') {
+            $queryContent->orderBy('views', 'desc');
+        } elseif ($filterViewOrder === 'least_viewed') {
+            $queryContent->orderBy('views', 'asc');
+        } else {
+            if ($filterDateOrder === 'oldest') {
+                $queryContent->orderBy('created_at', 'asc');
+            } else {
+                $queryContent->orderBy('created_at', 'desc');
+            }
+        }
+
+        $contents = $queryContent->paginate(9)->withQueryString();
 
         return view('user.content.index', compact(
-            'filterType', 'contentType', 
-            'filterClassification', 'contentClassification',
+            'contents',
+            'classifications',
+            'authors',
+            'filterSearch',
+            'filterType',
+            'filterClassification',
             'filterDateOrder',
-            'content',
+            'filterAuthor',
+            'filterViewOrder'
         ));
     }
 
@@ -57,7 +101,7 @@ class ContentUserController extends Controller
             'user_id' => auth()->user()->id, 'content_id' => $content->id
         ]);
 
-        $queryAssessment = Assesment::where('type', 'content');
+        $queryAssessment = Assesment::query()->where('type', 'content');
             
         $assesment = $queryAssessment->where('content_id', $content->id)->first();
 
@@ -84,7 +128,7 @@ class ContentUserController extends Controller
         if ($category === null) {
             abort(404);
         }
-        $content = Content::where('classification_id', $category->id)->whereActive('Active')->get();
+        $content = Content::query()->where('classification_id', $category->id)->where('active', 'Active')->get();
         return view('user.content.category', compact('content', 'category'));
     }
 
@@ -94,7 +138,7 @@ class ContentUserController extends Controller
         if ($content === null) {
             abort(404);
         }
-        $content_user = ContentUser::where('user_id', auth()->user()->id)->where('content_id', $content->id)->first();
+        $content_user = ContentUser::query()->where('user_id', auth()->user()->id)->where('content_id', $content->id)->first();
 
         if ($content_user->progress < 100) {
             $progression = ((float) $request->current_time / (float) $request->duration) * 100;

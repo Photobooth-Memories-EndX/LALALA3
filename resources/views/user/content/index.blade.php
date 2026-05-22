@@ -1,144 +1,195 @@
 @extends('layouts.sidebar-master')
 
+@section('style')
+    <style>
+        .content-filter-card {
+            border-radius: 18px;
+        }
+
+        .learning-path-card {
+            border-radius: 18px;
+        }
+
+        .learning-path-card .card-body {
+            padding: 24px;
+        }
+
+        .learning-path-card:hover,
+        .content-card:hover {
+            transform: translateY(-3px);
+            transition: all .2s ease;
+        }
+    </style>
+@endsection
+
 @section('content')
-    <div class="page-body">
-        <div class="container">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">All Content</h3>
-                </div>
-                <div class="card-body">
+<div class="page-body">
+    <div class="container-xl">
 
-                    <form action="{{ route('content.user.index') }}" method="get">
-                        <div class="input-group mb-2">
-                            <span class="input-group-text">
-                                Filter By
-                            </span>
-                            <select name="type" id="type" class="form-select">
-                                <option value="">- Choose Type -</option>
-                                @foreach ($contentType as $type)
-                                    <option value="{{ $type->type }}" {{ $type->type == $filterType ? 'selected' : '' }}>{{ $type->type }}</option>
-                                @endforeach
-                            </select>
-                            <select name="classification" id="classification" class="form-select">
-                                <option value="">- Choose Type -</option>
-                                @foreach ($contentClassification as $contentClass)
-                                    <option value="{{ $contentClass->classification_id }}" {{ $contentClass->classification_id == $filterClassification ? 'selected' : '' }}>{{ $contentClass->classification->classification_name }}</option>
-                                @endforeach
-                            </select>
-                            <select name="date_order" id="date-order" class="form-select">
-                                <option value="">- Choose Date Order -</option>
-                                <option value="newest" {{ $filterDateOrder == 'newest' ? 'selected' : '' }}>Newest</option>
-                                <option value="oldest" {{ $filterDateOrder == 'oldest' ? 'selected' : '' }}>Oldest</option>
-                            </select>
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i></button>
+        @php
+            $selectedCategory = $classifications->firstWhere('id', $filterClassification);
+            $hasActiveFilter = filled($filterSearch) || filled($filterClassification) || filled($filterType) || filled($filterAuthor) || filled($filterViewOrder) || $filterDateOrder !== 'newest';
+        @endphp
+
+        {{-- HERO --}}
+        <div class="card mb-4 overflow-hidden rounded-4 border-0 shadow-sm">
+            <div class="card-body p-4 p-lg-5 text-white" style="background: linear-gradient(135deg, #2f6de1 0%, #4d8df5 55%, #5da0ff 100%);">
+                <div class="row align-items-center g-4">
+                    <div class="col-lg-8">
+                        <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-3 px-3 py-2 rounded-pill">
+                            <i class="ti ti-sparkles"></i>
+                            Learning Content
                         </div>
-                    </form>
 
-                    <hr class="my-2">
+                        <h1 class="mb-2 fw-bold">
+                            {{ $selectedCategory->classification_name ?? 'All Learning Content' }}
+                        </h1>
 
-                    <div id="table-default" class="table-responsive">
-                        @unless (count($content) == 0)
-                            <table class="table table-bordered table-striped table-vcenter" id="MyTable">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center">#</th>
-                                        <th class="text-center" style="width: 30vw !important;">Title</th>
-                                        <th class="text-center">Type</th>
-                                        <th class="text-center">Classification</th>
-                                        <th class="text-center">Duration</th>
-                                        <th class="text-center">Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($content as $list)
-                                        <tr>
-                                            <td class="text-center">{{ $loop->iteration }}</td>
-                                            <td>
-                                                <div class="d-flex gap-3">
-                                                    <div style="width: 30% !important;">
-                                                        @if ($list->type == 'YouTube')
-                                                            <img class="rounded object-cover" src="http://img.youtube.com/vi/{{ $list->link }}/mqdefault.jpg" style="height: 7vw !important; width: 10vw; !important" alt="{{ $list->title }}">
-                                                        @else
-                                                            @php
-                                                                $src = 'storage/files/content/' . $list->id . '/thumb.jpg';
-                                                            @endphp
+                        <p class="mb-0 text-white-75">
+                            Temukan materi pembelajaran berdasarkan kategori, tipe konten, dan urutan terbaru dalam satu halaman.
+                        </p>
+                    </div>
 
-                                                            @if (\File::exists(public_path($src)) && !is_dir($src))
-                                                                <img class="rounded object-cover" src="{{ asset($src) }}" style="height: 7vw !important; width: 10vw; !important" alt="{{ $list->title }}">
-                                                            @else
-                                                                <img class="rounded object-cover" src="{{ asset('default-video.jpg') }}" style="height: 7vw !important; width: 10vw; !important" alt="{{ $list->title }}">
-                                                            @endif
-                                                        @endif
-                                                    </div>
-                                                    <div style="width: 70% !important;">
-                                                        <h4 class="mb-0"><a href="{{ route('content.user.view', $list->slug) }}" class="text-reset">{{ $list->title }}</a></h4>
-                                                        <div class="text-muted ">
-                                                            {{ strlen($list->description) >= 100 ? substr($list->description, 0, 100) . '...' : $list->description }}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="text-center">
-                                                    @if (in_array($list->type, ['Video', 'YouTube']))
-                                                        <div class="bg-red-lt avatar">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-video" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                                <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"></path>
-                                                                <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
-                                                            </svg>
-                                                        </div>
-                                                    @else
-                                                        <div class="bg-yellow-lt avatar">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-type-pdf" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                                <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                                                <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"></path>
-                                                                <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6"></path>
-                                                                <path d="M17 18h2"></path>
-                                                                <path d="M20 15h-3v6"></path>
-                                                                <path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z"></path>
-                                                            </svg>
-                                                        </div>
-                                                    @endif
-                                                    <h4 class="mb-0">{{ $list->type }}</h4>
-                                                </div>
-                                            </td>
-                                            <td><a href="{{ route('content.user.category', $list->classification->slug) }}">{{ $list->classification->classification_name ?? '' }}</a></td>
-                                            <td>{{ $list->duration }}</td>
-                                            <td>{{ $list->date }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @else
-                            <p>No content data found</p>
-                        @endunless
+                    <div class="col-lg-4 text-lg-end">
+                        <div class="d-inline-flex align-items-center gap-2 bg-white text-primary rounded-pill px-3 py-2 shadow-sm">
+                            <i class="ti ti-folder"></i>
+                            <strong>{{ $contents->total() }}</strong>
+                            <span>Content</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        @include('user.content.components.learning-paths')
+
+        @include('user.content.components.content-search-filter')
+
+        {{-- MAIN CONTENT --}}
+        <div class="row">
+
+            {{-- LEFT CONTENT --}}
+            <div class="col-lg-9">
+
+                <div class="d-flex align-items-center mb-3">
+                    <div>
+                        <h2 class="mb-0">Learning Materials</h2>
+                        <div class="text-muted">
+                            Menampilkan daftar materi pembelajaran OWL LMS.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row row-cards">
+                    @forelse ($contents as $item)
+                        <div class="col-sm-6 col-xl-4">
+                            @if (in_array($item->type, ['Video', 'YouTube']))
+                                @include('user.content.components.card-video', ['item' => $item])
+                            @else
+                                @include('user.content.components.card-document', ['item' => $item])
+                            @endif
+                        </div>
+                    @empty
+                        <div class="col-12">
+                            <div class="empty card card-body rounded-4 shadow-sm border-0">
+                                <div class="empty-img">
+                                    <i class="ti ti-folder-off" style="font-size: 64px;"></i>
+                                </div>
+                                <p class="empty-title">Content not found</p>
+                                <p class="empty-subtitle text-muted">
+                                    Tidak ada content yang sesuai dengan filter yang dipilih.
+                                </p>
+                                <div class="empty-action">
+                                    <a href="{{ route('content.user.index') }}" class="btn btn-primary">
+                                        Reset Filter
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endforelse
+                </div>
+
+                <div class="mt-4">
+                    {{ $contents->links() }}
+                </div>
+
+            </div>
+
+            {{-- RIGHT SIDEBAR --}}
+            <div class="col-lg-3 mt-4 mt-lg-0">
+
+                {{-- SUGGESTED SKILLS --}}
+                <div class="card mb-3 rounded-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h3 class="card-title">
+                            <i class="ti ti-sparkles me-1"></i>
+                            Suggested Skills
+                        </h3>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach ($classifications->take(8) as $skill)
+                                <a href="{{ route('content.user.index', ['classification' => $skill->id]) }}"
+                                   class="badge bg-primary-lt text-decoration-none rounded-pill px-3 py-2">
+                                    {{ $skill->classification_name }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                {{-- QUICK FILTER --}}
+                <div class="card mb-3 rounded-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h3 class="card-title">
+                            <i class="ti ti-filter me-1"></i>
+                            Quick Filter
+                        </h3>
+
+                        <div class="list-group list-group-flush">
+                            <a href="{{ route('content.user.index', ['type' => 'Video']) }}"
+                               class="list-group-item list-group-item-action px-0">
+                                <i class="ti ti-video me-2 text-primary"></i>
+                                Video Content
+                            </a>
+
+                            <a href="{{ route('content.user.index', ['type' => 'YouTube']) }}"
+                               class="list-group-item list-group-item-action px-0">
+                                <i class="ti ti-brand-youtube me-2 text-danger"></i>
+                                YouTube Content
+                            </a>
+
+                            <a href="{{ route('content.user.index', ['type' => 'Document']) }}"
+                               class="list-group-item list-group-item-action px-0">
+                                <i class="ti ti-file-text me-2 text-success"></i>
+                                Document Content
+                            </a>
+
+                            <a href="{{ route('content.user.index', ['date_order' => 'newest']) }}"
+                               class="list-group-item list-group-item-action px-0">
+                                <i class="ti ti-clock me-2 text-warning"></i>
+                                Newest Content
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- INFO --}}
+                <div class="card bg-primary text-white rounded-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h3 class="text-white">
+                            <i class="ti ti-bulb me-1"></i>
+                            Learning Tips
+                        </h3>
+                        <p class="mb-0">
+                            Gunakan filter kategori dan tipe konten agar materi pembelajaran lebih mudah ditemukan.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
-@endsection
-
-@section('style')
-    <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
-@endsection
-
-@section('script')
-    <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
-    <script>
-        $(function() {
-            $("#MyTable").DataTable({
-                "lengthMenu": [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, 'All'],
-                ],
-                "pageLength": 25,
-                "autoWidth": false,
-            });
-        });
-    </script>
+</div>
 @endsection

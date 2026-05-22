@@ -1,5 +1,5 @@
 @php
-    $category = $category ?? collect();
+    $category = isset($category) && is_iterable($category) ? $category : collect();
     $mylearningongoing = $mylearningongoing ?? 0;
 @endphp
 
@@ -24,13 +24,6 @@
                     </a>
                 </li>
 
-                <li class="nav-item {{ request()->is('content') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('content.user.index') }}">
-                        <span class="nav-link-icon"><i class="ti ti-list-details"></i></span>
-                        <span class="nav-link-title">All Content</span>
-                    </a>
-                </li>
-
                 <li class="nav-item dropdown {{ request()->is('learning*') ? 'active' : '' }}">
                     <a class="nav-link dropdown-toggle" href="#sidebar-learning" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                         <span class="nav-link-icon"><i class="ti ti-book-2"></i></span>
@@ -52,26 +45,16 @@
                         </a>
                     </div>
                 </li>
-                <li class="nav-item dropdown {{ request()->is('content/category*') ? 'active' : '' }}">
-                        <a class="nav-link dropdown-toggle" href="#sidebar-category" data-bs-toggle="dropdown">
-                            <span class="nav-link-icon"><i class="ti ti-category-2"></i></span>
-                            <span class="nav-link-title">Category</span>
-                        </a>
-
-                        <div class="dropdown-menu">
-                            @forelse($category as $cat)
-                                <a class="dropdown-item {{ empty($cat->slug) ? 'disabled' : '' }}"
-                                   href="{{ $cat->slug ? route('content.user.category', $cat->slug) : '#' }}">
-                                    <i class="ti ti-folder me-2"></i>
-                                    {{ $cat->classification_name }}
-                                </a>
-                            @empty
-                                <span class="dropdown-item">Tidak ada category</span>
-                            @endforelse
-                        </div>
-                    </li>
-
-
+                <li class="nav-item {{ request()->is('content*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('content.user.index') }}">
+                    <span class="nav-link-icon">
+                        <i class="ti ti-category-2"></i>
+                    </span>
+                    <span class="nav-link-title">
+                        All Content
+                    </span>
+                </a>
+                </li>
 
                 <li class="nav-item {{ request()->is('playlist*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ url('/playlist') }}">

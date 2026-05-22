@@ -132,6 +132,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::delete('question-bank/update-question/{question_bank_slug}/{question_id}', [QuestionController::class, 'destroy'])->name('question.bank.delete.question');
     Route::get('question-bank/download-question/{question_bank_id}', [QuestionController::class, 'downloadQuestions'])->name('question.bank.download.question');
 
+    //manage content
     Route::resource('content', ContentController::class);
     Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');
     Route::get('content/thumbnail/upload/delete', [ContentController::class, 'deletethumbnailajax'])->name('content.deletethumbnailajax');
@@ -140,12 +141,15 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::get('content/list/ongoing', [ContentController::class, 'ongoingcontent'])->name('content.ongoing');
     Route::put('content/delete/{slug}', [ContentDeleteController::class, 'deletecontentajax'])->name('contentdelete.deletecontentajax');
     Route::post('content/assign', [ContentController::class, 'assign'])->name('content.assign');
+
+
     Route::get('trainingplan/order/{slug}', [TrainingPlanController::class, 'order'])->name('trainingplan.order');
     Route::resource('trainingplan', TrainingPlanController::class);
     Route::resource('eventphoto', EventPhotoController::class);
     Route::post('eventphoto/create/upload', [EventPhotoController::class, 'uploadfileajax'])->name('eventphoto.uploadfileajax');
     Route::post('eventphoto/delete', [EventPhotoController::class, 'deleteImage'])->name('eventphoto.deleteImage');
 
+    //learning content
     Route::get('learning', [LearningManageController::class, 'index'])->name('learning.manage.index');
     Route::get('learning/all', [LearningManageController::class, 'all'])->name('learning.manage.all');
     Route::get('learning/category/{slug}', [LearningManageController::class, 'category'])->name('learning.manage.category');

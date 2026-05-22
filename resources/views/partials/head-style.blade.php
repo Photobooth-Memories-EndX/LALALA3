@@ -175,6 +175,49 @@
             display: none !important;
         }
     }
+
+    /* all content  */
+     .content-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        border-radius: 18px;
+        overflow: hidden;
+    }
+
+    .content-card .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 18px;
+    }
+
+    .content-card-thumb {
+        height: 170px;
+        background-size: cover;
+        background-position: center;
+        background-color: #f1f5f9;
+    }
+
+    .content-card-title {
+        min-height: 52px;
+        font-size: 16px;
+        line-height: 1.4;
+    }
+
+    .content-card-meta {
+        font-size: 13px;
+    }
+
+    .content-card-action {
+        margin-top: auto;
+    }
+
+    @media (max-width: 768px) {
+        .content-card-thumb {
+            height: 190px;
+        }
+    }
 </style>
 
 {{-- Select2 --}}
