@@ -27,6 +27,17 @@ class Content extends Model
         return $this->hasMany(ContentUser::class);
     }
 
+    public function bookmarkedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'bookmark_contents')
+            ->withTimestamps();
+    }
+
+    public function bookmarkContents()
+    {
+        return $this->hasMany(BookmarkContent::class);
+    }
+
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()

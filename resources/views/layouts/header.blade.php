@@ -1,6 +1,8 @@
 @php
     $category = isset($category) && is_iterable($category) ? $category : collect();
     $mylearningongoing = $mylearningongoing ?? 0;
+    $darkThemeUrl = request()->fullUrlWithQuery(['theme' => 'dark']);
+    $lightThemeUrl = request()->fullUrlWithQuery(['theme' => 'light']);
 @endphp
 
 <aside class="navbar navbar-vertical navbar-expand-lg d-print-none">
@@ -144,7 +146,7 @@
 
             {{-- DARK MODE --}}
             <div class="nav-item d-none d-md-flex me-3">
-                <a href="?theme=dark"
+                <a href="{{ $darkThemeUrl }}"
                    class="nav-link px-0 hide-theme-dark"
                    title="Enable dark mode"
                    data-bs-toggle="tooltip"
@@ -152,7 +154,7 @@
                     <i class="ti ti-moon fs-2"></i>
                 </a>
 
-                <a href="?theme=light"
+                <a href="{{ $lightThemeUrl }}"
                    class="nav-link px-0 hide-theme-light"
                    title="Enable light mode"
                    data-bs-toggle="tooltip"

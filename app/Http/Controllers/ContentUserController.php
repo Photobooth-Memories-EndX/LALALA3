@@ -72,7 +72,7 @@ class ContentUserController extends Controller
             }
         }
 
-        $contents = $queryContent->paginate(9)->withQueryString();
+        $contents = $queryContent->paginate(9)->appends(request()->query());
 
         return view('user.content.index', compact(
             'contents',
@@ -87,23 +87,28 @@ class ContentUserController extends Controller
         ));
     }
 
-    public function view($slug)
+        public function view($slug)
     {
         $content = Content::findBySlug($slug);
+
         if ($content === null) {
             abort(404);
         }
+
         $content->views += 1;
         $content->save();
 
-        //add content to user learning on going if not exist yet
+        // add content to user learning on going if not exist yet
         $content_user = ContentUser::firstOrCreate([
-            'user_id' => auth()->user()->id, 'content_id' => $content->id
+            'user_id' => auth()->user()->id,
+            'content_id' => $content->id
         ]);
 
         $queryAssessment = Assesment::query()->where('type', 'content');
-            
-        $assesment = $queryAssessment->where('content_id', $content->id)->first();
+
+        $assesment = $queryAssessment
+            ->where('content_id', $content->id)
+            ->first();
 
         if (isset($assesment)) {
             $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
@@ -114,14 +119,81 @@ class ContentUserController extends Controller
                 ->where('user_id', Auth::user()->id);
         }
 
-        $assessmentCount        = $queryAssessmentResult->where('final', 1)->count();
-        $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
+        $assessmentCount = $queryAssessmentResult
+            ->where('final', 1)
+            ->count();
 
-        $comment = Comment::with('user')->where('parent_id', null)->where('type', 'content')->where('content_id', $content->id)->latest()->get();
+        $assessmentLatestScores = $queryAssessmentResult
+            ->latest()
+            ->first()
+            ->score ?? 0;
 
-        return view('user.content.view', compact('content', 'assesment', 'assessmentCount', 'assessmentLatestScores', 'comment', 'content_user'));
+        // comment pagination + reply + like
+        $comment = Comment::with([
+                'user',
+                'replies.user',
+                'replies.likes',
+                'replies.likedByUser',
+                'likes',
+                'likedByUser'
+            ])
+            ->withCount('replies')
+            ->whereNull('parent_id')
+            ->where('type', 'content')
+            ->where('content_id', $content->id)
+            ->latest()
+            ->paginate(5)->appends(request()->query());
+
+        $discussionCount = Comment::query()
+            ->where('type', 'content')
+            ->where('content_id', $content->id)
+            ->count();
+
+        $bookmarkCount = $content->bookmarkedByUsers()->count();
+        $isBookmarked = auth()->user()->bookmarkedContents()
+            ->where('content_id', $content->id)
+            ->exists();
+
+        return view('user.content.view', compact(
+            'content',
+            'assesment',
+            'assessmentCount',
+            'assessmentLatestScores',
+            'comment',
+            'content_user',
+            'discussionCount',
+            'bookmarkCount',
+            'isBookmarked'
+        ));
     }
 
+    public function toggleBookmark($slug)
+    {
+        $content = Content::findBySlug($slug);
+
+        if ($content === null) {
+            abort(404);
+        }
+
+        $user = auth()->user();
+        $isBookmarked = $user->bookmarkedContents()
+            ->where('content_id', $content->id)
+            ->exists();
+
+        if ($isBookmarked) {
+            $user->bookmarkedContents()->detach($content->id);
+
+            return back()
+                ->with('success', 'Content removed from bookmarks.')
+                ->withFragment('comment');
+        }
+
+        $user->bookmarkedContents()->attach($content->id);
+
+        return back()
+            ->with('success', 'Content saved to bookmarks.')
+            ->withFragment('comment');
+    }
     public function category($slug)
     {
         $category = Classification::findBySlug($slug);

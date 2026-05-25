@@ -90,4 +90,15 @@ class User extends Authenticatable
     {
         return \Illuminate\Support\Str::initials($this->name);
     }
+
+    public function bookmarkedContents()
+    {
+        return $this->belongsToMany(Content::class, 'bookmark_contents')
+            ->withTimestamps();
+    }
+
+    public function bookmarkContents()
+    {
+        return $this->hasMany(BookmarkContent::class);
+    }
 }

@@ -165,15 +165,23 @@ Route::group(['prefix' => 'news', 'middleware' => 'auth'], function () {
     Route::get('/{slug}', [NewsUserController::class, 'view'])->name('news.user.view');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storenews'])->name('news.comment.store');
 });
-
+// comment
 Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
     Route::get('/', [ContentUserController::class, 'index'])->name('content.user.index');
     Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
     Route::get('category/{slug}', [ContentUserController::class, 'category'])->name('content.user.category');
     Route::put('progress/{slug}', [ContentUserController::class, 'progress'])->name('content.user.progress');
+    Route::post('/{slug}/bookmark', [ContentUserController::class, 'toggleBookmark'])->name('content.user.bookmark');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storecontent'])->name('content.comment.store');
     Route::post('/{slug}/commentplaylist/store', [CommentController::class, 'storecontentplaylist'])->name('contentplaylist.comment.store');
+    
 });
+
+    Route::middleware('auth')->group(function () {
+        Route::post('/comment/{id}/like', [CommentController::class, 'toggleLike'])
+            ->name('comment.like');
+    });
+
 
 Route::group(['prefix' => 'learning', 'middleware' => 'auth'], function () {
     Route::get('on-going', [LearningController::class, 'ongoing'])->name('learning.ongoing');
