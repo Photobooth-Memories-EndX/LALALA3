@@ -1,62 +1,134 @@
 @extends('layouts.sidebar-master')
+
 @section('content')
-<div class="page-header d-print-none">
-    <div class="container-xl">
-      <div class="row g-2 align-items-center">
-        <div class="col">
-          <h2 class="page-title">
-            News
-          </h2>
-        </div>
-      </div>
-    </div>
-</div>
 
 <div class="page-body">
+
     <div class="container-xl">
-      <div class="row g-4">
-        <div class="col-12">
-          <div class="row row-cards">
 
-            @unless(count($news) == 0)
-                @foreach ($news as $list)
-                <div class="col-sm-6 col-lg-4">
-                <div class="card card-sm">
-                    {{-- <a href="#" class="d-block"><img src="{{ asset('storage/news').'/'.$list->image }}" class="card-img-top"></a> --}}
-                    <div class="img-responsive img-responsive-2x1" style="background-image: url({{ asset('storage/news').'/'.$list->image }})"></div>
-                    <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div>
-                            <div><a href="{{ route('news.user.view', $list->slug) }}">{{ $list->title }}</a></div>
-                            <div class="text-muted">{{ $list->created_at }}</div>
+        {{-- HERO --}}
+        @include('user.news.partials.hero')
+
+        <div class="row mt-4">
+
+            {{-- LEFT CONTENT --}}
+            <div class="col-lg-9">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+
+                    <h2 class="page-title fw-bold">
+                        Hub Highlights
+                    </h2>
+
+                </div>
+
+                <div class="row">
+
+                    @if($news->count() > 1)
+
+                        @foreach($news->slice(1) as $item)
+
+                            @include('user.news.partials.card')
+
+                        @endforeach
+
+                    @else
+
+                        <div class="col-12">
+
+                            <div class="card border-0 shadow-sm">
+
+                                <div class="card-body text-center py-5">
+
+                                    <h3 class="mb-3">
+                                        No News Available
+                                    </h3>
+
+                                    <p class="text-secondary">
+                                        Please create news first.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
                         </div>
-                    </div>
-                    </div>
-                </div>
-                </div>
-                @endforeach
-            @else
-            <div class="col-sm-12 col-lg-12">
-                <div class="card card-sm">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center">
-                      <div>
-                        <p>Currently there is no news data yet</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            @endunless
 
-            <div class="card-footer clearfix mt-3">
-                {{ $news->links() }}
+                    @endif
+
+                </div>
+
             </div>
 
-          </div>
+            {{-- RIGHT SIDEBAR --}}
+            <div class="col-lg-3">
+
+                @include('user.news.partials.sidebar')
+
+            </div>
+
         </div>
-      </div>
+
     </div>
-  </div>
+
+</div>
+
+@endsection
+
+@section('style')
+
+<style>
+
+body{
+    background:#f5f7fb;
+}
+
+/* HERO */
+
+.owl-hero-card{
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);
+    border-radius:28px;
+    overflow:hidden;
+}
+
+.hero-image{
+    min-height:450px;
+    object-fit:cover;
+}
+
+/* CARD */
+
+.owl-news-card{
+    border-radius:24px;
+    overflow:hidden;
+    transition:0.3s;
+}
+
+.owl-news-card:hover{
+    transform:translateY(-6px);
+    box-shadow:0 20px 40px rgba(0,0,0,0.08);
+}
+
+.owl-sidebar-card{
+    border-radius:24px;
+}
+
+/* IMAGE */
+
+.owl-news-image{
+    width:100%;
+    height:240px;
+    object-fit:cover;
+}
+
+/* TRENDING */
+
+.trending-number{
+    font-size:32px;
+    color:#cbd5e1;
+    font-weight:700;
+}
+
+</style>
 
 @endsection
