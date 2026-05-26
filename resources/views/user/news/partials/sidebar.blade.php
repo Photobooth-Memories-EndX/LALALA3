@@ -86,9 +86,9 @@
 
     <div class="card-body p-4">
 
-        <h2 class="fw-bold mb-3">
+        {{-- <h2 class="fw-bold mb-3">
             OWL Weekly
-        </h2>
+        </h2> --}}
 
         <p class="text-white-50 mb-4">
             Get the best insights delivered to your inbox.

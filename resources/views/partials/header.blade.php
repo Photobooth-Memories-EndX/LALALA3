@@ -32,7 +32,12 @@
                     </li>
 
                     <li class="nav-item dropdown {{ request()->is('learning*') ? 'active' : '' }}">
-                        <a class="nav-link dropdown-toggle" href="#sidebar-learning" data-bs-toggle="dropdown">
+                                <a class="nav-link dropdown-toggle"
+                                    href="#"
+                                    data-bs-toggle="dropdown"
+                                    data-bs-auto-close="outside"
+                                    role="button"
+                                    aria-expanded="false">
                             <span class="nav-link-icon"><i class="ti ti-book-2"></i></span>
                             <span class="nav-link-title">My Learning</span>
 
@@ -56,7 +61,12 @@
                         </div>
                     </li>
                     <li class="nav-item dropdown {{ request()->is('content/category*') ? 'active' : '' }}">
-                        <a class="nav-link dropdown-toggle" href="#sidebar-category" data-bs-toggle="dropdown">
+                                <a class="nav-link dropdown-toggle"
+                                    href="#"
+                                    data-bs-toggle="dropdown"
+                                    data-bs-auto-close="outside"
+                                    role="button"
+                                    aria-expanded="false">
                             <span class="nav-link-icon"><i class="ti ti-category-2"></i></span>
                             <span class="nav-link-title">Category</span>
                         </a>
@@ -98,7 +108,12 @@
                     {{-- ADMIN & SUPER ADMIN --}}
                     @if (in_array(auth()->user()->role, ['2', '3']))
                         <li class="nav-item dropdown {{ request()->is('manage*') ? 'active' : '' }}">
-                            <a class="nav-link dropdown-toggle" href="#sidebar-manage" data-bs-toggle="dropdown">
+                                     <a class="nav-link dropdown-toggle"
+                                         href="#"
+                                         data-bs-toggle="dropdown"
+                                         data-bs-auto-close="outside"
+                                         role="button"
+                                         aria-expanded="false">
                                 <span class="nav-link-icon"><i class="ti ti-settings"></i></span>
                                 <span class="nav-link-title">Manage</span>
                             </a>
@@ -128,7 +143,7 @@
     <div class="page-wrapper">
 
         {{-- TOP NAVBAR --}}
-        <header class="navbar navbar-expand-md d-print-none">
+        <header class="navbar navbar-expand-md d-print-none app-topbar">
             <div class="container-xl">
                 <div class="navbar-nav flex-row ms-auto">
 
@@ -145,7 +160,13 @@
 
                     {{-- PROFILE --}}
                     <div class="nav-item dropdown">
-                        <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+                        <a href="#"
+                           class="nav-link d-flex lh-1 text-reset p-0"
+                           data-bs-toggle="dropdown"
+                           data-bs-auto-close="outside"
+                           role="button"
+                           aria-expanded="false"
+                           aria-label="Open user menu">
 
                             @if (!empty(auth()->user()->avatar))
                                 <span class="avatar avatar-sm"

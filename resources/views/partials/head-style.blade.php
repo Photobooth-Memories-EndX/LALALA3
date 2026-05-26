@@ -118,7 +118,19 @@
         color: #f9fafb !important;
     }
 
-       .app-topbar {
+    .navbar-vertical,
+    .navbar-vertical .navbar-collapse,
+    .navbar-vertical .navbar-nav {
+        overflow: visible;
+    }
+
+    .navbar-vertical .dropdown-menu {
+        z-index: 1050;
+    }
+
+    .app-topbar {
+        position: relative;
+        z-index: 1030;
         background: var(--tblr-bg-surface, #ffffff);
         border-bottom: 1px solid var(--tblr-border-color, #e6e7e9);
     }

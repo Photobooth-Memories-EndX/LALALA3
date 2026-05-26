@@ -11,6 +11,7 @@
 
 <body>
     <script src="{{ asset('Tabler/dist/js/demo-theme.min.js') }}"></script>
+
     <div class="page">
         @include('partials.header')
         <!-- Content Wrapper. Contains page content -->
@@ -22,8 +23,8 @@
     </div>
     <!-- ./wrapper -->
     @include('partials.foot-script')
-    @yield('script')
     @stack('scripts')
+    @yield('script')
 </body>
 
 </html>

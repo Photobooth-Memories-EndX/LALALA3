@@ -27,35 +27,45 @@
                 </li>
 
                 <li class="nav-item dropdown {{ request()->is('learning*') ? 'active' : '' }}">
-                    <a class="nav-link dropdown-toggle" href="#sidebar-learning" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle"
+                       href="#"
+                       data-bs-toggle="dropdown"
+                       data-bs-auto-close="outside"
+                       role="button"
+                       aria-expanded="false">
                         <span class="nav-link-icon"><i class="ti ti-book-2"></i></span>
                         <span class="nav-link-title">My Learning</span>
                     </a>
+
                     <div class="dropdown-menu">
-                        <a class="dropdown-item" href="{{ url('learning/on-going') }}">
+                        <a class="dropdown-item d-flex align-items-center" href="{{ url('learning/on-going') }}">
                             <i class="ti ti-player-play me-2"></i>
                             <span>Learning On Going</span>
+
                             @if ($mylearningongoing >= 1)
                                 <span class="badge bg-red ms-auto">{{ $mylearningongoing }}</span>
                             @endif
                         </a>
+
                         <a class="dropdown-item" href="{{ url('learning/record') }}">
                             <i class="ti ti-history me-2"></i> Learning Record
                         </a>
+
                         <a class="dropdown-item" href="{{ url('learning/assesment') }}">
                             <i class="ti ti-checkup-list me-2"></i> My Assessment
                         </a>
                     </div>
                 </li>
+
                 <li class="nav-item {{ request()->is('content*') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('content.user.index') }}">
-                    <span class="nav-link-icon">
-                        <i class="ti ti-category-2"></i>
-                    </span>
-                    <span class="nav-link-title">
-                        All Content
-                    </span>
-                </a>
+                    <a class="nav-link" href="{{ route('content.user.index') }}">
+                        <span class="nav-link-icon">
+                            <i class="ti ti-category-2"></i>
+                        </span>
+                        <span class="nav-link-title">
+                            All Content
+                        </span>
+                    </a>
                 </li>
 
                 <li class="nav-item {{ request()->is('playlist*') ? 'active' : '' }}">
@@ -81,10 +91,16 @@
 
                 @if (in_array(auth()->user()->role, ['2', '3']))
                     <li class="nav-item dropdown {{ request()->is('manage*') ? 'active' : '' }}">
-                        <a class="nav-link dropdown-toggle" href="#sidebar-manage" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle"
+                           href="#"
+                           data-bs-toggle="dropdown"
+                           data-bs-auto-close="outside"
+                           role="button"
+                           aria-expanded="false">
                             <span class="nav-link-icon"><i class="ti ti-settings"></i></span>
                             <span class="nav-link-title">Manage</span>
                         </a>
+
                         <div class="dropdown-menu">
                             <a class="dropdown-item" href="{{ url('manage/learning') }}"><i class="ti ti-school me-2"></i> Learning</a>
                             <a class="dropdown-item" href="{{ url('manage/user') }}"><i class="ti ti-users me-2"></i> User</a>
@@ -121,7 +137,7 @@
 
         {{-- SEARCH DESKTOP ONLY --}}
         <div class="topbar-search d-none d-md-flex flex-grow-1">
-            <form action="{{ route('search', 'all') }}"
+            <form action="{{ route('search', ['searchtype' => 'all']) }}"
                   method="get"
                   autocomplete="off"
                   novalidate
@@ -168,6 +184,8 @@
                 <a href="#"
                    class="nav-link px-0 position-relative"
                    data-bs-toggle="dropdown"
+                   role="button"
+                   aria-expanded="false"
                    aria-label="Open notifications">
 
                     <i class="ti ti-bell fs-2"></i>
@@ -199,15 +217,19 @@
             </div>
 
             {{-- PROFILE --}}
+
             <div class="nav-item dropdown">
                 <a href="#"
                    class="nav-link d-flex lh-1 text-reset p-0"
                    data-bs-toggle="dropdown"
+                   data-bs-auto-close="outside"
+                   role="button"
+                   aria-expanded="false"
                    aria-label="Open user menu">
 
                     @if (!empty(auth()->user()->avatar))
                         <span class="avatar avatar-sm"
-                              style="background-image: url({{ asset('storage/profile') }}/{{ auth()->user()->avatar }})">
+                            style="background-image: url('{{ asset('storage/profile/' . auth()->user()->avatar) }}')">
                         </span>
                     @else
                         <span class="avatar avatar-sm avatar-default-icon">
