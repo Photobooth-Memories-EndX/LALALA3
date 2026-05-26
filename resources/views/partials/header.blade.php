@@ -31,13 +31,8 @@
                         </a>
                     </li>
 
-                    <li class="nav-item dropdown {{ request()->is('learning*') ? 'active' : '' }}">
-                                <a class="nav-link dropdown-toggle"
-                                    href="#"
-                                    data-bs-toggle="dropdown"
-                                    data-bs-auto-close="outside"
-                                    role="button"
-                                    aria-expanded="false">
+                    <li class="nav-item {{ request()->routeIs('user.learning.dashboard') || request()->is('learning*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('user.learning.dashboard') }}">
                             <span class="nav-link-icon"><i class="ti ti-book-2"></i></span>
                             <span class="nav-link-title">My Learning</span>
 
@@ -47,18 +42,6 @@
                                 </span>
                             @endif
                         </a>
-
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="{{ url('learning/on-going') }}">
-                                <i class="ti ti-player-play me-2"></i> Learning On Going
-                            </a>
-                            <a class="dropdown-item" href="{{ url('learning/record') }}">
-                                <i class="ti ti-history me-2"></i> Learning Record
-                            </a>
-                            <a class="dropdown-item" href="{{ url('learning/assesment') }}">
-                                <i class="ti ti-checkup-list me-2"></i> My Assessment
-                            </a>
-                        </div>
                     </li>
                     <li class="nav-item dropdown {{ request()->is('content/category*') ? 'active' : '' }}">
                                 <a class="nav-link dropdown-toggle"

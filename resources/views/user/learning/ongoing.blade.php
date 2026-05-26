@@ -2,162 +2,242 @@
 
 @section('content')
 
-    {{-- <div class="page-header d-print-none">
-        <div class="container-xl">
-            <div class="row g-2 align-items-center">
-                <div class="col">
-                    <h2 class="page-title">Learning On Going</h2>
-                </div>
-                <div class="col-auto ms-auto d-print-none">
-                    <div class="d-flex">
-                        <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-                            <li class="breadcrumb-item"><a href="#">Learning</a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><a href="#">On Going</a>
-                            </li>
-                        </ol>
-                    </div>
+<x-learning.dashboard-shell 
+    active="ongoing"
+    title="Learning Dashboard"
+    subtitle="Pantau kelas yang sedang Anda ikuti."
+>
+    @php
+        $totalLearning = count($content_user ?? []);
+        $completed = collect($content_user ?? [])->filter(fn($item) => ($item->progress ?? 0) >= 100)->count();
+        $ongoing = $totalLearning - $completed;
+        $averageProgress = $totalLearning > 0 ? round(collect($content_user)->avg('progress')) : 0;
+    @endphp
+
+    <div class="row g-3 mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted">Total Learning</div>
+                    <div class="h2 mb-0">{{ $totalLearning }}</div>
                 </div>
             </div>
         </div>
-    </div> --}}
 
-    <div class="page-body">
-        <div class="container">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Learning On Going</h3>
-                    <div class="card-actions row">
-                        <div class="col-auto ms-auto d-print-none">
-                            <div class="d-flex">
-                                <div class="me-3 row">
-                                    <x-label class="col-6 col-form-label">Learning Program: </x-label>
-                                    <x-select name="status" class="col">
-                                        <option value="">-choose-</option>
-                                        <option value="mandatory">Mandatory Learning</option>
-                                        <option value="optional">Optional Learning</option>
-                                    </x-select>
-                                </div>
-                                <div class="me-3">
-                                    <x-select name="year" class="col">
-                                        <option value="2023">2023</option>
-                                        <option value="2024">2024</option>
-                                        <option value="2025">2025</option>
-                                    </x-select>
-                                </div>
-                                <x-button class="btn-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
-                                        <path d="M21 21l-6 -6"></path>
-                                    </svg>
-                                </x-button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
-                    <div id="table-default" class="table-responsive">
-                        @unless (count($content_user) == 0)
-                            <table class="table table-bordered table-vcenter" id="MyTable">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Title</th>
-                                        <th>Classification</th>
-                                        <th>Duration</th>
-                                        <th>Latest Date</th>
-                                        <th>Status</th>
-                                        <th width="10%">Progress</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($content_user as $list)
-                                        @if ($list->content != null)
-                                            @php
-                                                if ($list->active == 'Active') {
-                                                    $activecolor = 'green';
-                                                } else {
-                                                    $activecolor = 'orange';
-                                                }
-                                            @endphp
-                                            <tr>
-                                                <td>{{ $loop->index + 1 }}</td>
-                                                <td>
-                                                    <div class="row align-items-center">
-                                                        <div class="col-auto">
-                                                            @if (in_array($list->content->type, ['Video','YouTube']))
-                                                                <span class="bg-red-lt avatar">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-video" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                                        <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"></path>
-                                                                        <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
-                                                                    </svg>
-                                                                </span>
-                                                            @else
-                                                                <span class="bg-yellow-lt avatar">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-type-pdf" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                                        <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                                                        <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"></path>
-                                                                        <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6"></path>
-                                                                        <path d="M17 18h2"></path>
-                                                                        <path d="M20 15h-3v6"></path>
-                                                                        <path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z"></path>
-                                                                    </svg>
-                                                                </span>
-                                                            @endif
-                                                        </div>
-                                                        <div class="col">
-                                                            <a href="{{ route('content.user.view', $list->content->slug) }}" class="text-reset">{{ $list->content->title }}</a>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>{{ $list->content->classification->classification_name ?? '' }}</td>
-                                                <td>{{ $list->content->duration }}</td>
-                                                <td>{{ $list->updated_at }}</td>
-                                                <td>{{ $list->status }}</td>
-                                                <td>
-                                                    <div class="progressbg">
-                                                        <div class="progress progressbg-progress">
-                                                        <div class="progress-bar bg-info-lt" style="width: {{ $list->progress }}%" role="progressbar" aria-valuenow="{{ $list->progress }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $list->progress }}%">
-                                                            <span class="visually-hidden">{{ $list->progress }}%</span>
-                                                        </div>
-                                                        </div>
-                                                        <div class="progressbg-text">{{ $list->progress }}%</div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endif
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @else
-                            <p>No content data found</p>
-                        @endunless
-                    </div>
+                    <div class="text-muted">Completed</div>
+                    <div class="h2 mb-0 text-success">{{ $completed }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted">On Going</div>
+                    <div class="h2 mb-0 text-primary">{{ $ongoing }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted">Average Progress</div>
+                    <div class="h2 mb-0">{{ $averageProgress }}%</div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-center">
+                <div class="col">
+                    <h3 class="card-title mb-1">Learning On Going</h3>
+                    <div class="text-muted small">
+                        Menampilkan daftar kelas atau kursus yang sedang berjalan.
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" id="learningSearch" class="form-control" placeholder="Cari nama kelas atau kursus">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if ($totalLearning > 0)
+        <div class="row g-3" id="learningGrid">
+            @foreach ($content_user as $list)
+                @if ($list->content != null)
+                    @php
+                        $progress = (int) ($list->progress ?? 0);
+                        $isCompleted = $progress >= 100;
+                        $type = $list->content->type ?? 'Content';
+                        $title = $list->content->title ?? '-';
+                        $classification = $list->content->classification->classification_name ?? '-';
+                        $duration = $list->content->duration ?? '-';
+                        $slug = $list->content->slug ?? null;
+                    @endphp
+
+                    <div class="col-md-6 col-xl-4 learning-item"
+                         data-title="{{ strtolower($title) }}"
+                         data-classification="{{ strtolower($classification) }}">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+                            <div class="card-status-top {{ $isCompleted ? 'bg-success' : 'bg-primary' }}"></div>
+
+                            <div class="card-body">
+                                <div class="d-flex align-items-start gap-3 mb-3">
+                                    <span class="avatar rounded bg-blue-lt">
+                                        @if (in_array($type, ['Video', 'YouTube']))
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon text-danger" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z"/>
+                                                <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/>
+                                            </svg>
+                                        @else
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon text-warning" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                                                <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"/>
+                                                <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6"/>
+                                                <path d="M17 18h2"/>
+                                                <path d="M20 15h-3v6"/>
+                                                <path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z"/>
+                                            </svg>
+                                        @endif
+                                    </span>
+
+                                    <div class="flex-fill">
+                                        <span class="badge {{ $isCompleted ? 'bg-green-lt text-green' : 'bg-blue-lt text-blue' }}">
+                                            {{ $isCompleted ? 'Completed' : 'Sedang Berlangsung' }}
+                                        </span>
+
+                                        <h3 class="mt-2 mb-1 fs-4">
+                                            {{ $title }}
+                                        </h3>
+
+                                        <div class="text-muted small">
+                                            {{ $classification }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span class="text-muted">Progress</span>
+                                        <span class="fw-semibold">{{ $progress }}%</span>
+                                    </div>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar {{ $isCompleted ? 'bg-success' : 'bg-primary' }}"
+                                             style="width: {{ $progress }}%"
+                                             role="progressbar"
+                                             aria-valuenow="{{ $progress }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="small text-muted">
+                                        Duration: {{ $duration }}
+                                    </div>
+
+                                    @if ($slug)
+                                        <a href="{{ route('content.user.view', $slug) }}" class="btn btn-sm btn-primary">
+                                            {{ $isCompleted ? 'Detail' : 'Lanjutkan' }}
+                                        </a>
+                                    @else
+                                        <button class="btn btn-sm btn-secondary" disabled>Unavailable</button>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endforeach
+        </div>
+
+        <div class="d-none">
+            <table id="MyTable">
+                <tbody>
+                    @foreach ($content_user as $list)
+                        <tr>
+                            <td>{{ $list->content->title ?? '-' }}</td>
+                            <td>{{ $list->content->classification->classification_name ?? '-' }}</td>
+                            <td>{{ $list->progress ?? 0 }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @else
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center py-5">
+                <div class="empty">
+                    <div class="empty-img">
+                        <img src="{{ asset('Tabler/static/illustrations/undraw_empty.svg') }}" height="120" alt="">
+                    </div>
+                    <p class="empty-title">Belum ada learning berjalan</p>
+                    <p class="empty-subtitle text-muted">
+                        Data kelas atau kursus Anda akan muncul di halaman ini.
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+</x-learning.dashboard-shell>
+
 @endsection
 
 @section('style')
     <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
+    <style>
+        .rounded-4 {
+            border-radius: 1rem !important;
+        }
+
+        .learning-item .card {
+            transition: .2s ease;
+        }
+
+        .learning-item .card:hover {
+            transform: translateY(-3px);
+        }
+    </style>
 @endsection
 
 @section('script')
     <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
+
     <script>
         $(function() {
-            $("#MyTable").DataTable({
-                "ordering": false,
-                "lengthMenu": [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, 'All'],
-                ],
-                "pageLength": 25,
-                "autoWidth": false,
+            if ($('#MyTable').length) {
+                $("#MyTable").DataTable({
+                    ordering: false,
+                    pageLength: 25,
+                    autoWidth: false,
+                });
+            }
+
+            $('#learningSearch').on('keyup', function () {
+                let keyword = $(this).val().toLowerCase();
+
+                $('.learning-item').each(function () {
+                    let title = $(this).data('title') || '';
+                    let classification = $(this).data('classification') || '';
+
+                    if (title.includes(keyword) || classification.includes(keyword)) {
+                        $(this).removeClass('d-none');
+                    } else {
+                        $(this).addClass('d-none');
+                    }
+                });
             });
         });
     </script>

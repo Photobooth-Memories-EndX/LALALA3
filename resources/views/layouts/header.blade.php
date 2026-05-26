@@ -26,35 +26,15 @@
                     </a>
                 </li>
 
-                <li class="nav-item dropdown {{ request()->is('learning*') ? 'active' : '' }}">
-                    <a class="nav-link dropdown-toggle"
-                       href="#"
-                       data-bs-toggle="dropdown"
-                       data-bs-auto-close="outside"
-                       role="button"
-                       aria-expanded="false">
+                <li class="nav-item {{ request()->routeIs('user.learning.dashboard') || request()->is('learning*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('user.learning.dashboard') }}">
                         <span class="nav-link-icon"><i class="ti ti-book-2"></i></span>
                         <span class="nav-link-title">My Learning</span>
+
+                        @if ($mylearningongoing >= 1)
+                            <span class="badge bg-red ms-auto">{{ $mylearningongoing }}</span>
+                        @endif
                     </a>
-
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item d-flex align-items-center" href="{{ url('learning/on-going') }}">
-                            <i class="ti ti-player-play me-2"></i>
-                            <span>Learning On Going</span>
-
-                            @if ($mylearningongoing >= 1)
-                                <span class="badge bg-red ms-auto">{{ $mylearningongoing }}</span>
-                            @endif
-                        </a>
-
-                        <a class="dropdown-item" href="{{ url('learning/record') }}">
-                            <i class="ti ti-history me-2"></i> Learning Record
-                        </a>
-
-                        <a class="dropdown-item" href="{{ url('learning/assesment') }}">
-                            <i class="ti ti-checkup-list me-2"></i> My Assessment
-                        </a>
-                    </div>
                 </li>
 
                 <li class="nav-item {{ request()->is('content*') ? 'active' : '' }}">
@@ -203,7 +183,7 @@
                     </div>
 
                     @if (($mylearningongoing ?? 0) >= 1)
-                        <a href="{{ url('learning/on-going') }}" class="dropdown-item">
+                        <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
                             <i class="ti ti-book-2 me-2"></i>
                             You have {{ $mylearningongoing }} ongoing learning
                         </a>

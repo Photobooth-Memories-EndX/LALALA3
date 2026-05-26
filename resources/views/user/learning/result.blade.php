@@ -1,198 +1,262 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
-    <div class="page-body">
-        <div class="container">
-            <div class="card">
-                <div class="card-header py-2">
-                    <h3 class="card-title">List Assesment</h3>
-                </div>
+
+<x-learning.dashboard-shell 
+    active="record"
+    title="Learning Dashboard"
+    subtitle="Laporan dan riwayat pembelajaran Anda."
+>
+    @php
+        $items = collect($content_user ?? []);
+        $totalLearning = $items->count();
+        $completed = $items->filter(fn($item) => ($item->progress ?? 0) >= 100)->count();
+        $ongoing = $totalLearning - $completed;
+        $averageProgress = $totalLearning > 0 ? round($items->avg('progress')) : 0;
+
+        $totalDuration = $items->sum(function ($item) {
+            return (int) ($item->content->duration ?? 0);
+        });
+    @endphp
+
+    <div class="row g-3 mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
-                    <div id="table-default" class="table-responsive">
-                        @unless (count($assessments) == 0)
-                            <table class="table table-bordered table-striped table-vcenter" id="table-list-assessment">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center">No</th>
-                                        <th class="text-center">Datetime</th>
-                                        <th class="text-center">Title</th>
-                                        <th class="text-center">Type</th>
-                                        <th class="text-center">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($assessments as $assessment)
-                                        @if ($assessment->content_id != null)
-                                            @php
-                                                $newCollectionScore = new Illuminate\Database\Eloquent\Collection();
-                                            @endphp
-                                            @foreach ($assessments->where('content_id', $assessment->content_id) as $newAssessment)
-                                                @php
-                                                    $assessmentScore = $newAssessment->scores->where('assesment_id', $newAssessment->id)->where('user_id', Auth::user()->id)->sortByDesc('score');
-
-                                                    $newCollectionScore = $newCollectionScore->merge($assessmentScore);
-                                                @endphp
-                                            @endforeach
-                                        @endif
-
-                                        <tr class="fs-5">
-                                            <td class="text-center p-2">{{ $loop->iteration }}</td>
-                                            @if ($assessment->timer == 'y')
-                                                <td class="text-end p-2">From : {{ date('d/m/y H:i', strtotime($assessment->fromdate)) }} <br>To : {{ date('d/m/y H:i', strtotime($assessment->todate)) }}</td>
-                                            @else
-                                                <td class="text-center p-2">-</td>
-                                            @endif
-                                            <td class="p-2">
-                                                @if ($assessment->type == 'content' && $assessment->content_id == $assessment->contents->first()->id)
-                                                    @if ($newCollectionScore->sortByDesc('score')->where('final', 1)->first() != null && $newCollectionScore->sortByDesc('score')->where('final', 1)->first()->score >= $assessment->passing_grade)
-                                                        {{ $assessment->title }}
-                                                    @else
-                                                        <a href="{{ route('assesment.user.view', $assessment->slug) }}" class="text-reset link">{{ $assessment->title }}</a>
-                                                    @endif
-                                                @elseif ($assessment->type != 'content')
-                                                    @if ($assessment->scores->where('assesment_id', $assessment->id)->where('user_id', Auth::user()->id)->first() != null && $assessment->scores->where('assesment_id', $assessment->id)->where('user_id', Auth::user()->id)->first()->final == 1)
-                                                        {{ $assessment->title }}
-                                                        @if ($assessment->type == 'trainingplan')
-                                                            <div class="card">
-                                                                <div class="card-body p-1">
-                                                                    <div class="badge bg-info-lt mb-1" style="font-size: 1.75vh;">Playlist Assessment</div>
-                                                                    <div style="font-size: 1.75vh;">{{ $assessment->trainingplan->title ?? '#N/A' }}</div>
-                                                                </div>
-                                                            </div>
-                                                        @endif
-                                                    @else
-                                                        <a href="{{ route('assesment.user.view', $assessment->slug) }}" class="text-reset link">{{ $assessment->title }}</a>
-                                                    @endif
-                                                @endif
-                                            </td>
-                                            <td class="p-2">
-                                                @if ($assessment->type == 'trainingplan')
-                                                            Playlist
-                                                @else
-                                                    {{ ucwords(str_replace('_', ' ', $assessment->type)) }}
-                                                @endif
-                                            </td>
-                                            <td class="p-2">
-                                                @if ($assessment->type == 'content' && $assessment->content_id == $assessment->contents->first()->id)
-                                                    @if ($newCollectionScore->sortByDesc('score')->where('final', 1)->first() != null && $newCollectionScore->sortByDesc('score')->where('final', 1)->first()->score >= $assessment->passing_grade)
-                                                        <span class="badge bg-success">Finished</span>
-                                                    @else
-                                                        <span class="badge bg-danger">Haven't done it yet</span>
-                                                    @endif
-                                                @elseif ($assessment->type != 'content')
-                                                    @if ($assessment->scores->where('assesment_id', $assessment->id)->where('user_id', Auth::user()->id)->first() != null && $assessment->scores->where('assesment_id', $assessment->id)->where('user_id', Auth::user()->id)->first()->final == 1)
-                                                        <span class="badge bg-success">Finished</span>
-                                                    @else
-                                                        <span class="badge bg-danger">Haven't done it yet</span>
-                                                    @endif
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @else
-                            <p>No assesment score data found</p>
-                        @endunless
-                    </div>
+                    <div class="text-muted">Total Learning</div>
+                    <div class="h2 mb-0">{{ $totalLearning }}</div>
                 </div>
             </div>
+        </div>
 
-            <hr class="my-3">
-
-            <div class="card">
-                <div class="card-header py-2">
-                    <h3 class="card-title">Assesment Result</h3>
-                </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
-                    <div id="table-default" class="table-responsive">
-                        @unless (count($result) == 0)
-                            <table class="table table-bordered table-striped" id="MyTable">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center">No</th>
-                                        <th class="text-center">Datetime</th>
-                                        <th class="text-center">Assesment</th>
-                                        <th class="text-center">Type</th>
-                                        <th class="text-center">Score</th>
-                                        <th class="text-center">Batch</th>
-                                        <th class="text-center">Result</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($result as $list)
-                                        <tr>
-                                            <td class=" p-2 text-center">{{ $loop->index + 1 }}</td>
-                                            <td class=" p-2 ">{{ date("d/m/y H:i:s", strtotime($list->created_at)) }}</td>
-                                            <td class=" p-2 ">
-                                                {{ $list->assesment->title }}
-                                                @if ($list->assesment->type == 'trainingplan')
-                                                    <div class="card">
-                                                        <div class="card-body p-1">
-                                                            <div class="badge bg-info-lt mb-1" style="font-size: 1.75vh;">Playlist Assessment</div>
-                                                            <div style="font-size: 1.75vh;">{{ $list->assesment->trainingplan->title ?? '#N/A' }}</div>
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                            </td>
-                                            <td class=" p-2 ">
-                                                @if ($list->assesment->type == 'trainingplan')
-                                                    Playlist
-                                                @else
-                                                    {{ ucwords(str_replace('_', ' ', $list->assesment->type)) }}
-                                                @endif
-                                            </td>
-                                            <td class=" p-2 text-center">{{ $list->score }}</td>
-                                            <td class=" p-2 text-center">{{ $list->batch }}</td>
-                                            <td class=" p-2 text-center">
-                                                @if ($list->pass)
-                                                    <span class="badge bg-green">Pass</span>
-                                                @else
-                                                    <span class="badge bg-red">Failed</span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @else
-                            <p>No assesment score data found</p>
-                        @endunless
-                    </div>
+                    <div class="text-muted">Completed</div>
+                    <div class="h2 mb-0 text-success">{{ $completed }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted">On Going</div>
+                    <div class="h2 mb-0 text-primary">{{ $ongoing }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted">Average Progress</div>
+                    <div class="h2 mb-0">{{ $averageProgress }}%</div>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body">
+            <div class="row align-items-center g-3">
+                <div class="col">
+                    <h3 class="mb-1">Learning Record</h3>
+                    <div class="text-muted">
+                        Riwayat pembelajaran berdasarkan aktivitas training Anda.
+                    </div>
+                </div>
+
+                <div class="col-md-auto">
+                    <button type="button" class="btn btn-primary">
+                        Unduh PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="fw-bold mb-1">Learning Hour</div>
+                <div class="display-6 text-primary mb-2">
+                    {{ $totalDuration > 0 ? $totalDuration : '11 Jam 00 Menit' }}
+                </div>
+
+                <div class="progress progress-sm mb-2">
+                    <div class="progress-bar bg-primary" style="width: {{ $averageProgress }}%"></div>
+                </div>
+
+                <div class="text-muted small">
+                    Rata-rata progres pembelajaran Anda saat ini {{ $averageProgress }}%.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-center">
+                <div class="col">
+                    <h3 class="card-title mb-1">Daftar Riwayat Training</h3>
+                    <div class="text-muted small">
+                        Detail daftar training yang pernah atau sedang Anda ikuti.
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <input type="text" id="recordSearch" class="form-control" placeholder="Cari training">
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            @if ($totalLearning > 0)
+                <table class="table table-vcenter card-table" id="MyTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Kelas</th>
+                            <th>Jenis</th>
+                            <th>Classification</th>
+                            <th>Duration</th>
+                            <th>Progress</th>
+                            <th>Finish Date</th>
+                            <th>Score Test</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($content_user as $list)
+                            @php
+                                $progress = (int) ($list->progress ?? 0);
+                                $isCompleted = $progress >= 100;
+                                $content = $list->content ?? null;
+                                $score = null;
+
+                                if (!blank($list->assesment ?? null)) {
+                                    $datas = $list->assesment->scores ?? collect();
+                                    $filter = $datas->filter(function ($assesment_result) use($list) {
+                                        return $assesment_result->user_id == $list->user_id;
+                                    })->sortByDesc('score')->first();
+
+                                    if (!blank($filter)) {
+                                        $score = $filter->score;
+                                    }
+                                }
+                            @endphp
+
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="avatar avatar-sm bg-blue-lt">
+                                            {{ strtoupper(substr($content->title ?? 'L', 0, 1)) }}
+                                        </span>
+
+                                        <div>
+                                            @if ($content && !empty($content->slug))
+                                                <a href="{{ route('content.user.view', $content->slug) }}" class="fw-semibold text-reset">
+                                                    {{ $content->title ?? '-' }}
+                                                </a>
+                                            @else
+                                                <div class="fw-semibold">{{ $content->title ?? '-' }}</div>
+                                            @endif
+
+                                            <div class="text-muted small">
+                                                {{ $content->type ?? 'Content' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    @if (($list->assesment ?? null) != null)
+                                        <span class="badge bg-blue-lt text-blue">Content</span>
+                                    @elseif (($list->assesmentPlaylist ?? null) != null)
+                                        <span class="badge bg-green-lt text-green">Playlist</span>
+                                    @else
+                                        <span class="badge bg-secondary-lt">N/A</span>
+                                    @endif
+                                </td>
+
+                                <td>{{ $content->classification->classification_name ?? '-' }}</td>
+                                <td>{{ $content->duration ?? '-' }}</td>
+
+                                <td style="min-width: 140px;">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span>{{ $progress }}%</span>
+                                    </div>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar {{ $isCompleted ? 'bg-success' : 'bg-primary' }}"
+                                             style="width: {{ $progress }}%">
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    @if ($isCompleted)
+                                        {{ $list->updated_at ?? $list->created_at ?? '-' }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+
+                                <td>
+                                    {{ $score ?? '-' }}
+                                </td>
+
+                                <td>
+                                    @if ($isCompleted)
+                                        <span class="badge bg-green-lt text-green">Completed</span>
+                                    @else
+                                        <span class="badge bg-orange-lt text-orange">On Going</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @else
+                <div class="empty py-5">
+                    <div class="empty-title">Belum ada record pembelajaran</div>
+                    <div class="empty-subtitle text-muted">
+                        Data riwayat training Anda akan muncul di sini.
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+
+</x-learning.dashboard-shell>
+
 @endsection
 
 @section('style')
-    <!-- DataTables -->
     <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
+    <style>
+        .rounded-4 {
+            border-radius: 1rem !important;
+        }
+    </style>
 @endsection
 
 @section('script')
     <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
-    <script>
-        // let table = new DataTable('#MyTable');
-        $("#table-list-assessment").DataTable({
-            "lengthMenu": [
-                [10, 25, 50, -1],
-                [10, 25, 50, 'All'],
-            ],
-            "pageLength": 10,
-            "autoWidth": false,
-        });
 
+    <script>
         $(function() {
-            $("#MyTable").DataTable({
-                "lengthMenu": [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, 'All'],
-                ],
-                "pageLength": 10,
-                "autoWidth": false,
-            });
+            if ($('#MyTable').length) {
+                const table = $("#MyTable").DataTable({
+                    ordering: false,
+                    pageLength: 10,
+                    autoWidth: false,
+                    dom: 'rt<"d-flex justify-content-between align-items-center mt-3"ip>',
+                });
+
+                $('#recordSearch').on('keyup', function () {
+                    table.search(this.value).draw();
+                });
+            }
         });
     </script>
 @endsection

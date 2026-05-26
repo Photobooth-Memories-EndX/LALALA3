@@ -156,8 +156,21 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::get('learning/content/{slug}', [LearningManageController::class, 'content'])->name('learning.manage.content');
     Route::get('learning/download', [DownloadController::class, 'learningdownload'])->name('manage.learning.download');
 
-
     Route::get('user/profile/{hash}', [ProfileUserController::class, 'index'])->name('user.manage.profile');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/my-learning', [LearningController::class, 'dashboard'])->name('user.learning.dashboard');
+
+    Route::get('/learning', function () {
+        return redirect()->route('user.learning.dashboard');
+    })->name('learning.dashboard');
+
+    Route::get('/learning/on-going', [LearningController::class, 'ongoing'])->name('learning.ongoing');
+
+    Route::get('/learning/record', [LearningController::class, 'record'])->name('learning.record');
+
+    Route::get('/learning/assesment', [LearningController::class, 'assesment'])->name('learning.assesment');
 });
 
 Route::group(['prefix' => 'news', 'middleware' => 'auth'], function () {
@@ -183,11 +196,6 @@ Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
     });
 
 
-Route::group(['prefix' => 'learning', 'middleware' => 'auth'], function () {
-    Route::get('on-going', [LearningController::class, 'ongoing'])->name('learning.ongoing');
-    Route::get('record', [LearningController::class, 'record'])->name('learning.record');
-    Route::get('assesment', [LearningController::class, 'assesment'])->name('learning.assesment');
-});
 
 Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
     Route::get('/', [AssesmentUserController::class, 'index'])->name('assesment.user.index');
