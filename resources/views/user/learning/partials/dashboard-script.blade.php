@@ -52,5 +52,7 @@
             });
         }
     });
+
+
 </script>
 @endsection
