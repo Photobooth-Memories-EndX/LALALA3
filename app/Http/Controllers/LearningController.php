@@ -106,28 +106,62 @@ class LearningController extends Controller
         $ongoingSearch = request('ongoing_search');
         $ongoingStatus = request('ongoing_status', 'all');
         $ongoingYear = request('ongoing_year', 'all');
+        $ongoingActivitySort = request('ongoing_activity_sort', 'newest_activity');
+        $ongoingProgressSort = request('ongoing_progress_sort', 'all');
 
-        return ContentUser::with([
+        $query = ContentUser::with([
                 'content.classification',
                 'assesment.scores',
             ])
-            ->where('user_id', $userId)
-            ->where('finish', '0')
-            ->when($ongoingSearch, function ($query) use ($ongoingSearch) {
-                $query->whereHas('content', function ($contentQuery) use ($ongoingSearch) {
-                    $contentQuery->where('title', 'like', '%' . $ongoingSearch . '%')
-                        ->orWhereHas('classification', function ($classificationQuery) use ($ongoingSearch) {
-                            $classificationQuery->where('classification_name', 'like', '%' . $ongoingSearch . '%');
-                        });
-                });
-            })
-            ->when($ongoingStatus !== 'all', function ($query) use ($ongoingStatus) {
-                $query->where('status', $ongoingStatus);
-            })
-            ->when($ongoingYear !== 'all', function ($query) use ($ongoingYear) {
-                $query->whereYear('created_at', $ongoingYear);
-            })
-            ->latest()
+            ->where('user_id', $userId);
+
+        if ($ongoingProgressSort === 'completed') {
+            $query->where('finish', '1');
+        } else {
+            $query->where('finish', '0');
+        }
+
+        $query->when($ongoingSearch, function ($query) use ($ongoingSearch) {
+            $query->whereHas('content', function ($contentQuery) use ($ongoingSearch) {
+                $contentQuery->where('title', 'like', '%' . $ongoingSearch . '%')
+                    ->orWhereHas('classification', function ($classificationQuery) use ($ongoingSearch) {
+                        $classificationQuery->where('classification_name', 'like', '%' . $ongoingSearch . '%');
+                    });
+            });
+        });
+
+        $query->when($ongoingStatus !== 'all', function ($query) use ($ongoingStatus) {
+            $query->where('status', $ongoingStatus);
+        });
+
+        $query->when($ongoingYear !== 'all', function ($query) use ($ongoingYear) {
+            $query->whereYear('created_at', $ongoingYear);
+        });
+
+        $query->when($ongoingProgressSort === 'not_started', function ($query) {
+            $query->where('progress', 0);
+        });
+
+        $query->when($ongoingProgressSort === 'in_progress', function ($query) {
+            $query->whereBetween('progress', [1, 99]);
+        });
+
+        $query->when($ongoingProgressSort === 'almost_done', function ($query) {
+            $query->where('progress', '>=', 80)
+                ->where('progress', '<', 100);
+        });
+
+        if ($ongoingProgressSort === 'progress_highest') {
+            $query->orderByDesc('progress');
+        } elseif ($ongoingProgressSort === 'progress_lowest') {
+            $query->orderBy('progress', 'asc');
+        } elseif ($ongoingActivitySort === 'oldest_activity') {
+            $query->orderBy('updated_at', 'asc');
+        } else {
+            $query->orderByDesc('updated_at');
+        }
+
+        return $query
             ->paginate(9, ['*'], 'ongoing_page')
             ->withQueryString();
     }
