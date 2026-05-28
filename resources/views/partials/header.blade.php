@@ -31,7 +31,7 @@
                         </a>
                     </li>
 
-                    <li class="nav-item {{ request()->routeIs('user.learning.dashboard') || request()->is('learning*') ? 'active' : '' }}">
+                    <li class="nav-item {{ request()->routeIs('user.learning.dashboard') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ route('user.learning.dashboard') }}">
                             <span class="nav-link-icon"><i class="ti ti-book-2"></i></span>
                             <span class="nav-link-title">My Learning</span>

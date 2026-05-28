@@ -160,17 +160,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/my-learning', [LearningController::class, 'dashboard'])->name('user.learning.dashboard');
-
-    Route::get('/learning', function () {
-        return redirect()->route('user.learning.dashboard');
-    })->name('learning.dashboard');
-
-    Route::get('/learning/on-going', [LearningController::class, 'ongoing'])->name('learning.ongoing');
-
-    Route::get('/learning/record', [LearningController::class, 'record'])->name('learning.record');
-
-    Route::get('/learning/assesment', [LearningController::class, 'assesment'])->name('learning.assesment');
+    Route::get('/my-learning', [LearningController::class, 'dashboard'])
+        ->name('user.learning.dashboard');
 });
 
 Route::group(['prefix' => 'news', 'middleware' => 'auth'], function () {

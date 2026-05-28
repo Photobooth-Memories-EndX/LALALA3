@@ -13,17 +13,17 @@
         [
             'key' => 'ongoing',
             'label' => 'Learning On Going',
-            'url' => route('learning.ongoing'),
+            'url' => route('user.learning.dashboard'),
         ],
         [
             'key' => 'record',
             'label' => 'Learning Record',
-            'url' => route('learning.record'),
+            'url' => route('user.learning.dashboard'),
         ],
         [
             'key' => 'assessment',
             'label' => 'Assessment',
-            'url' => route('learning.assesment'),
+            'url' => route('user.learning.dashboard'),
         ],
         [
             'key' => 'claim',

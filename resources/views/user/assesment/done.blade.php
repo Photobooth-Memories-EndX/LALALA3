@@ -124,19 +124,17 @@
                         <h3 class="mb-3">Next Action</h3>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <a href="{{ route('learning.assesment') }}" class="btn btn-primary">
+                            <a href="{{ route('user.learning.dashboard') }}" class="btn btn-primary">
                                 Back to Assessment
                             </a>
 
-                            <a href="{{ route('learning.ongoing') }}" class="btn btn-white">
+                            <a href="{{ route('user.learning.dashboard') }}" class="btn btn-white">
                                 Learning Dashboard
                             </a>
 
-                            @if (Route::has('learning.record'))
-                                <a href="{{ route('learning.record') }}" class="btn btn-white">
-                                    Learning Record
-                                </a>
-                            @endif
+                            <a href="{{ route('user.learning.dashboard') }}" class="btn btn-white">
+                                Learning Record
+                            </a>
                         </div>
                     </div>
                 </div>
