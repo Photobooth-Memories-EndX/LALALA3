@@ -173,7 +173,6 @@ Route::group(['prefix' => 'news', 'middleware' => 'auth'], function () {
 Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
     Route::get('/', [ContentUserController::class, 'index'])->name('content.user.index');
     Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
-    Route::get('category/{slug}', [ContentUserController::class, 'category'])->name('content.user.category');
     Route::put('progress/{slug}', [ContentUserController::class, 'progress'])->name('content.user.progress');
     Route::post('/{slug}/bookmark', [ContentUserController::class, 'toggleBookmark'])->name('content.user.bookmark');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storecontent'])->name('content.comment.store');

@@ -194,15 +194,6 @@ class ContentUserController extends Controller
             ->with('success', 'Content saved to bookmarks.')
             ->withFragment('comment');
     }
-    public function category($slug)
-    {
-        $category = Classification::findBySlug($slug);
-        if ($category === null) {
-            abort(404);
-        }
-        $content = Content::query()->where('classification_id', $category->id)->where('active', 'Active')->get();
-        return view('user.content.category', compact('content', 'category'));
-    }
 
     public function progress(Request $request, $slug)
     {

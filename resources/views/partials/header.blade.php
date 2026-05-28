@@ -43,7 +43,7 @@
                             @endif
                         </a>
                     </li>
-                    <li class="nav-item dropdown {{ request()->is('content/category*') ? 'active' : '' }}">
+                    <li class="nav-item dropdown {{ request()->is('content*') ? 'active' : '' }}">
                                 <a class="nav-link dropdown-toggle"
                                     href="#"
                                     data-bs-toggle="dropdown"
@@ -57,7 +57,7 @@
                         <div class="dropdown-menu">
                             @forelse($category as $cat)
                                 <a class="dropdown-item {{ empty($cat->slug) ? 'disabled' : '' }}"
-                                   href="{{ $cat->slug ? route('content.user.category', $cat->slug) : '#' }}">
+                                   href="{{ $cat->slug ? route('content.user.index', ['classification' => $cat->id]) : '#' }}">
                                     <i class="ti ti-folder me-2"></i>
                                     {{ $cat->classification_name }}
                                 </a>
