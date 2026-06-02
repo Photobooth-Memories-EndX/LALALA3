@@ -64,8 +64,11 @@ Route::group(['prefix' => 'page'], function () {
     Route::get('/{slug}', [PagesUserController::class, 'view'])->name('pages.user.view');
 });
 
-Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
+Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {   
 
+// datatable dahboard admin
+    Route::get('learning/datatable', [LearningManageController::class, 'datatable'])
+        ->name('learning.manage.datatable');
 
     // manage dashboard admin role 1 & 2
     Route::get('/', [ManageDashboardController::class, 'index'])
