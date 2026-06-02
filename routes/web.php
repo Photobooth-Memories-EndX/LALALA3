@@ -34,6 +34,7 @@ use App\Http\Controllers\AssesmentResultController;
 use App\Http\Controllers\AssesmentQuestionController;
 use App\Http\Controllers\QuestionBankController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\ManageDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,6 +65,11 @@ Route::group(['prefix' => 'page'], function () {
 });
 
 Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
+
+
+    // manage dashboard admin role 1 & 2
+    Route::get('/', [ManageDashboardController::class, 'index'])
+        ->name('manage.dashboard');
 
     Route::resource('user', UserController::class);
     Route::get('user-outsourcing/create', [UserController::class, 'createOutsourcing'])->name('manage.create.user.outsourcing');

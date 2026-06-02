@@ -68,32 +68,13 @@
                         <span class="nav-link-title">Gallery</span>
                     </a>
                 </li>
-
                 @if (in_array(auth()->user()->role, ['2', '3']))
-                    <li class="nav-item dropdown {{ request()->is('manage*') ? 'active' : '' }}">
-                        <a class="nav-link dropdown-toggle"
-                           href="#"
-                           data-bs-toggle="dropdown"
-                           data-bs-auto-close="outside"
-                           role="button"
-                           aria-expanded="false">
+                    <li class="nav-item {{ request()->is('manage*') ? 'active' : '' }}">
+                        <a class="nav-link"
+                        href="{{ url('manage') }}">
                             <span class="nav-link-icon"><i class="ti ti-settings"></i></span>
                             <span class="nav-link-title">Manage</span>
                         </a>
-
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="{{ url('manage/learning') }}"><i class="ti ti-school me-2"></i> Learning</a>
-                            <a class="dropdown-item" href="{{ url('manage/user') }}"><i class="ti ti-users me-2"></i> User</a>
-                            <a class="dropdown-item" href="{{ url('manage/admin') }}"><i class="ti ti-user-shield me-2"></i> Admin</a>
-                            <a class="dropdown-item" href="{{ url('manage/pages') }}"><i class="ti ti-file-text me-2"></i> Pages</a>
-                            <a class="dropdown-item" href="{{ url('manage/news') }}"><i class="ti ti-news me-2"></i> News</a>
-                            <a class="dropdown-item" href="{{ url('manage/content') }}"><i class="ti ti-archive me-2"></i> Content</a>
-                            <a class="dropdown-item" href="{{ url('manage/classification') }}"><i class="ti ti-category me-2"></i> Category</a>
-                            <a class="dropdown-item" href="{{ url('manage/assesment') }}"><i class="ti ti-clipboard-check me-2"></i> Assessment</a>
-                            <a class="dropdown-item" href="{{ url('manage/question-bank') }}"><i class="ti ti-help-circle me-2"></i> Question Bank</a>
-                            <a class="dropdown-item" href="{{ url('manage/trainingplan') }}"><i class="ti ti-list-check me-2"></i> Playlist</a>
-                            <a class="dropdown-item" href="{{ url('manage/eventphoto') }}"><i class="ti ti-camera me-2"></i> Event Gallery</a>
-                        </div>
                     </li>
                 @endif
             </ul>
