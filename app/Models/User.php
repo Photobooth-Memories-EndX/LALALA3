@@ -101,4 +101,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(BookmarkContent::class);
     }
+
+        /**
+     * Get all news articles published by this user
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function news()
+    {
+        return $this->hasMany(News::class);
+    }
 }
