@@ -112,7 +112,7 @@
                                     <td>{{ $loop->iteration }}</td>
                                     <td>
                                         @if($list->slug)
-                                            <a href="{{ route('learning.manage.category', $list->slug) }}" class="fw-semibold text-reset">
+                                            <a href="{{ route('learning.manage.category', $list->slug) }}"  class="fw-bold text-primary text-decoration-underline">
                                                 {{ $list->classification_name }}
                                             </a>
                                         @else

@@ -21,9 +21,48 @@ class ProfileUserController extends Controller
         $content = ContentUser::with(['content', 'content.classification'])->whereHas('user', function ($query) use ($user_id) {
             $query->where('id', $user_id);
         })->get();
+
+        $validContent = $content->filter(function ($item) {
+            return !empty($item->content);
+        });
+
+    $lastLearning = optional($validContent->sortByDesc('updated_at')->first()?->content)->title ?? '-';
+
+    $favoriteCategory = $validContent
+        ->groupBy(function ($item) {
+            return $item->content->classification->classification_name ?? '-';
+        })
+        ->sortByDesc(function ($items) {
+            return $items->count();
+        })
+        ->keys()
+        ->first() ?? '-';
+
+    $learningHours = $validContent->sum(function ($item) {
+        $duration = $item->content->duration ?? '00:00';
+
+        $parts = explode(':', $duration);
+
+        $minutes = (int) ($parts[0] ?? 0);
+        $seconds = (int) ($parts[1] ?? 0);
+
+        return $minutes / 60;
+    });
+
+    $learningHours = round($learningHours, 1);
         return view('main.profile.index', [
             "profile" =>  $user,
-            "content" => $content
+            "content" => $content,
+            'lastLearning' => $lastLearning,
+            'favoriteCategory' => $favoriteCategory,
+            'learningHours' => $learningHours
         ]);
     }
+
+    public function editOutsourcing(User $user)
+{
+    return view('manage.user.edit_outsourcing', [
+        'user' => $user,
+    ]);
+}
 }
