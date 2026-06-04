@@ -6,6 +6,7 @@ use App\Models\Assesment;
 use App\Models\AssesmentResult;
 use App\Models\ContentUser;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class LearningController extends Controller
 {
@@ -82,11 +83,14 @@ class LearningController extends Controller
 
         $result = $this->getUserAssessmentResults($userId);
 
+        $learningHours = $this->getUserLearningHours($userId);
+
         return view('user.learning.dashboard', compact(
             'content_user',
             'ongoing_content_user',
             'assessments',
-            'result'
+            'result',
+            'learningHours'
         ));
     }
 
@@ -99,6 +103,28 @@ class LearningController extends Controller
             ->where('user_id', $userId)
             ->latest()
             ->get();
+    }
+
+    private function getUserLearningHours($userId)
+    {
+        $learningHours = ContentUser::join('content', 'content_users.content_id', '=', 'content.id')
+            ->where('content_users.user_id', $userId)
+            ->whereNull('content.deleted_at')
+            ->whereNotNull('content.duration')
+            ->where('content.duration', '!=', '')
+            ->sum(DB::raw("
+                CASE 
+                    WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2
+                    THEN TIME_TO_SEC(content.duration) / 3600
+
+                    WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 1
+                    THEN TIME_TO_SEC(CONCAT('00:', content.duration)) / 3600
+
+                    ELSE 0
+                END
+            "));
+
+        return round($learningHours, 1);
     }
 
     private function getOngoingLearningContents($userId)

@@ -18,7 +18,26 @@ class LearningManageController extends Controller
         $totalLearning = ContentUser::count();
         $ongoing = ContentUser::where('finish', '0')->count();
         $finish = ContentUser::where('finish', '1')->count();
-        $completionRate = $totalLearning > 0 ? round(($finish / $totalLearning) * 100, 1) : 0;
+
+        $completionRate = $totalLearning > 0
+            ? round(($finish / $totalLearning) * 100, 1)
+            : 0;
+
+        // Total Learning Hour dari semua content yang ada di content_users
+        $learningHours = ContentUser::with('content')
+            ->get()
+            ->sum(function ($item) {
+                $duration = $item->content->duration ?? '00:00';
+
+                $parts = explode(':', $duration);
+
+                $minutes = (int) ($parts[0] ?? 0);
+                $seconds = (int) ($parts[1] ?? 0);
+
+                return ($minutes / 60) + ($seconds / 3600);
+            });
+
+        $learningHours = round($learningHours, 1);
 
         $classification = DB::table('classification')
             ->leftJoin('content', function ($join) {
@@ -32,16 +51,47 @@ class LearningManageController extends Controller
                 DB::raw('MIN(classification.slug) as slug'),
                 DB::raw('COUNT(DISTINCT content.id) as content_total'),
                 DB::raw('COUNT(content_users.id) as total_learning'),
-                DB::raw('COALESCE(SUM(CASE WHEN content_users.finish = 0 THEN 1 ELSE 0 END), 0) as ongoing_learning'),
-                DB::raw('COALESCE(SUM(CASE WHEN content_users.finish = 1 THEN 1 ELSE 0 END), 0) as finished_learning'),
+
+                DB::raw("
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN content_users.finish = '0' THEN 1 
+                                ELSE 0 
+                            END
+                        ), 0
+                    ) as ongoing_learning
+                "),
+
+                DB::raw("
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN content_users.finish = '1' THEN 1 
+                                ELSE 0 
+                            END
+                        ), 0
+                    ) as finished_learning
+                "),
+
+                DB::raw("
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN content_users.id IS NOT NULL 
+                                    AND content.duration IS NOT NULL 
+                                    AND content.duration != ''
+                                THEN TIME_TO_SEC(CONCAT('00:', content.duration)) / 3600
+                                ELSE 0 
+                            END
+                        ), 0
+                    ) as learning_hours
+                "),
             ])
             ->whereNotNull('classification.classification_name')
             ->whereNotNull('classification.slug')
             ->where('classification.slug', '!=', '')
             ->groupBy('classification.id')
-
-            // yang membuat data klasifikasi tetap muncul meskipun tidak memiliki konten atau pembelajaran terkait, dengan total pembelajaran, ongoing, dan selesai yang dihitung sebagai 0.
-            // ->havingRaw('COUNT(DISTINCT content.id) > 0') 
             ->orderBy('classification_name')
             ->get();
 
@@ -50,6 +100,7 @@ class LearningManageController extends Controller
             'finish' => $finish,
             'totalLearning' => $totalLearning,
             'completionRate' => $completionRate,
+            'learningHours' => $learningHours,
             'classification' => $classification,
         ]);
     }
@@ -135,4 +186,32 @@ class LearningManageController extends Controller
 
         return (string) $value;
     }
+
+    private function durationToHours($duration): float
+    {
+        if (!$duration) {
+            return 0;
+        }
+
+        $parts = explode(':', $duration);
+
+        // Format 00:10:30 = jam:menit:detik
+        if (count($parts) === 3) {
+            $hours = (int) $parts[0];
+            $minutes = (int) $parts[1];
+            $seconds = (int) $parts[2];
+
+            return $hours + ($minutes / 60) + ($seconds / 3600);
+        }
+
+        // Format 10:30 = menit:detik
+        if (count($parts) === 2) {
+            $minutes = (int) $parts[0];
+            $seconds = (int) $parts[1];
+
+            return ($minutes / 60) + ($seconds / 3600);
+        }
+
+        return 0;
+}
 }

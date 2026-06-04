@@ -102,6 +102,7 @@
                                 <th>Classification</th>
                                 <th class="text-center">Content</th>
                                 <th class="text-center">Total Learning</th>
+                                <th class="text-center">Learning Hours</th>
                                 <th class="text-center">Ongoing</th>
                                 <th class="text-center">Finished</th>
                             </tr>
@@ -116,11 +117,13 @@
                                                 {{ $list->classification_name }}
                                             </a>
                                         @else
-                                            <span class="fw-semibold">{{ $list->classification_name }}</span>
+                                            <span class="fw-semibold">{{ $list->classification_name }}
+                                            </span> {{ number_format($list->learning_hours, 1) }} Hours
                                         @endif
                                     </td>
                                     <td class="text-center">{{ number_format((int) ($list->content_total ?? 0)) }}</td>
                                     <td class="text-center fw-semibold">{{ number_format((int) ($list->total_learning ?? 0)) }}</td>
+                                    <td class="text-center fw-semibold">{{ number_format($list->learning_hours, 1) }} Hours</td>
                                     <td class="text-center text-warning fw-semibold">{{ number_format((int) ($list->ongoing_learning ?? 0)) }}</td>
                                     <td class="text-center text-success fw-semibold">{{ number_format((int) ($list->finished_learning ?? 0)) }}</td>
                                 </tr>

@@ -92,6 +92,46 @@
         overflow: hidden;
         border-radius: .25rem;
         z-index: 1000;
-        background: rgba(255,255,255,.85);
+        bac
+        
+        #modalEditPtkp .modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+    }
+
+    #modalEditPtkp .form-control {
+        height: 38px;
+    }
+
+    #modalEditPtkp .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
+    }kground: rgba(255,255,255,.85);
+
+    .modal-close-btn {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255,255,255,.18);
+    color: #fff;
+    font-size: 22px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+    .modal-close-btn:hover {
+        background: rgba(255,255,255,.28);
+        color: #fff;
+    }
+
+    #modalCreatePtkp .modal-content,
+    #modalEditPtkp .modal-content {
+        border-radius: 12px;
+        overflow: hidden;
+    }
     }
 </style>

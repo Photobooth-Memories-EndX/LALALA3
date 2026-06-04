@@ -39,7 +39,12 @@
             </div>
         </div>
 
-        <x-learning.profile-card :user="$user" />
+        <x-learning.profile-card 
+            :user="$user" 
+            :learning-hours="$learningHours ?? 0" 
+        />
+
+
 
         <x-learning.tab-navigation />
 

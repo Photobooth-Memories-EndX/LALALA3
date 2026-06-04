@@ -9,9 +9,9 @@
         $('#form-filter-data-user').submit();
     });
 
-  $('.toggle-class').change(function() {
+$('.toggle-class').change(function() {
 
-    var active = $(this).prop('checked') == true ? '0' : '1';
+    var active = $(this).prop('checked') ? 1 : 0;
     var user_id = $(this).data('id');
 
     $.ajax({
@@ -23,24 +23,53 @@
             id: user_id,
             _token: "{{ csrf_token() }}"
         },
+
         success: function(response) {
 
-            console.log(response.message);
+            $('#status-alert').html(`
+                <div class="alert alert-success alert-dismissible fade show shadow-sm mb-3">
+                    <i class="ti ti-circle-check mr-2"></i>
+                    ${response.message}
 
-            // Optional notification
-            // alert(response.message);
+                    <button type="button"
+                        class="close"
+                        data-dismiss="alert">
+
+                        <span>&times;</span>
+
+                    </button>
+                </div>
+            `);
+
+            setTimeout(function() {
+                $('#status-alert .alert').fadeOut();
+            }, 3000);
 
         },
-        error: function(xhr) {
 
-            console.error(xhr.responseText);
+        error: function() {
 
-            alert('Failed to update user status');
+            $('#status-alert').html(`
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3">
+                    <i class="ti ti-alert-circle mr-2"></i>
+                    Failed to update user status
+
+                    <button type="button"
+                        class="close"
+                        data-dismiss="alert">
+
+                        <span>&times;</span>
+
+                    </button>
+                </div>
+            `);
 
         }
     });
 
 });
+
+
 
     $('#modalAction').on('show.bs.modal', function(event) {
         var button = $(event.relatedTarget);
@@ -152,6 +181,61 @@
             $('#edit_sap_code').val(user.sap_code);
         });
     });
+    
+        $(document).on('click', '#btn-api-create', function(e) {
+            e.preventDefault();
 
+            var emp_id = $('#create_id_emp').val();
+
+            if (!emp_id) {
+                alert('Employee ID wajib diisi.');
+                return;
+            }
+
+            $.ajax({
+                type: "GET",
+                url: "/manage/user/get-employee/" + emp_id,
+                dataType: "json",
+                beforeSend: function() {
+                    $('#btn-api-create').prop('disabled', true).html('Getting Data...');
+                },
+                success: function(response) {
+                    $('#create_sap_code').val(response.sap_code);
+                    $('#create_ssohash').val(response.ssohash);
+                    $('#create_name').val(response.name);
+                    $('#create_email').val(response.email);
+                    $('#create_team').val(response.team);
+                    $('#create_department').val(response.department);
+                    $('#create_division').val(response.division);
+                    $('#create_id_org_unit').val(response.id_org_unit);
+                    $('#create_id_user').val(response.id_user);
+                },
+                error: function(xhr) {
+                    alert(xhr.responseJSON?.message ?? 'Employee tidak ditemukan.');
+                },
+                complete: function() {
+                    $('#btn-api-create').prop('disabled', false).html('Get Data');
+                }
+            });
+        });
+
+        // copas id emp span
+
+        $(document).on('click', '.copy-id', function() {
+
+            let id = $(this).data('id');
+
+            navigator.clipboard.writeText(id);
+
+            $('#status-alert').html(`
+                <div class="alert alert-success alert-dismissible fade show mb-3">
+                    Employee ID ${id} copied successfully
+                </div>
+            `);
+
+            setTimeout(function() {
+                $('#status-alert .alert').fadeOut();
+            }, 2000);
+        });
     
 </script>

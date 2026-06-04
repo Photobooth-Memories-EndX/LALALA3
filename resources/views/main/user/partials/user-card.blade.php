@@ -7,6 +7,7 @@
             </div>
         </div>
     </div>
+    <div id="status-alert"></div>
 
     <div class="card-body border-bottom py-3">
         <form action="{{ route('user.search') }}" method="GET" id="form-filter-data-user">
@@ -68,16 +69,23 @@
                         <td class="text-muted">{{ ++$no }}</td>
 
                         <td>
-                            <span class="badge badge-light border">
+                            <span
+                                class="badge badge-light border copy-id"
+                                data-id="{{ $list->id_emp }}"
+                                title="Click to copy">
+
                                 {{ $list->id_emp }}
+
+                                <i class="ti ti-copy ml-1"></i>
+
                             </span>
                         </td>
 
                         <td>
-                            <div class="d-flex align-items-center">
+                            {{-- <div class="d-flex align-items-center">
                                 <div class="user-avatar mr-2">
                                     {{ strtoupper(substr($list->name, 0, 1)) }}
-                                </div>
+                                </div> --}}
 
                                 <div>
                                     <a href="{{ route('user.manage.profile', $list->ssohash) }}" class="font-weight-bold text-reset">
@@ -96,7 +104,8 @@
                         <td>{{ $list->email ?: '-' }}</td>
 
                         <td>
-                            <input data-id="{{ $list->id }}"
+                            <input
+                                data-id="{{ $list->id }}"
                                 data-toggle="toggle"
                                 class="toggle-class"
                                 type="checkbox"

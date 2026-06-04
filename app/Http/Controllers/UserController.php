@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 
 class UserController extends Controller
 {
@@ -184,11 +185,12 @@ class UserController extends Controller
 
     public function resetpassword(User $user)
     {
-
         User::whereId($user->id)->update([
             'password' => Hash::make($user->id_emp)
         ]);
-        return redirect()->route('user.index')->with('success', 'User reset password successfully');
+
+        return redirect()->route('user.index')
+            ->with('success', 'User reset password successfully. Password baru: ' . $user->id_emp);
     }
 
     public function changestatus(Request $request)
@@ -200,7 +202,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $request->active == 0
+            'message' => $request->active == 1
                 ? 'User activated successfully'
                 : 'User deactivated successfully'
         ]);
@@ -239,6 +241,40 @@ class UserController extends Controller
             'id_employee_clean' => substr($user->id_emp, 0, 2) === 'ex'
                 ? substr($user->id_emp, 2)
                 : $user->id_emp,
+        ]);
+    }
+
+    public function getEmployeeData($id_emp)
+    {
+        $response = Http::get(config('api.employee.base_url') . $id_emp);
+
+        if ($response->failed()) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'Gagal mengambil data employee.'
+            ], 500);
+        }
+
+        $data = $response->json();
+
+        if (($data['status'] ?? null) == 404) {
+            return response()->json([
+                'status' => 404,
+                'message' => $data['message'] ?? 'Employee tidak ditemukan.'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'sap_code' => $data['sap_code'] ?? '-',
+            'ssohash' => $data['newhash'] ?? '-',
+            'name' => $data['name'] ?? '',
+            'email' => $data['email'] ?? '',
+            'team' => $data['team'] ?? '',
+            'department' => $data['department'] ?? '',
+            'division' => $data['division'] ?? '',
+            'id_org_unit' => $data['id_ou'] ?? null,
+            'id_user' => $data['id_user'] ?? null,
         ]);
     }
 }
