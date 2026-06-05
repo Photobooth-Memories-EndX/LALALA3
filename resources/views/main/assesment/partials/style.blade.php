@@ -275,4 +275,161 @@
         margin: 0 2px;
     }
 
+   /* ==========================
+         MISC
+    ========================== */
+    /* Assessment stat card - Tabler dark mode support */
+    .owl-stat-card {
+        border: 1px solid rgba(98, 105, 118, .16);
+        background: var(--tblr-card-bg, #ffffff);
+        color: var(--tblr-body-color);
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .04);
+    }
+
+    .owl-stat-card .card-body {
+        background: transparent;
+    }
+
+    .owl-stat-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        margin-right: 12px;
+    }
+
+    .owl-stat-icon i {
+        font-size: 16px;
+    }
+
+    .owl-stat-content {
+        min-width: 0;
+    }
+
+    .owl-stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--tblr-muted);
+        margin-bottom: 2px;
+    }
+
+    .owl-stat-number {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--tblr-body-color);
+    }
+
+    /* Jika Tabler dark mode aktif */
+    [data-bs-theme="dark"] .owl-stat-card,
+    [data-theme="dark"] .owl-stat-card,
+    body.theme-dark .owl-stat-card {
+        background: var(--tblr-bg-surface, #1f2937);
+        border-color: rgba(255, 255, 255, .08);
+        box-shadow: none;
+    }
+
+    [data-bs-theme="dark"] .owl-stat-label,
+    [data-theme="dark"] .owl-stat-label,
+    body.theme-dark .owl-stat-label {
+        color: rgba(255, 255, 255, .65);
+    }
+
+    [data-bs-theme="dark"] .owl-stat-number,
+    [data-theme="dark"] .owl-stat-number,
+    body.theme-dark .owl-stat-number {
+        color: #ffffff;
+    }
+
+      [data-theme="dark"] .owl-main-card,
+    body.theme-dark .owl-main-card {
+        background: #182433 !important;
+        border-color: #25384d !important;
+        color: #dce6f1 !important;
+    }
+
+    [data-theme="dark"] .owl-main-card .card-header,
+    [data-theme="dark"] .owl-main-card .card-footer,
+    body.theme-dark .owl-main-card .card-header,
+    body.theme-dark .owl-main-card .card-footer {
+        background: #1f2d3d !important;
+        border-color: #25384d !important;
+        color: #dce6f1 !important;
+    }
+
+    [data-theme="dark"] .owl-main-card .card-body,
+    body.theme-dark .owl-main-card .card-body {
+        background: #182433 !important;
+        border-color: #25384d !important;
+    }
+
+    [data-theme="dark"] .owl-table,
+    body.theme-dark .owl-table {
+        color: #dce6f1 !important;
+        background: #182433 !important;
+    }
+
+    [data-theme="dark"] .owl-table thead th,
+    body.theme-dark .owl-table thead th {
+        background: #223247 !important;
+        color: #b6c7da !important;
+        border-color: #25384d !important;
+    }
+
+    [data-theme="dark"] .owl-table tbody tr,
+    body.theme-dark .owl-table tbody tr {
+        background: #182433 !important;
+        border-color: #25384d !important;
+    }
+
+    [data-theme="dark"] .owl-table tbody tr:hover,
+    body.theme-dark .owl-table tbody tr:hover {
+        background: #223247 !important;
+    }
+
+    [data-theme="dark"] .owl-table td,
+    [data-theme="dark"] .owl-table th,
+    body.theme-dark .owl-table td,
+    body.theme-dark .owl-table th {
+        border-color: #25384d !important;
+    }
+
+    [data-theme="dark"] .owl-table a.text-dark,
+    body.theme-dark .owl-table a.text-dark {
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .text-muted,
+    body.theme-dark .text-muted {
+        color: #8fa3b8 !important;
+    }
+
+    [data-theme="dark"] .form-control,
+    body.theme-dark .form-control {
+        background-color: #111827 !important;
+        border-color: #25384d !important;
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .form-control:focus,
+    body.theme-dark .form-control:focus {
+        background-color: #111827 !important;
+        border-color: #2f80ed !important;
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .btn-light,
+    body.theme-dark .btn-light {
+        background: #223247 !important;
+        border-color: #33465f !important;
+        color: #ffffff !important;
+    }
+
+    
+
 </style>

@@ -17,23 +17,27 @@
                 </div>
             </div>
 
-            <div class="col-auto ml-auto">
-                <div class="btn-list">
+                <div class="col-auto ms-auto">
+                    <div class="btn-list">
 
-                    <a href="{{ route('assesment.edit.score.index') }}"
-                       class="btn btn-warning owl-action-btn">
-                        <i class="fas fa-pen mr-1"></i>
-                        Edit Score
-                    </a>
+                        <a href="{{ route('assesment.edit.score.index') }}"
+                        class="btn btn-warning d-inline-flex align-items-center">
 
-                    <a href="{{ route('assesment.create') }}"
-                       class="btn btn-primary owl-action-btn">
-                        <i class="fas fa-plus mr-1"></i>
-                        Add Assessment
-                    </a>
+                            <i class="fas fa-pen me-2"></i>
+                            <span>Edit Score</span>
 
+                        </a>
+
+                        <a href="{{ route('assesment.create') }}"
+                        class="btn btn-primary d-inline-flex align-items-center">
+
+                            <i class="fas fa-plus me-2"></i>
+                            <span>Add Assessment</span>
+
+                        </a>
+
+                    </div>
                 </div>
-            </div>
 
         </div>
 

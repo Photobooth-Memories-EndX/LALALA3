@@ -29,6 +29,13 @@
             <span>Generate New Link</span>
         </a>
 
+        <a href="{{ route('assesment.question', $list->slug) }}"
+            class="dropdown-item">
+
+            <i class="fas fa-list-check text-success"></i>
+            <span>Question List</span>
+        </a>
+
         <a href="{{ route('assesment.result', $list->slug) }}"
             class="dropdown-item">
 
@@ -36,12 +43,29 @@
             <span>View Result</span>
         </a>
 
-        <a href="{{ route('assesment.clone', $list->slug) }}"
+        <a href="{{ route('assesment.assign.users.index', $list->slug) }}"
             class="dropdown-item">
+
+            <i class="fas fa-users text-secondary"></i>
+            <span>Assign Users</span>
+        </a>
+
+        <a href="{{ route('assesment.clone', $list->slug) }}"
+            class="dropdown-item"
+            onclick="return confirm('Clone this assessment ?')">
 
             <i class="fas fa-copy text-warning"></i>
             <span>Clone Assessment</span>
         </a>
+
+        <button
+            type="button"
+            class="dropdown-item btn-copy-assessment"
+            data-copy-text="{{ route('assesment.user.view', $list->slug) }}">
+
+            <i class="fas fa-copy text-info"></i>
+            <span>Copy Assessment Link</span>
+        </button>
 
         <div class="dropdown-divider"></div>
 
@@ -56,7 +80,7 @@
                 class="dropdown-item dropdown-delete"
                 onclick="return confirm('Delete this assessment ?')">
 
-                <i class="fas fa-trash-alt"></i>
+                <i class="fas fa-trash-alt text-danger"></i>
                 <span>Delete Assessment</span>
             </button>
 

@@ -40,9 +40,10 @@
             <button
                 type="button"
                 class="btn btn-sm btn-light btn-copy-assessment"
-                data-copy-text="{{ $assessmentUrl }}"
+                data-copy-text="{{ $list->unique_code }}"
+                data-copy-label="Assessment Code"
                 data-toggle="tooltip"
-                title="Copy assessment link">
+                title="Copy assessment code">
                 <i class="fas fa-copy"></i>
             </button>
         </div>

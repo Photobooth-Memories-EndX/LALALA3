@@ -230,6 +230,174 @@
             height: 190px;
         }
     }
+
+
+    [data-bs-theme="dark"] .card,
+    [data-theme="dark"] .card,
+    body.theme-dark .card {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .card-header,
+    [data-theme="dark"] .card-header,
+    body.theme-dark .card-header {
+        background-color: var(--tblr-bg-surface-secondary, #1f2d3d) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .card-body,
+    [data-theme="dark"] .card-body,
+    body.theme-dark .card-body {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+    }
+
+    [data-bs-theme="dark"] .table,
+    [data-theme="dark"] .table,
+    body.theme-dark .table {
+        color: var(--tblr-body-color, #dce6f1) !important;
+        background-color: transparent !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .table thead th,
+    [data-theme="dark"] .table thead th,
+    body.theme-dark .table thead th {
+        background-color: var(--tblr-bg-surface-secondary, #223247) !important;
+        color: var(--tblr-muted, #8fa3b8) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .table tbody tr,
+    [data-theme="dark"] .table tbody tr,
+    body.theme-dark .table tbody tr {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+    }
+
+    [data-bs-theme="dark"] .table tbody td,
+    [data-theme="dark"] .table tbody td,
+    body.theme-dark .table tbody td {
+        background-color: transparent !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .table-hover tbody tr:hover,
+    [data-bs-theme="dark"] .table-hover tbody tr:hover td,
+    [data-theme="dark"] .table-hover tbody tr:hover,
+    [data-theme="dark"] .table-hover tbody tr:hover td,
+    body.theme-dark .table-hover tbody tr:hover,
+    body.theme-dark .table-hover tbody tr:hover td {
+        background-color: var(--tblr-bg-surface-secondary, #223247) !important;
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .bg-white,
+    [data-theme="dark"] .bg-white,
+    body.theme-dark .bg-white {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+    }
+
+    [data-bs-theme="dark"] .bg-light,
+    [data-theme="dark"] .bg-light,
+    body.theme-dark .bg-light {
+        background-color: var(--tblr-bg-surface-secondary, #223247) !important;
+    }
+
+    [data-bs-theme="dark"] .text-dark,
+    [data-theme="dark"] .text-dark,
+    body.theme-dark .text-dark {
+        color: var(--tblr-body-color, #dce6f1) !important;
+    }
+
+    [data-bs-theme="dark"] .text-muted,
+    [data-theme="dark"] .text-muted,
+    body.theme-dark .text-muted {
+        color: var(--tblr-muted, #8fa3b8) !important;
+    }
+
+    [data-bs-theme="dark"] .form-control,
+    [data-bs-theme="dark"] .form-select,
+    [data-theme="dark"] .form-control,
+    [data-theme="dark"] .form-select,
+    body.theme-dark .form-control,
+    body.theme-dark .form-select {
+        background-color: var(--tblr-bg-surface, #111827) !important;
+        color: var(--tblr-body-color, #ffffff) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .form-control:focus,
+    [data-bs-theme="dark"] .form-select:focus,
+    [data-theme="dark"] .form-control:focus,
+    [data-theme="dark"] .form-select:focus,
+    body.theme-dark .form-control:focus,
+    body.theme-dark .form-select:focus {
+        background-color: var(--tblr-bg-surface, #111827) !important;
+        color: #ffffff !important;
+        border-color: var(--tblr-primary, #206bc4) !important;
+        box-shadow: 0 0 0 .25rem rgba(32, 107, 196, .25) !important;
+    }
+
+    [data-bs-theme="dark"] .btn-light,
+    [data-theme="dark"] .btn-light,
+    body.theme-dark .btn-light {
+        background-color: var(--tblr-bg-surface-secondary, #223247) !important;
+        border-color: var(--tblr-border-color, #33465f) !important;
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .page-title,
+    [data-theme="dark"] .page-title,
+    body.theme-dark .page-title {
+        color: var(--tblr-body-color, #ffffff) !important;
+    }
+
+    [data-bs-theme="dark"] .breadcrumb a,
+    [data-theme="dark"] .breadcrumb a,
+    body.theme-dark .breadcrumb a {
+        color: var(--tblr-primary, #4299e1) !important;
+    }
+
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection,
+    [data-theme="dark"] .select2-container--bootstrap-5 .select2-selection,
+    body.theme-dark .select2-container--bootstrap-5 .select2-selection {
+        background-color: var(--tblr-bg-surface, #111827) !important;
+        color: #ffffff !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection__rendered,
+    [data-theme="dark"] .select2-container--bootstrap-5 .select2-selection__rendered,
+    body.theme-dark .select2-container--bootstrap-5 .select2-selection__rendered {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .select2-dropdown,
+    [data-theme="dark"] .select2-dropdown,
+    body.theme-dark .select2-dropdown {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .select2-results__option,
+    [data-theme="dark"] .select2-results__option,
+    body.theme-dark .select2-results__option {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .select2-results__option--highlighted,
+    [data-theme="dark"] .select2-results__option--highlighted,
+    body.theme-dark .select2-results__option--highlighted {
+        background-color: var(--tblr-primary, #206bc4) !important;
+        color: #ffffff !important;
+    }
+
 </style>
 
 {{-- Select2 --}}
