@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
+use App\Models\CertificateSetting;
 
 class Content extends Model
 {
@@ -48,5 +49,9 @@ class Content extends Model
     public function getRouteKeyName()
     {
         return 'slug';
+    }
+    public function certificateSetting()
+    {
+        return $this->hasOne(CertificateSetting::class, 'content_id');
     }
 }

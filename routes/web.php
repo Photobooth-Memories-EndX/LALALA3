@@ -35,17 +35,9 @@ use App\Http\Controllers\AssesmentQuestionController;
 use App\Http\Controllers\QuestionBankController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ManageDashboardController;
+use App\Http\Controllers\CertificateController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
+
 
 // Route::get('/', function () {
 //     return view('welcome');
@@ -64,7 +56,7 @@ Route::group(['prefix' => 'page'], function () {
     Route::get('/{slug}', [PagesUserController::class, 'view'])->name('pages.user.view');
 });
 
-Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {   
+Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
 
 // datatable dahboard admin
     Route::get('learning/datatable', [LearningManageController::class, 'datatable'])
@@ -110,7 +102,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
         [UserController::class, 'getEmployeeData']
         )->name('user.getEmployeeData');
 
-    
+        /*
+    |--------------------------------------------------------------------------
+    | Certificate Setting
+    |--------------------------------------------------------------------------
+    */
+    Route::get('certificate-setting', [CertificateController::class, 'index'])->name('certificate.setting.index');
+
     Route::resource('news', NewsController::class);
     Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     Route::resource('pages', PagesController::class);
@@ -216,7 +214,7 @@ Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
     Route::post('/{slug}/bookmark', [ContentUserController::class, 'toggleBookmark'])->name('content.user.bookmark');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storecontent'])->name('content.comment.store');
     Route::post('/{slug}/commentplaylist/store', [CommentController::class, 'storecontentplaylist'])->name('contentplaylist.comment.store');
-    
+
 });
 
     Route::middleware('auth')->group(function () {
@@ -252,3 +250,5 @@ Route::get('/assessment-access', [LoginController::class, 'assessmentAccess'])->
 Route::post('/login', [LoginController::class, 'authenticate'])->name('authuser');
 Route::get('/sso', [LoginController::class, 'checksso'])->name('checksso');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logoutpage');
+
+

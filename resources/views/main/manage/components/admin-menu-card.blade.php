@@ -1,4 +1,4 @@
-<div class="col-sm-6 col-lg-4 col-xl-3">
+<div class="col-sm-6 col-lg-4 col-xl-3 mb-3">
 
     <a href="{{ $url }}"
        class="text-decoration-none text-reset">
@@ -21,7 +21,7 @@
 
                 <div class="d-flex align-items-center text-primary fw-semibold small">
                     {{ $button }}
-                    <i class="ti ti-arrow-right ms-1"></i>
+                    <i class="ti ti-arrow-right ml-1"></i>
                 </div>
 
             </div>

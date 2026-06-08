@@ -9,7 +9,7 @@
         </div>
     </div>
 
-    <div class="row g-3">
+    <div class="row">
 
         @include('main.manage.components.admin-menu-card', [
             'title' => 'Learning Management',
@@ -99,6 +99,16 @@
             'icon' => 'ti ti-photo'
         ])
 
+        @include('main.manage.components.admin-menu-card', [
+            'title' => 'Certificate Setting',
+            'description' => 'Mengatur syarat pembuatan sertifikat seperti minimum progress, minimum score, issuer name, logo penerbit, dan status sertifikat.',
+            'url' => route('certificate.setting.index'),
+            'button' => 'Manage Certificate',
+            'icon' => 'ti ti-award'
+        ])
+
     </div>
+
+
 
 </div>

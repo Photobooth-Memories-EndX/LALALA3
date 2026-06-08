@@ -9,11 +9,12 @@ use App\Models\Classification;
 use App\Models\TrainingPlan;
 use App\Models\Assesment;
 use App\Models\EventPhoto;
+use App\Models\CertificateSetting;
 
 
 class ManageDashboardController extends Controller
 {
-    public function index()
+     public function index()
     {
         abort_unless(in_array(auth()->user()->role, ['2', '3']), 403);
 
@@ -25,6 +26,7 @@ class ManageDashboardController extends Controller
             'assessment' => Assesment::where('created_at', '>=', $startMonth)->count(),
             'playlist' => TrainingPlan::where('created_at', '>=', $startMonth)->count(),
             'news' => News::where('created_at', '>=', $startMonth)->count(),
+            'certificate_setting' => CertificateSetting::where('created_at', '>=', $startMonth)->count(),
         ];
 
         $recentActivities = collect()
@@ -60,6 +62,14 @@ class ManageDashboardController extends Controller
                 'time' => $item->created_at,
                 'url' => url('manage/news/' . $item->slug . '/edit'),
             ]))
+            ->merge(CertificateSetting::latest()->take(3)->get()->map(fn ($item) => [
+                'type' => 'Certificate Setting',
+                'title' => $item->issuer_name ?? 'Certificate Setting',
+                'icon' => 'ti ti-award',
+                'color' => 'purple',
+                'time' => $item->created_at,
+                'url' => route('certificate.setting.index'),
+            ]))
             ->sortByDesc('time')
             ->take(4)
             ->values();
@@ -82,6 +92,7 @@ class ManageDashboardController extends Controller
             'totalAssessments' => Assesment::count(),
             'totalPlaylists' => TrainingPlan::count(),
             'totalGallery' => EventPhoto::count(),
+            'totalCertificateSettings' => CertificateSetting::count(),
             'monthlyUploads' => $monthlyUploads,
             'recentActivities' => $recentActivities,
             'topContributors' => $topContributors,

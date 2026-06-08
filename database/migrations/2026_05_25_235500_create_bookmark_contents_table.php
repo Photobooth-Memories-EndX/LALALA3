@@ -8,14 +8,28 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('bookmark_contents', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('content_id')->constrained('content')->cascadeOnDelete();
-            $table->timestamps();
+        if (!Schema::hasTable('bookmark_contents')) {
 
-            $table->unique(['user_id', 'content_id']);
-        });
+            Schema::create('bookmark_contents', function (Blueprint $table) {
+                $table->id();
+
+                $table->foreignId('user_id')
+                    ->constrained()
+                    ->cascadeOnDelete();
+
+                $table->foreignId('content_id')
+                    ->constrained('content')
+                    ->cascadeOnDelete();
+
+                $table->timestamps();
+
+                $table->unique([
+                    'user_id',
+                    'content_id'
+                ]);
+            });
+
+        }
     }
 
     public function down()
