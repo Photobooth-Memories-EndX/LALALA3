@@ -8,6 +8,7 @@ use App\Models\Classification;
 use App\Models\ContentUser;
 use App\Models\User;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class ContentController extends Controller
 {
@@ -96,17 +97,8 @@ class ContentController extends Controller
 
     public function store(Request $request)
     {
-        //
-        // $request->validate([
-        //     'title' => 'required',
-        //     'type' => 'required',
-        //     'classification' => 'required',
-        //     'date' => 'required',
-        //     'author' => 'required',
-        //     'duration' => 'required',
-        //     'description' => 'required'
-        // ]);
-        // return $request;
+        Log::info('ContentController@store called', ['user_id' => auth()->id(), 'payload' => $request->all()]);
+
         if ($request->type == "YouTube") {
             parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
             // $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];

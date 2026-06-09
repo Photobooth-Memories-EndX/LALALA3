@@ -11,21 +11,70 @@
 
     :root {
         --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+        --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+
+        --tblr-primary-rgb: 37, 99, 235;
+        --tblr-primary: rgb(var(--tblr-primary-rgb));
+        --tblr-secondary: 29, 78, 216;
+        --tblr-body-color: #0f172a;
+        --tblr-bg-surface: #ffffff;
+        --tblr-border-color: #e6e7e9;
+        --tblr-muted: #64748b;
+
+        --owl-primary-rgb: var(--tblr-primary-rgb);
+        --owl-primary: var(--tblr-primary, rgb(var(--owl-primary-rgb)));
+        --owl-secondary: var(--tblr-secondary, #1d4ed8);
+        --owl-primary-light: #3b82f6;
+        --owl-accent: #f8fbff;
+        --owl-surface: var(--tblr-bg-surface, #ffffff);
+        --owl-surface-alt: #f8fafc;
+        --owl-text: var(--tblr-body-color, #0f172a);
+        --owl-text-secondary: #475569;
+        --owl-text-tertiary: #94a3b8;
+        --owl-border: var(--tblr-border-color, #e6e7e9);
+        --owl-border-soft: rgba(226, 232, 240, 0.75);
+        --owl-shadow: 0 15px 40px rgba(15, 23, 42, 0.08);
+        --owl-shadow-md: 0 12px 30px rgba(15, 23, 42, 0.08);
+        --owl-shadow-lg: 0 18px 70px rgba(15, 23, 42, 0.12);
+    }
+
+    body[data-bs-theme="dark"], body.dark-mode {
+        --owl-body-bg: #020617;
+        --owl-body-color: #f8fafc;
+        --owl-text: #f8fafc;
+        --owl-text-secondary: #cbd5e1;
+        --owl-text-tertiary: #94a3b8;
+        --owl-surface: #111827;
+        --owl-surface-alt: #1f2937;
+        --owl-border: #334155;
+        --owl-border-soft: rgba(148, 163, 184, 0.24);
+        --owl-shadow: 0 15px 40px rgba(15, 23, 42, 0.32);
+        --owl-shadow-md: 0 12px 30px rgba(15, 23, 42, 0.24);
+        --owl-shadow-lg: 0 18px 70px rgba(15, 23, 42, 0.32);
     }
 
     body {
         font-feature-settings: "cv03", "cv04", "cv11";
+        color: var(--owl-body-color);
+        background: var(--owl-body-bg);
+        transition: background 0.25s ease, color 0.25s ease;
     }
-    .navbar-vertical {
+    /* .navbar-vertical {
         background-color: #ffffff !important;
         border-right: 1px solid #e6e7e9 !important;
+    } */
+
+        .navbar-vertical {
+        background-color: var(--owl-surface) !important;
+        border-right: 1px solid var(--owl-border) !important;
     }
 
     .navbar-vertical .nav-link,
     .navbar-vertical .nav-link-icon,
     .navbar-vertical .nav-link-title,
     .navbar-vertical .ti {
-        color: #111827 !important;
+        /* color: #111827 !important; */
+        color: var(--owl-body-color) !important;
     }
 
     .navbar-vertical .nav-link {
@@ -42,13 +91,18 @@
     .navbar-vertical .nav-item.active > .nav-link {
         background: #eef3ff !important;
         color: #206bc4 !important;
+        /* background: rgba(37, 99, 235, 0.12) !important;
+        color: var(--tblr-primary) !important; */
     }
 
     .navbar-vertical .nav-link:hover .ti,
     .navbar-vertical .nav-link:hover .nav-link-title,
     .navbar-vertical .nav-item.active > .nav-link .ti,
     .navbar-vertical .nav-item.active > .nav-link .nav-link-title {
-        color: #206bc4 !important;
+        /* color: #206bc4 !important; */
+        color: var(--tblr-primary) !important;
+
+
     }
 
     .navbar-vertical .badge {
@@ -57,26 +111,32 @@
 
     .navbar-vertical .dropdown-menu {
         border-radius: 12px;
-        border: 1px solid #e6e7e9;
+        /* border: 1px solid #e6e7e9; */
+        border: 1px solid var(--owl-border);
+        background: var(--owl-surface);
     }
 
     .navbar-vertical .dropdown-item {
         display: flex;
         align-items: center;
-        color: #111827 !important;
+        /* color: #111827 !important; */
+        color: var(--owl-body-color) !important;
         font-weight: 500;
     }
 
     .navbar-vertical .dropdown-item .ti {
-        color: #111827 !important;
+        /* color: #111827 !important; */
+        color: var(--owl-body-color) !important;
     }
 
     .avatar-default-icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: #eef3ff;
-        color: #206bc4;
+        /* background: #eef3ff;
+        color: #206bc4; */
+        background: var(--tblr-primary-lt);
+        color: var(--tblr-primary);
         font-size: 18px;
         font-weight: 600;
     }

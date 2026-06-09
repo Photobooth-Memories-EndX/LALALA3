@@ -12,6 +12,8 @@ class CommentLike extends Model
     protected $fillable = [
         'comment_id',
         'user_id',
+        'reference_type',
+        'reference_id',
     ];
 
     public function comment()

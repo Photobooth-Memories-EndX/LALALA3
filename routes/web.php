@@ -217,6 +217,13 @@ Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
 
 });
 
+// comment news
+Route::middleware('auth')->group(function () {
+    Route::post('/comment/{id}/like', [CommentController::class, 'toggleLike'])
+        ->name('comment.like');
+});
+
+
     Route::middleware('auth')->group(function () {
         Route::post('/comment/{id}/like', [CommentController::class, 'toggleLike'])
             ->name('comment.like');
