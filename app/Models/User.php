@@ -102,7 +102,23 @@ class User extends Authenticatable
         return $this->hasMany(BookmarkContent::class);
     }
 
-        /**
+
+    public function commentLikes()
+    {
+        return $this->hasMany(CommentLike::class);
+    }
+
+    public function commentReplies()
+    {
+        return $this->hasMany(CommentReply::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
      * Get all news articles published by this user
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany

@@ -11,6 +11,30 @@
     $themeMode = request('theme') === 'dark' ? 'dark' : 'light';
 @endphp
 <body data-bs-theme="{{ $themeMode }}" class="{{ $themeMode === 'dark' ? 'dark-mode' : '' }}">
+    <script>
+        (function() {
+            const validThemes = ['light', 'dark'];
+            const params = new URLSearchParams(window.location.search);
+            const urlTheme = params.get('theme');
+            const storedTheme = localStorage.getItem('owl-dark-mode');
+            const normalize = (value) => {
+                if (!value) return null;
+                const normalized = String(value).trim().toLowerCase();
+                if (normalized === 'true') return 'dark';
+                if (normalized === 'false') return 'light';
+                return validThemes.includes(normalized) ? normalized : null;
+            };
+            let theme = normalize(urlTheme) || normalize(storedTheme);
+            if (!theme) {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            localStorage.setItem('owl-dark-mode', theme);
+            document.documentElement.dataset.bsTheme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            document.body.dataset.bsTheme = theme;
+            document.body.classList.toggle('dark-mode', theme === 'dark');
+        })();
+    </script>
     <script src="{{ asset('Tabler/dist/js/demo-theme.min.js') }}"></script>
 
     <div class="page">

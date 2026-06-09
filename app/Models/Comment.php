@@ -13,10 +13,17 @@ class Comment extends Model
         'content_id',
         'news_id',
         'eventphoto_id',
+        'reference_type',
+        'reference_id',
         'user_id',
         'parent_id',
         'type',
         'description',
+        'is_edited',
+    ];
+
+    protected $casts = [
+        'is_edited' => 'boolean',
     ];
 
     /*
@@ -80,6 +87,15 @@ class Comment extends Model
             ->with('user')
             ->latest();
     }
+ /*
+    |--------------------------------------------------------------------------
+    | REPLY SYSTEM GALERY
+    |--------------------------------------------------------------------------
+    */
+    public function commentReplies()
+    {
+        return $this->hasMany(CommentReply::class);
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -126,5 +142,41 @@ class Comment extends Model
         }
 
         return $this->likedByUser()->exists();
+    }
+
+    public function resolvedReference(): array
+    {
+        if ($this->reference_type && $this->reference_id) {
+            return [
+                'reference_type' => $this->reference_type,
+                'reference_id' => $this->reference_id,
+            ];
+        }
+
+        if ($this->type === 'content') {
+            return [
+                'reference_type' => 'content',
+                'reference_id' => $this->content_id,
+            ];
+        }
+
+        if ($this->type === 'news') {
+            return [
+                'reference_type' => 'news',
+                'reference_id' => $this->news_id,
+            ];
+        }
+
+        if ($this->type === 'eventphoto') {
+            return [
+                'reference_type' => 'gallery',
+                'reference_id' => $this->eventphoto_id,
+            ];
+        }
+
+        return [
+            'reference_type' => null,
+            'reference_id' => null,
+        ];
     }
 }

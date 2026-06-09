@@ -1,40 +1,33 @@
 @props(['content', 'comment'])
 
 @php
+    $slug = optional($content)->slug;
+
     if ($attributes->get('type') == 'content') {
         $hiddenplaylistslug = '';
-        $url = route('content.comment.store', $content->slug);
+        $url = $slug ? route('content.comment.store', $slug) : '#';
     } elseif ($attributes->get('type') == 'news') {
         $hiddenplaylistslug = '';
-        $url = route('news.comment.store', $content->slug);
+        $url = $slug ? route('news.comment.store', $slug) : '#';
     } elseif ($attributes->get('type') == 'contentplaylist') {
         $hiddenplaylistslug = $attributes->get('playlistslug');
-        $url = route('contentplaylist.comment.store', $content->slug);
+        $url = $slug ? route('contentplaylist.comment.store', $slug) : '#';
     } else {
         $hiddenplaylistslug = '';
-        $url = route('gallery.comment.store', $content->slug);
+        $url = $slug ? route('gallery.comment.store', $slug) : '#';
     }
 
     $user = auth()->user();
+    $commentTotal = method_exists($comment, 'total') ? $comment->total() : $comment->count();
 @endphp
 
 <div class="mt-3 mb-4">
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden" id="comment">
 
-        <div class="card-body p-3 border-bottom bg-white">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                    <h5 class="fw-bold mb-1">
-                        <i class="ti ti-message-circle text-primary me-1"></i>
-                        Diskusi Kursus
-                    </h5>
-                    <div class="text-muted small">
-                        Bagikan pertanyaan atau insight Anda.
-                    </div>
-                </div>
+
 
                 <span class="badge bg-primary-lt text-primary rounded-pill px-3 py-2 small">
-                    {{ $comment->total() }} Comments
+                    {{ $commentTotal }} Comments
                 </span>
             </div>
 
@@ -98,7 +91,7 @@
                 </div>
             @endforelse
 
-            @if($comment->hasPages())
+            @if(method_exists($comment, 'hasPages') && $comment->hasPages())
                 <div class="p-3 border-top d-flex justify-content-center">
                     {{ $comment->links() }}
                 </div>
