@@ -2,33 +2,41 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Assesment;
-use App\Models\Content;
 
 class CertificateSetting extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'assessment_id',
+        'certificate_type',
         'content_id',
+        'trainingplan_id',
+        'assessment_id',
+        'is_assessment_required',
         'minimum_progress',
         'minimum_score',
         'issuer_name',
         'issuer_logo',
+        'certificate_template',
         'is_active',
     ];
 
-    public function assessment()
-    {
-        return $this->belongsTo(Assesment::class, 'assessment_id');
-    }
+    protected $casts = [
+        'is_assessment_required' => 'boolean',
+        'is_active' => 'boolean',
+    ];
 
     public function content()
     {
         return $this->belongsTo(Content::class, 'content_id');
     }
 
+    public function trainingPlan()
+    {
+        return $this->belongsTo(TrainingPlan::class, 'trainingplan_id');
+    }
+
+    public function assessment()
+    {
+        return $this->belongsTo(Assesment::class, 'assessment_id');
+    }
 }

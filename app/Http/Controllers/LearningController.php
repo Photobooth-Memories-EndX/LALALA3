@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assesment;
 use App\Models\AssesmentResult;
 use App\Models\ContentUser;
+use App\Models\CertificateSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -32,7 +33,21 @@ class LearningController extends Controller
             ->latest()
             ->get();
 
-        return view('user.learning.finish', compact('content_user'));
+        $certificateSettings = CertificateSetting::with([
+                'content',
+                'trainingPlan',
+                'assessment',
+            ])
+            ->where('is_active', 1)
+            ->get();
+
+        return view(
+            'user.learning.finish',
+            compact(
+                'content_user',
+                'certificateSettings'
+            )
+        );
     }
 
     public function assesment()

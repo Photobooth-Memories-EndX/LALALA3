@@ -1,6 +1,7 @@
 @props([
     'contentUser',
     'averageProgress' => 0,
+    'certificateSettings' => collect(),
 ])
 
 <div class="card border-0 shadow-sm rounded-4 mb-3">
@@ -62,7 +63,29 @@
                                 }
 
                                 $type = $content->type ?? 'Content';
-                                $typeLower = strtolower($type);
+
+                                $certificateSetting = collect($certificateSettings)
+                                    ->where('certificate_type', 'content')
+                                    ->where('content_id', $content->id ?? null)
+                                    ->first();
+
+                                $minimumProgress = $certificateSetting->minimum_progress ?? 100;
+                                $minimumScore = $certificateSetting->minimum_score ?? null;
+
+                                $isProgressPassed = $progress >= $minimumProgress;
+
+                                $isAssessmentPassed = true;
+
+                                if ($certificateSetting && $certificateSetting->is_assessment_required) {
+                                    $isAssessmentPassed = !is_null($score)
+                                        && !is_null($minimumScore)
+                                        && $score >= $minimumScore;
+                                }
+
+                                $canGenerateCertificate = $certificateSetting
+                                    && $certificateSetting->is_active
+                                    && $isProgressPassed
+                                    && $isAssessmentPassed;
                             @endphp
 
                             <tr>
@@ -124,9 +147,17 @@
                                 </td>
 
                                 <td>
-                                    <span class="badge bg-secondary-lt text-secondary">
-                                        -
-                                    </span>
+                                    @if($canGenerateCertificate)
+                                        <a href="{{ route('certificate.generate', $list->id) }}"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="ti ti-certificate mr-1"></i>
+                                            Generate
+                                        </a>
+                                    @else
+                                        <span class="badge bg-secondary-lt text-secondary">
+                                            Not Available
+                                        </span>
+                                    @endif
                                 </td>
                             </tr>
                         @endif

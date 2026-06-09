@@ -36,6 +36,7 @@ use App\Http\Controllers\QuestionBankController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ManageDashboardController;
 use App\Http\Controllers\CertificateController;
+use App\Http\Controllers\UserCertificateController;
 
 
 
@@ -102,12 +103,36 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
         [UserController::class, 'getEmployeeData']
         )->name('user.getEmployeeData');
 
-        /*
-    |--------------------------------------------------------------------------
-    | Certificate Setting
-    |--------------------------------------------------------------------------
-    */
-    Route::get('certificate-setting', [CertificateController::class, 'index'])->name('certificate.setting.index');
+            /*
+        |--------------------------------------------------------------------------
+        | Manage Certificate Setting
+        |--------------------------------------------------------------------------
+        */
+        Route::get('certificate-setting', [CertificateController::class, 'index'])
+            ->name('certificate.setting.index');
+
+        Route::post('certificate-setting', [CertificateController::class, 'store'])
+            ->name('certificate.setting.store');
+
+        Route::put('certificate-setting/{certificateSetting}', [CertificateController::class, 'update'])
+            ->name('certificate.setting.update');
+
+        Route::delete('certificate-setting/{certificateSetting}', [CertificateController::class, 'destroy'])
+            ->name('certificate.setting.destroy');
+
+        Route::get('certificate-setting/ajax/items', [CertificateController::class, 'getItemsByType'])
+            ->name('certificate.setting.ajax.items');
+
+        Route::get('certificate-setting/ajax/assessments', [CertificateController::class, 'getAssessmentsByType'])
+            ->name('certificate.setting.ajax.assessments');
+
+        Route::get('certificate-setting/{certificateSetting}/preview-template', [CertificateController::class, 'previewTemplate'])
+            ->name('certificate.setting.preview.template');
+
+        Route::get('certificate-setting/{certificateSetting}/preview-generated', [CertificateController::class, 'previewGenerated'])
+            ->name('certificate.setting.preview.generated');
+
+
 
     Route::resource('news', NewsController::class);
     Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
@@ -250,5 +275,17 @@ Route::get('/assessment-access', [LoginController::class, 'assessmentAccess'])->
 Route::post('/login', [LoginController::class, 'authenticate'])->name('authuser');
 Route::get('/sso', [LoginController::class, 'checksso'])->name('checksso');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logoutpage');
+
+/*
+|--------------------------------------------------------------------------
+| Certificate Setting
+|--------------------------------------------------------------------------
+ */
+Route::middleware(['auth'])->group(function () {
+    Route::get(
+        '/certificate/generate/{contentUser}',
+        [UserCertificateController::class, 'generate']
+    )->name('certificate.generate');
+});
 
 

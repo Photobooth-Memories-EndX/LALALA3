@@ -6,6 +6,7 @@
     active="record"
     title="Learning Dashboard"
     subtitle="Laporan dan riwayat pembelajaran Anda."
+    
 >
     @php
         $items = collect($content_user ?? []);

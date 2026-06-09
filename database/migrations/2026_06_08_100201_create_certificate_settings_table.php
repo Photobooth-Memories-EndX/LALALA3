@@ -14,20 +14,23 @@ class CreateCertificateSettingsTable extends Migration
 
                 $table->id();
 
-                $table->unsignedBigInteger('assessment_id')->nullable();
+                $table->string('certificate_type')->default('content');
+
                 $table->unsignedBigInteger('content_id')->nullable();
+                $table->unsignedBigInteger('trainingplan_id')->nullable();
+                $table->unsignedBigInteger('assessment_id')->nullable();
+
+                $table->boolean('is_assessment_required')->default(false);
 
                 $table->integer('minimum_progress')->default(100);
-                $table->integer('minimum_score')->default(80);
+                $table->integer('minimum_score')->nullable();
 
-                $table->string('issuer_name')
-                    ->default('OWL Training Management');
+                $table->string('issuer_name')->default('OWL Training Management');
+                $table->string('issuer_logo')->nullable();
 
-                $table->string('issuer_logo')
-                    ->nullable();
+                $table->string('certificate_template')->nullable();
 
-                $table->boolean('is_active')
-                    ->default(true);
+                $table->boolean('is_active')->default(true);
 
                 $table->timestamps();
             });
@@ -36,33 +39,48 @@ class CreateCertificateSettingsTable extends Migration
 
             Schema::table('certificate_settings', function (Blueprint $table) {
 
-                if (!Schema::hasColumn('certificate_settings', 'assessment_id')) {
-                    $table->unsignedBigInteger('assessment_id')->nullable()->after('id');
+                if (!Schema::hasColumn('certificate_settings', 'certificate_type')) {
+                    $table->string('certificate_type')->default('content')->after('id');
                 }
 
                 if (!Schema::hasColumn('certificate_settings', 'content_id')) {
-                    $table->unsignedBigInteger('content_id')->nullable()->after('assessment_id');
+                    $table->unsignedBigInteger('content_id')->nullable()->after('certificate_type');
+                }
+
+                if (!Schema::hasColumn('certificate_settings', 'trainingplan_id')) {
+                    $table->unsignedBigInteger('trainingplan_id')->nullable()->after('content_id');
+                }
+
+                if (!Schema::hasColumn('certificate_settings', 'assessment_id')) {
+                    $table->unsignedBigInteger('assessment_id')->nullable()->after('trainingplan_id');
+                }
+
+                if (!Schema::hasColumn('certificate_settings', 'is_assessment_required')) {
+                    $table->boolean('is_assessment_required')->default(false)->after('assessment_id');
                 }
 
                 if (!Schema::hasColumn('certificate_settings', 'minimum_progress')) {
-                    $table->integer('minimum_progress')->default(100);
+                    $table->integer('minimum_progress')->default(100)->after('is_assessment_required');
                 }
 
                 if (!Schema::hasColumn('certificate_settings', 'minimum_score')) {
-                    $table->integer('minimum_score')->default(80);
+                    $table->integer('minimum_score')->nullable()->after('minimum_progress');
                 }
 
                 if (!Schema::hasColumn('certificate_settings', 'issuer_name')) {
-                    $table->string('issuer_name')
-                        ->default('OWL Training Management');
+                    $table->string('issuer_name')->default('OWL Training Management')->after('minimum_score');
                 }
 
                 if (!Schema::hasColumn('certificate_settings', 'issuer_logo')) {
-                    $table->string('issuer_logo')->nullable();
+                    $table->string('issuer_logo')->nullable()->after('issuer_name');
+                }
+
+                if (!Schema::hasColumn('certificate_settings', 'certificate_template')) {
+                    $table->string('certificate_template')->nullable()->after('issuer_logo');
                 }
 
                 if (!Schema::hasColumn('certificate_settings', 'is_active')) {
-                    $table->boolean('is_active')->default(true);
+                    $table->boolean('is_active')->default(true)->after('certificate_template');
                 }
             });
 
