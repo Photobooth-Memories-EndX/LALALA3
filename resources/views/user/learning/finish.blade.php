@@ -210,6 +210,61 @@
     </div>
 </div>
 
+<div class="page-body pt-0">
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Certificates</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr><th>Type</th><th>Certificate</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                    @forelse($certificateOpportunities ?? [] as $item)
+                        @php
+                            $setting = $item['setting'];
+                            $certificate = $item['certificate'];
+                            $eligible = $item['eligibility']['eligible'];
+                        @endphp
+                        <tr>
+                            <td><span class="badge bg-blue-lt">{{ ucfirst($setting->certificate_type) }}</span></td>
+                            <td>{{ $setting->sourceTitle() }}</td>
+                            <td>
+                                @if($certificate)
+                                    <span class="badge bg-success-lt">Issued</span>
+                                @elseif($eligible)
+                                    <span class="badge bg-green-lt">Eligible</span>
+                                @else
+                                    <span class="text-muted">{{ $item['eligibility']['reason'] }}</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($certificate)
+                                    <a class="btn btn-sm btn-primary" href="{{ route('certificate.download', $certificate->credential_id) }}">Download</a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('certificate.verify', $certificate->credential_id) }}">Verify</a>
+                                    <a class="btn btn-sm btn-outline-info" target="_blank" rel="noopener" href="{{ $certificate->linkedin_url }}">LinkedIn</a>
+                                @elseif($eligible)
+                                    <form method="POST" action="{{ route('certificate.generate.setting', $setting) }}">
+                                        @csrf
+                                        <button class="btn btn-sm btn-primary" type="submit">Generate Certificate</button>
+                                    </form>
+                                @else
+                                    <span class="badge bg-secondary-lt">Not Available</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="4" class="text-center text-muted">No certificate setting available.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('style')

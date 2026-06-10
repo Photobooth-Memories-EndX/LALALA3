@@ -16,12 +16,15 @@ class CertificateSetting extends Model
         'minimum_score',
         'issuer_name',
         'issuer_logo',
+        'use_default_template',
         'certificate_template',
+        'background_image',
         'is_active',
     ];
 
     protected $casts = [
         'is_assessment_required' => 'boolean',
+        'use_default_template' => 'boolean',
         'is_active' => 'boolean',
     ];
 
@@ -38,5 +41,23 @@ class CertificateSetting extends Model
     public function assessment()
     {
         return $this->belongsTo(Assesment::class, 'assessment_id');
+    }
+
+    public function sourceId()
+    {
+        return $this->certificate_type === 'content'
+            ? $this->content_id
+            : ($this->certificate_type === 'playlist' ? $this->trainingplan_id : $this->assessment_id);
+    }
+
+    public function sourceTitle(): string
+    {
+        if ($this->certificate_type === 'content') {
+            return $this->content->title ?? 'Content Certificate';
+        }
+        if ($this->certificate_type === 'playlist') {
+            return $this->trainingPlan->title ?? 'Playlist Certificate';
+        }
+        return $this->assessment->title ?? 'Global Assessment Certificate';
     }
 }

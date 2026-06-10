@@ -7,6 +7,7 @@
     $issuerName = old('issuer_name', $setting->issuer_name ?? 'OWL Training Management');
     $isAssessmentRequired = old('is_assessment_required', $setting->is_assessment_required ?? false);
     $isActive = old('is_active', $setting->is_active ?? 1);
+    $useDefaultTemplate = old('use_default_template', $setting->use_default_template ?? true);
 @endphp
 
 <div class="form-group">
@@ -110,8 +111,17 @@
 </div>
 
 <div class="form-group">
-    <label class="form-label">Issuer Logo</label>
+    <label class="custom-control custom-checkbox">
+        <input type="checkbox" name="use_default_template" value="1"
+               class="custom-control-input certificate-default-template"
+               {{ $useDefaultTemplate ? 'checked' : '' }}>
+        <span class="custom-control-label">Use System Default Certificate</span>
+    </label>
+</div>
 
+<div class="certificate-custom-template-fields">
+<div class="form-group">
+    <label class="form-label">Logo</label>
     <input type="file"
            name="issuer_logo"
            class="form-control"
@@ -125,7 +135,7 @@
 </div>
 
 <div class="form-group">
-    <label class="form-label">Certificate Template / Design</label>
+    <label class="form-label">Custom Template / Design</label>
 
     <input type="file"
            name="certificate_template"
@@ -150,4 +160,13 @@
             OFF
         </option>
     </select>
+</div>
+
+<div class="form-group">
+    <label class="form-label">Custom Background</label>
+    <input type="file" name="background_image" class="form-control" accept="image/*">
+    @if($isEdit && !empty($setting->background_image))
+        <small class="text-muted d-block mt-1">Current: {{ $setting->background_image }}</small>
+    @endif
+</div>
 </div>

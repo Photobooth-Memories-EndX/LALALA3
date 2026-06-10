@@ -8,11 +8,13 @@ use App\Models\Content;
 use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use App\Services\CertificateSyncService;
 
 class CertificateController extends Controller
 {
-    public function index()
+    public function index(CertificateSyncService $syncService)
     {
+        $syncService->sync();
         $settings = CertificateSetting::with([
             'content',
             'trainingPlan',
@@ -39,6 +41,7 @@ public function store(Request $request)
         'issuer_name' => 'required|string|max:255',
         'issuer_logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
+        'background_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         'is_active' => 'required|boolean',
     ]);
 
@@ -49,9 +52,11 @@ public function store(Request $request)
         'minimum_score',
         'issuer_name',
         'is_active',
+        'use_default_template',
     ]);
 
     $data['is_assessment_required'] = $request->has('is_assessment_required') ? 1 : 0;
+    $data['use_default_template'] = $request->has('use_default_template');
 
     if ($data['is_assessment_required'] && empty($data['minimum_score'])) {
         return back()
@@ -75,6 +80,9 @@ public function store(Request $request)
             $request->file('certificate_template'),
             'uploads/certificates/templates'
         );
+    }
+    if ($request->hasFile('background_image')) {
+        $data['background_image'] = $this->uploadFile($request->file('background_image'), 'uploads/certificates/backgrounds');
     }
 
     CertificateSetting::create($data);
@@ -96,6 +104,7 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         'issuer_name' => 'required|string|max:255',
         'issuer_logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
+        'background_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         'is_active' => 'required|boolean',
     ]);
 
@@ -106,9 +115,11 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         'minimum_score',
         'issuer_name',
         'is_active',
+        'use_default_template',
     ]);
 
     $data['is_assessment_required'] = $request->has('is_assessment_required') ? 1 : 0;
+    $data['use_default_template'] = $request->has('use_default_template');
 
     if ($data['is_assessment_required'] && empty($data['minimum_score'])) {
         return back()
@@ -132,6 +143,9 @@ public function update(Request $request, CertificateSetting $certificateSetting)
             $request->file('certificate_template'),
             'uploads/certificates/templates'
         );
+    }
+    if ($request->hasFile('background_image')) {
+        $data['background_image'] = $this->uploadFile($request->file('background_image'), 'uploads/certificates/backgrounds');
     }
 
     $certificateSetting->update($data);

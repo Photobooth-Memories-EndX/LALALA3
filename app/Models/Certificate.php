@@ -9,6 +9,8 @@ class Certificate extends Model
     protected $fillable = [
         'user_id',
         'certificate_setting_id',
+        'certificate_type',
+        'source_id',
         'content_user_id',
         'assessment_result_id',
         'certificate_number',
@@ -33,5 +35,16 @@ class Certificate extends Model
     public function certificateSetting()
     {
         return $this->belongsTo(CertificateSetting::class);
+    }
+
+    public function getLinkedInUrlAttribute(): string
+    {
+        return 'https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME'
+            . '&name=' . urlencode($this->title)
+            . '&organizationName=' . urlencode($this->certificateSetting->issuer_name ?? 'OWL Training Management')
+            . '&issueYear=' . optional($this->issued_at)->format('Y')
+            . '&issueMonth=' . optional($this->issued_at)->format('m')
+            . '&certUrl=' . urlencode(route('certificate.verify', $this->credential_id))
+            . '&certId=' . urlencode($this->credential_id);
     }
 }

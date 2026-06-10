@@ -15,6 +15,11 @@
             }
         }
 
+        function toggleTemplateFields(form) {
+            form.find('.certificate-custom-template-fields')
+                .toggle(!form.find('.certificate-default-template').is(':checked'));
+        }
+
         function getSelectedItemId(form, type) {
             let itemSelect = form.find('.certificate-item-select');
 
@@ -119,6 +124,7 @@
             let form = $(this);
 
             toggleAssessmentInfo(form);
+            toggleTemplateFields(form);
 
             loadItems(form, function () {
                 loadAssessments(form);
@@ -154,6 +160,10 @@
             let form = $(this).closest('form');
 
             toggleAssessmentInfo(form);
+        });
+
+        $(document).on('change', '.certificate-default-template', function () {
+            toggleTemplateFields($(this).closest('form'));
         });
 
     });

@@ -293,6 +293,15 @@ Route::middleware(['auth'])->group(function () {
         '/certificate/generate/{contentUser}',
         [UserCertificateController::class, 'generate']
     )->name('certificate.generate');
+    Route::post('/certificate/generate-setting/{certificateSetting}', [UserCertificateController::class, 'generateSetting'])
+        ->name('certificate.generate.setting');
+    Route::get('/certificate/{credentialId}', [UserCertificateController::class, 'show'])
+        ->name('certificate.show');
+    Route::get('/certificate/{credentialId}/download', [UserCertificateController::class, 'download'])
+        ->name('certificate.download');
 });
+
+Route::get('/certificate/verify/{credentialId}', [UserCertificateController::class, 'verify'])
+    ->name('certificate.verify');
 
 

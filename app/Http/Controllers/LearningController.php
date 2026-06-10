@@ -8,6 +8,8 @@ use App\Models\ContentUser;
 use App\Models\CertificateSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\Certificate;
+use App\Services\CertificateEligibilityService;
 
 class LearningController extends Controller
 {
@@ -22,7 +24,7 @@ class LearningController extends Controller
         return view('user.learning.ongoing', compact('content_user'));
     }
 
-    public function record()
+    public function record(CertificateEligibilityService $eligibilityService)
     {
         $content_user = ContentUser::with([
                 'content.classification',
@@ -41,11 +43,22 @@ class LearningController extends Controller
             ->where('is_active', 1)
             ->get();
 
+        $certificates = Certificate::where('user_id', auth()->id())
+            ->get()->keyBy('certificate_setting_id');
+        $certificateOpportunities = $certificateSettings->map(function ($setting) use ($eligibilityService, $certificates) {
+            return [
+                'setting' => $setting,
+                'eligibility' => $eligibilityService->check($setting, auth()->user()),
+                'certificate' => $certificates->get($setting->id),
+            ];
+        });
+
         return view(
             'user.learning.finish',
             compact(
                 'content_user',
-                'certificateSettings'
+                'certificateSettings',
+                'certificateOpportunities'
             )
         );
     }
