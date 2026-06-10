@@ -131,6 +131,15 @@
             });
         });
 
+        $(document).on('certificate:reload', '.modal form', function () {
+            let form = $(this);
+            toggleAssessmentInfo(form);
+            toggleTemplateFields(form);
+            loadItems(form, function () {
+                loadAssessments(form);
+            });
+        });
+
         $(document).on('change', '.certificate-type-select', function () {
             let form = $(this).closest('form');
 

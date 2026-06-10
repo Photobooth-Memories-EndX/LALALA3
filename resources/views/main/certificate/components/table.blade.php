@@ -2,7 +2,7 @@
 
     <div class="table-responsive">
 
-        <table class="table table-vcenter table-hover card-table mb-0">
+        <table id="certificate-settings-table" class="table table-vcenter table-hover card-table mb-0 w-100">
 
             <thead>
                 <tr>
@@ -17,32 +17,10 @@
                 </tr>
             </thead>
 
-            <tbody>
-
-                @forelse($settings as $setting)
-
-                    @include('main.certificate.components.table-row', [
-                        'setting' => $setting
-                    ])
-
-                    @include('main.certificate.components.edit-modal', [
-                        'setting' => $setting
-                    ])
-
-                @empty
-
-                    @include('main.certificate.components.empty-state')
-
-                @endforelse
-
-            </tbody>
+            <tbody></tbody>
 
         </table>
 
     </div>
 
-</div>
-
-<div class="mt-3">
-    {{ $settings->links() }}
 </div>

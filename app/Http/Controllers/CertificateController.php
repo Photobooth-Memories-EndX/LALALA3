@@ -9,24 +9,136 @@ use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use App\Services\CertificateSyncService;
+use Yajra\DataTables\Facades\DataTables;
 
 class CertificateController extends Controller
 {
     public function index(CertificateSyncService $syncService)
     {
         $syncService->sync();
-        $settings = CertificateSetting::with([
-            'content',
-            'trainingPlan',
-            'assessment'
-        ])
-            ->orderByRaw('certificate_type = "content" DESC')
-            ->orderByRaw('certificate_type = "playlist" DESC')
-            ->orderByRaw('certificate_type = "global" DESC')
-            ->latest()
-            ->paginate(15);
+        $summary = [
+            'total' => CertificateSetting::count(),
+            'content' => CertificateSetting::where('certificate_type', 'content')->count(),
+            'playlist' => CertificateSetting::where('certificate_type', 'playlist')->count(),
+            'global' => CertificateSetting::where('certificate_type', 'global')->count(),
+            'active' => CertificateSetting::where('is_active', 1)->count(),
+            'inactive' => CertificateSetting::where('is_active', 0)->count(),
+            'required' => CertificateSetting::where('is_assessment_required', 1)->count(),
+            'optional' => CertificateSetting::where('is_assessment_required', 0)->count(),
+        ];
 
-        return view('main.certificate.index', compact('settings'));
+        return view('main.certificate.index', compact('summary'));
+    }
+
+    public function datatable(Request $request)
+    {
+        $query = CertificateSetting::with(['content', 'trainingPlan', 'assessment'])
+            ->select('certificate_settings.*');
+
+        foreach ([
+            'certificate_type' => 'type',
+            'issuer_name' => 'issuer',
+            'minimum_progress' => 'minimum_progress',
+            'minimum_score' => 'minimum_score',
+        ] as $column => $filter) {
+            if ($request->filled($filter) && $request->input($filter) !== 'all') {
+                $query->where($column, $request->input($filter));
+            }
+        }
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('is_active', (int) $request->status);
+        }
+
+        if ($request->filled('assessment_required') && $request->assessment_required !== 'all') {
+            $query->where('is_assessment_required', (int) $request->assessment_required);
+        }
+
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $search = trim((string) $request->input('search.value'));
+                if ($search === '') {
+                    return;
+                }
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('certificate_type', 'like', "%{$search}%")
+                        ->orWhere('issuer_name', 'like', "%{$search}%")
+                        ->orWhereHas('content', fn ($relation) => $relation->where('title', 'like', "%{$search}%"))
+                        ->orWhereHas('trainingPlan', fn ($relation) => $relation->where('title', 'like', "%{$search}%"))
+                        ->orWhereHas('assessment', fn ($relation) => $relation->where('title', 'like', "%{$search}%"));
+                });
+            })
+            ->addColumn('type', function ($row) {
+                $colors = ['content' => 'blue', 'playlist' => 'purple', 'global' => 'green'];
+                $color = $colors[$row->certificate_type] ?? 'secondary';
+                return '<span class="badge bg-' . $color . '-lt text-' . $color . '">' . e(ucfirst($row->certificate_type)) . '</span>';
+            })
+            ->addColumn('name', function ($row) {
+                $title = match ($row->certificate_type) {
+                    'content' => optional($row->content)->title,
+                    'playlist' => optional($row->trainingPlan)->title,
+                    'global' => optional($row->assessment)->title,
+                    default => null,
+                };
+
+                return e($title ?: '-');
+            })
+            ->addColumn('assessment', function ($row) {
+                $title = $row->assessment ? '<div>' . e($row->assessment->title) . '</div>' : '';
+                $required = $row->is_assessment_required;
+                $badge = $required
+                    ? '<span class="badge bg-green-lt text-green">Required</span>'
+                    : '<span class="badge bg-yellow-lt text-yellow">Optional</span>';
+                return $title . $badge;
+            })
+            ->addColumn('minimum_progress', fn ($row) => '<span class="badge bg-blue-lt text-blue">' . (int) $row->minimum_progress . '%</span>')
+            ->addColumn('minimum_score', fn ($row) => $row->is_assessment_required
+                ? '<span class="badge bg-green-lt text-green">' . (int) $row->minimum_score . '</span>'
+                : '<span class="text-muted">-</span>')
+            ->addColumn('issuer', function ($row) {
+                $logo = $row->issuer_logo
+                    ? '<img src="' . e(asset($row->issuer_logo)) . '" width="28" height="28" class="rounded mr-2" alt="">'
+                    : '';
+                return '<div class="d-flex align-items-center">' . $logo . '<span>' . e($row->issuer_name) . '</span></div>';
+            })
+            ->addColumn('status', fn ($row) => $row->is_active
+                ? '<span class="badge bg-green-lt text-green">ON</span>'
+                : '<span class="badge bg-red-lt text-red">OFF</span>')
+            ->addColumn('action', fn ($row) => $this->certificateActionColumn($row))
+            ->rawColumns(['type', 'assessment', 'minimum_progress', 'minimum_score', 'issuer', 'status', 'action'])
+            ->make(true);
+    }
+
+    private function certificateActionColumn(CertificateSetting $setting): string
+    {
+        $payload = e(json_encode([
+            'id' => $setting->id,
+            'certificate_type' => $setting->certificate_type,
+            'content_id' => $setting->content_id,
+            'trainingplan_id' => $setting->trainingplan_id,
+            'assessment_id' => $setting->assessment_id,
+            'is_assessment_required' => (bool) $setting->is_assessment_required,
+            'minimum_progress' => $setting->minimum_progress,
+            'minimum_score' => $setting->minimum_score,
+            'issuer_name' => $setting->issuer_name,
+            'use_default_template' => (bool) $setting->use_default_template,
+            'is_active' => (bool) $setting->is_active,
+        ]));
+
+        $buttons = '<div class="btn-list flex-nowrap">'
+            . '<button type="button" class="btn btn-sm btn-outline-primary certificate-edit" data-setting="' . $payload . '" title="Edit"><i class="ti ti-edit"></i></button>';
+
+        if ($setting->certificate_template) {
+            $buttons .= '<a href="' . route('certificate.setting.preview.template', $setting) . '" target="_blank" class="btn btn-sm btn-outline-info" title="Preview Template"><i class="ti ti-file-search"></i></a>';
+        }
+
+        $buttons .= '<a href="' . route('certificate.setting.preview.generated', $setting) . '" target="_blank" class="btn btn-sm btn-outline-success" title="Preview Generated Certificate"><i class="ti ti-certificate"></i></a>'
+            . '<form method="POST" action="' . route('certificate.setting.destroy', $setting) . '" onsubmit="return confirm(\'Delete certificate setting?\')">'
+            . csrf_field() . method_field('DELETE')
+            . '<button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="ti ti-trash"></i></button></form></div>';
+
+        return $buttons;
     }
 
 public function store(Request $request)

@@ -111,6 +111,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
         Route::get('certificate-setting', [CertificateController::class, 'index'])
             ->name('certificate.setting.index');
 
+        Route::get('certificate-setting/datatable', [CertificateController::class, 'datatable'])
+            ->name('certificate.setting.datatable');
+
         Route::post('certificate-setting', [CertificateController::class, 'store'])
             ->name('certificate.setting.store');
 

@@ -1,5 +1,5 @@
 <div class="modal fade"
-     id="editCertificateSettingModal{{ $setting->id }}"
+     id="editCertificateSettingModal"
      tabindex="-1"
      role="dialog"
      aria-hidden="true">
@@ -9,7 +9,8 @@
         <div class="modal-content border-0 shadow">
 
             <form method="POST"
-                  action="{{ route('certificate.setting.update', $setting->id) }}"
+                  action=""
+                  data-update-url="{{ route('certificate.setting.update', ['certificateSetting' => '__ID__']) }}"
                   enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
@@ -29,9 +30,7 @@
 
                 <div class="modal-body">
 
-                    @include('main.certificate.components.form-fields', [
-                        'setting' => $setting
-                    ])
+                    @include('main.certificate.components.form-fields')
 
                 </div>
 
