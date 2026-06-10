@@ -204,11 +204,9 @@ class CommentController extends Controller
         $reference = $comment->resolvedReference();
 
         CommentLike::create([
-            'comment_id' => $comment->id,
-            'user_id' => auth()->id(),
-            'reference_type' => $reference['reference_type'],
-            'reference_id' => $reference['reference_id'],
-        ]);
+    'comment_id' => $comment->id,
+    'user_id' => auth()->id(),
+]);
 
         return back()
             ->with('success', 'Comment liked.')

@@ -39,18 +39,22 @@ class EventPhotoController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required'
-        ]);
-
+       $request->validate([
+    'title' => 'required',
+    'category' => 'required'
+]);
         $eventphoto = new EventPhoto();
 
         $eventphoto->title = $request->input('title');
+        $eventphoto->category = $request->input('category');
         $eventphoto->eventdate = $request->input('eventdate');
+
         $eventphoto->likes = '0';
         $eventphoto->views = '0';
+
         $eventphoto->user_id = auth()->user()->id;
         $eventphoto->uploader = auth()->user()->name;
+       
         $eventphoto->save();
         $newid = $eventphoto->id;
         $path = public_path('storage/gallery/photo/' . $newid . '');
@@ -111,6 +115,10 @@ class EventPhotoController extends Controller
      */
     public function update(Request $request, EventPhoto $eventPhoto)
     {
+        $request->validate([
+    'title' => 'required',
+    'category' => 'required'
+]);
         //
         $eventphoto = EventPhoto::find($request->id);
         if ($request->action == 'unpublish') {
@@ -119,12 +127,13 @@ class EventPhotoController extends Controller
                     'active' => 'Inactive'
                 ]);
         } else {
-            EventPhoto::where('id', $request->id)
-                ->update([
-                    'title' => $request->title,
-                    'eventdate' => $request->eventdate,
-                    'thumbnail' => $request->thumbnail
-                ]);
+           EventPhoto::where('id', $request->id)
+        ->update([
+        'title' => $request->title,
+        'category' => $request->category,
+        'eventdate' => $request->eventdate,
+        'thumbnail' => $request->thumbnail
+    ]);
             if ($request->has('documents')) {
                 foreach ($request->documents as $doc) {
                     $arraydoc[] = $doc;
