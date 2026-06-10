@@ -15,6 +15,9 @@ class UpgradeCertificateSystemV2 extends Migration
             if (!Schema::hasColumn('certificate_settings', 'background_image')) {
                 $table->string('background_image')->nullable()->after('certificate_template');
             }
+            if (!Schema::hasColumn('certificate_settings', 'custom_background')) {
+                $table->string('custom_background')->nullable()->after('certificate_template');
+            }
         });
 
         Schema::table('certificates', function (Blueprint $table) {
@@ -30,7 +33,9 @@ class UpgradeCertificateSystemV2 extends Migration
     public function down()
     {
         Schema::table('certificate_settings', function (Blueprint $table) {
-            $table->dropColumn(['use_default_template', 'background_image']);
+            if (Schema::hasColumn('certificate_settings', 'custom_background')) {
+                $table->dropColumn('custom_background');
+            }
         });
         Schema::table('certificates', function (Blueprint $table) {
             $table->dropColumn(['certificate_type', 'source_id']);

@@ -34,7 +34,9 @@ class CertificateGenerateService
                     'credential_id' => 'CRD-' . strtoupper(Str::random(11)),
                     'title' => $setting->sourceTitle(),
                     'participant_name' => $user->name,
-                    'score' => optional($check['assessmentResult'])->score,
+                    'score' => $setting->is_assessment_required || $setting->certificate_type === 'global'
+                        ? optional($check['assessmentResult'])->score
+                        : null,
                     'issued_at' => now(),
                 ]
             );

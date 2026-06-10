@@ -18,6 +18,7 @@ class CertificateSetting extends Model
         'issuer_logo',
         'use_default_template',
         'certificate_template',
+        'custom_background',
         'background_image',
         'is_active',
     ];
@@ -59,5 +60,12 @@ class CertificateSetting extends Model
             return $this->trainingPlan->title ?? 'Playlist Certificate';
         }
         return $this->assessment->title ?? 'Global Assessment Certificate';
+    }
+
+    public function playlistContents()
+    {
+        return $this->trainingPlan
+            ? $this->trainingPlan->trainingplandetail->pluck('content')->filter()
+            : collect();
     }
 }

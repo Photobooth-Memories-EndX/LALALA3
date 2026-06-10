@@ -89,6 +89,12 @@
                                             && $certificateSetting->is_active
                                             && $isProgressPassed
                                             && $isAssessmentPassed;
+
+                                        $issuedCertificate = collect($certificateOpportunities ?? [])
+                                            ->first(function ($opportunity) use ($certificateSetting) {
+                                                return $certificateSetting
+                                                    && $opportunity['setting']->id === $certificateSetting->id;
+                                            })['certificate'] ?? null;
                                     @endphp
                                     <tr>
                                         <td>{{ $loop->index + 1 }}</td>
@@ -181,7 +187,11 @@
                                         </td>
 
                                         <td class="text-center">
-                                            @if($canGenerateCertificate)
+                                            @if($issuedCertificate)
+                                                <a class="btn btn-sm btn-primary" href="{{ route('certificate.download', $issuedCertificate->credential_id) }}">Download</a>
+                                                <a class="btn btn-sm btn-outline-secondary" href="{{ route('certificate.verify', $issuedCertificate->credential_id) }}">Verify</a>
+                                                <a class="btn btn-sm btn-outline-info" target="_blank" rel="noopener" href="{{ $issuedCertificate->linkedin_url }}">LinkedIn</a>
+                                            @elseif($canGenerateCertificate)
                                                 <a href="{{ route('certificate.generate', $list->id) }}"
                                                    class="btn btn-sm btn-primary">
                                                     <i class="ti ti-certificate mr-1"></i>

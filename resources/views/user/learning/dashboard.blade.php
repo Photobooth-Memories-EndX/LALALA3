@@ -64,7 +64,7 @@
         </div>
 
         <div id="tab-record" class="learning-tab-content d-none">
-            <x-learning.record-section :content-user="$content_user" :average-progress="$averageProgress" />
+            <x-learning.record-section :content-user="$content_user" :average-progress="$averageProgress"  :certificate-settings="$certificateSettings" />
         </div>
 
         <div id="tab-assessment" class="learning-tab-content d-none">
@@ -76,7 +76,8 @@
         </div>
 
         <div id="tab-certificate" class="learning-tab-content d-none">
-            <x-learning.empty-tab title="Sertifikat" description="Halaman ini masih kosong dan bisa dikembangkan nanti." />
+            <x-learning.certificate-section
+                :user-certificates="$userCertificates" />
         </div>
 
         <div id="tab-monitoring" class="learning-tab-content d-none">

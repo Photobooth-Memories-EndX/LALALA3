@@ -27,14 +27,20 @@ class UserCertificateController extends Controller
 
     public function show(string $credentialId)
     {
-        $certificate = Certificate::with('certificateSetting')->where('credential_id', $credentialId)->firstOrFail();
+        $certificate = Certificate::with([
+            'certificateSetting.assessment',
+            'certificateSetting.trainingPlan.trainingplandetail.content',
+        ])->where('credential_id', $credentialId)->firstOrFail();
         abort_unless($certificate->user_id === Auth::id(), 403);
         return view('certificate.show', compact('certificate'));
     }
 
     public function download(string $credentialId)
     {
-        $certificate = Certificate::with('certificateSetting')->where('credential_id', $credentialId)->firstOrFail();
+        $certificate = Certificate::with([
+            'certificateSetting.assessment',
+            'certificateSetting.trainingPlan.trainingplandetail.content',
+        ])->where('credential_id', $credentialId)->firstOrFail();
         abort_unless($certificate->user_id === Auth::id(), 403);
         return response()->view('certificate.templates.default', compact('certificate'))
             ->header('Content-Disposition', 'attachment; filename="' . $certificate->certificate_number . '.html"');

@@ -23,7 +23,7 @@ class CreateCertificateSettingsTable extends Migration
                 $table->boolean('is_assessment_required')->default(false);
 
                 $table->integer('minimum_progress')->default(100);
-                $table->integer('minimum_score')->nullable();
+                $table->integer('minimum_score')->nullable()->default(80);
 
                 $table->string('issuer_name')->default('OWL Training Management');
                 $table->string('issuer_logo')->nullable();

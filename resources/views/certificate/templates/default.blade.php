@@ -5,34 +5,56 @@
     <title>{{ $certificate->certificate_number }}</title>
     <style>
         body { margin: 0; font-family: Georgia, serif; color: #17324d; }
-        .certificate { box-sizing: border-box; width: 1120px; min-height: 790px; margin: 20px auto; padding: 70px; text-align: center; border: 18px double #c7a34b;
-            @if(!$certificate->certificateSetting->use_default_template && $certificate->certificateSetting->background_image)
-            background: url('{{ asset($certificate->certificateSetting->background_image) }}') center/cover no-repeat;
+        .certificate { box-sizing: border-box; width: 1120px; min-height: 790px; margin: 20px auto; padding: 65px; text-align: center; border: 18px double #c7a34b;
+            @if(!$certificate->certificateSetting->use_default_template && ($certificate->certificateSetting->custom_background ?: $certificate->certificateSetting->background_image))
+            background: url('{{ asset($certificate->certificateSetting->custom_background ?: $certificate->certificateSetting->background_image) }}') center/cover no-repeat;
             @elseif(!$certificate->certificateSetting->use_default_template && $certificate->certificateSetting->certificate_template)
             background: url('{{ asset($certificate->certificateSetting->certificate_template) }}') center/cover no-repeat;
             @endif
         }
-        h1 { font-size: 54px; margin: 20px 0; } h2 { font-size: 38px; margin: 30px 0; }
-        .title { font-size: 28px; font-weight: bold; } .meta { margin-top: 55px; font-family: Arial, sans-serif; }
-        @media print { .certificate { margin: 0; } }
+        h1 { font-size: 54px; margin: 20px 0; } h2 { font-size: 38px; margin: 28px 0; }
+        .title { font-size: 28px; font-weight: bold; } .details, .meta { font-family: Arial, sans-serif; line-height: 1.7; }
+        .details { margin: 28px 0; } .playlist { display: inline-block; text-align: left; }
+        .meta { margin-top: 40px; } @media print { .certificate { margin: 0; } }
     </style>
 </head>
 <body>
+@php($setting = $certificate->certificateSetting)
 <main class="certificate">
-    @if($certificate->certificateSetting->issuer_logo)
-        <img src="{{ asset($certificate->certificateSetting->issuer_logo) }}" alt="Issuer logo" style="max-height:80px;max-width:220px">
-    @endif
-    <div>OWL LMS</div>
+    <div>{{ $setting->issuer_name }}</div>
     <h1>Certificate of Completion</h1>
     <p>This certificate is proudly presented to</p>
     <h2>{{ $certificate->participant_name }}</h2>
     <p>for successfully completing</p>
     <div class="title">{{ $certificate->title }}</div>
-    @if(!is_null($certificate->score))<p>Assessment Score: {{ $certificate->score }}</p>@endif
+    <div class="details">
+        <div>Certificate Type: {{ ucfirst($certificate->certificate_type) }}</div>
+        <div>Target Name: {{ $certificate->title }}</div>
+        @if($certificate->certificate_type !== 'global')
+            <div>Minimum Progress: {{ $setting->minimum_progress }}%</div>
+        @endif
+        @if($setting->is_assessment_required)
+            <div>Assessment: {{ optional($setting->assessment)->title ?: '-' }}</div>
+            <div>Minimum Score: {{ $setting->minimum_score }}</div>
+            <div>Assessment Score: {{ $certificate->score ?? '-' }}</div>
+        @endif
+    </div>
+    @if($certificate->certificate_type === 'playlist')
+        <div class="playlist">
+            <strong>Playlist Content</strong>
+            <ol>
+                @forelse($setting->playlistContents() as $content)
+                    <li>{{ $content->title }}</li>
+                @empty
+                    <li>No content</li>
+                @endforelse
+            </ol>
+        </div>
+    @endif
     <div class="meta">
-        <p>Issued by {{ $certificate->certificateSetting->issuer_name }}</p>
-        <p>{{ optional($certificate->issued_at)->format('F j, Y') }}</p>
-        <p>{{ $certificate->certificate_number }} | {{ $certificate->credential_id }}</p>
+        <div>Issued by {{ $setting->issuer_name }}</div>
+        <div>{{ optional($certificate->issued_at)->format('F j, Y') }}</div>
+        <div>{{ $certificate->certificate_number }} | {{ $certificate->credential_id }}</div>
     </div>
 </main>
 </body>

@@ -43,7 +43,7 @@ class CertificateSyncService
                 ['certificate_type' => 'global', 'assessment_id' => $assessment->id],
                 array_merge($this->defaults(), [
                     'is_assessment_required' => true,
-                    'minimum_progress' => 0,
+                    'minimum_progress' => 100,
                     'minimum_score' => 80,
                 ])
             );
@@ -53,6 +53,7 @@ class CertificateSyncService
     private function defaults(): array
     {
         return [
+            'is_assessment_required' => false,
             'minimum_progress' => 100,
             'minimum_score' => 80,
             'issuer_name' => 'OWL Training Management',

@@ -1,136 +1,57 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
     <meta charset="utf-8">
     <title>Preview Certificate</title>
-
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f3f4f6;
-            padding: 40px;
+        body { margin: 0; padding: 30px; background: #eef2f6; color: #17324d; font-family: Georgia, serif; }
+        .certificate { box-sizing: border-box; width: 1120px; min-height: 790px; margin: auto; padding: 65px; text-align: center; background: #fff; border: 18px double #c7a34b;
+            @if(!$setting->use_default_template && ($setting->custom_background ?: $setting->background_image))
+            background: url('{{ asset($setting->custom_background ?: $setting->background_image) }}') center/cover no-repeat;
+            @elseif(!$setting->use_default_template && $setting->certificate_template)
+            background: url('{{ asset($setting->certificate_template) }}') center/cover no-repeat;
+            @endif
         }
-
-        .certificate {
-            width: 1000px;
-            min-height: 650px;
-            margin: auto;
-            background: white;
-            border: 12px solid #1f2937;
-            padding: 50px;
-            text-align: center;
-            position: relative;
-        }
-
-        .issuer {
-            font-size: 18px;
-            color: #374151;
-            margin-bottom: 40px;
-        }
-
-        .title {
-            font-size: 42px;
-            font-weight: bold;
-            color: #111827;
-            margin-bottom: 20px;
-        }
-
-        .subtitle {
-            font-size: 20px;
-            color: #6b7280;
-            margin-bottom: 30px;
-        }
-
-        .name {
-            font-size: 34px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 20px;
-        }
-
-        .course {
-            font-size: 26px;
-            color: #111827;
-            margin-bottom: 30px;
-        }
-
-        .meta {
-            font-size: 16px;
-            color: #374151;
-            margin-top: 40px;
-        }
-
-        .footer {
-            position: absolute;
-            bottom: 40px;
-            left: 50px;
-            right: 50px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-            color: #6b7280;
-        }
+        h1 { margin: 18px 0; font-size: 52px; } h2 { margin: 24px 0; font-size: 36px; }
+        .target { font-size: 28px; font-weight: bold; } .details { margin: 28px auto; font-family: Arial, sans-serif; line-height: 1.7; }
+        .playlist { display: inline-block; text-align: left; } .footer { margin-top: 45px; font-family: Arial, sans-serif; }
     </style>
 </head>
-
 <body>
-
-@php
-    $certificateName = 'Certificate of Completion';
-
-    if ($setting->certificate_type === 'content') {
-        $targetName = $setting->content->title ?? 'Content Learning';
-    } elseif ($setting->certificate_type === 'playlist') {
-        $targetName = $setting->trainingPlan->title ?? 'Playlist Learning';
-    } else {
-        $targetName = $setting->assessment->title ?? 'Global Assessment';
-    }
-@endphp
-
-<div class="certificate">
-
-    <div class="issuer">
-        {{ $setting->issuer_name }}
-    </div>
-
-    <div class="title">
-        {{ $certificateName }}
-    </div>
-
-    <div class="subtitle">
-        This certificate is proudly presented to
-    </div>
-
-    <div class="name">
-        Nama Peserta
-    </div>
-
-    <div class="subtitle">
-        for successfully completing
-    </div>
-
-    <div class="course">
-        {{ $targetName }}
-    </div>
-
-    <div class="meta">
-        Minimum Progress: {{ $setting->minimum_progress }}%
+<main class="certificate">
+    <div>{{ $setting->issuer_name }}</div>
+    <h1>Certificate of Completion</h1>
+    <p>This certificate is proudly presented to</p>
+    <h2>Nama Peserta</h2>
+    <p>for successfully completing</p>
+    <div class="target">{{ $setting->sourceTitle() }}</div>
+    <div class="details">
+        <div>Certificate Type: {{ ucfirst($setting->certificate_type) }}</div>
+        <div>Target Name: {{ $setting->sourceTitle() }}</div>
+        @if($setting->certificate_type !== 'global')
+            <div>Minimum Progress: {{ $setting->minimum_progress }}%</div>
+        @endif
         @if($setting->is_assessment_required)
-            | Minimum Score: {{ $setting->minimum_score }}
+            <div>Assessment: {{ optional($setting->assessment)->title ?: '-' }}</div>
+            <div>Minimum Score: {{ $setting->minimum_score }}</div>
         @endif
     </div>
-
+    @if($setting->certificate_type === 'playlist')
+        <div class="playlist">
+            <strong>Playlist Content</strong>
+            <ol>
+                @forelse($setting->playlistContents() as $content)
+                    <li>{{ $content->title }}</li>
+                @empty
+                    <li>No content</li>
+                @endforelse
+            </ol>
+        </div>
+    @endif
     <div class="footer">
-        <div>
-            Credential ID: PREVIEW-000001
-        </div>
-
-        <div>
-            Issued Date: {{ now()->format('Y-m-d') }}
-        </div>
+        <div>Credential ID: PREVIEW-000001</div>
+        <div>Issued Date: {{ now()->format('F j, Y') }}</div>
     </div>
-
-</div>
-
+</main>
 </body>
 </html>

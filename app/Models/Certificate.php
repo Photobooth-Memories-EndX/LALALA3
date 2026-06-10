@@ -37,6 +37,11 @@ class Certificate extends Model
         return $this->belongsTo(CertificateSetting::class);
     }
 
+    public function assessmentResult()
+    {
+        return $this->belongsTo(AssesmentResult::class);
+    }
+
     public function getLinkedInUrlAttribute(): string
     {
         return 'https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME'

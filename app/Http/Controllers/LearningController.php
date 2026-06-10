@@ -37,7 +37,7 @@ class LearningController extends Controller
 
         $certificateSettings = CertificateSetting::with([
                 'content',
-                'trainingPlan',
+                'trainingPlan.trainingplandetail.content',
                 'assessment',
             ])
             ->where('is_active', 1)
@@ -104,35 +104,57 @@ class LearningController extends Controller
         $userId = Auth::id();
 
         $content_user = $this->getUserLearningContents($userId);
-
         $ongoing_content_user = $this->getOngoingLearningContents($userId);
-
         $assessments = $this->getUserAssessments($user, $userId);
-
         $result = $this->getUserAssessmentResults($userId);
-
         $learningHours = $this->getUserLearningHours($userId);
+
+        $certificateSettings = CertificateSetting::with([
+                'content',
+                'trainingPlan',
+                'assessment',
+            ])
+            ->where('is_active', 1)
+            ->get();
+
+        $userCertificates = Certificate::with([
+                'certificateSetting',
+                'certificateSetting.content',
+                'certificateSetting.trainingPlan',
+                'certificateSetting.assessment',
+            ])
+            ->where('user_id', $userId)
+            ->latest()
+            ->get();
 
         return view('user.learning.dashboard', compact(
             'content_user',
             'ongoing_content_user',
             'assessments',
             'result',
-            'learningHours'
+            'learningHours',
+            'certificateSettings',
+            'userCertificates'
         ));
     }
-
     private function getUserLearningContents($userId)
     {
         return ContentUser::with([
+                'content',
                 'content.classification',
+
+                // assessment yang terhubung ke content user
+                'assesment',
                 'assesment.scores',
+
+                // tambahan relasi jika assessment punya content / playlist
+                'assesment.contents',
+                'assesment.trainingplan',
             ])
             ->where('user_id', $userId)
             ->latest()
             ->get();
     }
-
     private function getUserLearningHours($userId)
     {
         $learningHours = ContentUser::join('content', 'content_users.content_id', '=', 'content.id')

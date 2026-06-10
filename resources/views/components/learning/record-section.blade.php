@@ -22,7 +22,9 @@
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
     <div class="card-body p-4 border-bottom">
         <h3 class="card-title mb-1">Daftar Riwayat Training</h3>
-        <div class="text-muted small">Training yang sudah Anda selesaikan.</div>
+        <div class="text-muted small">
+            Training yang sudah Anda selesaikan dan status kelayakan sertifikat.
+        </div>
     </div>
 
     <div class="card-body p-0">
@@ -69,31 +71,33 @@
                                     ->where('content_id', $content->id ?? null)
                                     ->first();
 
-                                $minimumProgress = $certificateSetting->minimum_progress ?? 100;
+                                $minimumProgress = $certificateSetting->minimum_progress ?? null;
                                 $minimumScore = $certificateSetting->minimum_score ?? null;
 
-                                $isProgressPassed = $progress >= $minimumProgress;
+                                $isProgressPassed = true;
+                                $isScorePassed = true;
 
-                                $isAssessmentPassed = true;
+                                if (!is_null($minimumProgress) && (int) $minimumProgress > 0) {
+                                    $isProgressPassed = $progress >= (int) $minimumProgress;
+                                }
 
-                                if ($certificateSetting && $certificateSetting->is_assessment_required) {
-                                    $isAssessmentPassed = !is_null($score)
-                                        && !is_null($minimumScore)
-                                        && $score >= $minimumScore;
+                                if (!is_null($minimumScore) && (int) $minimumScore > 0) {
+                                    $isScorePassed = !is_null($score)
+                                        && $score >= (int) $minimumScore;
                                 }
 
                                 $canGenerateCertificate = $certificateSetting
                                     && $certificateSetting->is_active
                                     && $isProgressPassed
-                                    && $isAssessmentPassed;
+                                    && $isScorePassed;
                             @endphp
 
                             <tr>
                                 <td class="text-muted">{{ $loop->iteration }}</td>
 
                                 <td style="min-width: 280px;">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-sm {{ in_array($type, ['Video', 'YouTube']) ? 'bg-red-lt text-red' : 'bg-yellow-lt text-yellow' }}">
+                                    <div class="d-flex align-items-center">
+                                        <span class="avatar avatar-sm mr-2 {{ in_array($type, ['Video', 'YouTube']) ? 'bg-red-lt text-red' : 'bg-yellow-lt text-yellow' }}">
                                             @if (in_array($type, ['Video', 'YouTube']))
                                                 <i class="ti ti-video"></i>
                                             @else
@@ -103,11 +107,14 @@
 
                                         <div>
                                             @if ($content && !empty($content->slug))
-                                                <a href="{{ route('content.user.view', $content->slug) }}" class="fw-semibold text-reset line-clamp-2">
+                                                <a href="{{ route('content.user.view', $content->slug) }}"
+                                                   class="fw-semibold text-reset line-clamp-2">
                                                     {{ $content->title ?? '-' }}
                                                 </a>
                                             @else
-                                                <div class="fw-semibold line-clamp-2">{{ $content->title ?? '-' }}</div>
+                                                <div class="fw-semibold line-clamp-2">
+                                                    {{ $content->title ?? '-' }}
+                                                </div>
                                             @endif
 
                                             <div class="text-muted small">
@@ -129,12 +136,21 @@
 
                                 <td>{{ $content->duration ?? '-' }}</td>
 
-                                <td style="min-width: 150px;">
+                                <td style="min-width: 170px;">
                                     <div class="d-flex justify-content-between small mb-1">
                                         <span>{{ $progress }}%</span>
+
+                                        @if(!is_null($minimumProgress) && (int) $minimumProgress > 0)
+                                            <span class="{{ $isProgressPassed ? 'text-success' : 'text-danger' }}">
+                                                Min {{ $minimumProgress }}%
+                                            </span>
+                                        @endif
                                     </div>
+
                                     <div class="progress progress-sm">
-                                        <div class="progress-bar bg-success" style="width: {{ $progress }}%"></div>
+                                        <div class="progress-bar {{ $isProgressPassed ? 'bg-success' : 'bg-danger' }}"
+                                             style="width: {{ min($progress, 100) }}%">
+                                        </div>
                                     </div>
                                 </td>
 
@@ -142,11 +158,31 @@
                                     {{ $list->updated_at ? date('Y-m-d H:i', strtotime($list->updated_at)) : '-' }}
                                 </td>
 
-                                <td>
-                                    {{ $score ?? '-' }}
+                                <td style="min-width: 120px;">
+                                    @if(!is_null($score))
+                                        <span class="badge {{ $isScorePassed ? 'bg-green-lt text-green' : 'bg-red-lt text-red' }}">
+                                            {{ $score }}
+                                        </span>
+
+                                        @if(!is_null($minimumScore) && (int) $minimumScore > 0)
+                                            <div class="small text-muted mt-1">
+                                                Min {{ $minimumScore }}
+                                            </div>
+                                        @endif
+                                    @else
+                                        <span class="badge bg-secondary-lt text-secondary">
+                                            -
+                                        </span>
+
+                                        @if(!is_null($minimumScore) && (int) $minimumScore > 0)
+                                            <div class="small text-danger mt-1">
+                                                Butuh score min {{ $minimumScore }}
+                                            </div>
+                                        @endif
+                                    @endif
                                 </td>
 
-                                <td>
+                                <td style="min-width: 180px;">
                                     @if($canGenerateCertificate)
                                         <a href="{{ route('certificate.generate', $list->id) }}"
                                            class="btn btn-sm btn-primary">
@@ -157,6 +193,20 @@
                                         <span class="badge bg-secondary-lt text-secondary">
                                             Not Available
                                         </span>
+
+                                        @if($certificateSetting)
+                                            <div class="small text-muted mt-1">
+                                                @if(!$isProgressPassed)
+                                                    Progress minimal {{ $minimumProgress }}%.
+                                                @elseif(!$isScorePassed)
+                                                    Score minimal {{ $minimumScore }}, score Anda {{ $score ?? '-' }}.
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="small text-muted mt-1">
+                                                Sertifikat belum tersedia.
+                                            </div>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>

@@ -32,8 +32,17 @@ class CertificateController extends Controller
 
     public function datatable(Request $request)
     {
-        $query = CertificateSetting::with(['content', 'trainingPlan', 'assessment'])
-            ->select('certificate_settings.*');
+       $query = CertificateSetting::with([
+        'content',
+        'trainingPlan',
+        'assessment'
+        ])
+        ->select('certificate_settings.*')
+        ->orderByDesc('minimum_progress')
+        ->orderByDesc('minimum_score')
+        ->orderByDesc('is_assessment_required')
+        ->orderByDesc('is_active')
+        ->latest();
 
         foreach ([
             'certificate_type' => 'type',
@@ -41,9 +50,9 @@ class CertificateController extends Controller
             'minimum_progress' => 'minimum_progress',
             'minimum_score' => 'minimum_score',
         ] as $column => $filter) {
-            if ($request->filled($filter) && $request->input($filter) !== 'all') {
-                $query->where($column, $request->input($filter));
-            }
+             if ($request->filled($filter) && $request->input($filter) !== 'all') {
+            $query->where($column, $request->input($filter));
+        }
         }
 
         if ($request->filled('status') && $request->status !== 'all') {
@@ -97,10 +106,7 @@ class CertificateController extends Controller
                 ? '<span class="badge bg-green-lt text-green">' . (int) $row->minimum_score . '</span>'
                 : '<span class="text-muted">-</span>')
             ->addColumn('issuer', function ($row) {
-                $logo = $row->issuer_logo
-                    ? '<img src="' . e(asset($row->issuer_logo)) . '" width="28" height="28" class="rounded mr-2" alt="">'
-                    : '';
-                return '<div class="d-flex align-items-center">' . $logo . '<span>' . e($row->issuer_name) . '</span></div>';
+                return '<span>' . e($row->issuer_name) . '</span>';
             })
             ->addColumn('status', fn ($row) => $row->is_active
                 ? '<span class="badge bg-green-lt text-green">ON</span>'
@@ -146,14 +152,13 @@ public function store(Request $request)
     $request->validate([
         'certificate_type' => 'required|in:content,playlist,global',
         'item_id' => 'required',
-        'assessment_id' => 'nullable',
+        'assessment_id' => 'nullable|required_if:is_assessment_required,1|exists:assesments,id',
         'is_assessment_required' => 'nullable|boolean',
         'minimum_progress' => 'required|integer|min:0|max:100',
         'minimum_score' => 'nullable|integer|min:0|max:100',
         'issuer_name' => 'required|string|max:255',
-        'issuer_logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
-        'background_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        'custom_background' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         'is_active' => 'required|boolean',
     ]);
 
@@ -169,6 +174,9 @@ public function store(Request $request)
 
     $data['is_assessment_required'] = $request->has('is_assessment_required') ? 1 : 0;
     $data['use_default_template'] = $request->has('use_default_template');
+    $data['minimum_score'] = $data['is_assessment_required'] ? $request->minimum_score : null;
+    $data['assessment_id'] = $data['is_assessment_required'] ? $request->assessment_id : null;
+    $data['minimum_progress'] = $request->certificate_type === 'global' ? 0 : $request->minimum_progress;
 
     if ($data['is_assessment_required'] && empty($data['minimum_score'])) {
         return back()
@@ -180,21 +188,14 @@ public function store(Request $request)
 
     $data = $this->mapCertificateTarget($request, $data);
 
-    if ($request->hasFile('issuer_logo')) {
-        $data['issuer_logo'] = $this->uploadFile(
-            $request->file('issuer_logo'),
-            'uploads/certificates/logos'
-        );
-    }
-
     if ($request->hasFile('certificate_template')) {
         $data['certificate_template'] = $this->uploadFile(
             $request->file('certificate_template'),
             'uploads/certificates/templates'
         );
     }
-    if ($request->hasFile('background_image')) {
-        $data['background_image'] = $this->uploadFile($request->file('background_image'), 'uploads/certificates/backgrounds');
+    if ($request->hasFile('custom_background')) {
+        $data['custom_background'] = $this->uploadFile($request->file('custom_background'), 'uploads/certificates/backgrounds');
     }
 
     CertificateSetting::create($data);
@@ -209,14 +210,13 @@ public function update(Request $request, CertificateSetting $certificateSetting)
     $request->validate([
         'certificate_type' => 'required|in:content,playlist,global',
         'item_id' => 'required',
-        'assessment_id' => 'nullable',
+        'assessment_id' => 'nullable|required_if:is_assessment_required,1|exists:assesments,id',
         'is_assessment_required' => 'nullable|boolean',
         'minimum_progress' => 'required|integer|min:0|max:100',
         'minimum_score' => 'nullable|integer|min:0|max:100',
         'issuer_name' => 'required|string|max:255',
-        'issuer_logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
-        'background_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        'custom_background' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         'is_active' => 'required|boolean',
     ]);
 
@@ -232,6 +232,9 @@ public function update(Request $request, CertificateSetting $certificateSetting)
 
     $data['is_assessment_required'] = $request->has('is_assessment_required') ? 1 : 0;
     $data['use_default_template'] = $request->has('use_default_template');
+    $data['minimum_score'] = $data['is_assessment_required'] ? $request->minimum_score : null;
+    $data['assessment_id'] = $data['is_assessment_required'] ? $request->assessment_id : null;
+    $data['minimum_progress'] = $request->certificate_type === 'global' ? 0 : $request->minimum_progress;
 
     if ($data['is_assessment_required'] && empty($data['minimum_score'])) {
         return back()
@@ -243,21 +246,14 @@ public function update(Request $request, CertificateSetting $certificateSetting)
 
     $data = $this->mapCertificateTarget($request, $data);
 
-    if ($request->hasFile('issuer_logo')) {
-        $data['issuer_logo'] = $this->uploadFile(
-            $request->file('issuer_logo'),
-            'uploads/certificates/logos'
-        );
-    }
-
     if ($request->hasFile('certificate_template')) {
         $data['certificate_template'] = $this->uploadFile(
             $request->file('certificate_template'),
             'uploads/certificates/templates'
         );
     }
-    if ($request->hasFile('background_image')) {
-        $data['background_image'] = $this->uploadFile($request->file('background_image'), 'uploads/certificates/backgrounds');
+    if ($request->hasFile('custom_background')) {
+        $data['custom_background'] = $this->uploadFile($request->file('custom_background'), 'uploads/certificates/backgrounds');
     }
 
     $certificateSetting->update($data);
@@ -285,9 +281,15 @@ public function update(Request $request, CertificateSetting $certificateSetting)
                 ->orderBy('title')
                 ->get();
         } elseif ($type === 'playlist') {
-            $items = TrainingPlan::select('id', 'title')
+            $items = TrainingPlan::with('trainingplandetail.content:id,title')
+                ->select('id', 'title')
                 ->orderBy('title')
-                ->get();
+                ->get()
+                ->map(fn ($playlist) => [
+                    'id' => $playlist->id,
+                    'title' => $playlist->title,
+                    'contents' => $playlist->trainingplandetail->pluck('content')->filter()->values(),
+                ]);
         } else {
             $items = Assesment::select('id', 'title')
                 ->where('type', 'global')
@@ -303,19 +305,46 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         $type = $request->get('type');
         $itemId = $request->get('item_id');
 
-        $query = Assesment::select('id', 'title', 'passing_grade', 'content_id', 'trainingplan_id', 'type');
-
-        if ($type === 'content') {
-            $query->where('content_id', $itemId);
-        } elseif ($type === 'playlist') {
-            $query->where('trainingplan_id', $itemId);
-        } elseif ($type === 'global') {
-            $query->where('type', 'global');
+        if ($type === 'global') {
+            return response()->json(
+                Assesment::where('type', 'global')->orderBy('title')->get(['id', 'title'])
+            );
         }
 
-        return response()->json(
-            $query->orderBy('title')->get()
-        );
+        $target = $type === 'content'
+            ? Content::find($itemId)
+            : TrainingPlan::find($itemId);
+
+        if (!$target) {
+            return response()->json([]);
+        }
+
+        $foreignKey = $type === 'content' ? 'content_id' : 'trainingplan_id';
+        $assessmentType = $type === 'content' ? 'content' : 'trainingplan';
+        $direct = Assesment::where($foreignKey, $itemId)->orderBy('title')->get(['id', 'title']);
+
+        if ($direct->isNotEmpty()) {
+            return response()->json($direct);
+        }
+
+        $typed = Assesment::where('type', $assessmentType)->orderBy('title')->get(['id', 'title']);
+        if ($typed->isNotEmpty()) {
+            return response()->json($typed);
+        }
+
+        $normalizedTarget = $this->normalizeAssessmentTitle($target->title);
+        $matches = Assesment::orderBy('title')->get(['id', 'title'])->filter(function ($assessment) use ($normalizedTarget) {
+            $normalizedAssessment = $this->normalizeAssessmentTitle($assessment->title);
+            return $normalizedAssessment !== ''
+                && (str_contains($normalizedAssessment, $normalizedTarget)
+                    || str_contains($normalizedTarget, $normalizedAssessment));
+        })->map(fn ($assessment) => [
+            'id' => $assessment->id,
+            'title' => $assessment->title,
+            'matched_by_title' => true,
+        ])->values();
+
+        return response()->json($matches);
     }
 
     private function uploadFile($file, $path)
@@ -333,6 +362,14 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         return $path . '/' . $filename;
     }
 
+    private function normalizeAssessmentTitle(string $title): string
+    {
+        $title = strtolower($title);
+        $title = preg_replace('/[^a-z0-9\s]/', ' ', $title);
+        $title = preg_replace('/\b(post test|pre test|assessment|training|course|batch|remedial)\b/', ' ', $title);
+        return trim(preg_replace('/\s+/', ' ', $title));
+    }
+
     private function mapCertificateTarget(Request $request, array $data)
 {
     $data['content_id'] = null;
@@ -346,7 +383,7 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         $data['trainingplan_id'] = $request->item_id;
     }
 
-    if ($request->certificate_type === 'global') {
+    if ($request->certificate_type === 'global' && !$data['is_assessment_required']) {
         $data['assessment_id'] = $request->item_id;
     }
 
@@ -369,7 +406,7 @@ public function previewGenerated(CertificateSetting $certificateSetting)
     return view('main.certificate.preview-generated', [
         'setting' => $certificateSetting->load([
             'content',
-            'trainingPlan',
+            'trainingPlan.trainingplandetail.content',
             'assessment'
         ])
     ]);
