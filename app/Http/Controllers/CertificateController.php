@@ -392,13 +392,16 @@ public function update(Request $request, CertificateSetting $certificateSetting)
 
 public function previewTemplate(CertificateSetting $certificateSetting)
 {
-    if (!$certificateSetting->certificate_template) {
-        return back()->withErrors([
-            'certificate_template' => 'Template sertifikat belum diupload.'
-        ]);
-    }
+    $setting = $certificateSetting->load([
+        'content',
+        'trainingPlan.trainingplandetail.content',
+        'assessment'
+    ]);
 
-    return response()->file(public_path($certificateSetting->certificate_template));
+    return view(
+        'certificate.templates.preview-template',
+        compact('setting')
+    );
 }
 
 public function previewGenerated(CertificateSetting $certificateSetting)

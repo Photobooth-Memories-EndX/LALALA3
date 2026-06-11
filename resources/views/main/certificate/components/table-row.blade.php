@@ -219,7 +219,7 @@
                 <a href="{{ route('certificate.setting.preview.template', $setting->id) }}"
                 target="_blank"
                 class="btn btn-sm btn-outline-info"
-                title="Preview Template">
+                title="Example Preview">
                     <i class="ti ti-file-search"></i>
                 </a>
             @endif

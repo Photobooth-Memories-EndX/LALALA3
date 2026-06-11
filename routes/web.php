@@ -135,6 +135,10 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
         Route::get('certificate-setting/{certificateSetting}/preview-generated', [CertificateController::class, 'previewGenerated'])
             ->name('certificate.setting.preview.generated');
 
+        Route::get(
+            '/certificate/{credentialId}/download-pdf',
+            [UserCertificateController::class, 'downloadPdf']
+        )->name('certificate.download.pdf');
 
 
     Route::resource('news', NewsController::class);

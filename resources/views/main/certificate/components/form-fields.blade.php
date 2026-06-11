@@ -87,15 +87,59 @@
     </label>
 </div>
 
-<div class="certificate-custom-template-fields">
+{{-- <div class="certificate-custom-template-fields">
     <div class="form-group">
-        <label class="form-label">Custom Template / Design</label>
+        <label class="form-label">Masukan Photo untuk Preview</label>
         <input type="file" name="certificate_template" class="form-control" accept=".jpg,.jpeg,.png,.webp,.pdf">
     </div>
     <div class="form-group">
         <label class="form-label">Custom Background</label>
         <input type="file" name="custom_background" class="form-control" accept="image/*">
     </div>
+</div> --}}
+
+<div class="certificate-custom-template-fields">
+
+    {{-- <div class="form-group">
+        <label class="form-label">
+            Upload Preview Sertifikat
+        </label>
+
+        <input
+            type="file"
+            name="certificate_template"
+            class="form-control"
+            accept=".jpg,.jpeg,.png,.webp,.pdf">
+
+        <small class="form-text text-muted">
+            Unggah desain sertifikat sebagai hanya preview hasilnya.
+        </small>
+        <br>
+        <small class="text-muted">
+            Maksimal ukuran file 2 MB.
+        </small>
+    </div> --}}
+
+    <div class="form-group">
+        <label class="form-label">
+            Upload Background Sertifikat
+        </label>
+
+        <input
+            type="file"
+            name="custom_background"
+            class="form-control"
+            accept="image/*">
+
+        <small class="form-text text-muted">
+            Gunakan gambar background khusus untuk sertifikat. Disarankan menggunakan ukuran 1200 x 848.
+        </small>
+        <br>
+        <small class="text-muted">
+            Maksimal ukuran file 2 MB.
+        </small>
+    </div>
+
 </div>
 
 <div class="form-group">

@@ -7,6 +7,8 @@ use App\Models\CertificateSetting;
 use App\Models\ContentUser;
 use App\Services\CertificateGenerateService;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class UserCertificateController extends Controller
 {
@@ -51,4 +53,41 @@ class UserCertificateController extends Controller
         $certificate = Certificate::with('certificateSetting')->where('credential_id', $credentialId)->firstOrFail();
         return view('certificate.verify', compact('certificate'));
     }
+
+        public function downloadPdf($credentialId)
+    {
+        $certificate = Certificate::with([
+                'certificateSetting',
+                'certificateSetting.assessment',
+                'certificateSetting.content',
+                'certificateSetting.trainingPlan',
+            ])
+            ->where('credential_id', $credentialId)
+            ->firstOrFail();
+
+        $pdf = Pdf::loadView(
+            'main.certificate.templates.pdf',
+            compact('certificate')
+        );
+
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download(
+            $certificate->certificate_number . '.pdf'
+        );
+    }
+
+
+    public function previewTemplate(CertificateSetting $certificateSetting)
+{
+    $setting = $certificateSetting->load([
+        'assessment',
+        'content',
+        'trainingPlan.trainingplandetail.content',
+    ]);
+
+    return view('main.certificate.template.preview-template', compact('setting'));
+}
+
+
 }

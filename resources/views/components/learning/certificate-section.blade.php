@@ -100,29 +100,27 @@
 
             </div>
 
-        @else
+       @else
 
-            <div class="empty text-center py-5">
+<div class="d-flex flex-column align-items-center justify-content-center py-5">
 
-                <div class="empty-icon mb-3">
-                    <span class="avatar avatar-xl bg-blue-lt text-blue">
-                        <i class="ti ti-certificate"></i>
-                    </span>
-                </div>
+    <span class="avatar avatar-xl bg-blue-lt text-blue mb-4 certificate-empty-icon">
+        <i class="ti ti-certificate"></i>
+    </span>
 
-                <h3>
-                    Belum Ada Sertifikat
-                </h3>
+    <h3 class="mb-2">
+        Belum Ada Sertifikat
+    </h3>
 
-                <p class="text-muted mb-0">
-                    Sertifikat yang berhasil digenerate akan muncul di sini.
-                </p>
+    <p class="text-muted text-center mb-0">
+        Sertifikat yang berhasil digenerate akan muncul di sini.
+    </p>
 
-            </div>
+</div>
 
-        @endif
+@endif
 
-    </div>
+</div>
 
 </div>
 
@@ -148,5 +146,18 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+    }
+
+    .certificate-empty-icon {
+        width: 90px;
+        height: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .certificate-empty-icon i {
+        font-size: 42px;
+        line-height: 1;
     }
 </style>

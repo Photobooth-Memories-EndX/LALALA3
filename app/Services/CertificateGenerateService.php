@@ -31,7 +31,7 @@ class CertificateGenerateService
                     'content_user_id' => optional($check['learning'])->id,
                     'assessment_result_id' => optional($check['assessmentResult'])->id,
                     'certificate_number' => $this->number(),
-                    'credential_id' => 'CRD-' . strtoupper(Str::random(11)),
+                    'credential_id' => 'OWL-' . strtoupper(Str::random(11)),
                     'title' => $setting->sourceTitle(),
                     'participant_name' => $user->name,
                     'score' => $setting->is_assessment_required || $setting->certificate_type === 'global'
