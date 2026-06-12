@@ -28,4 +28,6 @@ class ContentUser extends Model
     {
         return $this->hasOne(TrainingPlanDetail::class, 'content_id', 'content_id');
     }
+
+    
 }

@@ -211,9 +211,15 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
     Route::put('content/delete/{slug}', [ContentDeleteController::class, 'deletecontentajax'])->name('contentdelete.deletecontentajax');
     Route::post('content/assign', [ContentController::class, 'assign'])->name('content.assign');
 
-
+    /*
+    |--------------------------------------------------------------------------
+    | TRAINING PLAN => PLAYLIST
+    |--------------------------------------------------------------------------
+    */
     Route::get('trainingplan/order/{slug}', [TrainingPlanController::class, 'order'])->name('trainingplan.order');
     Route::resource('trainingplan', TrainingPlanController::class);
+
+
     Route::resource('eventphoto', EventPhotoController::class);
     Route::post('eventphoto/create/upload', [EventPhotoController::class, 'uploadfileajax'])->name('eventphoto.uploadfileajax');
     Route::post('eventphoto/delete', [EventPhotoController::class, 'deleteImage'])->name('eventphoto.deleteImage');
@@ -279,11 +285,20 @@ Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
     Route::post('/{slug}/comment/store', [CommentController::class, 'storeeventphoto'])->name('gallery.comment.store');
     // Route::get('/{slug}', [GalleryUserController::class, 'view'])->name('gallery.user.view');
 });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PLAYLIST
+    |--------------------------------------------------------------------------
+    */
 Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
 
     Route::get('/', [PlaylistUserController::class, 'index'])->name('playlist.user.index');
     Route::get('/{slug}/{vidslug}', [PlaylistUserController::class, 'view'])->name('playlist.user.view');
 });
+
+
 Route::get('/login', [LoginController::class, 'index'])->name('loginpage')->middleware('guest');
 Route::get('/assessment-access', [LoginController::class, 'assessmentAccess'])->name('assessment.access')->middleware('guest');
 Route::post('/login', [LoginController::class, 'authenticate'])->name('authuser');

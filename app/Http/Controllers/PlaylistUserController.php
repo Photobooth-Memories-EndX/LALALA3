@@ -14,16 +14,21 @@ use Illuminate\Support\Facades\Auth;
 
 class PlaylistUserController extends Controller
 {
-    public function index()
+        public function index()
     {
-        $trainingplan = TrainingPlan::with(['trainingplandetail' => function ($query) {
-                $query->orderBy('content_order');
-            }, 'trainingplandetail.content'
-        ])->where('active', 'Active')->orderBy('created_at', 'desc')->get();
+        $trainingplan = TrainingPlan::with([
+                'trainingplandetail' => function ($query) {
+                    $query->orderBy('content_order');
+                },
+                'trainingplandetail.content.contentuser',
+            ])
+            ->where('active', 'Active')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
 
         return view('user.playlist.index', [
-            "title" =>  "Playlist",
-            "trainingplan" => $trainingplan
+            'title' => 'Playlist',
+            'trainingplan' => $trainingplan,
         ]);
     }
 
@@ -65,7 +70,7 @@ class PlaylistUserController extends Controller
 
         $assessmentCount        = $queryAssessmentResult->count();
         $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
-        
+
         // Assessment Content
         $assessmentContent = Assesment::where('type', 'content')->where('content_id', $content->id)->first();
         $queryAssessmentContentResult = AssesmentResult::with('user', 'assesment')

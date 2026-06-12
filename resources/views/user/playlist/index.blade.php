@@ -1,111 +1,138 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
-    <div class="page-body">
-        <div class="container">
+<div class="page-body">
+    <div class="container-xl">
 
-            @if (session()->has('success'))
-                <div class="alert alert-important alert-success alert-dismissible" role="alert">
-                    <div class="d-flex">
-                        <div>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M5 12l5 5l10 -10"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            {{ session('success') }}
-                        </div>
-                    </div>
-                    <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
-                </div>
-            @endif
+        @include('user.playlist.components.playlist-hero')
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">{{ $title }}</h3>
-                </div>
-                <div class="card-body">
-                    {{-- <button type="button" class="btn btn-primary" data-bs-trigger="hover" data-bs-toggle="popover" title="Popover title" data-bs-content="And here's some amazing content. It's very engaging. Right?">
-                        Hover to toggle popover
-                    </button> --}}
-                    <div id="table-default" class="table-responsive">
-                        @unless (count($trainingplan) == 0)
-                            <table class="table table-bordered table-striped" id="MyTable">
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Title</th>
-                                        <th>Content</th>
-                                        <th>Publish Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($trainingplan as $list)
-                                        @php
-                                            if ($list->active == 'Active') {
-                                                $activecolor = 'green';
-                                            } else {
-                                                $activecolor = 'orange';
-                                            }
-                                        @endphp
-                                        <tr>
-                                            @php
-                                                $listcontent = '';
+        @include('user.playlist.components.playlist-continue-learning')
 
-                                                foreach ($list->trainingplandetail as $detail) {
-                                                    if ($detail->content != null) {
-                                                        $listcontent .= '- ' . $detail->content->title . '<br>';
-                                                    }
-                                                }
-                                            @endphp
-                                            <td>{{ $loop->index + 1 }}</td>
-                                            <td>
-                                                <a href="{{ route('playlist.user.view', [$list->slug, $list->trainingplandetail[0]->content->slug]) }}">{{ $list->title }}</a>
-                                            </td>
-                                            <td data-bs-trigger="hover" data-bs-toggle="popover" title="Content List" data-bs-html="true" data-bs-content="{{ $listcontent }}">
-                                                @foreach ($list->trainingplandetail->take(3) as $detail)
-                                                    @if ($detail->content != null)
-                                                        - {{ $detail->content->title }}<br>
-                                                    @endif
-                                                @endforeach
-                                                @if (count($list->trainingplandetail) >= 4)
-                                                    - ......
-                                                @else
-                                                @endif
-                                            </td>
-                                            <td class="text-center">{{ date_format(date_create($list->created_at), 'Y-m-d') }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @else
-                            <p>No Playlist data found</p>
-                        @endunless
-                    </div>
-                </div>
-            </div>
-        </div>
+        @include('user.playlist.components.playlist-filters')
+
+        @if(count($trainingplan) > 0)
+
+            @include('user.playlist.components.playlist-grid')
+
+        @else
+
+            @include('user.playlist.components.playlist-empty')
+
+        @endif
+
     </div>
+</div>
 @endsection
 
 @section('style')
-    <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
+<style>
+    .rounded-4 {
+        border-radius: 20px !important;
+    }
+
+    .playlist-hero {
+        background:
+            radial-gradient(circle at top right, rgba(32, 107, 196, .16), transparent 35%),
+            linear-gradient(135deg, rgba(32, 107, 196, .08), var(--tblr-bg-surface));
+        border: 1px solid var(--tblr-border-color);
+    }
+
+    .playlist-card {
+        transition: all .2s ease;
+    }
+
+    .playlist-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, .12) !important;
+    }
+
+    .playlist-thumbnail {
+        height: 180px;
+        object-fit: cover;
+        background: var(--tblr-bg-surface-secondary);
+    }
+
+    .playlist-title {
+        font-size: 16px;
+        font-weight: 700;
+        min-height: 44px;
+    }
+
+    .playlist-content-list {
+        min-height: 72px;
+    }
+
+    .playlist-filter-card {
+        border: 1px solid var(--tblr-border-color);
+    }
+
+    [data-bs-theme="dark"] .playlist-hero,
+    body.theme-dark .playlist-hero,
+    body.dark .playlist-hero {
+        background:
+            radial-gradient(circle at top right, rgba(32, 107, 196, .25), transparent 35%),
+            linear-gradient(135deg, rgba(32, 107, 196, .12), var(--tblr-bg-surface));
+    }
+
+    .playlist-learning-path-wrap {
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.playlist-continue-card {
+    background:
+        radial-gradient(circle at top right, rgba(255,255,255,.18), transparent 30%),
+        linear-gradient(135deg, #0d5be1 0%, #2563eb 50%, #3b82f6 100%);
+    color: #fff;
+}
+
+.text-white-75 {
+    color: rgba(255,255,255,.78);
+}
+
+.playlist-progress-badge {
+    min-width: 112px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    text-align: center;
+    background: rgba(255,255,255,.18);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.playlist-progress-badge .small {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    opacity: .9;
+}
+
+.playlist-white-progress {
+    height: 8px;
+    background: rgba(255,255,255,.22);
+    border-radius: 999px;
+}
+
+.playlist-path-card {
+    background:
+        radial-gradient(circle at top right, rgba(32,107,196,.16), transparent 35%),
+        linear-gradient(135deg, rgba(32,107,196,.08), var(--tblr-bg-surface));
+    border: 1px solid var(--tblr-border-color) !important;
+}
+
+.playlist-continue-title {
+    max-width: 560px;
+    line-height: 1.25;
+}
+
+@media (max-width: 991.98px) {
+    .playlist-progress-badge {
+        min-width: 96px;
+    }
+}
+</style>
 @endsection
 
 @section('script')
-    <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
-    <script>
-        $(function() {
-            $("#MyTable").DataTable({
-                "lengthMenu": [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, 'All'],
-                ],
-                "pageLength": 25,
-                "autoWidth": false,
-            });
-        });
-    </script>
+@include('user.playlist.components.playlist-script')
 @endsection
