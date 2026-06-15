@@ -14,7 +14,7 @@
         : 'ti-thumb-up';
 @endphp
 
-<div class="comment-thread {{ $isReply ? 'comment-thread-reply' : 'comment-thread-root' }} p-3 border-bottom">
+<div class="comment-thread comment-thread-root comment-level-{{ $depth ?? 0 }} {{ ($depth ?? 0) === 0 ? 'border-bottom' : 'mb-2' }}">
 
     <div class="d-flex gap-2 align-items-start">
 
@@ -32,7 +32,7 @@
 
         <div class="flex-fill min-w-0">
 
-            <div class="{{ $isReply ? 'ms-2 ps-3 border-start' : '' }}">
+            <div>
 
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
 

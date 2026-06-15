@@ -24,28 +24,29 @@
 <div class="mt-3 mb-4">
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden" id="comment">
 
+        <div class="card-header border-0 bg-white p-4">
+            <x-form action="{{ $url }}" method="post">
+                <input type="hidden" value="{{ $hiddenplaylistslug }}" name="playlistslug">
 
+                <div class="comment-compose-row">
 
-                <span class="badge bg-primary-lt text-primary rounded-pill px-3 py-2 small">
-                    {{ $commentTotal }} Comments
-                </span>
-            </div>
+                    <div class="comment-count-box">
+                        {{ $commentTotal }} Comments
+                    </div>
 
-            <div class="d-flex gap-2 align-items-start">
-                <div class="flex-shrink-0">
-                    @if(!empty($user->avatar))
-                        <span class="avatar avatar-sm rounded-circle"
-                            style="background-image:url('{{ asset('storage/profile/' . $user->avatar) }}')">
-                        </span>
-                    @else
-                        <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
-                            {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
-                        </span>
-                    @endif
-                </div>
+                    <div class="comment-avatar">
+                        @if(!empty($user->avatar))
+                            <span class="avatar avatar-sm rounded-circle"
+                                  style="background-image:url('{{ asset('storage/profile/' . $user->avatar) }}')">
+                            </span>
+                        @else
+                            <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
+                                {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
+                            </span>
+                        @endif
+                    </div>
 
-                <div class="flex-fill">
-                    <x-form action="{{ $url }}" method="post">
+                    <div class="comment-input-area">
                         <x-textarea
                             class="form-control modern-comment-input"
                             name="description"
@@ -55,9 +56,7 @@
                             rows="2">
                         </x-textarea>
 
-                        <input type="hidden" value="{{ $hiddenplaylistslug }}" name="playlistslug">
-
-                        <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div class="comment-submit-row">
                             <span id="note_remaining" class="text-muted small">
                                 1000 characters remaining
                             </span>
@@ -67,9 +66,10 @@
                                 Submit
                             </button>
                         </div>
-                    </x-form>
+                    </div>
+
                 </div>
-            </div>
+            </x-form>
         </div>
 
         <div class="card-body p-0 bg-white">
@@ -100,6 +100,76 @@
 
     </div>
 </div>
+
+@push('styles')
+<style>
+    .comment-compose-row {
+        display: grid;
+        grid-template-columns: auto auto minmax(260px, 420px);
+        align-items: start;
+        gap: 12px;
+    }
+
+    .comment-count-box {
+        min-width: 120px;
+        height: 32px;
+        padding: 0 16px;
+        border-radius: 999px;
+        background: #eaf1ff;
+        color: #2563eb;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 17px;
+    }
+
+    .comment-avatar {
+        margin-top: 16px;
+    }
+
+    .modern-comment-input {
+        width: 100%;
+        min-height: 52px;
+        resize: vertical;
+        border-radius: 6px;
+    }
+
+    .comment-submit-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .comment-compose-row {
+            grid-template-columns: auto 1fr;
+        }
+
+        .comment-count-box {
+            grid-column: 1 / -1;
+            margin-top: 0;
+            justify-self: start;
+        }
+
+        .comment-avatar {
+            margin-top: 8px;
+        }
+
+        .comment-input-area {
+            width: 100%;
+        }
+
+        .comment-submit-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>

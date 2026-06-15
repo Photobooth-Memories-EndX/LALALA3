@@ -33,68 +33,110 @@ class PlaylistUserController extends Controller
     }
 
     public function view($slug, $vidslug)
-    {
-        $trainingplan   = TrainingPlan::findBySlug($slug);
-        $content        = Content::findBySlug($vidslug);
-        $content->views += 1;
-        $content->save();
+{
+    $userId = Auth::id();
 
-        //add content to user learning on going if not exist yet
-        $content_user = ContentUser::firstOrCreate([
-            'user_id' => auth()->user()->id, 'content_id' => $content->id
-        ]);
+    $trainingplan = TrainingPlan::findBySlug($slug);
+    $content = Content::findBySlug($vidslug);
 
-        $content_user_all = ContentUser::where('user_id', auth()->user()->id)->get();
-        $content_all      = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)->with('content')->get();
-        $assessmentAccess = false;
-        $progressContent  = 0;
+    abort_if(!$trainingplan || !$content, 404);
 
-        foreach ($content_all as $ca) {
-            $contentUser = ContentUser::where('user_id', auth()->user()->id)->where('content_id', $ca->content->id)->first()->progress ?? 0;
+    $content->increment('views');
 
-            $progressContent += $contentUser;
-        }
+    // Add content to user learning on going if not exist yet
+    $content_user = ContentUser::firstOrCreate([
+        'user_id' => $userId,
+        'content_id' => $content->id,
+    ]);
 
-        $percentageProgressPlaylist = $progressContent / count($content_all);
+    $content_user_all = ContentUser::where('user_id', $userId)->get();
 
-        if ($percentageProgressPlaylist >= 100) {
-            $assessmentAccess = true;
-        }
+    $content_all = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)
+        ->with('content')
+        ->orderBy('content_order')
+        ->get();
 
-        $assesment = Assesment::where('type', 'trainingplan')->where('trainingplan_id', $trainingplan->id)->first();
-        $comment   = Comment::with('user')->where('parent_id', null)->where('type', 'content')->where('content_id', $content->id)->latest()->get();
+    // Ambil semua progress user sekali saja, agar tidak N+1 query
+    $progressByContentId = ContentUser::where('user_id', $userId)
+        ->whereIn('content_id', $content_all->pluck('content_id'))
+        ->pluck('progress', 'content_id');
 
-        $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
-            ->where('user_id', Auth::user()->id)
-            ->where('assesment_id', $assesment->id ?? '');
+    $progressContent = 0;
 
-        $assessmentCount        = $queryAssessmentResult->count();
-        $assessmentLatestScores = $queryAssessmentResult->latest()->first()->score ?? 0;
-
-        // Assessment Content
-        $assessmentContent = Assesment::where('type', 'content')->where('content_id', $content->id)->first();
-        $queryAssessmentContentResult = AssesmentResult::with('user', 'assesment')
-            ->where('user_id', Auth::user()->id)
-            ->where('assesment_id', $assessmentContent->id ?? '');
-
-        $assessmentContentCount        = $queryAssessmentContentResult->count();
-        $assessmentContentLatestScores = $queryAssessmentContentResult->latest()->first()->score ?? 0;
-
-        return view('user.playlist.view', [
-            "playlist" => $trainingplan,
-            "content" => $content,
-            "content_all" => $content_all,
-            "content_user_all" => $content_user_all,
-            "content_user" => $content_user,
-            "assesment" => $assesment,
-            "comment" => $comment,
-            "assessmentAccess" => $assessmentAccess,
-            "assessmentCount" => $assessmentCount,
-            "assessmentLatestScores" => $assessmentLatestScores,
-            "percentageProgressPlaylist" => $percentageProgressPlaylist,
-            "assessmentContent" => $assessmentContent,
-            "assessmentContentCount" => $assessmentContentCount,
-            "assessmentContentLatestScores" => $assessmentContentLatestScores,
-        ]);
+    foreach ($content_all as $ca) {
+        $progressContent += $progressByContentId[$ca->content_id] ?? 0;
     }
+
+    $totalContent = $content_all->count();
+
+    $percentageProgressPlaylist = $totalContent > 0
+        ? $progressContent / $totalContent
+        : 0;
+
+    $assessmentAccess = $percentageProgressPlaylist >= 100;
+
+    $assesment = Assesment::where('type', 'trainingplan')
+        ->where('trainingplan_id', $trainingplan->id)
+        ->first();
+
+    // Batasi komentar yang tampil agar halaman tidak berat
+    $comment = Comment::with('user')
+        ->whereNull('parent_id')
+        ->where('type', 'content')
+        ->where('content_id', $content->id)
+        ->latest()
+        ->take(5)
+        ->get();
+
+    // Total semua komentar untuk angka count
+    $totalComment = Comment::whereNull('parent_id')
+        ->where('type', 'content')
+        ->where('content_id', $content->id)
+        ->count();
+
+    $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
+        ->where('user_id', $userId)
+        ->where('assesment_id', $assesment->id ?? '');
+
+    $assessmentCount = $queryAssessmentResult->count();
+
+    $assessmentLatestScores = (clone $queryAssessmentResult)
+        ->latest()
+        ->first()
+        ->score ?? 0;
+
+    // Assessment Content
+    $assessmentContent = Assesment::where('type', 'content')
+        ->where('content_id', $content->id)
+        ->first();
+
+    $queryAssessmentContentResult = AssesmentResult::with('user', 'assesment')
+        ->where('user_id', $userId)
+        ->where('assesment_id', $assessmentContent->id ?? '');
+
+    $assessmentContentCount = $queryAssessmentContentResult->count();
+
+    $assessmentContentLatestScores = (clone $queryAssessmentContentResult)
+        ->latest()
+        ->first()
+        ->score ?? 0;
+
+    return view('user.playlist.view', [
+        "playlist" => $trainingplan,
+        "content" => $content,
+        "content_all" => $content_all,
+        "content_user_all" => $content_user_all,
+        "content_user" => $content_user,
+        "assesment" => $assesment,
+        "comment" => $comment,
+        "totalComment" => $totalComment,
+        "assessmentAccess" => $assessmentAccess,
+        "assessmentCount" => $assessmentCount,
+        "assessmentLatestScores" => $assessmentLatestScores,
+        "percentageProgressPlaylist" => $percentageProgressPlaylist,
+        "assessmentContent" => $assessmentContent,
+        "assessmentContentCount" => $assessmentContentCount,
+        "assessmentContentLatestScores" => $assessmentContentLatestScores,
+    ]);
+}
 }
