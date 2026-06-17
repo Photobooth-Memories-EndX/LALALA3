@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CertificateSetting;
 use App\Models\Comment;
 use App\Models\Content;
 use App\Models\Assesment;
@@ -80,11 +81,13 @@ class PlaylistUserController extends Controller
         ? $progressContent / $totalContent
         : 0;
 
-    $assessmentAccess = $percentageProgressPlaylist >= 100;
+    $playlistProgressComplete = $percentageProgressPlaylist >= 100;
 
     $assesment = Assesment::where('type', 'trainingplan')
         ->where('trainingplan_id', $trainingplan->id)
         ->first();
+
+    $hasPlaylistAssessment = $assesment !== null;
 
     // Batasi komentar yang tampil agar halaman tidak berat
     $comment = Comment::with([
@@ -129,6 +132,21 @@ class PlaylistUserController extends Controller
         ->first()
         ->score ?? 0;
 
+    $playlistAssessmentDone = false;
+    if ($hasPlaylistAssessment) {
+        $playlistAssessmentDone = AssesmentResult::where('user_id', $userId)
+            ->where('assesment_id', $assesment->id)
+            ->exists();
+    }
+
+    $needsPlaylistAssessment = $playlistProgressComplete && $hasPlaylistAssessment && !$playlistAssessmentDone;
+    $canGeneratePlaylistCertificate = $playlistProgressComplete && (!$hasPlaylistAssessment || $playlistAssessmentDone);
+
+    $playlistCertificateSetting = CertificateSetting::where('certificate_type', 'playlist')
+        ->where('trainingplan_id', $trainingplan->id)
+        ->where('is_active', 1)
+        ->first();
+
     // Assessment Content
     $assessmentContent = Assesment::where('type', 'content')
         ->where('content_id', $content->id)
@@ -154,13 +172,19 @@ class PlaylistUserController extends Controller
         "assesment" => $assesment,
         "comment" => $comment,
         "totalComment" => $totalComment,
-        "assessmentAccess" => $assessmentAccess,
+        "assessmentAccess" => $playlistProgressComplete,
         "assessmentCount" => $assessmentCount,
         "assessmentLatestScores" => $assessmentLatestScores,
         "percentageProgressPlaylist" => $percentageProgressPlaylist,
         "assessmentContent" => $assessmentContent,
         "assessmentContentCount" => $assessmentContentCount,
         "assessmentContentLatestScores" => $assessmentContentLatestScores,
+        "playlistProgressComplete" => $playlistProgressComplete,
+        "hasPlaylistAssessment" => $hasPlaylistAssessment,
+        "playlistAssessmentDone" => $playlistAssessmentDone,
+        "needsPlaylistAssessment" => $needsPlaylistAssessment,
+        "canGeneratePlaylistCertificate" => $canGeneratePlaylistCertificate,
+        "playlistCertificateSetting" => $playlistCertificateSetting,
     ]);
 }
 }

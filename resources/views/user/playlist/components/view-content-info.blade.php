@@ -97,5 +97,73 @@
             </div>
         </div>
 
+{{-- Playlist Assessment & Sertifikat --}}
+<div class="d-flex flex-wrap gap-2">
+
+    {{-- 1. Status progress --}}
+    @if ($playlistProgressComplete)
+        <button type="button" class="btn btn-success" disabled>
+            <i class="fas fa-check me-2"></i>
+            Semua Content Selesai
+        </button>
+    @else
+        <button type="button" class="btn btn-secondary" disabled>
+            <i class="fas fa-lock me-2"></i>
+            Selesaikan Semua Content Terlebih Dahulu
+        </button>
+    @endif
+
+
+    {{-- 2. Tombol Playlist Assessment --}}
+    @if ($hasPlaylistAssessment)
+        <a href="{{ $playlistProgressComplete && !$playlistAssessmentDone ? route('assesment.user.view', $assesment->slug) : '#' }}"
+           class="btn btn-primary {{ !$playlistProgressComplete || $playlistAssessmentDone ? 'disabled' : '' }}"
+           aria-disabled="{{ !$playlistProgressComplete || $playlistAssessmentDone ? 'true' : 'false' }}">
+            <i class="fas fa-tasks me-2"></i>
+            {{ $playlistAssessmentDone ? 'Playlist Assessment Selesai' : 'Kerjakan Playlist Assessment' }}
+        </a>
+    @else
+        <button type="button" class="btn btn-secondary" disabled>
+            <i class="fas fa-info-circle me-2"></i>
+            Playlist Assessment Tidak Ada
+        </button>
+    @endif
+
+
+    {{-- 3. Tombol Cetak Sertifikat --}}
+    @if ($playlistCertificateSetting)
+        <form method="POST"
+              action="{{ route('certificate.generate.setting', $playlistCertificateSetting) }}"
+              class="d-inline">
+            @csrf
+            <button type="submit"
+                    class="btn btn-success"
+                    {{ $canGeneratePlaylistCertificate ? '' : 'disabled' }}>
+                <i class="fas fa-certificate me-2"></i>
+                Cetak Sertifikat Playlist
+            </button>
+        </form>
+    @else
+        <button type="button" class="btn btn-secondary" disabled>
+            <i class="fas fa-certificate me-2"></i>
+            Sertifikat Belum Dikonfigurasi
+        </button>
+    @endif
+
+</div>
+        {{-- Debug block (hanya muncul di APP_DEBUG=true) --}}
+        @if (config('app.debug'))
+            <div class="alert alert-info small mt-3">
+                <strong>Debug Certificate:</strong><br>
+                Progress: {{ $percentageProgressPlaylist ?? 'null' }}%<br>
+                Progress Complete (>=100): {{ ($playlistProgressComplete ?? false) ? 'YES' : 'NO' }}<br>
+                Has Playlist Assessment: {{ ($hasPlaylistAssessment ?? false) ? 'YES' : 'NO' }}<br>
+                Playlist Assessment Done: {{ ($playlistAssessmentDone ?? false) ? 'YES' : 'NO' }}<br>
+                Needs Playlist Assessment: {{ ($needsPlaylistAssessment ?? false) ? 'YES' : 'NO' }}<br>
+                Can Generate Certificate: {{ ($canGeneratePlaylistCertificate ?? false) ? 'YES' : 'NO' }}<br>
+                Has Certificate Setting: {{ ($playlistCertificateSetting ?? null) ? 'YES (ID: '.$playlistCertificateSetting->id.')' : 'NO' }}
+            </div>
+        @endif
+
     </div>
 </div>
