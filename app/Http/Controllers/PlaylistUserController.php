@@ -14,23 +14,30 @@ use Illuminate\Support\Facades\Auth;
 
 class PlaylistUserController extends Controller
 {
-        public function index()
-    {
-        $trainingplan = TrainingPlan::with([
-                'trainingplandetail' => function ($query) {
-                    $query->orderBy('content_order');
-                },
-                'trainingplandetail.content.contentuser',
-            ])
-            ->where('active', 'Active')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
+    public function index()
+{
+    $trainingplan = TrainingPlan::with([
+            'trainingplandetail' => function ($query) {
+                $query->orderBy('content_order');
+            },
+            'trainingplandetail.content.contentuser',
+        ])
+        ->where('active', 'Active')
+        ->orderBy('created_at', 'desc')
+        ->paginate(9);
 
-        return view('user.playlist.index', [
-            'title' => 'Playlist',
-            'trainingplan' => $trainingplan,
-        ]);
-    }
+    $allTrainingplan = TrainingPlan::with([
+            'trainingplandetail.content.contentuser',
+        ])
+        ->where('active', 'Active')
+        ->get();
+
+    return view('user.playlist.index', [
+        'title' => 'Playlist',
+        'trainingplan' => $trainingplan,
+        'allTrainingplan' => $allTrainingplan,
+    ]);
+}
 
     public function view($slug, $vidslug)
 {
@@ -80,13 +87,30 @@ class PlaylistUserController extends Controller
         ->first();
 
     // Batasi komentar yang tampil agar halaman tidak berat
-    $comment = Comment::with('user')
+    $comment = Comment::with([
+            'user',
+            'likes',
+            'likedByUser',
+
+            'replies.user',
+            'replies.likes',
+            'replies.likedByUser',
+
+            'replies.replies.user',
+            'replies.replies.likes',
+            'replies.replies.likedByUser',
+
+            'replies.replies.replies.user',
+            'replies.replies.replies.likes',
+            'replies.replies.replies.likedByUser',
+        ])
+        ->withCount('replies')
         ->whereNull('parent_id')
         ->where('type', 'content')
         ->where('content_id', $content->id)
         ->latest()
-        ->take(5)
-        ->get();
+        ->paginate(5)
+        ->withQueryString();
 
     // Total semua komentar untuk angka count
     $totalComment = Comment::whereNull('parent_id')

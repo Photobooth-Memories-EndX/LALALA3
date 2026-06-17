@@ -14,6 +14,10 @@
 
             @include('user.playlist.components.playlist-grid')
 
+            <div class="playlist-pagination mt-4 d-flex justify-content-center">
+                {{ $trainingplan->links() }}
+            </div>
+
         @else
 
             @include('user.playlist.components.playlist-empty')
@@ -26,6 +30,26 @@
 
 @section('style')
 <style>
+
+
+    .playlist-pagination nav {
+        width: 100%;
+    }
+
+    .playlist-pagination nav > div:first-child {
+        display: none !important;
+    }
+
+    .playlist-pagination nav > div:last-child {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+
+    .playlist-pagination .pagination {
+        justify-content: center !important;
+        margin-bottom: 0 !important;
+    }
     .rounded-4 {
         border-radius: 20px !important;
     }

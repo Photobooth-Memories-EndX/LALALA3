@@ -92,7 +92,7 @@
             @endforelse
 
             @if(method_exists($comment, 'hasPages') && $comment->hasPages())
-                <div class="p-3 border-top d-flex justify-content-center">
+                <div class="comment-pagination p-3 border-top">
                     {{ $comment->links() }}
                 </div>
             @endif
@@ -103,6 +103,31 @@
 
 @push('styles')
 <style>
+
+
+    .comment-pagination {
+        display: flex;
+        justify-content: center;
+    }
+
+    .comment-pagination nav {
+        width: 100%;
+    }
+
+    .comment-pagination nav > div:first-child {
+        display: none !important;
+    }
+
+    .comment-pagination nav > div:last-child {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+
+    .comment-pagination .pagination {
+        justify-content: center !important;
+        margin: 0 !important;
+    }
     .comment-compose-row {
         display: grid;
         grid-template-columns: auto auto minmax(260px, 420px);

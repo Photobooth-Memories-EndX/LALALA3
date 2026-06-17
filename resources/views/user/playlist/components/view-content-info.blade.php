@@ -28,13 +28,15 @@
             </div>
 
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-icon btn-outline-secondary rounded-3">
+                {{-- <button type="button" class="btn btn-icon btn-outline-secondary rounded-3">
                     <i class="far fa-bookmark"></i>
-                </button>
+                </button> --}}
 
-                <button type="button" class="btn btn-icon btn-outline-secondary rounded-3">
-                    <i class="fas fa-share-alt"></i>
-                </button>
+            <button type="button"
+                    class="btn btn-icon btn-outline-secondary rounded-3"
+                    onclick="shareContent()">
+                <i class="fas fa-share-alt"></i>
+            </button>
             </div>
         </div>
 

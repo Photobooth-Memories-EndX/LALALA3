@@ -3,7 +3,9 @@
         ? $comment->replies->count()
         : $comment->replies()->count();
 
-    $isReply = ($depth ?? 0) > 0;
+    $depth = $depth ?? 0;
+    $levelClass = 'comment-level-' . min($depth, 3);
+    $isReply = $depth > 0;
 
     $likeButtonClass = $comment->is_liked
         ? 'btn-primary'
@@ -14,7 +16,7 @@
         : 'ti-thumb-up';
 @endphp
 
-<div class="comment-thread comment-thread-root comment-level-{{ $depth ?? 0 }} {{ ($depth ?? 0) === 0 ? 'border-bottom' : 'mb-2' }}">
+<div class="comment-thread {{ $depth === 0 ? 'comment-thread-root border-bottom' : 'comment-thread-reply mb-2' }} {{ $levelClass }}">
 
     <div class="d-flex gap-2 align-items-start">
 
@@ -128,7 +130,7 @@
                                 'content' => $content,
                                 'url' => $url,
                                 'hiddenplaylistslug' => $hiddenplaylistslug,
-                                'depth' => ($depth ?? 0) + 1,
+                                'depth' => $depth + 1,
                             ])
                         @endforeach
                     </div>

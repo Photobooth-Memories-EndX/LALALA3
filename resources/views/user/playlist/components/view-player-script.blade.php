@@ -72,4 +72,35 @@
             window.location.reload();
         }, 700);
     }
+
+
+    async function shareContent() {
+        const shareData = {
+            title: document.title,
+            text: 'Lihat materi pembelajaran ini',
+            url: window.location.href
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+
+                if (window.Toastify) {
+                    Toastify({
+                        text: "Link berhasil disalin",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right"
+                    }).showToast();
+                } else {
+                    alert('Link berhasil disalin');
+                }
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
 </script>

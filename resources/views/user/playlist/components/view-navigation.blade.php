@@ -1,8 +1,12 @@
 @php
+    /** @var \App\Models\Content $content */
+    /** @var \Illuminate\Support\Collection $content_all */
+    /** @var \App\Models\TrainingPlan $playlist */
+    $content = $content ?? null;
     $contentItems = $content_all->values();
 
     $currentIndex = $contentItems->search(function ($item) use ($content) {
-        return optional($item->content)->slug === $content->slug;
+        return $content && optional($item->content)->slug === $content->slug;
     });
 
     $previousItem = $currentIndex !== false && $currentIndex > 0
