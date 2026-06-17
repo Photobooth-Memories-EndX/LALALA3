@@ -4,7 +4,7 @@
 
         <div class="row g-3 align-items-center">
 
-            <div class="col-lg-6">
+            <div class="col-lg-9">
 
                 <div class="input-icon">
 
@@ -22,7 +22,7 @@
 
             </div>
 
-            <div class="col-lg-3">
+            {{-- <div class="col-lg-3">
 
                 <select id="playlistCategoryFilter" class="form-select">
                     <option value="all">All Categories</option>
@@ -32,13 +32,13 @@
                     <option value="technical">Technical</option>
                 </select>
 
-            </div>
+            </div> --}}
 
             <div class="col-lg-3">
 
                 <select id="playlistSort" class="form-select">
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
+                    {{-- <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option> --}}
                     <option value="az">A - Z</option>
                     <option value="za">Z - A</option>
                 </select>
