@@ -14,10 +14,19 @@ class NewsController extends Controller
      */
     public function index()
     {
-        $news = News::with(['user' => function ($query) {
-            $query->select('id', 'name');
-        }])->latest()->get();
-        return view('main.news.index', compact('news'));
+        $news = News::with('user')->latest()->get();
+
+        $totalNews = News::count();
+        $totalAuthor = News::distinct('user_id')->count();
+
+        return view(
+            'main.news.index',
+            compact(
+                'news',
+                'totalNews',
+                'totalAuthor'
+            )
+        );
     }
 
     /**

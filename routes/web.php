@@ -221,8 +221,11 @@ Route::group(['prefix' => 'manage', 'middleware' => 'admin'], function () {
 
 
     Route::resource('eventphoto', EventPhotoController::class);
-    Route::post('eventphoto/create/upload', [EventPhotoController::class, 'uploadfileajax'])->name('eventphoto.uploadfileajax');
-    Route::post('eventphoto/delete', [EventPhotoController::class, 'deleteImage'])->name('eventphoto.deleteImage');
+    Route::post('eventphoto/create/upload',[EventPhotoController::class, 'uploadfileajax'])->name('eventphoto.uploadfileajax');
+    Route::get('eventphoto/create/upload/delete',[EventPhotoController::class, 'deletefileajax'])->name('eventphoto.deletefileajax');
+    Route::post('eventphoto/delete',[EventPhotoController::class, 'deleteImage'])->name('eventphoto.deleteImage');
+    Route::get('/gallery/search',[GalleryController::class, 'search'])->name('gallery.search');
+
 
     //learning content
     Route::get('learning', [LearningManageController::class, 'index'])->name('learning.manage.index');

@@ -13,9 +13,25 @@
         <div class="container-xl">
             <div class="row g-2 align-items-center">
                 <div class="col">
-                    <h2 class="page-title">
-                        Add Event Photo
-                    </h2>
+                    <div class="d-flex justify-content-between align-items-center">
+
+                        <div>
+
+                            <h2 class="page-title mb-1">
+                                Edit Event Gallery
+                            </h2>
+
+                            <div class="text-secondary">
+                                Manage photos, thumbnail and publishing status
+                            </div>
+
+                        </div>
+
+                        <span class="badge bg-{{ $eventphoto->active == 'Active' ? 'success' : 'warning' }}">
+                            {{ $eventphoto->active }}
+                        </span>
+
+                    </div>
                 </div>
                 <!-- Page title actions -->
                 <div class="col-auto ms-auto d-print-none">
@@ -35,24 +51,117 @@
     <!-- Page body -->
     <div class="page-body">
         <!-- Container Page -->
-        <div class="page page-center">
-            <div class="container container-sm py-4">
+        <div class="page">
+            <div class="container-xl py-4">
                 <x-alert type='success' />
                 <x-alert type='warning' />
                 <form class="card card-md" action="{{ route('eventphoto.update', $eventphoto->slug) }}" method="post" autocomplete="off">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="id" value="{{ $eventphoto->id }}">
+
+                    @if($eventphoto->thumbnail)
+
+                    <div class="card border-0 shadow-sm mb-4">
+
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">
+                                Featured Thumbnail
+                            </h3>
+                        </div>
+
+                        <div class="card-body">
+
+                            <img
+                                src="{{ asset('storage/gallery/photo/'.$eventphoto->id.'/'.$eventphoto->thumbnail) }}"
+                                class="cover-thumbnail">
+
+                        </div>
+
+                    </div>
+
+                    @endif
                     <div class="card-body">
+                        <div class="row row-cards mb-4">
+
+                            <div class="col-md-4">
+
+                                <div class="card stat-card">
+
+                                    <div class="card-body">
+
+                                        <div class="subheader">
+                                            Total Photos
+                                        </div>
+                                        @php
+
+                                        $arraypic =
+                                            json_decode(
+                                                $eventphoto->photos,
+                                                true
+                                            ) ?? [];
+
+                                        @endphp
+                                        <div class="h1 mb-0">
+                                            {{ count($arraypic ?? []) }}
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-4">
+
+                                <div class="card stat-card">
+
+                                    <div class="card-body">
+
+                                        <div class="subheader">
+                                            Event Date
+                                        </div>
+
+                                        <div class="h4 mb-0">
+                                            {{ date('d M Y', strtotime($eventphoto->eventdate)) }}
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-4">
+
+                                <div class="card stat-card">
+
+                                    <div class="card-body">
+
+                                        <div class="subheader">
+                                            Status
+                                        </div>
+
+                                        <div class="h4 mb-0">
+                                            {{ $eventphoto->active }}
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
                         <h2 class="card-title text-center mb-4">Edit event</h2>
-                        <div class="row">
-                            <div class="col-xl-6">
+                        <div class="row g-4">
+                            <div class="col-lg-8">
                                 <div class="mb-3">
                                     <label class="form-label">Title</label>
                                     <input type="text" class="form-control" placeholder="Enter title" name="title" id="title" value="{{ $eventphoto->title }}" required>
                                 </div>
                             </div>
-                            <div class="col-xl-6">
+                            <div class="col-lg-4">
                                 <div class="mb-3">
                                     <label class="form-label">Event Date</label>
                                     <div class="input-icon">
@@ -72,48 +181,118 @@
                                 </div>
                             </div>
                         </div>
-                        @php
-                            $search = ['[', ']', '"'];
-                            $arraypic = explode(',', $eventphoto->photos);
-                            $i = 0;
+                       @php
+                        $search = ['[', ']', '"'];
+                        $arraypic = $eventphoto->photos
+                        ? explode(',', $eventphoto->photos)
+                        : [];
                         @endphp
-                        <div class="row row-cols-6 g-3">
-                            @foreach ($arraypic as $listphoto)
-                                @php
-                                    $i++;
-                                @endphp
 
-                                <div class="col" id="{{ $eventphoto->id . str_replace($search, '', $listphoto) }}"
-                                    @if ($i == 1) {{-- first --}}
-                                        style='border-left : 1px solid #d9d9d9;border-top : 1px solid #d9d9d9; border-bottom: 1px solid #d9d9d9;border-top-left-radius: 0.5em 0.5em;border-bottom-left-radius: 0.5em 0.5em;'
-                                    @elseif($i == count($arraypic)){{-- last --}}
-                                        style='border: 1px solid #d9d9d9;border-top-right-radius: 0.5em 0.5em;border-bottom-right-radius: 0.5em 0.5em;'
-                                    @elseif(fmod($i, 6) == 0){{-- last in row --}}
-                                        style='border: 1px solid #d9d9d9;border-top-right-radius: 0.5em 0.5em;border-bottom-right-radius: 0.5em 0.5em;'
-                                    @elseif(fmod($i, 6) == 1) {{-- first next row --}}
-                                        style='border-left : 1px solid #d9d9d9;border-top : 1px solid #d9d9d9; border-bottom: 1px solid #d9d9d9;border-top-left-radius: 0.5em 0.5em;border-bottom-left-radius: 0.5em 0.5em;' 
-                                    @else
-                                        style='border-left : 1px solid #d9d9d9;border-top : 1px solid #d9d9d9; border-bottom: 1px solid #d9d9d9;' @endif>
-                                    <div style="padding: 3px">
-                                        <center>
+                        <div class="card mb-4 border-0 shadow-sm">
 
-                                            <input type="radio" name="thumbnail" value="{{ str_replace($search, '', $listphoto) }}" @if (str_replace($search, '', $listphoto) == $eventphoto->thumbnail) checked @endif> Thumbnail
-                                        </center>
+
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">
+                                Photo Gallery
+                            </h3>
+
+                            <div class="text-secondary">
+                                {{ count($arraypic) }} Photos
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="row g-4">
+
+                                @foreach ($arraypic as $listphoto)
+
+                                    @php
+                                        $photo = str_replace($search, '', $listphoto);
+                                        $isThumbnail = $photo == $eventphoto->thumbnail;
+                                    @endphp
+
+                                    <div
+                                        class="col-sm-6 col-md-4 col-lg-3"
+                                        id="{{ $eventphoto->id . $photo }}">
+
+                                        <div class="card photo-card h-100">
+
+                                            <div class="photo-wrapper">
+
+                                                <a
+                                                    data-fslightbox="gallery"
+                                                    href="{{ asset('storage/gallery/photo/' . $eventphoto->id . '/' . $photo) }}">
+
+                                                    <img
+                                                        src="{{ asset('storage/gallery/photo/' . $eventphoto->id . '/' . $photo) }}"
+                                                        class="photo-image">
+
+                                                </a>
+
+                                                @if($isThumbnail)
+
+                                                    <span class="badge bg-primary thumbnail-badge">
+                                                        Thumbnail
+                                                    </span>
+
+                                                @endif
+
+                                            </div>
+
+                                            <div class="card-body py-2">
+
+                                                <label class="form-check">
+
+                                                    <input
+                                                        class="form-check-input"
+                                                        type="radio"
+                                                        name="thumbnail"
+                                                        value="{{ $photo }}"
+                                                        @checked($isThumbnail)>
+
+                                                    <span class="form-check-label">
+                                                        Set Thumbnail
+                                                    </span>
+
+                                                </label>
+
+                                            </div>
+
+                                            @if ($eventphoto->active == 'Inactive')
+
+                                                @if(!$isThumbnail)
+
+                                                    <div class="card-footer bg-transparent">
+
+                                                        <button
+                                                            type="button"
+                                                            onclick="deleteimage(event)"
+                                                            class="btn btn-danger btn-sm w-100 btndelete"
+                                                            data-id="{{ $eventphoto->id }}"
+                                                            data-option="{{ $photo }}">
+
+                                                            Delete Photo
+
+                                                        </button>
+
+                                                    </div>
+
+                                                @endif
+
+                                            @endif
+
+                                        </div>
+
                                     </div>
 
-                                    <a data-fslightbox="gallery" href="{{ asset('storage/gallery/photo/' . $eventphoto->id . '/' . str_replace($search, '', $listphoto)) }}">
-                                        <!-- Photo -->
-                                        <div class="img-responsive img-responsive-1x1 rounded border" style="background-image: url({{ asset('storage/gallery/photo/' . $eventphoto->id . '/' . str_replace($search, '', $listphoto)) }})"></div>
-                                    </a>
-                                    @if ($eventphoto->active == 'Inactive')
-                                        @if (str_replace($search, '', $listphoto) != $eventphoto->thumbnail)
-                                            <center>
-                                                <button type="button" onclick="deleteimage()" class="btn btn-danger btndelete" data-id="{{ $eventphoto->id }}" data-option="{{ str_replace($search, '', $listphoto) }}" formnovalidate>Delete</button>
-                                            </center>
-                                        @endif
-                                    @endif
-                                </div>
-                            @endforeach
+                                @endforeach
+
+                            </div>
+
+                        </div>
+
+
                         </div>
 
                         {{-- <div class="mb-3">
@@ -122,18 +301,25 @@
                         </div> --}}
                         <br>
                         <div class="mb-3">
-                            <label class="form-label">Upload Photo</label>
-                            <div class="dropzone" id="document-dropzone">
-                                <div class="fallback">
-                                </div>
+                            <h3 class="mb-3">
+                                Upload Additional Photos
+                            </h3>
+
+                            <div class="alert alert-info">
+
+                                Current photos:
+                                <strong>
+                                    {{ count($arraypic) }}
+                                </strong>
+
                             </div>
                         </div>
 
-                        <div class="form-footer" style="float: right">
+                        <div class="d-flex justify-content-end gap-2 mt-4">
                             @if ($eventphoto->active == 'Active')
                                 <button type="submit" class="btn btn-warning" name="action" value="unpublish">Unpublish</button>
                             @else
-                                <button type="submit" class="btn btn-success" name="action" value="save">Save</button>
+                                <button type="submit"class="btn btn-success btn-lg">
                                 <button type="submit" class="btn btn-primary" name="action" value="publish">Save & Publish</button>
                             @endif
                         </div>
@@ -177,6 +363,64 @@
             margin: 2px;
             padding: 2px;
         }
+
+        .cover-thumbnail{
+    width:100%;
+    height:400px;
+    object-fit:cover;
+    border-radius:16px;
+}
+
+.photo-card{
+    border:none;
+    transition:.3s;
+    overflow:hidden;
+}
+
+.photo-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 15px 35px rgba(0,0,0,.15);
+}
+
+.photo-image{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+}
+
+.thumbnail-badge{
+    position:absolute;
+    top:10px;
+    right:10px;
+}
+
+.photo-wrapper{
+    position:relative;
+}
+
+.stat-card{
+    border:none;
+    border-radius:16px;
+}
+
+.dropzone{
+    min-height:250px;
+    border-radius:20px;
+    border:2px dashed var(--tblr-primary);
+}
+
+[data-bs-theme="dark"] .photo-card{
+    background:#1f2937;
+}
+
+[data-bs-theme="dark"] .stat-card{
+    background:#1f2937;
+}
+
+[data-bs-theme="dark"] .dropzone{
+    background:#111827;
+}
+
     </style>
 @endsection
 
@@ -185,30 +429,39 @@
     <script src={{ $url_litepicker }}></script>
     <script src={{ $url_lightbox_js }}></script>
     <script>
-        function deleteimage(e) {
-            if (confirm("Are you sure want to delete this image?")) {
-                if (!e) var e = window.event; // Get the window event
-                e.cancelBubble = true; // IE Stop propagation
-                if (e.stopPropagation) e.stopPropagation(); // Other Broswers
-                var id = $(e.target).data('id');
-                var option = $(e.target).data('option');
-                $.ajax({
-                    type: "POST",
-                    url: "{{ route('eventphoto.deleteImage') }}",
-                    data: {
-                        '_token': '{{ csrf_token() }}',
-                        id: id,
-                        option: option
-                    },
-                    success: function(data) {
-                        if (data.status == 200) {
-                            document.getElementById(id + option).style = "display:none;"
-                            console.log(data.status);
-                        }
-                    }
-                });
+function deleteimage(e) {
+
+    e.preventDefault();
+
+    if (!confirm("Are you sure want to delete this image?")) {
+        return;
+    }
+
+    let id = $(e.target).data('id');
+    let option = $(e.target).data('option');
+
+    $.ajax({
+        type: "POST",
+        url: "{{ route('eventphoto.deleteImage') }}",
+        data: {
+            _token: "{{ csrf_token() }}",
+            id: id,
+            option: option
+        },
+        success: function(data) {
+
+            if (data.status == 200) {
+
+                $("#" + id + option)
+                    .fadeOut(300, function() {
+                        $(this).remove();
+                    });
+
             }
-        };
+
+        }
+    });
+}
 
         let uploadedDocumentMap = {};
         Dropzone.autoDiscover = false;

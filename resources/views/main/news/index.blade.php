@@ -1,132 +1,393 @@
 @extends('layouts.sidebar-master')
+
 @section('content')
 
 <div class="page-header d-print-none">
     <div class="container-xl">
-      <div class="row g-2 align-items-center">
-        <div class="col">
-          <h2 class="page-title">
-            Manage News
-          </h2>
+
+        <div class="row g-2 align-items-center">
+
+            <div class="col">
+
+                <div class="d-flex align-items-center gap-3">
+
+                    <div class="avatar avatar-lg bg-primary-lt">
+                        <i class="ti ti-news fs-1"></i>
+                    </div>
+
+                    <div>
+
+                        <h2 class="page-title mb-1">
+                            Manage News
+                        </h2>
+
+                        <div class="text-secondary">
+                            Manage all company news and articles
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-auto ms-auto d-print-none">
+
+                <a href="{{ route('news.create') }}"
+                    class="btn btn-primary">
+
+                    <i class="ti ti-plus"></i>
+
+                    Add News
+
+                </a>
+
+            </div>
+
         </div>
-        <!-- Page title actions -->
-        <div class="col-auto ms-auto d-print-none">
-          <div class="d-flex">
-            <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-              <li class="breadcrumb-item"><a href="#">Manage</a></li>
-              <li class="breadcrumb-item active" aria-current="page"><a href="#">News</a></li>
-            </ol>
-          </div>
-        </div>
-      </div>
+
     </div>
 </div>
 
-<!-- Page body -->
 <div class="page-body">
-    <!-- Container Page -->
-    <div class="container">
+    <div class="container-xl">
 
-      {{-- alert component   --}}
-      <x-alert type='success' />
-      <x-alert type='warning' />
+        <x-alert type="success" />
+        <x-alert type="warning" />
 
-      <!-- Card -->
-      <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">List News</h3>
-            <div class="card-actions">
-                <a href="{{ route('news.create') }}" class="btn btn-primary">
-                  <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
-                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></svg>
-                  Add news
-                </a>
-              </div>
-          </div>
-        <div class="card-body">
-          <div id="table-default" class="table-responsive">
-            @unless(count($news) == 0)
-            <table class="table table-bordered table-striped" id="MyTable">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Title</th>
-                        <th>Creator</th>
-                        <th>Created At</th>
-                        <th width="65px"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach ($news as $list)
-                    <tr>
-                        <td>{{ $loop->index + 1 }}</td>
-                        <td>{{ $list->title }}</td>
-                        <td>{{ $list->user->name }}</td>
-                        <td>{{ date("d/m/y", strtotime($list->created_at)) }}</td>
-                        <td>
-                            <div class="d-inline">
-                                <a href="{{ route('news.edit', $list->slug) }}" class="btn btn-info btn-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
-                                        <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path>
-                                        <path d="M16 5l3 3"></path>
-                                     </svg>
-                                  </a>
+        {{-- Statistics --}}
+        <div class="row row-deck row-cards mb-4">
+
+            <div class="col-sm-6 col-lg-6">
+
+                <div class="card stat-card shadow-sm h-100">
+
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <div>
+
+                                <div class="subheader">
+                                    Total News
+                                </div>
+
+                                <div class="h1 mb-0">
+                                    {{ $totalNews }}
+                                </div>
+
                             </div>
 
-                            <form action="{{ route('news.destroy', $list->slug) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M4 7l16 0"></path>
-                                    <path d="M10 11l0 6"></path>
-                                    <path d="M14 11l0 6"></path>
-                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
-                                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
-                                 </svg></button>
-                            </form>
-                        </td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table>
-            @else
-            <p>No news data found</p>
-            @endunless
-          </div>
+                            <div class="avatar avatar-lg bg-primary-lt">
+                                <i class="ti ti-news fs-3"></i>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-sm-6 col-lg-6">
+
+                <div class="card stat-card shadow-sm h-100">
+
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <div>
+
+                                <div class="subheader">
+                                    Contributors
+                                </div>
+
+                                <div class="h1 text-success mb-0">
+                                    {{ $totalAuthor }}
+                                </div>
+
+                            </div>
+
+                            <div class="avatar avatar-lg bg-success-lt">
+                                <i class="ti ti-users fs-3"></i>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
 
-      </div>
-      <!-- Card -->
+        {{-- Search --}}
+        <div class="row mb-4">
+
+            <div class="col-md-12">
+
+                <input
+                    type="text"
+                    id="newsSearch"
+                    class="form-control"
+                    placeholder="Search news...">
+
+            </div>
+
+        </div>
+
+        {{-- News Grid --}}
+        <div class="row row-cards g-4" id="newsContainer">
+
+            @forelse($news as $list)
+
+                <div class="col-md-6 col-xl-4 news-item"
+                    data-title="{{ strtolower($list->title) }}">
+
+                    <div class="card gallery-card h-100">
+
+                        <div class="gallery-image-wrapper">
+
+                            @if($list->image)
+
+                                <img
+                                    src="{{ asset('storage/news/'.$list->image) }}"
+                                    class="gallery-image"
+                                    alt="{{ $list->title }}">
+
+                            @else
+
+                                <div class="gallery-placeholder">
+
+                                    <i class="ti ti-news fs-1"></i>
+
+                                </div>
+
+                            @endif
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <h3 class="card-title">
+
+                                {{ \Illuminate\Support\Str::limit($list->title, 80) }}
+
+                            </h3>
+
+                            <div class="text-secondary mb-3">
+
+                                {{ \Illuminate\Support\Str::limit(strip_tags($list->description), 120) }}
+
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+
+                                <span class="badge bg-primary-lt">
+
+                                    {{ $list->user->name }}
+
+                                </span>
+
+                                <span class="text-secondary small">
+
+                                    {{ date('d M Y', strtotime($list->created_at)) }}
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="card-footer bg-transparent border-0">
+
+                            <div class="d-flex gap-2">
+
+                                <a
+                                    href="{{ route('news.edit', $list->slug) }}"
+                                    class="btn btn-primary w-100 action-btn">
+
+                                    <i class="ti ti-edit me-1"></i>
+                                    Edit
+
+                                </a>
+
+                                <form
+                                    action="{{ route('news.destroy', $list->slug) }}"
+                                    method="POST"
+                                    class="w-100">
+
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-danger w-100 action-btn"
+                                        onclick="return confirm('Delete this news?')">
+
+                                        <i class="ti ti-trash me-1"></i>
+                                        Delete
+
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="col-12">
+
+                    <div class="empty">
+
+                        <div class="empty-img">
+                            <i class="ti ti-news-off fs-1"></i>
+                        </div>
+
+                        <p class="empty-title">
+                            No News Found
+                        </p>
+
+                    </div>
+
+                </div>
+
+            @endforelse
+
+        </div>
 
     </div>
-    <!-- Container Page -->
-  </div>
-  <!-- Page body -->
+</div>
 
 @endsection
 
 @section('style')
-    <!-- DataTables -->
-    <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
+
+<style>
+
+.stat-card{
+    border:none;
+    border-radius:18px;
+    overflow:hidden;
+    transition:.3s;
+}
+
+.stat-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 15px 35px rgba(0,0,0,.08);
+}
+
+.gallery-card{
+    border:none;
+    border-radius:18px;
+    overflow:hidden;
+    transition:.3s;
+}
+
+.gallery-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 15px 35px rgba(0,0,0,.12);
+}
+
+.gallery-image{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+}
+
+.gallery-placeholder{
+    height:220px;
+    background:#f1f5f9;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.card-title{
+    font-size:1rem;
+    font-weight:700;
+    line-height:1.5;
+    min-height:52px;
+}
+
+.action-btn{
+    height:42px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-weight:600;
+}
+
+#newsSearch{
+    border-radius:14px;
+    padding:12px 16px;
+    border:1px solid #e5e7eb;
+}
+
+[data-bs-theme="dark"] .gallery-card{
+    background:#1f2937;
+}
+
+[data-bs-theme="dark"] .stat-card{
+    background:#1f2937;
+}
+
+[data-bs-theme="dark"] .gallery-placeholder{
+    background:#111827;
+}
+
+[data-bs-theme="dark"] #newsSearch{
+    background:#111827;
+    border-color:#374151;
+    color:#fff;
+}
+
+</style>
+
 @endsection
 
 @section('script')
-    <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
-    <script>
-        // let table = new DataTable('#MyTable');
-        $(function() {
-            $("#MyTable").DataTable({
-                "lengthMenu": [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, 'All'],
-                ],
-                "pageLength": 25,
-                "autoWidth": false,
-            });
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function(){
+
+    const search =
+        document.getElementById('newsSearch');
+
+    const cards =
+        document.querySelectorAll('.news-item');
+
+    search.addEventListener('keyup', function(){
+
+        let keyword =
+            this.value.toLowerCase();
+
+        cards.forEach(card => {
+
+            let title =
+                card.dataset.title;
+
+            card.style.display =
+                title.includes(keyword)
+                ? ''
+                : 'none';
+
         });
-    </script>
+
+    });
+
+});
+
+</script>
+
 @endsection
