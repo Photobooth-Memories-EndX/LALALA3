@@ -9,7 +9,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row g-3">
 
         @include('main.manage.components.admin-menu-card', [
             'title' => 'Learning Management',
@@ -109,6 +109,63 @@
 
     </div>
 
-
-
 </div>
+
+@if(auth()->user()->canManageRole() || auth()->user()->canMonitor())
+
+    <div class="mt-5 mb-5">
+
+        <hr class="my-5">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">Super Administrator Access</h2>
+                <div class="text-muted">
+                    Akses khusus untuk pengaturan role, permission, dan monitoring sistem LMS.
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+
+            @if(auth()->user()->canManageRole())
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => 'Role & Permission Management',
+                    'description' => 'Mengelola role, permission, hak akses menu, pembatasan fitur, serta kontrol otorisasi seluruh pengguna LMS.',
+                    'url' => route('manage.role.index'),
+                    'button' => 'Manage Role',
+                    'icon' => 'ti ti-user-shield'
+                ])
+            @endif
+
+            @if(auth()->user()->canMonitor())
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => auth()->user()->isSubadminDivision()
+                        ? 'Division Monitoring'
+                        : 'Learning Monitoring',
+                    'description' => auth()->user()->isSubadminDivision()
+                        ? 'Monitoring progress learning karyawan berdasarkan division yang menjadi tanggung jawab Anda.'
+                        : 'Monitoring aktivitas learning, progress user, assessment, sertifikat, dan statistik pembelajaran secara keseluruhan.',
+                    'url' => route('monitoring.index'),
+                    'button' => auth()->user()->isSubadminDivision()
+                        ? 'Open Division Monitoring'
+                        : 'Open Monitoring',
+                    'icon' => 'ti ti-chart-bar'
+                ])
+            @endif
+
+            @if(auth()->user()->role == 2 || auth()->user()->role == 3)
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => 'Access Permission',
+                    'description' => 'Mengatur akses permission admin, pembatasan menu, dan kontrol hak akses fitur pada sistem OWL LMS.',
+                    'url' => url('manage/access-permission'),
+                    'button' => 'Manage Permission',
+                    'icon' => 'ti ti-lock-access'
+                ])
+            @endif
+
+        </div>
+
+    </div>
+
+@endif

@@ -78,27 +78,6 @@
                     </li>
                 @endif
 
-                {{-- Manage Role: hanya Super Admin (3) --}}
-                @if (auth()->user()->canManageRole())
-                    <li class="nav-item {{ request()->routeIs('manage.role.*') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('manage.role.index') }}">
-                            <span class="nav-link-icon"><i class="ti ti-user-shield"></i></span>
-                            <span class="nav-link-title">Manage Role</span>
-                        </a>
-                    </li>
-                @endif
-
-                {{-- Monitoring: Admin Training (2), Super Admin (3), Subadmin Division (4) --}}
-                @if (auth()->user()->canMonitor())
-                    <li class="nav-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('monitoring.index') }}">
-                            <span class="nav-link-icon"><i class="ti ti-chart-bar"></i></span>
-                            <span class="nav-link-title">
-                                {{ auth()->user()->isSubadminDivision() ? 'Monitoring Division' : 'Monitoring' }}
-                            </span>
-                        </a>
-                    </li>
-                @endif
             </ul>
         </div>
     </div>
