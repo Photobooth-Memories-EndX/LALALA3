@@ -1,24 +1,12 @@
 @php
-    $totalContent = count($playlist->trainingplandetail);
-    $completedContent = 0;
-
-    foreach ($playlist->trainingplandetail as $detail) {
-        if ($detail->content && isset($detail->content->contentuser)) {
-            $contentUser = $detail->content->contentuser
-                ->where('user_id', auth()->id())
-                ->first();
-
-            if ($contentUser && (int) $contentUser->finish === 1) {
-                $completedContent++;
-            }
-        }
-    }
-
-    $progress = $totalContent > 0
-        ? round(($completedContent / $totalContent) * 100)
-        : 0;
-
-    $firstContent = optional($playlist->trainingplandetail->first())->content;
+    // All values pre-computed in PlaylistUserController@index()
+    // No DB queries, no File::exists(), no progress loops in Blade
+    $totalContent     = $stats['totalContent'] ?? 0;
+    $completedContent = $stats['completedContent'] ?? 0;
+    $progress         = $stats['progress'] ?? 0;
+    $firstContent     = $stats['firstContent'] ?? null;
+    $thumbnail        = $stats['thumbnail'] ?? asset('default-video.jpg');
+    $hasRealThumb     = $thumbnail !== asset('default-video.jpg');
 @endphp
 
 <div class="col-xl-4 col-lg-6 mb-4 playlist-item">
@@ -27,22 +15,25 @@
 
         <div class="position-relative">
 
-            @if (!empty($playlist->image))
-                <img src="{{ asset($playlist->image) }}"
-                     class="playlist-thumbnail w-100">
-            @else
-                <div class="playlist-thumbnail d-flex align-items-center justify-content-center">
-                    <div class="text-center">
-                        <span class="avatar avatar-xl bg-primary-lt text-primary mb-2">
-                            <i class="ti ti-playlist"></i>
-                        </span>
+            @if($hasRealThumb)
+                <img src="{{ $thumbnail }}"
+                     class="playlist-thumbnail w-100"
+                     alt="{{ $playlist->title }}"
+                     onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            @endif
 
-                        <div class="small text-muted">
-                            Learning Playlist
-                        </div>
+            <div class="playlist-thumbnail d-flex align-items-center justify-content-center"
+                 @if($hasRealThumb) style="display:none;" @endif>
+                <div class="text-center">
+                    <span class="avatar avatar-xl bg-primary-lt text-primary mb-2">
+                        <i class="ti ti-playlist"></i>
+                    </span>
+
+                    <div class="small text-muted">
+                        Learning Playlist
                     </div>
                 </div>
-            @endif
+            </div>
 
             <span class="badge bg-primary position-absolute top-0 end-0 m-3">
                 Playlist

@@ -28,7 +28,7 @@
                             <div class="card-body text-center">
 
                                 <div class="h1 mb-1 text-primary">
-                                    {{ $allTrainingplan->count() }}
+                                    {{ $totalPlaylists }}
                                 </div>
 
                                 <div class="small text-muted">
@@ -44,9 +44,7 @@
                             <div class="card-body text-center">
 
                                 <div class="h1 mb-1 text-success">
-                                    {{ $allTrainingplan->sum(function ($item) {
-                                        return $item->trainingplandetail->count();
-                                    }) }}
+                                    {{ $totalContents }}
                                 </div>
 
                                 <div class="small text-muted">

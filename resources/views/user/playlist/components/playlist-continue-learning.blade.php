@@ -2,45 +2,14 @@
     $featuredPlaylist = $trainingplan->first();
 @endphp
 
-@if($featuredPlaylist)
+@if($featuredPlaylist && $featuredStats)
     @php
-        $details = $featuredPlaylist->trainingplandetail
-            ->filter(fn ($detail) => !empty($detail->content));
-
-        $totalContent = $details->count();
-        $completedContent = 0;
-        $totalProgress = 0;
-
-        foreach ($details as $detail) {
-            $contentUser = $detail->content->contentuser
-                ->where('user_id', auth()->id())
-                ->first();
-
-            $contentProgress = (int) ($contentUser->progress ?? 0);
-            $totalProgress += $contentProgress;
-
-            if ($contentUser && (int) $contentUser->finish === 1) {
-                $completedContent++;
-            }
-        }
-
-        $progress = $totalContent > 0
-            ? round($totalProgress / $totalContent)
-            : 0;
-
-        $firstContent = optional($details->first())->content;
-
-        $nextContent = $details
-            ->first(function ($detail) {
-                $contentUser = $detail->content->contentuser
-                    ->where('user_id', auth()->id())
-                    ->first();
-
-                return !$contentUser || (int) ($contentUser->finish ?? 0) === 0;
-            })
-            ->content ?? $firstContent;
-
-        $remainingContent = max($totalContent - $completedContent, 0);
+        $progress         = $featuredStats['progress'];
+        $completedContent = $featuredStats['completedContent'];
+        $totalContent     = $featuredStats['totalContent'];
+        $remainingContent = $featuredStats['remainingContent'];
+        $nextContent      = $featuredStats['nextContent'];
+        $firstContent     = $featuredStats['firstContent'];
     @endphp
 
     <div class="row g-3 mb-4 playlist-learning-path-wrap">

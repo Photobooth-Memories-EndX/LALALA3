@@ -26,9 +26,7 @@
                     $lesson = $list->content;
                     $isActive = optional($lesson)->slug === $content->slug;
 
-                    $learningProgress = App\Models\ContentUser::where('user_id', Auth::id())
-                        ->where('content_id', $list->content_id)
-                        ->first()->progress ?? 0;
+                    $learningProgress = $progressByContentId[$list->content_id] ?? 0;
 
                     if (optional($lesson)->type == 'YouTube') {
                         $thumb = 'http://img.youtube.com/vi/' . $lesson->link . '/mqdefault.jpg';

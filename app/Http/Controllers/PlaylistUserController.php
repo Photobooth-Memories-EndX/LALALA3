@@ -12,179 +12,273 @@ use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 
 class PlaylistUserController extends Controller
 {
     public function index()
-{
-    $trainingplan = TrainingPlan::with([
-            'trainingplandetail' => function ($query) {
-                $query->orderBy('content_order');
-            },
-            'trainingplandetail.content.contentuser',
-        ])
-        ->where('active', 'Active')
-        ->orderBy('created_at', 'desc')
-        ->paginate(9);
+    {
+        $userId = Auth::id();
 
-    $allTrainingplan = TrainingPlan::with([
-            'trainingplandetail.content.contentuser',
-        ])
-        ->where('active', 'Active')
-        ->get();
+        // Global aggregate stats — safe to cache, no per-user data
+        $totalPlaylists = Cache::remember('playlist_active_count', 300, function () {
+            return TrainingPlan::where('active', 'Active')->count();
+        });
 
-    return view('user.playlist.index', [
-        'title' => 'Playlist',
-        'trainingplan' => $trainingplan,
-        'allTrainingplan' => $allTrainingplan,
-    ]);
-}
+        $totalContents = Cache::remember('playlist_active_content_count', 300, function () {
+            return TrainingPlanDetail::whereHas('trainingplan', function ($q) {
+                $q->where('active', 'Active');
+            })->count();
+        });
+
+        // trainingplan columns: id, slug, title, url_link, active, created_at, updated_at
+        // content columns:      id, title, slug, type, link   (no 'image' column exists)
+        // content_users columns: id, user_id, content_id, progress, finish
+        $trainingplan = TrainingPlan::with([
+                'trainingplandetail' => fn ($q) => $q
+                    ->orderBy('content_order')
+                    ->select(['id', 'trainingplan_id', 'content_id', 'content_order']),
+                'trainingplandetail.content' => fn ($q) => $q
+                    ->select(['id', 'title', 'slug', 'type', 'link']),
+                'trainingplandetail.content.contentuser' => fn ($q) => $q
+                    ->where('user_id', $userId)
+                    ->select(['id', 'user_id', 'content_id', 'progress', 'finish']),
+            ])
+            ->select(['id', 'title', 'slug', 'url_link', 'active', 'created_at'])
+            ->where('active', 'Active')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
+
+        // Pre-compute per-card stats from eager-loaded data (no extra DB queries).
+        // Also computes the thumbnail URL — moves File::exists() out of Blade.
+        $playlistStats = [];
+        foreach ($trainingplan as $tp) {
+            $details      = $tp->trainingplandetail->filter(fn ($d) => !empty($d->content));
+            $totalContent = $details->count();
+            $completedContent = 0;
+
+            foreach ($details as $detail) {
+                $cu = $detail->content->contentuser->first(); // already filtered to $userId
+                if ($cu && (int) ($cu->finish ?? 0) === 1) {
+                    $completedContent++;
+                }
+            }
+
+            $firstContent = optional($details->first())->content;
+
+            $playlistStats[$tp->id] = [
+                'totalContent'     => $totalContent,
+                'completedContent' => $completedContent,
+                'progress'         => $totalContent > 0
+                    ? round(($completedContent / $totalContent) * 100)
+                    : 0,
+                'firstContent' => $firstContent,
+                'thumbnail'    => $this->getPlaylistThumbnail($firstContent),
+            ];
+        }
+
+        // Pre-compute featured playlist stats (first on page) for the "Continue Learning" card.
+        // Includes nextContent (first unfinished chapter) which per-card stats don't need.
+        $featuredStats    = null;
+        $featuredPlaylist = $trainingplan->first();
+
+        if ($featuredPlaylist) {
+            $details      = $featuredPlaylist->trainingplandetail->filter(fn ($d) => !empty($d->content));
+            $totalContent = $details->count();
+            $completedContent = 0;
+            $totalProgress    = 0;
+            $nextContent      = null;
+
+            foreach ($details as $detail) {
+                $cu = $detail->content->contentuser->first();
+                $p  = (int) ($cu->progress ?? 0);
+                $totalProgress += $p;
+
+                if ($cu && (int) ($cu->finish ?? 0) === 1) {
+                    $completedContent++;
+                }
+
+                if (!$nextContent && (!$cu || (int) ($cu->finish ?? 0) === 0)) {
+                    $nextContent = $detail->content;
+                }
+            }
+
+            $featuredStats = [
+                'totalContent'     => $totalContent,
+                'completedContent' => $completedContent,
+                'remainingContent' => max($totalContent - $completedContent, 0),
+                'progress'         => $totalContent > 0 ? round($totalProgress / $totalContent) : 0,
+                'firstContent'     => optional($details->first())->content,
+                'nextContent'      => $nextContent ?? optional($details->first())->content,
+            ];
+        }
+
+        return view('user.playlist.index', [
+            'title'          => 'Playlist',
+            'trainingplan'   => $trainingplan,
+            'totalPlaylists' => $totalPlaylists,
+            'totalContents'  => $totalContents,
+            'playlistStats'  => $playlistStats,
+            'featuredStats'  => $featuredStats,
+        ]);
+    }
 
     public function view($slug, $vidslug)
-{
-    $userId = Auth::id();
+    {
+        $userId = Auth::id();
 
-    $trainingplan = TrainingPlan::findBySlug($slug);
-    $content = Content::findBySlug($vidslug);
+        $trainingplan = TrainingPlan::findBySlug($slug);
+        $content      = Content::findBySlug($vidslug);
 
-    abort_if(!$trainingplan || !$content, 404);
+        abort_if(!$trainingplan || !$content, 404);
 
-    $content->increment('views');
+        $content->increment('views');
 
-    // Add content to user learning on going if not exist yet
-    $content_user = ContentUser::firstOrCreate([
-        'user_id' => $userId,
-        'content_id' => $content->id,
-    ]);
+        $content_user = ContentUser::firstOrCreate([
+            'user_id'    => $userId,
+            'content_id' => $content->id,
+        ]);
 
-    $content_user_all = ContentUser::where('user_id', $userId)->get();
+        $content_all = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)
+            ->with('content')
+            ->orderBy('content_order')
+            ->get();
 
-    $content_all = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)
-        ->with('content')
-        ->orderBy('content_order')
-        ->get();
+        // Single query replaces the N+1 in view-playlist-sidebar.blade.php
+        $progressByContentId = ContentUser::where('user_id', $userId)
+            ->whereIn('content_id', $content_all->pluck('content_id'))
+            ->pluck('progress', 'content_id');
 
-    // Ambil semua progress user sekali saja, agar tidak N+1 query
-    $progressByContentId = ContentUser::where('user_id', $userId)
-        ->whereIn('content_id', $content_all->pluck('content_id'))
-        ->pluck('progress', 'content_id');
+        $progressContent = $progressByContentId->sum();
+        $totalContent    = $content_all->count();
 
-    $progressContent = 0;
+        $percentageProgressPlaylist = $totalContent > 0
+            ? $progressContent / $totalContent
+            : 0;
 
-    foreach ($content_all as $ca) {
-        $progressContent += $progressByContentId[$ca->content_id] ?? 0;
+        $playlistProgressComplete = $percentageProgressPlaylist >= 100;
+
+        $assesment             = Assesment::where('type', 'trainingplan')
+            ->where('trainingplan_id', $trainingplan->id)
+            ->first();
+        $hasPlaylistAssessment = $assesment !== null;
+
+        // Load only the columns we display — no user/assesment relations needed
+        $queryAssessmentResult = AssesmentResult::select(['id', 'user_id', 'assesment_id', 'score', 'pass', 'final', 'created_at'])
+            ->where('user_id', $userId)
+            ->where('assesment_id', $assesment->id ?? '');
+
+        $assessmentCount        = $queryAssessmentResult->count();
+        $assessmentLatestScores = (clone $queryAssessmentResult)->latest()->first()?->score ?? 0;
+
+        // "Done" means the user has submitted a FINAL result (final = 1).
+        // Must NOT be derived from $assessmentCount — that counts all attempts
+        // including non-final in-progress drafts, which would unlock the certificate prematurely.
+        $playlistAssessmentDone = false;
+        if ($hasPlaylistAssessment) {
+            $playlistAssessmentDone = AssesmentResult::where('user_id', $userId)
+                ->where('assesment_id', $assesment->id)
+                ->where('final', 1)
+                ->exists();
+        }
+
+        $needsPlaylistAssessment       = $playlistProgressComplete && $hasPlaylistAssessment && !$playlistAssessmentDone;
+        $canGeneratePlaylistCertificate = $playlistProgressComplete && (!$hasPlaylistAssessment || $playlistAssessmentDone);
+
+        $playlistCertificateSetting = CertificateSetting::where('certificate_type', 'playlist')
+            ->where('trainingplan_id', $trainingplan->id)
+            ->where('is_active', 1)
+            ->first();
+
+        $assessmentContent = Assesment::where('type', 'content')
+            ->where('content_id', $content->id)
+            ->first();
+
+        $queryAssessmentContentResult = AssesmentResult::select(['id', 'user_id', 'assesment_id', 'score', 'pass', 'final', 'created_at'])
+            ->where('user_id', $userId)
+            ->where('assesment_id', $assessmentContent->id ?? '');
+
+        $assessmentContentCount        = $queryAssessmentContentResult->count();
+        $assessmentContentLatestScores = (clone $queryAssessmentContentResult)->latest()->first()?->score ?? 0;
+
+        // Comments: paginated root comments + 2 reply levels (was 4)
+        $comment = Comment::with([
+                'user',
+                'likes',
+                'likedByUser',
+
+                'replies' => fn ($q) => $q->with([
+                    'user',
+                    'likes',
+                    'likedByUser',
+
+                    'replies' => fn ($q) => $q->with([
+                        'user',
+                        'likes',
+                        'likedByUser',
+                    ]),
+                ]),
+            ])
+            ->withCount('replies')
+            ->whereNull('parent_id')
+            ->where('type', 'content')
+            ->where('content_id', $content->id)
+            ->latest()
+            ->paginate(5)
+            ->withQueryString();
+
+        $totalComment = Comment::whereNull('parent_id')
+            ->where('type', 'content')
+            ->where('content_id', $content->id)
+            ->count();
+
+        return view('user.playlist.view', [
+            'playlist'                       => $trainingplan,
+            'content'                        => $content,
+            'content_all'                    => $content_all,
+            'content_user'                   => $content_user,
+            'progressByContentId'            => $progressByContentId,
+            'assesment'                      => $assesment,
+            'comment'                        => $comment,
+            'totalComment'                   => $totalComment,
+            'assessmentAccess'               => $playlistProgressComplete,
+            'assessmentCount'                => $assessmentCount,
+            'assessmentLatestScores'         => $assessmentLatestScores,
+            'percentageProgressPlaylist'     => $percentageProgressPlaylist,
+            'assessmentContent'              => $assessmentContent,
+            'assessmentContentCount'         => $assessmentContentCount,
+            'assessmentContentLatestScores'  => $assessmentContentLatestScores,
+            'playlistProgressComplete'       => $playlistProgressComplete,
+            'hasPlaylistAssessment'          => $hasPlaylistAssessment,
+            'playlistAssessmentDone'         => $playlistAssessmentDone,
+            'needsPlaylistAssessment'        => $needsPlaylistAssessment,
+            'canGeneratePlaylistCertificate' => $canGeneratePlaylistCertificate,
+            'playlistCertificateSetting'     => $playlistCertificateSetting,
+        ]);
     }
 
-    $totalContent = $content_all->count();
+    // ─── Private helpers ────────────────────────────────────────────────────────
 
-    $percentageProgressPlaylist = $totalContent > 0
-        ? $progressContent / $totalContent
-        : 0;
+    /**
+     * Resolve the thumbnail URL for a playlist card.
+     * trainingplan has no image column — thumbnail comes from the first content item.
+     */
+    private function getPlaylistThumbnail(?object $content): string
+    {
+        if (!$content) {
+            return asset('default-video.jpg');
+        }
 
-    $playlistProgressComplete = $percentageProgressPlaylist >= 100;
+        if ($content->type === 'YouTube' && !empty($content->link)) {
+            return 'http://img.youtube.com/vi/' . $content->link . '/mqdefault.jpg';
+        }
 
-    $assesment = Assesment::where('type', 'trainingplan')
-        ->where('trainingplan_id', $trainingplan->id)
-        ->first();
+        $path = 'storage/files/content/' . $content->id . '/thumb.jpg';
+        if (File::exists(public_path($path)) && !is_dir(public_path($path))) {
+            return asset($path);
+        }
 
-    $hasPlaylistAssessment = $assesment !== null;
-
-    // Batasi komentar yang tampil agar halaman tidak berat
-    $comment = Comment::with([
-            'user',
-            'likes',
-            'likedByUser',
-
-            'replies.user',
-            'replies.likes',
-            'replies.likedByUser',
-
-            'replies.replies.user',
-            'replies.replies.likes',
-            'replies.replies.likedByUser',
-
-            'replies.replies.replies.user',
-            'replies.replies.replies.likes',
-            'replies.replies.replies.likedByUser',
-        ])
-        ->withCount('replies')
-        ->whereNull('parent_id')
-        ->where('type', 'content')
-        ->where('content_id', $content->id)
-        ->latest()
-        ->paginate(5)
-        ->withQueryString();
-
-    // Total semua komentar untuk angka count
-    $totalComment = Comment::whereNull('parent_id')
-        ->where('type', 'content')
-        ->where('content_id', $content->id)
-        ->count();
-
-    $queryAssessmentResult = AssesmentResult::with('user', 'assesment')
-        ->where('user_id', $userId)
-        ->where('assesment_id', $assesment->id ?? '');
-
-    $assessmentCount = $queryAssessmentResult->count();
-
-    $assessmentLatestScores = (clone $queryAssessmentResult)
-        ->latest()
-        ->first()
-        ->score ?? 0;
-
-    $playlistAssessmentDone = false;
-    if ($hasPlaylistAssessment) {
-        $playlistAssessmentDone = AssesmentResult::where('user_id', $userId)
-            ->where('assesment_id', $assesment->id)
-            ->exists();
+        return asset('default-video.jpg');
     }
-
-    $needsPlaylistAssessment = $playlistProgressComplete && $hasPlaylistAssessment && !$playlistAssessmentDone;
-    $canGeneratePlaylistCertificate = $playlistProgressComplete && (!$hasPlaylistAssessment || $playlistAssessmentDone);
-
-    $playlistCertificateSetting = CertificateSetting::where('certificate_type', 'playlist')
-        ->where('trainingplan_id', $trainingplan->id)
-        ->where('is_active', 1)
-        ->first();
-
-    // Assessment Content
-    $assessmentContent = Assesment::where('type', 'content')
-        ->where('content_id', $content->id)
-        ->first();
-
-    $queryAssessmentContentResult = AssesmentResult::with('user', 'assesment')
-        ->where('user_id', $userId)
-        ->where('assesment_id', $assessmentContent->id ?? '');
-
-    $assessmentContentCount = $queryAssessmentContentResult->count();
-
-    $assessmentContentLatestScores = (clone $queryAssessmentContentResult)
-        ->latest()
-        ->first()
-        ->score ?? 0;
-
-    return view('user.playlist.view', [
-        "playlist" => $trainingplan,
-        "content" => $content,
-        "content_all" => $content_all,
-        "content_user_all" => $content_user_all,
-        "content_user" => $content_user,
-        "assesment" => $assesment,
-        "comment" => $comment,
-        "totalComment" => $totalComment,
-        "assessmentAccess" => $playlistProgressComplete,
-        "assessmentCount" => $assessmentCount,
-        "assessmentLatestScores" => $assessmentLatestScores,
-        "percentageProgressPlaylist" => $percentageProgressPlaylist,
-        "assessmentContent" => $assessmentContent,
-        "assessmentContentCount" => $assessmentContentCount,
-        "assessmentContentLatestScores" => $assessmentContentLatestScores,
-        "playlistProgressComplete" => $playlistProgressComplete,
-        "hasPlaylistAssessment" => $hasPlaylistAssessment,
-        "playlistAssessmentDone" => $playlistAssessmentDone,
-        "needsPlaylistAssessment" => $needsPlaylistAssessment,
-        "canGeneratePlaylistCertificate" => $canGeneratePlaylistCertificate,
-        "playlistCertificateSetting" => $playlistCertificateSetting,
-    ]);
-}
 }
