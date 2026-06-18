@@ -68,12 +68,34 @@
                         <span class="nav-link-title">Gallery</span>
                     </a>
                 </li>
-                @if (in_array(auth()->user()->role, ['2', '3']))
-                    <li class="nav-item {{ request()->is('manage*') ? 'active' : '' }}">
-                        <a class="nav-link"
-                        href="{{ url('manage') }}">
+                {{-- Manage LMS: Admin Training (2) & Super Admin (3) --}}
+                @if (auth()->user()->canManageLms())
+                    <li class="nav-item {{ request()->is('manage') || (request()->is('manage/*') && !request()->routeIs('manage.role.*')) ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ url('manage') }}">
                             <span class="nav-link-icon"><i class="ti ti-settings"></i></span>
                             <span class="nav-link-title">Manage</span>
+                        </a>
+                    </li>
+                @endif
+
+                {{-- Manage Role: hanya Super Admin (3) --}}
+                @if (auth()->user()->canManageRole())
+                    <li class="nav-item {{ request()->routeIs('manage.role.*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('manage.role.index') }}">
+                            <span class="nav-link-icon"><i class="ti ti-user-shield"></i></span>
+                            <span class="nav-link-title">Manage Role</span>
+                        </a>
+                    </li>
+                @endif
+
+                {{-- Monitoring: Admin Training (2), Super Admin (3), Subadmin Division (4) --}}
+                @if (auth()->user()->canMonitor())
+                    <li class="nav-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('monitoring.index') }}">
+                            <span class="nav-link-icon"><i class="ti ti-chart-bar"></i></span>
+                            <span class="nav-link-title">
+                                {{ auth()->user()->isSubadminDivision() ? 'Monitoring Division' : 'Monitoring' }}
+                            </span>
                         </a>
                     </li>
                 @endif

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\UserAccessPermission;
 
 class User extends Authenticatable
 {
@@ -15,6 +16,7 @@ class User extends Authenticatable
     const ROLE_USER              = '1';
     const ROLE_ADMIN             = '2';
     const ROLE_SUPER_ADMIN       = '3';
+    const ROLE_SUBADMIN_DIVISION = '4';
 
     /**
      * The attributes that are mass assignable.
@@ -32,7 +34,8 @@ class User extends Authenticatable
         'id_emp',
         'id_user',
         'ssohash',
-        'sap_code'
+        'sap_code',
+        'role',
     ];
 
     /**
@@ -69,12 +72,46 @@ class User extends Authenticatable
         return $this->role === self::ROLE_SUPER_ADMIN;
     }
 
+    public function isSubadminDivision()
+    {
+        return $this->role === self::ROLE_SUBADMIN_DIVISION;
+    }
+
+    /**
+     * Boleh mengakses menu & fitur Manage LMS (Admin Training + Super Admin).
+     */
+    public function canManageLms()
+    {
+        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN], true);
+    }
+
+    /**
+     * Boleh mengakses Manage Role (hanya Super Admin).
+     */
+    public function canManageRole()
+    {
+        return $this->role === self::ROLE_SUPER_ADMIN;
+    }
+
+    /**
+     * Boleh mengakses Monitoring (Admin Training, Super Admin, Subadmin Division).
+     */
+    public function canMonitor()
+    {
+        return in_array(
+            $this->role,
+            [self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN, self::ROLE_SUBADMIN_DIVISION],
+            true
+        );
+    }
+
     public static function roles()
     {
         return [
-            static::ROLE_ADMIN         => 'Administrator',
-            static::ROLE_SUPER_ADMIN   => 'Super Admin',
-            static::ROLE_USER          => 'User',
+            static::ROLE_ADMIN              => 'Administrator',
+            static::ROLE_SUPER_ADMIN        => 'Super Admin',
+            static::ROLE_USER               => 'User',
+            static::ROLE_SUBADMIN_DIVISION  => 'Subadmin Division',
         ];
     }
 
@@ -127,4 +164,34 @@ class User extends Authenticatable
     {
         return $this->hasMany(News::class);
     }
+
+    public function accessPermissions()
+{
+    return $this->hasMany(UserAccessPermission::class);
+}
+
+public function hasAccessPermission(string $moduleKey): bool
+{
+    return $this->accessPermissions()
+        ->where('module_key', $moduleKey)
+        ->where('can_access', true)
+        ->exists();
+}
+
+public function canAccessManageModule(string $moduleKey): bool
+{
+    if ($this->isSuperAdmin()) {
+        return true;
+    }
+
+    $permission = $this->accessPermissions()
+        ->where('module_key', $moduleKey)
+        ->first();
+
+    if ($permission) {
+        return (bool) $permission->can_access;
+    }
+
+    return $this->isAdmin();
+}
 }

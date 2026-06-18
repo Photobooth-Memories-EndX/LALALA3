@@ -88,9 +88,9 @@
                         </a>
                     </li>
 
-                    {{-- ADMIN & SUPER ADMIN --}}
-                    @if (in_array(auth()->user()->role, ['2', '3']))
-                        <li class="nav-item dropdown {{ request()->is('manage*') ? 'active' : '' }}">
+                    {{-- MANAGE LMS: Admin Training (2) & Super Admin (3) --}}
+                    @if (auth()->user()->canManageLms())
+                        <li class="nav-item dropdown {{ request()->is('manage*') && !request()->routeIs('manage.role.*') ? 'active' : '' }}">
                                      <a class="nav-link dropdown-toggle"
                                          href="#"
                                          data-bs-toggle="dropdown"
@@ -114,6 +114,28 @@
                                 <a class="dropdown-item" href="{{ url('manage/trainingplan') }}"><i class="ti ti-list-check me-2"></i> Playlist</a>
                                 <a class="dropdown-item" href="{{ url('manage/eventphoto') }}"><i class="ti ti-camera me-2"></i> Event Gallery</a>
                             </div>
+                        </li>
+                    @endif
+
+                    {{-- MANAGE ROLE: hanya Super Admin (3) --}}
+                    @if (auth()->user()->canManageRole())
+                        <li class="nav-item {{ request()->routeIs('manage.role.*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('manage.role.index') }}">
+                                <span class="nav-link-icon"><i class="ti ti-shield-lock"></i></span>
+                                <span class="nav-link-title">Manage Role</span>
+                            </a>
+                        </li>
+                    @endif
+
+                    {{-- MONITORING: Admin Training (2), Super Admin (3), Subadmin Division (4) --}}
+                    @if (auth()->user()->canMonitor())
+                        <li class="nav-item {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('monitoring.index') }}">
+                                <span class="nav-link-icon"><i class="ti ti-chart-bar"></i></span>
+                                <span class="nav-link-title">
+                                    {{ auth()->user()->isSubadminDivision() ? 'Monitoring Division' : 'Monitoring' }}
+                                </span>
+                            </a>
                         </li>
                     @endif
 

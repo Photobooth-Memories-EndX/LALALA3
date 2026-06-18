@@ -70,5 +70,7 @@ class Kernel extends HttpKernel
         'prevent-back-button' => \App\Http\Middleware\PreventBackButtonMiddleware::class,
         'admin' => \App\Http\Middleware\AuthAdmin::class,
         'superadmin' => \App\Http\Middleware\AuthSuperAdmin::class,
+        'monitoring' => \App\Http\Middleware\AuthMonitoring::class,
+        'mpermission' => \App\Http\Middleware\CheckManagePermission::class,
     ];
 }
