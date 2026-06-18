@@ -2,29 +2,6 @@
 
 @section('content')
 
-@php
-    $user = Auth::user();
-
-    $contentItems = collect($content_user ?? []);
-    $assessmentItems = collect($assessments ?? []);
-    $resultItems = collect($result ?? []);
-
-    $totalLearning = $contentItems->count();
-    $completedLearning = $contentItems
-        ->filter(fn($item) => ($item->progress ?? 0) >= 100 || ($item->finish ?? '0') == '1')
-        ->count();
-
-    $ongoingLearning = $contentItems
-        ->filter(fn($item) => ($item->finish ?? '0') == '0')
-        ->count();
-
-    $averageProgress = $totalLearning > 0 ? round($contentItems->avg('progress')) : 0;
-
-    $totalAssessment = $assessmentItems->count();
-    $completedAssessment = $resultItems->where('final', 1)->count();
-    $passedAssessment = $resultItems->where('pass', 1)->count();
-@endphp
-
 <div class="page-body">
     <div class="container-xl">
 
@@ -39,12 +16,10 @@
             </div>
         </div>
 
-        <x-learning.profile-card 
-            :user="$user" 
-            :learning-hours="$learningHours ?? 0" 
+        <x-learning.profile-card
+            :user="$user"
+            :learning-hours="$learningHours ?? 0"
         />
-
-
 
         <x-learning.tab-navigation />
 
@@ -55,33 +30,19 @@
             :passed-assessment="$passedAssessment"
         />
 
-        <div id="tab-ongoing" class="learning-tab-content">
-            <x-learning.ongoing-section
-                :ongoing-content-user="$ongoing_content_user"
-                :ongoing-learning="$ongoingLearning"
-                :average-progress="$averageProgress"
-            />
-        </div>
-
-        <div id="tab-record" class="learning-tab-content d-none">
-            <x-learning.record-section :content-user="$content_user" :average-progress="$averageProgress"  :certificate-settings="$certificateSettings" />
-        </div>
-
-        <div id="tab-assessment" class="learning-tab-content d-none">
-            <x-learning.assessment-section :assessments="$assessments" :result="$result" />
-        </div>
-
-        <div id="tab-claim" class="learning-tab-content d-none">
-            <x-learning.empty-tab title="Klaim Learning Hour" description="Halaman ini masih kosong dan bisa dikembangkan nanti." />
-        </div>
-
-        <div id="tab-certificate" class="learning-tab-content d-none">
-            <x-learning.certificate-section
-                :user-certificates="$userCertificates" />
-        </div>
-
-        <div id="tab-monitoring" class="learning-tab-content d-none">
-            <x-learning.empty-tab title="Monitoring" description="Halaman monitoring masih kosong dan bisa dikembangkan nanti." />
+        <div id="learning-tab-content">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="placeholder-glow">
+                    <span class="placeholder col-6 mb-3 rounded-3" style="height:20px"></span>
+                    <span class="placeholder col-12 mb-2 rounded-3" style="height:14px"></span>
+                    <span class="placeholder col-10 mb-4 rounded-3" style="height:14px"></span>
+                    <div class="row g-3">
+                        <div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>
+                        <div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>
+                        <div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>

@@ -75,6 +75,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/change-password', [ProfileController::class, 'updatePassword'])->name('user.updatepassword');
 
     Route::get('/my-learning', [LearningController::class, 'dashboard'])->name('user.learning.dashboard');
+    Route::get('/my-learning/partial/{tab}', [LearningController::class, 'dashboardPartial'])->name('user.learning.dashboard.partial');
 
     Route::post('/comment/{id}/like', [CommentController::class, 'toggleLike'])->name('comment.like');
 });
