@@ -3,6 +3,15 @@
 @section('content')
 
 @php
+use App\Models\Assesment;
+use Carbon\Carbon;
+
+$upcomingDeadlines = Assesment::whereNotNull('todate')
+    ->whereDate('todate', '>=', now())
+    ->orderBy('todate', 'asc')
+    ->take(5)
+    ->get();
+
 $content_video = $content->filter(function ($list){
     return in_array($list->type, ['YouTube', 'Video']);
 });
@@ -18,35 +27,47 @@ $content_pdf = $content->filter(function ($list){
 
             <div class="col-xl-9 col-lg-8">
 
-                <div class="modern-hero">
-                    <div class="row align-items-center">
-                        <div class="col-lg-8">
-                            <span class="hero-badge">
-                                Learning Management System
-                            </span>
-                            <h1 class="hero-title">
-                                Welcome Back, {{ explode(' ', auth()->user()->name)[0] }}
-                            </h1>
-                            <p class="hero-subtitle">
-                                Continue your learning journey and improve your professional skills.
-                            </p>
-                            <a href="#continue-learning" class="btn btn-light btn-lg">
-                                Continue Learning
-                            </a>
-                        </div>
+<div class="modern-hero">
 
-                        <div class="col-lg-4 text-center">
-                            <div class="hero-circle">
-                                <h2>
-                                    {{ $content_user->where('finish',1)->count() }}
-                                </h2>
-                                <span>
-                                    Completed Course
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="row align-items-center">
+
+        <div class="col-lg-8">
+
+            <span class="hero-badge">
+                Learning Management System
+            </span>
+
+            <h1 class="hero-title">
+                Welcome,
+                {{ auth()->user()->name }}
+            </h1>
+
+            <div class="hero-position">
+
+                <i class="ti ti-briefcase me-2"></i>
+
+                {{ auth()->user()->team ?? 'Employee' }}
+
+            </div>
+
+            <p class="hero-subtitle">
+
+                Continue your learning journey and improve your professional skills.
+
+            </p>
+
+        </div>
+
+        <div class="col-lg-4">
+
+            <div id="hero-progress-chart"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
 
                 <div class="row mt-4">
                     <div class="col-md-3">
@@ -82,9 +103,85 @@ $content_pdf = $content->filter(function ($list){
                     </div>
                 </div>
 
+<div class="modern-card mt-4">
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+
+        <h2 class="section-title mb-0">
+            Continue Learning
+        </h2>
+
+        <a href="{{ route('content.user.index') }}">
+            View All
+        </a>
+
+    </div>
+
+    <div class="card-body">
+
+        @php
+            $continueCourse = $content_user
+                ->where('finish',0)
+                ->first();
+        @endphp
+
+        @if($continueCourse)
+
+        <div class="row align-items-center">
+
+            <div class="col-md-4">
+
+                <img
+                    src="https://picsum.photos/800/500?random={{ $continueCourse->id }}"
+                    class="continue-cover">
+
+            </div>
+
+            <div class="col-md-8">
+
+                <span class="badge bg-primary mb-2">
+                    In Progress
+                </span>
+
+                <h3 class="continue-title">
+
+                    {{ $continueCourse->content->title ?? '-' }}
+
+                </h3>
+
+                <p class="text-muted">
+
+                    Continue your last learning activity.
+
+                </p>
+
+                <div class="progress progress-modern mb-3">
+
+                    <div class="progress-bar" style="width:45%"></div>
+
+                </div>
+
+                <a
+                    href="{{ route('content.user.view',$continueCourse->content->slug ?? '') }}"
+                    class="btn btn-primary">
+
+                    Resume Learning
+
+                </a>
+
+            </div>
+
+        </div>
+
+        @endif
+
+    </div>
+
+</div>
+
                 <div class="modern-card mt-4">
                     <div class="card-header border-0">
-                        <h2 class="mb-0">
+                        <h2 class="section-title">
                             Recommended Learning
                         </h2>
                     </div>
@@ -95,7 +192,13 @@ $content_pdf = $content->filter(function ($list){
                             <div class="col-md-6 mb-4">
                                 <div class="course-card">
                                     @if($item->type == 'YouTube')
-                                        <img src="https://img.youtube.com/vi/{{ $item->link }}/mqdefault.jpg" class="img-fluid w-100">
+                                        <img
+                                            src="https://img.youtube.com/vi/{{ $item->link }}/mqdefault.jpg"
+                                            class="img-fluid w-100 course-cover">
+                                    @else
+                                        <img
+                                            src="https://picsum.photos/1600/800?random={{ $item->id }}"
+                                            class="img-fluid w-100 course-cover">
                                     @endif
 
                                     <div class="course-body">
@@ -119,9 +222,9 @@ $content_pdf = $content->filter(function ($list){
 
                 <div class="modern-profile-card">
                     <div class="d-flex align-items-center">
-                        <div class="modern-avatar">
-                            {{ substr(auth()->user()->initials, 0, 2) }}
-                        </div>
+                    <div class="modern-avatar">
+                        {{ strtoupper(substr(auth()->user()->name ?? 'U',0,1)) }}
+                    </div>
                         <div class="ms-3">
                             <h5 class="mb-0">
                                 {{ ucwords(strtolower(auth()->user()->name ?? '')) }}
@@ -135,9 +238,10 @@ $content_pdf = $content->filter(function ($list){
 
                 <div class="modern-widget mt-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">
-                            Learning Progress
-                        </h5>
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="ti ti-target-arrow me-2 text-primary"></i>
+                        Learning Progress
+                    </h5>
                         <span class="badge bg-primary">
                             {{ $content_user->where('finish',1)->count() }}
                         </span>
@@ -154,49 +258,183 @@ $content_pdf = $content->filter(function ($list){
                     </p>
                 </div>
 
-                <div class="row mt-4">
+<div class="modern-widget mt-4">
 
-                    <div class="col-md-6">
-                        <div class="modern-widget h-100">
-                            <div class="d-flex justify-content-between mb-3">
-                                <h5 class="mb-0">Latest Gallery</h5>
-                            </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
 
-                            @if($eventphoto->count())
-                                @php
-                                    $gallery = $eventphoto->first();
-                                @endphp
+        <h5 class="mb-0 d-flex align-items-center">
+            <i class="ti ti-calendar-event me-2 text-danger"></i>
+            Upcoming Deadline
+        </h5>
 
-                                <a href="{{ route('gallery.user.view',$gallery->slug) }}">
-                                    @if(!empty($gallery->thumbnail))
-                                        <img src="{{ asset('/storage/gallery/photo/'.$gallery->id.'/'.$gallery->thumbnail) }}"class="gallery-cover">
-                                    @else
-                                        <img src="https://via.placeholder.com/600x350?text=Gallery" class="gallery-cover">
-                                    @endif
+    </div>
 
-                                    <h4 class="gallery-title">
-                                        {{ Str::limit($gallery->title,50) }}
-                                    </h4>
-                                </a>
-                            @endif
-                        </div>
-                    </div> <div class="col-md-6">
-                        <div class="modern-widget h-100">
-                            <div class="d-flex justify-content-between mb-3">
-                                <h5 class="mb-0">Latest News</h5>
-                                <a href="{{ route('news.user.index') ?? '#' }}">
-                                    View All
-                                </a>
-                            </div>
+    @forelse($upcomingDeadlines as $deadline)
 
-                            @foreach($news as $list)
-                                <div class="news-item">
-                                    <a href="{{ route('news.user.view',$list->slug) }}" class="news-link">
-                                        {{ Str::limit($list->title,70) }}
-                                    </a>
-                                </div>
-                            @endforeach
-                        </div>
+        @php
+
+            $date = \Carbon\Carbon::parse($deadline->todate);
+
+            $remaining = now()->diffInDays(
+                $date,
+                false
+            );
+
+        @endphp
+
+        <div class="deadline-item">
+
+            <div class="deadline-date">
+
+                {{ $date->format('d') }}
+
+                <span>
+                    {{ strtoupper($date->format('M')) }}
+                </span>
+
+            </div>
+
+            <div class="flex-grow-1">
+
+                <strong>
+
+                    {{ Str::limit($deadline->title, 30) }}
+
+                </strong>
+
+                <small class="d-block text-muted">
+
+                    @if($remaining <= 0)
+
+                        Due Today
+
+                    @elseif($remaining == 1)
+
+                        Due Tomorrow
+
+                    @else
+
+                        Due in {{ $remaining }} days
+
+                    @endif
+
+                </small>
+
+            </div>
+
+        </div>
+
+    @empty
+
+        <div class="text-muted">
+
+            No upcoming deadlines
+
+        </div>
+
+    @endforelse
+
+</div>
+
+<!-- LATEST GALLERY -->
+<div class="modern-widget mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h5 class="mb-0 d-flex align-items-center">
+            <i class="ti ti-photo me-2 text-primary"></i>
+            Latest Gallery
+        </h5>
+
+        <a href="{{ route('gallery.user.index') ?? '#' }}">
+            View All
+        </a>
+
+    </div>
+
+    @if($eventphoto->count())
+
+        @php
+            $gallery = $eventphoto->first();
+        @endphp
+
+        <a href="{{ route('gallery.user.view',$gallery->slug) }}">
+
+                @if(!empty($gallery->thumbnail))
+
+                <img
+                    src="{{ asset('/storage/gallery/photo/'.$gallery->id.'/'.$gallery->thumbnail) }}"
+                    class="gallery-cover">
+
+                @else
+
+                <img
+                    src="https://picsum.photos/1600/800?random={{ $gallery->id }}"
+                    class="gallery-cover">
+
+                @endif
+            <h4 class="gallery-title mt-3">
+                {{ Str::limit($gallery->title,60) }}
+            </h4>
+
+        </a>
+
+    @else
+
+        <img
+            src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800"
+            class="gallery-cover">
+
+        <h4 class="gallery-title mt-3">
+            No Gallery Available
+        </h4>
+
+    @endif
+
+</div>
+
+
+<!-- LATEST NEWS -->
+<div class="modern-widget mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h5 class="mb-0 d-flex align-items-center">
+            <i class="ti ti-news me-2 text-primary"></i>
+            Latest News
+        </h5>
+
+        <a href="{{ route('news.user.index') ?? '#' }}">
+            View All
+        </a>
+
+    </div>
+
+        @foreach($news->take(4) as $list)
+
+        <div class="news-card">
+
+            <img
+                src="https://picsum.photos/1600/800?random={{ $list->id }}"
+                class="news-cover">
+
+            <div class="news-content">
+
+                <a
+                    href="{{ route('news.user.view',$list->slug) }}"
+                    class="news-link">
+
+                    {{ Str::limit($list->title,60) }}
+
+                </a>
+
+            </div>
+
+        </div>
+
+        @endforeach
+
+</div>
                     </div> </div> </div> </div> </div> </div> @endsection
 
 
@@ -307,9 +545,9 @@ a{
 .stat-card{
     background:white;
     border-radius:22px;
-    padding:25px;
+    padding:30px;
     text-align:center;
-    box-shadow:0 10px 30px rgba(0,0,0,.06);
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
     transition:.3s;
     height:100%;
 }
@@ -340,22 +578,27 @@ a{
 
 .modern-card{
     border:none;
-    border-radius:24px;
+    border-radius:22px;
     overflow:hidden;
-    box-shadow:0 10px 30px rgba(0,0,0,.06);
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
+}
+
+.modern-card .card-header{
+    padding:24px 28px 0;
 }
 
 .modern-card .card-header h2{
     font-size:28px;
     font-weight:700;
     color:#111827;
+    margin:0;
 }
 
 .course-card{
     background:white;
-    border-radius:18px;
+    border-radius:24px;
     overflow:hidden;
-    box-shadow:0 8px 20px rgba(0,0,0,.06);
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
     transition:.3s;
     height:100%;
 }
@@ -366,7 +609,7 @@ a{
 
 .course-card img{
     width:100%;
-    height:220px;
+    height:180px;
     object-fit:cover;
 }
 
@@ -375,11 +618,11 @@ a{
 }
 
 .course-body h5{
-    min-height:80px;
-    font-size:18px;
-    font-weight:700;
-    line-height:1.6;
-    margin-bottom:12px;
+    min-height:auto;
+    font-size:16px;
+    font-weight:600;
+    line-height:1.5;
+    margin-bottom:10px;
 }
 
 .course-body h5 a{
@@ -406,18 +649,30 @@ a{
 .modern-profile-card{
     background:white;
     border-radius:24px;
-    padding:30px;
-    box-shadow:0 10px 30px rgba(0,0,0,.06);
+    padding:20px;
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
 }
 
 .modern-avatar{
-    width:72px;
-    height:72px;
-    font-size:24px;
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    background:linear-gradient(
+        135deg,
+        #2563eb,
+        #1d4ed8
+    );
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-size:22px;
+    font-weight:700;
+    flex-shrink:0;
 }
 
 .modern-profile-card h5{
-    font-size:20px;
+    font-size:16px;
     font-weight:700;
     margin-bottom:4px;
 }
@@ -431,8 +686,9 @@ a{
 ======================================================= */
 
 .modern-widget h5{
-    font-size:24px;
-    font-weight:700;
+    font-size:18px;
+    font-weight:800;
+    color:#111827;
 }
 
 .progress-modern{
@@ -455,19 +711,32 @@ a{
     line-height:1.4;
 }
 
+.modern-widget{
+    background:white;
+    border-radius:24px;
+    padding:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,.06);
+    height:100%;
+}
+
 .gallery-cover{
     width:100%;
-    height:240px;
+    height:150px;
     object-fit:cover;
-    border-radius:16px;
-    margin-bottom:15px;
+    border-radius:14px;
+    margin-bottom:12px;
+    display:block;
+}
+
+.gallery-cover:hover{
+    transform:scale(1.02);
+    transition:.3s;
 }
 
 .gallery-title{
-    font-size:18px;
-    font-weight:700;
-    line-height:1.6;
-    color:#111827;
+    font-size:15px;
+    font-weight:600;
+    line-height:1.5;
 }
 
 /* =======================================================
@@ -484,10 +753,9 @@ a{
 }
 
 .news-link{
-    font-size:17px;
-    font-weight:600;
-    line-height:1.8;
-    color:#111827;
+    font-size:14px;
+    font-weight:500;
+    line-height:1.6;
 }
 
 .news-link:hover{
@@ -525,6 +793,65 @@ a{
     .hero-circle h2{
         font-size:30px;
     }
+}
+.continue-cover{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+    border-radius:18px;
+}
+
+.continue-title{
+    font-size:24px;
+    font-weight:700;
+}
+
+.deadline-item{
+    display:flex;
+    gap:15px;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.deadline-date{
+    width:55px;
+    height:55px;
+    border-radius:14px;
+    background:#fee2e2;
+    color:#dc2626;
+    font-weight:700;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+}
+
+.deadline-date span{
+    font-size:10px;
+}
+
+.path-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:16px;
+    font-weight:500;
+}
+
+.path-dot{
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    border:2px solid #2563eb;
+}
+
+.path-item.completed .path-dot{
+    background:#22c55e;
+    border-color:#22c55e;
+}
+
+.path-item.active .path-dot{
+    background:#2563eb;
 }
 
 /* =======================================================
@@ -608,7 +935,7 @@ a{
 .navbar .form-control,
 header .form-control,
 .search-input{
-    height:48px !important;
+    width:420px !important;
     font-size:15px !important;
     border-radius:12px !important;
 }
@@ -646,6 +973,48 @@ header .form-control,
     transform:translateX(0);
 }
 
+.modern-widget:hover,
+.modern-profile-card:hover,
+.stat-card:hover,
+.course-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 20px 50px rgba(0,0,0,.12);
+}
+
+.navbar .form-control,
+.search-input{
+    width:380px !important;
+    height:44px !important;
+    font-size:14px !important;
+    border-radius:12px !important;
+}
+
+.navbar .avatar{
+    width:40px !important;
+    height:40px !important;
+}
+
+.navbar .nav-link{
+    font-size:15px !important;
+    font-weight:600;
+}
+
+.col-lg-4 .modern-widget{
+    margin-bottom:18px;
+}
+
+.col-lg-4 .modern-widget h5{
+    font-size:18px;
+}
+
+.col-lg-4 .news-item{
+    padding:8px 0;
+}
+
+.col-lg-4 .gallery-title{
+    margin-top:8px;
+}
+
 </style>
 
 @endsection
@@ -653,6 +1022,29 @@ header .form-control,
 @section('script')
 
 <script>
+
+new ApexCharts(
+document.querySelector("#hero-progress-chart"),
+{
+    chart:{
+        type:'donut',
+        height:260
+    },
+
+    series:[
+        {{ $completedCourse }},
+        {{ $ongoingCourse }}
+    ],
+
+    labels:[
+        'Completed',
+        'In Progress'
+    ],
+
+    legend:{
+        position:'bottom'
+    }
+}).render();
 
 /* =======================================================
    MULTI CAROUSEL
