@@ -23,7 +23,10 @@ class ManageRoleController extends Controller
      */
     public function index(Request $request)
     {
-        $search = $request->input('s');
+        $search     = $request->input('s');
+        $division   = $request->input('division');
+        $department = $request->input('department');
+        $team       = $request->input('team');
 
         $users = User::query()
             ->when($search, function ($query) use ($search) {
@@ -31,51 +34,106 @@ class ManageRoleController extends Controller
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('id_emp', 'like', "%{$search}%")
-                        ->orWhere('division', 'like', "%{$search}%");
+                        ->orWhere('division', 'like', "%{$search}%")
+                        ->orWhere('department', 'like', "%{$search}%")
+                        ->orWhere('team', 'like', "%{$search}%");
                 });
+            })
+            ->when($division, function ($query) use ($division) {
+                $query->where('division', $division);
+            })
+            ->when($department, function ($query) use ($department) {
+                $query->where('department', $department);
+            })
+            ->when($team, function ($query) use ($team) {
+                $query->where('team', $team);
             })
             ->orderBy('name')
             ->paginate(15)
             ->withQueryString();
 
+            $divisions = User::query()
+                ->whereNotNull('division')
+                ->whereRaw("TRIM(division) != ''")
+                ->selectRaw('TRIM(division) as division')
+                ->distinct()
+                ->orderBy('division')
+                ->pluck('division');
+
+            $departments = User::query()
+                ->whereNotNull('department')
+                ->whereRaw("TRIM(department) != ''")
+                ->selectRaw('TRIM(department) as department')
+                ->distinct()
+                ->orderBy('department')
+                ->pluck('department');
+
+            $teams = User::query()
+                ->whereNotNull('team')
+                ->whereRaw("TRIM(team) != ''")
+                ->selectRaw('TRIM(team) as team')
+                ->distinct()
+                ->orderBy('team')
+                ->pluck('team');
+
         return view('main.manage-role.index', [
             'users'           => $users,
             'search'          => $search,
+            'division'        => $division,
+            'department'      => $department,
+            'team'            => $team,
+            'divisions'       => $divisions,
+            'departments'     => $departments,
+            'teams'           => $teams,
             'assignableRoles' => $this->assignableRoleLabels(),
+
+            'totalUsers'      => User::count(),
+            'totalDivision'   => $divisions->count(),
+            'totalDepartment' => $departments->count(),
+            'totalTeam'       => $teams->count(),
         ]);
     }
 
-    /**
-     * Ubah role seorang user.
-     */
-    public function update(Request $request, User $user)
-    {
-        $request->validate([
-            'role' => ['required', 'in:' . implode(',', self::ASSIGNABLE_ROLES)],
-        ], [
-            'role.in' => 'Role tidak valid. Super Admin tidak dapat diberikan melalui halaman ini.',
-        ]);
+   public function update(Request $request, User $user)
+{
+    $request->validate([
+        'role'        => ['required', 'in:' . implode(',', self::ASSIGNABLE_ROLES)],
+        'division'    => ['nullable', 'string', 'max:255'],
+        'department'  => ['nullable', 'string', 'max:255'],
+        'team'        => ['nullable', 'string', 'max:255'],
+        'id_org_unit' => ['nullable', 'string'],
+    ], [
+        'role.in' => 'Role tidak valid. Super Admin tidak dapat diberikan melalui halaman ini.',
+    ]);
 
-        // Tidak boleh mengubah role diri sendiri (mencegah Super Admin mengunci diri).
-        if ($user->id === Auth::id()) {
-            return redirect()->route('manage.role.index')
-                ->with('warning', 'Anda tidak dapat mengubah role akun Anda sendiri.');
-        }
-
-        // Lindungi akun Super Admin: role 3 tidak boleh diubah dari sini.
-        if ($user->isSuperAdmin()) {
-            return redirect()->route('manage.role.index')
-                ->with('warning', 'Role Super Admin tidak dapat diubah melalui halaman ini.');
-        }
-
-        // Direct assignment (bukan mass-assign) karena 'role' tidak termasuk
-        // $fillable pada model User — sama seperti pola di AdminController.
-        $user->role = $request->role;
-        $user->save();
-
+    if ($user->id === Auth::id()) {
         return redirect()->route('manage.role.index')
-            ->with('success', "Role {$user->name} berhasil diperbarui menjadi {$user->role_name}.");
+            ->with('warning', 'Anda tidak dapat mengubah data akun Anda sendiri.');
     }
+
+    if ($user->isSuperAdmin()) {
+        return redirect()->route('manage.role.index')
+            ->with('warning', 'Data Super Admin tidak dapat diubah melalui halaman ini.');
+    }
+
+    // Sesuaikan angka 5 dengan panjang kolom database
+    if (!empty($request->id_org_unit) && strlen($request->id_org_unit) > 5) {
+        return redirect()->back()
+            ->withInput()
+            ->with('warning', 'ID Org Unit terlalu panjang. Maksimal 5 karakter.');
+    }
+
+    $user->role        = $request->role;
+    $user->division    = $request->division;
+    $user->department  = $request->department;
+    $user->team        = $request->team;
+    $user->id_org_unit = $request->id_org_unit;
+
+    $user->save();
+
+    return redirect()->route('manage.role.index')
+        ->with('success', "Data {$user->name} berhasil diperbarui.");
+}
 
     /**
      * Pasangan value => label untuk pilihan role yang boleh di-set.

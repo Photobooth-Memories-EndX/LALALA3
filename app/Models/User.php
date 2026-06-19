@@ -13,10 +13,10 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    const ROLE_USER              = '1';
-    const ROLE_ADMIN             = '2';
-    const ROLE_SUPER_ADMIN       = '3';
-    const ROLE_SUBADMIN_DIVISION = '4';
+    public const ROLE_USER = 1;
+    public const ROLE_ADMIN = 2;
+    public const ROLE_SUPER_ADMIN = 3;
+    public const ROLE_SUBADMIN_DIVISION = 4;
 
     /**
      * The attributes that are mass assignable.
@@ -54,55 +54,55 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
+    'email_verified_at' => 'datetime',
+    'role' => 'integer',
     ];
 
     public function isAdmin()
     {
-        return $this->role === self::ROLE_ADMIN;
+        return (int) $this->role === self::ROLE_ADMIN;
     }
 
     public function isUser()
     {
-        return $this->role === self::ROLE_USER;
+        return (int) $this->role === self::ROLE_USER;
     }
 
     public function isSuperAdmin()
     {
-        return $this->role === self::ROLE_SUPER_ADMIN;
+        return (int) $this->role === self::ROLE_SUPER_ADMIN;
     }
 
     public function isSubadminDivision()
     {
-        return $this->role === self::ROLE_SUBADMIN_DIVISION;
+        return (int) $this->role === self::ROLE_SUBADMIN_DIVISION;
     }
+public function canManageLms()
+{
+    return in_array((int) $this->role, [
+        self::ROLE_ADMIN,
+        self::ROLE_SUPER_ADMIN,
+        self::ROLE_SUBADMIN_DIVISION,
+    ], true);
+}
 
-    /**
-     * Boleh mengakses menu & fitur Manage LMS (Admin Training + Super Admin).
-     */
-    public function canManageLms()
-    {
-        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN], true);
-    }
+//     public function canManageLms()
+// {
+//     return in_array((int) $this->role, [2, 3, 4], true);
+// }
 
-    /**
-     * Boleh mengakses Manage Role (hanya Super Admin).
-     */
     public function canManageRole()
     {
-        return $this->role === self::ROLE_SUPER_ADMIN;
+        return (int) $this->role === self::ROLE_SUPER_ADMIN;
     }
 
-    /**
-     * Boleh mengakses Monitoring (Admin Training, Super Admin, Subadmin Division).
-     */
     public function canMonitor()
     {
-        return in_array(
-            $this->role,
-            [self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN, self::ROLE_SUBADMIN_DIVISION],
-            true
-        );
+        return in_array((int) $this->role, [
+            self::ROLE_ADMIN,
+            self::ROLE_SUPER_ADMIN,
+            self::ROLE_SUBADMIN_DIVISION,
+        ], true);
     }
 
     public static function roles()
@@ -117,10 +117,13 @@ class User extends Authenticatable
 
     public function getRoleNameAttribute()
     {
-        if (!in_array($this->role, array_keys(static::roles()))) {
+        $role = (int) $this->role;
+
+        if (!array_key_exists($role, static::roles())) {
             throw new \Exception('Role [' . $this->role . '] is not defined');
         }
-        return static::roles()[$this->role];
+
+        return static::roles()[$role];
     }
 
     public function getInitialsAttribute(): string
@@ -184,12 +187,20 @@ public function canAccessManageModule(string $moduleKey): bool
         return true;
     }
 
-    $permission = $this->accessPermissions()
+    $userPermission = $this->accessPermissions()
         ->where('module_key', $moduleKey)
         ->first();
 
-    if ($permission) {
-        return (bool) $permission->can_access;
+    if ($userPermission) {
+        return (bool) $userPermission->can_access;
+    }
+
+    $rolePermission = RoleAccessPermission::where('role', $this->role)
+        ->where('module_key', $moduleKey)
+        ->first();
+
+    if ($rolePermission) {
+        return (bool) $rolePermission->can_access;
     }
 
     return $this->isAdmin();

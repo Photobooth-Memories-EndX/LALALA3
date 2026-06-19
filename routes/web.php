@@ -181,8 +181,9 @@ Route::get('/certificate/verify/{credentialId}', [UserCertificateController::cla
 */
 Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
+    Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
+
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
-        Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);
     });
 
@@ -326,7 +327,7 @@ Route::group(['prefix' => 'manage/role', 'middleware' => ['auth', 'superadmin']]
 | Monitoring
 |--------------------------------------------------------------------------
 */
-Route::group(['prefix' => 'monitoring', 'middleware' => ['auth', 'monitoring']], function () {
+Route::group(['prefix' => 'monitoring', 'middleware' => ['auth', 'mpermission:monitoring']], function () {
     Route::get('/', [MonitoringController::class, 'index'])->name('monitoring.index');
 });
 
@@ -336,7 +337,12 @@ Route::group(['prefix' => 'monitoring', 'middleware' => ['auth', 'monitoring']],
 |--------------------------------------------------------------------------
 */
 Route::group(['prefix' => 'manage/access-permission', 'middleware' => ['auth', 'superadmin']], function () {
-    Route::get('/', [ManageAccessPermissionController::class, 'index'])->name('manage.access-permission.index');
-    Route::get('/{user}/edit', [ManageAccessPermissionController::class, 'edit'])->name('manage.access-permission.edit');
-    Route::put('/{user}', [ManageAccessPermissionController::class, 'update'])->name('manage.access-permission.update');
+    Route::get('/', [ManageAccessPermissionController::class, 'index'])
+        ->name('manage.access-permission.index');
+
+    Route::get('/{role}/edit', [ManageAccessPermissionController::class, 'edit'])
+        ->name('manage.access-permission.edit');
+
+    Route::put('/{role}', [ManageAccessPermissionController::class, 'update'])
+        ->name('manage.access-permission.update');
 });

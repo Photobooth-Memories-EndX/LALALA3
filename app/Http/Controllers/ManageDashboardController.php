@@ -16,7 +16,12 @@ class ManageDashboardController extends Controller
 {
      public function index()
     {
-        abort_unless(in_array(auth()->user()->role, ['2', '3']), 403);
+        $role = (int) auth()->user()->role;
+
+        abort_unless(
+            in_array($role, [2, 3, 4], true),
+            403
+        );
 
         $startMonth = now()->startOfMonth();
         $startSixMonths = now()->subMonths(6)->startOfDay();

@@ -3,7 +3,19 @@
     $mylearningongoing = $mylearningongoing ?? 0;
     $darkThemeUrl = request()->fullUrlWithQuery(['theme' => 'dark']);
     $lightThemeUrl = request()->fullUrlWithQuery(['theme' => 'light']);
+
+    // debug sementara
+
+      $authUser = auth()->user();
 @endphp
+
+  // debug sementara
+{{-- <div style="color:red; font-size:12px;">
+    email: {{ $authUser->email }} |
+    role: {{ $authUser->role }} |
+    type: {{ gettype($authUser->role) }} |
+    canManageLms: {{ $authUser->canManageLms() ? 'YES' : 'NO' }}
+</div> --}}
 
 <aside class="navbar navbar-vertical navbar-expand-lg d-print-none">
     <div class="container-fluid">

@@ -2,77 +2,70 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RoleAccessPermission;
 use App\Models\User;
-use App\Models\UserAccessPermission;
 use Illuminate\Http\Request;
 
 class ManageAccessPermissionController extends Controller
 {
-    private array $modules = [
-        'learning_management'        => 'Learning Management',
-        'user_management'            => 'User Management',
+        private array $modules = [
         'admin_management'           => 'Admin Management',
-        'page_management'            => 'Page Management',
-        'news_announcement'          => 'News & Announcement',
+        'user_management'            => 'User Management',
+        'learning_management'        => 'Learning Management',
         'content_repository'         => 'Content Repository',
         'category_classification'    => 'Category & Classification',
         'assessment_management'      => 'Assessment Management',
         'question_bank'              => 'Question Bank',
         'playlist_learning_path'     => 'Playlist & Learning Path',
+        'news_announcement'          => 'News & Announcement',
+        'page_management'            => 'Page Management',
         'event_documentation'        => 'Event Documentation',
         'certificate_setting'        => 'Certificate Setting',
+        'monitoring'                 => 'Monitoring',
     ];
 
-    public function index(Request $request)
+    public function index()
     {
-        $search = $request->input('s');
-
-        $users = User::query()
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('id_emp', 'like', "%{$search}%")
-                        ->orWhere('division', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name')
-            ->paginate(15)
-            ->withQueryString();
-
         return view('main.manage-access-permission.index', [
-            'users' => $users,
-            'search' => $search,
+            'roles' => User::roles(),
+            'modules' => $this->modules,
+            'permissions' => RoleAccessPermission::all()
+                ->groupBy('role')
+                ->map(fn ($items) => $items->pluck('can_access', 'module_key'))
+                ->toArray(),
         ]);
     }
 
-    public function edit(User $user)
+    public function edit(string $role)
     {
-        $permissions = $user->accessPermissions()
-            ->pluck('can_access', 'module_key')
-            ->toArray();
+        abort_if(!array_key_exists($role, User::roles()), 404);
 
         return view('main.manage-access-permission.edit', [
-            'user' => $user,
+            'role' => $role,
+            'roleName' => User::roles()[$role],
             'modules' => $this->modules,
-            'permissions' => $permissions,
+            'permissions' => RoleAccessPermission::where('role', $role)
+                ->pluck('can_access', 'module_key')
+                ->toArray(),
         ]);
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, string $role)
     {
-        if ($user->isSuperAdmin()) {
+        abort_if(!array_key_exists($role, User::roles()), 404);
+
+        if ($role === User::ROLE_SUPER_ADMIN) {
             return redirect()
                 ->route('manage.access-permission.index')
-                ->with('warning', 'Super Admin tidak perlu diatur permission-nya karena sudah full access.');
+                ->with('warning', 'Super Admin selalu memiliki full access.');
         }
 
         $selectedModules = $request->input('permissions', []);
 
-        foreach ($this->modules as $moduleKey => $moduleLabel) {
-            UserAccessPermission::updateOrCreate(
+        foreach ($this->modules as $moduleKey => $label) {
+            RoleAccessPermission::updateOrCreate(
                 [
-                    'user_id' => $user->id,
+                    'role' => $role,
                     'module_key' => $moduleKey,
                 ],
                 [
@@ -83,6 +76,6 @@ class ManageAccessPermissionController extends Controller
 
         return redirect()
             ->route('manage.access-permission.index')
-            ->with('success', 'Access permission berhasil diperbarui.');
+            ->with('success', 'Access permission role berhasil diperbarui.');
     }
 }

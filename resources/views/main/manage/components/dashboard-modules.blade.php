@@ -11,107 +11,134 @@
 
     <div class="row g-3">
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Learning Management',
-            'description' => 'Melihat data pembelajaran karyawan, progres belajar, riwayat learning, dan monitoring aktivitas learning.',
-            'url' => url('manage/learning'),
-            'button' => 'Manage Learning',
-            'icon' => 'ti ti-school'
-        ])
+        @if(auth()->user()->canAccessManageModule('learning_management'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Learning Management',
+                'description' => 'Melihat data pembelajaran karyawan, progres belajar, riwayat learning, dan monitoring aktivitas learning.',
+                'url' => url('manage/learning'),
+                'button' => 'Manage Learning',
+                'icon' => 'ti ti-school'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'User Management',
-            'description' => 'Mengelola akun karyawan, data user, status akun, reset password, dan profil pengguna LMS.',
-            'url' => url('manage/user'),
-            'button' => 'Manage Users',
-            'icon' => 'ti ti-users'
-        ])
+        @if(auth()->user()->canAccessManageModule('user_management'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'User Management',
+                'description' => 'Mengelola akun karyawan, data user, status akun, reset password, dan profil pengguna LMS.',
+                'url' => url('manage/user'),
+                'button' => 'Manage Users',
+                'icon' => 'ti ti-users'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Admin Management',
-            'description' => 'Mengatur akses administrator, super admin, dan hak kelola pengguna yang memiliki role pengelola sistem.',
-            'url' => url('manage/admin'),
-            'button' => 'Manage Admin',
-            'icon' => 'ti ti-shield-lock'
-        ])
+        @if(auth()->user()->canAccessManageModule('admin_management'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Admin Management',
+                'description' => 'Mengatur akses administrator, super admin, dan hak kelola pengguna yang memiliki role pengelola sistem.',
+                'url' => url('manage/admin'),
+                'button' => 'Manage Admin',
+                'icon' => 'ti ti-shield-lock'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Page Management',
-            'description' => 'Mengelola halaman statis, informasi platform, konten halaman, dan kebutuhan informasi umum LMS.',
-            'url' => url('manage/pages'),
-            'button' => 'Manage Pages',
-            'icon' => 'ti ti-layout'
-        ])
+        @if(auth()->user()->canAccessManageModule('page_management'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Page Management',
+                'description' => 'Mengelola halaman statis, informasi platform, konten halaman, dan kebutuhan informasi umum LMS.',
+                'url' => url('manage/pages'),
+                'button' => 'Manage Pages',
+                'icon' => 'ti ti-layout'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'News & Announcement',
-            'description' => 'Membuat dan mengelola berita, pengumuman, informasi training, serta komunikasi internal perusahaan.',
-            'url' => url('manage/news'),
-            'button' => 'Manage News',
-            'icon' => 'ti ti-news'
-        ])
+        @if(auth()->user()->canAccessManageModule('news_announcement'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'News & Announcement',
+                'description' => 'Membuat dan mengelola berita, pengumuman, informasi training, serta komunikasi internal perusahaan.',
+                'url' => url('manage/news'),
+                'button' => 'Manage News',
+                'icon' => 'ti ti-news'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Content Repository',
-            'description' => 'Mengelola materi pembelajaran seperti video, YouTube, dokumen, SOP, thumbnail, author, dan status publish.',
-            'url' => url('manage/content'),
-            'button' => 'Manage Content',
-            'icon' => 'ti ti-book-2'
-        ])
+        @if(auth()->user()->canAccessManageModule('content_repository'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Content Repository',
+                'description' => 'Mengelola materi pembelajaran seperti video, YouTube, dokumen, SOP, thumbnail, author, dan status publish.',
+                'url' => url('manage/content'),
+                'button' => 'Manage Content',
+                'icon' => 'ti ti-book-2'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Category & Classification',
-            'description' => 'Mengatur kategori materi, klasifikasi learning, pengelompokan konten, dan struktur pencarian content.',
-            'url' => url('manage/classification'),
-            'button' => 'Manage Category',
-            'icon' => 'ti ti-category'
-        ])
+        @if(auth()->user()->canAccessManageModule('category_classification'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Category & Classification',
+                'description' => 'Mengatur kategori materi, klasifikasi learning, pengelompokan konten, dan struktur pencarian content.',
+                'url' => url('manage/classification'),
+                'button' => 'Manage Category',
+                'icon' => 'ti ti-category'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Assessment Management',
-            'description' => 'Mengelola quiz, assessment, passing grade, remedial, assign user, link assessment, dan hasil penilaian.',
-            'url' => url('manage/assesment'),
-            'button' => 'Manage Assessment',
-            'icon' => 'ti ti-clipboard-check'
-        ])
+        @if(auth()->user()->canAccessManageModule('assessment_management'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Assessment Management',
+                'description' => 'Mengelola quiz, assessment, passing grade, remedial, assign user, link assessment, dan hasil penilaian.',
+                'url' => url('manage/assesment'),
+                'button' => 'Manage Assessment',
+                'icon' => 'ti ti-clipboard-check'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Question Bank',
-            'description' => 'Mengelola bank soal, pilihan jawaban, gambar soal, cloning soal, sinkronisasi soal, dan reusable question set.',
-            'url' => url('manage/question-bank'),
-            'button' => 'Manage Question Bank',
-            'icon' => 'ti ti-help-circle'
-        ])
+        @if(auth()->user()->canAccessManageModule('question_bank'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Question Bank',
+                'description' => 'Mengelola bank soal, pilihan jawaban, gambar soal, cloning soal, sinkronisasi soal, dan reusable question set.',
+                'url' => url('manage/question-bank'),
+                'button' => 'Manage Question Bank',
+                'icon' => 'ti ti-help-circle'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Playlist & Learning Path',
-            'description' => 'Menyusun alur pembelajaran, playlist training, urutan materi, learning path, dan paket pembelajaran terstruktur.',
-            'url' => url('manage/trainingplan'),
-            'button' => 'Manage Playlist',
-            'icon' => 'ti ti-route'
-        ])
+        @if(auth()->user()->canAccessManageModule('playlist_learning_path'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Playlist & Learning Path',
+                'description' => 'Menyusun alur pembelajaran, playlist training, urutan materi, learning path, dan paket pembelajaran terstruktur.',
+                'url' => url('manage/trainingplan'),
+                'button' => 'Manage Playlist',
+                'icon' => 'ti ti-route'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Event Documentation',
-            'description' => 'Mengelola dokumentasi event, gallery foto training, kegiatan perusahaan, dan arsip dokumentasi pembelajaran.',
-            'url' => url('manage/eventphoto'),
-            'button' => 'Manage Gallery',
-            'icon' => 'ti ti-photo'
-        ])
+        @if(auth()->user()->canAccessManageModule('event_documentation'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Event Documentation',
+                'description' => 'Mengelola dokumentasi event, gallery foto training, kegiatan perusahaan, dan arsip dokumentasi pembelajaran.',
+                'url' => url('manage/eventphoto'),
+                'button' => 'Manage Gallery',
+                'icon' => 'ti ti-photo'
+            ])
+        @endif
 
-        @include('main.manage.components.admin-menu-card', [
-            'title' => 'Certificate Setting',
-            'description' => 'Mengatur syarat pembuatan sertifikat seperti minimum progress, minimum score, issuer name, logo penerbit, dan status sertifikat.',
-            'url' => route('certificate.setting.index'),
-            'button' => 'Manage Certificate',
-            'icon' => 'ti ti-award'
-        ])
+        @if(auth()->user()->canAccessManageModule('certificate_setting'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Certificate Setting',
+                'description' => 'Mengatur syarat pembuatan sertifikat seperti minimum progress, minimum score, issuer name, logo penerbit, dan status sertifikat.',
+                'url' => route('certificate.setting.index'),
+                'button' => 'Manage Certificate',
+                'icon' => 'ti ti-award'
+            ])
+        @endif
 
     </div>
-
 </div>
 
-@if(auth()->user()->canManageRole() || auth()->user()->canMonitor())
+@if(
+    auth()->user()->canManageRole() ||
+    auth()->user()->canAccessManageModule('monitoring') ||
+    auth()->user()->isSuperAdmin()
+)
 
     <div class="mt-5 mb-5">
 
@@ -138,7 +165,7 @@
                 ])
             @endif
 
-            @if(auth()->user()->canMonitor())
+            @if(auth()->user()->canAccessManageModule('monitoring'))
                 @include('main.manage.components.admin-menu-card', [
                     'title' => auth()->user()->isSubadminDivision()
                         ? 'Division Monitoring'
@@ -154,18 +181,16 @@
                 ])
             @endif
 
-            @if(auth()->user()->role == 2 || auth()->user()->role == 3)
+            @if(auth()->user()->isSuperAdmin())
                 @include('main.manage.components.admin-menu-card', [
                     'title' => 'Access Permission',
-                    'description' => 'Mengatur akses permission admin, pembatasan menu, dan kontrol hak akses fitur pada sistem OWL LMS.',
-                    'url' => url('manage/access-permission'),
+                    'description' => 'Mengatur akses permission berdasarkan role, pembatasan menu, dan kontrol hak akses fitur pada sistem OWL LMS.',
+                    'url' => route('manage.access-permission.index'),
                     'button' => 'Manage Permission',
                     'icon' => 'ti ti-lock-access'
                 ])
             @endif
 
         </div>
-
     </div>
-
 @endif

@@ -6,28 +6,29 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
-{
-    Schema::table('comment_likes', function (Blueprint $table) {
-        $table->string('reference_type')->nullable();
-        $table->unsignedBigInteger('reference_id')->nullable();
-    });
-}
+    {
+        Schema::table('comment_likes', function (Blueprint $table) {
+            if (!Schema::hasColumn('comment_likes', 'reference_type')) {
+                $table->string('reference_type')->nullable();
+            }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
+            if (!Schema::hasColumn('comment_likes', 'reference_id')) {
+                $table->unsignedBigInteger('reference_id')->nullable();
+            }
+        });
+    }
+
     public function down()
     {
         Schema::table('comment_likes', function (Blueprint $table) {
-            //
+            if (Schema::hasColumn('comment_likes', 'reference_type')) {
+                $table->dropColumn('reference_type');
+            }
+
+            if (Schema::hasColumn('comment_likes', 'reference_id')) {
+                $table->dropColumn('reference_id');
+            }
         });
     }
 };
