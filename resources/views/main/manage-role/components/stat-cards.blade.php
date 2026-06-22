@@ -1,53 +1,68 @@
-@extends('layouts.sidebar-master')
+{{-- Summary cards (mengikuti style Monitoring Group). Data: $totalUsers, $totalDivision, $totalDepartment, $totalTeam --}}
+<div class="row row-cards mb-3">
 
-@section('content')
-    <div class="page-header d-print-none">
-        <div class="container-xl">
-            <div class="row g-2 align-items-center">
-                <div class="col">
-                    <h2 class="page-title">Manage Role</h2>
-                    <div class="text-muted mt-1">
-                        Kelola role, division, department, team, dan org unit user.
+    <div class="col-sm-6 col-lg-3 mb-3">
+        <div class="card owl-stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="owl-stat-icon bg-primary">
+                        <i class="ti ti-users"></i>
                     </div>
-                </div>
-
-                <div class="col-auto ms-auto d-print-none">
-                    <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-                        <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                        <li class="breadcrumb-item active" aria-current="page"><a href="#">Role</a></li>
-                    </ol>
+                    <div class="owl-stat-content">
+                        <div class="owl-stat-label">Total User</div>
+                        <div class="owl-stat-number">{{ number_format($totalUsers) }}</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="page-body">
-        <div class="container-xl">
-
-            <x-alert type="success" />
-            <x-alert type="warning" />
-
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    {!! implode('', $errors->all('<div>:message</div>')) !!}
+    <div class="col-sm-6 col-lg-3 mb-3">
+        <div class="card owl-stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="owl-stat-icon bg-azure">
+                        <i class="ti ti-building-community"></i>
+                    </div>
+                    <div class="owl-stat-content">
+                        <div class="owl-stat-label">Division</div>
+                        <div class="owl-stat-number">{{ number_format($totalDivision) }}</div>
+                    </div>
                 </div>
-            @endif
-
-            @include('main.manage-role.components.stat-cards')
-
-            @include('main.manage-role.components.filter-card')
-
-            @include('main.manage-role.components.user-table')
-
-            {{-- Modal wajib di luar table/tbody agar tidak bug --}}
-            @foreach ($users as $user)
-                @if (!$user->isSuperAdmin() && $user->id !== auth()->id())
-                    @include('main.manage-role.components.edit-user-modal', [
-                        'user' => $user,
-                    ])
-                @endif
-            @endforeach
-
+            </div>
         </div>
     </div>
-@endsection
+
+    <div class="col-sm-6 col-lg-3 mb-3">
+        <div class="card owl-stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="owl-stat-icon bg-success">
+                        <i class="ti ti-building"></i>
+                    </div>
+                    <div class="owl-stat-content">
+                        <div class="owl-stat-label">Department</div>
+                        <div class="owl-stat-number">{{ number_format($totalDepartment) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3 mb-3">
+        <div class="card owl-stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="owl-stat-icon bg-purple">
+                        <i class="ti ti-users-group"></i>
+                    </div>
+                    <div class="owl-stat-content">
+                        <div class="owl-stat-label">Team</div>
+                        <div class="owl-stat-number">{{ number_format($totalTeam) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
