@@ -49,9 +49,28 @@ class Assesment extends Model
     {
         return $this->hasMany(Content::class, 'id', 'content_id');
     }
-    
+
     public function trainingplan()
     {
         return $this->belongsTo(TrainingPlan::class, 'trainingplan_id', 'id')->withTrashed()->withDefault();
     }
+
+    public static function getUpcomingDeadlineByUser($userId)
+    {
+    $contentIds = ContentUser::where(
+            'user_id',
+            $userId
+        )
+        ->where('finish', 0)
+        ->pluck('content_id')
+        ->toArray();
+
+    return self::whereNotNull('todate')
+        ->whereDate('todate', '>=', now())
+        ->whereIn('content_id', $contentIds)
+        ->orderBy('todate')
+        ->take(5)
+        ->get();
+    }
+
 }

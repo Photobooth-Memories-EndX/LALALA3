@@ -2,25 +2,6 @@
 
 @section('content')
 
-@php
-use App\Models\Assesment;
-use Carbon\Carbon;
-
-$upcomingDeadlines = Assesment::whereNotNull('todate')
-    ->whereDate('todate', '>=', now())
-    ->orderBy('todate', 'asc')
-    ->take(5)
-    ->get();
-
-$content_video = $content->filter(function ($list){
-    return in_array($list->type, ['YouTube', 'Video']);
-});
-
-$content_pdf = $content->filter(function ($list){
-    return $list->type == 'Document';
-});
-@endphp
-
 <div class="page-body">
     <div class="container-fluid px-4">
         <div class="row g-4 align-items-start">
@@ -107,9 +88,9 @@ $content_pdf = $content->filter(function ($list){
 
     <div class="card-header d-flex justify-content-between align-items-center">
 
-        <h2 class="section-title mb-0">
+        <h1 class="section-title mb-0">
             Continue Learning
-        </h2>
+        </h1>
 
         <a href="{{ route('content.user.index') }}">
             View All
@@ -127,17 +108,15 @@ $content_pdf = $content->filter(function ($list){
 
         @if($continueCourse)
 
-        <div class="row align-items-center">
+        <div class="row align-items-center gx-4">
 
             <div class="col-md-4">
 
-                <img
-                    src="https://picsum.photos/800/500?random={{ $continueCourse->id }}"
-                    class="continue-cover">
+                <img src="{{ asset('default-video.jpg') }}"class="continue-cover"alt="Continue Learning">
 
             </div>
 
-            <div class="col-md-8">
+            <div class="col-md-8 continue-content">
 
                 <span class="badge bg-primary mb-2">
                     In Progress
@@ -181,9 +160,9 @@ $content_pdf = $content->filter(function ($list){
 
                 <div class="modern-card mt-4">
                     <div class="card-header border-0">
-                        <h2 class="section-title">
+                        <h1 class="section-title">
                             Recommended Learning
-                        </h2>
+                        </h1>
                     </div>
 
                     <div class="card-body">
@@ -191,16 +170,7 @@ $content_pdf = $content->filter(function ($list){
                             @foreach($top_video->take(4) as $item)
                             <div class="col-md-6 mb-4">
                                 <div class="course-card">
-                                    @if($item->type == 'YouTube')
-                                        <img
-                                            src="https://img.youtube.com/vi/{{ $item->link }}/mqdefault.jpg"
-                                            class="img-fluid w-100 course-cover">
-                                    @else
-                                        <img
-                                            src="https://picsum.photos/1600/800?random={{ $item->id }}"
-                                            class="img-fluid w-100 course-cover">
-                                    @endif
-
+                                   <img src="{{ asset('default-video.jpg') }}"class="img-fluid w-100 course-cover"alt="{{ $item->title }}">
                                     <div class="course-body">
                                         <h5>
                                             <a href="{{ route('content.user.view',$item->slug) }}">
@@ -282,6 +252,8 @@ $content_pdf = $content->filter(function ($list){
 
         @endphp
 
+        <a href="{{ route('assesment.user.view',$deadline->slug) }}"class="deadline-link">
+
         <div class="deadline-item">
 
             <div class="deadline-date">
@@ -296,11 +268,24 @@ $content_pdf = $content->filter(function ($list){
 
             <div class="flex-grow-1">
 
-                <strong>
+            <strong>
 
-                    {{ Str::limit($deadline->title, 30) }}
+                {{ Str::limit($deadline->title, 30) }}
 
-                </strong>
+            </strong>
+
+            @if($deadline->content)
+
+                <small class="text-primary d-block">
+
+                    {{ Str::limit(
+                        $deadline->content->title,
+                        35
+                    ) }}
+
+                </small>
+
+            @endif
 
                 <small class="d-block text-muted">
 
@@ -330,7 +315,9 @@ $content_pdf = $content->filter(function ($list){
 
             No upcoming deadlines
 
-        </div>
+                </div>
+
+    </a>
 
     @endforelse
 
@@ -352,44 +339,37 @@ $content_pdf = $content->filter(function ($list){
 
     </div>
 
-    @if($eventphoto->count())
+@if($eventphoto->count())
 
-        @php
-            $gallery = $eventphoto->first();
-        @endphp
+    @php
+        $gallery = $eventphoto->first();
+    @endphp
 
-        <a href="{{ route('gallery.user.view',$gallery->slug) }}">
-
-                @if(!empty($gallery->thumbnail))
-
-                <img
-                    src="{{ asset('/storage/gallery/photo/'.$gallery->id.'/'.$gallery->thumbnail) }}"
-                    class="gallery-cover">
-
-                @else
-
-                <img
-                    src="https://picsum.photos/1600/800?random={{ $gallery->id }}"
-                    class="gallery-cover">
-
-                @endif
-            <h4 class="gallery-title mt-3">
-                {{ Str::limit($gallery->title,60) }}
-            </h4>
-
-        </a>
-
-    @else
+    <a href="{{ route('gallery.user.view',$gallery->slug) }}">
 
         <img
-            src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800"
-            class="gallery-cover">
+            src="{{ asset('default-video.jpg') }}"
+            class="gallery-cover"
+            alt="{{ $gallery->title }}">
 
         <h4 class="gallery-title mt-3">
-            No Gallery Available
+            {{ Str::limit($gallery->title,60) }}
         </h4>
 
-    @endif
+    </a>
+
+@else
+
+    <img
+        src="{{ asset('default-video.jpg') }}"
+        class="gallery-cover"
+        alt="No Gallery">
+
+    <h4 class="gallery-title mt-3">
+        No Gallery Available
+    </h4>
+
+@endif
 
 </div>
 
@@ -414,9 +394,7 @@ $content_pdf = $content->filter(function ($list){
 
         <div class="news-card">
 
-            <img
-                src="https://picsum.photos/1600/800?random={{ $list->id }}"
-                class="news-cover">
+            <img src="{{ asset('default-video.jpg') }}"class="gallery-cover"alt="{{ $gallery->title }}">
 
             <div class="news-content">
 
@@ -806,24 +784,70 @@ a{
     font-weight:700;
 }
 
+.continue-content{
+    padding-left:10px;
+}
+
+.deadline-link{
+    display:block;
+    text-decoration:none;
+    color:inherit;
+}
+
+.deadline-link:hover{
+    color:inherit;
+}
+
 .deadline-item{
     display:flex;
-    gap:15px;
+    gap:10px;
     align-items:center;
-    margin-bottom:18px;
+    margin-bottom:10px;
+    padding:10px;
+    border-radius:12px;
+}
+
+.deadline-content{
+    flex:1;
+    min-width:0;
+}
+
+.deadline-content strong{
+    display:block;
+    font-size:13px;
+    line-height:1.3;
+}
+
+.deadline-item:hover{
+    background:#f8fafc;
+    transform:translateY(-2px);
 }
 
 .deadline-date{
-    width:55px;
-    height:55px;
-    border-radius:14px;
-    background:#fee2e2;
+    width:40px;
+    height:40px;
+    border-radius:10px;
+    background:#fef2f2;
     color:#dc2626;
-    font-weight:700;
     display:flex;
     flex-direction:column;
     justify-content:center;
     align-items:center;
+    flex-shrink:0;
+}
+
+.deadline-date .day{
+    font-size:12px;
+    font-weight:700;
+    line-height:1;
+}
+
+.deadline-date .month{
+    font-size:7px;
+    font-weight:600;
+    line-height:1;
+    margin-top:2px;
+    letter-spacing:.5px;
 }
 
 .deadline-date span{
@@ -857,6 +881,9 @@ a{
 /* =======================================================
    DARK MODE
 ======================================================= */
+[data-bs-theme="dark"] .deadline-item:hover{
+    background:#334155;
+}
 
 [data-bs-theme="dark"] .page-body{
     background:#0f172a;

@@ -51,7 +51,7 @@ class HomeUserController extends Controller
 
         // News
         $news = News::latest()
-            ->limit(5)
+            ->limit(2)
             ->get();
 
         // Gallery
@@ -65,6 +65,12 @@ class HomeUserController extends Controller
                 'user_id',
                 auth()->id()
             )->get();
+
+        $upcomingDeadlines = Assesment::whereNotNull('todate')
+        ->whereDate('todate', '>=', now())
+        ->orderBy('todate')
+        ->take(5)
+        ->get();
 
         /*
         |--------------------------------------------------------------------------
@@ -139,10 +145,37 @@ class HomeUserController extends Controller
                 'continueContent',
                 'totalGallery',
                 'totalNews',
-                'totalPlaylist'
+                'totalPlaylist',
+                'upcomingDeadlines',
             )
         );
     }
+
+public function upcomingDeadline()
+{
+    return response()->json(
+        $this->getUpcomingDeadlines()
+    );
+}
+
+    public function getUpcomingDeadlines()
+{
+    $currentContentIds = ContentUser::where(
+            'user_id',
+            auth()->id()
+        )
+        ->where('finish', 0)
+        ->orderByDesc('progress')
+        ->pluck('content_id')
+        ->toArray();
+
+    return Assesment::whereNotNull('todate')
+        ->whereDate('todate', '>=', now())
+        ->whereIn('content_id', $currentContentIds)
+        ->orderBy('todate', 'asc')
+        ->take(5)
+        ->get();
+}
 
     public function accessAssessmentByUniqueCode(Request $request)
     {

@@ -60,6 +60,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logoutpage');
 */
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [HomeUserController::class, 'index'])->name('home.user.index');
+    Route::get('/upcoming-deadline',[HomeUserController::class, 'upcomingDeadline'])->name('home.upcoming.deadline');
 
     Route::post('/assessment-access-by-unique-code', [HomeUserController::class, 'accessAssessmentByUniqueCode'])
         ->name('home.user.access.assessment.by.unique.code');
