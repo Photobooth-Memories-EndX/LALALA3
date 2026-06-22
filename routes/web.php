@@ -170,6 +170,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/certificate/{credentialId}/download', [UserCertificateController::class, 'download'])
         ->name('certificate.download');
+
+    Route::get('/certificate/{credentialId}/download-pdf', [UserCertificateController::class, 'downloadPdf'])->name('certificate.download.pdf');
 });
 
 Route::get('/certificate/verify/{credentialId}', [UserCertificateController::class, 'verify'])
@@ -211,7 +213,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('certificate-setting/ajax/assessments', [CertificateController::class, 'getAssessmentsByType'])->name('certificate.setting.ajax.assessments');
         Route::get('certificate-setting/{certificateSetting}/preview-template', [CertificateController::class, 'previewTemplate'])->name('certificate.setting.preview.template');
         Route::get('certificate-setting/{certificateSetting}/preview-generated', [CertificateController::class, 'previewGenerated'])->name('certificate.setting.preview.generated');
-        Route::get('/certificate/{credentialId}/download-pdf', [UserCertificateController::class, 'downloadPdf'])->name('certificate.download.pdf');
+
     });
 
     Route::group(['middleware' => 'mpermission:news_announcement'], function () {
@@ -330,6 +332,15 @@ Route::group(['prefix' => 'manage/role', 'middleware' => ['auth', 'superadmin']]
 */
 Route::group(['prefix' => 'monitoring', 'middleware' => ['auth', 'mpermission:monitoring']], function () {
     Route::get('/', [MonitoringController::class, 'index'])->name('monitoring.index');
+    Route::get('/datatable', [MonitoringController::class, 'datatable'])->name('monitoring.datatable');
+    Route::get('/profile/{hash}', [MonitoringController::class, 'profile'])->name('monitoring.profile');
+
+    Route::get('/profile/{hash}/learning-datatable', [MonitoringController::class, 'learningDatatable'])->name('monitoring.profile.learning.datatable');
+    Route::get('/profile/{hash}/assessment-datatable', [MonitoringController::class, 'assessmentDatatable'])->name('monitoring.profile.assessment.datatable');
+    Route::get('/profile/{hash}/playlist-datatable', [MonitoringController::class, 'playlistDatatable'])->name('monitoring.profile.playlist.datatable');
+
+    Route::get('/group/{type}/{value}', [MonitoringController::class, 'group'])->name('monitoring.group');
+    Route::get('/group/{type}/{value}/datatable', [MonitoringController::class, 'groupDatatable'])->name('monitoring.group.datatable');
 });
 
 /*
