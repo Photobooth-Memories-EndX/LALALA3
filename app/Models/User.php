@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     const ROLE_USER              = '1';
     const ROLE_ADMIN             = '2';
@@ -89,5 +90,30 @@ class User extends Authenticatable
     public function getInitialsAttribute(): string
     {
         return \Illuminate\Support\Str::initials($this->name);
+    }
+
+    public function news()
+    {
+        return $this->hasMany(News::class);
+    }
+
+    public function eventPhotos()
+    {
+        return $this->hasMany(EventPhoto::class);
+    }
+
+    public function contentUsers()
+    {
+        return $this->hasMany(ContentUser::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function assesmentResults()
+    {
+        return $this->hasMany(AssesmentResult::class);
     }
 }

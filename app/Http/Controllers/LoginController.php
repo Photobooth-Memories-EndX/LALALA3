@@ -69,45 +69,124 @@ class LoginController extends Controller
         }
     }
 
+    public function synchronizeData($id_employee)
+    {
+        $userSignIn = User::where('id_emp', $id_employee)->first();
+        $duplicateUser = null;
+
+        // Check duplicate employee
+        $duplicateEmployees = User::where('name', $userSignIn->name)
+            ->where('division', $userSignIn->division)
+            ->where('department', $userSignIn->department)->get();
+
+        if (count($duplicateEmployees) > 1) { // Condition when data is duplicate
+            $signInEmp = null;
+            $duplicateEmp = null;
+
+            foreach ($duplicateEmployees as $duplicate) {
+                if ($duplicate->id_emp == $userSignIn->id_emp) {
+                    $signInEmp = $duplicate->toArray();
+                } else {
+                    $duplicateEmp = $duplicate->toArray();
+                }
+            }
+
+            $signInUser = User::findOrFail($signInEmp['id']);
+            $duplicateUser = User::findOrFail($duplicateEmp['id']);
+
+            // Change user_id form duplicate to sign in user or update child relationship
+            if (count($duplicateUser->news) > 1) { // Update child news
+                foreach ($duplicateUser->news as $news) {
+                    $news->user_error = $signInUser->id;
+                    $news->save();
+                }
+            }
+
+            if (count($duplicateUser->eventPhotos) > 1) { // Update child eventPhoto
+                foreach ($duplicateUser->eventPhotos as $eventPhoto) {
+                    $eventPhoto->user_id = $signInUser->id;
+                    $eventPhoto->save();
+                }
+            }
+
+            if (count($duplicateUser->contentUsers) > 1) { // Update child content_users
+                foreach ($duplicateUser->contentUsers as $contentUser) {
+                    $contentUser->user_id = $signInUser->id;
+                    $contentUser->save();
+                }
+            }
+
+            if (count($duplicateUser->comments) > 1) { // Update child comments
+                foreach ($duplicateUser->comments as $comment) {
+                    $comment->user_id = $signInUser->id;
+                    $comment->save();
+                }
+            }
+
+            if (count($duplicateUser->assesmentResults) > 1) { // Update child assessment_results
+                foreach ($duplicateUser->assesmentResults as $assessmentResult) {
+                    $assessmentResult->user_id = $signInUser->id;
+                    $assessmentResult->save();
+                }
+            }
+        }
+
+        // Update data user if there are any changes
+        $apiEmployee = Http::get(config('api.employee.base_url') . $userSignIn->id_emp)->object(); // Fetch data employee
+        if (!isset($apiEmployee->status)) { // Sync data if any data form api employee
+            $userSignIn->id_user = $apiEmployee->id_user;
+            $userSignIn->id_org_unit = $apiEmployee->id_ou;
+            $userSignIn->email = $apiEmployee->email;
+            $userSignIn->team = $apiEmployee->team;
+            $userSignIn->department = $apiEmployee->department;
+            $userSignIn->division = $apiEmployee->division;
+            $userSignIn->ssohash = $apiEmployee->ssohash;
+            $userSignIn->sap_code = $apiEmployee->sap_code;
+
+            if ($duplicateUser) {
+                $userSignIn->role = $duplicateUser->role;
+            }
+
+            $userSignIn->save();
+        }
+
+        // Delete duplicate user after moved the data
+        if ($duplicateUser) {
+            $duplicateUser->delete();
+        }
+
+        return $userSignIn;
+    }
+
     public function checksso()
     {
         Auth::logout();
         $getid = explode('$', request('ses'));
         $userget = User::firstWhere('ssohash', $getid[1]);
-        
-        //return $userget;
+        $userSign = null;
+
         if ($userget) {
-            if (Auth::loginUsingId($userget->id)) {
-                //if($userget->id_user==2315){
-                    //return config('api.employee.base_url_hash') . $getid[1];
-                    $employee = Http::get(config('api.employee.base_url_hash') . $getid[1] . '')->object();
-                    foreach ($employee as $key => $value) {
-                        $arrays[$key] = $value;
-                    }
-                    
-                    $userget->update([
-                        'team' => $arrays["team"],
-                        'department' => $arrays["department"],
-                        'division' => $arrays["division"],
-                        'id_org_unit' => $arrays["id_ou"]
-                    ]);
-                //}
-                return redirect()->intended('/');
-            } else {
-                return back()->with('loginError', 'SSO failed, user not found');
-            }
+            $userSign = $this->synchronizeData($userget->id_emp);
         } else {
             $employee = Http::get(config('api.employee.base_url_hash') . $getid[1] . '')->object();
+            if (isset($employee->status) == 404) {
+                return back()->with('loginError', 'SSO failed, The user was not found in the employee master data.');
+            }
+
             foreach ($employee as $key => $value) {
                 $arrays[$key] = $value;
             }
             $arrays['password'] =  Hash::make($employee->id_emp);
             $user = User::create($arrays);
-            if (Auth::loginUsingId($user->id)) {
-                return redirect()->intended('/');
-            } else {
-                return back()->with('loginError', 'SSO failed, user not found');
-            }
+
+            $userSign = $this->synchronizeData($user->id_emp);
+        }
+
+        if ($userSign) {
+            Auth::loginUsingId($userSign->id);
+            return redirect()->intended('/');
+        } else {
+            return back()->with('loginError', 'SSO failed, user not found');
         }
     }
 
