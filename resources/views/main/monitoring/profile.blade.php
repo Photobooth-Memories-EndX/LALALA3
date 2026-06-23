@@ -30,6 +30,11 @@
 
             @include('main.monitoring.components.profile-summary', ['summary' => $summary])
 
+            @include('main.monitoring.components.chart-cards', [
+                'charts'      => $charts,
+                'chartPrefix' => $chartPrefix,
+            ])
+
             @include('main.monitoring.components.profile-tabs', ['profile' => $profile])
 
         </div>

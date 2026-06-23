@@ -72,6 +72,29 @@ class LearningAnalyticsService
         });
     }
 
+    /**
+     * Full chart dataset for a scoped group of users (monitoring index / group pages).
+     * Keys match the personal() output so the same Blade component can render both.
+     *
+     * @param string   $cacheKey   Unique identifier for this scope (e.g. "all-users", "group-team-IT").
+     * @param \Closure $idsFactory Returns a fresh Eloquent User builder scoped to the desired users.
+     */
+    public function groupCharts(string $cacheKey, \Closure $idsFactory): array
+    {
+        return Cache::remember("learning_analytics_group_{$cacheKey}", self::TTL, function () use ($idsFactory) {
+            return [
+                'category'            => $this->categoryDistributionForIds($idsFactory),
+                'type_distribution'   => $this->typeDistributionForIds($idsFactory),
+                'status_distribution' => $this->statusDistributionForIds($idsFactory),
+                'monthly_activity'    => $this->monthlyActivityForIds($idsFactory),
+                'completion_trend'    => $this->completionTrendForIds($idsFactory),
+                'assessment_trend'    => $this->assessmentTrendForIds($idsFactory),
+                'top_categories'      => $this->topCategoriesForIds($idsFactory),
+                'hours_trend'         => $this->hoursTrendForIds($idsFactory),
+            ];
+        });
+    }
+
     public function forgetPersonal(int $userId): void
     {
         Cache::forget("learning_analytics_personal_{$userId}");
@@ -348,6 +371,132 @@ class LearningAnalyticsService
             ->pluck('total', 'ym');
 
         return $this->mapMonthly($rows);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Group builders (multi-user versions of the personal builders above)
+    |--------------------------------------------------------------------------
+    */
+    private function categoryDistributionForIds(\Closure $idsFactory): array
+    {
+        $rows = DB::table('content_users as cu')
+            ->join('content as content', 'content.id', '=', 'cu.content_id')
+            ->leftJoin('classification as cl', 'cl.id', '=', 'content.classification_id')
+            ->whereIn('cu.user_id', $this->ids($idsFactory)->toBase())
+            ->whereNull('content.deleted_at')
+            ->groupBy('label')
+            ->selectRaw("COALESCE(cl.classification_name, 'Lainnya') as label, COUNT(*) as total")
+            ->orderByDesc('total')
+            ->get();
+
+        return [
+            'labels' => $rows->pluck('label')->all(),
+            'series' => $rows->pluck('total')->map(fn ($v) => (int) $v)->all(),
+        ];
+    }
+
+    private function topCategoriesForIds(\Closure $idsFactory): array
+    {
+        $rows = DB::table('content_users as cu')
+            ->join('content as content', 'content.id', '=', 'cu.content_id')
+            ->leftJoin('classification as cl', 'cl.id', '=', 'content.classification_id')
+            ->whereIn('cu.user_id', $this->ids($idsFactory)->toBase())
+            ->whereNull('content.deleted_at')
+            ->groupBy('label')
+            ->selectRaw("COALESCE(cl.classification_name, 'Lainnya') as label, COUNT(*) as total")
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        return [
+            'labels' => $rows->pluck('label')->all(),
+            'series' => $rows->pluck('total')->map(fn ($v) => (int) $v)->all(),
+        ];
+    }
+
+    private function typeDistributionForIds(\Closure $idsFactory): array
+    {
+        $rows = DB::table('content_users as cu')
+            ->join('content as content', 'content.id', '=', 'cu.content_id')
+            ->whereIn('cu.user_id', $this->ids($idsFactory)->toBase())
+            ->whereNull('content.deleted_at')
+            ->groupBy('label')
+            ->selectRaw("COALESCE(NULLIF(content.type, ''), 'Lainnya') as label, COUNT(*) as total")
+            ->orderByDesc('total')
+            ->get();
+
+        return [
+            'labels' => $rows->pluck('label')->all(),
+            'series' => $rows->pluck('total')->map(fn ($v) => (int) $v)->all(),
+        ];
+    }
+
+    private function statusDistributionForIds(\Closure $idsFactory): array
+    {
+        $row = ContentUser::whereIn('user_id', $this->ids($idsFactory))
+            ->selectRaw("
+                SUM(CASE WHEN finish = '1' OR progress >= 100 THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN finish = '0' AND progress BETWEEN 1 AND 99 THEN 1 ELSE 0 END) as ongoing,
+                SUM(CASE WHEN finish = '0' AND progress = 0 THEN 1 ELSE 0 END) as not_started
+            ")
+            ->first();
+
+        return [
+            'labels' => ['Completed', 'Ongoing', 'Not Started'],
+            'series' => [
+                (int) ($row->completed ?? 0),
+                (int) ($row->ongoing ?? 0),
+                (int) ($row->not_started ?? 0),
+            ],
+        ];
+    }
+
+    private function monthlyActivityForIds(\Closure $idsFactory): array
+    {
+        $rows = ContentUser::whereIn('user_id', $this->ids($idsFactory))
+            ->where('updated_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->selectRaw("DATE_FORMAT(updated_at, '%Y-%m') as ym, COUNT(*) as total")
+            ->groupBy('ym')
+            ->pluck('total', 'ym');
+
+        return $this->mapMonthly($rows);
+    }
+
+    private function completionTrendForIds(\Closure $idsFactory): array
+    {
+        $rows = ContentUser::whereIn('user_id', $this->ids($idsFactory))
+            ->where('finish', '1')
+            ->where('updated_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->selectRaw("DATE_FORMAT(updated_at, '%Y-%m') as ym, COUNT(*) as total")
+            ->groupBy('ym')
+            ->pluck('total', 'ym');
+
+        return $this->mapMonthly($rows);
+    }
+
+    private function assessmentTrendForIds(\Closure $idsFactory): array
+    {
+        $rows = AssesmentResult::whereIn('user_id', $this->ids($idsFactory))
+            ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as ym, ROUND(AVG(score)) as total")
+            ->groupBy('ym')
+            ->pluck('total', 'ym');
+
+        return $this->mapMonthly($rows);
+    }
+
+    private function hoursTrendForIds(\Closure $idsFactory): array
+    {
+        $rows = ContentUser::join('content', 'content.id', '=', 'content_users.content_id')
+            ->whereIn('content_users.user_id', $this->ids($idsFactory))
+            ->whereNull('content.deleted_at')
+            ->where('content_users.updated_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->selectRaw("DATE_FORMAT(content_users.updated_at, '%Y-%m') as ym, ROUND(SUM(" . self::HOURS_EXPR . "), 1) as total")
+            ->groupBy('ym')
+            ->pluck('total', 'ym');
+
+        return $this->mapMonthly($rows, true);
     }
 
     /*

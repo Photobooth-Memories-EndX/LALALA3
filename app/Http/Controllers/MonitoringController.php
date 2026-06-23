@@ -7,12 +7,14 @@ use App\Models\ContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Models\User;
+use App\Services\LearningAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 
 class MonitoringController extends Controller
 {
+    public function __construct(private LearningAnalyticsService $analytics) {}
     /**
      * Monitoring progress belajar user berbasis role & scope organisasi.
      *
@@ -45,6 +47,15 @@ class MonitoringController extends Controller
             $teams       = $this->distinctScopeValues('team');
         }
 
+        $cacheKey = Auth::user()->isSubadminDivision()
+            ? 'scope-' . Auth::id()
+            : 'all-users';
+
+        $charts = $isScopeEmpty ? null : $this->analytics->groupCharts(
+            $cacheKey,
+            fn () => $this->baseMonitoringUserQuery()
+        );
+
         return view('main.monitoring.index', [
             'scopeLabel'   => $this->getScopeLabel(),
             'isScopeEmpty' => $isScopeEmpty,
@@ -54,6 +65,8 @@ class MonitoringController extends Controller
             'teams'        => $teams,
             'roles'        => User::roles(),
             'stats'        => $this->statsForUserQuery(fn () => $this->baseMonitoringUserQuery()),
+            'charts'       => $charts,
+            'chartPrefix'  => 'monitoring-main',
         ]);
     }
 
@@ -76,13 +89,20 @@ class MonitoringController extends Controller
         $value = $this->decodeGroupValue($value);
         $this->authorizeGroupAccess($type, $value);
 
+        $groupCharts = $this->analytics->groupCharts(
+            'group-' . $type . '-' . md5($value),
+            fn () => $this->baseMonitoringUserQuery()->where('users.' . $type, $value)
+        );
+
         return view('main.monitoring.group', [
-            'type'       => $type,
-            'value'      => $value,
-            'typeLabel'  => ucfirst($type),
-            'stats'      => $this->statsForUserQuery(
+            'type'        => $type,
+            'value'       => $value,
+            'typeLabel'   => ucfirst($type),
+            'stats'       => $this->statsForUserQuery(
                 fn () => $this->baseMonitoringUserQuery()->where('users.' . $type, $value)
             ),
+            'charts'      => $groupCharts,
+            'chartPrefix' => 'monitoring-group',
         ]);
     }
 
@@ -108,8 +128,10 @@ class MonitoringController extends Controller
         $this->authorizeMonitoringUser($profile);
 
         return view('main.monitoring.profile', [
-            'profile' => $profile,
-            'summary' => $this->profileSummary($profile),
+            'profile'     => $profile,
+            'summary'     => $this->profileSummary($profile),
+            'charts'      => $this->analytics->personal($profile->id),
+            'chartPrefix' => 'monitoring-profile',
         ]);
     }
 

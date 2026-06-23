@@ -46,6 +46,11 @@
 
             @include('main.monitoring.components.stats-cards', ['stats' => $stats])
 
+            @include('main.monitoring.components.chart-cards', [
+                'charts'      => $charts,
+                'chartPrefix' => $chartPrefix,
+            ])
+
             @include('main.monitoring.components.filter-card', [
                 'divisions'   => $divisions,
                 'departments' => $departments,
