@@ -45,7 +45,10 @@ class HomeUserController extends Controller
             ->get();
 
         // Playlist
-        $playlist = TrainingPlan::where('active', 'Active')
+        $playlist = TrainingPlan::with([
+                'trainingplandetail.content'
+            ])
+            ->where('active', 'Active')
             ->latest()
             ->get();
 
@@ -67,10 +70,10 @@ class HomeUserController extends Controller
             )->get();
 
         $upcomingDeadlines = Assesment::whereNotNull('todate')
-        ->whereDate('todate', '>=', now())
-        ->orderBy('todate')
-        ->take(5)
-        ->get();
+            ->whereDate('todate', '>=', now())
+            ->orderBy('todate')
+            ->take(2)
+            ->get();
 
         /*
         |--------------------------------------------------------------------------
@@ -98,22 +101,11 @@ class HomeUserController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $continueLearning = ContentUser::where(
-                'user_id',
-                auth()->id()
-            )
+        $continueCourse = ContentUser::with('content')
+            ->where('user_id', auth()->id())
             ->where('finish', 0)
-            ->latest()
+            ->orderByDesc('progress')
             ->first();
-
-        $continueContent = null;
-
-        if ($continueLearning) {
-
-            $continueContent = Content::find(
-                $continueLearning->content_id
-            );
-        }
 
         /*
         |--------------------------------------------------------------------------
@@ -126,6 +118,12 @@ class HomeUserController extends Controller
         $totalNews = $news->count();
 
         $totalPlaylist = $playlist->count();
+
+$continueCourse = ContentUser::with('content')
+    ->where('user_id', auth()->id())
+    ->where('progress', '>', 0)
+    ->orderByDesc('updated_at')
+    ->first();
 
         return view(
             'homepage',
@@ -141,12 +139,11 @@ class HomeUserController extends Controller
                 'completedCourse',
                 'ongoingCourse',
                 'progressPercent',
-                'continueLearning',
-                'continueContent',
                 'totalGallery',
                 'totalNews',
                 'totalPlaylist',
                 'upcomingDeadlines',
+                'continueCourse',
             )
         );
     }

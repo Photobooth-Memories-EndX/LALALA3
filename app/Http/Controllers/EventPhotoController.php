@@ -13,50 +13,78 @@ class EventPhotoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-public function index()
+public function index(Request $request)
 {
-    $eventphoto = EventPhoto::latest()
-        ->paginate(6);
+$query = EventPhoto::query();
 
-    $totalEvent =
-        EventPhoto::count();
+// Search
+if ($request->filled('search')) {
 
-    $activeEvent =
-        EventPhoto::where(
-            'active',
-            'Active'
-        )->count();
-
-    $draftEvent =
-        EventPhoto::where(
-            'active',
-            'Inactive'
-        )->count();
-
-    $totalPhotos = 0;
-
-    foreach (EventPhoto::all() as $event) {
-
-        $photos =
-            json_decode(
-                $event->photos,
-                true
-            ) ?? [];
-
-        $totalPhotos += count($photos);
-    }
-
-    return view(
-        'main.gallery.index',
-        compact(
-            'eventphoto',
-            'totalEvent',
-            'activeEvent',
-            'draftEvent',
-            'totalPhotos'
-        )
+    $query->where(
+        'title',
+        'like',
+        '%' . $request->search . '%'
     );
+
 }
+
+// Status Filter
+if ($request->filled('status')) {
+
+    $query->where(
+        'active',
+        $request->status
+    );
+
+}
+
+$show = $request->show ?? 25;
+
+$eventphoto = $query
+    ->latest()
+    ->paginate($show)
+    ->withQueryString();
+
+$totalEvent = EventPhoto::count();
+
+$activeEvent = EventPhoto::where(
+    'active',
+    'Active'
+)->count();
+
+$draftEvent = EventPhoto::where(
+    'active',
+    'Inactive'
+)->count();
+
+$totalPhotos = 0;
+
+foreach (EventPhoto::all() as $event) {
+
+    $photos =
+        json_decode(
+            $event->photos,
+            true
+        ) ?? [];
+
+    $totalPhotos += count($photos);
+
+}
+
+return view(
+    'main.gallery.index',
+    compact(
+        'eventphoto',
+        'show',
+        'totalEvent',
+        'activeEvent',
+        'draftEvent',
+        'totalPhotos'
+    )
+);
+
+}
+
 
     /**
      * Store a newly created resource in storage.

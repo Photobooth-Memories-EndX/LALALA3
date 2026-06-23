@@ -4,312 +4,488 @@
 
 <div class="page-header d-print-none">
     <div class="container-xl">
-
         <div class="row g-2 align-items-center">
-
             <div class="col">
 
                 <div class="d-flex align-items-center gap-3">
 
                     <div class="avatar avatar-lg bg-primary-lt">
-                        <i class="ti ti-news fs-1"></i>
+                        <i class="ti ti-photo fs-1"></i>
                     </div>
 
                     <div>
-
                         <h2 class="page-title mb-1">
-                            Manage News
+                            Event Photo Gallery
                         </h2>
 
                         <div class="text-secondary">
-                            Manage all company news and articles
+                            Manage all gallery events and photo collections
                         </div>
-
                     </div>
 
                 </div>
 
             </div>
 
-            <div class="col-auto ms-auto d-print-none">
+        <div class="col-auto ms-auto d-print-none">
+            <a href="{{ route('eventphoto.create') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="icon"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    stroke="currentColor"
+                    fill="none">
 
-                <a href="{{ route('news.create') }}"
-                    class="btn btn-primary">
+                    <path d="M12 5l0 14"></path>
+                    <path d="M5 12l14 0"></path>
+                </svg>
 
-                    <i class="ti ti-plus"></i>
-
-                    Add News
-
-                </a>
-
-            </div>
-
+                Add Event
+            </a>
         </div>
-
     </div>
+</div>
+
 </div>
 
 <div class="page-body">
     <div class="container-xl">
 
-        <x-alert type="success" />
-        <x-alert type="warning" />
+    <x-alert type="success" />
+    <x-alert type="warning" />
 
-        {{-- Statistics --}}
-        <div class="row row-deck row-cards mb-4">
 
-            <div class="col-sm-6 col-lg-6">
+    {{-- Statistics --}}
 
-                <div class="card stat-card shadow-sm h-100">
+<div class="row row-cards mb-4">
 
-                    <div class="card-body">
-
-                        <div class="d-flex justify-content-between align-items-center">
-
-                            <div>
-
-                                <div class="subheader">
-                                    Total News
-                                </div>
-
-                                <div class="h1 mb-0">
-                                    {{ $totalNews }}
-                                </div>
-
-                            </div>
-
-                            <div class="avatar avatar-lg bg-primary-lt">
-                                <i class="ti ti-news fs-3"></i>
-                            </div>
-
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-secondary text-uppercase fw-bold small">
+                            Total Event
                         </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-sm-6 col-lg-6">
-
-                <div class="card stat-card shadow-sm h-100">
-
-                    <div class="card-body">
-
-                        <div class="d-flex justify-content-between align-items-center">
-
-                            <div>
-
-                                <div class="subheader">
-                                    Contributors
-                                </div>
-
-                                <div class="h1 text-success mb-0">
-                                    {{ $totalAuthor }}
-                                </div>
-
-                            </div>
-
-                            <div class="avatar avatar-lg bg-success-lt">
-                                <i class="ti ti-users fs-3"></i>
-                            </div>
-
+                        <div class="display-6 fw-bold">
+                            {{ $totalEvent }}
                         </div>
-
                     </div>
-
+                    <div class="col-auto">
+                        <span class="bg-primary-lt avatar">
+                            <i class="ti ti-photo"></i>
+                        </span>
+                    </div>
                 </div>
-
             </div>
-
         </div>
+    </div>
 
-        {{-- Search --}}
-        <div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-secondary text-uppercase fw-bold small">
+                            Published
+                        </div>
+                        <div class="display-6 fw-bold text-success">
+                            {{ $activeEvent }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="bg-success-lt avatar">
+                            <i class="ti ti-circle-check"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <div class="col-md-12">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-secondary text-uppercase fw-bold small">
+                            Draft
+                        </div>
+                        <div class="display-6 fw-bold text-warning">
+                            {{ $draftEvent }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="bg-warning-lt avatar">
+                            <i class="ti ti-edit"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-secondary text-uppercase fw-bold small">
+                            Total Photos
+                        </div>
+                        <div class="display-6 fw-bold text-primary">
+                            {{ $totalPhotos }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="bg-primary-lt avatar">
+                            <i class="ti ti-images"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+
+</div>
+
+</div>
+    {{-- Gallery --}}
+<div class="card shadow-sm border-0">
+
+    <div class="card-header">
+
+        <h3 class="card-title mb-0">
+            List Event Gallery
+        </h3>
+
+    </div>
+
+    <div class="card-body border-bottom">
+
+        <div class="row g-3">
+
+            <div class="col-md-2">
+
+                <div class="d-flex align-items-center">
+
+                    <span class="me-2">
+                        Show
+                    </span>
+
+                    <select
+                        id="showFilter"
+                        class="form-select">
+
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-3">
+
+                <select
+                    id="statusFilter"
+                    class="form-select">
+
+                    <option value="">
+                        All Status
+                    </option>
+
+                    <option value="Active">
+                        Active
+                    </option>
+
+                    <option value="Inactive">
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-5">
 
                 <input
                     type="text"
-                    id="newsSearch"
+                    id="searchInput"
                     class="form-control"
-                    placeholder="Search news...">
+                    placeholder="Search event gallery...">
 
             </div>
 
-        </div>
+            <div class="col-md-2">
 
-        {{-- News Grid --}}
-        <div class="row row-cards g-4" id="newsContainer">
+                <button
+                    id="btnSearch"
+                    class="btn btn-primary w-100">
 
-            @forelse($news as $list)
+                    Search
 
-                <div class="col-md-6 col-xl-4 news-item"
-                    data-title="{{ strtolower($list->title) }}">
+                </button>
 
-                    <div class="card gallery-card h-100">
-
-                        <div class="gallery-image-wrapper">
-
-                            @if($list->image)
-
-                                <img
-                                    src="{{ asset('storage/news/'.$list->image) }}"
-                                    class="gallery-image"
-                                    alt="{{ $list->title }}">
-
-                            @else
-
-                                <div class="gallery-placeholder">
-
-                                    <i class="ti ti-news fs-1"></i>
-
-                                </div>
-
-                            @endif
-
-                        </div>
-
-                        <div class="card-body">
-
-                            <h3 class="card-title">
-
-                                {{ \Illuminate\Support\Str::limit($list->title, 80) }}
-
-                            </h3>
-
-                            <div class="text-secondary mb-3">
-
-                                {{ \Illuminate\Support\Str::limit(strip_tags($list->description), 120) }}
-
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center">
-
-                                <span class="badge bg-primary-lt">
-
-                                    {{ $list->user->name }}
-
-                                </span>
-
-                                <span class="text-secondary small">
-
-                                    {{ date('d M Y', strtotime($list->created_at)) }}
-
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                        <div class="card-footer bg-transparent border-0">
-
-                            <div class="d-flex gap-2">
-
-                                <a
-                                    href="{{ route('news.edit', $list->slug) }}"
-                                    class="btn btn-primary w-100 action-btn">
-
-                                    <i class="ti ti-edit me-1"></i>
-                                    Edit
-
-                                </a>
-
-                                <form
-                                    action="{{ route('news.destroy', $list->slug) }}"
-                                    method="POST"
-                                    class="w-100">
-
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-danger w-100 action-btn"
-                                        onclick="return confirm('Delete this news?')">
-
-                                        <i class="ti ti-trash me-1"></i>
-                                        Delete
-
-                                    </button>
-
-                                </form>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            @empty
-
-                <div class="col-12">
-
-                    <div class="empty">
-
-                        <div class="empty-img">
-                            <i class="ti ti-news-off fs-1"></i>
-                        </div>
-
-                        <p class="empty-title">
-                            No News Found
-                        </p>
-
-                    </div>
-
-                </div>
-
-            @endforelse
+            </div>
 
         </div>
 
     </div>
+
+<div id="galleryTableWrapper">
+
+    <div class="table-responsive">
+
+        <table class="table table-vcenter card-table">
+
+        <thead>
+        <tr>
+
+            <th style="width:60px">NO</th>
+
+            <th style="width:90px">IMAGE</th>
+
+            <th>TITLE</th>
+
+            <th style="width:120px" class="text-center">
+                STATUS
+            </th>
+
+            <th style="width:80px" class="text-center">
+                PHOTOS
+            </th>
+
+            <th style="width:120px" class="text-center">
+                DATE
+            </th>
+
+            <th style="width:100px" class="text-center">
+                ACTION
+            </th>
+
+        </tr>
+        </thead>
+
+            <tbody>
+
+                @forelse($eventphoto as $list)
+
+                @php
+                    $photos = json_decode($list->photos, true) ?? [];
+                    $photoCount = count($photos);
+                @endphp
+
+                <tr>
+
+                    <td class="text-center">
+                        {{ $loop->iteration + (($eventphoto->currentPage()-1) * $eventphoto->perPage()) }}
+                    </td>
+
+                    <td>
+
+                        @if($list->thumbnail)
+
+                        <img src="{{ asset('storage/gallery/photo/'.$list->id.'/'.$list->thumbnail) }}"class="table-image">
+
+                        @endif
+
+                    </td>
+
+                    <td>
+                        <div class="news-title">
+                            {{ $list->title }}
+                        </div>
+                    </td>
+
+                    <td class="text-center">
+                        <span class="badge bg-{{ $list->active == 'Active' ? 'success' : 'warning' }}">
+                            {{ $list->active }}
+                        </span>
+
+                    </td>
+
+                    <td class="text-center">
+                        {{ $photoCount }}
+                    </td>
+
+                    <td class="text-center">
+
+                        @if($list->eventdate)
+                            {{ date('d M Y', strtotime($list->eventdate)) }}
+                        @else
+                            -
+                        @endif
+
+                    </td>
+
+<td class="text-center">
+
+    <div class="d-flex justify-content-center gap-2">
+
+        <a
+            href="{{ route('eventphoto.edit',$list->slug) }}"
+            class="btn btn-primary btn-sm action-btn">
+
+            <i class="ti ti-edit"></i>
+
+        </a>
+
+        <form
+            action="{{ route('eventphoto.destroy',$list->slug) }}"
+            method="POST">
+
+            @csrf
+            @method('DELETE')
+
+            <button
+                type="submit"
+                class="btn btn-danger btn-sm action-btn">
+
+                <i class="ti ti-trash"></i>
+
+            </button>
+
+        </form>
+
+    </div>
+
+</td>
+                </tr>
+
+                @empty
+
+                <tr>
+
+                    <td colspan="7" class="text-center py-5">
+
+                        No Event Gallery Found
+
+                    </td>
+
+                </tr>
+
+                @endforelse
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <div class="card-footer">
+
+        {{ $eventphoto->links() }}
+
+    </div>
+
 </div>
 
+</div>
+
+</div>
+
+</div>
+
+
+</div>
+
+</div>
 @endsection
 
 @section('style')
 
 <style>
 
+.table{
+    width:100%;
+    table-layout:auto;
+}
+
+.table th{
+    font-size:11px;
+    font-weight:700;
+    color:#6b7280;
+    text-transform:uppercase;
+}
+
+.table td,
+.table th{
+    vertical-align:middle;
+}
+
+.table-image{
+    width:70px;
+    height:50px;
+    object-fit:cover;
+    border-radius:8px;
+    border:1px solid #e5e7eb;
+}
+
+.news-title{
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.action-btn{
+    width:34px;
+    height:34px;
+    padding:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* ==================================
+   STATISTICS CARD
+================================== */
+
 .stat-card{
     border:none;
-    border-radius:18px;
-    overflow:hidden;
+    border-radius:16px;
     transition:.3s;
+}
+
+.stat-card .card-body{
+    padding:20px;
 }
 
 .stat-card:hover{
     transform:translateY(-5px);
-    box-shadow:0 15px 35px rgba(0,0,0,.08);
+    box-shadow:0 12px 25px rgba(0,0,0,.08);
 }
 
-.gallery-card{
-    border:none;
-    border-radius:18px;
-    overflow:hidden;
-    transition:.3s;
+/* ==================================
+   TABLE STYLE
+================================== */
+
+.table td{
+    vertical-align:middle;
 }
 
-.gallery-card:hover{
-    transform:translateY(-5px);
-    box-shadow:0 15px 35px rgba(0,0,0,.12);
+.table-responsive{
+    min-height:500px;
 }
 
-.gallery-image{
-    width:100%;
-    height:220px;
-    object-fit:cover;
+.card{
+    border-radius:16px;
 }
 
-.gallery-placeholder{
-    height:220px;
-    background:#f1f5f9;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+.page-body{
+    padding-bottom:40px;
+}
+
+
+.photo-count{
+    position:absolute;
+    top:12px;
+    right:12px;
 }
 
 .card-title{
@@ -319,74 +495,258 @@
     min-height:52px;
 }
 
-.action-btn{
-    height:42px;
-    display:flex;
+.pagination{
     justify-content:center;
+    gap:8px;
+}
+
+.page-link{
+    border:none;
+    min-width:40px;
+    height:40px;
+    display:flex;
     align-items:center;
-    font-weight:600;
+    justify-content:center;
+    border-radius:8px !important;
+    color:#64748b;
+    transition:.2s;
 }
 
-#newsSearch{
+.page-item.active .page-link{
+    background:#206bc4;
+}
+/* ==================================
+   BADGES
+================================== */
+
+.photo-count{
+    position:absolute;
+    top:12px;
+    right:12px;
+    font-size:12px;
+    border-radius:999px;
+    padding:6px 10px;
+}
+
+.status-badge{
+    border-radius:999px;
+}
+
+/* ==================================
+   CARD CONTENT
+================================== */
+
+.card-title{
+    font-size:1.05rem;
+    font-weight:700;
+    line-height:1.5;
+    min-height:60px;
+}
+
+.gallery-card .text-secondary{
+    font-size:.9rem;
+}
+
+
+/* ==================================
+   SEARCH
+================================== */
+
+#gallerySearch{
     border-radius:14px;
-    padding:12px 16px;
     border:1px solid #e5e7eb;
+    padding:12px 16px;
 }
 
-[data-bs-theme="dark"] .gallery-card{
-    background:#1f2937;
+#statusFilter{
+    border-radius:14px;
 }
+
+/* ==================================
+   PAGINATION
+================================== */
+
+.pagination{
+    justify-content:center;
+    gap:6px;
+}
+
+.page-item{
+    margin:0;
+}
+
+.pagination .page-link{
+    width:40px !important;
+    height:40px !important;
+    min-width:40px !important;
+
+    border-radius:8px !important;
+
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+
+    border:none !important;
+}
+
+.page-link:hover{
+    background:#e9f2ff;
+    color:#206bc4;
+}
+
+.pagination .page-item.active .page-link{
+    background:#206bc4 !important;
+    color:#fff !important;
+    border-radius:8px !important;
+}
+
+/* ==================================
+   GLOBAL CARD
+================================== */
+
+.card{
+    border-radius:20px;
+}
+
+/* ==================================
+   DARK MODE
+================================== */
+
 
 [data-bs-theme="dark"] .stat-card{
     background:#1f2937;
 }
 
-[data-bs-theme="dark"] .gallery-placeholder{
-    background:#111827;
-}
 
-[data-bs-theme="dark"] #newsSearch{
+[data-bs-theme="dark"] #gallerySearch{
     background:#111827;
     border-color:#374151;
     color:#fff;
 }
 
-</style>
+[data-bs-theme="dark"] #statusFilter{
+    background:#111827;
+    border-color:#374151;
+    color:#fff;
+}
 
-@endsection
+[data-bs-theme="dark"] .page-link{
+    background:#1f2937;
+    color:#fff;
+}
+
+[data-bs-theme="dark"] .page-link:hover{
+    background:#374151;
+}
+
+[data-bs-theme="dark"] .card-title{
+    color:#fff;
+}
+
+[data-bs-theme="dark"] .text-secondary{
+    color:#9ca3af !important;
+}
+
+.action-btn{
+    width:38px;
+    height:38px;
+    padding:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:8px;
+}
+
+</style>
 
 @section('script')
 
 <script>
 
-document.addEventListener('DOMContentLoaded', function(){
+function loadGallery(page = 1)
+{
+    $.get(
+        "{{ route('eventphoto.index') }}",
+        {
+            search : $('#searchInput').val(),
+            status : $('#statusFilter').val(),
+            show   : $('#showFilter').val(),
+            page   : page
+        },
+        function(response){
 
-    const search =
-        document.getElementById('newsSearch');
+            let html =
+                $(response)
+                .find('#galleryTableWrapper')
+                .html();
 
-    const cards =
-        document.querySelectorAll('.news-item');
+            $('#galleryTableWrapper')
+                .html(html);
 
-    search.addEventListener('keyup', function(){
+        }
+    );
+}
 
-        let keyword =
-            this.value.toLowerCase();
+$('#btnSearch').on(
+    'click',
+    function(){
 
-        cards.forEach(card => {
+        loadGallery();
 
-            let title =
-                card.dataset.title;
+    }
+);
 
-            card.style.display =
-                title.includes(keyword)
-                ? ''
-                : 'none';
+$('#searchInput').on(
+    'keyup',
+    function(){
 
-        });
+        clearTimeout(
+            window.galleryTimer
+        );
 
-    });
+        window.galleryTimer =
+            setTimeout(
+                loadGallery,
+                500
+            );
 
-});
+    }
+);
+
+$('#statusFilter').on(
+    'change',
+    function(){
+
+        loadGallery();
+
+    }
+);
+
+$('#showFilter').on(
+    'change',
+    function(){
+
+        loadGallery();
+
+    }
+);
+
+$(document).on(
+    'click',
+    '.pagination a',
+    function(e){
+
+        e.preventDefault();
+
+        let page =
+            $(this)
+            .attr('href')
+            .split('page=')[1];
+
+        loadGallery(page);
+
+    }
+);
 
 </script>
 
