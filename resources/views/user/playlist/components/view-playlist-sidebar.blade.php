@@ -3,9 +3,17 @@
 
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h3 class="mb-0 fs-4 fw-bold">Playlist</h3>
-            <span class="text-muted small">
-                {{ $content_all->count() }} Lessons
-            </span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">
+                    {{ $content_all->count() }} Lessons
+                </span>
+                <button type="button"
+                        class="panel-header-toggle"
+                        onclick="toggleLearningPanel('left')"
+                        title="Tutup Playlist">
+                    <i class="fas fa-list-ul"></i>
+                </button>
+            </div>
         </div>
 
         <div class="mb-3">

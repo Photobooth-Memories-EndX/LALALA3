@@ -12,7 +12,15 @@
                     <div class="fw-bold lh-1 mb-1" style="font-size:14px;">AI Assistant</div>
                     <div class="text-muted lh-1" style="font-size:11px;">Powered by AI</div>
                 </div>
-                <span class="badge bg-success rounded-pill ms-auto" style="font-size:10px;">● Online</span>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <span class="badge bg-success rounded-pill" style="font-size:10px;">● Online</span>
+                    <button type="button"
+                            class="panel-header-toggle"
+                            onclick="toggleLearningPanel('right')"
+                            title="Tutup AI Assistant">
+                        <i class="fas fa-robot"></i>
+                    </button>
+                </div>
             </div>
         </div>
 

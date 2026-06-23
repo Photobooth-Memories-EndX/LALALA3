@@ -15,28 +15,36 @@
 
             @include('user.playlist.components.view-hero')
 
-            <div class="row g-3 align-items-start">
-                <div class="col-xl-3 col-lg-4">
+            <div id="playlistLearningLayout" class="playlist-learning-layout">
+
+                {{-- Restore buttons: hanya muncul saat panel di-collapse, posisi absolute di tepi layout --}}
+                <button type="button"
+                        class="restore-toggle-btn restore-left"
+                        onclick="toggleLearningPanel('left')"
+                        title="Buka Playlist">
+                    <i class="fas fa-list-ul"></i>
+                </button>
+
+                <button type="button"
+                        class="restore-toggle-btn restore-right"
+                        onclick="toggleLearningPanel('right')"
+                        title="Buka AI Assistant">
+                    <i class="fas fa-robot"></i>
+                </button>
+
+                <div class="learning-left-panel">
                     @include('user.playlist.components.view-playlist-sidebar')
                 </div>
 
-                <div class="col-xl-6 col-lg-8">
+                <div class="learning-main-panel">
                     @include('user.playlist.components.view-player')
-                    @include('user.playlist.components.view-content-info')
                     @include('user.playlist.components.view-navigation', [
                         'content' => $content,
                         'content_all' => $content_all,
                         'playlist' => $playlist,
                     ])
-                </div>
+                    @include('user.playlist.components.view-content-info')
 
-                <div class="col-xl-3 col-lg-12">
-                    @include('user.playlist.components.view-ai-assistant')
-                </div>
-            </div>
-
-            <div class="row mt-4">
-                <div class="col-12">
                     <div class="view-comment-wrapper">
                         <x-comment
                             :content="$content"
@@ -46,6 +54,11 @@
                         />
                     </div>
                 </div>
+
+                <div class="learning-right-panel">
+                    @include('user.playlist.components.view-ai-assistant')
+                </div>
+
             </div>
 
         </div>
@@ -58,20 +71,19 @@
 
     <style>
         .view-comment-wrapper {
-            max-width: 1120px;
-            margin: 32px auto 0;
-            padding: 28px 36px;
-            border-radius: 24px;
+            margin-top: 16px;
+            padding: 24px 28px;
+            border-radius: 20px;
             background: #ffffff;
+            box-shadow: 0 1px 6px rgba(15, 23, 42, .07);
         }
 
         .view-comment-wrapper #comment {
             padding: 0 !important;
-            color: inherit;
         }
 
         .view-comment-wrapper #comment .card-header {
-            padding: 24px !important;
+            padding: 18px 0 !important;
         }
 
         .view-comment-wrapper #comment .card-body {
@@ -79,34 +91,34 @@
         }
 
         .view-comment-wrapper .comment-thread-root {
-            padding: 20px 24px !important;
+            padding: 16px 20px !important;
         }
 
         .view-comment-wrapper .comment-thread-reply {
-            margin-top: 16px !important;
-            padding: 16px 20px 16px 24px !important;
+            margin-top: 12px !important;
+            padding: 12px 16px 12px 18px !important;
             border-left: 3px solid #bfdbfe !important;
             background: #f8fafc !important;
-            border-radius: 14px !important;
+            border-radius: 12px !important;
         }
 
         .view-comment-wrapper .comment-replies {
-            margin-top: 16px !important;
-            padding-left: 48px !important;
+            margin-top: 12px !important;
+            padding-left: 40px !important;
         }
 
         .view-comment-wrapper .comment-replies-nested {
-            margin-top: 14px !important;
-            padding-left: 48px !important;
+            margin-top: 10px !important;
+            padding-left: 40px !important;
         }
 
         .view-comment-wrapper .comment-replies .comment-replies {
-            padding-left: 48px !important;
+            padding-left: 40px !important;
         }
 
         .view-comment-wrapper .comment-card {
-            padding: 16px 20px !important;
-            border-radius: 14px !important;
+            padding: 14px 18px !important;
+            border-radius: 12px !important;
         }
 
         .view-comment-wrapper .comment-card-reply {
@@ -116,19 +128,18 @@
         .view-comment-wrapper textarea,
         .view-comment-wrapper .form-control,
         .view-comment-wrapper .modern-comment-input {
-            padding: 14px 18px !important;
-            border-radius: 12px !important;
+            padding: 12px 16px !important;
+            border-radius: 10px !important;
         }
 
         .view-comment-wrapper .pagination {
-            margin: 24px 0 0;
+            margin: 20px 0 0;
             justify-content: center;
         }
 
         body[data-bs-theme="dark"] .learning-view-page,
         body.dark-mode .learning-view-page {
             background: #0f172a;
-            color: #e5e7eb;
         }
 
         body[data-bs-theme="dark"] .view-comment-wrapper,
@@ -154,12 +165,6 @@
         body.dark-mode .view-comment-wrapper .comment-replies .comment-thread-reply {
             background: #1f2937 !important;
             border-left-color: #3b82f6 !important;
-        }
-
-        body[data-bs-theme="dark"] .view-comment-wrapper .comment-replies .comment-replies .comment-thread-reply,
-        body.dark-mode .view-comment-wrapper .comment-replies .comment-replies .comment-thread-reply {
-            background: #26364f !important;
-            border-left-color: #60a5fa !important;
         }
 
         body[data-bs-theme="dark"] .view-comment-wrapper .comment-card,
@@ -191,30 +196,52 @@
 
         @media (max-width: 768px) {
             .view-comment-wrapper {
-                padding: 18px 14px;
-                margin-top: 24px;
-            }
-
-            .view-comment-wrapper .comment-thread-root {
-                padding: 14px 12px !important;
+                padding: 16px 14px;
+                margin-top: 12px;
             }
 
             .view-comment-wrapper .comment-replies,
             .view-comment-wrapper .comment-replies-nested,
             .view-comment-wrapper .comment-replies .comment-replies {
-                padding-left: 18px !important;
+                padding-left: 16px !important;
             }
 
             .view-comment-wrapper .comment-thread-reply {
-                padding: 14px 12px 14px 16px !important;
+                padding: 12px 10px 12px 14px !important;
             }
         }
-
-        
     </style>
 @endsection
 
 @section('script')
+<script>
+    (function () {
+        var layout  = document.getElementById('playlistLearningLayout');
+        var LS_LEFT  = 'owl_playlist_left_collapsed';
+        var LS_RIGHT = 'owl_playlist_right_collapsed';
+
+        function applyState() {
+            if (!layout) return;
+            if (localStorage.getItem(LS_LEFT)  === '1') layout.classList.add('left-collapsed');
+            if (localStorage.getItem(LS_RIGHT) === '1') layout.classList.add('right-collapsed');
+        }
+
+        function toggleLearningPanel(side) {
+            if (!layout) return;
+            if (side === 'left') {
+                layout.classList.toggle('left-collapsed');
+                localStorage.setItem(LS_LEFT, layout.classList.contains('left-collapsed') ? '1' : '0');
+            }
+            if (side === 'right') {
+                layout.classList.toggle('right-collapsed');
+                localStorage.setItem(LS_RIGHT, layout.classList.contains('right-collapsed') ? '1' : '0');
+            }
+        }
+
+        window.toggleLearningPanel = toggleLearningPanel;
+        applyState();
+    })();
+</script>
     <script src="{{ $url_ytplayer_js }}"></script>
     @include('user.playlist.components.view-player-script')
 @endsection
