@@ -22,7 +22,7 @@
             </button>
 
             <button class="btn btn-white learning-tab-btn" data-target="#tab-monitoring" type="button">
-                Monitoring
+                Monitoring Progress
             </button>
         </div>
     </div>

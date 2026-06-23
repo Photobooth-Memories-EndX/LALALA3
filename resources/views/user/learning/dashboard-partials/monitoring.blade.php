@@ -1,4 +1,6 @@
-<x-learning.empty-tab
-    title="Monitoring"
-    description="Halaman monitoring masih kosong dan bisa dikembangkan nanti."
-/>
+{{-- Tab Monitoring. Role 1/2 -> personal insight, role 3/4 -> organization/team monitoring. --}}
+@if (($mode ?? 'personal') === 'personal')
+    @include('user.learning.dashboard-partials.monitoring.personal')
+@else
+    @include('user.learning.dashboard-partials.monitoring.organization')
+@endif
