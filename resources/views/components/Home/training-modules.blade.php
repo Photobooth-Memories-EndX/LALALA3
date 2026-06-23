@@ -1,81 +1,49 @@
-<div class="modern-card mt-4">
+<div class="home-modern-card mt-4">
 
-    <div class="card-header border-0 d-flex justify-content-between align-items-center">
-
-        <h2 class="section-title mb-0">
-            Training Modules
-        </h2>
-
-        <div class="module-filter">
-
-            <span class="active">
-                Video
-            </span>
-
-            <span>
-                Files
-            </span>
-
-        </div>
-
+    <div class="home-modern-card-header">
+        <h2 class="home-modern-section-title">Training Modules</h2>
+        <a href="{{ route('playlist.user.index') }}" class="home-modern-view-all">
+            View All <i class="ti ti-arrow-right ms-1"></i>
+        </a>
     </div>
 
-    <div class="card-body pt-0">
+    <div class="home-modern-card-body pt-0">
 
-        @foreach($playlist->take(5) as $item)
+        @forelse($playlist->take(5) as $item)
 
             @php
-
-                $firstVideo =
-                    $item->trainingplandetail
-                        ->first();
-
+                $firstVideo = $item->trainingplandetail->first();
             @endphp
 
             @if($firstVideo && $firstVideo->content)
+            <a href="{{ route('playlist.user.view', ['slug' => $item->slug, 'vidslug' => $firstVideo->content->slug]) }}"
+               class="home-modern-module-row">
 
-            <a
-                href="{{ route(
-                    'playlist.user.view',
-                    [
-                        'slug'    => $item->slug,
-                        'vidslug' => $firstVideo->content->slug
-                    ]
-                ) }}"
-                class="module-row">
-
-                <div class="module-left">
-
-                    <img
-                        src="{{ asset('default-video.jpg') }}"
-                        class="module-image">
-
-                    <div>
-
-                        <h5>
-
-                            {{ $item->title }}
-
-                        </h5>
-
-                        <small>
-
-                            {{ $item->trainingplandetail->count() }}
-                            Modules
-
-                        </small>
-
+                <div class="home-modern-module-left">
+                    <div class="home-modern-module-icon">
+                        <i class="ti ti-video"></i>
                     </div>
-
+                    <div class="home-modern-module-text">
+                        <div class="home-modern-module-title">{{ Str::limit($item->title, 55) }}</div>
+                        <div class="home-modern-module-sub">
+                            {{ $item->trainingplandetail->count() }} Modules
+                        </div>
+                    </div>
                 </div>
 
-                <i class="ti ti-chevron-right"></i>
+                <i class="ti ti-chevron-right home-modern-module-arrow"></i>
 
             </a>
-
             @endif
 
-        @endforeach
+        @empty
+
+        <div class="home-modern-empty">
+            <i class="ti ti-playlist-x"></i>
+            <p>No training modules available</p>
+        </div>
+
+        @endforelse
 
     </div>
 

@@ -1,56 +1,49 @@
-<div class="dashboard-hero">
-
+<div class="home-modern-hero">
     <div class="row align-items-center">
 
         <div class="col-lg-8">
 
-            <span class="hero-label">
+            <span class="home-modern-hero-label">
+                <i class="ti ti-school me-1"></i>
                 Learning Management System
             </span>
 
-            <h1 class="hero-title">
-                Welcome Back,
-            </h1>
+            <h1 class="home-modern-hero-greeting">Welcome back,</h1>
 
-            <h1 class="hero-title hero-name">
-                {{ auth()->user()->name }}
-            </h1>
+            <h1 class="home-modern-hero-name">{{ auth()->user()->name }}</h1>
 
-            <p class="hero-subtitle">
-                Continue your learning journey as
-                <strong>{{ auth()->user()->team }}</strong>
+            <p class="home-modern-hero-subtitle">
+                Continuing journey as <strong>{{ auth()->user()->team }}</strong>
             </p>
 
-            <div class="hero-achievement">
-
-                <span class="streak-badge">
-                    Learning Streak
+            <div class="home-modern-hero-badges">
+                <span class="home-modern-badge-streak">
+                    <i class="ti ti-flame me-1"></i>Learning Streak
                 </span>
-
-                <span class="learner-badge">
-                    {{ $progressPercent }}% Completed
+                <span class="home-modern-badge-progress">
+                    <i class="ti ti-check me-1"></i>{{ $progressPercent }}% Completed
                 </span>
-
             </div>
 
         </div>
 
-        <div class="col-lg-4 text-center">
+        <div class="col-lg-4 text-center mt-4 mt-lg-0">
 
-            <div class="progress-circle-text">
+            <div class="home-modern-donut-wrap">
 
-                <h1>
-                    {{ $progressPercent }}%
-                </h1>
+                <div class="home-modern-donut-outer"
+                     style="background: conic-gradient(#38bdf8 {{ $progressPercent }}%, rgba(255,255,255,.15) 0)">
+                    <div class="home-modern-donut-inner">
+                        <strong>{{ $progressPercent }}%</strong>
+                        <small>Progress</small>
+                    </div>
+                </div>
 
-                <span>
-                    Learning Progress
-                </span>
+                <p class="home-modern-donut-label">Learning Progress</p>
 
             </div>
 
         </div>
 
     </div>
-
 </div>
