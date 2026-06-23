@@ -151,7 +151,7 @@
     @endif
 
 </div>
-        {{-- Debug block (hanya muncul di APP_DEBUG=true) --}}
+        {{-- Debug block (hanya muncul di APP_DEBUG=true) JANGAN DI HAPUS BUAT DEBUGGER --}}
         @if (config('app.debug'))
             <div class="alert alert-info small mt-3">
                 <strong>Debug Certificate:</strong><br>
