@@ -13,7 +13,7 @@
         @include('components.Home.stats')
 
         {{-- QUICK ACTIONS --}}
-        <div class="row g-2 mt-3">
+        {{-- <div class="row g-2 mt-3">
             <div class="col-6 col-sm-3">
                 <a href="{{ route('user.learning.dashboard') }}" class="home-modern-quick-btn">
                     <i class="ti ti-layout-dashboard"></i>
@@ -38,7 +38,7 @@
                     <span>Assessment</span>
                 </a>
             </div>
-        </div>
+        </div> --}}
 
         {{-- CONTINUE LEARNING --}}
         @include('components.Home.continue-learning')
