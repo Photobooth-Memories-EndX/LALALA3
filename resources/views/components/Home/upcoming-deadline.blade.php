@@ -1,4 +1,4 @@
-<div class="home-modern-card mt-4">
+<div class="home-modern-card">
 
     <div class="home-modern-card-header">
         <h2 class="home-modern-section-title">Upcoming Deadlines</h2>

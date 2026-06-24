@@ -1,753 +1,322 @@
 @extends('layouts.sidebar-master')
 
+@section('style')
+<style>
+.admin-news-img {
+    width: 70px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--tblr-border-color);
+    display: block;
+}
+.admin-news-placeholder {
+    width: 70px;
+    height: 50px;
+    border-radius: 8px;
+    background: var(--tblr-bg-surface-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tblr-secondary);
+    font-size: 1.25rem;
+}
+.admin-news-stat {
+    border-radius: 16px;
+    transition: transform .2s, box-shadow .2s;
+}
+.admin-news-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+}
+.admin-news-action {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.admin-news-row-title {
+    font-weight: 600;
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.admin-news-desc {
+    font-size: .85rem;
+    color: var(--tblr-secondary);
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pagination .page-link {
+    border-radius: 6px !important;
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--tblr-border-color);
+}
+</style>
+@endsection
+
 @section('content')
 
 <div class="page-header d-print-none">
     <div class="container-xl">
-        <div class="row g-2 align-items-center">
+        <div class="row align-items-center">
             <div class="col">
-
                 <div class="d-flex align-items-center gap-3">
-
-                    <div class="avatar avatar-lg bg-primary-lt">
-                        <i class="ti ti-photo fs-1"></i>
+                    <div class="avatar avatar-lg bg-blue-lt">
+                        <i class="ti ti-news fs-2"></i>
                     </div>
-
                     <div>
-                        <h2 class="page-title mb-1">
-                            Event Photo Gallery
-                        </h2>
-
-                        <div class="text-secondary">
-                            Manage all gallery events and photo collections
-                        </div>
+                        <h2 class="page-title mb-1">News Management</h2>
+                        <div class="text-secondary">Manage company learning news and announcements</div>
                     </div>
-
                 </div>
-
             </div>
-
-        <div class="col-auto ms-auto d-print-none">
-            <a href="{{ route('eventphoto.create') }}" class="btn btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    class="icon"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                    fill="none">
-
-                    <path d="M12 5l0 14"></path>
-                    <path d="M5 12l14 0"></path>
-                </svg>
-
-                Add Event
-            </a>
+            <div class="col-auto">
+                <a href="{{ route('news.create') }}" class="btn btn-primary">
+                    <i class="ti ti-plus me-1"></i>Add News
+                </a>
+            </div>
         </div>
     </div>
-</div>
-
 </div>
 
 <div class="page-body">
     <div class="container-xl">
 
-    <x-alert type="success" />
-    <x-alert type="warning" />
+        <x-alert type="success" />
+        <x-alert type="warning" />
 
-
-    {{-- Statistics --}}
-
-<div class="row row-cards mb-4">
-
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="text-secondary text-uppercase fw-bold small">
-                            Total Event
-                        </div>
-                        <div class="display-6 fw-bold">
-                            {{ $totalEvent }}
+        {{-- Statistics --}}
+        <div class="row row-cards mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card admin-news-stat">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-fill">
+                                <div class="text-secondary text-uppercase fw-bold small mb-1">Total News</div>
+                                <div class="display-6 fw-bold">{{ $totalNews ?? 0 }}</div>
+                            </div>
+                            <span class="avatar bg-blue-lt ms-3"><i class="ti ti-news"></i></span>
                         </div>
                     </div>
-                    <div class="col-auto">
-                        <span class="bg-primary-lt avatar">
-                            <i class="ti ti-photo"></i>
-                        </span>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card admin-news-stat">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-fill">
+                                <div class="text-secondary text-uppercase fw-bold small mb-1">Total Authors</div>
+                                <div class="display-6 fw-bold text-purple">{{ $totalAuthor ?? 0 }}</div>
+                            </div>
+                            <span class="avatar bg-purple-lt ms-3"><i class="ti ti-users"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card admin-news-stat">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-fill">
+                                <div class="text-secondary text-uppercase fw-bold small mb-1">This Month</div>
+                                <div class="display-6 fw-bold text-success">
+                                    {{ isset($totalNews) ? \App\Models\News::whereMonth('created_at', now()->month)->count() : 0 }}
+                                </div>
+                            </div>
+                            <span class="avatar bg-success-lt ms-3"><i class="ti ti-calendar-stats"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card admin-news-stat">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-fill">
+                                <div class="text-secondary text-uppercase fw-bold small mb-1">Showing</div>
+                                <div class="display-6 fw-bold text-info">{{ $news->count() }}</div>
+                            </div>
+                            <span class="avatar bg-info-lt ms-3"><i class="ti ti-list"></i></span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="text-secondary text-uppercase fw-bold small">
-                            Published
+        {{-- Table Card --}}
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h3 class="card-title">List News</h3>
+            </div>
+
+            <div class="card-body border-bottom py-3">
+                <form method="GET" action="{{ route('news.index') }}" id="newsFilterForm">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="text-nowrap text-secondary small">Show</span>
+                                <select name="show" id="newsShow" class="form-select form-select-sm"
+                                        onchange="document.getElementById('newsFilterForm').submit()">
+                                    <option value="10"  {{ ($show ?? 25) == 10  ? 'selected' : '' }}>10</option>
+                                    <option value="25"  {{ ($show ?? 25) == 25  ? 'selected' : '' }}>25</option>
+                                    <option value="50"  {{ ($show ?? 25) == 50  ? 'selected' : '' }}>50</option>
+                                    <option value="100" {{ ($show ?? 25) == 100 ? 'selected' : '' }}>100</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="display-6 fw-bold text-success">
-                            {{ $activeEvent }}
+                        <div class="col-md-3">
+                            <select name="author" id="newsAuthorFilter" class="form-select form-select-sm"
+                                    onchange="document.getElementById('newsFilterForm').submit()">
+                                <option value="">All Authors</option>
+                                @foreach($authors as $author)
+                                    <option value="{{ $author->id }}"
+                                            {{ request('author') == $author->id ? 'selected' : '' }}>
+                                        {{ $author->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" name="search" id="newsSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Search news title or author..."
+                                   value="{{ request('search') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="ti ti-search me-1"></i>Search
+                            </button>
                         </div>
                     </div>
-                    <div class="col-auto">
-                        <span class="bg-success-lt avatar">
-                            <i class="ti ti-circle-check"></i>
-                        </span>
-                    </div>
+                </form>
+            </div>
+
+            <div id="newsTableWrapper">
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th style="width:50px">NO</th>
+                                <th style="width:90px">IMAGE</th>
+                                <th>TITLE</th>
+                                <th style="width:140px">AUTHOR</th>
+                                <th style="width:120px" class="text-center">DATE</th>
+                                <th style="width:100px" class="text-center">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($news as $item)
+                            <tr>
+                                <td class="text-center text-secondary small">
+                                    {{ $loop->iteration + (($news->currentPage()-1) * $news->perPage()) }}
+                                </td>
+                                <td>
+                                    @if($item->image)
+                                        <img src="{{ asset('storage/news/'.$item->image) }}"
+                                             class="admin-news-img"
+                                             alt="{{ $item->title }}"
+                                             onerror="this.outerHTML='<div class=&quot;admin-news-placeholder&quot;><i class=&quot;ti ti-news&quot;></i></div>'">
+                                    @else
+                                        <div class="admin-news-placeholder">
+                                            <i class="ti ti-news"></i>
+                                        </div>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="admin-news-row-title" title="{{ $item->title }}">
+                                        {{ $item->title }}
+                                    </div>
+                                    @if($item->description)
+                                    <div class="admin-news-desc">
+                                        {{ Str::limit(strip_tags($item->description), 60) }}
+                                    </div>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($item->user)
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="avatar avatar-xs bg-blue-lt">
+                                                {{ strtoupper(substr($item->user->name, 0, 1)) }}
+                                            </span>
+                                            <span class="small">{{ $item->user->name }}</span>
+                                        </div>
+                                    @else
+                                        <span class="text-muted small">&mdash;</span>
+                                    @endif
+                                </td>
+                                <td class="text-center text-secondary small">
+                                    {{ $item->created_at ? $item->created_at->format('d M Y') : '&mdash;' }}
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <a href="{{ route('news.edit', $item->slug) }}"
+                                           class="btn btn-sm btn-primary admin-news-action"
+                                           title="Edit">
+                                            <i class="ti ti-edit"></i>
+                                        </a>
+                                        <form action="{{ route('news.destroy', $item->slug) }}" method="POST" class="m-0">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button"
+                                                    onclick="if(confirm('Delete this news article? This cannot be undone.')){this.closest('form').submit()}"
+                                                    class="btn btn-sm btn-danger admin-news-action"
+                                                    title="Delete">
+                                                <i class="ti ti-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty py-5">
+                                        <div class="empty-icon">
+                                            <i class="ti ti-news-off" style="font-size:3rem;opacity:.4;"></i>
+                                        </div>
+                                        <p class="empty-title">No news articles found</p>
+                                        <p class="empty-subtitle text-secondary">Try adjusting your search or add a new article.</p>
+                                        <div class="empty-action">
+                                            <a href="{{ route('news.create') }}" class="btn btn-primary btn-sm">
+                                                <i class="ti ti-plus me-1"></i>Add News
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-center py-3">
+                    {{ $news->withQueryString()->links() }}
                 </div>
             </div>
+
         </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="text-secondary text-uppercase fw-bold small">
-                            Draft
-                        </div>
-                        <div class="display-6 fw-bold text-warning">
-                            {{ $draftEvent }}
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <span class="bg-warning-lt avatar">
-                            <i class="ti ti-edit"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="text-secondary text-uppercase fw-bold small">
-                            Total Photos
-                        </div>
-                        <div class="display-6 fw-bold text-primary">
-                            {{ $totalPhotos }}
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <span class="bg-primary-lt avatar">
-                            <i class="ti ti-images"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-
-</div>
-
-</div>
-    {{-- Gallery --}}
-<div class="card shadow-sm border-0">
-
-    <div class="card-header">
-
-        <h3 class="card-title mb-0">
-            List Event Gallery
-        </h3>
 
     </div>
-
-    <div class="card-body border-bottom">
-
-        <div class="row g-3">
-
-            <div class="col-md-2">
-
-                <div class="d-flex align-items-center">
-
-                    <span class="me-2">
-                        Show
-                    </span>
-
-                    <select
-                        id="showFilter"
-                        class="form-select">
-
-                        <option value="10">10</option>
-                        <option value="25" selected>25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-
-                    </select>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-3">
-
-                <select
-                    id="statusFilter"
-                    class="form-select">
-
-                    <option value="">
-                        All Status
-                    </option>
-
-                    <option value="Active">
-                        Active
-                    </option>
-
-                    <option value="Inactive">
-                        Inactive
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="col-md-5">
-
-                <input
-                    type="text"
-                    id="searchInput"
-                    class="form-control"
-                    placeholder="Search event gallery...">
-
-            </div>
-
-            <div class="col-md-2">
-
-                <button
-                    id="btnSearch"
-                    class="btn btn-primary w-100">
-
-                    Search
-
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-<div id="galleryTableWrapper">
-
-    <div class="table-responsive">
-
-        <table class="table table-vcenter card-table">
-
-        <thead>
-        <tr>
-
-            <th style="width:60px">NO</th>
-
-            <th style="width:90px">IMAGE</th>
-
-            <th>TITLE</th>
-
-            <th style="width:120px" class="text-center">
-                STATUS
-            </th>
-
-            <th style="width:80px" class="text-center">
-                PHOTOS
-            </th>
-
-            <th style="width:120px" class="text-center">
-                DATE
-            </th>
-
-            <th style="width:100px" class="text-center">
-                ACTION
-            </th>
-
-        </tr>
-        </thead>
-
-            <tbody>
-
-                @forelse($eventphoto as $list)
-
-                @php
-                    $photos = json_decode($list->photos, true) ?? [];
-                    $photoCount = count($photos);
-                @endphp
-
-                <tr>
-
-                    <td class="text-center">
-                        {{ $loop->iteration + (($eventphoto->currentPage()-1) * $eventphoto->perPage()) }}
-                    </td>
-
-                    <td>
-
-                        @if($list->thumbnail)
-
-                        <img src="{{ asset('storage/gallery/photo/'.$list->id.'/'.$list->thumbnail) }}"class="table-image">
-
-                        @endif
-
-                    </td>
-
-                    <td>
-                        <div class="news-title">
-                            {{ $list->title }}
-                        </div>
-                    </td>
-
-                    <td class="text-center">
-                        <span class="badge bg-{{ $list->active == 'Active' ? 'success' : 'warning' }}">
-                            {{ $list->active }}
-                        </span>
-
-                    </td>
-
-                    <td class="text-center">
-                        {{ $photoCount }}
-                    </td>
-
-                    <td class="text-center">
-
-                        @if($list->eventdate)
-                            {{ date('d M Y', strtotime($list->eventdate)) }}
-                        @else
-                            -
-                        @endif
-
-                    </td>
-
-<td class="text-center">
-
-    <div class="d-flex justify-content-center gap-2">
-
-        <a
-            href="{{ route('eventphoto.edit',$list->slug) }}"
-            class="btn btn-primary btn-sm action-btn">
-
-            <i class="ti ti-edit"></i>
-
-        </a>
-
-        <form
-            action="{{ route('eventphoto.destroy',$list->slug) }}"
-            method="POST">
-
-            @csrf
-            @method('DELETE')
-
-            <button
-                type="submit"
-                class="btn btn-danger btn-sm action-btn">
-
-                <i class="ti ti-trash"></i>
-
-            </button>
-
-        </form>
-
-    </div>
-
-</td>
-                </tr>
-
-                @empty
-
-                <tr>
-
-                    <td colspan="7" class="text-center py-5">
-
-                        No Event Gallery Found
-
-                    </td>
-
-                </tr>
-
-                @endforelse
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-    <div class="card-footer">
-
-        {{ $eventphoto->links() }}
-
-    </div>
-
 </div>
 
-</div>
-
-</div>
-
-</div>
-
-
-</div>
-
-</div>
 @endsection
 
-@section('style')
-
-<style>
-
-.table{
-    width:100%;
-    table-layout:auto;
-}
-
-.table th{
-    font-size:11px;
-    font-weight:700;
-    color:#6b7280;
-    text-transform:uppercase;
-}
-
-.table td,
-.table th{
-    vertical-align:middle;
-}
-
-.table-image{
-    width:70px;
-    height:50px;
-    object-fit:cover;
-    border-radius:8px;
-    border:1px solid #e5e7eb;
-}
-
-.news-title{
-    font-weight:600;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
-
-.action-btn{
-    width:34px;
-    height:34px;
-    padding:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-/* ==================================
-   STATISTICS CARD
-================================== */
-
-.stat-card{
-    border:none;
-    border-radius:16px;
-    transition:.3s;
-}
-
-.stat-card .card-body{
-    padding:20px;
-}
-
-.stat-card:hover{
-    transform:translateY(-5px);
-    box-shadow:0 12px 25px rgba(0,0,0,.08);
-}
-
-/* ==================================
-   TABLE STYLE
-================================== */
-
-.table td{
-    vertical-align:middle;
-}
-
-.table-responsive{
-    min-height:500px;
-}
-
-.card{
-    border-radius:16px;
-}
-
-.page-body{
-    padding-bottom:40px;
-}
-
-
-.photo-count{
-    position:absolute;
-    top:12px;
-    right:12px;
-}
-
-.card-title{
-    font-size:1rem;
-    font-weight:700;
-    line-height:1.5;
-    min-height:52px;
-}
-
-.pagination{
-    justify-content:center;
-    gap:8px;
-}
-
-.page-link{
-    border:none;
-    min-width:40px;
-    height:40px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:8px !important;
-    color:#64748b;
-    transition:.2s;
-}
-
-.page-item.active .page-link{
-    background:#206bc4;
-}
-/* ==================================
-   BADGES
-================================== */
-
-.photo-count{
-    position:absolute;
-    top:12px;
-    right:12px;
-    font-size:12px;
-    border-radius:999px;
-    padding:6px 10px;
-}
-
-.status-badge{
-    border-radius:999px;
-}
-
-/* ==================================
-   CARD CONTENT
-================================== */
-
-.card-title{
-    font-size:1.05rem;
-    font-weight:700;
-    line-height:1.5;
-    min-height:60px;
-}
-
-.gallery-card .text-secondary{
-    font-size:.9rem;
-}
-
-
-/* ==================================
-   SEARCH
-================================== */
-
-#gallerySearch{
-    border-radius:14px;
-    border:1px solid #e5e7eb;
-    padding:12px 16px;
-}
-
-#statusFilter{
-    border-radius:14px;
-}
-
-/* ==================================
-   PAGINATION
-================================== */
-
-.pagination{
-    justify-content:center;
-    gap:6px;
-}
-
-.page-item{
-    margin:0;
-}
-
-.pagination .page-link{
-    width:40px !important;
-    height:40px !important;
-    min-width:40px !important;
-
-    border-radius:8px !important;
-
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-
-    border:none !important;
-}
-
-.page-link:hover{
-    background:#e9f2ff;
-    color:#206bc4;
-}
-
-.pagination .page-item.active .page-link{
-    background:#206bc4 !important;
-    color:#fff !important;
-    border-radius:8px !important;
-}
-
-/* ==================================
-   GLOBAL CARD
-================================== */
-
-.card{
-    border-radius:20px;
-}
-
-/* ==================================
-   DARK MODE
-================================== */
-
-
-[data-bs-theme="dark"] .stat-card{
-    background:#1f2937;
-}
-
-
-[data-bs-theme="dark"] #gallerySearch{
-    background:#111827;
-    border-color:#374151;
-    color:#fff;
-}
-
-[data-bs-theme="dark"] #statusFilter{
-    background:#111827;
-    border-color:#374151;
-    color:#fff;
-}
-
-[data-bs-theme="dark"] .page-link{
-    background:#1f2937;
-    color:#fff;
-}
-
-[data-bs-theme="dark"] .page-link:hover{
-    background:#374151;
-}
-
-[data-bs-theme="dark"] .card-title{
-    color:#fff;
-}
-
-[data-bs-theme="dark"] .text-secondary{
-    color:#9ca3af !important;
-}
-
-.action-btn{
-    width:38px;
-    height:38px;
-    padding:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:8px;
-}
-
-</style>
-
 @section('script')
-
 <script>
-
-function loadGallery(page = 1)
-{
-    $.get(
-        "{{ route('eventphoto.index') }}",
-        {
-            search : $('#searchInput').val(),
-            status : $('#statusFilter').val(),
-            show   : $('#showFilter').val(),
-            page   : page
-        },
-        function(response){
-
-            let html =
-                $(response)
-                .find('#galleryTableWrapper')
-                .html();
-
-            $('#galleryTableWrapper')
-                .html(html);
-
-        }
-    );
-}
-
-$('#btnSearch').on(
-    'click',
-    function(){
-
-        loadGallery();
-
-    }
-);
-
-$('#searchInput').on(
-    'keyup',
-    function(){
-
-        clearTimeout(
-            window.galleryTimer
-        );
-
-        window.galleryTimer =
-            setTimeout(
-                loadGallery,
-                500
-            );
-
-    }
-);
-
-$('#statusFilter').on(
-    'change',
-    function(){
-
-        loadGallery();
-
-    }
-);
-
-$('#showFilter').on(
-    'change',
-    function(){
-
-        loadGallery();
-
-    }
-);
-
-$(document).on(
-    'click',
-    '.pagination a',
-    function(e){
-
-        e.preventDefault();
-
-        let page =
-            $(this)
-            .attr('href')
-            .split('page=')[1];
-
-        loadGallery(page);
-
-    }
-);
-
+var newsSearchTimer;
+document.getElementById('newsSearch').addEventListener('keyup', function() {
+    clearTimeout(newsSearchTimer);
+    var form = document.getElementById('newsFilterForm');
+    newsSearchTimer = setTimeout(function() { form.submit(); }, 450);
+});
 </script>
-
 @endsection

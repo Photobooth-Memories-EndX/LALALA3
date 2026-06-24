@@ -1,73 +1,79 @@
 @extends('layouts.sidebar-master')
 
+@section('style')
+    <link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet"/>
+    @include('components.Home.styles')
+@endsection
+
 @section('content')
 
-<div class="page-body">
+    @php
+        $content_video = $content->filter(fn($c) => in_array($c->type, ['YouTube', 'Video']));
+        $content_pdf   = $content->filter(fn($c) => $c->type === 'Document');
+    @endphp
 
-    <div class="container-fluid px-4 py-4">
+    <div class="page-body">
+        <div class="container-xl py-4">
 
-        {{-- HERO --}}
-        @include('components.Home.hero')
-
-        {{-- STATS --}}
-        @include('components.Home.stats')
-
-        {{-- QUICK ACTIONS --}}
-        {{-- <div class="row g-2 mt-3">
-            <div class="col-6 col-sm-3">
-                <a href="{{ route('user.learning.dashboard') }}" class="home-modern-quick-btn">
-                    <i class="ti ti-layout-dashboard"></i>
-                    <span>My Learning</span>
-                </a>
+            {{-- ── Dashboard Header ── --}}
+            <div class="home-modern-db-header">
+                <div>
+                    <h1 class="home-modern-db-title">Learning Dashboard</h1>
+                    <p class="home-modern-db-subtitle">Continue your learning journey</p>
+                </div>
+                <button type="button"
+                        class="home-modern-assessment-btn"
+                        id="btn-assessment-access">
+                    <i class="ti ti-clipboard-list"></i>
+                    Assessment Access
+                </button>
             </div>
-            <div class="col-6 col-sm-3">
-                <a href="{{ route('content.user.index') }}" class="home-modern-quick-btn">
-                    <i class="ti ti-books"></i>
-                    <span>All Content</span>
-                </a>
+            
+            {{-- ── Main 2-Column Layout ── --}}
+            <div class="row g-4">
+                {{-- HERO SECTION --}}
+                @include('components.Home.hero')
+
+                {{-- LEFT: Main Content (8 cols) --}}
+                <div class="col-xl-8 col-lg-8 d-flex flex-column gap-4">
+
+                    {{-- Continue Learning --}}
+                    @include('components.Home.continue-learning')
+
+                    {{-- Top Video Learning --}}
+                    @include('components.Home.top-video')
+
+                    {{-- Training Modules: Video / Document / Playlist tabs --}}
+                    @include('components.Home.training-modules')
+
+                </div>
+
+                {{-- RIGHT: Sidebar (4 cols) --}}
+                <div class="col-xl-4 col-lg-4 d-flex flex-column gap-4">
+
+                    {{-- Profile + Donut Chart --}}
+                    @include('components.Home.sidebar-profile')
+
+                    {{-- Upcoming Deadlines --}}
+                    @include('components.Home.upcoming-deadline')
+
+                    {{-- Latest Gallery --}}
+                    @include('components.Home.latest-gallery')
+
+                    {{-- Latest News --}}
+                    @include('components.Home.latest-news')
+
+                </div>
+
             </div>
-            <div class="col-6 col-sm-3">
-                <a href="{{ route('playlist.user.index') }}" class="home-modern-quick-btn">
-                    <i class="ti ti-list-details"></i>
-                    <span>Playlist</span>
-                </a>
-            </div>
-            <div class="col-6 col-sm-3">
-                <a href="{{ route('assesment.user.index') }}" class="home-modern-quick-btn">
-                    <i class="ti ti-clipboard-check"></i>
-                    <span>Assessment</span>
-                </a>
-            </div>
-        </div> --}}
 
-        {{-- CONTINUE LEARNING --}}
-        @include('components.Home.continue-learning')
-
-        {{-- TOP VIDEO LEARNING --}}
-        @include('components.Home.recommended-learning')
-
-        {{-- TRAINING MODULES --}}
-        @include('components.Home.training-modules')
-
-        {{-- UPCOMING DEADLINES --}}
-        @include('components.Home.upcoming-deadline')
-
-        {{-- LATEST NEWS --}}
-        @include('components.Home.latest-news')
-
-        {{-- RECENT ACTIVITY --}}
-        @include('components.Home.latest-gallery')
-
+        </div>
     </div>
 
-</div>
+    {{-- Assessment Access Modal --}}
+    @include('components.Home.assessment-modal')
 
 @endsection
 
-@section('style')
-@include('components.Home.styles')
-@endsection
-
-@section('script')
+{{-- Scripts: ApexCharts + Assessment AJAX --}}
 @include('components.Home.scripts')
-@endsection

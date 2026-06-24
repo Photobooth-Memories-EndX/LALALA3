@@ -984,4 +984,276 @@ a { text-decoration: none; }
 [data-bs-theme="dark"] .home-modern-empty { color: #2a4a6a; }
 [data-bs-theme="dark"] .home-modern-empty p { color: #4b6680; }
 
+/* =====================================================
+   HORIZONTAL SCROLL ROW
+===================================================== */
+
+.home-modern-hscroll {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: #e2e8f0 transparent;
+}
+
+.home-modern-hscroll::-webkit-scrollbar { height: 4px; }
+.home-modern-hscroll::-webkit-scrollbar-track { background: transparent; }
+.home-modern-hscroll::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 999px;
+}
+
+.home-modern-hscroll-item {
+    flex: 0 0 210px;
+    min-width: 0;
+}
+
+.home-modern-duration-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,.72);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    letter-spacing: .2px;
+}
+
+[data-bs-theme="dark"] .home-modern-hscroll {
+    scrollbar-color: #1a3356 transparent;
+}
+[data-bs-theme="dark"] .home-modern-hscroll::-webkit-scrollbar-thumb {
+    background: #1a3356;
+}
+
+/* =====================================================
+   NAV TABS — Training Modules
+===================================================== */
+
+.home-modern-nav-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: none;
+    padding: 0;
+    margin-bottom: 0;
+}
+
+.home-modern-nav-tabs .nav-link {
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 16px;
+    transition: color .15s, border-color .15s;
+    background: transparent;
+}
+
+.home-modern-nav-tabs .nav-link:hover {
+    color: #2563eb;
+    border-bottom-color: #bfdbfe;
+}
+
+.home-modern-nav-tabs .nav-link.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+[data-bs-theme="dark"] .home-modern-nav-tabs .nav-link {
+    color: #4b6680;
+}
+[data-bs-theme="dark"] .home-modern-nav-tabs .nav-link:hover {
+    color: #60a5fa;
+    border-bottom-color: rgba(96,165,250,.35);
+}
+[data-bs-theme="dark"] .home-modern-nav-tabs .nav-link.active {
+    color: #60a5fa;
+    border-bottom-color: #3b82f6;
+}
+
+/* =====================================================
+   GALLERY ROW — Sidebar list style
+===================================================== */
+
+.home-modern-gallery-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    text-decoration: none;
+    color: #0f172a;
+    transition: color .15s;
+}
+
+.home-modern-gallery-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.home-modern-gallery-row:hover { color: #2563eb; }
+
+.home-modern-gallery-row-thumb {
+    width: 68px;
+    height: 48px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.home-modern-gallery-row-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.home-modern-gallery-row-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: inherit;
+}
+
+.home-modern-gallery-row-date {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+}
+
+[data-bs-theme="dark"] .home-modern-gallery-row {
+    color: #e2e8f0;
+    border-bottom-color: rgba(255,255,255,.06);
+}
+[data-bs-theme="dark"] .home-modern-gallery-row:hover { color: #60a5fa; }
+[data-bs-theme="dark"] .home-modern-gallery-row-date { color: #4b6680; }
+
+/* =====================================================
+   NEWS ROW — Sidebar list style
+===================================================== */
+
+.home-modern-news-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    text-decoration: none;
+    color: #0f172a;
+    transition: color .15s;
+}
+
+.home-modern-news-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.home-modern-news-row:hover { color: #2563eb; }
+
+.home-modern-news-row-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.home-modern-news-row-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: inherit;
+}
+
+.home-modern-news-row-date {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+}
+
+[data-bs-theme="dark"] .home-modern-news-row {
+    color: #e2e8f0;
+    border-bottom-color: rgba(255,255,255,.06);
+}
+[data-bs-theme="dark"] .home-modern-news-row:hover { color: #60a5fa; }
+[data-bs-theme="dark"] .home-modern-news-row-icon {
+    background: rgba(37,99,235,.2);
+    color: #60a5fa;
+}
+[data-bs-theme="dark"] .home-modern-news-row-date { color: #4b6680; }
+
+/* =====================================================
+   DASHBOARD HEADER
+===================================================== */
+
+.home-modern-db-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.home-modern-db-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px;
+    line-height: 1.2;
+}
+
+.home-modern-db-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+[data-bs-theme="dark"] .home-modern-db-title    { color: #f1f5f9; }
+[data-bs-theme="dark"] .home-modern-db-subtitle { color: #94a3b8; }
+
+/* =====================================================
+   ASSESSMENT BUTTON — top of main column
+===================================================== */
+
+.home-modern-assessment-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(217,119,6,.3);
+    transition: transform .15s, box-shadow .15s;
+}
+
+.home-modern-assessment-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(217,119,6,.4);
+    color: #fff;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-btn {
+    box-shadow: 0 4px 14px rgba(217,119,6,.2);
+}
+
 </style>

@@ -1,0 +1,70 @@
+<div class="home-modern-card">
+
+    <div class="home-modern-card-header">
+        <h2 class="home-modern-section-title">
+            <i class="ti ti-crown me-2 text-warning"></i>Top Video Learning
+        </h2>
+        <a href="{{ route('content.user.index') }}" class="home-modern-view-all">
+            View All <i class="ti ti-arrow-right ms-1"></i>
+        </a>
+    </div>
+
+    <div class="home-modern-card-body">
+
+        @if($top_video && $top_video->count())
+
+        <div class="home-modern-hscroll">
+            @foreach($top_video->take(8) as $item)
+            <div class="home-modern-hscroll-item">
+                <a href="{{ route('content.user.view', $item->slug) }}" class="home-modern-video-card">
+
+                    <div class="home-modern-video-thumb">
+                        @if($item->type === 'YouTube')
+                            <img src="https://img.youtube.com/vi/{{ $item->link }}/mqdefault.jpg"
+                                 alt="{{ $item->title }}"
+                                 onerror="this.src='{{ asset('default-video.jpg') }}'">
+                        @else
+                            @php
+                                $tvSrc = 'storage/files/content/' . $item->id . '/thumb.jpg';
+                                $tvThumb = (\File::exists(public_path($tvSrc)) && !is_dir(public_path($tvSrc)))
+                                    ? asset($tvSrc)
+                                    : asset('default-video.jpg');
+                            @endphp
+                            <img src="{{ $tvThumb }}"
+                                 alt="{{ $item->title }}"
+                                 onerror="this.src='{{ asset('default-video.jpg') }}'">
+                        @endif
+
+                        <div class="home-modern-video-play">
+                            <i class="ti ti-player-play-filled"></i>
+                        </div>
+
+                        @if($item->duration)
+                        <span class="home-modern-duration-badge">{{ $item->duration }}</span>
+                        @endif
+                    </div>
+
+                    <div class="home-modern-video-body">
+                        <span class="home-modern-category-badge">
+                            {{ $item->type === 'YouTube' ? 'YouTube' : 'Video' }}
+                        </span>
+                        <h4 class="home-modern-video-title">{{ Str::limit($item->title, 55) }}</h4>
+                    </div>
+
+                </a>
+            </div>
+            @endforeach
+        </div>
+
+        @else
+
+        <div class="home-modern-empty">
+            <i class="ti ti-video-off"></i>
+            <p>No videos available</p>
+        </div>
+
+        @endif
+
+    </div>
+
+</div>

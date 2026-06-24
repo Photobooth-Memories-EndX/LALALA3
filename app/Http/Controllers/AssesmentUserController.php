@@ -12,10 +12,23 @@
 
     class AssesmentUserController extends Controller
     {
-        public function index()
+    public function index()
         {
-            $assesment = Assesment::latest()->paginate(15);
-            return view('user.assesment.index', compact('assesment'));
+            $assesment = Assesment::with([
+                    'trainingplan',
+                    'scores' => function ($query) {
+                        $query->where('user_id', Auth::id());
+                    },
+                ])
+                ->latest()
+                ->get();
+
+            $result = AssesmentResult::with('assesment')
+                ->where('user_id', Auth::id())
+                ->latest()
+                ->get();
+
+            return view('user.assesment.index', compact('assesment', 'result'));
         }
 
         public function view($slug)
