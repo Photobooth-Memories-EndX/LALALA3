@@ -8,33 +8,76 @@ use Illuminate\Http\Request;
 
 class GalleryUserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $eventphoto = EventPhoto::withCount('comments')
-            ->where('active', 'Active')
-            ->latest()
-            ->get();
+        $q        = $request->input('q');
+        $uploader = $request->input('uploader');
+        $sort     = $request->input('sort', 'latest');
+        $category = $request->input('category');
 
-        $totalEvents = $eventphoto->count();
+        $query = EventPhoto::withCount('comments')
+            ->where('active', 'Active');
 
-        $totalPhotos = 0;
-
-        foreach ($eventphoto as $item) {
-
-            if ($item->photos) {
-
-                $photos = json_decode($item->photos, true);
-
-                if ($photos) {
-                    $totalPhotos += count($photos);
-                }
-            }
+        if ($q) {
+            $query->where('title', 'like', "%{$q}%");
         }
 
+        if ($uploader) {
+            $query->where('uploader', $uploader);
+        }
+
+        if ($category) {
+            $query->where('category', $category);
+        }
+
+        switch ($sort) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'az':
+                $query->orderBy('title', 'asc');
+                break;
+            case 'za':
+                $query->orderBy('title', 'desc');
+                break;
+            default:
+                $query->latest();
+        }
+
+        $eventphoto = $query->paginate(9)->withQueryString();
+
+        $totalEvents = EventPhoto::where('active', 'Active')->count();
+
+        $totalPhotos = 0;
+        EventPhoto::where('active', 'Active')
+            ->pluck('photos')
+            ->each(function ($p) use (&$totalPhotos) {
+                if ($p) {
+                    $arr = json_decode($p, true);
+                    if (is_array($arr)) {
+                        $totalPhotos += count($arr);
+                    }
+                }
+            });
+
+        $uploaders = EventPhoto::where('active', 'Active')
+            ->whereNotNull('uploader')
+            ->where('uploader', '!=', '')
+            ->distinct()
+            ->pluck('uploader');
+
+        $categories = EventPhoto::where('active', 'Active')
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->pluck('category');
+
         return view('user.gallery.index', [
-            'eventphoto' => $eventphoto,
+            'eventphoto'  => $eventphoto,
             'totalEvents' => $totalEvents,
             'totalPhotos' => $totalPhotos,
+            'uploaders'   => $uploaders,
+            'categories'  => $categories,
         ]);
     }
 
@@ -45,16 +88,8 @@ class GalleryUserController extends Controller
         $eventphoto->views = ($eventphoto->views ?? 0) + 1;
         $eventphoto->save();
 
-        $photoCount = 0;
-
-        if ($eventphoto->photos) {
-
-            $photos = json_decode($eventphoto->photos, true);
-
-            if ($photos) {
-                $photoCount = count($photos);
-            }
-        }
+        $photosArr  = $eventphoto->photos ? (json_decode($eventphoto->photos, true) ?? []) : [];
+        $photoCount = is_array($photosArr) ? count($photosArr) : 0;
 
         $comment = Comment::with('user')
             ->where('parent_id', null)
@@ -63,13 +98,11 @@ class GalleryUserController extends Controller
             ->latest()
             ->paginate(10);
 
-     return view(
-    'user.gallery.view',
-    [
-        'eventphoto' => $eventphoto,
-        'comment' => $comment,
-        'photoCount' => $photoCount
-    ]
-);
+        return view('user.gallery.view', [
+            'eventphoto' => $eventphoto,
+            'comment'    => $comment,
+            'photoCount' => $photoCount,
+            'photos'     => is_array($photosArr) ? $photosArr : [],
+        ]);
     }
 }

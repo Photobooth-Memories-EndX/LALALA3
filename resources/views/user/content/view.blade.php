@@ -18,7 +18,7 @@
         </a>
 
         <div class="row g-4">
-            <div class="col-lg-8">
+            <div class="col-lg-8 col-xl-9">
                 @include('user.content.components.content-player')
                 @include('user.content.components.content-detail-header', [
                     'discussionCount' => $discussionCount,
@@ -33,7 +33,7 @@
                 <x-comment :content="$content" :comment="$comment" :discussion-count="$discussionCount" type="content" />
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-4 col-xl-3">
                 @include('user.content.components.content-learning-sidebar', [
                     'discussionCount' => $discussionCount,
                     'bookmarkCount' => $bookmarkCount,

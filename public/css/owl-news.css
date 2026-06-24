@@ -830,3 +830,300 @@ textarea:focus-visible {
         height:280px;
     }
 }
+
+/* =================================================================
+   IMAGE PLACEHOLDER SYSTEM
+   CSS placeholder sits behind; real image overlays on top (z-index 1).
+   onerror hides broken img → placeholder shows through automatically.
+   ================================================================= */
+
+.news-img-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: var(--owl-text-tertiary, #94a3b8);
+    background: var(--owl-surface-alt, #f6f8fb);
+    z-index: 0;
+}
+
+/* Card grid thumbnail — make image absolute above placeholder */
+.owl-news-image-wrapper {
+    position: relative;
+}
+
+.owl-news-image-wrapper .owl-news-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+.owl-news-image-wrapper .owl-news-overlay {
+    z-index: 2;
+}
+
+.owl-news-image-wrapper .owl-news-badge {
+    z-index: 3;
+}
+
+/* Save button absolute inside image wrapper */
+.owl-save-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 4;
+}
+
+/* Card link color respects dark mode */
+.owl-card-title-link {
+    color: var(--owl-text);
+    text-decoration: none;
+}
+
+.owl-card-title-link:hover {
+    color: var(--owl-primary);
+}
+
+/* Sidebar text helpers */
+.owl-sidebar-label {
+    color: var(--owl-text-secondary);
+    font-size: .75rem;
+    letter-spacing: .04em;
+}
+
+.owl-sidebar-heading {
+    color: var(--owl-text);
+}
+
+.owl-trending-meta {
+    color: var(--owl-text-secondary);
+}
+
+/* ---- TRENDING THUMBNAIL ---- */
+.trending-thumb {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--owl-surface-alt);
+}
+
+.trending-thumb-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--owl-text-tertiary);
+}
+
+.trending-thumb-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+.trending-thumb-num {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    background: rgba(37, 99, 235, .85);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    z-index: 2;
+    line-height: 1.4;
+}
+
+/* ---- FEATURED HERO IMAGE ---- */
+.owl-hero-image-wrapper {
+    position: relative;
+}
+
+.news-hero-img-placeholder {
+    font-size: 3rem;
+    opacity: .5;
+}
+
+.owl-hero-image-wrapper .owl-hero-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+.owl-hero-image-wrapper .owl-hero-overlay {
+    z-index: 2;
+}
+
+/* ---- ARTICLE HERO ---- */
+.owl-article-hero-wrapper {
+    position: relative;
+}
+
+.news-article-hero-placeholder {
+    font-size: 4rem;
+    opacity: .45;
+}
+
+.news-cover-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+/* ---- EXPLORE / RELATED CARDS ---- */
+.owl-explore-image-wrapper {
+    position: relative;
+    min-height: 180px;
+}
+
+.news-explore-placeholder {
+    font-size: 1.8rem;
+    opacity: .45;
+    min-height: 180px;
+}
+
+.owl-explore-image-wrapper .owl-explore-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+/* ---- INSIGHTS CARD DARK MODE ---- */
+.owl-insights-card {
+    background: var(--owl-surface);
+    border: 1px solid var(--owl-border) !important;
+}
+
+/* ---- EXPLORE CARD DARK MODE ---- */
+.owl-explore-card {
+    color: var(--owl-text);
+    background: var(--owl-surface);
+}
+
+/* ---- REMOVE HARD-CODED WHITE BACKGROUNDS IN DARK MODE ---- */
+body.dark-mode .bg-white,
+body[data-bs-theme="dark"] .bg-white {
+    background-color: var(--owl-surface) !important;
+}
+
+/* =================================================================
+   LAYOUT FIX — main + sidebar proportions
+   Root cause: col-lg-9/col-lg-3 was too tight at 1366px, and
+   the outer .owl-sidebar-sticky in index.blade.php caused
+   double-sticky nesting with the one inside sidebar.blade.php.
+   ================================================================= */
+
+/* Row stays flex-start so sidebar doesn't stretch */
+.news-layout {
+    align-items: flex-start;
+}
+
+/* Sidebar: give it breathing room on lg, cap on very wide screens */
+.news-sidebar {
+    max-width: 380px;
+}
+
+/* On lg (992-1199px) sidebar = col-lg-4 = ~33%.
+   On xl (1200px+)    sidebar = col-xl-3 = 25%.
+   Both are handled by Bootstrap grid classes in the HTML.
+   These guards prevent it from getting too small: */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .news-sidebar {
+        min-width: 280px;
+    }
+}
+
+/* =================================================================
+   SIDEBAR OVERFLOW FIX
+   .owl-sidebar-card already exists; add overflow guard.
+   =================================================================*/
+
+.owl-sidebar-card {
+    overflow: hidden;
+}
+
+/* Trending item: align-items-start so 2-line title doesn't
+   vertically misalign the thumbnail */
+.owl-trending-item {
+    overflow: hidden;
+    align-items: flex-start !important;
+}
+
+/* CRITICAL: 2-line clamp with word-break.
+   Replaces the old text-truncate (single-line white-space:nowrap)
+   that caused overflow when title was longer than sidebar width. */
+.owl-trending-title {
+    color: var(--owl-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;       /* override any Bootstrap text-truncate */
+    word-break: break-word;
+    line-height: 1.4;
+    font-size: .875rem;
+    margin-bottom: 0;
+}
+
+/* =================================================================
+   CARD GRID — consistent aspect ratio thumbnail
+   ================================================================= */
+
+/* Keep aspect-ratio stable regardless of parent column width */
+.owl-news-image-wrapper {
+    aspect-ratio: 16 / 9;
+}
+
+/* =================================================================
+   DARK MODE — sidebar card body
+   ================================================================= */
+
+body.dark-mode .owl-sidebar-card,
+body[data-bs-theme="dark"] .owl-sidebar-card {
+    background: var(--owl-surface);
+    border-color: var(--owl-border);
+}
+
+body.dark-mode .owl-trending-item,
+body[data-bs-theme="dark"] .owl-trending-item {
+    background: var(--owl-surface-alt);
+}
+
+body.dark-mode .owl-trending-title,
+body[data-bs-theme="dark"] .owl-trending-title {
+    color: var(--owl-text);
+}
+
+body.dark-mode .owl-trending-meta,
+body[data-bs-theme="dark"] .owl-trending-meta {
+    color: var(--owl-text-secondary);
+}
+
+body.dark-mode .owl-sidebar-heading,
+body[data-bs-theme="dark"] .owl-sidebar-heading {
+    color: var(--owl-text);
+}
+

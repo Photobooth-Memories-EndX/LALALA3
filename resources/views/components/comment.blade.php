@@ -25,16 +25,19 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden" id="comment">
 
         <div class="card-header border-0 bg-white p-4">
+
+            <div class="mb-3">
+                <span class="comment-modern-badge">
+                    {{ $commentTotal }} Comments
+                </span>
+            </div>
+
             <x-form action="{{ $url }}" method="post">
                 <input type="hidden" value="{{ $hiddenplaylistslug }}" name="playlistslug">
 
-                <div class="comment-compose-row">
+                <div class="d-flex gap-3 align-items-start w-100">
 
-                    <div class="comment-count-box">
-                        {{ $commentTotal }} Comments
-                    </div>
-
-                    <div class="comment-avatar">
+                    <div class="flex-shrink-0">
                         @if(!empty($user->avatar))
                             <span class="avatar avatar-sm rounded-circle"
                                   style="background-image:url('{{ asset('storage/profile/' . $user->avatar) }}')">
@@ -46,17 +49,17 @@
                         @endif
                     </div>
 
-                    <div class="comment-input-area">
+                    <div class="comment-modern-input-wrap">
                         <x-textarea
-                            class="form-control modern-comment-input"
+                            class="form-control comment-modern-textarea"
                             name="description"
                             placeholder="Tulis komentar..."
                             onkeyup="countWord(this)"
                             maxlength="1000"
-                            rows="2">
+                            rows="3">
                         </x-textarea>
 
-                        <div class="comment-submit-row">
+                        <div class="comment-modern-submit-row">
                             <span id="note_remaining" class="text-muted small">
                                 1000 characters remaining
                             </span>
@@ -92,7 +95,7 @@
             @endforelse
 
             @if(method_exists($comment, 'hasPages') && $comment->hasPages())
-                <div class="comment-pagination p-3 border-top">
+                <div class="comment-modern-pagination p-3 border-top">
                     {{ $comment->links() }}
                 </div>
             @endif
@@ -103,94 +106,99 @@
 
 @push('styles')
 <style>
-
-
-    .comment-pagination {
-        display: flex;
-        justify-content: center;
-    }
-
-    .comment-pagination nav {
-        width: 100%;
-    }
-
-    .comment-pagination nav > div:first-child {
-        display: none !important;
-    }
-
-    .comment-pagination nav > div:last-child {
-        display: flex !important;
-        justify-content: center !important;
-        width: 100% !important;
-    }
-
-    .comment-pagination .pagination {
-        justify-content: center !important;
-        margin: 0 !important;
-    }
-    .comment-compose-row {
-        display: grid;
-        grid-template-columns: auto auto minmax(260px, 420px);
-        align-items: start;
-        gap: 12px;
-    }
-
-    .comment-count-box {
-        min-width: 120px;
-        height: 32px;
-        padding: 0 16px;
+    /* ── Badge ── */
+    .comment-modern-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 16px;
         border-radius: 999px;
         background: #eaf1ff;
         color: #2563eb;
         font-size: 13px;
         font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 17px;
     }
 
-    .comment-avatar {
-        margin-top: 16px;
-    }
-
-    .modern-comment-input {
+    /* ── Input area fills remaining space ── */
+    .comment-modern-input-wrap {
+        flex: 1 1 0;
+        min-width: 0;
         width: 100%;
-        min-height: 52px;
+    }
+
+    /* ── Textarea full width, taller ── */
+    .comment-modern-textarea {
+        width: 100% !important;
+        min-height: 90px;
         resize: vertical;
         border-radius: 6px;
     }
 
-    .comment-submit-row {
+    /* ── Submit row ── */
+    .comment-modern-submit-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
         margin-top: 8px;
+        flex-wrap: wrap;
     }
 
-    @media (max-width: 768px) {
-        .comment-compose-row {
-            grid-template-columns: auto 1fr;
-        }
+    /* ── Thread root items ── */
+    .comment-thread-root {
+        padding: 16px;
+        width: 100%;
+    }
 
-        .comment-count-box {
-            grid-column: 1 / -1;
-            margin-top: 0;
-            justify-self: start;
-        }
+    .comment-thread-reply {
+        padding: 10px 0 0 20px;
+        width: 100%;
+    }
 
-        .comment-avatar {
-            margin-top: 8px;
-        }
+    /* ── Pagination ── */
+    .comment-modern-pagination {
+        display: flex;
+        justify-content: center;
+    }
 
-        .comment-input-area {
-            width: 100%;
-        }
+    .comment-modern-pagination nav {
+        width: 100%;
+    }
 
-        .comment-submit-row {
+    .comment-modern-pagination nav > div:first-child {
+        display: none !important;
+    }
+
+    .comment-modern-pagination nav > div:last-child {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+
+    .comment-modern-pagination .pagination {
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+
+    /* ── Dark mode ── */
+    [data-bs-theme="dark"] .comment-modern-badge {
+        background: rgba(37, 99, 235, 0.15);
+        color: #93c5fd;
+    }
+
+    [data-bs-theme="dark"] .card-header,
+    [data-bs-theme="dark"] .card-body {
+        background-color: var(--tblr-card-bg, #1e293b) !important;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 576px) {
+        .comment-modern-submit-row {
             flex-direction: column;
             align-items: flex-start;
+        }
+
+        .comment-thread-reply {
+            padding-left: 12px;
         }
     }
 </style>

@@ -105,7 +105,7 @@
                         <input type="hidden" value="{{ $hiddenplaylistslug }}" name="playlistslug">
 
                         <x-textarea
-                            class="form-control modern-comment-input"
+                            class="form-control comment-modern-textarea"
                             name="description"
                             placeholder="Tulis balasan..."
                             maxlength="1000"

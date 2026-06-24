@@ -61,7 +61,7 @@
             </div>
         </div>
 
-        @include('user.content.components.learning-paths')
+        {{-- @include('user.content.components.learning-paths') --}}
 
         @include('user.content.components.content-search-filter')
 

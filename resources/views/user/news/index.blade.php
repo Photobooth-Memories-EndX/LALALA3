@@ -70,10 +70,11 @@
         </div>
 
         {{-- CONTENT --}}
-        <div class="row gx-4 gy-4">
+        {{-- news-layout: flex-start so sidebar doesn't stretch full height --}}
+        <div class="row gx-4 gy-4 news-layout">
 
             {{-- NEWS GRID --}}
-            <div class="col-lg-9">
+            <div class="col-xl-9 col-lg-8 news-main">
 
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
                     <div>
@@ -91,6 +92,7 @@
 
                 @if($news->count() > 0)
 
+                    {{-- 3 cols on xl, 2 cols on md–lg, 1 on mobile --}}
                     <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
                         @foreach($news as $item)
                             @include('user.news.partials.card')
@@ -113,10 +115,9 @@
             </div>
 
             {{-- SIDEBAR --}}
-            <div class="col-lg-3">
-                <div class="owl-sidebar-sticky">
-                    @include('user.news.partials.sidebar', ['trending' => $trending])
-                </div>
+            {{-- Outer sticky wrapper removed — sidebar.blade.php owns its own .owl-sidebar-sticky --}}
+            <div class="col-xl-3 col-lg-4 news-sidebar">
+                @include('user.news.partials.sidebar', ['trending' => $trending])
             </div>
 
         </div>

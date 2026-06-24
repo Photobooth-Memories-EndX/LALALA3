@@ -1,11 +1,23 @@
 <div class="col">
     <div class="card owl-news-card h-100 border-0 shadow-sm" data-news-id="{{ $item->id }}">
 
+        {{-- THUMBNAIL --}}
         <div class="owl-news-image-wrapper">
-            <img src="{{ asset('default-video.jpg') }}"
-                 class="owl-news-image"
-                 alt="{{ $item->title }}"
-                 loading="lazy">
+
+            {{-- Placeholder always behind; image overlays on top --}}
+            <div class="news-img-placeholder">
+                <i class="ti ti-news"></i>
+            </div>
+
+            @if(!empty($item->image))
+                <img
+                    src="{{ asset('storage/news/' . $item->image) }}"
+                    class="owl-news-image"
+                    alt="{{ $item->title ?? '' }}"
+                    loading="lazy"
+                    onerror="this.style.display='none'"
+                >
+            @endif
 
             <div class="owl-news-overlay"></div>
 
@@ -14,61 +26,66 @@
                 <span>{{ $item->category ?? 'Technology' }}</span>
             </div>
 
-            <button class="btn btn-icon btn-white rounded-circle owl-save-btn"
-                    data-bs-toggle="tooltip"
-                    title="Save for later"
-                    aria-label="Save article">
+            <button
+                class="btn btn-icon btn-white rounded-circle owl-save-btn"
+                data-bs-toggle="tooltip"
+                title="Save for later"
+                aria-label="Save article"
+            >
                 <i class="ti ti-bookmark"></i>
             </button>
+
         </div>
 
+        {{-- BODY --}}
         <div class="card-body d-flex flex-column flex-grow-1">
 
             <div class="d-flex flex-wrap gap-2 align-items-center mb-3 owl-news-meta">
                 <span class="owl-news-pill">
                     <i class="ti ti-clock-hour-4 me-1"></i>
-                    {{ ceil(str_word_count(strip_tags($item->description)) / 200) }} min read
+                    {{ ceil(str_word_count(strip_tags($item->description ?? '')) / 200) ?: 1 }} min read
                 </span>
                 <span class="owl-news-pill owl-news-pill-muted">
-                    {{ $item->created_at->format('M d, Y') }}
+                    {{ $item->created_at ? $item->created_at->format('M d, Y') : '-' }}
                 </span>
             </div>
 
             <h3 class="card-title mb-3 flex-grow-1 owl-card-title">
                 <a href="{{ route('news.user.view', $item->slug) }}"
-                   class="text-dark text-decoration-none">
-                    {{ $item->title }}
+                   class="owl-card-title-link">
+                    {{ $item->title ?? '-' }}
                 </a>
             </h3>
 
-            <p class="text-secondary mb-4 flex-grow-1 owl-card-excerpt">
-                {{ Str::limit(strip_tags($item->description), 130) }}
+            <p class="owl-card-excerpt mb-4">
+                {{ Str::limit(strip_tags($item->description ?? ''), 130) }}
             </p>
 
         </div>
 
+        {{-- FOOTER --}}
         <div class="card-footer bg-transparent border-top pt-0 mt-auto">
             <div class="d-flex align-items-center justify-content-between gap-3 py-3">
 
-                <div class="d-flex align-items-center gap-2">
-                    <span class="avatar avatar-sm bg-blue-lt text-blue fw-bold">
+                <div class="d-flex align-items-center gap-2 min-w-0">
+                    <span class="avatar avatar-sm bg-blue-lt text-blue fw-bold flex-shrink-0">
                         {{ strtoupper(substr($item->user->name ?? 'U', 0, 1)) }}
                     </span>
-                    <div>
-                        <div class="fw-semibold text-dark small mb-1">
+                    <div class="min-w-0">
+                        <div class="fw-semibold small text-truncate owl-card-author-name">
                             {{ $item->user->name ?? 'Unknown' }}
                         </div>
-                        <div class="text-secondary tiny">
+                        <div class="text-secondary" style="font-size:.75rem">
                             {{ number_format($item->views ?? 0) }} views
                         </div>
                     </div>
                 </div>
 
                 <a href="{{ route('news.user.view', $item->slug) }}"
-                   class="btn btn-sm btn-outline-primary rounded-pill owl-card-cta">
-                    Read more
-                    <i class="ti ti-arrow-right ms-2"></i>
+                   class="btn btn-sm btn-outline-primary rounded-pill owl-card-cta flex-shrink-0">
+                    Read more <i class="ti ti-arrow-right ms-1"></i>
                 </a>
+
             </div>
         </div>
 

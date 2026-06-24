@@ -17,9 +17,9 @@
             </p>
 
             <div class="home-modern-hero-badges">
-                <span class="home-modern-badge-streak">
+                {{-- <span class="home-modern-badge-streak">
                     <i class="ti ti-flame me-1"></i>Learning Streak
-                </span>
+                </span> --}}
                 <span class="home-modern-badge-progress">
                     <i class="ti ti-check me-1"></i>{{ $progressPercent }}% Completed
                 </span>

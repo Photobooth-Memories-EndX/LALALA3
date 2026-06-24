@@ -62,7 +62,7 @@
             <div class="d-flex flex-wrap justify-content-center gap-2">
                 <span class="badge rounded-pill bg-primary-lt text-primary px-3 py-2">
                     <i class="ti ti-badge me-1"></i>
-                    All Level
+                    Instructor
                 </span>
 
                 <span class="badge rounded-pill bg-secondary-lt text-secondary px-3 py-2">
