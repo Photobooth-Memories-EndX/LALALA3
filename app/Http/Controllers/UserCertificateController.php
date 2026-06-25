@@ -54,28 +54,30 @@ class UserCertificateController extends Controller
         return view('certificate.verify', compact('certificate'));
     }
 
-        public function downloadPdf($credentialId)
+      public function downloadPdf($credentialId)
     {
         $certificate = Certificate::with([
                 'certificateSetting',
                 'certificateSetting.assessment',
                 'certificateSetting.content',
-                'certificateSetting.trainingPlan',
+                'certificateSetting.trainingPlan.trainingplandetail.content',
             ])
             ->where('credential_id', $credentialId)
             ->firstOrFail();
+
+        abort_unless($certificate->user_id === Auth::id(), 403);
 
         $pdf = Pdf::loadView(
             'main.certificate.templates.pdf',
             compact('certificate')
         );
 
-        $pdf->setPaper('a4', 'landscape');
+        $pdf->setPaper('a4', 'portrait');
 
         return $pdf->download(
             $certificate->certificate_number . '.pdf'
         );
-    }
+}
 
 
     public function previewTemplate(CertificateSetting $certificateSetting)

@@ -5,127 +5,421 @@
     <title>Preview Certificate</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 30px;
             background: #eef2f6;
-            color: #17324d;
-            font-family: Georgia, serif;
+            font-family: Arial, sans-serif;
+            color: #696441;
         }
 
-        .certificate {
-            box-sizing: border-box;
-            width: 1200px;
-            min-height: 848px;
-            margin: auto;
-            padding: 80px;
-            text-align: center;
+        .preview-wrapper {
+            width: 848px;
+            margin: 0 auto 30px auto;
+            box-shadow: 0 10px 35px rgba(0,0,0,.15);
             background: #fff;
-            border: 18px double #c7a34b;
-
-            @if(!$setting->use_default_template && ($setting->custom_background ?: $setting->background_image))
-                background: url('{{ asset($setting->custom_background ?: $setting->background_image) }}') center/cover no-repeat;
-            @elseif(!$setting->use_default_template && $setting->certificate_template)
-                background: url('{{ asset($setting->certificate_template) }}') center/cover no-repeat;
-            @endif
         }
 
-        h1 {
-            margin: 20px 0;
-            font-size: 60px;
-            line-height: 1.2;
+        .certificate-page {
+            position: relative;
+            width: 848px;
+            height: 1200px;
+            overflow: hidden;
+            background-size: 100% 100%;
+            background-position: center center;
+            background-repeat: no-repeat;
         }
 
-        h2 {
-            margin: 30px 0;
-            font-size: 42px;
-            line-height: 1.2;
+        .front-page {
+            background-image: url('{{ asset("uploads/template/Front.png") }}');
         }
 
-        p {
-            margin: 12px 0;
-            font-size: 18px;
+        .back-page {
+            background-image: url('{{ asset("uploads/template/Bhind.png") }}');
         }
 
-        .target {
-            font-size: 32px;
+        .certificate-number {
+            position: absolute;
+            top: 58px;
+            left: 58px;
+            font-size: 19px;
             font-weight: bold;
-            margin-top: 20px;
+            color: #696441;
         }
 
-        .details {
-            margin: 35px auto;
-            font-family: Arial, sans-serif;
-            font-size: 16px;
-            line-height: 1.8;
-        }
-
-        .playlist {
-            display: inline-block;
+        .main-content {
+            position: absolute;
+            top: 330px;
+            left: 58px;
+            right: 128px;
             text-align: left;
-            font-family: Arial, sans-serif;
-            font-size: 16px;
         }
 
-        .footer {
-            margin-top: 50px;
-            font-family: Arial, sans-serif;
-            font-size: 16px;
+        .presented-text,
+        .completion-text {
+            font-size: 18px;
+            margin-bottom: 28px;
+            color: #696441;
+        }
+
+        .participant-name {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 34px;
+            color: #696441;
+            text-transform: uppercase;
+            line-height: 1.12;
+        }
+
+        .training-title {
+            font-size: 31px;
+            font-weight: bold;
+            line-height: 1.25;
+            color: #696441;
+            margin-bottom: 36px;
+        }
+
+        .details-table {
+            font-size: 18px;
             line-height: 1.8;
+            color: #696441;
+        }
+
+        .details-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 4px;
+        }
+
+        .details-label {
+            display: table-cell;
+            width: 190px;
+        }
+
+        .details-separator {
+            display: table-cell;
+            width: 25px;
+        }
+
+        .details-value {
+            display: table-cell;
+        }
+
+        .meta-info {
+            margin-top: 54px;
+            font-size: 17px;
+            line-height: 1.8;
+            color: #696441;
+        }
+
+        .credential-box {
+            position: absolute;
+            right: 58px;
+            bottom: 54px;
+            width: 360px;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #696441;
+            text-align: right;
+        }
+
+        .qr-code {
+            width: 86px;
+            height: 86px;
+            margin-left: auto;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .credential-label {
+            font-size: 14px;
+        }
+
+        .credential-id {
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .credential-url {
+            font-size: 10px;
+            word-break: break-all;
+        }
+
+        .attachment-content {
+            position: absolute;
+            top: 115px;
+            left: 70px;
+            right: 100px;
+            color: #696441;
+        }
+
+        .attachment-title {
+            text-align: left;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .attachment-subtitle {
+            text-align: left;
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.45;
+        }
+
+        .attachment-meta {
+            margin-bottom: 18px;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .content-list {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            color: #696441;
+        }
+
+        .content-list th,
+        .content-list td {
+            border: 1px solid #c9c4a3;
+            padding: 7px 9px;
+            vertical-align: top;
+        }
+
+        .content-list th {
+            background: #f7f6ef;
+            font-weight: bold;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .preview-label {
+            width: 848px;
+            margin: 0 auto 12px auto;
+            font-size: 14px;
+            color: #6b7280;
+            font-family: Arial, sans-serif;
         }
     </style>
 </head>
 
 <body>
-<main class="certificate">
+@php
+    use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
-    <div>{{ $setting->issuer_name ?? 'OWL Training Management' }}</div>
+    $previewCredentialId = 'PREVIEW-000001';
+    $verifyUrl = route('certificate.verify', $previewCredentialId);
+    $certificateNumber = 'OWL-CERT-' . now()->format('Y') . '-000001';
 
-    <h1>Certificate of Completion</h1>
+    $qrCode = base64_encode(
+        QrCode::format('svg')
+            ->size(180)
+            ->margin(1)
+            ->color(105, 100, 65)
+            ->generate($verifyUrl)
+    );
 
-    <p>This certificate is proudly presented to</p>
+    $playlistContents = $setting->certificate_type === 'playlist'
+        ? $setting->playlistContents()->values()
+        : collect();
 
-    <h2>Nama Peserta</h2>
+    $contentChunks = $playlistContents->isNotEmpty()
+        ? $playlistContents->chunk(15)
+        : collect([collect()]);
+@endphp
 
-    <p>for successfully completing</p>
+<div class="preview-label">
+    Preview Certificate - Front Page
+</div>
 
-    <div class="target">
-        {{ $setting->sourceTitle() }}
-    </div>
+<div class="preview-wrapper">
+    <div class="certificate-page front-page">
 
-    <div class="details">
-        <div>Certificate Type: {{ ucfirst($setting->certificate_type) }}</div>
-        <div>Target Name: {{ $setting->sourceTitle() }}</div>
-
-        @if($setting->certificate_type !== 'global')
-            <div>Minimum Progress: {{ $setting->minimum_progress }}%</div>
-        @endif
-
-        @if($setting->is_assessment_required)
-            <div>Assessment: {{ optional($setting->assessment)->title ?: '-' }}</div>
-            <div>Minimum Score: {{ $setting->minimum_score }}</div>
-        @endif
-    </div>
-
-    @if($setting->certificate_type === 'playlist')
-        <div class="playlist">
-            <strong>Playlist Content</strong>
-
-            <ol>
-                @forelse($setting->playlistContents() as $content)
-                    <li>{{ $content->title }}</li>
-                @empty
-                    <li>No content</li>
-                @endforelse
-            </ol>
+        <div class="certificate-number">
+            No. : {{ $certificateNumber }}
         </div>
-    @endif
 
-    <div class="footer">
-        <div>Credential ID: PREVIEW-000001</div>
-        <div>Issued Date: {{ now()->format('F j, Y') }}</div>
+        <div class="main-content">
+
+            <div class="presented-text">
+                This certificate is proudly presented to
+            </div>
+
+            <div class="participant-name">
+                NAMA PESERTA
+            </div>
+
+            <div class="completion-text">
+                for successfully completing
+            </div>
+
+            <div class="training-title">
+                {{ $setting->sourceTitle() }}
+            </div>
+
+            <div class="details-table">
+
+                <div class="details-row">
+                    <div class="details-label">Certificate Type</div>
+                    <div class="details-separator">:</div>
+                    <div class="details-value">{{ ucfirst($setting->certificate_type) }}</div>
+                </div>
+
+                <div class="details-row">
+                    <div class="details-label">Target Name</div>
+                    <div class="details-separator">:</div>
+                    <div class="details-value">{{ $setting->sourceTitle() }}</div>
+                </div>
+
+                @if($setting->assessment)
+                    <div class="details-row">
+                        <div class="details-label">Assessment</div>
+                        <div class="details-separator">:</div>
+                        <div class="details-value">{{ $setting->assessment->title }}</div>
+                    </div>
+                @endif
+
+                @if($setting->certificate_type !== 'global')
+                    <div class="details-row">
+                        <div class="details-label">Minimum Progress</div>
+                        <div class="details-separator">:</div>
+                        <div class="details-value">{{ $setting->minimum_progress }}%</div>
+                    </div>
+                @endif
+
+                @if($setting->is_assessment_required || $setting->certificate_type === 'global')
+                    <div class="details-row">
+                        <div class="details-label">Minimum Score</div>
+                        <div class="details-separator">:</div>
+                        <div class="details-value">{{ $setting->minimum_score }}</div>
+                    </div>
+
+                    <div class="details-row">
+                        <div class="details-label">Assessment Score</div>
+                        <div class="details-separator">:</div>
+                        <div class="details-value">100</div>
+                    </div>
+                @endif
+
+            </div>
+
+            <div class="meta-info">
+                <div>Issued Date : {{ now()->format('F d, Y') }}</div>
+                <div>Issuer : {{ $setting->issuer_name ?? 'OWL Training Management' }}</div>
+            </div>
+
+        </div>
+
+        <div class="credential-box">
+            <img
+                class="qr-code"
+                src="data:image/svg+xml;base64,{{ $qrCode }}"
+                alt="QR Code">
+
+            <div class="credential-label">
+                Credential ID:
+            </div>
+
+            <div class="credential-id">
+                {{ $previewCredentialId }}
+            </div>
+
+            <div class="credential-url">
+                {{ $verifyUrl }}
+            </div>
+        </div>
+
     </div>
+</div>
 
-</main>
+@if($setting->certificate_type === 'playlist')
+    @foreach($contentChunks as $chunkIndex => $contents)
+        <div class="preview-label">
+            Preview Certificate - Attachment Page {{ $loop->iteration }}
+        </div>
+
+        <div class="preview-wrapper">
+            <div class="certificate-page back-page">
+
+                <div class="attachment-content">
+
+                    <div class="attachment-title">
+                        Attachment of Training Content
+                    </div>
+
+                    <div class="attachment-subtitle">
+                        This attachment lists the learning contents completed for
+                        <br>
+                        <strong>{{ $setting->sourceTitle() }}</strong>
+                    </div>
+
+                    <div class="attachment-meta">
+                        <div>Participant Name : NAMA PESERTA</div>
+                        <div>Certificate Number : {{ $certificateNumber }}</div>
+                        <div>Credential ID : {{ $previewCredentialId }}</div>
+                        <div>Issued Date : {{ now()->format('F d, Y') }}</div>
+                    </div>
+
+                    <table class="content-list">
+                        <thead>
+                            <tr>
+                                <th width="8%">No</th>
+                                <th>Content Title</th>
+                                <th width="18%">Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @forelse($contents as $content)
+                                <tr>
+                                    <td class="text-center">
+                                        {{ ($chunkIndex * 15) + $loop->iteration }}
+                                    </td>
+                                    <td>{{ $content->title }}</td>
+                                    <td class="text-center">Completed</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="text-center">
+                                        No content available
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <div class="credential-box">
+                    <img
+                        class="qr-code"
+                        src="data:image/svg+xml;base64,{{ $qrCode }}"
+                        alt="QR Code">
+
+                    <div class="credential-label">
+                        Credential ID:
+                    </div>
+
+                    <div class="credential-id">
+                        {{ $previewCredentialId }}
+                    </div>
+
+                    <div class="credential-url">
+                        {{ $verifyUrl }}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    @endforeach
+@endif
+
 </body>
 </html>

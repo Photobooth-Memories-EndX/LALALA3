@@ -17,6 +17,7 @@
         "laravel/sanctum": "^2.14",
         "laravel/tinker": "^2.7",
         "opcodesio/log-viewer": "^3.15",
+        "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-sluggable": "^3.5",
         "yajra/laravel-datatables": "^9.0"
     },

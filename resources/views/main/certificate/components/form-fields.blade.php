@@ -132,7 +132,7 @@
             accept="image/*">
 
         <small class="form-text text-muted">
-            Gunakan gambar background khusus untuk sertifikat. Disarankan menggunakan ukuran 1200 x 848.
+            Gunakan gambar background khusus untuk sertifikat. Disarankan menggunakan ukuran Potrait 848 x 1200 px atau pixel.
         </small>
         <br>
         <small class="text-muted">

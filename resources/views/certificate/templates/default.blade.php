@@ -3,150 +3,426 @@
 <head>
     <meta charset="utf-8">
     <title>{{ $certificate->certificate_number }}</title>
+
     <style>
-        /* body { margin: 0; font-family: Georgia, serif; color: #17324d; }
-        .certificate { box-sizing: border-box; width: 1120px; min-height: 790px; margin: 20px auto; padding: 65px; text-align: center; border: 18px double #c7a34b;
-            @if(!$certificate->certificateSetting->use_default_template && ($certificate->certificateSetting->custom_background ?: $certificate->certificateSetting->background_image))
-            background: url('{{ asset($certificate->certificateSetting->custom_background ?: $certificate->certificateSetting->background_image) }}') center/cover no-repeat;
-            @elseif(!$certificate->certificateSetting->use_default_template && $certificate->certificateSetting->certificate_template)
-            background: url('{{ asset($certificate->certificateSetting->certificate_template) }}') center/cover no-repeat;
-            @endif
+        * {
+            box-sizing: border-box;
         }
-        h1 { font-size: 54px; margin: 20px 0; } h2 { font-size: 38px; margin: 28px 0; }
-        .title { font-size: 28px; font-weight: bold; } .details, .meta { font-family: Arial, sans-serif; line-height: 1.7; }
-        .details { margin: 28px 0; } .playlist { display: inline-block; text-align: left; }
-        .meta { margin-top: 40px; } @media print { .certificate { margin: 0; } } */
 
-    body {
-        margin: 0;
-        padding: 20px;
-        background: #f4f6f9;
-        font-family: Georgia, serif;
-        color: #17324d;
-    }
-
-    .certificate {
-        box-sizing: border-box;
-
-        width: 1200px;
-        min-height: 848px;
-
-        margin: 0 auto;
-        padding: 80px;
-
-        text-align: center;
-
-        border: 18px double #c7a34b;
-
-        @if(!$certificate->certificateSetting->use_default_template && ($certificate->certificateSetting->custom_background ?: $certificate->certificateSetting->background_image))
-            background: url('{{ asset($certificate->certificateSetting->custom_background ?: $certificate->certificateSetting->background_image) }}') center center no-repeat;
-        @elseif(!$certificate->certificateSetting->use_default_template && $certificate->certificateSetting->certificate_template)
-            background: url('{{ asset($certificate->certificateSetting->certificate_template) }}') center center no-repeat;
-        @endif
-
-        background-size: 100% 100%;
-    }
-
-    h1 {
-        font-size: 60px;
-        margin: 20px 0;
-        line-height: 1.2;
-    }
-
-    h2 {
-        font-size: 42px;
-        margin: 30px 0;
-        line-height: 1.2;
-    }
-
-    p {
-        font-size: 18px;
-        margin: 12px 0;
-    }
-
-    .title {
-        font-size: 32px;
-        font-weight: bold;
-        margin-top: 20px;
-    }
-
-    .details {
-        margin: 35px auto;
-        font-family: Arial, sans-serif;
-        font-size: 16px;
-        line-height: 1.8;
-    }
-
-    .playlist {
-        display: inline-block;
-        text-align: left;
-        font-family: Arial, sans-serif;
-        font-size: 16px;
-        margin-top: 15px;
-    }
-
-    .playlist ol {
-        margin-top: 10px;
-        padding-left: 25px;
-    }
-
-    .meta {
-        margin-top: 50px;
-        font-family: Arial, sans-serif;
-        font-size: 16px;
-        line-height: 1.8;
-    }
-
-    @media print {
         body {
-            padding: 0;
             margin: 0;
+            padding: 30px;
+            background: #eef2f6;
+            font-family: Arial, sans-serif;
+            color: #696441;
         }
 
-        .certificate {
-            margin: 0;
+        .download-wrapper {
+            width: 848px;
+            margin: 0 auto 30px auto;
+            background: #ffffff;
+            box-shadow: 0 10px 35px rgba(0,0,0,.15);
         }
-    }
+
+        .certificate-page {
+            position: relative;
+            width: 848px;
+            height: 1200px;
+            overflow: hidden;
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .front-page {
+            background-image: url('{{ asset("uploads/template/Front.png") }}');
+        }
+
+        .back-page {
+            background-image: url('{{ asset("uploads/template/Bhind.png") }}');
+        }
+
+        .certificate-number {
+            position: absolute;
+            top: 58px;
+            left: 58px;
+            font-size: 19px;
+            font-weight: bold;
+            color: #696441;
+        }
+
+        .main-content {
+            position: absolute;
+            top: 330px;
+            left: 58px;
+            right: 128px;
+            text-align: left;
+        }
+
+        .presented-text,
+        .completion-text {
+            font-size: 18px;
+            margin-bottom: 28px;
+            color: #696441;
+        }
+
+        .participant-name {
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 34px;
+            color: #696441;
+            text-transform: uppercase;
+            line-height: 1.12;
+        }
+
+        .training-title {
+            font-size: 31px;
+            font-weight: bold;
+            line-height: 1.25;
+            color: #696441;
+            margin-bottom: 36px;
+        }
+
+        .details-table {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #696441;
+        }
+
+        .details-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 4px;
+        }
+
+        .details-label {
+            display: table-cell;
+            width: 190px;
+        }
+
+        .details-separator {
+            display: table-cell;
+            width: 25px;
+        }
+
+        .details-value {
+            display: table-cell;
+        }
+
+        .meta-info {
+            margin-top: 54px;
+            font-size: 17px;
+            line-height: 1.8;
+            color: #696441;
+        }
+
+        .credential-box {
+            position: absolute;
+            right: 58px;
+            bottom: 54px;
+            width: 360px;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #696441;
+            text-align: right;
+        }
+
+        .qr-code {
+            width: 86px;
+            height: 86px;
+            margin-left: auto;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .credential-label {
+            font-size: 14px;
+        }
+
+        .credential-id {
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .credential-url {
+            font-size: 10px;
+            word-break: break-all;
+        }
+
+        .attachment-content {
+            position: absolute;
+            top: 115px;
+            left: 70px;
+            right: 100px;
+            color: #696441;
+        }
+
+        .attachment-title {
+            text-align: left;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .attachment-subtitle {
+            text-align: left;
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.45;
+        }
+
+        .attachment-meta {
+            margin-bottom: 18px;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .content-list {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            color: #696441;
+        }
+
+        .content-list th,
+        .content-list td {
+            border: 1px solid #c9c4a3;
+            padding: 7px 9px;
+            vertical-align: top;
+        }
+
+        .content-list th {
+            background: #f7f6ef;
+            font-weight: bold;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background: #ffffff;
+            }
+
+            .download-wrapper {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+            }
+
+            .download-wrapper:last-child {
+                page-break-after: auto;
+            }
+        }
     </style>
 </head>
+
 <body>
-@php($setting = $certificate->certificateSetting)
-<main class="certificate">
-    <div>{{ $setting->issuer_name }}</div>
-    <h1>Certificate of Completion</h1>
-    <p>This certificate is proudly presented to</p>
-    <h2>{{ $certificate->participant_name }}</h2>
-    <p>for successfully completing</p>
-    <div class="title">{{ $certificate->title }}</div>
-    <div class="details">
-        <div>Certificate Type: {{ ucfirst($certificate->certificate_type) }}</div>
-        <div>Target Name: {{ $certificate->title }}</div>
-        @if($certificate->certificate_type !== 'global')
-            <div>Minimum Progress: {{ $setting->minimum_progress }}%</div>
-        @endif
-        @if($setting->is_assessment_required)
-            <div>Assessment: {{ optional($setting->assessment)->title ?: '-' }}</div>
-            <div>Minimum Score: {{ $setting->minimum_score }}</div>
-            <div>Assessment Score: {{ $certificate->score ?? '-' }}</div>
-        @endif
-    </div>
-    @if($certificate->certificate_type === 'playlist')
-        <div class="playlist">
-            <strong>Playlist Content</strong>
-            <ol>
-                @forelse($setting->playlistContents() as $content)
-                    <li>{{ $content->title }}</li>
-                @empty
-                    <li>No content</li>
-                @endforelse
-            </ol>
+@php
+    use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
+    $setting = $certificate->certificateSetting;
+    $verifyUrl = $certificate->credential_url ?: route('certificate.verify', $certificate->credential_id);
+
+    $qrCode = base64_encode(
+        QrCode::format('svg')
+            ->size(180)
+            ->margin(1)
+            ->color(105, 100, 65)
+            ->generate($verifyUrl)
+    );
+
+    $playlistContents = $certificate->certificate_type === 'playlist'
+        ? $setting->playlistContents()->values()
+        : collect();
+
+    $contentChunks = $playlistContents->isNotEmpty()
+        ? $playlistContents->chunk(15)
+        : collect();
+@endphp
+
+<div class="download-wrapper">
+    <div class="certificate-page front-page">
+
+        <div class="certificate-number">
+            No. : {{ $certificate->certificate_number }}
         </div>
-    @endif
-    <div class="meta">
-        <div>Issued by {{ $setting->issuer_name }}</div>
-        <div>{{ optional($certificate->issued_at)->format('F j, Y') }}</div>
-        <div>{{ $certificate->certificate_number }} | {{ $certificate->credential_id }}</div>
+
+        <div class="main-content">
+
+            <div class="presented-text">
+                This certificate is proudly presented to
+            </div>
+
+            <div class="participant-name">
+                {{ $certificate->participant_name }}
+            </div>
+
+            <div class="completion-text">
+                for successfully completing
+            </div>
+
+            <div class="training-title">
+                {{ $certificate->title }}
+            </div>
+
+            <div class="details-table">
+
+                <div class="details-row">
+                    <div class="details-label">Certificate Type</div>
+                    <div class="details-separator">:</div>
+                    <div class="details-value">{{ ucfirst($certificate->certificate_type) }}</div>
+                </div>
+
+                <div class="details-row">
+                    <div class="details-label">Target Name</div>
+                    <div class="details-separator">:</div>
+                    <div class="details-value">{{ $certificate->title }}</div>
+                </div>
+
+                @if($setting->assessment)
+                    <div class="details-row">
+                        <div class="details-label">Assessment</div>
+                        <div class="details-separator">:</div>
+                        <div class="details-value">{{ $setting->assessment->title }}</div>
+                    </div>
+                @endif
+
+                @if($certificate->certificate_type !== 'global')
+                    <div class="details-row">
+                        <div class="details-label">Minimum Progress</div>
+                        <div class="details-separator">:</div>
+                        <div class="details-value">{{ $setting->minimum_progress }}%</div>
+                    </div>
+                @endif
+
+                @if($setting->is_assessment_required || $certificate->certificate_type === 'global')
+                    <div class="details-row">
+                        <div class="details-label">Minimum Score</div>
+                        <div class="details-separator">:</div>
+                        <div class="details-value">{{ $setting->minimum_score }}</div>
+                    </div>
+                @endif
+
+                @if($certificate->score)
+                    <div class="details-row">
+                        <div class="details-label">Assessment Score</div>
+                        <div class="details-separator">:</div>
+                        <div class="details-value">{{ $certificate->score }}</div>
+                    </div>
+                @endif
+
+            </div>
+
+            <div class="meta-info">
+                <div>Issued Date : {{ optional($certificate->issued_at)->format('F d, Y') }}</div>
+                <div>Issuer : {{ $setting->issuer_name }}</div>
+            </div>
+
+        </div>
+
+        <div class="credential-box">
+            <img
+                class="qr-code"
+                src="data:image/svg+xml;base64,{{ $qrCode }}"
+                alt="QR Code">
+
+            <div class="credential-label">
+                Credential ID:
+            </div>
+
+            <div class="credential-id">
+                {{ $certificate->credential_id }}
+            </div>
+
+            <div class="credential-url">
+                {{ $verifyUrl }}
+            </div>
+        </div>
+
     </div>
-</main>
+</div>
+
+@if($certificate->certificate_type === 'playlist')
+    @foreach($contentChunks as $chunkIndex => $contents)
+        <div class="download-wrapper">
+            <div class="certificate-page back-page">
+
+                <div class="attachment-content">
+
+                    <div class="attachment-title">
+                        Attachment of Training Content
+                    </div>
+
+                    <div class="attachment-subtitle">
+                        This attachment lists the learning contents completed for
+                        <br>
+                        <strong>{{ $certificate->title }}</strong>
+                    </div>
+
+                    <div class="attachment-meta">
+                        <div>Participant Name : {{ $certificate->participant_name }}</div>
+                        <div>Certificate Number : {{ $certificate->certificate_number }}</div>
+                        <div>Credential ID : {{ $certificate->credential_id }}</div>
+                        <div>Issued Date : {{ optional($certificate->issued_at)->format('F d, Y') }}</div>
+                    </div>
+
+                    <table class="content-list">
+                        <thead>
+                            <tr>
+                                <th width="8%">No</th>
+                                <th>Content Title</th>
+                                <th width="18%">Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @forelse($contents as $content)
+                                <tr>
+                                    <td class="text-center">
+                                        {{ ($chunkIndex * 15) + $loop->iteration }}
+                                    </td>
+                                    <td>{{ $content->title }}</td>
+                                    <td class="text-center">Completed</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="text-center">
+                                        No content available
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+
+                </div>
+
+                <div class="credential-box">
+                    <img
+                        class="qr-code"
+                        src="data:image/svg+xml;base64,{{ $qrCode }}"
+                        alt="QR Code">
+
+                    <div class="credential-label">
+                        Credential ID:
+                    </div>
+
+                    <div class="credential-id">
+                        {{ $certificate->credential_id }}
+                    </div>
+
+                    <div class="credential-url">
+                        {{ $verifyUrl }}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    @endforeach
+@endif
+
 </body>
 </html>
