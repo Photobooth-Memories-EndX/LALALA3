@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  */
 class LearningAnalyticsService
 {
-    private const TTL = 300; // 5 menit
+     private const TTL = 60 * 60 * 24; // 1 hari
 
     /** Ekspresi MySQL untuk konversi content.duration -> jam. */
     private const HOURS_EXPR = "
