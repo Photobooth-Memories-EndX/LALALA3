@@ -172,28 +172,49 @@
         }
 
         .attachment-meta {
-            margin-bottom: 18px;
-            font-size: 13px;
-            line-height: 1.55;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            column-gap: 18px;
+            row-gap: 4px;
+            margin-bottom: 14px;
+            font-size: 10px;
+            line-height: 1.35;
+            color: #696441;
+        }
+
+        .attachment-meta > div {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .content-list {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            font-size: 8px;
             color: #696441;
+            line-height: 1.3;
         }
 
         .content-list th,
         .content-list td {
             border: 1px solid #c9c4a3;
-            padding: 7px 9px;
+            padding: 5px 8px;
             vertical-align: top;
+            line-height: 1.3;
         }
 
         .content-list th {
             background: #f7f6ef;
             font-weight: bold;
+        }
+
+        .content-list .no-col {
+            width: 8%;
+        }
+
+        .content-list .status-col {
+            width: 18%;
         }
 
         .text-center {
@@ -240,7 +261,7 @@
         : collect();
 
     $contentChunks = $playlistContents->isNotEmpty()
-        ? $playlistContents->chunk(15)
+        ? $playlistContents->chunk(30)
         : collect();
 @endphp
 
@@ -319,7 +340,6 @@
 
             <div class="meta-info">
                 <div>Issued Date : {{ optional($certificate->issued_at)->format('F d, Y') }}</div>
-                <div>Issuer : {{ $setting->issuer_name }}</div>
             </div>
 
         </div>
@@ -363,19 +383,13 @@
                         <strong>{{ $certificate->title }}</strong>
                     </div>
 
-                    <div class="attachment-meta">
-                        <div>Participant Name : {{ $certificate->participant_name }}</div>
-                        <div>Certificate Number : {{ $certificate->certificate_number }}</div>
-                        <div>Credential ID : {{ $certificate->credential_id }}</div>
-                        <div>Issued Date : {{ optional($certificate->issued_at)->format('F d, Y') }}</div>
-                    </div>
 
                     <table class="content-list">
                         <thead>
                             <tr>
-                                <th width="8%">No</th>
+                                <th class="no-col">No</th>
                                 <th>Content Title</th>
-                                <th width="18%">Status</th>
+                                <th class="status-col">Status</th>
                             </tr>
                         </thead>
 
@@ -383,7 +397,7 @@
                             @forelse($contents as $content)
                                 <tr>
                                     <td class="text-center">
-                                        {{ ($chunkIndex * 15) + $loop->iteration }}
+                                        {{ ($chunkIndex * 30) + $loop->iteration }}
                                     </td>
                                     <td>{{ $content->title }}</td>
                                     <td class="text-center">Completed</td>

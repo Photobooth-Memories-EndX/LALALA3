@@ -26,19 +26,19 @@
         }
 
         .certificate-page {
-            position: relative;
-            width: 848px;
-            height: 1200px;
-            overflow: hidden;
-            background-size: 100% 100%;
-            background-position: center;
-            background-repeat: no-repeat;
-            page-break-after: auto;
-        }
+        position: relative;
+        width: 848px;
+        height: 1200px;
+        overflow: hidden;
+        background-size: 100% 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+        page-break-after: auto;
+    }
 
-        .page-break {
-            page-break-after: always;
-        }
+    .page-break {
+        page-break-after: always;
+    }
 
         .front-page {
             background-image: url('{{ public_path("uploads/template/Front.png") }}');
@@ -115,6 +115,13 @@
             display: table-cell;
         }
 
+        .meta-info {
+            margin-top: 54px;
+            font-size: 17px;
+            line-height: 1.8;
+            color: #696441;
+        }
+
         .credential-box {
             position: absolute;
             right: 58px;
@@ -150,56 +157,51 @@
 
         .attachment-content {
             position: absolute;
-            top: 85px;
-            left: 55px;
-            right: 85px;
+            top: 115px;
+            left: 70px;
+            right: 100px;
             color: #696441;
         }
 
         .attachment-title {
             text-align: left;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: bold;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .attachment-subtitle {
             text-align: left;
-            font-size: 10px;
-            margin-bottom: 10px;
-            line-height: 1.3;
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.45;
+        }
+
+        .attachment-meta {
+            margin-bottom: 18px;
+            font-size: 13px;
+            line-height: 1.55;
         }
 
         .content-list {
             width: 100%;
             border-collapse: collapse;
-            font-size: 7.6px;
+            font-size: 9px;
             color: #696441;
+            line-height: 1.3;
         }
 
         .content-list th,
         .content-list td {
             border: 1px solid #c9c4a3;
-            padding: 3px 5px;
-            vertical-align: middle;
-            line-height: 1.18;
+            padding: 5px 8px;
+            vertical-align: top;
+            line-height: 1.3;
         }
 
         .content-list th {
             background: #f7f6ef;
             font-weight: bold;
-        }
-
-        .content-list .no-col {
-            width: 28px;
-        }
-
-        .content-list .status-col {
-            width: 70px;
-        }
-
-        .content-list .title-col {
-            width: auto;
         }
 
         .text-center {
@@ -228,11 +230,11 @@
         : collect();
 
     $contentChunks = $playlistContents->isNotEmpty()
-        ? $playlistContents->chunk(35)
+        ? $playlistContents->chunk(30)
         : collect([collect()]);
 @endphp
 
-<div class="certificate-page front-page {{ $certificate->certificate_type === 'playlist' ? 'page-break' : '' }}">
+<div  class="certificate-page front-page {{ $certificate->certificate_type === 'playlist' ? 'page-break' : '' }}">
 
     <div class="certificate-number">
         No. : {{ $certificate->certificate_number }}
@@ -304,6 +306,8 @@
 
         </div>
 
+
+
     </div>
 
     <div class="credential-box">
@@ -320,20 +324,18 @@
             {{ $certificate->credential_id }}
         </div>
 
-        <div class="credential-url">
-            Issued Date : {{ optional($certificate->issued_at)->format('F d, Y') }}
-        </div>
+            <div class="credential-url">Issued Date : {{ optional($certificate->issued_at)->format('F d, Y') }}</div>
 
-        <div class="credential-url">
-            {{ $verifyUrl }}
-        </div>
+            <div class="credential-url">
+                {{ $verifyUrl }}
+            </div>
     </div>
 
 </div>
 
 @if($certificate->certificate_type === 'playlist')
     @foreach($contentChunks as $chunkIndex => $contents)
-        <div class="certificate-page back-page {{ !$loop->last ? 'page-break' : '' }}">
+        <div  class="certificate-page back-page {{ !$loop->last ? 'page-break' : '' }}">
 
             <div class="attachment-content">
 
@@ -347,12 +349,13 @@
                     <strong>{{ $certificate->title }}</strong>
                 </div>
 
+
                 <table class="content-list">
                     <thead>
                         <tr>
-                            <th class="no-col">No</th>
-                            <th class="title-col">Content Title</th>
-                            <th class="status-col">Status</th>
+                            <th width="8%">No</th>
+                            <th>Content Title</th>
+                            <th width="18%">Status</th>
                         </tr>
                     </thead>
 
@@ -360,7 +363,7 @@
                         @forelse($contents as $content)
                             <tr>
                                 <td class="text-center">
-                                    {{ ($chunkIndex * 35) + $loop->iteration }}
+                                    {{ ($chunkIndex * 15) + $loop->iteration }}
                                 </td>
                                 <td>{{ $content->title }}</td>
                                 <td class="text-center">Completed</td>
@@ -391,14 +394,15 @@
                     {{ $certificate->credential_id }}
                 </div>
 
-                <div class="credential-url">
-                    Issued Date : {{ optional($certificate->issued_at)->format('F d, Y') }}
-                </div>
+                <div class="credential-url">Issued Date : {{ optional($certificate->issued_at)->format('F d, Y') }}</div>
 
                 <div class="credential-url">
                     {{ $verifyUrl }}
                 </div>
+
+
             </div>
+
 
         </div>
     @endforeach

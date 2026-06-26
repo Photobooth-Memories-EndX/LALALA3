@@ -72,6 +72,15 @@
             form.find('.certificate-default-template').prop('checked', setting.use_default_template);
             form.find('[name="is_active"]').val(setting.is_active ? '1' : '0');
             form.trigger('certificate:reload');
+
+            // Show/hide current custom template info
+            const hasCustomBg = !setting.use_default_template && setting.custom_background;
+            form.find('.certificate-current-template-info').toggle(!!hasCustomBg);
+            if (hasCustomBg) {
+                const previewCustomUrl = @json(route('certificate.setting.preview.custom-template', ['certificateSetting' => '__CERT_ID__'])).replace('__CERT_ID__', setting.id);
+                form.find('.certificate-preview-custom-link').attr('href', previewCustomUrl);
+            }
+
             modal.modal('show');
         });
     });

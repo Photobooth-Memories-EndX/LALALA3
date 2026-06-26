@@ -100,39 +100,29 @@
 
 <div class="certificate-custom-template-fields">
 
-    {{-- <div class="form-group">
-        <label class="form-label">
-            Upload Preview Sertifikat
-        </label>
-
-        <input
-            type="file"
-            name="certificate_template"
-            class="form-control"
-            accept=".jpg,.jpeg,.png,.webp,.pdf">
-
-        <small class="form-text text-muted">
-            Unggah desain sertifikat sebagai hanya preview hasilnya.
-        </small>
-        <br>
-        <small class="text-muted">
-            Maksimal ukuran file 2 MB.
-        </small>
-    </div> --}}
+    <div class="certificate-current-template-info mb-2" style="display:none;">
+        <div class="alert alert-info py-2 d-flex align-items-center mb-0">
+            <i class="ti ti-photo-check me-2"></i>
+            <span class="flex-grow-1">Custom template sudah ada. Upload baru hanya jika ingin mengganti.</span>
+            <a href="#" class="certificate-preview-custom-link ms-2 text-info" target="_blank">
+                <i class="ti ti-external-link"></i> Preview
+            </a>
+        </div>
+    </div>
 
     <div class="form-group">
         <label class="form-label">
-            Upload Background Sertifikat
+            Upload Custom Certificate Template
         </label>
 
         <input
             type="file"
             name="custom_background"
             class="form-control"
-            accept="image/*">
+            accept=".jpg,.jpeg,.png,.webp">
 
         <small class="form-text text-muted">
-            Gunakan gambar background khusus untuk sertifikat. Disarankan menggunakan ukuran Potrait 848 x 1200 px atau pixel.
+            Portrait 848 × 1200 px disarankan. Format: jpg, jpeg, png, webp.
         </small>
         <br>
         <small class="text-muted">

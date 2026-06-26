@@ -20,8 +20,15 @@
         .preview-wrapper {
             width: 848px;
             margin: 0 auto 30px auto;
+            background: #ffffff;
             box-shadow: 0 10px 35px rgba(0,0,0,.15);
-            background: #fff;
+        }
+
+        .preview-label {
+            width: 848px;
+            margin: 0 auto 12px auto;
+            font-size: 14px;
+            color: #6b7280;
         }
 
         .certificate-page {
@@ -30,7 +37,7 @@
             height: 1200px;
             overflow: hidden;
             background-size: 100% 100%;
-            background-position: center center;
+            background-position: center;
             background-repeat: no-repeat;
         }
 
@@ -172,23 +179,36 @@
         }
 
         .attachment-meta {
-            margin-bottom: 18px;
-            font-size: 13px;
-            line-height: 1.55;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            column-gap: 18px;
+            row-gap: 4px;
+            margin-bottom: 14px;
+            font-size: 10px;
+            line-height: 1.35;
+            color: #696441;
+        }
+
+        .attachment-meta > div {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .content-list {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            font-size: 8px;
             color: #696441;
+            line-height: 1.3;
         }
 
         .content-list th,
         .content-list td {
             border: 1px solid #c9c4a3;
-            padding: 7px 9px;
+            padding: 5px 8px;
             vertical-align: top;
+            line-height: 1.3;
         }
 
         .content-list th {
@@ -196,16 +216,16 @@
             font-weight: bold;
         }
 
-        .text-center {
-            text-align: center;
+        .content-list .no-col {
+            width: 8%;
         }
 
-        .preview-label {
-            width: 848px;
-            margin: 0 auto 12px auto;
-            font-size: 14px;
-            color: #6b7280;
-            font-family: Arial, sans-serif;
+        .content-list .status-col {
+            width: 18%;
+        }
+
+        .text-center {
+            text-align: center;
         }
     </style>
 </head>
@@ -215,8 +235,8 @@
     use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
     $previewCredentialId = 'PREVIEW-000001';
-    $verifyUrl = route('certificate.verify', $previewCredentialId);
     $certificateNumber = 'OWL-CERT-' . now()->format('Y') . '-000001';
+    $verifyUrl = route('certificate.verify', $previewCredentialId);
 
     $qrCode = base64_encode(
         QrCode::format('svg')
@@ -231,8 +251,8 @@
         : collect();
 
     $contentChunks = $playlistContents->isNotEmpty()
-        ? $playlistContents->chunk(15)
-        : collect([collect()]);
+        ? $playlistContents->chunk(30)
+        : collect();
 @endphp
 
 <div class="preview-label">
@@ -312,7 +332,6 @@
 
             <div class="meta-info">
                 <div>Issued Date : {{ now()->format('F d, Y') }}</div>
-                <div>Issuer : {{ $setting->issuer_name ?? 'OWL Training Management' }}</div>
             </div>
 
         </div>
@@ -360,19 +379,13 @@
                         <strong>{{ $setting->sourceTitle() }}</strong>
                     </div>
 
-                    <div class="attachment-meta">
-                        <div>Participant Name : NAMA PESERTA</div>
-                        <div>Certificate Number : {{ $certificateNumber }}</div>
-                        <div>Credential ID : {{ $previewCredentialId }}</div>
-                        <div>Issued Date : {{ now()->format('F d, Y') }}</div>
-                    </div>
 
                     <table class="content-list">
                         <thead>
                             <tr>
-                                <th width="8%">No</th>
+                                <th class="no-col">No</th>
                                 <th>Content Title</th>
-                                <th width="18%">Status</th>
+                                <th class="status-col">Status</th>
                             </tr>
                         </thead>
 
@@ -380,7 +393,7 @@
                             @forelse($contents as $content)
                                 <tr>
                                     <td class="text-center">
-                                        {{ ($chunkIndex * 15) + $loop->iteration }}
+                                        {{ ($chunkIndex * 30) + $loop->iteration }}
                                     </td>
                                     <td>{{ $content->title }}</td>
                                     <td class="text-center">Completed</td>

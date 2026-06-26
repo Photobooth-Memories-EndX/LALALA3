@@ -187,6 +187,9 @@ Route::middleware(['auth'])->group(function () {
         ->name('certificate.download');
 
     Route::get('/certificate/{credentialId}/download-pdf', [UserCertificateController::class, 'downloadPdf'])->name('certificate.download.pdf');
+
+    Route::get('/certificate/{credentialId}/download-custom', [UserCertificateController::class, 'downloadCustom'])
+        ->name('certificate.download.custom');
 });
 
 Route::get('/certificate/verify/{credentialId}', [UserCertificateController::class, 'verify'])
@@ -228,6 +231,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('certificate-setting/ajax/assessments', [CertificateController::class, 'getAssessmentsByType'])->name('certificate.setting.ajax.assessments');
         Route::get('certificate-setting/{certificateSetting}/preview-template', [CertificateController::class, 'previewTemplate'])->name('certificate.setting.preview.template');
         Route::get('certificate-setting/{certificateSetting}/preview-generated', [CertificateController::class, 'previewGenerated'])->name('certificate.setting.preview.generated');
+        Route::get('certificate-setting/{certificateSetting}/preview-custom-template', [CertificateController::class, 'previewCustomTemplate'])->name('certificate.setting.preview.custom-template');
 
     });
 

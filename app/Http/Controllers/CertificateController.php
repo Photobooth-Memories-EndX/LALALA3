@@ -129,6 +129,7 @@ class CertificateController extends Controller
             'minimum_score' => $setting->minimum_score,
             'issuer_name' => $setting->issuer_name,
             'use_default_template' => (bool) $setting->use_default_template,
+            'custom_background' => $setting->custom_background,
             'is_active' => (bool) $setting->is_active,
         ]));
 
@@ -137,6 +138,10 @@ class CertificateController extends Controller
 
         if ($setting->certificate_template) {
             $buttons .= '<a href="' . route('certificate.setting.preview.template', $setting) . '" target="_blank" class="btn btn-sm btn-outline-info" title="Preview Template"><i class="ti ti-file-search"></i></a>';
+        }
+
+        if (!$setting->use_default_template && $setting->custom_background) {
+            $buttons .= '<a href="' . route('certificate.setting.preview.custom-template', $setting) . '" target="_blank" class="btn btn-sm btn-outline-warning" title="Preview Custom Template"><i class="ti ti-photo-search"></i></a>';
         }
 
         $buttons .= '<a href="' . route('certificate.setting.preview.generated', $setting) . '" target="_blank" class="btn btn-sm btn-outline-success" title="Preview Generated Certificate"><i class="ti ti-certificate"></i></a>'
@@ -157,8 +162,14 @@ public function store(Request $request)
         'minimum_progress' => 'required|integer|min:0|max:100',
         'minimum_score' => 'nullable|integer|min:0|max:100',
         'issuer_name' => 'required|string|max:255',
+        'use_default_template' => 'nullable|boolean',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
-        'custom_background' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        'custom_background' => array_filter([
+            $request->has('use_default_template') ? 'nullable' : 'required',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:2048',
+        ]),
         'is_active' => 'required|boolean',
     ]);
 
@@ -215,8 +226,14 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         'minimum_progress' => 'required|integer|min:0|max:100',
         'minimum_score' => 'nullable|integer|min:0|max:100',
         'issuer_name' => 'required|string|max:255',
+        'use_default_template' => 'nullable|boolean',
         'certificate_template' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:4096',
-        'custom_background' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        'custom_background' => array_filter([
+            ($request->has('use_default_template') || $certificateSetting->custom_background) ? 'nullable' : 'required',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:2048',
+        ]),
         'is_active' => 'required|boolean',
     ]);
 
@@ -407,6 +424,17 @@ public function previewTemplate(CertificateSetting $certificateSetting)
 public function previewGenerated(CertificateSetting $certificateSetting)
 {
     return view('main.certificate.preview-generated', [
+        'setting' => $certificateSetting->load([
+            'content',
+            'trainingPlan.trainingplandetail.content',
+            'assessment'
+        ])
+    ]);
+}
+
+public function previewCustomTemplate(CertificateSetting $certificateSetting)
+{
+    return view('main.certificate.templates.preview-custom-template', [
         'setting' => $certificateSetting->load([
             'content',
             'trainingPlan.trainingplandetail.content',

@@ -80,6 +80,33 @@ class UserCertificateController extends Controller
 }
 
 
+    public function downloadCustom(string $credentialId)
+    {
+        $certificate = Certificate::with([
+            'certificateSetting',
+            'certificateSetting.assessment',
+            'certificateSetting.content',
+            'certificateSetting.trainingPlan.trainingplandetail.content',
+        ])->where('credential_id', $credentialId)->firstOrFail();
+
+        abort_unless($certificate->user_id === Auth::id(), 403);
+
+        $setting = $certificate->certificateSetting;
+
+        abort_if(!$setting || $setting->use_default_template, 404);
+
+        $hasCustomFile = !empty($setting->certificate_template)
+            || !empty($setting->custom_background)
+            || !empty($setting->background_image);
+
+        abort_unless($hasCustomFile, 404);
+
+        $pdf = Pdf::loadView('main.certificate.templates.custom-pdf', compact('certificate'));
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download($certificate->certificate_number . '-custom.pdf');
+    }
+
     public function previewTemplate(CertificateSetting $certificateSetting)
 {
     $setting = $certificateSetting->load([

@@ -101,6 +101,17 @@
 
                     </div>
 
+                    @php
+                        $setting = $certificate->certificateSetting;
+                        $hasCustomTemplate = $setting
+                            && !(bool) $setting->use_default_template
+                            && (
+                                !empty($setting->certificate_template)
+                                || !empty($setting->custom_background)
+                                || !empty($setting->background_image)
+                            );
+                    @endphp
+
                     <hr>
 
                     <div class="text-center mt-4">
@@ -132,6 +143,15 @@
                             Verify
 
                         </a>
+
+                        {{-- Custom Certificate --}}
+                        @if($hasCustomTemplate)
+                            <a href="{{ route('certificate.download.custom', $certificate->credential_id) }}"
+                               class="btn btn-outline-primary mx-1 mb-2">
+                                <i class="ti ti-certificate mr-1"></i>
+                                Download Custom Certificate
+                            </a>
+                        @endif
 
                         {{-- LinkedIn --}}
                         @if(!empty($certificate->linkedin_url))
