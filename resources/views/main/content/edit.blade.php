@@ -1,4 +1,5 @@
 @extends('layouts.sidebar-master')
+
 @section('content')
     @php
         $url_dropzone_css = asset('Tabler/dist/libs/dropzone/dist/dropzone.css?1684106062');
@@ -6,150 +7,273 @@
         $url_ytplayer_js = asset('Tabler/dist/libs/plyr/dist/plyr.min.js?1684106062');
         $url_ytplayer_css = asset('Tabler/dist/libs/plyr/dist/plyr.css?1684106062');
         $url_litepicker = asset('Tabler/dist/libs/litepicker/dist/litepicker.js?1684106062');
-
         $url_select = asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062');
         $url_vendor = asset('Tabler/dist/css/tabler-vendors.min.css?1684106062');
-
     @endphp
-    {{-- @push('css')
-        <link rel="stylesheet" href="{{ $url_dropzone_css }}">
-    @endpush --}}
-    <div class="page-header d-print-none">
+
+    @include('main.monitoring.components.style')
+
+    {{-- Page Header --}}
+    <div class="page-header d-print-none mb-3">
         <div class="container-xl">
-            <div class="row g-2 align-items-center">
+            <div class="row align-items-center">
                 <div class="col">
-                    <h2 class="page-title">
-                        {{-- {{ $title }} --}}
-                    </h2>
-                </div>
-                <!-- Page title actions -->
-                <div class="col-auto ms-auto d-print-none">
-                    <div class="d-flex">
-                        <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-                            <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('content.index') }}">Content</a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><a href="#">Edit Content</a>
-                            </li>
-                        </ol>
+                    <div class="page-pretitle">Manage / Content</div>
+                    <h2 class="owl-page-title mb-1">Edit Content</h2>
+                    <div class="owl-page-subtitle">
+                        {{ $content->title }}
+                        <span class="badge bg-{{ $content->active == 'Active' ? 'success' : 'warning' }}-lt ms-2">
+                            {{ $content->active }}
+                        </span>
                     </div>
+                </div>
+                <div class="col-auto ms-auto">
+                    <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
+                        <li class="breadcrumb-item"><a href="#">Manage</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('content.index') }}">Content</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Edit Content</li>
+                    </ol>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Page body -->
     <div class="page-body">
-        <!-- Container Page -->
-        <div class="page page-center">
-            {{-- <div class="container container-tight py-4"> --}}
-            <div class="container container-sm py-4">
+        <div class="container-xl">
 
-                {{-- <div class="container container-slim py-4 d-none" id="overlay">
-                    <div class="text-center">
+            <x-alert type='success' />
+            <x-alert type='warning' />
 
-                        <div class="text-muted mb-3">Getting employee data</div>
-                        <div class="progress progress-sm">
-                            <div class="progress-bar progress-bar-indeterminate"></div>
-                        </div>
-                    </div>
-                </div> --}}
-
-                {{-- <form class="card card-md" action="{{ route('content.store') }}" method="post"> --}}
-                <x-alert type='success' />
-                <x-alert type='warning' />
-                <form class="card card-md" action="{{ route('content.assign', $content->slug) }}" method="post" autocomplete="off">
+            {{-- ============================================================
+                 FORM 1: Assign Content to Employee
+            ============================================================ --}}
+            <div class="card owl-main-card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">Assign Content ke Karyawan</h3>
+                    <div class="card-subtitle text-muted mt-1">Pilih karyawan yang akan mendapatkan konten ini sebagai mandatory.</div>
+                </div>
+                <form action="{{ route('content.assign', $content->slug) }}" method="post" autocomplete="off">
                     @csrf
                     @method('POST')
                     <div class="card-body">
-                        <h2 class="card-title text-center mb-4">Assign Content to Employee</h2>
-                        <div class="row">
-                            <div class="col-xl-12">
-                                <div class="mb-3">
-                                    <label class="form-label">Employee</label>
-                                    {{-- <input type="text" class="form-control" placeholder="Enter Type" name="type"
-                                        id="type" required> --}}
-                                    <select type="text" class="form-select" id="select-user" name="employee[]" value="" multiple>
-                                        @unless (count($user) == 0)
-                                            @foreach ($user as $list)
-                                                <option value="{{ $list->id }}">{{ $list->id_emp }} - {{ $list->name }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="">No content available</option>
-                                        @endunless
-                                    </select>
-                                </div>
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-10">
+                                <label class="form-label">Employee</label>
+                                <select type="text" class="form-select" id="select-user" name="employee[]" value="" multiple>
+                                    @unless (count($user) == 0)
+                                        @foreach ($user as $list)
+                                            <option value="{{ $list->id }}">{{ $list->id_emp }} - {{ $list->name }}</option>
+                                        @endforeach
+                                    @else
+                                        <option value="">No employee available</option>
+                                    @endunless
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="hidden" name="content_id" value="{{ $content->id }}">
+                                <input type="hidden" name="slug" value="{{ $content->slug }}">
+                                <button type="submit" class="btn btn-primary w-100" name="action" value="assign">
+                                    Assign
+                                </button>
                             </div>
                         </div>
-                        <input type="hidden" name="content_id" value="{{ $content->id }}">
-                        <input type="hidden" name="slug" value="{{ $content->slug }}">
-                        <button type="submit" class="btn btn-primary" name="action" value="assign">Assign</button>
                     </div>
                 </form>
-                <br>
-                <form class="card card-md" action="{{ route('content.update', $content->slug) }}" method="post" autocomplete="off">
-                    @csrf
-                    @method('PUT')
-                    <div class="card-header">
-                        <h3 class="card-title">Edit content</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-xl-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Title</label>
-                                    <input type="text" class="form-control" placeholder="Enter title" name="title" id="title" value="{{ $content->title ?? '' }}" required>
-                                </div>
-                            </div>
-                            <div class="col-xl-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Type</label>
-                                    {{-- <input type="text" class="form-control" placeholder="Enter Type" name="type" id="type" value="{{ $content->type ?? '' }}" required> --}}
-                                    <select name="type" id="type" class="form-control" onchange="typevalue(this)">
-                                        <option value="">---------Select Type---------</option>
-                                        <option value="Video" @if ($content->type == 'Video') selected='selected' @endif>Video</option>
-                                        <option value="Document" @if ($content->type == 'Document') selected='selected' @endif>Document</option>
-                                        <option value="YouTube" @if ($content->type == 'YouTube') selected='selected' @endif>YouTube</option>
-                                        <option value="SOP/Regulation" @if ($content->type == 'SOP/Regulation') selected='selected' @endif>SOP/Regulation</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row" style="display: none;" id="linkrow">
+            </div>
 
-                            <div class="col-xl-12">
-                                <div class="mb-3">
-                                    <label class="form-label">YouTube Link</label>
-                                    <input type="text" class="form-control" placeholder="Enter youtube link" name="link" id="link" value="https://www.youtube.com/watch?v={{ $content->link }}">
+            {{-- ============================================================
+                 FORM 2: Edit Content
+            ============================================================ --}}
+            <form action="{{ route('content.update', $content->slug) }}" method="post" autocomplete="off">
+                @csrf
+                @method('PUT')
+                <input type="hidden" value="{{ $content->id }}" name="contentid">
+
+                <div class="row g-3">
+
+                    {{-- Kolom Kiri --}}
+                    <div class="col-lg-8">
+
+                        {{-- Informasi Utama --}}
+                        <div class="card owl-main-card mb-3">
+                            <div class="card-header">
+                                <h3 class="card-title">Informasi Utama</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label required">Title</label>
+                                        <input type="text" class="form-control" placeholder="Enter title"
+                                            name="title" id="title" value="{{ $content->title ?? '' }}" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Type</label>
+                                        <select name="type" id="type" class="form-select" onchange="typevalue(this)">
+                                            <option value="">-- Select Type --</option>
+                                            <option value="Video" @if ($content->type == 'Video') selected @endif>Video</option>
+                                            <option value="Document" @if ($content->type == 'Document') selected @endif>Document</option>
+                                            <option value="YouTube" @if ($content->type == 'YouTube') selected @endif>YouTube</option>
+                                            <option value="SOP/Regulation" @if ($content->type == 'SOP/Regulation') selected @endif>SOP/Regulation</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12" style="display: none;" id="linkrow">
+                                        <label class="form-label">YouTube Link</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-red" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M2 8a4 4 0 0 1 4 -4h12a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-8z"></path>
+                                                    <path d="M10 9l5 3l-5 3z"></path>
+                                                </svg>
+                                            </span>
+                                            <input type="text" class="form-control" placeholder="https://www.youtube.com/watch?v=..."
+                                                name="link" id="link"
+                                                value="https://www.youtube.com/watch?v={{ $content->link }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label">Content Description</label>
+                                        <textarea name="description" id="description" rows="6" class="form-control">{{ $content->description ?? '' }}</textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        {{-- <input type="hidden" id="gettype"> --}}
-                        <div class="row">
-                            <div class="col-xl-6">
+
+                        {{-- File yang Ada --}}
+                        <div class="card owl-main-card mb-3">
+                            <div class="card-header">
+                                <h3 class="card-title">File Konten Saat Ini</h3>
+                            </div>
+                            <div class="card-body">
+                                @php
+                                    $contentfile = json_decode($content->file);
+                                    if (isset($contentfile[0])) {
+                                        $getcontentfile = $contentfile[0];
+                                        $displaycontent = 'display:block;';
+                                    } elseif ($content->type == 'YouTube') {
+                                        $getcontentfile = '';
+                                        $displaycontent = 'display:none;';
+                                    } else {
+                                        $getcontentfile = '';
+                                        $displaycontent = 'display:none;';
+                                    }
+                                @endphp
+
+                                <div class="text-center" id="contentContainer">
+                                    @if ($content->type == 'Video')
+                                        <video width="100%" controls style="{{ $displaycontent }} max-width:854px;">
+                                            <source src="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile) }}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                            <input type="hidden" name="replacecontent" id="replacecontent" value="{{ $getcontentfile }}">
+                                        </video>
+                                        @if (!isset($contentfile[0]))
+                                            <p class="text-muted mt-2">Tidak ada file video.</p>
+                                        @endif
+                                    @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
+                                        <object data="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile) }}"
+                                            width="100%" height="600px" style="max-width:800px;"></object>
+                                        @if (!isset($contentfile[0]))
+                                            <p class="text-muted mt-2">Tidak ada file dokumen.</p>
+                                        @endif
+                                    @elseif ($content->type == 'YouTube')
+                                        <div id="player-youtube" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"
+                                            style="max-width:854px; margin: 0 auto;"></div>
+                                    @else
+                                        <p class="text-muted">No file exist</p>
+                                    @endif
+
+                                    @if ($content->type != 'YouTube')
+                                        <div class="mt-3">
+                                            <a href="#"
+                                                data-url="{{ route('contentdelete.deletecontentajax', $content->slug) }}"
+                                                class="btn btn-danger btn-sm btn-remove-content"
+                                                @if ($content->active == 'Active') style="pointer-events: none; opacity:.6;" @endif>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M4 7l16 0"></path>
+                                                    <path d="M10 11l0 6"></path>
+                                                    <path d="M14 11l0 6"></path>
+                                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
+                                                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
+                                                </svg>
+                                                Delete Content
+                                            </a>
+                                            @if ($content->active == 'Active')
+                                                <small class="text-muted d-block mt-1">Unpublish konten terlebih dahulu untuk menghapus file.</small>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Ganti / Tambah File --}}
+                        <div class="card owl-main-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Ganti / Tambah File</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Replace File</label>
+                                    <small class="text-muted d-block mb-2">Format: PDF, MP4 — maks. 1 file, 1 GB</small>
+                                    <div class="dropzone" id="document-dropzone">
+                                        <div class="fallback"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label">Upload Thumbnail</label>
+                                    <small class="text-muted d-block mb-2">Format: JPG only</small>
+                                    <div class="dropzone" id="thumbnail-dropzone">
+                                        <div class="fallback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {{-- Kolom Kanan --}}
+                    <div class="col-lg-4">
+
+                        {{-- Klasifikasi --}}
+                        <div class="card owl-main-card mb-3">
+                            <div class="card-header">
+                                <h3 class="card-title">Klasifikasi</h3>
+                            </div>
+                            <div class="card-body">
                                 <div class="mb-3">
                                     <label class="form-label">Classification</label>
-                                    <select name="classification" id="classification" class="form-control">
-                                        <option value="">-------Select Classification---------</option>
+                                    <select name="classification" id="classification" class="form-select">
+                                        <option value="">-- Select Classification --</option>
                                         @foreach ($classification as $list)
-                                            <option value="{{ $list->id }}" @if ($list->id == $content->classification_id) selected='selected' @endif>
-                                                {{ $list->classification_name }}</option>
+                                            <option value="{{ $list->id }}"
+                                                @if ($list->id == $content->classification_id) selected @endif>
+                                                {{ $list->classification_name }}
+                                            </option>
                                         @endforeach
-
                                     </select>
                                 </div>
-                            </div>
-                            <div class="col-xl-6">
-                                <div class="mb-3">
+                                <div>
                                     <label class="form-label">Duration (mm:ss)</label>
-                                    <input type="text" class="form-control" placeholder="Enter duration" name="duration" id="duration" value="{{ $content->duration ?? '' }}" data-mask="00:00" data-mask-visible="true" placeholder="00:00" autocomplete="off">
-                                    <small class="form-hint">Format mm:ss. Required if video and youtube content for progress status</small>
+                                    <input type="text" class="form-control" placeholder="00:00"
+                                        name="duration" id="duration"
+                                        value="{{ $content->duration ?? '' }}"
+                                        data-mask="00:00" data-mask-visible="true" autocomplete="off">
+                                    <small class="form-hint">Format mm:ss. Wajib untuk Video & YouTube.</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-xl-6">
+
+                        {{-- Pengaturan --}}
+                        <div class="card owl-main-card mb-3">
+                            <div class="card-header">
+                                <h3 class="card-title">Pengaturan</h3>
+                            </div>
+                            <div class="card-body">
                                 <div class="mb-3">
-                                    <label class="form-label">Date</label>
+                                    <label class="form-label required">Date</label>
                                     <div class="input-icon">
                                         <span class="input-icon-addon">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -162,120 +286,71 @@
                                                 <path d="M12 15v3" />
                                             </svg>
                                         </span>
-                                        <input class="form-control" placeholder="Select a date" id="datepicker-icon-prepend" name="date" value="{{ $content->date ?? '' }}" />
+                                        <input class="form-control" placeholder="Select a date"
+                                            id="datepicker-icon-prepend" name="date"
+                                            value="{{ $content->date ?? '' }}" />
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-xl-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Author</label>
-                                    <input type="text" class="form-control" placeholder="Enter author" name="author" id="author" value="{{ $content->author ?? '' }}" required>
+                                    <label class="form-label required">Author</label>
+                                    <input type="text" class="form-control" placeholder="Enter author"
+                                        name="author" id="author"
+                                        value="{{ $content->author ?? '' }}" required>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="row">
-
-                            <div class="col-xl-6">
-                                <div class="mb-3">
-                                    <label class="form-check">
+                                <div>
+                                    <label class="form-check cursor-pointer">
                                         <input type="hidden" name="playlistonly" value="N">
-                                        <input class="form-check-input" type="checkbox" name="playlistonly" value="Y" @if ($content->playlistonly == 'Y') checked @endif>
-                                        <span class="form-check-label">Only show this content on Playlist</span>
-
+                                        <input class="form-check-input" type="checkbox" name="playlistonly" value="Y"
+                                            @if ($content->playlistonly == 'Y') checked @endif>
+                                        <span class="form-check-label">Only show on Playlist</span>
                                     </label>
-
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Content Description</label>
-                            <textarea name="description" id="description" cols="30" rows="10" class="form-control">{{ $content->description ?? '' }}</textarea>
-                            {{-- <input type="text" class="form-control" placeholder="Enter duration" name="duration"
-                              id="duration"> --}}
-                        </div>
-                        <div class="mb-3">
-                            @php
-                                $contentfile = json_decode($content->file);
-                            @endphp
-                            <label class="form-label">Existing File</label>
-                            <div style="text-align: center" id="contentContainer">
-                                @php
-                                    if (isset($contentfile[0])) {
-                                        $getcontentfile = $contentfile[0];
-                                        $displaycontent = 'display:block;';
-                                    } elseif ($content->type == 'YouTube') {
-                                        $getcontentfile = '';
-                                        $displaycontent = 'display:none;';
-                                    } else {
-                                        $getcontentfile = '';
-                                        $displaycontent = 'display:none;';
-                                        echo 'No file exist';
-                                    }
-                                @endphp
-                                @if ($content->type == 'Video')
-                                    <video width="854" height="480" controls style="{{ $displaycontent }}" style="display: block; margin-left: auto; margin-right: auto;">
-                                        <source src="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" type="video/mp4">
-                                        Your browser does not support the video tag.
-                                        <input type="hidden" name="replacecontent" id="replacecontent" value="{{ $getcontentfile }}">
-                                    </video>
-                                @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
-                                    <object data="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" width="800px" height="800px" style="text-align: center"></object>
-                                    {{-- <embed src="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" width="800px" height="800px" style="text-align: center" /> --}}
-                                @elseif ($content->type == 'YouTube')
-                                    <div id="player-youtube" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
-                                    {{-- <iframe width="854" height="480" src="https://www.youtube.com/embed/{{ $content->link }}"></iframe> --}}
-                                @endif
-                                <br>
-                                @if ($content->type != 'YouTube')
-                                    <a href="#" data-url="{{ route('contentdelete.deletecontentajax', $content->slug) }}" class="btn btn-danger btn-remove-content" @if ($content->active == 'Active') style="pointer-events: none" @endif>
-                                        Delete Content
-                                    </a>
-                                @endif
-
-                            </div>
-
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Replace File</label>
-                            <div class="dropzone" id="document-dropzone">
-                                <div class="fallback">
-                                    {{-- <input name="file" type="file" /> --}}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Upload Thumbnail</label>
-                            <div class="dropzone" id="thumbnail-dropzone">
-                                <div class="fallback">
-                                    {{-- <input name="file" type="file" /> --}}
                                 </div>
                             </div>
                         </div>
 
-
-                        <div class="form-footer" style="float: right">
-                            <input type="hidden" value="{{ $content->id }}" name="contentid">
-                            @if ($content->active == 'Active')
-                                <button type="submit" class="btn btn-warning" name="action" value="unpublish">Unpublish This Content</button>
-                            @else
-                                <button type="submit" class="btn btn-success" name="action" value="save">Save Content</button>
-                                <button type="submit" class="btn btn-primary" name="action" value="publish">Save & Publish Content</button>
-                            @endif
-
+                        {{-- Action Buttons --}}
+                        <div class="card owl-main-card">
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    @if ($content->active == 'Active')
+                                        <button type="submit" class="btn btn-warning" name="action" value="unpublish">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"></path>
+                                                <path d="M9 12h6"></path>
+                                            </svg>
+                                            Unpublish This Content
+                                        </button>
+                                    @else
+                                        <button type="submit" class="btn btn-success" name="action" value="save" formnovalidate>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"></path>
+                                                <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                                <path d="M14 4l0 4l-6 0l0 -4"></path>
+                                            </svg>
+                                            Save Content (Draft)
+                                        </button>
+                                        <button type="submit" class="btn btn-primary" name="action" value="publish">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M7 11v8a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1h3a4 4 0 0 0 4 -4v-1a2 2 0 0 1 4 0v5h3a2 2 0 0 1 2 2l-1 5a2 3 0 0 1 -2 2h-7a3 3 0 0 1 -3 -3"></path>
+                                            </svg>
+                                            Save & Publish
+                                        </button>
+                                    @endif
+                                    <a href="{{ route('content.index') }}" class="btn btn-light">Back to List</a>
+                                </div>
+                            </div>
                         </div>
+
                     </div>
-                </form>
-                {{-- <form class="dropzone" id="document-dropzone" action="./" autocomplete="off" novalidate>
-                    <div class="fallback">
-                        <input name="file" type="file" />
-                    </div>
-                </form> --}}
-            </div>
+                </div>
+            </form>
 
         </div>
-        <!-- Container Page -->
     </div>
-    <!-- Page body -->
+
 @endsection
 
 @section('style')
@@ -285,21 +360,9 @@
     <style>
         #overlay {
             position: absolute;
-            top: 0rem;
-            right: 0rem;
-            left: 0rem;
-            bottom: 0rem;
-            display: -webkit-box;
-            display: -webkit-flex;
-            display: -ms-flexbox;
+            top: 0; right: 0; left: 0; bottom: 0;
             display: flex;
-            -webkit-align-items: center;
-            -webkit-box-align: center;
-            -ms-flex-align: center;
             align-items: center;
-            -webkit-box-pack: center;
-            -ms-flex-pack: center;
-            -webkit-justify-content: center;
             justify-content: center;
             overflow: hidden;
             border-radius: 0.25rem;
@@ -309,28 +372,22 @@
 @endsection
 
 @section('script')
-    <script src={{ $url_dropzone_js }}></script>
-    <script src={{ $url_litepicker }}></script>
-    <script src={{ $url_ytplayer_js }}></script>
-    <script src={{ $url_select }}></script>
+    <script src="{{ $url_dropzone_js }}"></script>
+    <script src="{{ $url_litepicker }}"></script>
+    <script src="{{ $url_ytplayer_js }}"></script>
+    <script src="{{ $url_select }}"></script>
     <script>
-        // @formatter:off
-        // document.addEventListener("DOMContentLoaded", function() {
-        //     new Dropzone("#document-dropzone")
-        // })
         document.addEventListener("DOMContentLoaded", function() {
             window.Plyr && (new Plyr('#player-youtube'));
         });
+
         $(document).on('click', '.btn-remove-content', function(e) {
             e.preventDefault();
             if (confirm("Are you sure want to delete this media content?")) {
-                var column = $(this).data('column');
                 $.ajax({
                     type: "PUT",
                     url: $(this).data('url'),
-                    data: {
-                        '_token': '{{ csrf_token() }}'
-                    },
+                    data: { '_token': '{{ csrf_token() }}' },
                     success: function(data) {
                         console.log(data);
                         if (data.status == 200) {
@@ -364,18 +421,15 @@
             addRemoveLinks: true,
             acceptedFiles: ".pdf,.mp4",
             parallelUploads: 2,
-            headers: {
-                'X-CSRF-TOKEN': "{{ csrf_token() }}"
-            },
+            headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
             maxFiles: 1,
-            maxFilesize: 1000, //max file size in MB,
+            maxFilesize: 1000,
             init: function() {
                 this.on("error", function(file, message) {
                     alert(message);
                     this.removeFile(file);
                 });
             },
-
             successmultiple: function(data, response) {
                 $.each(response['name'], function(key, val) {
                     $('form').append('<input type="hidden" name="documents[]" value="' + val + '">');
@@ -384,29 +438,18 @@
                 console.log(response.name);
             },
             removedfile: function(file) {
-                file.previewElement.remove()
-                let name = '';
-                if (typeof file.file_name !== 'undefined') {
-                    name = file.file_name;
-                } else {
-                    name = uploadedDocumentMap[file.name];
-                }
+                file.previewElement.remove();
+                let name = typeof file.file_name !== 'undefined' ? file.file_name : uploadedDocumentMap[file.name];
                 $.ajax({
                     url: "{{ route('content.deletefileajax') }}",
-                    data: {
-                        name: name
-                    },
-                    success: function(data) {
-                        console.log('sukses : ' + data);
-                    }
-                })
-                $('form').find('input[name="documents[]"][value="' + name + '"]').remove()
+                    data: { name: name },
+                    success: function(data) { console.log('sukses : ' + data); }
+                });
+                $('form').find('input[name="documents[]"][value="' + name + '"]').remove();
             }
         });
 
-        //----------------------------------------------------------------------------------------
         let uploadedThumbnailMap = {};
-        Dropzone.autoDiscover = false;
         let myThumbnailDropzone = new Dropzone("div#thumbnail-dropzone", {
             url: '{{ route('content.uploadthumbnailajax') }}',
             autoProcessQueue: true,
@@ -414,18 +457,15 @@
             addRemoveLinks: true,
             acceptedFiles: ".jpg",
             parallelUploads: 2,
-            headers: {
-                'X-CSRF-TOKEN': "{{ csrf_token() }}"
-            },
+            headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
             maxFiles: 1,
-            maxFilesize: 1000, //max file size in MB,
+            maxFilesize: 1000,
             init: function() {
                 this.on("error", function(file, message) {
                     alert(message);
                     this.removeFile(file);
                 });
             },
-
             successmultiple: function(data, response) {
                 $.each(response['name'], function(key, val) {
                     $('form').append('<input type="hidden" name="thumbnail[]" value="' + val + '" required>');
@@ -434,26 +474,17 @@
                 console.log(response.name);
             },
             removedfile: function(file) {
-                file.previewElement.remove()
-                let name = '';
-                if (typeof file.file_name !== 'undefined') {
-                    name = file.file_name;
-                } else {
-                    name = uploadedThumbnailMap[file.name];
-                }
+                file.previewElement.remove();
+                let name = typeof file.file_name !== 'undefined' ? file.file_name : uploadedThumbnailMap[file.name];
                 $.ajax({
                     url: "{{ route('content.deletethumbnailajax') }}",
-                    data: {
-                        name: name
-                    },
-                    success: function(data) {
-                        console.log('sukses : ' + data);
-                    }
-                })
-                $('form').find('input[name="thumbnail[]"][value="' + name + '"]').remove()
+                    data: { name: name },
+                    success: function(data) { console.log('sukses : ' + data); }
+                });
+                $('form').find('input[name="thumbnail[]"][value="' + name + '"]').remove();
             }
         });
-        // @formatter:off
+
         document.addEventListener("DOMContentLoaded", function() {
             window.Litepicker && (new Litepicker({
                 element: document.getElementById('datepicker-icon-prepend'),
@@ -464,6 +495,7 @@
                 },
             }));
         });
+
         document.addEventListener("DOMContentLoaded", function() {
             var el;
             window.TomSelect && (new TomSelect(el = document.getElementById('select-user'), {
