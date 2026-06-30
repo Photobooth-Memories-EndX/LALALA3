@@ -106,16 +106,20 @@ class ContentController extends Controller
         } else {
             $ytid = null;
         }
+        $hasDeadline = $request->boolean('has_deadline');
         $newcontent = new Content([
-            'title' => $request->title,
-            'type' => $request->type,
+            'title'            => $request->title,
+            'type'             => $request->type,
             'classification_id' => $request->classification,
-            'date' => $request->date,
-            'author' => $request->author,
-            'duration' => $request->duration,
-            'description' => $request->description,
-            'playlistonly' => $request->playlistonly,
-            'link' => $ytid
+            'date'             => $request->date,
+            'author'           => $request->author,
+            'duration'         => $request->duration,
+            'description'      => $request->description,
+            'playlistonly'     => $request->playlistonly,
+            'link'             => $ytid,
+            'has_deadline'     => $hasDeadline,
+            'from_date'        => $hasDeadline ? $request->from_date : null,
+            'to_date'          => $hasDeadline ? $request->to_date : null,
         ]);
         $newcontent->save();
         $newid = $newcontent->id;
@@ -258,18 +262,22 @@ class ContentController extends Controller
             $redir = "-";
             $redirmessage = "-";
         }
+        $hasDeadlineUpdate = $request->boolean('has_deadline');
         Content::where('id', $request->contentid)
             ->update([
-                'title' => $request->title,
-                'type' => $request->type,
+                'title'            => $request->title,
+                'type'             => $request->type,
                 'classification_id' => $request->classification,
-                'date' => $request->date,
-                'author' => $request->author,
-                'duration' => $request->duration,
-                'description' => $request->description,
-                'playlistonly' => $request->playlistonly,
-                'active' => $active,
-                'link' => $ytid
+                'date'             => $request->date,
+                'author'           => $request->author,
+                'duration'         => $request->duration,
+                'description'      => $request->description,
+                'playlistonly'     => $request->playlistonly,
+                'active'           => $active,
+                'link'             => $ytid,
+                'has_deadline'     => $hasDeadlineUpdate,
+                'from_date'        => $hasDeadlineUpdate ? $request->from_date : null,
+                'to_date'          => $hasDeadlineUpdate ? $request->to_date : null,
             ]);
 
         return to_route('content.edit', $getcontent->slug)->with('success', $message)->with($redir, $redirmessage);

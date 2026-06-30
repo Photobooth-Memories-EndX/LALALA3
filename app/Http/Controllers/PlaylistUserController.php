@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class PlaylistUserController extends Controller
 {
@@ -32,8 +33,9 @@ class PlaylistUserController extends Controller
             })->count();
         });
 
-        // trainingplan columns: id, slug, title, url_link, active, created_at, updated_at
-        // content columns:      id, title, slug, type, link   (no 'image' column exists)
+        // trainingplan columns used: id, slug, title, url_link, active, created_at,
+        //                            thumbnail, has_deadline, from_date, to_date
+        // content columns:      id, title, slug, type, link
         // content_users columns: id, user_id, content_id, progress, finish
         $trainingplan = TrainingPlan::with([
                 'trainingplandetail' => fn ($q) => $q
@@ -45,7 +47,8 @@ class PlaylistUserController extends Controller
                     ->where('user_id', $userId)
                     ->select(['id', 'user_id', 'content_id', 'progress', 'finish']),
             ])
-            ->select(['id', 'title', 'slug', 'url_link', 'active', 'created_at'])
+            ->select(['id', 'title', 'slug', 'url_link', 'active', 'created_at',
+                      'thumbnail', 'has_deadline', 'from_date', 'to_date'])
             ->where('active', 'Active')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
@@ -74,7 +77,10 @@ class PlaylistUserController extends Controller
                     ? round(($completedContent / $totalContent) * 100)
                     : 0,
                 'firstContent' => $firstContent,
-                'thumbnail'    => $this->getPlaylistThumbnail($firstContent),
+                'thumbnail'    => $this->getPlaylistThumbnail($tp, $firstContent),
+                'has_deadline' => $tp->has_deadline,
+                'from_date'    => $tp->from_date,
+                'to_date'      => $tp->to_date,
             ];
         }
 
@@ -262,10 +268,23 @@ class PlaylistUserController extends Controller
 
     /**
      * Resolve the thumbnail URL for a playlist card.
-     * trainingplan has no image column — thumbnail comes from the first content item.
+     * Priority: trainingplan's own thumbnail → first content's thumbnail → default.
+     *
+     * The accessor (thumbnail_url) filters external/null values.
+     * We additionally verify the file exists on disk before returning its URL,
+     * so we never hand back a URL that would 404.
      */
-    private function getPlaylistThumbnail(?object $content): string
+    private function getPlaylistThumbnail(?object $trainingplan, ?object $content): string
     {
+        if ($trainingplan) {
+            $path = $trainingplan->thumbnail ?? null;
+            if ($path
+                && !Str::startsWith($path, ['http://', 'https://', '//'])
+                && File::exists(public_path('storage/' . $path))) {
+                return asset('storage/' . $path);
+            }
+        }
+
         if (!$content) {
             return asset('default-video.jpg');
         }

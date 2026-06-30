@@ -18,6 +18,12 @@ class Content extends Model
     protected $guarded = ['id'];
     protected $dates = ['deleted_at'];
 
+    protected $casts = [
+        'has_deadline' => 'boolean',
+        'from_date'    => 'date',
+        'to_date'      => 'date',
+    ];
+
     public function classification()
     {
         return $this->belongsTo(Classification::class, "classification_id", "id");

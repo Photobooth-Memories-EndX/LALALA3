@@ -313,6 +313,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:playlist_learning_path'], function () {
         Route::get('trainingplan/order/{slug}', [TrainingPlanController::class, 'order'])->name('trainingplan.order');
+        Route::get('trainingplan-thumbnail-test', [TrainingPlanController::class, 'thumbnailTest'])->name('trainingplan.thumbnailTest');
         Route::resource('trainingplan', TrainingPlanController::class);
     });
 

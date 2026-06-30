@@ -72,6 +72,7 @@
                                         <th>Description</th>
                                         <th>Author</th>
                                         <th>Status</th>
+                                        <th>Deadline</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -115,6 +116,16 @@
                                                 <span class="badge bg-{{ $isActive ? 'success' : 'warning' }}-lt text-{{ $isActive ? 'success' : 'warning' }}">
                                                     {{ $list->active }}
                                                 </span>
+                                            </td>
+                                            <td>
+                                                @if($list->has_deadline && $list->from_date && $list->to_date)
+                                                    @php $expired = now()->gt($list->to_date); @endphp
+                                                    <span class="badge bg-{{ $expired ? 'danger' : 'cyan' }}-lt text-{{ $expired ? 'danger' : 'cyan' }}" style="font-size:11px;">
+                                                        {{ $list->from_date->format('d/m/Y') }} – {{ $list->to_date->format('d/m/Y') }}
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-secondary-lt text-secondary" style="font-size:11px;">Tanpa Deadline</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-1">

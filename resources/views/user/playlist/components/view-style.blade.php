@@ -16,6 +16,7 @@
         height: 260px;
         background-size: cover;
         background-position: center;
+        background-color: #1e293b;
     }
 
     .view-hero-overlay {

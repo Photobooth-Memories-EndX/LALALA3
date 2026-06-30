@@ -1,14 +1,17 @@
 @php
-    $heroThumb = asset('default-video.jpg');
-    $thumbPath = 'storage/files/content/' . $content->id . '/thumb.jpg';
-    if (\File::exists(public_path($thumbPath))) {
-        $heroThumb = asset($thumbPath);
+    // Priority: training plan thumbnail → content thumbnail → default
+    $heroThumb = $playlist->thumbnail_url;
+    if (!$heroThumb) {
+        $thumbPath = 'storage/files/content/' . $content->id . '/thumb.jpg';
+        if (\File::exists(public_path($thumbPath))) {
+            $heroThumb = asset($thumbPath);
+        }
     }
     $playlistProgress = $percentageProgressPlaylist ?? 0;
 @endphp
 
 <div class="card border-0 shadow-sm overflow-hidden mb-3 view-hero-card">
-    <div class="view-hero-bg" style="background-image: url('{{ $heroThumb }}')">
+    <div class="view-hero-bg" @if($heroThumb) style="background-image: url('{{ $heroThumb }}')" @endif>
         <div class="view-hero-overlay">
             <div class="px-3 py-2 text-white w-100">
 

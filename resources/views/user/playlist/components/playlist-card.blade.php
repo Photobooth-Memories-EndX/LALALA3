@@ -5,8 +5,12 @@
     $completedContent = $stats['completedContent'] ?? 0;
     $progress         = $stats['progress'] ?? 0;
     $firstContent     = $stats['firstContent'] ?? null;
-    $thumbnail        = $stats['thumbnail'] ?? asset('default-video.jpg');
-    $hasRealThumb     = $thumbnail !== asset('default-video.jpg');
+    $hasDeadline      = $stats['has_deadline'] ?? false;
+    $fromDate         = $stats['from_date'] ?? null;
+    $toDate           = $stats['to_date'] ?? null;
+    $isExpired        = $hasDeadline && $toDate && now()->gt($toDate);
+    // thumbnail_url is null when missing, external URL, or file not on disk
+    $thumbUrl         = $playlist->thumbnail_url;
 @endphp
 
 <div class="col-xl-4 col-lg-6 mb-4 playlist-item">
@@ -15,25 +19,25 @@
 
         <div class="position-relative">
 
-            @if($hasRealThumb)
-                <img src="{{ $thumbnail }}"
-                     class="playlist-thumbnail w-100"
+            @if($thumbUrl)
+                <img src="{{ $thumbUrl }}"
+                     class="playlist-card-image"
                      alt="{{ $playlist->title }}"
                      onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            @endif
-
-            <div class="playlist-thumbnail d-flex align-items-center justify-content-center"
-                 @if($hasRealThumb) style="display:none;" @endif>
-                <div class="text-center">
-                    <span class="avatar avatar-xl bg-primary-lt text-primary mb-2">
+                <div class="playlist-card-placeholder" style="display:none;">
+                    <div class="playlist-card-placeholder-icon">
                         <i class="ti ti-playlist"></i>
-                    </span>
-
-                    <div class="small text-muted">
-                        Learning Playlist
                     </div>
+                    <div class="playlist-card-placeholder-text">Learning Playlist</div>
                 </div>
-            </div>
+            @else
+                <div class="playlist-card-placeholder">
+                    <div class="playlist-card-placeholder-icon">
+                        <i class="ti ti-playlist"></i>
+                    </div>
+                    <div class="playlist-card-placeholder-text">Learning Playlist</div>
+                </div>
+            @endif
 
             <span class="badge bg-primary position-absolute top-0 end-0 m-3">
                 Playlist
@@ -52,10 +56,26 @@
                 {{ $playlist->title }}
             </div>
 
-            <div class="text-muted small mb-3">
+            <div class="text-muted small mb-2">
                 <i class="ti ti-calendar me-1"></i>
                 Published on {{ date('d M Y', strtotime($playlist->created_at)) }}
             </div>
+
+            @if($hasDeadline && $fromDate && $toDate)
+                <div class="mb-3">
+                    @if($isExpired)
+                        <span class="badge bg-danger-lt text-danger">
+                            <i class="ti ti-clock-x me-1"></i>
+                            Expired: {{ $fromDate->format('d M Y') }} – {{ $toDate->format('d M Y') }}
+                        </span>
+                    @else
+                        <span class="badge bg-warning-lt text-warning">
+                            <i class="ti ti-calendar-due me-1"></i>
+                            Deadline: {{ $fromDate->format('d M Y') }} – {{ $toDate->format('d M Y') }}
+                        </span>
+                    @endif
+                </div>
+            @endif
 
             <div class="playlist-content-list small text-muted">
 

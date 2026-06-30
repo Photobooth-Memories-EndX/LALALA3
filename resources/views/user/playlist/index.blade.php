@@ -76,6 +76,58 @@
         background: var(--tblr-bg-surface-secondary);
     }
 
+    .playlist-card-image {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .playlist-card-placeholder {
+        width: 100%;
+        height: 180px;
+        background: #f3f6fb;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .playlist-card-placeholder-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 8px;
+        background: #e8eef7;
+        border: 1px solid #cbd8ea;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .playlist-card-placeholder-icon i {
+        font-size: 30px;
+        color: #2563eb;
+    }
+
+    .playlist-card-placeholder-text {
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    [data-bs-theme="dark"] .playlist-card-placeholder,
+    body.theme-dark .playlist-card-placeholder,
+    body.dark .playlist-card-placeholder {
+        background: #111827;
+    }
+
+    [data-bs-theme="dark"] .playlist-card-placeholder-icon,
+    body.theme-dark .playlist-card-placeholder-icon,
+    body.dark .playlist-card-placeholder-icon {
+        background: #1f2937;
+        border-color: rgba(255, 255, 255, .12);
+    }
+
     .playlist-title {
         font-size: 16px;
         font-weight: 700;

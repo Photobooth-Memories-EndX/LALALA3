@@ -308,6 +308,42 @@
                             </div>
                         </div>
 
+                        {{-- Deadline Content --}}
+                        @php
+                            $showContentDeadline = old('has_deadline') !== null
+                                ? (bool) old('has_deadline')
+                                : (bool) $content->has_deadline;
+                        @endphp
+                        <div class="card owl-main-card mb-3">
+                            <div class="card-header">
+                                <h3 class="card-title">Deadline Content</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-check cursor-pointer">
+                                        <input type="hidden" name="has_deadline" value="0">
+                                        <input class="form-check-input" type="checkbox" id="has_deadline_content"
+                                            name="has_deadline" value="1"
+                                            @if($showContentDeadline) checked @endif>
+                                        <span class="form-check-label fw-medium">Perlu Deadline?</span>
+                                    </label>
+                                    <small class="form-hint d-block mt-1">Opsional. Jika dicentang, isi rentang tanggal.</small>
+                                </div>
+                                <div id="content-deadline-fields" style="{{ $showContentDeadline ? '' : 'display:none;' }}">
+                                    <div class="mb-2">
+                                        <label class="form-label">From Date</label>
+                                        <input type="date" class="form-control" name="from_date" id="content_from_date"
+                                            value="{{ old('from_date', $content->from_date ? $content->from_date->format('Y-m-d') : '') }}">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">To Date</label>
+                                        <input type="date" class="form-control" name="to_date" id="content_to_date"
+                                            value="{{ old('to_date', $content->to_date ? $content->to_date->format('Y-m-d') : '') }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Action Buttons --}}
                         <div class="card owl-main-card">
                             <div class="card-body">
@@ -495,6 +531,23 @@
                 },
             }));
         });
+
+        (function () {
+            var cb = document.getElementById('has_deadline_content');
+            var fields = document.getElementById('content-deadline-fields');
+            if (!cb || !fields) return;
+            cb.addEventListener('change', function () {
+                if (this.checked) {
+                    fields.style.display = '';
+                } else {
+                    fields.style.display = 'none';
+                    var fd = document.getElementById('content_from_date');
+                    var td = document.getElementById('content_to_date');
+                    if (fd) fd.value = '';
+                    if (td) td.value = '';
+                }
+            });
+        })();
 
         document.addEventListener("DOMContentLoaded", function() {
             var el;

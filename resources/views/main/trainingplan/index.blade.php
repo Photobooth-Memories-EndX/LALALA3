@@ -64,9 +64,11 @@
                                 <thead>
                                     <tr>
                                         <th>No</th>
+                                        <th>Thumbnail</th>
                                         <th>Title</th>
                                         <th>Content</th>
                                         <th>Status</th>
+                                        <th>Deadline</th>
                                         <th>Created At</th>
                                         <th>Action</th>
                                     </tr>
@@ -81,6 +83,21 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $loop->index + 1 }}</td>
+                                            <td>
+                                                @if($list->thumbnail_url)
+                                                    <img src="{{ $list->thumbnail_url }}"
+                                                        alt="thumb" width="56" height="40"
+                                                        style="object-fit:cover; border-radius:4px;"
+                                                        onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+                                                    <span class="avatar avatar-sm bg-blue-lt text-blue" style="display:none;">
+                                                        <i class="ti ti-playlist"></i>
+                                                    </span>
+                                                @else
+                                                    <span class="avatar avatar-sm bg-blue-lt text-blue">
+                                                        <i class="ti ti-playlist"></i>
+                                                    </span>
+                                                @endif
+                                            </td>
                                             <td>
                                                 <span class="monitoring-link fw-semibold">
                                                     {{ Str::limit($list->title, 30) }}
@@ -112,6 +129,16 @@
                                                 <span class="badge bg-{{ $isActive ? 'success' : 'warning' }}-lt text-{{ $isActive ? 'success' : 'warning' }}">
                                                     {{ $list->active }}
                                                 </span>
+                                            </td>
+                                            <td>
+                                                @if($list->has_deadline && $list->from_date && $list->to_date)
+                                                    @php $expired = now()->gt($list->to_date); @endphp
+                                                    <span class="badge bg-{{ $expired ? 'danger' : 'cyan' }}-lt text-{{ $expired ? 'danger' : 'cyan' }}" style="font-size:11px;">
+                                                        {{ $list->from_date->format('d/m/Y') }} – {{ $list->to_date->format('d/m/Y') }}
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-secondary-lt text-secondary" style="font-size:11px;">Tanpa Deadline</span>
+                                                @endif
                                             </td>
                                             <td>{{ date_format(date_create($list->created_at), 'Y-m-d') }}</td>
                                             <td>

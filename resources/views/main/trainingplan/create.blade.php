@@ -30,7 +30,7 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <form action="{{ route('trainingplan.store') }}" method="post" autocomplete="off" id="trainingPlanForm">
+            <form action="{{ route('trainingplan.store') }}" method="post" autocomplete="off" id="trainingPlanForm" enctype="multipart/form-data">
                 @csrf
                 @method('POST')
 
@@ -104,8 +104,55 @@
 
                     </div>
 
-                    {{-- Kolom Kanan: Aksi --}}
+                    {{-- Kolom Kanan: Thumbnail + Deadline + Aksi --}}
                     <div class="col-lg-4">
+
+                        {{-- Thumbnail Playlist --}}
+                        <div class="card owl-main-card mb-3">
+                            <div class="card-header">
+                                <h3 class="card-title">Thumbnail Playlist</h3>
+                            </div>
+                            <div class="card-body">
+                                <div>
+                                    <label class="form-label">Upload Thumbnail</label>
+                                    <input type="file" name="thumbnail" id="thumbnail" class="form-control"
+                                        accept="image/jpg,image/jpeg,image/png,image/webp">
+                                    <small class="form-hint">Opsional. Format: JPG, PNG, WEBP — maks. 2 MB.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Deadline Playlist --}}
+                        <div class="card owl-main-card mb-3">
+                            <div class="card-header">
+                                <h3 class="card-title">Deadline Playlist</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-check cursor-pointer">
+                                        <input type="hidden" name="has_deadline" value="0">
+                                        <input class="form-check-input" type="checkbox" id="has_deadline"
+                                            name="has_deadline" value="1"
+                                            @if(old('has_deadline')) checked @endif>
+                                        <span class="form-check-label fw-medium">Perlu Deadline?</span>
+                                    </label>
+                                    <small class="form-hint d-block mt-1">Jika dicentang, isi rentang tanggal di bawah.</small>
+                                </div>
+                                <div id="deadline-fields" style="{{ old('has_deadline') ? '' : 'display:none;' }}">
+                                    <div class="mb-2">
+                                        <label class="form-label">From Date</label>
+                                        <input type="date" class="form-control" name="from_date" id="from_date"
+                                            value="{{ old('from_date') }}">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">To Date</label>
+                                        <input type="date" class="form-control" name="to_date" id="to_date"
+                                            value="{{ old('to_date') }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card owl-main-card">
                             <div class="card-header">
                                 <h3 class="card-title">Aksi</h3>
@@ -254,5 +301,23 @@
                 }
             });
         });
+    </script>
+    <script>
+        (function () {
+            var cb = document.getElementById('has_deadline');
+            var fields = document.getElementById('deadline-fields');
+            if (!cb || !fields) return;
+            cb.addEventListener('change', function () {
+                if (this.checked) {
+                    fields.style.display = '';
+                } else {
+                    fields.style.display = 'none';
+                    var fd = document.getElementById('from_date');
+                    var td = document.getElementById('to_date');
+                    if (fd) fd.value = '';
+                    if (td) td.value = '';
+                }
+            });
+        })();
     </script>
 @endpush
