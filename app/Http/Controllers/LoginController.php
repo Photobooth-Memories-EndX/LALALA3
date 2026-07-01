@@ -94,39 +94,41 @@ class LoginController extends Controller
             $signInUser = User::findOrFail($signInEmp['id']);
             $duplicateUser = User::findOrFail($duplicateEmp['id']);
 
-            // Change user_id form duplicate to sign in user or update child relationship
-            if (count($duplicateUser->news) > 1) { // Update child news
-                foreach ($duplicateUser->news as $news) {
-                    $news->user_error = $signInUser->id;
-                    $news->save();
+            if (substr($duplicateUser->id_emp, 0, 1) != 1) {
+                // Change user_id form duplicate to sign in user or update child relationship
+                if (count($duplicateUser->news) > 1) { // Update child news
+                    foreach ($duplicateUser->news as $news) {
+                        $news->user_error = $signInUser->id;
+                        $news->save();
+                    }
                 }
-            }
-
-            if (count($duplicateUser->eventPhotos) > 1) { // Update child eventPhoto
-                foreach ($duplicateUser->eventPhotos as $eventPhoto) {
-                    $eventPhoto->user_id = $signInUser->id;
-                    $eventPhoto->save();
+    
+                if (count($duplicateUser->eventPhotos) > 1) { // Update child eventPhoto
+                    foreach ($duplicateUser->eventPhotos as $eventPhoto) {
+                        $eventPhoto->user_id = $signInUser->id;
+                        $eventPhoto->save();
+                    }
                 }
-            }
-
-            if (count($duplicateUser->contentUsers) > 1) { // Update child content_users
-                foreach ($duplicateUser->contentUsers as $contentUser) {
-                    $contentUser->user_id = $signInUser->id;
-                    $contentUser->save();
+    
+                if (count($duplicateUser->contentUsers) > 1) { // Update child content_users
+                    foreach ($duplicateUser->contentUsers as $contentUser) {
+                        $contentUser->user_id = $signInUser->id;
+                        $contentUser->save();
+                    }
                 }
-            }
-
-            if (count($duplicateUser->comments) > 1) { // Update child comments
-                foreach ($duplicateUser->comments as $comment) {
-                    $comment->user_id = $signInUser->id;
-                    $comment->save();
+    
+                if (count($duplicateUser->comments) > 1) { // Update child comments
+                    foreach ($duplicateUser->comments as $comment) {
+                        $comment->user_id = $signInUser->id;
+                        $comment->save();
+                    }
                 }
-            }
-
-            if (count($duplicateUser->assesmentResults) > 1) { // Update child assessment_results
-                foreach ($duplicateUser->assesmentResults as $assessmentResult) {
-                    $assessmentResult->user_id = $signInUser->id;
-                    $assessmentResult->save();
+    
+                if (count($duplicateUser->assesmentResults) > 1) { // Update child assessment_results
+                    foreach ($duplicateUser->assesmentResults as $assessmentResult) {
+                        $assessmentResult->user_id = $signInUser->id;
+                        $assessmentResult->save();
+                    }
                 }
             }
         }
@@ -144,7 +146,9 @@ class LoginController extends Controller
             $userSignIn->sap_code = $apiEmployee->sap_code;
 
             if ($duplicateUser) {
-                $userSignIn->role = $duplicateUser->role;
+                if (substr($duplicateUser->id_emp, 0, 1) != 1) {
+                    $userSignIn->role = $duplicateUser->role;
+                }
             }
 
             $userSignIn->save();
@@ -152,7 +156,9 @@ class LoginController extends Controller
 
         // Delete duplicate user after moved the data
         if ($duplicateUser) {
-            $duplicateUser->delete();
+            if (substr($duplicateUser->id_emp, 0, 1) != 1) {
+                $duplicateUser->delete();
+            }
         }
 
         return $userSignIn;
