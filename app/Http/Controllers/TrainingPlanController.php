@@ -13,17 +13,93 @@ use Illuminate\Support\Str;
 
 class TrainingPlanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $trainingplan = TrainingPlan::with([
-            'trainingplandetail' => function ($query) {
-                $query->orderBy('content_order');
-            }, 'trainingplandetail.content'
-        ])->orderBy('created_at', 'desc')->get();
+        $query = TrainingPlan::query()->withCount('trainingplandetail');
+
+        if ($request->filled('s')) {
+            $search = $request->s;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%")
+                  ->orWhere('url_link', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('active')) {
+            $query->where('active', $request->active);
+        }
+
+        if ($request->filled('deadline')) {
+            if ($request->deadline === 'with') {
+                $query->where('has_deadline', 1);
+            } elseif ($request->deadline === 'without') {
+                $query->where(function ($q) {
+                    $q->whereNull('has_deadline')->orWhere('has_deadline', 0);
+                });
+            } elseif ($request->deadline === 'active') {
+                $query->where('has_deadline', 1)
+                      ->whereDate('from_date', '<=', now()->toDateString())
+                      ->whereDate('to_date', '>=', now()->toDateString());
+            } elseif ($request->deadline === 'expired') {
+                $query->where('has_deadline', 1)
+                      ->whereDate('to_date', '<', now()->toDateString());
+            }
+        }
+
+        if ($request->filled('thumbnail')) {
+            if ($request->thumbnail === 'with') {
+                $query->whereNotNull('thumbnail')->where('thumbnail', '!=', '');
+            } elseif ($request->thumbnail === 'without') {
+                $query->where(function ($q) {
+                    $q->whereNull('thumbnail')->orWhere('thumbnail', '');
+                });
+            }
+        }
+
+        if ($request->filled('created_from')) {
+            $query->whereDate('created_at', '>=', $request->created_from);
+        }
+
+        if ($request->filled('created_to')) {
+            $query->whereDate('created_at', '<=', $request->created_to);
+        }
+
+        switch ($request->get('sort')) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'title':
+                $query->orderBy('title');
+                break;
+            case 'materials':
+                $query->orderByDesc('trainingplandetail_count');
+                break;
+            default:
+                $query->latest();
+                break;
+        }
+
+        $trainingplans = $query->paginate(10)->withQueryString();
+
+        $totalTrainingPlan   = TrainingPlan::count();
+        $activeTrainingPlan  = TrainingPlan::where('active', 'Active')->count();
+        $inactiveTrainingPlan = TrainingPlan::where('active', 'Inactive')->count();
+        $withDeadline        = TrainingPlan::where('has_deadline', 1)->count();
+        $expiredDeadline     = TrainingPlan::where('has_deadline', 1)
+                                ->whereDate('to_date', '<', now()->toDateString())
+                                ->count();
+        $totalMaterials      = TrainingPlanDetail::count();
 
         return view('main.trainingplan.index', [
-            "title" =>  "Playlist",
-            "trainingplan" => $trainingplan
+            'title'               => 'Training Plan Management',
+            'trainingplans'       => $trainingplans,
+            'totalTrainingPlan'   => $totalTrainingPlan,
+            'activeTrainingPlan'  => $activeTrainingPlan,
+            'inactiveTrainingPlan' => $inactiveTrainingPlan,
+            'withDeadline'        => $withDeadline,
+            'expiredDeadline'     => $expiredDeadline,
+            'totalMaterials'      => $totalMaterials,
         ]);
     }
 

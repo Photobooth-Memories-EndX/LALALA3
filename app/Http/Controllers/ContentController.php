@@ -12,12 +12,102 @@ use Illuminate\Support\Facades\Log;
 
 class ContentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $content = Content::with('classification')->latest()->get();
+        $query = Content::query()->with('classification');
+
+        if ($request->filled('s')) {
+            $search = $request->s;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('author', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('classification_id')) {
+            $query->where('classification_id', $request->classification_id);
+        }
+
+        if ($request->filled('active')) {
+            $query->where('active', $request->active);
+        }
+
+        if ($request->filled('exam')) {
+            $query->where('exam', $request->exam);
+        }
+
+        if ($request->filled('playlistonly')) {
+            $query->where('playlistonly', $request->playlistonly);
+        }
+
+        if ($request->filled('deadline')) {
+            if ($request->deadline === 'with') {
+                $query->where('has_deadline', 1);
+            } elseif ($request->deadline === 'without') {
+                $query->where(function ($q) {
+                    $q->whereNull('has_deadline')->orWhere('has_deadline', 0);
+                });
+            } elseif ($request->deadline === 'expired') {
+                $query->where('has_deadline', 1)
+                      ->whereDate('to_date', '<', now()->toDateString());
+            } elseif ($request->deadline === 'active') {
+                $query->where('has_deadline', 1)
+                      ->whereDate('from_date', '<=', now()->toDateString())
+                      ->whereDate('to_date', '>=', now()->toDateString());
+            }
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('date', '<=', $request->date_to);
+        }
+
+        switch ($request->get('sort')) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'views':
+                $query->orderByDesc('views');
+                break;
+            case 'title':
+                $query->orderBy('title');
+                break;
+            default:
+                $query->latest();
+                break;
+        }
+
+        $contents = $query->paginate(10)->withQueryString();
+
+        $types           = Content::whereNotNull('type')->distinct()->orderBy('type')->pluck('type');
+        $classifications = Classification::orderBy('classification_name')->get();
+
+        $totalContent   = Content::count();
+        $activeContent  = Content::where('active', 'Active')->count();
+        $inactiveContent = Content::where('active', 'Inactive')->count();
+        $playlistOnly   = Content::where('playlistonly', 'Y')->count();
+        $withDeadline   = Content::where('has_deadline', 1)->count();
+        $totalViews     = Content::sum('views');
+
         return view('main.content.index', [
-            "title" =>  "Content List",
-            "content" => $content
+            'title'           => 'Content Management',
+            'contents'        => $contents,
+            'types'           => $types,
+            'classifications' => $classifications,
+            'totalContent'    => $totalContent,
+            'activeContent'   => $activeContent,
+            'inactiveContent' => $inactiveContent,
+            'playlistOnly'    => $playlistOnly,
+            'withDeadline'    => $withDeadline,
+            'totalViews'      => $totalViews,
         ]);
     }
     // public function ongoingcontent()

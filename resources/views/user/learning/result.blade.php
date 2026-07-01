@@ -114,6 +114,7 @@
                     <thead>
                         <tr>
                             <th>No</th>
+                            <th>Certificate</th>
                             <th>Nama Kelas</th>
                             <th>Jenis</th>
                             <th>Classification</th>
@@ -125,7 +126,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($content_user as $list)
+                        @php
+                            // Records with progress >= 100 (eligible for certificate) appear first.
+                            // Within each group, newest updated_at first.
+                            $sortedForTable = collect($content_user)
+                                ->sortByDesc(function ($item) {
+                                    $completed = ((int)($item->progress ?? 0) >= 100) ? 1 : 0;
+                                    $ts        = optional($item->updated_at)->timestamp ?? 0;
+                                    return [$completed, $ts];
+                                })
+                                ->values();
+                        @endphp
+                        @foreach ($sortedForTable as $list)
                             @php
                                 $progress = (int) ($list->progress ?? 0);
                                 $isCompleted = $progress >= 100;
@@ -146,6 +158,20 @@
 
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
+
+                                <td class="text-nowrap">
+                                    @if($isCompleted)
+                                        <a href="{{ route('certificate.generate', $list->id) }}"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="ti ti-certificate me-1"></i>
+                                            Sertifikat
+                                        </a>
+                                    @else
+                                        <span class="badge bg-secondary-lt text-secondary">
+                                            Not Available
+                                        </span>
+                                    @endif
+                                </td>
 
                                 <td>
                                     <div class="d-flex align-items-center gap-2">

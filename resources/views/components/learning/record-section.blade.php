@@ -33,6 +33,7 @@
                 <thead>
                     <tr>
                         <th class="text-muted">No</th>
+                        <th class="text-muted">Certificate</th>
                         <th class="text-muted">Nama Kelas</th>
                         <th class="text-muted">Type</th>
                         <th class="text-muted">Classification</th>
@@ -40,13 +41,56 @@
                         <th class="text-muted">Progress</th>
                         <th class="text-muted">Finish Date</th>
                         <th class="text-muted">Score Test</th>
-                        <th class="text-muted">Certificate</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    @foreach ($contentUser as $list)
-                        @if (($list->finish ?? '0') == '1')
+                    @php
+                        // Pre-sort: records eligible for certificate appear first (priority 1),
+                        // then Not Available (priority 0). Within each group, newest first.
+                        $sortedContentUser = collect($contentUser)
+                            ->filter(fn ($cu) => ($cu->finish ?? '0') == '1')
+                            ->sortByDesc(function ($cu) use ($certificateSettings) {
+                                $content  = $cu->content ?? null;
+                                $progress = (int) ($cu->progress ?? 0);
+
+                                $certSetting = collect($certificateSettings)
+                                    ->where('certificate_type', 'content')
+                                    ->where('content_id', $content->id ?? null)
+                                    ->first();
+
+                                if (!$certSetting || !$certSetting->is_active) {
+                                    return [0, 0];
+                                }
+
+                                $minProgress = $certSetting->minimum_progress ?? null;
+                                $minScore    = $certSetting->minimum_score ?? null;
+
+                                $progressOk = is_null($minProgress) || (int) $minProgress <= 0
+                                    || $progress >= (int) $minProgress;
+
+                                $score = null;
+                                if (!blank($cu->assesment ?? null)) {
+                                    $top = ($cu->assesment->scores ?? collect())
+                                        ->filter(fn ($r) => $r->user_id == $cu->user_id)
+                                        ->sortByDesc('score')
+                                        ->first();
+                                    $score = $top->score ?? null;
+                                }
+
+                                $scoreOk = is_null($minScore) || (int) $minScore <= 0
+                                    || (!is_null($score) && $score >= (int) $minScore);
+
+                                $eligible = ($progressOk && $scoreOk) ? 1 : 0;
+
+                                // Secondary sort: newest updated_at within each group
+                                $ts = optional($cu->updated_at)->timestamp ?? 0;
+
+                                return [$eligible, $ts];
+                            })
+                            ->values();
+                    @endphp
+                    @foreach ($sortedContentUser as $list)
                             @php
                                 $content = $list->content ?? null;
                                 $progress = (int) ($list->progress ?? 0);
@@ -94,6 +138,20 @@
 
                             <tr>
                                 <td class="text-muted">{{ $loop->iteration }}</td>
+
+                                <td class="text-nowrap">
+                                    @if($canGenerateCertificate)
+                                        <a href="{{ route('certificate.generate', $list->id) }}"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="ti ti-certificate me-1"></i>
+                                            Sertifikat
+                                        </a>
+                                    @else
+                                        <span class="badge bg-secondary-lt text-secondary">
+                                            Not Available
+                                        </span>
+                                    @endif
+                                </td>
 
                                 <td style="min-width: 280px;">
                                     <div class="d-flex align-items-center">
@@ -182,35 +240,7 @@
                                     @endif
                                 </td>
 
-                                <td style="min-width: 180px;">
-                                    @if($canGenerateCertificate)
-                                        <a href="{{ route('certificate.generate', $list->id) }}"
-                                           class="btn btn-sm btn-primary">
-                                            <i class="ti ti-certificate mr-1"></i>
-                                            Generate
-                                        </a>
-                                    @else
-                                        <span class="badge bg-secondary-lt text-secondary">
-                                            Not Available
-                                        </span>
-
-                                        @if($certificateSetting)
-                                            <div class="small text-muted mt-1">
-                                                @if(!$isProgressPassed)
-                                                    Progress minimal {{ $minimumProgress }}%.
-                                                @elseif(!$isScorePassed)
-                                                    Score minimal {{ $minimumScore }}, score Anda {{ $score ?? '-' }}.
-                                                @endif
-                                            </div>
-                                        @else
-                                            <div class="small text-muted mt-1">
-                                                Sertifikat belum tersedia.
-                                            </div>
-                                        @endif
-                                    @endif
-                                </td>
                             </tr>
-                        @endif
                     @endforeach
                 </tbody>
             </table>
