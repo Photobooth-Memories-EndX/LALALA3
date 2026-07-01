@@ -80,6 +80,8 @@
                         $classification = $list->content->classification->classification_name ?? '-';
                         $duration = $list->content->duration ?? '-';
                         $slug = $list->content->slug ?? null;
+                        $contentId = $list->content->id ?? null;
+                        $thumbExists = $contentId && file_exists(public_path('storage/files/content/' . $contentId . '/thumb.jpg'));
                     @endphp
 
                     <div class="col-md-6 col-xl-4 learning-item"
@@ -87,6 +89,12 @@
                          data-classification="{{ strtolower($classification) }}">
                         <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
                             <div class="card-status-top {{ $isCompleted ? 'bg-success' : 'bg-primary' }}"></div>
+
+                            @if ($thumbExists)
+                                <img src="/storage/files/content/{{ $contentId }}/thumb.jpg"
+                                     alt="{{ $title }}"
+                                     class="learning-card-thumb-img">
+                            @endif
 
                             <div class="card-body">
                                 <div class="d-flex align-items-start gap-3 mb-3">
@@ -199,6 +207,13 @@
     <style>
         .rounded-4 {
             border-radius: 1rem !important;
+        }
+
+        .learning-card-thumb-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
         }
 
         .learning-item .card {

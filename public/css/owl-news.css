@@ -413,8 +413,23 @@ button, input, select, textarea {
     margin-bottom: 0;
 }
 
+.owl-news-card .card-footer {
+    overflow: hidden;
+}
+
+.owl-news-card .card-footer > .d-flex {
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.owl-card-author-name {
+    min-width: 0;
+}
+
 .owl-card-cta {
-    min-width: 120px;
+    flex-shrink: 0;
+    margin-left: auto;
+    white-space: nowrap;
     transition: var(--owl-transition);
 }
 

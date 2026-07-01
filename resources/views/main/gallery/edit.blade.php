@@ -51,19 +51,78 @@
 .admin-gallery-photo-wrapper {
     position: relative;
 }
-.admin-gallery-dropzone {
+.eventphoto-upload-zone {
     min-height: 180px;
     border: 2px dashed var(--tblr-primary);
     border-radius: 16px;
     background: var(--tblr-bg-surface);
-    transition: background .2s;
+    transition: background .2s, border-color .2s;
     cursor: pointer;
+    padding: 16px;
 }
-.admin-gallery-dropzone:hover {
+.eventphoto-upload-zone.dz-drag-hover {
     background: var(--tblr-bg-surface-secondary);
+    border-color: var(--tblr-primary);
+}
+.eventphoto-upload-empty {
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--tblr-secondary);
+    text-align: center;
+}
+.eventphoto-upload-empty i {
+    font-size: 42px;
+    color: var(--tblr-primary);
+}
+.eventphoto-upload-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+.eventphoto-upload-preview:not(:empty) {
+    margin-top: 16px;
+}
+.eventphoto-upload-card {
+    border: 1px solid rgba(98,105,118,.18);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--tblr-bg-surface);
+    cursor: default;
+}
+.eventphoto-upload-card-img-wrap img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    display: block;
+}
+.eventphoto-upload-card-body {
+    padding: 8px;
+}
+.eventphoto-upload-card-title {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.eventphoto-upload-card-meta {
+    font-size: 11px;
+    color: var(--tblr-secondary);
+    margin-bottom: 6px;
+}
+.eventphoto-upload-card .dz-error-message {
+    display: none;
+}
+.eventphoto-upload-remove {
+    width: 100%;
 }
 [data-bs-theme="dark"] .admin-gallery-photo-card { background: #1f2937; }
-[data-bs-theme="dark"] .admin-gallery-dropzone   { background: #111827; }
+[data-bs-theme="dark"] .eventphoto-upload-zone   { background: #111827; border-color: var(--tblr-primary); }
+[data-bs-theme="dark"] .eventphoto-upload-card   { background: #1f2937; border-color: rgba(255,255,255,.12); }
 </style>
 @endsection
 
@@ -295,9 +354,30 @@
                         <i class="ti ti-info-circle"></i>
                         <div>Upload JPG, JPEG or PNG. Maximum <strong>20 files</strong> per upload.</div>
                     </div>
-                    <div class="admin-gallery-dropzone" id="document-dropzone">
+                    <div class="eventphoto-upload-zone" id="document-dropzone">
+                        <div class="dz-message eventphoto-upload-empty">
+                            <i class="ti ti-cloud-upload"></i>
+                            <strong>Drop photos here or click to upload</strong>
+                            <span>JPG, JPEG, PNG. Maximum 20 files per upload.</span>
+                        </div>
+                        <div class="eventphoto-upload-preview" id="eventPhotoPreview"></div>
                         <div class="fallback"></div>
                     </div>
+                    <template id="eventPhotoPreviewTemplate">
+                        <div class="eventphoto-upload-card dz-preview dz-file-preview">
+                            <div class="eventphoto-upload-card-img-wrap dz-image">
+                                <img data-dz-thumbnail alt="preview">
+                            </div>
+                            <div class="eventphoto-upload-card-body">
+                                <div class="eventphoto-upload-card-title" data-dz-name></div>
+                                <div class="eventphoto-upload-card-meta" data-dz-size></div>
+                                <div class="dz-error-message"><span data-dz-errormessage></span></div>
+                                <button type="button" class="btn btn-sm btn-outline-danger eventphoto-upload-remove" data-dz-remove>
+                                    <i class="ti ti-trash me-1"></i>Remove
+                                </button>
+                            </div>
+                        </div>
+                    </template>
                 </div>
                 <div class="card-footer d-flex justify-content-end gap-2">
                     @if($eventphoto->active == 'Active')
@@ -305,13 +385,13 @@
                             <i class="ti ti-eye-off me-1"></i>Unpublish
                         </button>
                     @else
-                        <button type="submit" class="btn btn-success" name="action" value="save">
-                            <i class="ti ti-device-floppy me-1"></i>Save
-                        </button>
                         <button type="submit" class="btn btn-primary" name="action" value="publish">
                             <i class="ti ti-send me-1"></i>Save & Publish
                         </button>
                     @endif
+                    <button type="submit" class="btn btn-success" name="action" value="save">
+                        <i class="ti ti-device-floppy me-1"></i>Simpan Perubahan
+                    </button>
                 </div>
             </div>
 
@@ -348,15 +428,17 @@ var uploadedDocumentMap = {};
 Dropzone.autoDiscover = false;
 
 var myDropzone = new Dropzone('div#document-dropzone', {
-    url:              '{{ route('eventphoto.uploadfileajax') }}',
-    autoProcessQueue: true,
-    uploadMultiple:   true,
-    addRemoveLinks:   true,
-    acceptedFiles:    '.jpg,.png,.jpeg',
-    parallelUploads:  2,
-    headers:          { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-    maxFiles:         20,
-    maxFilesize:      1000,
+    url:               '{{ route('eventphoto.uploadfileajax') }}',
+    clickable:         '.eventphoto-upload-empty',
+    previewsContainer: '#eventPhotoPreview',
+    previewTemplate:   document.getElementById('eventPhotoPreviewTemplate').innerHTML,
+    autoProcessQueue:  true,
+    uploadMultiple:    true,
+    acceptedFiles:     '.jpg,.png,.jpeg',
+    parallelUploads:   2,
+    headers:           { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+    maxFiles:          20,
+    maxFilesize:       1000,
     init: function() {
         this.on('error', function(file, message) {
             alert(message);

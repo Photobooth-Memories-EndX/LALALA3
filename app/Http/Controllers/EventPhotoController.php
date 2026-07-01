@@ -87,6 +87,16 @@ return view(
 
 
     /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        return view('main.gallery.create');
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -96,7 +106,7 @@ return view(
     {
        $request->validate([
     'title' => 'required',
-    'category' => 'required'
+    'category' => 'nullable'
 ]);
         $eventphoto = new EventPhoto();
 
@@ -172,7 +182,7 @@ return view(
     {
         $request->validate([
     'title' => 'required',
-    'category' => 'required'
+    'category' => 'nullable'
 ]);
         //
         $eventphoto = EventPhoto::find($request->id);
@@ -190,22 +200,45 @@ return view(
         'thumbnail' => $request->thumbnail
     ]);
             if ($request->has('documents')) {
-                foreach ($request->documents as $doc) {
-                    $arraydoc[] = $doc;
-                    File::move(public_path('storage/gallery/tmp') . '/' . $doc, public_path('storage/gallery/photo/' . $request->id . '') . '/' . $doc);
-                }
-                $search = ['[', ']', '"'];
+                $arraydoc = [];
 
-                $oldarray = array();
-                // return $eventphoto;
-                foreach (explode(',', $eventphoto->photos) as $listphoto) {
-                    $oldarray[] = str_replace($search, '', $listphoto);
+                $targetDir = public_path('storage/gallery/photo/' . $request->id);
+
+                if (!File::exists($targetDir)) {
+                    File::makeDirectory($targetDir, 0755, true);
                 }
-                $newarray = array_merge($oldarray, $arraydoc);
-                EventPhoto::where('id', $request->id)
-                    ->update([
-                        'photos' => json_encode($newarray)
-                    ]);
+
+                foreach ($request->documents as $doc) {
+                    $tmpPath = public_path('storage/gallery/tmp/' . $doc);
+                    $targetPath = $targetDir . '/' . $doc;
+
+                    if (File::exists($tmpPath)) {
+                        $arraydoc[] = $doc;
+                        File::move($tmpPath, $targetPath);
+                    }
+                }
+
+                if (!empty($arraydoc)) {
+                    $search = ['[', ']', '"'];
+
+                    $oldarray = [];
+
+                    if (!empty($eventphoto->photos)) {
+                        foreach (explode(',', $eventphoto->photos) as $listphoto) {
+                            $cleanPhoto = str_replace($search, '', $listphoto);
+
+                            if (!empty($cleanPhoto)) {
+                                $oldarray[] = $cleanPhoto;
+                            }
+                        }
+                    }
+
+                    $newarray = array_merge($oldarray, $arraydoc);
+                    EventPhoto::where('id', $request->id)
+                        ->update([
+                            'photos' => json_encode($newarray)
+                        ]);
+                }
             }
             if ($request->action == 'publish') {
                 EventPhoto::where('id', $request->id)
@@ -227,6 +260,30 @@ return view(
     public function destroy(EventPhoto $eventPhoto)
     {
         //
+    }
+
+    public function deleteImage(Request $request)
+    {
+        $id = $request->id;
+        $option = $request->option;
+
+        $eventphoto = EventPhoto::find($id);
+
+        $photos = json_decode($eventphoto->photos, true) ?? [];
+        $photos = array_values(array_diff($photos, [$option]));
+
+        $path = public_path('storage/gallery/photo/' . $id . '/' . $option);
+        if (File::exists($path)) {
+            File::delete($path);
+        }
+
+        $eventphoto->update([
+            'photos' => json_encode($photos)
+        ]);
+
+        return response()->json([
+            'status' => 200
+        ]);
     }
 
     public function uploadfileajax(Request $request)

@@ -77,15 +77,10 @@
                                         : 'unknown'
                                 );
 
-                            $thumbnail = null;
-
-                            if (!empty($content->thumbnail)) {
-                                $thumbnail = asset('storage/content/thumbnail/' . $content->thumbnail);
-                            } elseif (!empty($content->image)) {
-                                $thumbnail = asset('storage/content/' . $content->image);
-                            } elseif (!empty($content->cover)) {
-                                $thumbnail = asset('storage/content/' . $content->cover);
-                            }
+                            $thumbFile = public_path('storage/files/content/' . $content->id . '/thumb.jpg');
+                            $thumbnail = file_exists($thumbFile)
+                                ? '/storage/files/content/' . $content->id . '/thumb.jpg'
+                                : null;
 
                             $statusLabel = $list->status ?? 'optional';
                         @endphp
