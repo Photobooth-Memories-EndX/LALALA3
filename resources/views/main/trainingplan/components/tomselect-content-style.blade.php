@@ -58,6 +58,7 @@
     .playlist-ts-wrapper .ts-control {
         display: flex !important;
         flex-direction: column !important;
+        flex-wrap: nowrap !important;
         align-items: stretch !important;
         padding: 8px 10px !important;
         gap: 5px;
@@ -79,14 +80,19 @@
         background: transparent !important;
         box-shadow: none !important;
         font-size: 13px;
+        flex: 0 0 auto;
     }
 
     /* ======================================================
-       SELECTED ITEM ROW - display:block for SortableJS
+       SELECTED ITEM ROW - flex row so .remove stays right
     ====================================================== */
     .playlist-ts-wrapper .ts-control .item {
-        display: block !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
         width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
         margin: 0 !important;
         padding: 0 !important;
         border-radius: 10px !important;
@@ -95,8 +101,8 @@
         border: 1px solid rgba(32, 107, 196, .2) !important;
         cursor: default !important;
         user-select: none;
-        max-width: 100% !important;
         overflow: hidden;
+        min-width: 0;
     }
     .playlist-ts-wrapper .ts-control .item:hover {
         background: #c7dcf7 !important;
@@ -104,7 +110,8 @@
 
     /* Remove button */
     .playlist-ts-wrapper .ts-control .item .remove {
-        float: right;
+        flex: 0 0 auto;
+        align-self: center;
         color: var(--tblr-primary, #206bc4);
         opacity: .5;
         font-size: 16px;
@@ -122,7 +129,7 @@
     }
 
     /* ======================================================
-       INNER FLEX ROW
+       INNER FLEX ROW - takes all space except .remove
     ====================================================== */
     .playlist-section-item-inner {
         display: flex;
@@ -131,6 +138,8 @@
         padding: 7px 10px;
         min-height: 34px;
         box-sizing: border-box;
+        flex: 1;
+        min-width: 0;
         overflow: hidden;
     }
 

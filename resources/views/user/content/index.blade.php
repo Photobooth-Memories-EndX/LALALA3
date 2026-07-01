@@ -19,6 +19,21 @@
             transform: translateY(-3px);
             transition: all .2s ease;
         }
+
+        /* ── Deadline row in content cards ────────────────────────── */
+        .content-card-deadline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 22px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .content-card-deadline i { flex: 0 0 auto; font-size: 14px; }
+
+        [data-bs-theme="dark"] .content-card-deadline,
+        body.dark-mode .content-card-deadline { color: #94a3b8; }
     </style>
 @endsection
 

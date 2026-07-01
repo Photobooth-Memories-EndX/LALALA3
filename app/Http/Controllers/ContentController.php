@@ -299,13 +299,20 @@ class ContentController extends Controller
             }
         } else {
             $ytid = null;
+            $arraythumbnail = [];
+            $targetDir = public_path('storage/files/content/' . $request->contentid);
+
             if ($request->has('documents')) {
-                if (!File::isDirectory($path)) {
-                    File::makeDirectory($path, 0777, true, true);
+                if (!File::isDirectory($targetDir)) {
+                    File::makeDirectory($targetDir, 0755, true);
                 }
                 foreach ($request->documents as $doc) {
-                    $arraydoc[] = $doc;
-                    File::move(public_path('storage/files/tmp') . '/' . $doc, public_path('storage/files/content/' . $request->contentid . '') . '/' . $doc);
+                    $tmpPath    = public_path('storage/files/tmp/' . $doc);
+                    $targetPath = $targetDir . '/' . $doc;
+                    if (File::exists($tmpPath)) {
+                        $arraydoc[] = $doc;
+                        File::move($tmpPath, $targetPath);
+                    }
                 }
                 // replacecontent
                 $src = 'storage/files/content/' . $request->contentid . '/' . $request->replacecontent;
@@ -315,10 +322,18 @@ class ContentController extends Controller
                 Content::where('id', $request->contentid)
                     ->update(['file' => json_encode($arraydoc)]);
             }
+
             if ($request->has('thumbnail')) {
+                if (!File::isDirectory($targetDir)) {
+                    File::makeDirectory($targetDir, 0755, true);
+                }
                 foreach ($request->thumbnail as $thumbnail) {
-                    $arraythumbnail[] = $thumbnail;
-                    File::move(public_path('storage/files/tmp/thumb') . '/' . $thumbnail, public_path('storage/files/content/' .  $request->contentid . '') . '/thumb.jpg');
+                    $thumbTmpPath    = public_path('storage/files/tmp/thumb/' . $thumbnail);
+                    $thumbTargetPath = $targetDir . '/thumb.jpg';
+                    if (File::exists($thumbTmpPath)) {
+                        $arraythumbnail[] = $thumbnail;
+                        File::move($thumbTmpPath, $thumbTargetPath);
+                    }
                 }
             }
         }
@@ -344,6 +359,11 @@ class ContentController extends Controller
         } else if ($request->action == "save") {
             $active = "Inactive";
             $message = "Content successfully saved ";
+            $redir = "-";
+            $redirmessage = "-";
+        } else if ($request->action == "update") {
+            $active = $getcontent->active;
+            $message = "Content successfully updated ";
             $redir = "-";
             $redirmessage = "-";
         } else if ($request->action == "unpublish") {

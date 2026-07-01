@@ -49,61 +49,99 @@
             {{-- DOCUMENT --}}
             @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
 
-                <div class="pdfviewer">
+                <div class="pdfviewer" id="pdfviewer-shell">
 
                     {{-- PDF TOOLBAR --}}
-                    <div class="pdf-toolbar">
+                    <div class="pdf-toolbar" id="pdf-toolbar-main" role="toolbar" aria-label="PDF Controls">
+                        <div class="pdf-tb-inner">
 
-                        <div class="d-flex flex-wrap gap-2 justify-content-center align-items-center">
+                            {{-- Group 1: Navigation --}}
+                            <div class="pdf-tb-group">
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    onclick="pdfViewer.first()"
+                                    title="First Page (Home)">
+                                    <i class="ti ti-player-skip-back"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    onclick="pdfViewer.prev(); return false;"
+                                    title="Previous Page (← / PageUp / Shift+Space)">
+                                    <i class="ti ti-chevron-left"></i>
+                                </button>
+                                <span class="pageno pdf-tb-pageno small fw-bold"></span>
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    onclick="pdfViewer.next(); return false;"
+                                    title="Next Page (→ / PageDown / Space)">
+                                    <i class="ti ti-chevron-right"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    onclick="pdfViewer.last()"
+                                    title="Last Page (End)">
+                                    <i class="ti ti-player-skip-forward"></i>
+                                </button>
+                            </div>
 
-                            <button class="btn btn-sm btn-secondary"
-                                onclick="pdfViewer.first()">
-                                <i class="ti ti-player-skip-back"></i>
-                            </button>
+                            <div class="pdf-tb-sep"></div>
 
-                            <button class="btn btn-sm btn-secondary"
-                                onclick="pdfViewer.prev(); return false;">
-                                <i class="ti ti-chevron-left"></i>
-                            </button>
+                            {{-- Group 2: Zoom --}}
+                            <div class="pdf-tb-group">
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    onclick="pdfViewer.setZoom('out')"
+                                    title="Zoom Out (Ctrl+-)">
+                                    <i class="ti ti-zoom-out"></i>
+                                </button>
+                                <span class="zoomval pdf-tb-zoomval small fw-bold">100%</span>
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    onclick="pdfViewer.setZoom('in')"
+                                    title="Zoom In (Ctrl++)">
+                                    <i class="ti ti-zoom-in"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    onclick="pdfViewer.setZoom('width')"
+                                    title="Fit Width (F)">
+                                    <i class="ti ti-arrows-horizontal"></i>
+                                    <span class="pdf-tb-label">W</span>
+                                </button>
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    onclick="pdfViewer.setZoom('fit')"
+                                    title="Fit Page (Ctrl+0)">
+                                    <i class="ti ti-arrows-maximize"></i>
+                                    <span class="pdf-tb-label">P</span>
+                                </button>
+                            </div>
 
-                            <span class="pageno small fw-bold"></span>
+                            <div class="pdf-tb-sep pdf-tb-sep-md"></div>
 
-                            <button class="btn btn-sm btn-secondary"
-                                onclick="pdfViewer.next(); return false;">
-                                <i class="ti ti-chevron-right"></i>
-                            </button>
-
-                            <button class="btn btn-sm btn-secondary"
-                                onclick="pdfViewer.last()">
-                                <i class="ti ti-player-skip-forward"></i>
-                            </button>
-
-                            <div class="vr mx-2"></div>
-
-                            <button class="btn btn-sm btn-secondary"
-                                onclick="pdfViewer.setZoom('out')">
-                                <i class="ti ti-zoom-out"></i>
-                            </button>
-
-                            <span class="zoomval small fw-bold">100%</span>
-
-                            <button class="btn btn-sm btn-secondary"
-                                onclick="pdfViewer.setZoom('in')">
-                                <i class="ti ti-zoom-in"></i>
-                            </button>
-
-                            <button class="btn btn-sm btn-secondary"
-                                onclick="pdfViewer.setZoom('width')">
-                                Fit Width
-                            </button>
-
-                            <button class="btn btn-sm btn-secondary"
-                                onclick="pdfViewer.setZoom('fit')">
-                                Fit Page
-                            </button>
+                            {{-- Group 3: Rotate + Download + Print + Fullscreen --}}
+                            <div class="pdf-tb-group">
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn pdf-tb-hide-xs"
+                                    onclick="pdfRotateLeft()"
+                                    title="Rotate Left">
+                                    <i class="ti ti-rotate-2"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn pdf-tb-hide-xs"
+                                    onclick="pdfRotateRight()"
+                                    title="Rotate Right">
+                                    <i class="ti ti-rotate-clockwise-2"></i>
+                                </button>
+                                <a id="pdf-download-btn" href="#" download
+                                    class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    title="Download PDF">
+                                    <i class="ti ti-download"></i>
+                                </a>
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn pdf-tb-hide-xs"
+                                    onclick="pdfDoPrint()"
+                                    title="Print PDF">
+                                    <i class="ti ti-printer"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary pdf-tb-btn"
+                                    onclick="pdfToggleFullscreen()"
+                                    id="pdf-fs-btn"
+                                    title="Fullscreen">
+                                    <i class="ti ti-maximize" id="pdf-fs-icon"></i>
+                                </button>
+                            </div>
 
                         </div>
-
                     </div>
 
                     {{-- PDF VIEWER --}}

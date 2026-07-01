@@ -84,7 +84,7 @@
             {{-- ============================================================
                  FORM 2: Edit Content
             ============================================================ --}}
-            <form action="{{ route('content.update', $content->slug) }}" method="post" autocomplete="off">
+            <form id="contentEditForm" action="{{ route('content.update', $content->slug) }}" method="post" autocomplete="off" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <input type="hidden" value="{{ $content->id }}" name="contentid">
@@ -344,10 +344,22 @@
                             </div>
                         </div>
 
+                        {{-- Live Preview --}}
+                        @include('main.content.components.upload-preview')
+
                         {{-- Action Buttons --}}
                         <div class="card owl-main-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Aksi</h3>
+                            </div>
                             <div class="card-body">
                                 <div class="d-grid gap-2">
+                                    {{-- Simpan Perubahan: selalu tampil, preserve status aktif --}}
+                                    <button type="submit" form="contentEditForm" class="btn btn-primary" name="action" value="update">
+                                        <i class="ti ti-device-floppy me-1"></i>
+                                        Simpan Perubahan Content
+                                    </button>
+
                                     @if ($content->active == 'Active')
                                         <button type="submit" class="btn btn-warning" name="action" value="unpublish">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -387,6 +399,17 @@
         </div>
     </div>
 
+    {{-- Sticky footer: tombol simpan selalu terlihat saat scroll --}}
+    <div class="content-sticky-actions">
+        <a href="{{ route('content.index') }}" class="btn btn-light btn-sm">
+            <i class="ti ti-arrow-left me-1"></i>Back to List
+        </a>
+        <button type="submit" form="contentEditForm" class="btn btn-primary btn-sm" name="action" value="update">
+            <i class="ti ti-device-floppy me-1"></i>
+            Simpan Perubahan
+        </button>
+    </div>
+
 @endsection
 
 @section('style')
@@ -403,6 +426,28 @@
             overflow: hidden;
             border-radius: 0.25rem;
             z-index: 1000;
+        }
+
+        .content-sticky-actions {
+            position: sticky;
+            bottom: 0;
+            z-index: 50;
+            background: rgba(255, 255, 255, .92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 0, 0, .08);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+        }
+
+        [data-bs-theme="dark"] .content-sticky-actions,
+        body.theme-dark .content-sticky-actions,
+        body.dark .content-sticky-actions {
+            background: rgba(17, 24, 39, .92);
+            border-top-color: rgba(255, 255, 255, .12);
         }
     </style>
 @endsection
@@ -468,7 +513,7 @@
             },
             successmultiple: function(data, response) {
                 $.each(response['name'], function(key, val) {
-                    $('form').append('<input type="hidden" name="documents[]" value="' + val + '">');
+                    $('#contentEditForm').append('<input type="hidden" name="documents[]" value="' + val + '">');
                     uploadedDocumentMap[data[key].name] = val;
                 });
                 console.log(response.name);
@@ -481,7 +526,7 @@
                     data: { name: name },
                     success: function(data) { console.log('sukses : ' + data); }
                 });
-                $('form').find('input[name="documents[]"][value="' + name + '"]').remove();
+                $('#contentEditForm').find('input[name="documents[]"][value="' + name + '"]').remove();
             }
         });
 
@@ -504,7 +549,7 @@
             },
             successmultiple: function(data, response) {
                 $.each(response['name'], function(key, val) {
-                    $('form').append('<input type="hidden" name="thumbnail[]" value="' + val + '" required>');
+                    $('#contentEditForm').append('<input type="hidden" name="thumbnail[]" value="' + val + '" required>');
                     uploadedThumbnailMap[data[key].name] = val;
                 });
                 console.log(response.name);
@@ -517,7 +562,7 @@
                     data: { name: name },
                     success: function(data) { console.log('sukses : ' + data); }
                 });
-                $('form').find('input[name="thumbnail[]"][value="' + name + '"]').remove();
+                $('#contentEditForm').find('input[name="thumbnail[]"][value="' + name + '"]').remove();
             }
         });
 
@@ -548,6 +593,33 @@
                 }
             });
         })();
+
+        // ── Live Preview ──────────────────────────────────────────────────
+        if (window.OwlPreview) {
+            OwlPreview.initThumb(myThumbnailDropzone);
+            OwlPreview.initFile(myDropzone);
+            @php
+                $_cf      = json_decode($content->file ?? '[]') ?: [];
+                $_fn      = $_cf[0] ?? null;
+                $_tpath   = public_path('storage/files/content/' . $content->id . '/thumb.jpg');
+                $_thumbUrl = file_exists($_tpath)
+                    ? asset('storage/files/content/' . $content->id . '/thumb.jpg')
+                    : ($content->type === 'YouTube' && $content->link
+                        ? 'https://img.youtube.com/vi/' . $content->link . '/mqdefault.jpg'
+                        : null);
+            @endphp
+            @if(!empty($_thumbUrl))
+            OwlPreview.setServerThumb(@json($_thumbUrl));
+            @endif
+            @if($_fn && $content->type === 'Video')
+            OwlPreview.setServerVideoFile(
+                @json(asset('storage/files/content/' . $content->id . '/' . $_fn)),
+                @json($_fn)
+            );
+            @elseif($_fn && in_array($content->type, ['Document', 'SOP/Regulation']))
+            OwlPreview.setServerPdfFile(@json($_fn));
+            @endif
+        }
 
         document.addEventListener("DOMContentLoaded", function() {
             var el;

@@ -9,6 +9,7 @@
     $fromDate         = $stats['from_date'] ?? null;
     $toDate           = $stats['to_date'] ?? null;
     $isExpired        = $hasDeadline && $toDate && now()->gt($toDate);
+    $isNotStarted     = $hasDeadline && $fromDate && now()->lt($fromDate);
     // thumbnail_url is null when missing, external URL, or file not on disk
     $thumbUrl         = $playlist->thumbnail_url;
 @endphp
@@ -68,6 +69,11 @@
                             <i class="ti ti-clock-x me-1"></i>
                             Expired: {{ $fromDate->format('d M Y') }} – {{ $toDate->format('d M Y') }}
                         </span>
+                    @elseif($isNotStarted)
+                        <span class="badge bg-secondary-lt text-secondary">
+                            <i class="ti ti-calendar-time me-1"></i>
+                            Belum Mulai: {{ $fromDate->format('d M Y') }} – {{ $toDate->format('d M Y') }}
+                        </span>
                     @else
                         <span class="badge bg-warning-lt text-warning">
                             <i class="ti ti-calendar-due me-1"></i>
@@ -117,7 +123,17 @@
 
         <div class="card-footer bg-transparent border-0">
 
-            @if($firstContent)
+            @if($isExpired)
+                <button class="btn btn-danger-lt w-100 rounded-pill" disabled>
+                    <i class="ti ti-lock me-1"></i>
+                    Akses Expired
+                </button>
+            @elseif($isNotStarted)
+                <button class="btn btn-secondary w-100 rounded-pill" disabled>
+                    <i class="ti ti-calendar-time me-1"></i>
+                    Belum Tersedia
+                </button>
+            @elseif($firstContent)
                 <a href="{{ route('playlist.user.view', [$playlist->slug, $firstContent->slug]) }}"
                    class="btn btn-primary w-100 rounded-pill">
                     Continue Learning

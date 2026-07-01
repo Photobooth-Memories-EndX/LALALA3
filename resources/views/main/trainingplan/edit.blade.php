@@ -74,11 +74,13 @@
                         {{-- Konten Playlist --}}
                         <div class="card owl-main-card">
                             <div class="card-header">
-                                <h3 class="card-title">Konten Playlist</h3>
-                                <div class="card-subtitle text-muted mt-1">
-                                    Pilih konten, lalu tarik item untuk mengatur urutan section.
-                                    <span class="badge bg-blue-lt ms-2" style="font-size:10px;">Drag &amp; Drop</span>
+                                <div>
+                                    <h3 class="card-title">Konten Playlist</h3>
+                                    <p class="text-muted mb-0" style="font-size:13px;">
+                                        Pilih konten, lalu tarik item untuk mengatur urutan section.
+                                    </p>
                                 </div>
+                                <span class="badge bg-blue-lt text-blue">Drag &amp; Drop</span>
                             </div>
                             <div class="card-body">
                                 <label class="form-label">Content</label>

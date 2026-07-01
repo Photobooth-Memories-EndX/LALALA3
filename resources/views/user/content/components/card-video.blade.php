@@ -2,11 +2,11 @@
     $thumbnailPath = public_path('storage/files/content/' . $item->id . '/thumb.jpg');
 
     if ($item->type == 'YouTube') {
-        $thumbnail = 'http://img.youtube.com/vi/' . $item->link . '/mqdefault.jpg';
+        $thumbnail = 'https://img.youtube.com/vi/' . $item->link . '/mqdefault.jpg';
     } elseif (file_exists($thumbnailPath)) {
-        $thumbnail = asset('storage/files/content/' . $item->id . '/thumb.jpg');
+        $thumbnail = '/storage/files/content/' . $item->id . '/thumb.jpg';
     } else {
-        $thumbnail = asset('default-video.jpg');
+        $thumbnail = '/default-video.jpg';
     }
 @endphp
 
@@ -38,7 +38,7 @@
             {{ $item->classification->classification_name ?? '-' }}
         </div>
 
-        <div class="d-flex align-items-center content-card-meta text-muted mb-3">
+        <div class="d-flex align-items-center content-card-meta text-muted mb-2">
             <span>
                 <i class="ti ti-user me-1"></i>
                 {{ $item->author ?? 'Training Team' }}
@@ -48,6 +48,18 @@
                 <i class="ti ti-eye me-1"></i>
                 {{ $item->views ?? 0 }}
             </span>
+        </div>
+
+        <div class="content-card-deadline mb-3">
+            @if (!empty($item->has_deadline) && $item->from_date && $item->to_date)
+                <i class="ti ti-calendar-due"></i>
+                <span>
+                    Deadline:
+                    {{ \Carbon\Carbon::parse($item->from_date)->format('d M Y') }}
+                    –
+                    {{ \Carbon\Carbon::parse($item->to_date)->format('d M Y') }}
+                </span>
+            @endif
         </div>
 
         <a href="{{ route('content.user.view', $item->slug) }}"

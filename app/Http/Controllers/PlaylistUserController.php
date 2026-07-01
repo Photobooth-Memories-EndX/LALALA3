@@ -139,6 +139,26 @@ class PlaylistUserController extends Controller
 
         abort_if(!$trainingplan || !$content, 404);
 
+        if (!$trainingplan->isAccessibleByDeadline()) {
+            return response()->view('user.learning.deadline-blocked', [
+                'title'    => $trainingplan->title,
+                'type'     => 'playlist',
+                'status'   => $trainingplan->isExpired() ? 'expired' : 'not_started',
+                'fromDate' => $trainingplan->from_date,
+                'toDate'   => $trainingplan->to_date,
+            ], 403);
+        }
+
+        if (!$content->isAccessibleByDeadline()) {
+            return response()->view('user.learning.deadline-blocked', [
+                'title'    => $content->title,
+                'type'     => 'content',
+                'status'   => $content->isExpired() ? 'expired' : 'not_started',
+                'fromDate' => $content->from_date,
+                'toDate'   => $content->to_date,
+            ], 403);
+        }
+
         $content->increment('views');
 
         $content_user = ContentUser::firstOrCreate([

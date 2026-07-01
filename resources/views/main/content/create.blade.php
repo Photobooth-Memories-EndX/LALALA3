@@ -211,6 +211,9 @@
                             </div>
                         </div>
 
+                        {{-- Live Preview --}}
+                        @include('main.content.components.upload-preview')
+
                         {{-- Action Buttons --}}
                         <div class="card owl-main-card">
                             <div class="card-body">
@@ -373,5 +376,11 @@
                 }
             });
         })();
+
+        // ── Live Preview ──────────────────────────────────────────────────
+        if (window.OwlPreview) {
+            OwlPreview.initThumb(myThumbnailDropzone);
+            OwlPreview.initFile(myDropzone);
+        }
     </script>
 @endsection

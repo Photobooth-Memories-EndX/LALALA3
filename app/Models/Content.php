@@ -45,6 +45,30 @@ class Content extends Model
         return $this->hasMany(BookmarkContent::class);
     }
 
+    public function isExpired(): bool
+    {
+        return (bool) $this->has_deadline && $this->to_date && now()->toDateString() > $this->to_date->format('Y-m-d');
+    }
+
+    public function isNotStarted(): bool
+    {
+        return (bool) $this->has_deadline && $this->from_date && now()->toDateString() < $this->from_date->format('Y-m-d');
+    }
+
+    public function isAccessibleByDeadline(): bool
+    {
+        if (!$this->has_deadline) {
+            return true;
+        }
+        $today = now()->toDateString();
+        if ($this->from_date && $today < $this->from_date->format('Y-m-d')) {
+            return false;
+        }
+        if ($this->to_date && $today > $this->to_date->format('Y-m-d')) {
+            return false;
+        }
+        return true;
+    }
 
     public function getSlugOptions(): SlugOptions
     {

@@ -95,6 +95,16 @@ class ContentUserController extends Controller
             abort(404);
         }
 
+        if (!$content->isAccessibleByDeadline()) {
+            return response()->view('user.learning.deadline-blocked', [
+                'title'    => $content->title,
+                'type'     => 'content',
+                'status'   => $content->isExpired() ? 'expired' : 'not_started',
+                'fromDate' => $content->from_date,
+                'toDate'   => $content->to_date,
+            ], 403);
+        }
+
         $content->views += 1;
         $content->save();
 
