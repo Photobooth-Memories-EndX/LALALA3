@@ -6,7 +6,7 @@
                 <div style="width: 100%;" class="ms-3">
                     <div class="d-flex justify-content-between">
                         <div class="text-truncate">
-                            <strong>{{ $list->user->name }}{{ $list->user->role == 2 ? '(Admin)' : ''}}</strong>
+                            <strong>{{ $list->user->name ?? '#N/A' }}{{ $list->user->role == 2 ? '(Admin)' : ''}}</strong>
                         </div>
                         <div class="text-muted">{{ \Carbon\Carbon::parse($list->created_at)->diffForHumans() }}</div>
                     </div>
