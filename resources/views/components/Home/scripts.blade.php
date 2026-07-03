@@ -61,6 +61,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 /* =====================================================
+   LATEST GALLERY — Auto-slide Carousel
+===================================================== */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    var galleryCarouselEl = document.getElementById('homeLatestGalleryCarousel');
+    if (!galleryCarouselEl || !window.bootstrap || !window.bootstrap.Carousel) return;
+
+    new bootstrap.Carousel(galleryCarouselEl, {
+        interval: 3500,
+        pause: 'hover',
+        wrap: true,
+        ride: 'carousel',
+    });
+
+});
+
+
+/* =====================================================
    ASSESSMENT ACCESS MODAL
 ===================================================== */
 

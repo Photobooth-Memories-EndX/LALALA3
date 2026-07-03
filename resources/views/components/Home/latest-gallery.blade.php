@@ -11,26 +11,41 @@
 
         @if($eventphoto && $eventphoto->count())
 
-            @foreach($eventphoto->take(5) as $gallery)
-            <a href="{{ route('gallery.user.view', $gallery->slug) }}"
-               class="home-modern-gallery-row">
+            <div id="homeLatestGalleryCarousel" class="carousel slide home-modern-gallery-carousel">
+                <div class="carousel-inner">
+                    @foreach($eventphoto->take(3) as $index => $gallery)
+                    <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                        <a href="{{ route('gallery.user.view', $gallery->slug) }}"
+                           class="home-modern-gallery-slide">
 
-                <div class="home-modern-gallery-row-thumb">
-                    <img src="{{ asset('storage/gallery/photo/' . $gallery->id . '/' . $gallery->thumbnail) }}"
-                         alt="{{ $gallery->title }}"
-                         onerror="this.src='{{ asset('default-video.jpg') }}'">
-                </div>
+                            <div class="home-modern-gallery-slide-thumb">
+                                @if(!empty($gallery->thumbnail))
+                                    <img src="{{ asset('storage/gallery/photo/' . $gallery->id . '/' . $gallery->thumbnail) }}"
+                                         alt="{{ $gallery->title }}"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="home-modern-gallery-placeholder" style="display:none">
+                                        <i class="ti ti-photo"></i>
+                                    </div>
+                                @else
+                                    <div class="home-modern-gallery-placeholder">
+                                        <i class="ti ti-photo"></i>
+                                    </div>
+                                @endif
+                            </div>
 
-                <div class="home-modern-gallery-row-body">
-                    <div class="home-modern-gallery-row-title">{{ Str::limit($gallery->title, 40) }}</div>
-                    <div class="home-modern-gallery-row-date">
-                        <i class="ti ti-calendar me-1"></i>
-                        {{ \Carbon\Carbon::parse($gallery->created_at)->format('d M Y') }}
+                            <div class="home-modern-gallery-slide-body">
+                                <div class="home-modern-gallery-slide-title">{{ Str::limit($gallery->title, 40) }}</div>
+                                <div class="home-modern-gallery-slide-date">
+                                    <i class="ti ti-calendar me-1"></i>
+                                    {{ \Carbon\Carbon::parse($gallery->created_at)->format('d M Y') }}
+                                </div>
+                            </div>
+
+                        </a>
                     </div>
+                    @endforeach
                 </div>
-
-            </a>
-            @endforeach
+            </div>
 
         @else
 

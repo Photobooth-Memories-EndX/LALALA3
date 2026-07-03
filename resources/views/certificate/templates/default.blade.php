@@ -248,6 +248,14 @@
     $setting = $certificate->certificateSetting;
     $verifyUrl = $certificate->credential_url ?: route('certificate.verify', $certificate->credential_id);
 
+    $periodTarget = $certificate->certificate_type === 'content'
+        ? $setting->content
+        : ($certificate->certificate_type === 'playlist' ? $setting->trainingPlan : null);
+
+    $periodDate = ($periodTarget && $periodTarget->has_deadline && $periodTarget->from_date && $periodTarget->to_date)
+        ? $periodTarget->from_date->format('d M Y') . ' - ' . $periodTarget->to_date->format('d M Y')
+        : null;
+
     $qrCode = base64_encode(
         QrCode::format('svg')
             ->size(180)
@@ -312,11 +320,11 @@
                     </div>
                 @endif
 
-                @if($certificate->certificate_type !== 'global')
+                @if($certificate->certificate_type !== 'global' && $periodDate)
                     <div class="details-row">
-                        <div class="details-label">Minimum Progress</div>
+                        <div class="details-label">Period Date</div>
                         <div class="details-separator">:</div>
-                        <div class="details-value">{{ $setting->minimum_progress }}%</div>
+                        <div class="details-value">{{ $periodDate }}</div>
                     </div>
                 @endif
 

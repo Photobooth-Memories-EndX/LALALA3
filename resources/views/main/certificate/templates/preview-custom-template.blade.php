@@ -246,6 +246,14 @@
         ? asset($setting->custom_background)
         : asset('uploads/template/Front.png');
 
+    $periodTarget = $setting->certificate_type === 'content'
+        ? $setting->content
+        : ($setting->certificate_type === 'playlist' ? $setting->trainingPlan : null);
+
+    $periodDate = ($periodTarget && $periodTarget->has_deadline && $periodTarget->from_date && $periodTarget->to_date)
+        ? $periodTarget->from_date->format('d M Y') . ' - ' . $periodTarget->to_date->format('d M Y')
+        : null;
+
     $playlistContents = $setting->certificate_type === 'playlist'
         ? $setting->playlistContents()->values()
         : collect();
@@ -310,11 +318,11 @@
                     </div>
                 @endif
 
-                @if($setting->certificate_type !== 'global')
+                @if($setting->certificate_type !== 'global' && $periodDate)
                     <div class="details-row">
-                        <div class="details-label">Minimum Progress</div>
+                        <div class="details-label">Period Date</div>
                         <div class="details-separator">:</div>
-                        <div class="details-value">{{ $setting->minimum_progress }}%</div>
+                        <div class="details-value">{{ $periodDate }}</div>
                     </div>
                 @endif
 

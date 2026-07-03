@@ -1135,6 +1135,82 @@ a { text-decoration: none; }
 [data-bs-theme="dark"] .home-modern-gallery-row-date { color: #4b6680; }
 
 /* =====================================================
+   GALLERY CAROUSEL — Sidebar auto-slide card
+===================================================== */
+
+.home-modern-gallery-carousel {
+    overflow: hidden;
+}
+
+.home-modern-gallery-slide {
+    display: block;
+    text-decoration: none;
+    color: #0f172a;
+}
+
+.home-modern-gallery-slide-thumb {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f3f6fb;
+}
+
+.home-modern-gallery-slide-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.home-modern-gallery-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.home-modern-gallery-placeholder i {
+    font-size: 42px;
+    color: #2563eb;
+}
+
+.home-modern-gallery-slide-body {
+    padding: 12px 2px 2px;
+}
+
+.home-modern-gallery-slide-title {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: inherit;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.home-modern-gallery-slide-date {
+    font-size: 12px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+}
+
+[data-bs-theme="dark"] .home-modern-gallery-slide {
+    color: #e2e8f0;
+}
+[data-bs-theme="dark"] .home-modern-gallery-placeholder {
+    background: #111827;
+}
+[data-bs-theme="dark"] .home-modern-gallery-slide-date {
+    color: #4b6680;
+}
+
+/* =====================================================
    NEWS ROW — Sidebar list style
 ===================================================== */
 

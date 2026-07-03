@@ -4,12 +4,12 @@
     $darkThemeUrl = request()->fullUrlWithQuery(['theme' => 'dark']);
     $lightThemeUrl = request()->fullUrlWithQuery(['theme' => 'light']);
 
-    // debug sementara
+
 
       $authUser = auth()->user();
 @endphp
 
-  // debug sementara
+
 {{-- <div style="color:red; font-size:12px;">
     email: {{ $authUser->email }} |
     role: {{ $authUser->role }} |
