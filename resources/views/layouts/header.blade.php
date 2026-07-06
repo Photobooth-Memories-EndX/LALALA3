@@ -98,17 +98,6 @@
 <header class="navbar navbar-expand-md d-print-none app-topbar">
     <div class="container-fluid">
 
-        {{-- MOBILE SIDEBAR TOGGLE --}}
-        <button class="navbar-toggler me-2"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#sidebar-menu"
-                aria-controls="sidebar-menu"
-                aria-expanded="false"
-                aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
         {{-- SEARCH DESKTOP ONLY --}}
         <div class="topbar-search d-none d-md-flex flex-grow-1">
             <form action="{{ route('search', ['searchtype' => 'all']) }}"
