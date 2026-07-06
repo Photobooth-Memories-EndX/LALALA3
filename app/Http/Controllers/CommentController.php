@@ -26,7 +26,7 @@ class CommentController extends Controller
         $comment->content_id  = $content->id;
         $comment->type        = 'content';
         $comment->user_id     = auth()->user()->id;
-        $comment->parent_id   = $request->parent_id;
+        $comment->parent_id   = $this->resolveRootParentId($request->parent_id);
         $comment->description = $request->input('description');
         $comment->save();
 
@@ -47,7 +47,7 @@ class CommentController extends Controller
         $comment->content_id  = $content->id;
         $comment->type        = 'content';
         $comment->user_id     = auth()->user()->id;
-        $comment->parent_id   = $request->parent_id;
+        $comment->parent_id   = $this->resolveRootParentId($request->parent_id);
         $comment->description = $request->input('description');
         $comment->save();
 
@@ -68,7 +68,7 @@ class CommentController extends Controller
         $comment->news_id     = $news->id;
         $comment->type        = 'news';
         $comment->user_id     = auth()->user()->id;
-        $comment->parent_id   = $request->parent_id;
+        $comment->parent_id   = $this->resolveRootParentId($request->parent_id);
         $comment->description = $request->input('description');
         $comment->save();
 
@@ -93,6 +93,26 @@ class CommentController extends Controller
         $comment->save();
 
         return to_route('gallery.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');
+    }
+
+    /**
+     * Instagram-style threading: replies never nest. If the given parent is
+     * itself a reply, walk up to the top-level (root) comment so the new reply
+     * is always attached to the main parent comment.
+     */
+    private function resolveRootParentId($parentId): ?int
+    {
+        if (empty($parentId)) {
+            return null;
+        }
+
+        $parent = Comment::find($parentId);
+
+        while ($parent && $parent->parent_id) {
+            $parent = Comment::find($parent->parent_id);
+        }
+
+        return $parent?->id;
     }
 
     private function referenceModels(): array

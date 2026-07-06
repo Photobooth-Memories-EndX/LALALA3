@@ -68,18 +68,22 @@ class NewsUserController extends Controller
         // Increment views (atomic-ish)
         $news->increment('views');
 
-        // Get comments with replies
-       $comments = Comment::with([
-    'user',
-    'replies.user',
-    'likes',
-    'likedByUser'
-])
-->whereNull('parent_id')
-->where('type', 'news')
-->where('news_id', $news->id)
-->latest()
-->get();
+        // Get comments with replies (paginated root comments + one reply level)
+        $comment = Comment::with([
+                'user',
+                'replies.user',
+                'replies.likes',
+                'replies.likedByUser',
+                'likes',
+                'likedByUser',
+            ])
+            ->withCount('replies')
+            ->whereNull('parent_id')
+            ->where('type', 'news')
+            ->where('news_id', $news->id)
+            ->latest()
+            ->paginate(5)
+            ->withQueryString();
         // Get related articles (continue exploring)
         $related = News::with('user')
             ->where('id', '!=', $news->id)
@@ -91,6 +95,6 @@ class NewsUserController extends Controller
         $wordCount = str_word_count(strip_tags($news->description));
         $readTime = ceil($wordCount / 200); // 200 words per minute
 
-        return view('user.news.view', compact('news', 'comments', 'related', 'readTime'));
+        return view('user.news.view', compact('news', 'comment', 'related', 'readTime'));
     }
 }

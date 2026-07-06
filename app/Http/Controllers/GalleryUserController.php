@@ -91,8 +91,16 @@ class GalleryUserController extends Controller
         $photosArr  = $eventphoto->photos ? (json_decode($eventphoto->photos, true) ?? []) : [];
         $photoCount = is_array($photosArr) ? count($photosArr) : 0;
 
-        $comment = Comment::with('user')
-            ->where('parent_id', null)
+        $comment = Comment::with([
+                'user',
+                'replies.user',
+                'replies.likes',
+                'replies.likedByUser',
+                'likes',
+                'likedByUser',
+            ])
+            ->withCount('replies')
+            ->whereNull('parent_id')
             ->where('type', 'eventphoto')
             ->where('eventphoto_id', $eventphoto->id)
             ->latest()

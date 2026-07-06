@@ -1,145 +1,90 @@
 @php
-    $replyCount = $comment->relationLoaded('replies')
-        ? $comment->replies->count()
-        : $comment->replies()->count();
+    /*
+    |--------------------------------------------------------------------------
+    | Comment thread (Instagram-style, single reply level)
+    |--------------------------------------------------------------------------
+    | Only ROOT comments are passed in here. All replies are flattened into a
+    | single level, sorted oldest-first, and hidden behind a show/hide toggle.
+    */
 
-    $depth = $depth ?? 0;
-    $levelClass = 'comment-level-' . min($depth, 3);
-    $isReply = $depth > 0;
+    // Collapse any (legacy) nested reply tree into one flat list.
+    $flattenReplies = function ($items) use (&$flattenReplies) {
+        $all = collect();
 
-    $likeButtonClass = $comment->is_liked
-        ? 'btn-primary'
-        : 'btn-light border text-secondary';
+        foreach ($items as $item) {
+            $all->push($item);
 
-    $likeIconClass = $comment->is_liked
-        ? 'ti-thumb-up-filled'
-        : 'ti-thumb-up';
+            if ($item->relationLoaded('replies') && $item->replies->isNotEmpty()) {
+                $all = $all->merge($flattenReplies($item->replies));
+            }
+        }
+
+        return $all;
+    };
+
+    $replies = ($comment->relationLoaded('replies')
+        ? $flattenReplies($comment->replies)
+        : collect())
+        ->sortBy('created_at')
+        ->values();
+
+    $replyCount = $replies->count();
 @endphp
 
-<div class="comment-thread {{ $depth === 0 ? 'comment-thread-root border-bottom' : 'comment-thread-reply mb-2' }} {{ $levelClass }}">
+<div class="comment-thread border-bottom" id="comment-{{ $comment->id }}">
 
-    <div class="d-flex gap-2 align-items-start">
+    {{-- Root comment --}}
+    @include('components.comment-item', [
+        'item'    => $comment,
+        'isReply' => false,
+        'rootId'  => $comment->id,
+    ])
 
-        <div class="flex-shrink-0">
-            @if(!empty($comment->user->avatar))
-                <span class="avatar avatar-sm rounded-circle"
-                    style="background-image:url('{{ asset('storage/profile/' . $comment->user->avatar) }}')">
-                </span>
-            @else
-                <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
-                    {{ strtoupper(substr($comment->user->name ?? 'U', 0, 1)) }}
-                </span>
-            @endif
-        </div>
+    {{-- Reply form (single, hidden by default, always attaches to this root comment) --}}
+    <div id="reply-form-{{ $comment->id }}" class="reply-form d-none mt-2">
+        <x-form action="{{ $url }}" method="post" class="comment-form w-100">
+            <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+            <input type="hidden" name="playlistslug" value="{{ $hiddenplaylistslug }}">
 
-        <div class="flex-fill min-w-0">
-
-            <div>
-
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-
-                    <div>
-                        <div class="fw-semibold small">
-                            {{ $comment->user->name ?? 'User' }}
-                        </div>
-
-                        <div class="text-muted" style="font-size:12px;">
-                            {{ $comment->created_at->diffForHumans() }}
-                        </div>
-                    </div>
-
-                    @if($isReply)
-                        <span class="badge bg-primary-lt text-primary rounded-pill small">
-                            Reply
-                        </span>
-                    @endif
-
+            <div class="d-flex gap-2 align-items-end w-100">
+                <div class="comment-input-wrapper flex-grow-1 w-100">
+                    <x-textarea
+                        class="comment-textarea comment-reply-textarea"
+                        id="reply-textarea-{{ $comment->id }}"
+                        name="description"
+                        placeholder="Tulis balasan..."
+                        maxlength="1000"
+                        rows="1"></x-textarea>
                 </div>
 
-                <div class="mt-2 text-secondary small lh-base">
-                    {!! nl2br(e($comment->description)) !!}
-                </div>
-
-                <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
-
-                    <form action="{{ route('comment.like', $comment->id) }}" method="POST" class="d-inline">
-                        @csrf
-
-                        <button type="submit"
-                            class="btn btn-sm py-1 px-2 rounded-pill {{ $likeButtonClass }}"
-                            style="font-size:12px;">
-
-                            <i class="ti {{ $likeIconClass }} me-1"></i>
-                            Like
-
-                            <span class="ms-1 badge rounded-pill {{ $comment->is_liked ? 'bg-white text-primary' : 'bg-secondary-lt text-secondary' }}"
-                                style="font-size:10px;">
-                                {{ $comment->likes_count }}
-                            </span>
-                        </button>
-                    </form>
-
-                    <button type="button"
-                        class="btn btn-sm py-1 px-2 rounded-pill btn-outline-secondary"
-                        style="font-size:12px;"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#reply-form-{{ $comment->id }}"
-                        aria-controls="reply-form-{{ $comment->id }}"
-                        aria-expanded="false">
-
-                        <i class="ti ti-message-circle-plus me-1"></i>
-                        Reply
-
-                        <span class="ms-1 badge rounded-pill bg-secondary-lt text-secondary"
-                            style="font-size:10px;">
-                            {{ $replyCount }}
-                        </span>
-                    </button>
-
-                </div>
-
-                <div class="collapse mt-2" id="reply-form-{{ $comment->id }}">
-                    <x-form action="{{ $url }}" method="post">
-
-                        <input type="hidden" name="parent_id" value="{{ $comment->id }}">
-                        <input type="hidden" value="{{ $hiddenplaylistslug }}" name="playlistslug">
-
-                        <x-textarea
-                            class="form-control comment-modern-textarea"
-                            name="description"
-                            placeholder="Tulis balasan..."
-                            maxlength="1000"
-                            rows="2">
-                        </x-textarea>
-
-                        <div class="d-flex justify-content-end mt-2">
-                            <button class="btn btn-primary btn-sm rounded-pill px-3">
-                                <i class="ti ti-send me-1"></i>
-                                Reply
-                            </button>
-                        </div>
-
-                    </x-form>
-                </div>
-
-                @if($replyCount > 0)
-                    <div class="mt-3">
-                        @foreach($comment->replies as $reply)
-                            @include('components.comment-thread', [
-                                'comment' => $reply,
-                                'content' => $content,
-                                'url' => $url,
-                                'hiddenplaylistslug' => $hiddenplaylistslug,
-                                'depth' => $depth + 1,
-                            ])
-                        @endforeach
-                    </div>
-                @endif
-
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 flex-shrink-0">
+                    <i class="ti ti-send"></i>
+                </button>
             </div>
-
-        </div>
-
+        </x-form>
     </div>
+
+    {{-- Replies: hidden by default, toggled with View/Hide replies --}}
+    @if($replyCount > 0)
+        <div class="replies-block">
+            <button type="button"
+                    class="btn btn-link btn-sm text-decoration-none comment-replies-toggle"
+                    data-target="replies-{{ $comment->id }}">
+                <i class="ti ti-chevron-down replies-chevron"></i>
+                <span class="replies-label-show">View {{ $replyCount }} {{ $replyCount === 1 ? 'Reply' : 'Replies' }}</span>
+                <span class="replies-label-hide">Hide Replies</span>
+            </button>
+
+            <div id="replies-{{ $comment->id }}" class="reply-list d-none">
+                @foreach($replies as $reply)
+                    @include('components.comment-item', [
+                        'item'    => $reply,
+                        'isReply' => true,
+                        'rootId'  => $comment->id,
+                    ])
+                @endforeach
+            </div>
+        </div>
+    @endif
 
 </div>
