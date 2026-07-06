@@ -12,13 +12,24 @@
 <div class="page-body content-detail-page">
     <div class="container-xl">
 
-        <a href="{{ url()->previous() }}" class="btn btn-outline-secondary mb-3 rounded-pill px-3 content-back-btn">
-            <i class="ti ti-arrow-left me-1"></i>
-            Back
-        </a>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary rounded-pill px-3 content-back-btn">
+                <i class="ti ti-arrow-left me-1"></i>
+                Back
+            </a>
 
-        <div class="row g-4">
-            <div class="col-lg-8 col-xl-9">
+            <button type="button"
+                id="contentSidebarToggle"
+                class="content-sidebar-toggle"
+                aria-controls="contentLearningSidebar"
+                aria-expanded="true">
+                <i class="ti ti-layout-sidebar-right-collapse me-1" id="contentSidebarToggleIcon"></i>
+                <span id="contentSidebarToggleLabel">Hide Sidebar</span>
+            </button>
+        </div>
+
+        <div class="row g-4 content-learning-layout" id="contentLearningLayout">
+            <div class="col-lg-8 col-xl-9 content-learning-main" id="contentLearningMain">
                 @include('user.content.components.content-player')
                 @include('user.content.components.content-detail-header', [
                     'discussionCount' => $discussionCount,
@@ -33,7 +44,7 @@
                 <x-comment :content="$content" :comment="$comment" :discussion-count="$discussionCount" type="content" />
             </div>
 
-            <div class="col-lg-4 col-xl-3">
+            <div class="col-lg-4 col-xl-3 content-learning-sidebar" id="contentLearningSidebar">
                 @include('user.content.components.content-learning-sidebar', [
                     'discussionCount' => $discussionCount,
                     'bookmarkCount' => $bookmarkCount,
@@ -44,6 +55,52 @@
 
     </div>
 </div>
+
+<script>
+    (function () {
+        var STORAGE_KEY = 'contentLearningSidebarCollapsed';
+
+        var layout = document.getElementById('contentLearningLayout');
+        var main = document.getElementById('contentLearningMain');
+        var sidebar = document.getElementById('contentLearningSidebar');
+        var toggleBtn = document.getElementById('contentSidebarToggle');
+        var toggleIcon = document.getElementById('contentSidebarToggleIcon');
+        var toggleLabel = document.getElementById('contentSidebarToggleLabel');
+
+        if (!layout || !main || !sidebar || !toggleBtn) return;
+
+        function applyState(collapsed) {
+            layout.classList.toggle('sidebar-collapsed', collapsed);
+            sidebar.classList.toggle('is-collapsed', collapsed);
+            sidebar.classList.toggle('d-none', collapsed);
+
+            main.classList.toggle('col-lg-8', !collapsed);
+            main.classList.toggle('col-xl-9', !collapsed);
+            main.classList.toggle('col-12', collapsed);
+
+            toggleIcon.className = collapsed
+                ? 'ti ti-layout-sidebar-right-expand me-1'
+                : 'ti ti-layout-sidebar-right-collapse me-1';
+            toggleLabel.textContent = collapsed ? 'Show Sidebar' : 'Hide Sidebar';
+            toggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        }
+
+        var collapsed = false;
+        try {
+            collapsed = localStorage.getItem(STORAGE_KEY) === '1';
+        } catch (e) {}
+
+        applyState(collapsed);
+
+        toggleBtn.addEventListener('click', function () {
+            var nowCollapsed = !layout.classList.contains('sidebar-collapsed');
+            applyState(nowCollapsed);
+            try {
+                localStorage.setItem(STORAGE_KEY, nowCollapsed ? '1' : '0');
+            } catch (e) {}
+        });
+    })();
+</script>
 @endsection
 
 @section('style')
@@ -232,6 +289,160 @@
 
         .tips-card {
             background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+        }
+
+        /* ── Sidebar toggle button ─────────────────────────────────── */
+        .content-sidebar-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .35rem;
+            min-height: 42px;
+            padding: .55rem 1.15rem;
+            border: 1px solid #e9edf5;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #475569;
+            font-size: .875rem;
+            font-weight: 600;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 .25rem .75rem rgba(15, 23, 42, .05);
+            transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease, border-color .18s ease;
+        }
+
+        .content-sidebar-toggle i {
+            font-size: 1.1rem;
+            color: inherit;
+            transition: color .18s ease;
+        }
+
+        .content-sidebar-toggle:hover {
+            background: #eff6ff;
+            border-color: #206bc4;
+            color: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 .75rem 1.5rem rgba(15, 23, 42, .1);
+        }
+
+        .content-sidebar-toggle:focus,
+        .content-sidebar-toggle:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 .25rem rgba(32, 107, 196, .18);
+        }
+
+        .content-sidebar-toggle:active {
+            transform: translateY(0);
+        }
+
+        body[data-bs-theme="dark"] .content-sidebar-toggle,
+        body.dark-mode .content-sidebar-toggle {
+            background: rgba(17, 24, 39, .82);
+            border-color: rgba(148, 163, 184, .18);
+            color: #e5e7eb;
+        }
+
+        body[data-bs-theme="dark"] .content-sidebar-toggle:hover,
+        body.dark-mode .content-sidebar-toggle:hover {
+            background: rgba(32, 107, 196, .18);
+            border-color: #206bc4;
+            color: #93c5fd;
+        }
+
+        /* ── Collapsible sidebar layout ────────────────────────────── */
+        .content-learning-main {
+            min-width: 0;
+        }
+
+        .content-learning-main .player-frame,
+        .content-learning-main video,
+        .content-learning-main iframe {
+            width: 100%;
+        }
+
+        /* ── AI Assistant card ─────────────────────────────────────── */
+        .ai-assistant-card .ai-online-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2fb344;
+            animation: ai-online-pulse 1.6s ease infinite;
+        }
+
+        @keyframes ai-online-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(47, 179, 68, .45); }
+            50% { box-shadow: 0 0 0 4px rgba(47, 179, 68, 0); }
+        }
+
+        .ai-chat-messages {
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .ai-chat-bubble {
+            max-width: 90%;
+            padding: .65rem .9rem;
+            border-radius: 1rem;
+            font-size: .875rem;
+            line-height: 1.55;
+            word-break: break-word;
+        }
+
+        .ai-chat-bubble-assistant {
+            align-self: flex-start;
+            background: rgba(32, 107, 196, .08);
+            color: #1e293b;
+            border-bottom-left-radius: .25rem;
+        }
+
+        .ai-chat-bubble-user {
+            align-self: flex-end;
+            background: #206bc4;
+            color: #fff;
+            border-bottom-right-radius: .25rem;
+        }
+
+        .ai-suggestion-btn {
+            font-size: .82rem;
+            font-weight: 500;
+            border-radius: .75rem;
+            border-color: rgba(32, 107, 196, .25);
+            color: #1d4ed8;
+            background: rgba(32, 107, 196, .04);
+            transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+        }
+
+        .ai-suggestion-btn:hover {
+            background: #206bc4;
+            border-color: #206bc4;
+            color: #fff;
+        }
+
+        .ai-chat-input {
+            border-radius: .75rem;
+        }
+
+        body[data-bs-theme="dark"] .ai-chat-bubble-assistant,
+        body.dark-mode .ai-chat-bubble-assistant {
+            background: rgba(255, 255, 255, .08);
+            color: #e5e7eb;
+        }
+
+        body[data-bs-theme="dark"] .ai-suggestion-btn,
+        body.dark-mode .ai-suggestion-btn {
+            background: rgba(255, 255, 255, .04);
+            border-color: rgba(148, 163, 184, .25);
+            color: #93c5fd;
+        }
+
+        body[data-bs-theme="dark"] .ai-suggestion-btn:hover,
+        body.dark-mode .ai-suggestion-btn:hover {
+            background: #206bc4;
+            border-color: #206bc4;
+            color: #fff;
         }
 
         .player-frame,
