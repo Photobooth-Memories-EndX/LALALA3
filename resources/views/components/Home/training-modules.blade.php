@@ -126,34 +126,58 @@
             {{-- ── PLAYLIST TAB ── --}}
             <div class="tab-pane fade" id="pane-playlist" role="tabpanel">
 
-                @forelse($playlist->take(8) as $item)
-                    @php $firstVideo = $item->trainingplandetail->first(); @endphp
-                    @if($firstVideo && $firstVideo->content)
-                    <a href="{{ route('playlist.user.view', ['slug' => $item->slug, 'vidslug' => $firstVideo->content->slug]) }}"
-                       class="home-modern-module-row">
+                @php
+                    $playlistCards = $playlist
+                        ->filter(fn ($p) => optional($p->trainingplandetail->first())->content)
+                        ->take(8);
+                @endphp
 
-                        <div class="home-modern-module-left">
-                            <div class="home-modern-module-icon">
-                                <i class="ti ti-playlist"></i>
-                            </div>
-                            <div class="home-modern-module-text">
-                                <div class="home-modern-module-title">{{ Str::limit($item->title, 55) }}</div>
-                                <div class="home-modern-module-sub">
-                                    {{ $item->trainingplandetail->count() }} modules
+                @if($playlistCards->count())
+                <div class="home-modern-hscroll py-2">
+                    @foreach($playlistCards as $item)
+                        @php
+                            $firstVideo = $item->trainingplandetail->first();
+                            // null when thumbnail is missing, external, or not on disk
+                            $plThumb = $item->thumbnail_url;
+                        @endphp
+                        <div class="home-modern-hscroll-item home-modern-playlist-hitem">
+                            <a href="{{ route('playlist.user.view', ['slug' => $item->slug, 'vidslug' => $firstVideo->content->slug]) }}"
+                               class="home-modern-video-card home-modern-playlist-hcard">
+
+                                <div class="home-modern-video-thumb">
+                                    @if($plThumb)
+                                        <img src="{{ $plThumb }}"
+                                             alt="{{ $item->title }}"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div class="home-modern-playlist-hthumb-fallback" style="display:none">
+                                            <i class="ti ti-playlist"></i>
+                                        </div>
+                                    @else
+                                        <div class="home-modern-playlist-hthumb-fallback">
+                                            <i class="ti ti-playlist"></i>
+                                        </div>
+                                    @endif
                                 </div>
-                            </div>
+
+                                <div class="home-modern-video-body">
+                                    <span class="home-modern-category-badge home-modern-category-purple">Playlist</span>
+                                    <h4 class="home-modern-video-title home-modern-playlist-htitle">{{ Str::limit($item->title, 55) }}</h4>
+                                    <div class="home-modern-video-meta">
+                                        <i class="ti ti-playlist me-1"></i>
+                                        {{ $item->trainingplandetail->count() }} modules
+                                    </div>
+                                </div>
+
+                            </a>
                         </div>
-
-                        <i class="ti ti-chevron-right home-modern-module-arrow"></i>
-
-                    </a>
-                    @endif
-                @empty
+                    @endforeach
+                </div>
+                @else
                 <div class="home-modern-empty">
                     <i class="ti ti-playlist-x"></i>
                     <p>No playlists available</p>
                 </div>
-                @endforelse
+                @endif
 
             </div>
 

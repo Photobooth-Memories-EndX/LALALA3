@@ -80,6 +80,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 /* =====================================================
+   LATEST NEWS — Auto-slide Carousel
+===================================================== */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    var newsCarouselEl = document.getElementById('homeLatestNewsCarousel');
+    if (!newsCarouselEl || !window.bootstrap || !window.bootstrap.Carousel) return;
+
+    new bootstrap.Carousel(newsCarouselEl, {
+        interval: 4500,
+        pause: 'hover',
+        wrap: true,
+        ride: 'carousel',
+    });
+
+});
+
+
+/* =====================================================
    ASSESSMENT ACCESS MODAL
 ===================================================== */
 

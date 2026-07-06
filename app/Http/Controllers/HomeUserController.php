@@ -9,12 +9,28 @@ use App\Models\ContentUser;
 use App\Models\EventPhoto;
 use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 
 class HomeUserController extends Controller
 {
     public function index()
     {
+        // Content has no image column: the thumbnail comes from YouTube
+        // (via `link`) or from storage/files/content/{id}/thumb.jpg on disk,
+        // so "has thumbnail" must be checked per item, not in the query.
+        $contentHasThumbnail = function ($item) {
+            if ($item->type === 'YouTube') {
+                return !empty($item->link);
+            }
+
+            $thumb = public_path(
+                'storage/files/content/' . $item->id . '/thumb.jpg'
+            );
+
+            return File::exists($thumb) && !is_dir($thumb);
+        };
+
         // Top Video
         $top_video = Content::select(
                 'id',
@@ -29,7 +45,9 @@ class HomeUserController extends Controller
             ->where('active', 'Active')
             ->orderBy('views', 'desc')
             ->limit(8)
-            ->get();
+            ->get()
+            ->sortBy(fn ($item) => $contentHasThumbnail($item) ? 0 : 1)
+            ->values();
 
         // All Content
         $content = Content::select(
@@ -42,23 +60,28 @@ class HomeUserController extends Controller
             )
             ->where('playlistonly', 'N')
             ->where('active', 'Active')
-            ->get();
+            ->get()
+            ->sortBy(fn ($item) => $contentHasThumbnail($item) ? 0 : 1)
+            ->values();
 
         // Playlist
         $playlist = TrainingPlan::with([
                 'trainingplandetail.content'
             ])
             ->where('active', 'Active')
+            ->orderByRaw("CASE WHEN thumbnail IS NOT NULL AND thumbnail != '' THEN 0 ELSE 1 END")
             ->latest()
             ->get();
 
         // News
-        $news = News::latest()
+        $news = News::orderByRaw("CASE WHEN image IS NOT NULL AND image != '' THEN 0 ELSE 1 END")
+            ->latest()
             ->limit(2)
             ->get();
 
         // Gallery
         $eventphoto = EventPhoto::where('active', 'Active')
+            ->orderByRaw("CASE WHEN thumbnail IS NOT NULL AND thumbnail != '' THEN 0 ELSE 1 END")
             ->latest()
             ->limit(10)
             ->get();
@@ -103,8 +126,8 @@ class HomeUserController extends Controller
 
         $continueCourse = ContentUser::with('content')
             ->where('user_id', auth()->id())
-            ->where('finish', 0)
-            ->orderByDesc('progress')
+            ->where('progress', '>', 0)
+            ->orderByDesc('updated_at')
             ->first();
 
         /*
@@ -118,12 +141,6 @@ class HomeUserController extends Controller
         $totalNews = $news->count();
 
         $totalPlaylist = $playlist->count();
-
-$continueCourse = ContentUser::with('content')
-    ->where('user_id', auth()->id())
-    ->where('progress', '>', 0)
-    ->orderByDesc('updated_at')
-    ->first();
 
         return view(
             'homepage',

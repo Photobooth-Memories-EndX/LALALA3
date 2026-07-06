@@ -623,6 +623,74 @@ a { text-decoration: none; }
     transition: transform .15s;
 }
 
+/* Playlist tab — horizontal thumbnail cards (mirrors the Document tab) */
+.home-modern-playlist-hitem {
+    flex: 0 0 200px;
+}
+
+.home-modern-playlist-hcard {
+    border: 1px solid #eef2f7;
+    box-shadow: 0 2px 10px rgba(0,0,0,.04);
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+
+.home-modern-playlist-hcard:hover {
+    border-color: #c7d2fe;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(15,23,42,.12);
+}
+
+.home-modern-playlist-hcard .home-modern-video-thumb img {
+    height: 120px;
+}
+
+.home-modern-playlist-hthumb-fallback {
+    width: 100%;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #fff;
+    font-size: 38px;
+}
+
+.home-modern-playlist-htitle {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.9em; /* reserve 2 lines so card heights stay even */
+}
+
+.home-modern-category-purple {
+    background: #f5f3ff;
+    color: #7c3aed;
+}
+
+@media (max-width: 991.98px) {
+    .home-modern-playlist-hitem { flex-basis: 180px; }
+    .home-modern-playlist-hcard .home-modern-video-thumb img,
+    .home-modern-playlist-hthumb-fallback { height: 110px; }
+}
+
+@media (max-width: 767.98px) {
+    .home-modern-playlist-hitem { flex-basis: 160px; }
+    .home-modern-playlist-hcard .home-modern-video-thumb img,
+    .home-modern-playlist-hthumb-fallback { height: 100px; }
+}
+
+[data-bs-theme="dark"] .home-modern-playlist-hcard {
+    border-color: rgba(255,255,255,.07);
+}
+[data-bs-theme="dark"] .home-modern-playlist-hcard:hover {
+    border-color: rgba(96,165,250,.4);
+}
+[data-bs-theme="dark"] .home-modern-category-purple {
+    background: rgba(124,58,237,.2);
+    color: #a78bfa;
+}
+
 /* =====================================================
    UPCOMING DEADLINES
 ===================================================== */
@@ -1211,66 +1279,135 @@ a { text-decoration: none; }
 }
 
 /* =====================================================
-   NEWS ROW — Sidebar list style
+   NEWS CAROUSEL — Sidebar auto-slide card
 ===================================================== */
 
-.home-modern-news-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid #f1f5f9;
+.home-modern-news-carousel {
+    position: relative;
+    overflow: hidden;
+}
+
+.home-modern-news-slide {
+    display: block;
     text-decoration: none;
     color: #0f172a;
-    transition: color .15s;
 }
 
-.home-modern-news-row:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+.home-modern-news-slide-thumb {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f3f6fb;
 }
 
-.home-modern-news-row:hover { color: #2563eb; }
+.home-modern-news-slide-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
 
-.home-modern-news-row-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: #eff6ff;
-    color: #2563eb;
+.home-modern-news-placeholder {
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    flex-shrink: 0;
-    margin-top: 1px;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
 }
 
-.home-modern-news-row-title {
-    font-size: 13px;
-    font-weight: 600;
+.home-modern-news-placeholder i {
+    font-size: 42px;
+    color: #2563eb;
+}
+
+.home-modern-news-slide-body {
+    padding: 12px 2px 2px;
+}
+
+.home-modern-news-slide-title {
+    font-size: 14px;
+    font-weight: 700;
     line-height: 1.35;
     color: inherit;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.home-modern-news-row-date {
-    font-size: 11px;
+.home-modern-news-slide-date {
+    font-size: 12px;
     color: #94a3b8;
-    margin-top: 3px;
     display: flex;
     align-items: center;
 }
 
-[data-bs-theme="dark"] .home-modern-news-row {
-    color: #e2e8f0;
-    border-bottom-color: rgba(255,255,255,.06);
+/* Prev / next arrows over the thumbnail */
+.home-modern-news-nav {
+    position: absolute;
+    top: 75px; /* vertical center of the 150px thumbnail */
+    transform: translateY(-50%);
+    z-index: 3;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(15,23,42,.45);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    cursor: pointer;
+    opacity: .65;
+    transition: opacity .2s, background .2s;
 }
-[data-bs-theme="dark"] .home-modern-news-row:hover { color: #60a5fa; }
-[data-bs-theme="dark"] .home-modern-news-row-icon {
-    background: rgba(37,99,235,.2);
-    color: #60a5fa;
+
+.home-modern-news-carousel:hover .home-modern-news-nav { opacity: 1; }
+.home-modern-news-nav:hover { background: rgba(15,23,42,.75); color: #fff; }
+.home-modern-news-nav-prev { left: 10px; }
+.home-modern-news-nav-next { right: 10px; }
+
+/* Dots — keep .carousel-indicators (Bootstrap syncs .active on it)
+   but pull them out of the overlay into normal flow below the text */
+.home-modern-news-dots {
+    position: static;
+    margin: 10px 0 0;
+    justify-content: center;
+    gap: 5px;
 }
-[data-bs-theme="dark"] .home-modern-news-row-date { color: #4b6680; }
+
+.home-modern-news-dots [data-bs-target] {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    background: #cbd5e1;
+    opacity: 1;
+    margin: 0;
+    padding: 0;
+    transition: background .2s, width .2s;
+}
+
+.home-modern-news-dots .active {
+    width: 20px;
+    border-radius: 99px;
+    background: #2563eb;
+}
+
+[data-bs-theme="dark"] .home-modern-news-slide { color: #e2e8f0; }
+[data-bs-theme="dark"] .home-modern-news-slide-thumb { background: #111827; }
+[data-bs-theme="dark"] .home-modern-news-placeholder {
+    background: linear-gradient(135deg, #10233d, #132e5a);
+}
+[data-bs-theme="dark"] .home-modern-news-placeholder i { color: #60a5fa; }
+[data-bs-theme="dark"] .home-modern-news-slide-date { color: #4b6680; }
+[data-bs-theme="dark"] .home-modern-news-dots [data-bs-target] { background: #2a4a6a; }
+[data-bs-theme="dark"] .home-modern-news-dots .active { background: #60a5fa; }
 
 /* =====================================================
    DASHBOARD HEADER
