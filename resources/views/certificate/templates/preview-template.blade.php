@@ -338,10 +338,10 @@
 
             </div>
 
-            <div class="meta-info">
+            {{-- <div class="meta-info">
                 <div>Issued Date : {{ now()->format('F d, Y') }}</div>
                 <div>Issuer : {{ $setting->issuer_name ?? 'OWL Training Management' }}</div>
-            </div>
+            </div> --}}
 
         </div>
 
@@ -354,6 +354,8 @@
             <div class="credential-label">
                 Credential ID:
             </div>
+            <div>Issued Date : {{ now()->format('F d, Y') }}</div>
+            <div>Issuer : {{ $setting->issuer_name ?? 'OWL Training Management' }}</div>
 
             <div class="credential-id">
                 {{ $previewCredentialId }}

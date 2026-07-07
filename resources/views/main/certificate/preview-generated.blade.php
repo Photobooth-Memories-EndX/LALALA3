@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Preview Certificate</title>
+    <title>Preview Custom Certificate Template</title>
 
     <style>
         * {
@@ -39,10 +39,6 @@
             background-size: 100% 100%;
             background-position: center;
             background-repeat: no-repeat;
-        }
-
-        .front-page {
-            background-image: url('{{ asset("uploads/template/Front.png") }}');
         }
 
         .back-page {
@@ -238,14 +234,6 @@
     $certificateNumber = 'OWL-CERT-' . now()->format('Y') . '-000001';
     $verifyUrl = route('certificate.verify', $previewCredentialId);
 
-    $periodTarget = $setting->certificate_type === 'content'
-        ? $setting->content
-        : ($setting->certificate_type === 'playlist' ? $setting->trainingPlan : null);
-
-    $periodDate = ($periodTarget && $periodTarget->has_deadline && $periodTarget->from_date && $periodTarget->to_date)
-        ? $periodTarget->from_date->format('d M Y') . ' - ' . $periodTarget->to_date->format('d M Y')
-        : null;
-
     $qrCode = base64_encode(
         QrCode::format('svg')
             ->size(180)
@@ -253,6 +241,18 @@
             ->color(105, 100, 65)
             ->generate($verifyUrl)
     );
+
+    $customBgUrl = $setting->custom_background
+        ? asset($setting->custom_background)
+        : asset('uploads/template/Front.png');
+
+    $periodTarget = $setting->certificate_type === 'content'
+        ? $setting->content
+        : ($setting->certificate_type === 'playlist' ? $setting->trainingPlan : null);
+
+    $periodDate = ($periodTarget && $periodTarget->has_deadline && $periodTarget->from_date && $periodTarget->to_date)
+        ? $periodTarget->from_date->format('d M Y') . ' - ' . $periodTarget->to_date->format('d M Y')
+        : null;
 
     $playlistContents = $setting->certificate_type === 'playlist'
         ? $setting->playlistContents()->values()
@@ -264,17 +264,21 @@
 @endphp
 
 <div class="preview-label">
-    Preview Certificate - Front Page
+    Preview Custom Template - Front Page
 </div>
 
 <div class="preview-wrapper">
-    <div class="certificate-page front-page">
+    <div class="certificate-page" style="background-image: url('{{ $customBgUrl }}'); background-size: 100% 100%; background-position: center; background-repeat: no-repeat;">
 
         <div class="certificate-number">
             No. : {{ $certificateNumber }}
         </div>
 
         <div class="main-content">
+
+            <div class="participant-name">
+            CERTIFICATE
+             </div>
 
             <div class="presented-text">
                 This certificate is proudly presented to
@@ -338,9 +342,9 @@
 
             </div>
 
-            <div class="meta-info">
+            {{-- <div class="meta-info">
                 <div>Issued Date : {{ now()->format('F d, Y') }}</div>
-            </div>
+            </div> --}}
 
         </div>
 
@@ -357,6 +361,7 @@
             <div class="credential-id">
                 {{ $previewCredentialId }}
             </div>
+            <div>Issued Date : {{ now()->format('F d, Y') }}</div>
 
             <div class="credential-url">
                 {{ $verifyUrl }}
@@ -369,7 +374,7 @@
 @if($setting->certificate_type === 'playlist')
     @foreach($contentChunks as $chunkIndex => $contents)
         <div class="preview-label">
-            Preview Certificate - Attachment Page {{ $loop->iteration }}
+            Preview Custom Template - Attachment Page {{ $loop->iteration }}
         </div>
 
         <div class="preview-wrapper">
@@ -386,7 +391,6 @@
                         <br>
                         <strong>{{ $setting->sourceTitle() }}</strong>
                     </div>
-
 
                     <table class="content-list">
                         <thead>

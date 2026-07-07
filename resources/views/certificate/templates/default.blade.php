@@ -346,9 +346,9 @@
 
             </div>
 
-            <div class="meta-info">
+            {{-- <div class="meta-info">
                 <div>Issued Date : {{ optional($certificate->issued_at)->format('F d, Y') }}</div>
-            </div>
+            </div> --}}
 
         </div>
 
@@ -365,6 +365,7 @@
             <div class="credential-id">
                 {{ $certificate->credential_id }}
             </div>
+            <div>Issued Date : {{ now()->format('F d, Y') }}</div>
 
             <div class="credential-url">
                 {{ $verifyUrl }}
