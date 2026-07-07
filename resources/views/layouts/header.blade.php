@@ -80,6 +80,13 @@
                         <span class="nav-link-title">Gallery</span>
                     </a>
                 </li>
+
+                <li class="nav-item {{ request()->is('trainingplan*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('trainingplan.user.index') }}">
+                        <span class="nav-link-icon"><i class="ti ti-clipboard-list"></i></span>
+                        <span class="nav-link-title">Training Plan</span>
+                    </a>
+                </li>
                 {{-- Manage LMS: Admin Training (2) & Super Admin (3) --}}
                 @if (auth()->user()->canManageLms())
                     <li class="nav-item {{ request()->is('manage') || (request()->is('manage/*') && !request()->routeIs('manage.role.*')) ? 'active' : '' }}">

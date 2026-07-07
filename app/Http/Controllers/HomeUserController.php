@@ -44,7 +44,7 @@ class HomeUserController extends Controller
             ->whereIn('type', ['YouTube', 'Video'])
             ->where('active', 'Active')
             ->orderBy('views', 'desc')
-            ->limit(8)
+            ->limit(6)
             ->get()
             ->sortBy(fn ($item) => $contentHasThumbnail($item) ? 0 : 1)
             ->values();
@@ -76,14 +76,14 @@ class HomeUserController extends Controller
         // News
         $news = News::orderByRaw("CASE WHEN image IS NOT NULL AND image != '' THEN 0 ELSE 1 END")
             ->latest()
-            ->limit(2)
+            ->limit(3)
             ->get();
 
         // Gallery
         $eventphoto = EventPhoto::where('active', 'Active')
             ->orderByRaw("CASE WHEN thumbnail IS NOT NULL AND thumbnail != '' THEN 0 ELSE 1 END")
             ->latest()
-            ->limit(10)
+            ->limit(3)
             ->get();
 
         // User Learning Data
@@ -130,6 +130,21 @@ class HomeUserController extends Controller
             ->orderByDesc('updated_at')
             ->first();
 
+        $continuePeriod = null;
+
+        if ($continueCourse && $continueCourse->content) {
+            $periodAssessment = Assesment::where('content_id', $continueCourse->content->id)
+                ->whereNotNull('fromdate')
+                ->whereNotNull('todate')
+                ->first();
+
+            if ($periodAssessment) {
+                $continuePeriod = \Carbon\Carbon::parse($periodAssessment->fromdate)->format('d M Y')
+                    . ' - '
+                    . \Carbon\Carbon::parse($periodAssessment->todate)->format('d M Y');
+            }
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Additional Dashboard Cards
@@ -161,6 +176,7 @@ class HomeUserController extends Controller
                 'totalPlaylist',
                 'upcomingDeadlines',
                 'continueCourse',
+                'continuePeriod',
             )
         );
     }

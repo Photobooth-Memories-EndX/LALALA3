@@ -1,61 +1,17 @@
 @section('script')
 
-<script src="{{ asset('Tabler/dist/libs/apexcharts/dist/apexcharts.min.js?1684106062') }}" defer></script>
-
 <script>
 
 /* =====================================================
-   APEXCHARTS — Profile Sidebar Donut
+   HERO DONUT — Bootstrap tooltips on hover
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    var chartEl = document.getElementById('chart-demo-pie');
-    if (!window.ApexCharts || !chartEl) return;
+    if (!window.bootstrap || !window.bootstrap.Tooltip) return;
 
-    new ApexCharts(chartEl, {
-        chart: {
-            type: "donut",
-            fontFamily: 'inherit',
-            height: 200,
-            sparkline: { enabled: true },
-            animations: { enabled: false },
-        },
-        fill: { opacity: 1 },
-        series: [{{ $ongoingCourse }}, {{ $completedCourse }}],
-        labels: ["On Going", "Completed"],
-        colors: [
-            tabler.getColor("primary"),
-            tabler.getColor("success")
-        ],
-        legend: {
-            show: true,
-            position: 'bottom',
-            markers: { width: 8, height: 8, radius: 100 },
-            itemMargin: { horizontal: 8, vertical: 4 },
-        },
-        tooltip: { theme: 'dark', fillSeriesColor: false },
-        dataLabels: { enabled: false },
-        plotOptions: {
-            pie: {
-                donut: {
-                    size: '72%',
-                    labels: {
-                        show: true,
-                        total: {
-                            show: true,
-                            label: 'Total',
-                            color: '#64748b',
-                            fontSize: '12px',
-                            formatter: function (w) {
-                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }).render();
+    document.querySelectorAll('.home-modern-donut-hit[data-bs-toggle="tooltip"]')
+        .forEach(function (el) { new bootstrap.Tooltip(el); });
 
 });
 
@@ -93,6 +49,82 @@ document.addEventListener("DOMContentLoaded", function () {
         pause: 'hover',
         wrap: true,
         ride: 'carousel',
+    });
+
+});
+
+
+/* =====================================================
+   SLIDE CAROUSEL — Top Video + Training Modules tabs
+   Responsive sliding window (4 desktop / 2 tablet / 1 mobile)
+===================================================== */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll('.home-modern-slide-carousel').forEach(function (carousel) {
+
+        var track = carousel.querySelector('.home-modern-slide-track');
+        var prevBtn = carousel.querySelector('.home-modern-slide-nav-prev');
+        var nextBtn = carousel.querySelector('.home-modern-slide-nav-next');
+        if (!track || !prevBtn || !nextBtn) return;
+
+        var items = track.children.length;
+        var index = 0;
+        var autoplayMs = parseInt(carousel.dataset.autoplay, 10) || 4000;
+        var timer = null;
+
+        function getVisibleCount() {
+            var w = window.innerWidth;
+            if (w <= 767.98) return 1;
+            if (w <= 991.98) return 2;
+            return 4;
+        }
+
+        function getMaxIndex(visible) {
+            return Math.max(0, items - visible);
+        }
+
+        function update() {
+            var visible = getVisibleCount();
+            var maxIndex = getMaxIndex(visible);
+
+            if (index > maxIndex) index = maxIndex;
+
+            track.style.transform = 'translateX(-' + (index * (100 / visible)) + '%)';
+
+            var hideNav = items <= visible;
+            prevBtn.classList.toggle('d-none', hideNav);
+            nextBtn.classList.toggle('d-none', hideNav);
+        }
+
+        function step(dir) {
+            var visible = getVisibleCount();
+            var maxIndex = getMaxIndex(visible);
+            if (maxIndex <= 0) return;
+            index = (index + dir + maxIndex + 1) % (maxIndex + 1);
+            update();
+        }
+
+        function startAutoplay() {
+            stopAutoplay();
+            timer = setInterval(function () { step(1); }, autoplayMs);
+        }
+
+        function stopAutoplay() {
+            if (timer) clearInterval(timer);
+            timer = null;
+        }
+
+        prevBtn.addEventListener('click', function () { step(-1); startAutoplay(); });
+        nextBtn.addEventListener('click', function () { step(1); startAutoplay(); });
+        carousel.addEventListener('mouseenter', stopAutoplay);
+        carousel.addEventListener('mouseleave', startAutoplay);
+
+        window.addEventListener('resize', update);
+
+        update();
+        startAutoplay();
+
     });
 
 });

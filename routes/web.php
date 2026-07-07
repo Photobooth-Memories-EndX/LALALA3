@@ -62,6 +62,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/', [HomeUserController::class, 'index'])->name('home.user.index');
     Route::get('/upcoming-deadline',[HomeUserController::class, 'upcomingDeadline'])->name('home.upcoming.deadline');
 
+    Route::view('/trainingplan', 'user.trainingplan-user.index')->name('trainingplan.user.index');
+
     Route::post('/assessment-access-by-unique-code', [HomeUserController::class, 'accessAssessmentByUniqueCode'])
         ->name('home.user.access.assessment.by.unique.code');
 

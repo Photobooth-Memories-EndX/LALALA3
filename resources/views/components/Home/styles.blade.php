@@ -91,6 +91,33 @@ a { text-decoration: none; }
     margin-bottom: 0;
 }
 
+.home-modern-hero-stats {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.home-modern-hero-stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,.85);
+}
+
+.home-modern-hero-stat-pill strong {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.home-modern-hero-stat-blue { background: rgba(56,189,248,.15); }
+.home-modern-hero-stat-green { background: rgba(34,197,94,.15); }
+
 .home-modern-hero-badges {
     display: flex;
     gap: 10px;
@@ -130,27 +157,48 @@ a { text-decoration: none; }
 }
 
 .home-modern-donut-outer {
-    width: 150px;
-    height: 150px;
+    width: 184px;
+    height: 184px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    box-shadow: 0 10px 28px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.06);
+    transition: transform .25s ease, box-shadow .25s ease;
 }
 
+.home-modern-donut-outer:hover {
+    transform: scale(1.03);
+    box-shadow: 0 16px 40px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+.home-modern-donut-hit {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    transition: background .2s ease;
+}
+
+.home-modern-donut-hit-completed:hover { background: rgba(34,197,94,.28); }
+.home-modern-donut-hit-ongoing:hover { background: rgba(56,189,248,.28); }
+
 .home-modern-donut-inner {
-    width: 110px;
-    height: 110px;
+    width: 132px;
+    height: 132px;
     border-radius: 50%;
     background: #0f2247;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 .home-modern-donut-inner strong {
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 700;
     line-height: 1;
     color: #fff;
@@ -159,16 +207,119 @@ a { text-decoration: none; }
 
 .home-modern-donut-inner small {
     font-size: 11px;
-    color: rgba(255,255,255,.65);
+    color: rgba(255,255,255,.7);
     margin-top: 5px;
     display: block;
 }
 
-.home-modern-donut-label {
-    color: rgba(255,255,255,.6);
-    font-size: 13px;
+.home-modern-donut-legend {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
     margin-top: 12px;
-    margin-bottom: 0;
+}
+
+.home-modern-donut-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(255,255,255,.75);
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease;
+}
+
+.home-modern-donut-legend-item:hover {
+    background: rgba(255,255,255,.08);
+    color: #fff;
+}
+
+.home-modern-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.home-modern-dot.completed { background: #22c55e; }
+.home-modern-dot.ongoing { background: #38bdf8; }
+
+.home-modern-donut-wrap:has(.home-modern-donut-legend-item.completed:hover) .home-modern-donut-hit-completed {
+    background: rgba(34,197,94,.28);
+}
+.home-modern-donut-wrap:has(.home-modern-donut-legend-item.ongoing:hover) .home-modern-donut-hit-ongoing {
+    background: rgba(56,189,248,.28);
+}
+
+/* =====================================================
+   TRAINING PLAN CARD — sidebar (right column)
+===================================================== */
+
+/* =====================================================
+   TRAINING PLAN CARD
+===================================================== */
+
+.home-modern-trainingplan-card-body {
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.home-modern-btn-training-plan {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    width: 100%;
+    max-width: 100%;
+
+    padding: 14px 20px;
+
+    border-radius: 12px;
+
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+
+    box-shadow: 0 4px 14px rgba(37,99,235,.20);
+
+    transition: all .25s ease;
+}
+
+.home-modern-btn-training-plan i {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.home-modern-btn-training-plan span {
+    white-space: nowrap;
+}
+
+.home-modern-btn-training-plan:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(37,99,235,.30);
+}
+
+.home-modern-btn-training-plan:active {
+    transform: translateY(0);
+}
+
+[data-bs-theme="dark"] .home-modern-btn-training-plan {
+    box-shadow: 0 4px 14px rgba(37,99,235,.15);
+}
+
+[data-bs-theme="dark"] .home-modern-btn-training-plan:hover {
+    box-shadow: 0 8px 22px rgba(37,99,235,.25);
 }
 
 /* =====================================================
@@ -354,7 +505,7 @@ a { text-decoration: none; }
 
 .home-modern-continue-thumb img {
     width: 100%;
-    height: 145px;
+    height: 125px;
     object-fit: cover;
     display: block;
 }
@@ -387,13 +538,18 @@ a { text-decoration: none; }
     color: #0f172a;
     margin-bottom: 6px;
     line-height: 1.4;
+    overflow-wrap: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.home-modern-continue-desc {
-    font-size: 13px;
-    color: #64748b;
-    margin-bottom: 14px;
-    line-height: 1.5;
+.home-modern-continue-period {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 10px;
 }
 
 .home-modern-progress-wrap small {
@@ -881,6 +1037,17 @@ a { text-decoration: none; }
     .home-modern-continue-thumb img {
         height: 200px;
     }
+    .home-modern-donut-outer {
+        width: 160px;
+        height: 160px;
+    }
+    .home-modern-donut-inner {
+        width: 116px;
+        height: 116px;
+    }
+    .home-modern-donut-inner strong {
+        font-size: 26px;
+    }
 }
 
 @media (max-width: 767px) {
@@ -894,15 +1061,15 @@ a { text-decoration: none; }
         font-size: 16px;
     }
     .home-modern-donut-outer {
-        width: 120px;
-        height: 120px;
+        width: 136px;
+        height: 136px;
     }
     .home-modern-donut-inner {
-        width: 88px;
-        height: 88px;
+        width: 98px;
+        height: 98px;
     }
     .home-modern-donut-inner strong {
-        font-size: 20px;
+        font-size: 22px;
     }
     .home-modern-module-title {
         max-width: 200px;
@@ -976,7 +1143,7 @@ a { text-decoration: none; }
 
 /* Continue learning */
 [data-bs-theme="dark"] .home-modern-continue-title { color: #f1f5f9; }
-[data-bs-theme="dark"] .home-modern-continue-desc  { color: #94a3b8; }
+[data-bs-theme="dark"] .home-modern-continue-period { color: #94a3b8; }
 [data-bs-theme="dark"] .home-modern-progress       { background: #1a3356; }
 [data-bs-theme="dark"] .home-modern-progress-wrap small { color: #94a3b8; }
 
@@ -1098,6 +1265,72 @@ a { text-decoration: none; }
 }
 
 /* =====================================================
+   SLIDE CAROUSEL — responsive 4/2/1 sliding window
+   (Top Video + Training Modules tabs)
+===================================================== */
+
+.home-modern-slide-carousel {
+    position: relative;
+}
+
+.home-modern-slide-viewport {
+    overflow: hidden;
+}
+
+.home-modern-slide-track {
+    display: flex;
+    transition: transform .4s ease;
+}
+
+.home-modern-slide-item {
+    flex: 0 0 25%;
+    max-width: 25%;
+    min-width: 0;
+    padding: 0 7px;
+}
+
+.home-modern-slide-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(15,23,42,.45);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    cursor: pointer;
+    opacity: .65;
+    transition: opacity .2s, background .2s;
+}
+
+.home-modern-slide-carousel:hover .home-modern-slide-nav { opacity: 1; }
+.home-modern-slide-nav:hover { background: rgba(37,99,235,.85); color: #fff; }
+.home-modern-slide-nav-prev { left: -6px; }
+.home-modern-slide-nav-next { right: -6px; }
+.home-modern-slide-nav.d-none { display: none; }
+
+@media (max-width: 991.98px) {
+    .home-modern-slide-item { flex-basis: 50%; max-width: 50%; }
+}
+
+@media (max-width: 767.98px) {
+    .home-modern-slide-item { flex-basis: 100%; max-width: 100%; }
+}
+
+[data-bs-theme="dark"] .home-modern-slide-nav {
+    background: rgba(21,34,53,.85);
+}
+[data-bs-theme="dark"] .home-modern-slide-nav:hover {
+    background: rgba(37,99,235,.85);
+}
+
+/* =====================================================
    NAV TABS — Training Modules
 ===================================================== */
 
@@ -1207,8 +1440,35 @@ a { text-decoration: none; }
 ===================================================== */
 
 .home-modern-gallery-carousel {
+    position: relative;
     overflow: hidden;
 }
+
+/* Prev / next arrows over the thumbnail */
+.home-modern-gallery-nav {
+    position: absolute;
+    top: 75px; /* vertical center of the 150px thumbnail */
+    transform: translateY(-50%);
+    z-index: 3;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(15,23,42,.45);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    cursor: pointer;
+    opacity: .65;
+    transition: opacity .2s, background .2s;
+}
+
+.home-modern-gallery-carousel:hover .home-modern-gallery-nav { opacity: 1; }
+.home-modern-gallery-nav:hover { background: rgba(37,99,235,.85); color: #fff; }
+.home-modern-gallery-nav-prev { left: 10px; }
+.home-modern-gallery-nav-next { right: 10px; }
 
 .home-modern-gallery-slide {
     display: block;

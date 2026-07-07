@@ -39,9 +39,11 @@
             <div class="tab-pane fade show active" id="pane-video" role="tabpanel">
 
                 @if($content_video && $content_video->count())
-                <div class="home-modern-hscroll py-2">
-                    @foreach($content_video->take(10) as $item)
-                    <div class="home-modern-hscroll-item">
+                <div class="home-modern-slide-carousel py-2" data-autoplay="4500">
+                    <div class="home-modern-slide-viewport">
+                        <div class="home-modern-slide-track">
+                    @foreach($content_video->take(6) as $item)
+                    <div class="home-modern-slide-item">
                         <a href="{{ route('content.user.view', $item->slug) }}" class="home-modern-video-card">
 
                             <div class="home-modern-video-thumb">
@@ -74,6 +76,14 @@
                         </a>
                     </div>
                     @endforeach
+                        </div>
+                    </div>
+                    <button class="home-modern-slide-nav home-modern-slide-nav-prev" type="button" aria-label="Previous videos">
+                        <i class="ti ti-chevron-left"></i>
+                    </button>
+                    <button class="home-modern-slide-nav home-modern-slide-nav-next" type="button" aria-label="Next videos">
+                        <i class="ti ti-chevron-right"></i>
+                    </button>
                 </div>
                 @else
                 <div class="home-modern-empty">
@@ -88,9 +98,11 @@
             <div class="tab-pane fade" id="pane-document" role="tabpanel">
 
                 @if($content_pdf && $content_pdf->count())
-                <div class="home-modern-hscroll py-2">
-                    @foreach($content_pdf->take(10) as $pdf)
-                    <div class="home-modern-hscroll-item">
+                <div class="home-modern-slide-carousel py-2" data-autoplay="4500">
+                    <div class="home-modern-slide-viewport">
+                        <div class="home-modern-slide-track">
+                    @foreach($content_pdf->take(6) as $pdf)
+                    <div class="home-modern-slide-item">
                         <a href="{{ route('content.user.view', $pdf->slug) }}" class="home-modern-video-card">
 
                             <div class="home-modern-video-thumb">
@@ -113,6 +125,14 @@
                         </a>
                     </div>
                     @endforeach
+                        </div>
+                    </div>
+                    <button class="home-modern-slide-nav home-modern-slide-nav-prev" type="button" aria-label="Previous documents">
+                        <i class="ti ti-chevron-left"></i>
+                    </button>
+                    <button class="home-modern-slide-nav home-modern-slide-nav-next" type="button" aria-label="Next documents">
+                        <i class="ti ti-chevron-right"></i>
+                    </button>
                 </div>
                 @else
                 <div class="home-modern-empty">
@@ -129,18 +149,20 @@
                 @php
                     $playlistCards = $playlist
                         ->filter(fn ($p) => optional($p->trainingplandetail->first())->content)
-                        ->take(8);
+                        ->take(6);
                 @endphp
 
                 @if($playlistCards->count())
-                <div class="home-modern-hscroll py-2">
+                <div class="home-modern-slide-carousel py-2" data-autoplay="4500">
+                    <div class="home-modern-slide-viewport">
+                        <div class="home-modern-slide-track">
                     @foreach($playlistCards as $item)
                         @php
                             $firstVideo = $item->trainingplandetail->first();
                             // null when thumbnail is missing, external, or not on disk
                             $plThumb = $item->thumbnail_url;
                         @endphp
-                        <div class="home-modern-hscroll-item home-modern-playlist-hitem">
+                        <div class="home-modern-slide-item">
                             <a href="{{ route('playlist.user.view', ['slug' => $item->slug, 'vidslug' => $firstVideo->content->slug]) }}"
                                class="home-modern-video-card home-modern-playlist-hcard">
 
@@ -171,6 +193,14 @@
                             </a>
                         </div>
                     @endforeach
+                        </div>
+                    </div>
+                    <button class="home-modern-slide-nav home-modern-slide-nav-prev" type="button" aria-label="Previous playlists">
+                        <i class="ti ti-chevron-left"></i>
+                    </button>
+                    <button class="home-modern-slide-nav home-modern-slide-nav-next" type="button" aria-label="Next playlists">
+                        <i class="ti ti-chevron-right"></i>
+                    </button>
                 </div>
                 @else
                 <div class="home-modern-empty">

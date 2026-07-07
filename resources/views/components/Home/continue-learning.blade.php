@@ -40,11 +40,11 @@
                 <span class="badge bg-primary-lt mb-2">In Progress</span>
 
                 <h3 class="home-modern-continue-title">
-                    {{ Str::limit($cl->title, 80) }}
+                    {{ Str::limit($cl->title, 70) }}
                 </h3>
 
-                <p class="home-modern-continue-desc">
-                    Continue your learning journey and complete this course.
+                <p class="home-modern-continue-period">
+                    Periode : {{ $continuePeriod ?? '-' }}
                 </p>
 
                 <div class="home-modern-progress-wrap">
@@ -58,7 +58,7 @@
                     </div>
                 </div>
 
-                <div class="mt-3">
+                <div class="mt-2">
                     <a href="{{ route('content.user.view', $cl->slug) }}"
                        class="home-modern-btn-primary">
                         Continue <i class="ti ti-arrow-right ms-1"></i>

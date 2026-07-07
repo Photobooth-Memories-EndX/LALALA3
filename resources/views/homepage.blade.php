@@ -8,8 +8,8 @@
 @section('content')
 
     @php
-        $content_video = $content->filter(fn($c) => in_array($c->type, ['YouTube', 'Video']));
-        $content_pdf   = $content->filter(fn($c) => $c->type === 'Document');
+        $content_video = $content->filter(fn($c) => in_array($c->type, ['YouTube', 'Video']))->take(6);
+        $content_pdf   = $content->filter(fn($c) => $c->type === 'Document')->take(6);
     @endphp
 
     <div class="page-body">

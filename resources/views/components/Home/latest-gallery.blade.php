@@ -45,6 +45,22 @@
                     </div>
                     @endforeach
                 </div>
+
+                @if($eventphoto->count() > 1)
+
+                    <button class="home-modern-gallery-nav home-modern-gallery-nav-prev" type="button"
+                            data-bs-target="#homeLatestGalleryCarousel" data-bs-slide="prev"
+                            aria-label="Previous gallery">
+                        <i class="ti ti-chevron-left"></i>
+                    </button>
+                    <button class="home-modern-gallery-nav home-modern-gallery-nav-next" type="button"
+                            data-bs-target="#homeLatestGalleryCarousel" data-bs-slide="next"
+                            aria-label="Next gallery">
+                        <i class="ti ti-chevron-right"></i>
+                    </button>
+
+                @endif
+
             </div>
 
         @else
