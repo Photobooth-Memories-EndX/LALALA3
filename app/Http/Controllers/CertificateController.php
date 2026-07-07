@@ -263,17 +263,39 @@ public function update(Request $request, CertificateSetting $certificateSetting)
 
     $data = $this->mapCertificateTarget($request, $data);
 
+    $oldCertificateTemplate = $certificateSetting->certificate_template;
+    $oldCustomBackground = $certificateSetting->custom_background;
+    $newCertificateTemplate = null;
+    $newCustomBackground = null;
+
     if ($request->hasFile('certificate_template')) {
-        $data['certificate_template'] = $this->uploadFile(
+        $newCertificateTemplate = $this->uploadFile(
             $request->file('certificate_template'),
             'uploads/certificates/templates'
         );
+        $data['certificate_template'] = $newCertificateTemplate;
     }
     if ($request->hasFile('custom_background')) {
-        $data['custom_background'] = $this->uploadFile($request->file('custom_background'), 'uploads/certificates/backgrounds');
+        $newCustomBackground = $this->uploadFile($request->file('custom_background'), 'uploads/certificates/backgrounds');
+        $data['custom_background'] = $newCustomBackground;
     }
 
-    $certificateSetting->update($data);
+    try {
+        $certificateSetting->update($data);
+    } catch (\Throwable $e) {
+        // Roll back newly uploaded files if the database update fails, so no orphan file is left behind.
+        $this->deleteUploadedFile($newCertificateTemplate);
+        $this->deleteUploadedFile($newCustomBackground);
+        throw $e;
+    }
+
+    // Delete old custom certificate template after successful update when a new file is uploaded.
+    if ($newCertificateTemplate && $oldCertificateTemplate && $oldCertificateTemplate !== $newCertificateTemplate) {
+        $this->deleteUploadedFile($oldCertificateTemplate);
+    }
+    if ($newCustomBackground && $oldCustomBackground && $oldCustomBackground !== $newCustomBackground) {
+        $this->deleteUploadedFile($oldCustomBackground);
+    }
 
     return redirect()
         ->route('certificate.setting.index')
@@ -377,6 +399,19 @@ public function update(Request $request, CertificateSetting $certificateSetting)
         $file->move($destination, $filename);
 
         return $path . '/' . $filename;
+    }
+
+    private function deleteUploadedFile(?string $path): void
+    {
+        if (!$path) {
+            return;
+        }
+
+        $fullPath = public_path($path);
+
+        if (File::exists($fullPath)) {
+            File::delete($fullPath);
+        }
     }
 
     private function normalizeAssessmentTitle(string $title): string
