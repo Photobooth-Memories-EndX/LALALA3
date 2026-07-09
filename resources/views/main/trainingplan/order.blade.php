@@ -15,8 +15,8 @@
                 <div class="col-auto ms-auto">
                     <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
                         <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('trainingplan.index') }}">Playlist</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('trainingplan.edit', $slug) }}">Edit Playlist</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('playlist.index') }}">Playlist</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('playlist.edit', $slug) }}">Edit Playlist</a></li>
                         <li class="breadcrumb-item active" aria-current="page">Re-order</li>
                     </ol>
                 </div>
@@ -44,7 +44,7 @@
 
             <div class="row g-3">
                 <div class="col-lg-8">
-                    <form action="{{ route('trainingplan.update', $slug) }}" method="post" autocomplete="off">
+                    <form action="{{ route('playlist.update', $slug) }}" method="post" autocomplete="off">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="savetype" value="reorder">
@@ -84,7 +84,7 @@
                                 @else
                                     <div class="text-center py-4">
                                         <p class="text-muted">Tidak ada konten dalam playlist ini.</p>
-                                        <a href="{{ route('trainingplan.edit', $slug) }}" class="btn btn-sm btn-primary">
+                                        <a href="{{ route('playlist.edit', $slug) }}" class="btn btn-sm btn-primary">
                                             Tambah Konten
                                         </a>
                                     </div>
@@ -123,7 +123,7 @@
                             </ol>
                         </div>
                         <div class="card-footer">
-                            <a href="{{ route('trainingplan.edit', $slug) }}" class="btn btn-light w-100">
+                            <a href="{{ route('playlist.edit', $slug) }}" class="btn btn-light w-100">
                                 Kembali ke Edit Playlist
                             </a>
                         </div>

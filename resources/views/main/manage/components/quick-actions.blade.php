@@ -30,7 +30,7 @@
                 Add Assessment
             </a>
 
-            <a href="{{ url('manage/trainingplan/create') }}"
+            <a href="{{ url('manage/playlist/create') }}"
                class="btn btn-outline-primary">
                 <i class="ti ti-route me-1"></i>
                 Add Playlist

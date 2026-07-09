@@ -57,7 +57,7 @@ class ManageDashboardController extends Controller
                 'icon' => 'ti ti-route',
                 'color' => 'green',
                 'time' => $item->created_at,
-                'url' => url('manage/trainingplan/' . $item->slug . '/edit'),
+                'url' => url('manage/playlist/' . $item->slug . '/edit'),
             ]))
             ->merge(News::latest()->take(3)->get()->map(fn ($item) => [
                 'type' => 'News',

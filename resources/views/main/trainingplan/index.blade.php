@@ -13,14 +13,14 @@
                             <i class="ti ti-playlist fs-2"></i>
                         </div>
                         <div>
-                            <h2 class="page-title mb-1">Training Plan Management</h2>
+                            <h2 class="page-title mb-1">Playlist Management</h2>
                             <div class="text-secondary">Manage learning playlists, content order, thumbnails, and training deadlines.</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-auto">
-                    <a href="{{ route('trainingplan.create') }}" class="btn btn-primary">
-                        <i class="ti ti-plus me-1"></i>Add Training Plan
+                    <a href="{{ route('playlist.create') }}" class="btn btn-primary">
+                        <i class="ti ti-plus me-1"></i>Add Playlist
                     </a>
                 </div>
             </div>
@@ -61,7 +61,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between">
                                 <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Total Training Plan</div>
+                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Total Playlist</div>
                                     <div class="display-6 fw-bold">{{ number_format($totalTrainingPlan) }}</div>
                                 </div>
                                 <span class="avatar avatar-lg bg-primary-lt">
@@ -154,7 +154,7 @@
                     <h3 class="card-title"><i class="ti ti-filter me-2"></i>Filter & Search</h3>
                 </div>
                 <div class="card-body">
-                    <form method="GET" action="{{ route('trainingplan.index') }}" id="filterForm">
+                    <form method="GET" action="{{ route('playlist.index') }}" id="filterForm">
                         <div class="row g-2">
                             <div class="col-md-4 col-lg-3">
                                 <label class="form-label small fw-semibold">Search</label>
@@ -211,7 +211,7 @@
                                 <button type="submit" class="btn btn-primary btn-sm">
                                     <i class="ti ti-search me-1"></i>Apply Filter
                                 </button>
-                                <a href="{{ route('trainingplan.index') }}" class="btn btn-secondary btn-sm">
+                                <a href="{{ route('playlist.index') }}" class="btn btn-secondary btn-sm">
                                     <i class="ti ti-x me-1"></i>Reset
                                 </a>
                             </div>
@@ -226,7 +226,7 @@
                     <div>
                         <h3 class="card-title">{{ $title }}</h3>
                         <div class="card-subtitle text-muted mt-1">
-                            Showing {{ $trainingplans->firstItem() ?? 0 }}–{{ $trainingplans->lastItem() ?? 0 }} of {{ $trainingplans->total() }} training plan(s)
+                            Showing {{ $trainingplans->firstItem() ?? 0 }}–{{ $trainingplans->lastItem() ?? 0 }} of {{ $trainingplans->total() }} playlist(s)
                         </div>
                     </div>
                 </div>
@@ -310,15 +310,15 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-1 flex-wrap">
-                                                    <a href="{{ route('trainingplan.edit', $list->slug) }}"
+                                                    <a href="{{ route('playlist.edit', $list->slug) }}"
                                                         class="btn btn-sm btn-info owl-action-btn" title="Edit">
                                                         <i class="ti ti-edit"></i>
                                                     </a>
-                                                    <a href="{{ route('trainingplan.order', $list->slug) }}"
+                                                    <a href="{{ route('playlist.order', $list->slug) }}"
                                                         class="btn btn-sm btn-secondary owl-action-btn" title="Order Content">
                                                         <i class="ti ti-arrows-sort"></i>
                                                     </a>
-                                                    <form action="{{ route('trainingplan.destroy', $list->slug) }}" method="POST" class="d-inline">
+                                                    <form action="{{ route('playlist.destroy', $list->slug) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit"
@@ -341,8 +341,8 @@
                                 <p class="empty-title">No training plans found</p>
                                 <p class="empty-subtitle text-secondary">Try adjusting your filters or add a new training plan.</p>
                                 <div class="empty-action">
-                                    <a href="{{ route('trainingplan.create') }}" class="btn btn-primary btn-sm">
-                                        <i class="ti ti-plus me-1"></i>Add Training Plan
+                                    <a href="{{ route('playlist.create') }}" class="btn btn-primary btn-sm">
+                                        <i class="ti ti-plus me-1"></i>Add Playlist
                                     </a>
                                 </div>
                             </div>

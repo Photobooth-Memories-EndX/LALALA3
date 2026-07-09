@@ -20,7 +20,7 @@
                 <div class="col-auto ms-auto">
                     <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
                         <li class="breadcrumb-item"><a href="javascript:;">Manage</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('trainingplan.index') }}">Playlist</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('playlist.index') }}">Playlist</a></li>
                         <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
                     </ol>
                 </div>
@@ -30,7 +30,7 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <form action="{{ route('trainingplan.store') }}" method="post" autocomplete="off" id="trainingPlanForm" enctype="multipart/form-data">
+            <form action="{{ route('playlist.store') }}" method="post" autocomplete="off" id="trainingPlanForm" enctype="multipart/form-data">
                 @csrf
                 @method('POST')
 
@@ -177,7 +177,7 @@
                                         </svg>
                                         Save & Publish
                                     </button>
-                                    <a href="{{ route('trainingplan.index') }}" class="btn btn-light">Cancel</a>
+                                    <a href="{{ route('playlist.index') }}" class="btn btn-light">Cancel</a>
                                 </div>
                             </div>
                         </div>

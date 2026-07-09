@@ -54,7 +54,8 @@
                     <strong>{{ $ongoingCourse }}</strong> On Going
                 </span> --}}
                 <span class="home-modern-hero-stat-pill home-modern-hero-stat-green">
-                    <strong>{{ $totalLearningDisplay }}</strong> Total Learning
+                    {{-- <strong>{{ $totalLearningDisplay }}</strong> Total Learning --}}
+                    <strong>Keep Learning 🔥</strong> 
                 </span>
             </div>
 

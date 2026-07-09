@@ -177,7 +177,7 @@ class TrainingPlanController extends Controller
 
             DB::commit();
             $addmessage = $request->action == "publish" ? " and published" : "";
-            return to_route('trainingplan.edit', $trainingplan->slug)->with('success', 'Playlist successfully saved ' . $addmessage);
+            return to_route('playlist.edit', $trainingplan->slug)->with('success', 'Playlist successfully saved ' . $addmessage);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error create playlist: ' . $e->getMessage());
@@ -261,7 +261,7 @@ class TrainingPlanController extends Controller
                     DB::commit();
 
                     session()->flash('success', 'Playlist updated successfully');
-                    return redirect()->route('trainingplan.edit', $trainingplan->slug);
+                    return redirect()->route('playlist.edit', $trainingplan->slug);
                 }
 
                 $trainingplan->save();
@@ -299,7 +299,7 @@ class TrainingPlanController extends Controller
             DB::commit();
 
             session()->flash('success', 'Playlist updated successfully');
-            return redirect()->route('trainingplan.edit', $trainingplan->slug);
+            return redirect()->route('playlist.edit', $trainingplan->slug);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error edit playlist: ' . $e->getMessage());
@@ -313,7 +313,7 @@ class TrainingPlanController extends Controller
     {
         $trainingplan->delete();
 
-        return to_route('trainingplan.index')->with('success', 'Playlist successfully deleted');
+        return to_route('playlist.index')->with('success', 'Playlist successfully deleted');
     }
 
     public function thumbnailTest()

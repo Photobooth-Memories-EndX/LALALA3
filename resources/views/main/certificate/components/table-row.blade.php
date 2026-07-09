@@ -60,7 +60,7 @@
 
             @if($setting->trainingPlan)
 
-                <a href="{{ route('trainingplan.edit', $setting->trainingPlan->id) }}"
+                <a href="{{ route('playlist.edit', $setting->trainingPlan->id) }}"
                    class="font-weight-bold text-primary">
 
                     {{ $setting->trainingPlan->title }}

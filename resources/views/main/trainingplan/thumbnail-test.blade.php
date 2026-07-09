@@ -11,7 +11,7 @@
                     <div class="owl-page-subtitle">Debug: cek path DB, generated URL, dan status file di disk.</div>
                 </div>
                 <div class="col-auto ms-auto">
-                    <a href="{{ route('trainingplan.index') }}" class="btn btn-secondary">
+                    <a href="{{ route('playlist.index') }}" class="btn btn-secondary">
                         <i class="ti ti-arrow-left me-1"></i> Kembali ke Manage Playlist
                     </a>
                 </div>

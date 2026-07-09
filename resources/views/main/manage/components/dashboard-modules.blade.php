@@ -105,7 +105,7 @@
             @include('main.manage.components.admin-menu-card', [
                 'title' => 'Playlist & Learning Path',
                 'description' => 'Menyusun alur pembelajaran, playlist training, urutan materi, learning path, dan paket pembelajaran terstruktur.',
-                'url' => url('manage/trainingplan'),
+                'url' => url('manage/playlist'),
                 'button' => 'Manage Playlist',
                 'icon' => 'ti ti-route'
             ])

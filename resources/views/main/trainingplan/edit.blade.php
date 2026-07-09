@@ -25,7 +25,7 @@
                 <div class="col-auto ms-auto">
                     <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
                         <li class="breadcrumb-item"><a href="javascript:;">Manage</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('trainingplan.index') }}">Playlist</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('playlist.index') }}">Playlist</a></li>
                         <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
                     </ol>
                 </div>
@@ -35,7 +35,7 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <form action="{{ route('trainingplan.update', $trainingplan->slug) }}" method="post" autocomplete="off" id="trainingPlanForm" enctype="multipart/form-data">
+            <form action="{{ route('playlist.update', $trainingplan->slug) }}" method="post" autocomplete="off" id="trainingPlanForm" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="savetype" value="update">
@@ -196,7 +196,7 @@
                                             Unpublish This Playlist
                                         </button>
                                     @else
-                                        <a type="button" class="btn btn-secondary" href="{{ route('trainingplan.order', $trainingplan->slug) }}">
+                                        <a type="button" class="btn btn-secondary" href="{{ route('playlist.order', $trainingplan->slug) }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                 <path d="M3 9l4 -4l4 4m-4 -4v14"></path>
@@ -221,7 +221,7 @@
                                             Save & Publish
                                         </button>
                                     @endif
-                                    <a href="{{ route('trainingplan.index') }}" class="btn btn-light">Back to List</a>
+                                    <a href="{{ route('playlist.index') }}" class="btn btn-light">Back to List</a>
                                 </div>
                             </div>
                         </div>

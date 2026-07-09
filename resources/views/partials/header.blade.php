@@ -111,7 +111,7 @@
                                 <a class="dropdown-item" href="{{ url('manage/classification') }}"><i class="ti ti-category me-2"></i> Category</a>
                                 <a class="dropdown-item" href="{{ url('manage/assesment') }}"><i class="ti ti-clipboard-check me-2"></i> Assesment</a>
                                 <a class="dropdown-item" href="{{ url('manage/question-bank') }}"><i class="ti ti-help-circle me-2"></i> Question Bank</a>
-                                <a class="dropdown-item" href="{{ url('manage/trainingplan') }}"><i class="ti ti-list-check me-2"></i> Playlist</a>
+                                <a class="dropdown-item" href="{{ url('manage/playlist') }}"><i class="ti ti-list-check me-2"></i> Playlist</a>
                                 <a class="dropdown-item" href="{{ url('manage/eventphoto') }}"><i class="ti ti-camera me-2"></i> Event Gallery</a>
                             </div>
                         </li>
