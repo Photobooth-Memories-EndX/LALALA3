@@ -143,7 +143,6 @@ public function canManageLms()
         return $this->hasMany(BookmarkContent::class);
     }
 
-
     public function commentLikes()
     {
         return $this->hasMany(CommentLike::class);
@@ -154,60 +153,45 @@ public function canManageLms()
         return $this->hasMany(CommentReply::class);
     }
 
-    // public function comments()
-    // {
-    //     return $this->hasMany(Comment::class);
-    // }
-
-    /**
-     * Get all news articles published by this user
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    
-    // public function news()
-    // {
-    //     return $this->hasMany(News::class);
-    // }
-
     public function accessPermissions()
-{
-    return $this->hasMany(UserAccessPermission::class);
-}
-
-public function hasAccessPermission(string $moduleKey): bool
-{
-    return $this->accessPermissions()
-        ->where('module_key', $moduleKey)
-        ->where('can_access', true)
-        ->exists();
-}
-
-public function canAccessManageModule(string $moduleKey): bool
-{
-    if ($this->isSuperAdmin()) {
-        return true;
+    {
+        return $this->hasMany(UserAccessPermission::class);
     }
 
-    $userPermission = $this->accessPermissions()
-        ->where('module_key', $moduleKey)
-        ->first();
-
-    if ($userPermission) {
-        return (bool) $userPermission->can_access;
+    public function hasAccessPermission(string $moduleKey): bool
+    {
+        return $this->accessPermissions()
+            ->where('module_key', $moduleKey)
+            ->where('can_access', true)
+            ->exists();
     }
 
-    $rolePermission = RoleAccessPermission::where('role', $this->role)
-        ->where('module_key', $moduleKey)
-        ->first();
+    public function canAccessManageModule(string $moduleKey): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
 
-    if ($rolePermission) {
-        return (bool) $rolePermission->can_access;
+        $userPermission = $this->accessPermissions()
+            ->where('module_key', $moduleKey)
+            ->first();
+
+        if ($userPermission) {
+            return (bool) $userPermission->can_access;
+        }
+
+        $rolePermission = RoleAccessPermission::where('role', $this->role)
+            ->where('module_key', $moduleKey)
+            ->first();
+
+        if ($rolePermission) {
+            return (bool) $rolePermission->can_access;
+        }
+
+        return $this->isAdmin();
     }
 
-    return $this->isAdmin();
-}
-public function news()
+    public function news()
     {
         return $this->hasMany(News::class);
     }
@@ -231,5 +215,5 @@ public function news()
     {
         return $this->hasMany(AssesmentResult::class);
     }
-
 }
+
