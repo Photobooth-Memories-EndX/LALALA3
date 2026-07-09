@@ -16,20 +16,16 @@
             </div>
         </div>
 
-        <x-learning.profile-card
+        <x-learning.hero-section
             :user="$user"
             :learning-hours="$learningHours ?? 0"
-        />
-
-        <x-learning.tab-navigation />
-
-        <x-learning.hero-section
             :total-learning="$totalLearning"
             :completed-learning="$completedLearning"
             :ongoing-learning="$ongoingLearning"
             :passed-assessment="$passedAssessment"
-            :average-progress="$averageProgress ?? 0"
         />
+
+        <x-learning.tab-navigation />
 
         <div id="learning-tab-content">
             <div class="card border-0 shadow-sm rounded-4 p-4">

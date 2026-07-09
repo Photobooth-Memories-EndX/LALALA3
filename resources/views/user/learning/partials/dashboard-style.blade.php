@@ -13,7 +13,7 @@
 
     .learning-hero {
         background: linear-gradient(135deg, #0d6efd 0%, #1e40af 100%);
-        border-radius: 1.25rem;
+        border-radius: 1.5rem;
         color: #fff;
     }
 
@@ -40,58 +40,11 @@
         line-height: 1;
     }
 
-    /* Highlight utama hero: Average Progress besar dengan glass effect */
-    .learning-hero-highlight {
-        background: rgba(255, 255, 255, .16);
-        border: 1px solid rgba(255, 255, 255, .25);
-        border-radius: 1.25rem;
-        padding: 1.5rem 1.75rem;
-        color: #fff;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 10px 30px rgba(13, 46, 110, .18);
-    }
-
-    .learning-hero-highlight-label {
-        font-size: .8rem;
-        font-weight: 600;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        opacity: .85;
-        margin-bottom: .5rem;
-    }
-
-    .learning-hero-highlight-value {
-        font-size: 3.5rem;
-        font-weight: 800;
-        line-height: 1;
-    }
-
-    .learning-hero-highlight-unit {
-        font-size: 1.75rem;
-        font-weight: 700;
-        opacity: .85;
-        margin-left: .15rem;
-    }
-
-    .learning-hero-highlight-bar {
-        height: .6rem;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, .22);
-        margin-top: 1rem;
-        overflow: hidden;
-    }
-
-    .learning-hero-highlight-bar-fill {
-        height: 100%;
-        border-radius: 999px;
-        background: #fff;
-    }
-
-    /* 4 mini card statistik pendukung: grid rapat, tinggi seragam, tanpa overflow */
+    /* 4 card statistik hero: grid 2x2, glass effect, tinggi seragam, tanpa overflow */
     .learning-hero-stats {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: .75rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
         align-items: stretch;
     }
 
@@ -100,25 +53,22 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        gap: .5rem;
         text-align: center;
-        padding: .85rem .6rem;
+        padding: 1.25rem 1rem;
+    }
+
+    .learning-hero-stats .learning-mini-stat-label {
+        font-size: .75rem;
+        opacity: .7;
     }
 
     .learning-hero-stats .learning-mini-stat-value {
-        font-size: 1.35rem;
-    }
-
-    @media (max-width: 1199.98px) {
-        .learning-hero-stats {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
+        font-size: 2rem;
+        font-weight: 700;
     }
 
     @media (max-width: 575.98px) {
-        .learning-hero-highlight-value {
-            font-size: 2.75rem;
-        }
-
         .learning-hero-cta {
             width: 100%;
         }
