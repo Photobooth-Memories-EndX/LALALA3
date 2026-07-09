@@ -42,14 +42,14 @@
                     @endif
                 </div>
 
-                <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
-                    <a href="mailto:{{ $user->email ?? '' }}" class="small text-primary text-break">
-                        {{ $user->email ?? '-' }}
-                    </a>
+                <div class="mt-2">
+                    <div class="text-primary small fw-semibold mb-2">
+                        {{ $user->email ?? auth()->user()->email ?? '-' }}
+                    </div>
 
-                    <span class="badge bg-primary-lt text-primary px-3 py-2">
+                    <span class="badge bg-primary-lt text-primary">
                         <i class="ti ti-clock me-1"></i>
-                        {{ number_format($learningHours ?? 0, 1) }} Learning Hours
+                        {{ $learningHours ?? 0 }} Learning Hours
                     </span>
                 </div>
             </div>

@@ -2,57 +2,51 @@
     <div class="card-body p-4">
         <form action="{{ route('user.learning.dashboard') }}" method="GET">
 
-            <div class="row g-3 align-items-center mb-3">
-                <div class="col-lg-4">
-                    <h3 class="card-title mb-1">Learning On Going</h3>
-                    <div class="text-muted small">
-                        Your Enrolled Classes
-                    </div>
-                </div>
-
-                <div class="col-lg-8">
-                    <div class="row g-3">
-                        <div class="col-md-5">
-                            <label class="form-label small text-muted mb-1" for="ongoing_search">Search</label>
-                            <div class="input-icon">
-                                <span class="input-icon-addon">
-                                    <i class="ti ti-search"></i>
-                                </span>
-                                <input type="text"
-                                       name="ongoing_search"
-                                       id="ongoing_search"
-                                       value="{{ request('ongoing_search') }}"
-                                       class="form-control rounded-3"
-                                       placeholder="Search classes or categories">
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label small text-muted mb-1" for="ongoing_status">Learning Program</label>
-                            <select name="ongoing_status" id="ongoing_status" class="form-select rounded-3">
-                                <option value="all" {{ request('ongoing_status', 'all') == 'all' ? 'selected' : '' }}>All Learning</option>
-                                <option value="mandatory" {{ request('ongoing_status') == 'mandatory' ? 'selected' : '' }}>Mandatory Learning</option>
-                                <option value="optional" {{ request('ongoing_status') == 'optional' ? 'selected' : '' }}>Optional Learning</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label small text-muted mb-1" for="ongoing_year">Tahun</label>
-                            <select name="ongoing_year" id="ongoing_year" class="form-select rounded-3">
-                                <option value="all" {{ request('ongoing_year', 'all') == 'all' ? 'selected' : '' }}>All Years</option>
-                                @foreach (range(date('Y'), 2020) as $yearOption)
-                                    <option value="{{ $yearOption }}" {{ request('ongoing_year') == $yearOption ? 'selected' : '' }}>
-                                        {{ $yearOption }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
+            <div class="mb-3">
+                <h3 class="card-title mb-1">Learning On Going</h3>
+                <div class="text-muted small">
+                    Your Enrolled Classes
                 </div>
             </div>
 
-            <div class="row g-3 align-items-end">
-                <div class="col-md-4">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-6 col-xl-3">
+                    <label class="form-label small text-muted mb-1" for="ongoing_search">Search</label>
+                    <div class="input-icon">
+                        <span class="input-icon-addon">
+                            <i class="ti ti-search"></i>
+                        </span>
+                        <input type="text"
+                               name="ongoing_search"
+                               id="ongoing_search"
+                               value="{{ request('ongoing_search') }}"
+                               class="form-control rounded-3"
+                               placeholder="Search classes or categories">
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-xl">
+                    <label class="form-label small text-muted mb-1" for="ongoing_status">Learning Program</label>
+                    <select name="ongoing_status" id="ongoing_status" class="form-select rounded-3">
+                        <option value="all" {{ request('ongoing_status', 'all') == 'all' ? 'selected' : '' }}>All Learning</option>
+                        <option value="mandatory" {{ request('ongoing_status') == 'mandatory' ? 'selected' : '' }}>Mandatory Learning</option>
+                        <option value="optional" {{ request('ongoing_status') == 'optional' ? 'selected' : '' }}>Optional Learning</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6 col-xl">
+                    <label class="form-label small text-muted mb-1" for="ongoing_year">Tahun</label>
+                    <select name="ongoing_year" id="ongoing_year" class="form-select rounded-3">
+                        <option value="all" {{ request('ongoing_year', 'all') == 'all' ? 'selected' : '' }}>All Years</option>
+                        @foreach (range(date('Y'), 2020) as $yearOption)
+                            <option value="{{ $yearOption }}" {{ request('ongoing_year') == $yearOption ? 'selected' : '' }}>
+                                {{ $yearOption }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6 col-xl">
                     <label class="form-label small text-muted mb-1" for="ongoing_activity_sort">Activity Sort</label>
                     <select name="ongoing_activity_sort" id="ongoing_activity_sort" class="form-select rounded-3">
                         <option value="newest_activity" {{ request('ongoing_activity_sort', 'newest_activity') == 'newest_activity' ? 'selected' : '' }}>Newest Activity</option>
@@ -61,7 +55,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-5">
+                <div class="col-12 col-md-6 col-xl">
                     <label class="form-label small text-muted mb-1" for="ongoing_progress_sort">Completion Status / Progress</label>
                     <select name="ongoing_progress_sort" id="ongoing_progress_sort" class="form-select rounded-3">
                         <option value="all" {{ request('ongoing_progress_sort', 'all') == 'all' ? 'selected' : '' }}>All Progress</option>
@@ -74,15 +68,15 @@
                     </select>
                 </div>
 
-                <div class="col-md-3">
-                    <div class="d-flex gap-2 justify-content-md-end">
-                        <button type="submit" class="btn btn-primary rounded-3 flex-fill flex-md-grow-0">
+                <div class="col-12 col-md-6 col-xl-auto">
+                    <div class="d-flex gap-2 learning-filter-actions">
+                        <button type="submit" class="btn btn-primary rounded-3 flex-fill flex-xl-grow-0">
                             <i class="ti ti-filter me-1"></i>
                             Filter
                         </button>
 
                         <a href="{{ route('user.learning.dashboard') }}"
-                           class="btn btn-outline-secondary rounded-3 flex-fill flex-md-grow-0">
+                           class="btn btn-outline-secondary rounded-3 flex-fill flex-xl-grow-0">
                             <i class="ti ti-refresh me-1"></i>
                             Reset
                         </a>

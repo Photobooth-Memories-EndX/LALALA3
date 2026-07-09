@@ -29,18 +29,18 @@
 
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-vcenter table-hover card-table mb-0" id="recordTable">
+            <table class="table table-vcenter table-hover card-table mb-0 learning-record-table" id="recordTable">
                 <thead>
                     <tr>
-                        <th class="text-muted">No</th>
-                        <th class="text-muted">Certificate</th>
-                        <th class="text-muted">Class</th>
-                        <th class="text-muted">Type</th>
-                        <th class="text-muted">Classification</th>
-                        <th class="text-muted">Duration</th>
-                        <th class="text-muted">Progress</th>
-                        <th class="text-muted">Finish Date</th>
-                        <th class="text-muted">Score Test</th>
+                        <th class="text-muted" style="width: 4%">No</th>
+                        <th class="text-muted" style="width: 26%">Class</th>
+                        <th class="text-muted" style="width: 8%">Type</th>
+                        <th class="text-muted" style="width: 13%">Classification</th>
+                        <th class="text-muted" style="width: 8%">Duration</th>
+                        <th class="text-muted" style="width: 9%">Progress</th>
+                        <th class="text-muted" style="width: 12%">Finish Date</th>
+                        <th class="text-muted" style="width: 9%">Score Test</th>
+                        <th class="text-muted" style="width: 11%">Certificate</th>
                     </tr>
                 </thead>
 
@@ -110,6 +110,12 @@
 
                                 $type = $content->type ?? 'Content';
 
+                                $typeBadgeClass = match (true) {
+                                    in_array($type, ['Video', 'YouTube']) => 'bg-blue-lt text-blue',
+                                    in_array($type, ['Quiz', 'Assessment', 'Assesment']) => 'bg-purple-lt text-purple',
+                                    default => 'bg-yellow-lt text-yellow',
+                                };
+
                                 $certificateSetting = collect($certificateSettings)
                                     ->where('certificate_type', 'content')
                                     ->where('content_id', $content->id ?? null)
@@ -139,86 +145,79 @@
                             <tr>
                                 <td class="text-muted">{{ $loop->iteration }}</td>
 
-                                <td class="text-nowrap">
-                                    @if($canGenerateCertificate)
-                                        <a href="{{ route('certificate.generate', $list->id) }}"
-                                           class="btn btn-sm btn-primary">
-                                            <i class="ti ti-certificate me-1"></i>
-                                            Sertifikat
+                                
+
+                                <td>
+                                    @if ($content && !empty($content->slug))
+                                        <a href="{{ route('content.user.view', $content->slug) }}"
+                                           class="fw-semibold text-reset learning-record-title"
+                                           title="{{ $content->title ?? '-' }}">
+                                            {{ $content->title ?? '-' }}
                                         </a>
                                     @else
-                                        <span class="badge bg-secondary-lt text-secondary">
-                                            Not Available
-                                        </span>
-                                    @endif
-                                </td>
-
-                                <td style="min-width: 280px;">
-                                    <div class="d-flex align-items-center">
-                                        <span class="avatar avatar-sm mr-2 {{ in_array($type, ['Video', 'YouTube']) ? 'bg-red-lt text-red' : 'bg-yellow-lt text-yellow' }}">
-                                            @if (in_array($type, ['Video', 'YouTube']))
-                                                <i class="ti ti-video"></i>
-                                            @else
-                                                <i class="ti ti-file-description"></i>
-                                            @endif
-                                        </span>
-
-                                        <div>
-                                            @if ($content && !empty($content->slug))
-                                                <a href="{{ route('content.user.view', $content->slug) }}"
-                                                   class="fw-semibold text-reset line-clamp-2">
-                                                    {{ $content->title ?? '-' }}
-                                                </a>
-                                            @else
-                                                <div class="fw-semibold line-clamp-2">
-                                                    {{ $content->title ?? '-' }}
-                                                </div>
-                                            @endif
-
-                                            <div class="text-muted small">
-                                                {{ ucfirst($list->status ?? '-') }}
-                                            </div>
+                                        <div class="fw-semibold learning-record-title"
+                                             title="{{ $content->title ?? '-' }}">
+                                            {{ $content->title ?? '-' }}
                                         </div>
+                                    @endif
+
+                                    <div class="text-muted small">
+                                        {{ ucfirst($list->status ?? '-') }}
                                     </div>
                                 </td>
 
                                 <td>
-                                    <span class="badge bg-blue-lt text-blue">
+                                    <span class="badge {{ $typeBadgeClass }} learning-record-badge">
                                         {{ $type }}
                                     </span>
                                 </td>
 
-                                <td style="min-width: 180px;">
-                                    {{ $content->classification->classification_name ?? '-' }}
+                                <td>
+                                    @php
+                                        $classification = $content->classification->classification_name ?? '-';
+
+                                        $colors = [
+                                            'SHE'                     => 'bg-red-lt text-red',
+                                            'Technology'              => 'bg-blue-lt text-blue',
+                                            'Basic & Common Duties'   => 'bg-green-lt text-green',
+                                            'Production'              => 'bg-indigo-lt text-indigo',
+                                            'Commercial'              => 'bg-orange-lt text-orange',
+                                            'Human Resources'         => 'bg-pink-lt text-pink',
+                                            'Leadership'              => 'bg-purple-lt text-purple',
+                                            'Quality'                 => 'bg-cyan-lt text-cyan',
+                                            'IT'                      => 'bg-azure-lt text-azure',
+                                            'Security'                => 'bg-dark-lt text-dark',
+                                        ];
+
+                                        $badgeClass = $colors[$classification] ?? 'bg-secondary-lt text-secondary';
+                                    @endphp
+
+                                    <span class="badge {{ $badgeClass }}">
+                                        {{ $classification }}
+                                    </span>
                                 </td>
 
-                                <td>{{ $content->duration ?? '-' }}</td>
+                                <td class="small">{{ $content->duration ?? '-' }}</td>
 
-                                <td style="min-width: 170px;">
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <span>{{ $progress }}%</span>
+                                <td>
+                                    <div class="learning-record-progress">
+                                        <div class="percent">{{ $progress }}%</div>
 
                                         @if(!is_null($minimumProgress) && (int) $minimumProgress > 0)
-                                            <span class="{{ $isProgressPassed ? 'text-success' : 'text-danger' }}">
+                                            <div class="minimum {{ $isProgressPassed ? '' : 'is-failed' }}">
                                                 Min {{ $minimumProgress }}%
-                                            </span>
+                                            </div>
                                         @endif
-                                    </div>
-
-                                    <div class="progress progress-sm">
-                                        <div class="progress-bar {{ $isProgressPassed ? 'bg-success' : 'bg-danger' }}"
-                                             style="width: {{ min($progress, 100) }}%">
-                                        </div>
                                     </div>
                                 </td>
 
-                                <td style="min-width: 150px;">
+                                <td class="small">
                                     {{ $list->updated_at ? date('Y-m-d H:i', strtotime($list->updated_at)) : '-' }}
                                 </td>
 
-                                <td style="min-width: 120px;">
+                                <td>
                                     @if(!is_null($score))
-                                        <span class="badge {{ $isScorePassed ? 'bg-green-lt text-green' : 'bg-red-lt text-red' }}">
+                                        <span class="badge {{ $isScorePassed ? 'bg-green-lt text-green' : 'bg-red-lt text-red' }} learning-record-badge">
                                             {{ $score }}
                                         </span>
 
@@ -228,7 +227,7 @@
                                             </div>
                                         @endif
                                     @else
-                                        <span class="badge bg-secondary-lt text-secondary">
+                                        <span class="badge bg-secondary-lt text-secondary learning-record-badge">
                                             -
                                         </span>
 
@@ -238,7 +237,20 @@
                                             </div>
                                         @endif
                                     @endif
-                                </td>
+                                        <td>
+                                            @if($canGenerateCertificate)
+                                                <a href="{{ route('certificate.generate', $list->id) }}"
+                                                class="btn btn-sm btn-primary learning-record-cert-btn">
+                                                    <i class="ti ti-certificate me-1"></i>
+                                                    Certificate
+                                                </a>
+                                            @else
+                                                <span class="badge bg-secondary-lt text-secondary learning-record-badge">
+                                                    <i class="ti ti-certificate-off me-1"></i>
+                                                    Not Available
+                                                </span>
+                                            @endif
+                                        </td>
 
                             </tr>
                     @endforeach

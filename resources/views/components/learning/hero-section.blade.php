@@ -26,6 +26,7 @@
                 <a href="#learning-tab-content" class="btn btn-light btn-lg text-primary fw-semibold learning-hero-cta">
                     Start Learning
                 </a>
+                
             </div>
 
             <div class="col-xl-7">
