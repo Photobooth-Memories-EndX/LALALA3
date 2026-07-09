@@ -1,5 +1,19 @@
+@php
+    $vpContentFile = json_decode($content->file ?? 'null');
+    $vpGetContentFile = is_array($vpContentFile) ? ($vpContentFile[0] ?? '') : '';
+    $vpIsDocument = in_array($content->type, ['Document', 'SOP/Regulation']);
+@endphp
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        const progressTracker = new OwlLearningProgress({
+            url: "{{ route('content.user.progress.update') }}",
+            csrf: "{{ csrf_token() }}",
+            contentId: {{ (int) $content->id }},
+            type: '{{ $vpIsDocument ? 'document' : 'video' }}',
+            onUpdate: window.owlUpdateLearningUi
+        });
+
         const playerElement = document.querySelector('#player');
 
         if (playerElement && typeof Plyr !== 'undefined') {
@@ -18,20 +32,110 @@
                 @endif
 
                 player.on('loadeddata', function() {
-                    let progression = $('#player_progress').val();
-                    let durasi = $('#player_duration').val();
-                    let currentPlayerTime = (progression * durasi) / 100;
+                    // Resume: prefer the exact saved position, fall back to the
+                    // legacy progress-percentage estimate.
+                    let resumeSeconds = {{ (int) ($content_user->current_time ?? 0) }};
 
-                    if (currentPlayerTime < durasi) {
-                        player.currentTime = currentPlayerTime;
+                    if (!resumeSeconds) {
+                        let progression = $('#player_progress').val();
+                        let durasi = $('#player_duration').val();
+                        resumeSeconds = (progression * durasi) / 100;
+                    }
+
+                    if (resumeSeconds > 0 && resumeSeconds < player.duration) {
+                        player.currentTime = resumeSeconds;
                     }
                 });
 
+                player.on('loadedmetadata', function() {
+                    if (player.duration) {
+                        progressTracker.send({ duration_seconds: player.duration }, true);
+                    }
+                });
+
+                player.on('play', function() {
+                    progressTracker.send({
+                        status: 'in_progress',
+                        current_time: player.currentTime,
+                        duration_seconds: player.duration
+                    }, true);
+                });
+
+                player.on('timeupdate', function() {
+                    if (!player.duration) return;
+
+                    progressTracker.send({
+                        current_time: player.currentTime,
+                        duration_seconds: player.duration
+                    });
+                });
+
                 player.on('pause', function() {
-                    updateLearningProgress(player.currentTime, $('#player_duration').val());
+                    if (player.ended) return;
+
+                    progressTracker.send({
+                        status: 'paused',
+                        current_time: player.currentTime,
+                        duration_seconds: player.duration
+                    }, true);
+                });
+
+                player.on('ended', function() {
+                    progressTracker.send({
+                        status: 'completed',
+                        current_time: player.duration,
+                        duration_seconds: player.duration
+                    }, true);
                 });
             @endif
         }
+
+        @if ($vpIsDocument && $vpGetContentFile)
+            if (typeof PDFjsViewer !== 'undefined' && document.querySelector('.playlist-pdfjs-viewer')) {
+                var pdfjsLib = window["pdfjs-dist/build/pdf"];
+                pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
+
+                let fileName = "{{ $vpGetContentFile }}";
+                let fileNameFixed = fileName
+                    .replaceAll(' ', '%20')
+                    .replaceAll('&amp;', '&');
+                let pdfFile = "{{ asset('storage/files/content/' . $content->id) }}/" + fileNameFixed;
+
+                window.playlistPdfViewer = new PDFjsViewer($(".playlist-pdfjs-viewer"), {
+                    onDocumentReady: function() {
+                        var totalPages = playlistPdfViewer.getPageCount();
+
+                        // Resume: prefer the exact saved page, fall back to the
+                        // legacy progress-percentage estimate.
+                        var lastPage = {{ (int) ($content_user->last_page ?? 0) }};
+
+                        if (!lastPage) {
+                            var progression = {{ (int) ($content_user->progress ?? 0) }};
+                            lastPage = parseInt((progression * totalPages) / 100);
+                        }
+
+                        if (lastPage > 1 && lastPage < totalPages) {
+                            playlistPdfViewer.scrollToPage(lastPage);
+                        }
+
+                        progressTracker.send({ total_pages: totalPages }, true);
+                    },
+
+                    onActivePageChanged: function(page, pageno) {
+                        $('#playlist-pdf-shell .pageno').text(pageno + "/" + this.getPageCount());
+
+                        progressTracker.sendDebounced({
+                            last_page: pageno,
+                            total_pages: this.getPageCount()
+                        });
+                    }
+                });
+
+                playlistPdfViewer.loadDocument(pdfFile).then(function() {
+                    playlistPdfViewer.setZoom('width');
+                });
+            }
+        @endif
 
         const playlistSearchInput = document.getElementById('playlistSearchInput');
 
@@ -48,6 +152,8 @@
         }
     });
 
+    // Legacy manual progress endpoint — kept as the fallback flow for the
+    // "Mark as Complete" button.
     function updateLearningProgress(currentTime, duration) {
         $.ajax({
             type: "PUT",

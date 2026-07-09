@@ -3,6 +3,14 @@
     $bookmarkCount = $bookmarkCount ?? 0;
     $discussionCount = $discussionCount ?? 0;
     $isBookmarked = $isBookmarked ?? false;
+
+    $learningStatusLabels = [
+        'not_started' => 'Not Started',
+        'in_progress' => 'In Progress',
+        'paused' => 'Paused',
+        'completed' => 'Completed',
+    ];
+    $learningStatusLabel = $learningStatusLabels[$content_user->learning_status ?? ''] ?? 'In Progress';
 @endphp
 
 <div class="d-flex flex-column gap-3 content-sidebar-stack">
@@ -17,7 +25,7 @@
                     Your Progress
                 </div>
 
-                <h1 class="fw-bold text-primary mb-2" style="font-size:2.4rem; line-height:1;">
+                <h1 id="contentProgressValue" class="fw-bold text-primary mb-2" style="font-size:2.4rem; line-height:1;">
                     {{ $progress }}%
                 </h1>
 
@@ -28,13 +36,14 @@
 
             <span class="badge rounded-pill bg-primary-lt text-primary px-3 py-2 mt-1">
                 <i class="ti ti-check me-1"></i>
-                In Progress
+                <span id="contentProgressStatus">{{ $learningStatusLabel }}</span>
             </span>
 
         </div>
 
         <div class="progress mb-4" style="height:8px;">
             <div
+                id="contentProgressBar"
                 class="progress-bar bg-primary rounded-pill"
                 style="width: {{ $progress }}%">
             </div>
