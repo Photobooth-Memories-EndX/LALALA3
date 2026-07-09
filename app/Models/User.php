@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -11,7 +12,7 @@ use App\Models\UserAccessPermission;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     public const ROLE_USER = 1;
     public const ROLE_ADMIN = 2;
@@ -153,20 +154,21 @@ public function canManageLms()
         return $this->hasMany(CommentReply::class);
     }
 
-    public function comments()
-    {
-        return $this->hasMany(Comment::class);
-    }
+    // public function comments()
+    // {
+    //     return $this->hasMany(Comment::class);
+    // }
 
     /**
      * Get all news articles published by this user
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function news()
-    {
-        return $this->hasMany(News::class);
-    }
+    
+    // public function news()
+    // {
+    //     return $this->hasMany(News::class);
+    // }
 
     public function accessPermissions()
 {
@@ -205,4 +207,29 @@ public function canAccessManageModule(string $moduleKey): bool
 
     return $this->isAdmin();
 }
+public function news()
+    {
+        return $this->hasMany(News::class);
+    }
+
+    public function eventPhotos()
+    {
+        return $this->hasMany(EventPhoto::class);
+    }
+
+    public function contentUsers()
+    {
+        return $this->hasMany(ContentUser::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function assesmentResults()
+    {
+        return $this->hasMany(AssesmentResult::class);
+    }
+
 }
