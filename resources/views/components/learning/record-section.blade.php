@@ -4,7 +4,7 @@
     'certificateSettings' => collect(),
 ])
 
-<div class="card border-0 shadow-sm rounded-4 mb-3">
+{{-- <div class="card border-0 shadow-sm rounded-4 mb-3">
     <div class="card-body p-4">
         <h3 class="mb-1">Learning Record</h3>
         <div class="text-muted">View your completed learning history.</div>
@@ -17,7 +17,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
     <div class="card-body p-4 border-bottom">

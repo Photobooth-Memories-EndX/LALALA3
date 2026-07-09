@@ -30,7 +30,7 @@
             </div>
 
             <div class="col-xl-7">
-                <div class="learning-hero-highlight mb-3">
+                {{-- <div class="learning-hero-highlight mb-3">
                     <div class="learning-hero-highlight-label">Average Progress</div>
                     <div class="learning-hero-highlight-value">
                         {{ $averageProgress }}<span class="learning-hero-highlight-unit">%</span>
@@ -39,7 +39,7 @@
                         <div class="learning-hero-highlight-bar-fill"
                              style="width: {{ max(0, min(100, (int) $averageProgress)) }}%"></div>
                     </div>
-                </div>
+                </div> --}}
 
                 <div class="learning-hero-stats">
                     <div class="learning-mini-stat">
