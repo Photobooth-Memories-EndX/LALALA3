@@ -7,13 +7,13 @@
 <div class="card">
     <div class="card-header">
         <div>
-            <h3 class="card-title mb-1">Daftar User</h3>
-            <div class="text-muted small">Klik nama user untuk melihat detail monitoring-nya.</div>
+            <h3 class="card-title mb-1">User List</h3>
+            <div class="text-muted small">Select a user to view detailed learning monitoring information.</div>
         </div>
         <div class="card-actions">
             <div class="input-icon">
                 <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                <input id="mlMonitoringSearch" type="text" class="form-control form-control-sm" placeholder="Cari nama / NIP...">
+                <input id="mlMonitoringSearch" type="text" class="form-control form-control-sm" placeholder="Cari name / NIP...">
             </div>
         </div>
     </div>
@@ -23,12 +23,12 @@
             <thead>
                 <tr>
                     <th class="w-1">No</th>
-                    <th>Nama</th>
+                    <th>Nam</th>
                     <th>NIP</th>
                     <th>Division</th>
                     <th>Department</th>
                     <th>Team</th>
-                    <th>Avg Progress</th>
+                    <th>Average Progress</th>
                     <th class="text-center">Finished</th>
                     <th class="text-center">Assessment</th>
                     <th class="text-center">Action</th>

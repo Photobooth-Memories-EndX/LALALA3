@@ -13,7 +13,7 @@
                     <div class="page-pretitle">Manage</div>
                     <h2 class="owl-page-title mb-1">Monitoring System</h2>
                     <div class="owl-page-subtitle">
-                        Monitoring progress learning, assessment, playlist, dan sertifikat user.
+                       Monitor user learning progress, assessments, playlists, and certificates.
                     </div>
                 </div>
                 <div class="col-auto ms-auto">
@@ -34,12 +34,12 @@
                 @if ($isScopeEmpty)
                     <div class="alert alert-warning" role="alert">
                         <i class="fas fa-exclamation-triangle mr-1"></i>
-                        Scope organisasi Anda belum diset. Hubungi Super Admin.
+                        Your organizational scope has not been configured. Please contact the Super Admin.
                     </div>
                 @else
                     <div class="alert alert-info" role="alert">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Anda melihat monitoring untuk <strong>{{ $scopeLabel }}</strong>.
+                        You are viewing monitoring data for <strong>{{ $scopeLabel }}</strong>.
                     </div>
                 @endif
             @endif
@@ -62,7 +62,7 @@
                 'tableId'     => 'monitoring-table',
                 'ajaxUrl'     => route('monitoring.datatable'),
                 'withFilters' => true,
-                'title'       => 'Daftar User',
+                'title'       => 'List User',
                 'subtitle'    => 'Scope: ' . $scopeLabel,
             ])
 

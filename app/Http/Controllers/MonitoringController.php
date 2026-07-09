@@ -337,7 +337,7 @@ class MonitoringController extends Controller
     private function getScopeLabel(): string
     {
         if (!Auth::user()->isSubadminDivision()) {
-            return 'Semua User';
+            return 'All User';
         }
 
         [$type, $value] = $this->monitoringScope();

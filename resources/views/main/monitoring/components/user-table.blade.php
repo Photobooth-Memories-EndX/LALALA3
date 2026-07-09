@@ -8,7 +8,7 @@
     <div class="card-header bg-white border-0">
         <div class="w-100 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
             <div>
-                <h3 class="card-title mb-1">{{ $title ?? 'Daftar User' }}</h3>
+                <h3 class="card-title mb-1">{{ $title ?? 'List User' }}</h3>
                 <div class="text-muted small">{{ $subtitle ?? 'Progress belajar user secara real-time.' }}</div>
             </div>
             @unless ($withFilters)
@@ -16,7 +16,7 @@
                     <div class="input-icon">
                         <span class="input-icon-addon"><i class="fas fa-search"></i></span>
                         <input id="{{ $tableId }}-search" type="text" class="form-control form-control-sm"
-                               placeholder="Cari nama / NIP...">
+                               placeholder="Cari name / NIP...">
                     </div>
                 </div>
             @endunless

@@ -5,7 +5,7 @@
             <div>
                 <h3 class="mb-1">Quick Actions</h3>
                 <div class="text-muted small">
-                    Akses cepat untuk membuat data baru.
+                    Quick access to create new data.
                 </div>
             </div>
         </div>

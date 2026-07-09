@@ -48,7 +48,7 @@
                         </h1>
 
                         <div class="text-muted">
-                            Kelola kategori pembelajaran OWL LMS untuk content, classification, dan reporting.
+                            Manage OWL LMS learning categories for content organization, classification, and reporting.
                         </div>
                     </div>
 
@@ -99,7 +99,7 @@
                     </h3>
 
                     <div class="text-muted small">
-                        Daftar seluruh kategori yang tersedia pada OWL LMS.
+                       View all categories available in OWL LMS.
                     </div>
                 </div>
             </div>

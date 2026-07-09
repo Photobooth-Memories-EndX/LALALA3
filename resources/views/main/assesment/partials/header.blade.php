@@ -13,7 +13,7 @@
                 </h2>
 
                 <div class="owl-page-subtitle">
-                    Kelola assessment, question bank, assignment user, dan hasil assessment.
+                    Manage assessments, question banks, user assignments, and assessment results.
                 </div>
             </div>
 

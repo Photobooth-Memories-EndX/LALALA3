@@ -16,7 +16,7 @@
                 </div>
                 <div class="col-auto ms-auto">
                     <a href="{{ route('monitoring.index') }}" class="btn btn-light owl-action-btn">
-                        <i class="fas fa-arrow-left mr-1"></i> Kembali
+                        <i class="fas fa-arrow-left mr-1"></i> Back
                     </a>
                 </div>
             </div>

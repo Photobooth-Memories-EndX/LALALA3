@@ -199,22 +199,22 @@
             <div class="d-flex flex-column gap-2 mb-3" id="aiSuggestions">
                 <button type="button" class="btn w-100 text-start ai-suggestion-btn">
                     <i class="ti ti-file-text me-2"></i>
-                    Ringkas materi ini
+                    Summarize this material
                 </button>
 
                 <button type="button" class="btn w-100 text-start ai-suggestion-btn">
                     <i class="ti ti-list-details me-2"></i>
-                    Apa poin pentingnya?
+                    What are the key points?
                 </button>
 
                 <button type="button" class="btn w-100 text-start ai-suggestion-btn">
                     <i class="ti ti-sparkles me-2"></i>
-                    Buatkan quiz dari materi ini
+                    Create a quiz from this material
                 </button>
 
                 <button type="button" class="btn w-100 text-start ai-suggestion-btn">
                     <i class="ti ti-help-circle me-2"></i>
-                    Jelaskan bagian yang sulit
+                    Explain the difficult parts
                 </button>
             </div>
 
@@ -222,7 +222,7 @@
                 <input type="text"
                     class="form-control ai-chat-input"
                     id="aiChatInput"
-                    placeholder="Tanya sesuatu tentang materi"
+                    placeholder="Type your question..."
                     autocomplete="off">
 
                 <button type="submit" class="btn btn-primary btn-icon flex-shrink-0" aria-label="Send message">
@@ -240,7 +240,7 @@
                 Learning Tips
             </h3>
             <p class="mb-0">
-                Selesaikan materi terlebih dahulu sebelum membuka assessment.
+                Complete the learning material before accessing the assessment.
             </p>
         </div>
     </div> --}}

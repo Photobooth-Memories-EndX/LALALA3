@@ -61,13 +61,13 @@
                             @if($type === 'content')
                                 <a href="{{ route('content.user.index') }}" class="btn btn-outline-secondary">
                                     <i class="ti ti-arrow-left me-1"></i>
-                                    Kembali ke Konten
+                                    Back to content
                                 </a>
                             @else
                                 <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('user.learning.dashboard') }}"
                                    class="btn btn-outline-secondary">
                                     <i class="ti ti-arrow-left me-1"></i>
-                                    Kembali
+                                    Back
                                 </a>
                             @endif
                         </div>

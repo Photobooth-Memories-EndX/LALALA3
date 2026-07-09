@@ -4,7 +4,7 @@
             <div class="col">
                 <div class="page-pretitle">Manage</div>
                 <h2 class="page-title">User Management</h2>
-                <div class="text-muted">Kelola data user PTKP dan Non-PTKP pada OWL LMS.</div>
+                <div class="text-muted">Manage PTKP and Non-PTKP user data in OWL LMS.</div>
             </div>
 
             <div class="col-auto ml-auto">

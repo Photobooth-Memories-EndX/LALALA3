@@ -2,11 +2,11 @@
 
 @section('content')
 
-<x-learning.dashboard-shell 
+<x-learning.dashboard-shell
     active="record"
     title="Learning Dashboard"
     subtitle="Laporan dan riwayat pembelajaran Anda."
-    
+
 >
     @php
         $items = collect($content_user ?? []);
@@ -86,7 +86,7 @@
                 </div>
 
                 <div class="text-muted small">
-                    Rata-rata progres pembelajaran Anda saat ini {{ $averageProgress }}%.
+                    Average Learning Progress {{ $averageProgress }}%.
                 </div>
             </div>
         </div>
@@ -96,9 +96,9 @@
         <div class="card-body">
             <div class="row g-2 align-items-center">
                 <div class="col">
-                    <h3 class="card-title mb-1">Daftar Riwayat Training</h3>
+                    <h3 class="card-title mb-1">Training History</h3>
                     <div class="text-muted small">
-                        Detail daftar training yang pernah atau sedang Anda ikuti.
+                        View your past and current training history.
                     </div>
                 </div>
 
@@ -115,7 +115,7 @@
                         <tr>
                             <th>No</th>
                             <th>Certificate</th>
-                            <th>Nama Kelas</th>
+                            <th>Class Name</th>
                             <th>Jenis</th>
                             <th>Classification</th>
                             <th>Duration</th>
@@ -164,7 +164,7 @@
                                         <a href="{{ route('certificate.generate', $list->id) }}"
                                            class="btn btn-sm btn-primary">
                                             <i class="ti ti-certificate me-1"></i>
-                                            Sertifikat
+                                            Certificate
                                         </a>
                                     @else
                                         <span class="badge bg-secondary-lt text-secondary">
@@ -243,12 +243,12 @@
                     </tbody>
                 </table>
             @else
-                <div class="empty py-5">
-                    <div class="empty-title">Belum ada record pembelajaran</div>
-                    <div class="empty-subtitle text-muted">
-                        Data riwayat training Anda akan muncul di sini.
-                    </div>
+            <div class="empty py-5">
+                <div class="empty-title">No Learning Records Yet</div>
+                <div class="empty-subtitle text-muted">
+                    Your training history will appear here.
                 </div>
+            </div>
             @endif
         </div>
     </div>

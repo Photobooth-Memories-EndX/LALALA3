@@ -94,8 +94,7 @@
         </div>
 
         <div class="alert alert-info mt-3">
-            Permission ini berlaku untuk semua user yang memiliki role tersebut.
-            Jika Role 2 dimatikan akses Content Repository, maka semua user Role 2 tidak bisa mengakses module tersebut.
+            These permissions apply to all users assigned to this role. If access to the Content Repository is disabled for Role 2, all users with Role 2 will no longer be able to access that module.
         </div>
 
     </div>

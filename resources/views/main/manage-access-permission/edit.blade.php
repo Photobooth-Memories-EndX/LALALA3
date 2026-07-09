@@ -50,13 +50,13 @@
                 <div class="col">
                     <h2 class="page-title mb-1">Edit Access Permission</h2>
                     <div class="text-muted">
-                        Atur module Manage LMS untuk role <strong>{{ $roleName }}</strong>.
+                        Configure Manage LMS modules for the <strong>{{ $roleName }}</strong> role.
                     </div>
                 </div>
 
                 <div class="col-auto">
                     <a href="{{ route('manage.access-permission.index') }}" class="btn btn-outline-secondary">
-                        Kembali
+                        Back
                     </a>
                 </div>
             </div>
@@ -85,7 +85,7 @@
                         <div class="col-md-4">
                             <div class="text-muted small">Effect</div>
                             <div class="fw-bold">
-                                Berlaku untuk semua user role {{ $roleName }}.
+                                Applies to all user roles. {{ $roleName }}.
                             </div>
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                         <div>
                             <h3 class="card-title mb-1">Module Permission</h3>
                             <div class="text-muted small">
-                                Aktifkan module yang boleh diakses oleh role ini.
+                               Select the modules this role can access.
                             </div>
                         </div>
                     </div>
@@ -136,16 +136,16 @@
                     <div class="sticky-footer-action p-3">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                             <div class="text-muted small">
-                                Perubahan otomatis berlaku ke semua user dengan role <strong>{{ $roleName }}</strong>.
+                                Changes will automatically apply to all users with the role <strong>{{ $roleName }}</strong>.
                             </div>
 
                             <div class="d-flex gap-2 justify-content-end">
                                 <a href="{{ route('manage.access-permission.index') }}" class="btn btn-outline-secondary">
-                                    Batal
+                                    Cancel
                                 </a>
 
                                 <button type="submit" class="btn btn-primary">
-                                    Simpan Permission
+                                    Save Permissions
                                 </button>
                             </div>
                         </div>

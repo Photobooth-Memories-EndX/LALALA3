@@ -2,7 +2,7 @@
 
 @section('content')
 
-<x-learning.dashboard-shell 
+<x-learning.dashboard-shell
     active="ongoing"
     title="Learning Dashboard"
     subtitle="Pantau kelas yang sedang Anda ikuti."
@@ -58,7 +58,7 @@
                 <div class="col">
                     <h3 class="card-title mb-1">Learning On Going</h3>
                     <div class="text-muted small">
-                        Menampilkan daftar kelas atau kursus yang sedang berjalan.
+                        View the list of ongoing classes or courses.
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -189,9 +189,9 @@
                     <div class="empty-img">
                         <img src="{{ asset('Tabler/static/illustrations/undraw_empty.svg') }}" height="120" alt="">
                     </div>
-                    <p class="empty-title">Belum ada learning berjalan</p>
+                    <p class="empty-title">No Ongoing Learning</p>
                     <p class="empty-subtitle text-muted">
-                        Data kelas atau kursus Anda akan muncul di halaman ini.
+                        Your ongoing classes or courses will appear here.
                     </p>
                 </div>
             </div>

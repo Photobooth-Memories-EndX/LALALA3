@@ -10,7 +10,7 @@
                 <div class="col">
                     <h2 class="page-title mb-1">Learning Dashboard</h2>
                     <div class="text-muted">
-                        Kelola learning, record, assessment, dan sertifikat Anda.
+                        Manage your learning, learning records, assessments, and certificates.
                     </div>
                 </div>
             </div>

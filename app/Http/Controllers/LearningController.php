@@ -643,7 +643,7 @@ class LearningController extends Controller
         $u = Auth::user();
 
         if ($u->isSuperAdmin()) {
-            return 'Semua User';
+            return 'All User';
         }
 
         [$type, $value] = $this->myLearningMonitoringScope();

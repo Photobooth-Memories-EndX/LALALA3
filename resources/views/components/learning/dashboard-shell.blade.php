@@ -32,7 +32,7 @@
         ],
         [
             'key' => 'certificate',
-            'label' => 'Sertifikat',
+            'label' => 'Certificate',
             'url' => Route::has('learning.certificate') ? route('learning.certificate') : '#',
         ],
         [

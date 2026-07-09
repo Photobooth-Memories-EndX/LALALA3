@@ -5,7 +5,7 @@
             <div>
                 <h3 class="mb-1">Recent Activity</h3>
                 <div class="text-muted small">
-                    Data terbaru dari Content, Assessment, Playlist, dan News.
+                    Latest updates from Content, Assessments, Playlists, and News.
                 </div>
             </div>
 

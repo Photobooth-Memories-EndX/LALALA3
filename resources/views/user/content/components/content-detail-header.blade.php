@@ -29,7 +29,7 @@
 
         {{-- SUBTITLE --}}
         <div class="text-muted mb-4 content-detail-subtitle">
-            Modul pembelajaran OWL LMS untuk pengembangan kompetensi dan peningkatan skill pembelajaran digital.
+            Develop your competencies and digital learning skills with OWL LMS learning modules.
         </div>
 
         {{-- ACTION SECTION --}}

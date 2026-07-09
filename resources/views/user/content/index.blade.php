@@ -61,7 +61,7 @@
                         </h1>
 
                         <p class="mb-0 text-white-75">
-                            Temukan materi pembelajaran berdasarkan kategori, tipe konten, dan urutan terbaru dalam satu halaman.
+                           Find learning materials by category, content type, and newest additions on a single page.
                         </p>
                     </div>
 
@@ -90,7 +90,7 @@
                     <div>
                         <h2 class="mb-0">Learning Materials</h2>
                         <div class="text-muted">
-                            Menampilkan daftar materi pembelajaran OWL LMS.
+                            Explore learning materials available in OWL LMS.
                         </div>
                     </div>
                 </div>
@@ -196,7 +196,7 @@
                             Learning Tips
                         </h3>
                         <p class="mb-0">
-                            Gunakan filter kategori dan tipe konten agar materi pembelajaran lebih mudah ditemukan.
+                            Use category and content type filters to find learning materials more easily.
                         </p>
                     </div>
                 </div>

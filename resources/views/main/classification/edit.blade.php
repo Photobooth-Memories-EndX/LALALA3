@@ -163,15 +163,15 @@
 
                                 <ul class="mb-0 small">
                                     <li>
-                                        Pastikan nama kategori tetap jelas dan tidak ambigu.
+                                        Keep the category name clear and unambiguous.
                                     </li>
 
                                     <li>
-                                        Hindari mengubah kategori yang sudah banyak dipakai tanpa kebutuhan jelas.
+                                        Avoid changing widely used categories unless necessary.
                                     </li>
 
                                     <li>
-                                        Setelah update, cek kembali filter content dan learning report.
+                                        Verify the content filters and learning reports after updating.
                                     </li>
                                 </ul>
 

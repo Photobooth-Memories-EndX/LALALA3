@@ -16,7 +16,7 @@
                 <div class="col">
                     <div class="page-pretitle">Manage / Content</div>
                     <h2 class="owl-page-title mb-1">{{ $title }}</h2>
-                    <div class="owl-page-subtitle">Isi form berikut untuk menambahkan konten baru.</div>
+                    <div class="owl-page-subtitle">Complete the form below to add new content.</div>
                 </div>
                 <div class="col-auto ms-auto">
                     <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
@@ -40,10 +40,10 @@
                     {{-- Kolom Kiri: Konten Utama --}}
                     <div class="col-lg-8">
 
-                        {{-- Informasi Utama --}}
+                        {{-- Main Information --}}
                         <div class="card owl-main-card mb-3">
                             <div class="card-header">
-                                <h3 class="card-title">Informasi Utama</h3>
+                                <h3 class="card-title">Main Information</h3>
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
@@ -134,7 +134,7 @@
                                     <input type="text" class="form-control" placeholder="00:00"
                                         name="duration" id="duration"
                                         data-mask="00:00" data-mask-visible="true" autocomplete="off">
-                                    <small class="form-hint">Format mm:ss. Wajib untuk konten Video & YouTube.</small>
+                                    <small class="form-hint">Format: mm:ss. Required for Video and YouTube content.</small>
                                 </div>
                             </div>
                         </div>
@@ -175,7 +175,7 @@
                                         <input class="form-check-input" type="checkbox" name="playlistonly" value="Y">
                                         <span class="form-check-label">Only show on Playlist</span>
                                     </label>
-                                    <small class="form-hint d-block mt-1">Konten hanya tampil di dalam playlist, tidak di daftar konten umum.</small>
+                                    <small class="form-hint d-block mt-1">This content is only available within playlists and will not appear in the general content list.</small>
                                 </div>
                             </div>
                         </div>
@@ -192,9 +192,9 @@
                                         <input class="form-check-input" type="checkbox" id="has_deadline_content"
                                             name="has_deadline" value="1"
                                             @if(old('has_deadline')) checked @endif>
-                                        <span class="form-check-label fw-medium">Perlu Deadline?</span>
+                                        <span class="form-check-label fw-medium">Set Deadline?</span>
                                     </label>
-                                    <small class="form-hint d-block mt-1">Opsional. Jika dicentang, isi rentang tanggal.</small>
+                                    <small class="form-hint d-block mt-1">Optional. If enabled, specify the date range.</small>
                                 </div>
                                 <div id="content-deadline-fields" style="{{ old('has_deadline') ? '' : 'display:none;' }}">
                                     <div class="mb-2">

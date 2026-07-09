@@ -5,7 +5,7 @@
         <div>
             <h3 class="card-title mb-1">Filter User</h3>
             <div class="text-muted small">
-                Cari user berdasarkan nama, NIP, division, department, atau team.
+                Search users by name, employee ID, division, department, or team.
             </div>
         </div>
     </div>
@@ -18,7 +18,7 @@
                     <label class="form-label small text-muted mb-1">Search</label>
                     <input type="text" name="s" value="{{ $search }}"
                            class="form-control form-control-sm"
-                           placeholder="Nama / email / NIP...">
+                           placeholder="Name / email / NIP...">
                 </div>
 
                 <div class="col-md-3 mb-2">

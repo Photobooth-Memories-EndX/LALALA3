@@ -20,9 +20,9 @@
 
             <div class="modal-body p-4">
 
-                <div class="alert alert-info py-2 mb-3">
-                    Klik <strong>Check Update</strong> untuk mengambil data terbaru dari sistem employee.
-                </div>
+                    <div class="alert alert-info py-2 mb-3">
+                        Click <strong>Check Update</strong> to sync the latest data from the employee system.
+                    </div>
 
                 <div class="form-group mb-3">
                     <label class="font-weight-bold">Employee ID</label>

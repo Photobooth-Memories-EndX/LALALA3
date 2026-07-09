@@ -4,7 +4,7 @@
     <div class="card-header bg-white border-0">
         <div>
             <h3 class="card-title mb-1">Filter Monitoring</h3>
-            <div class="text-muted small">Saring user berdasarkan division, department, team, atau role.</div>
+            <div class="text-muted small">Filter users by division, department, team, or role.</div>
         </div>
     </div>
 
@@ -14,7 +14,7 @@
             <div class="col-md-4 col-lg mb-2">
                 <label class="form-label small text-muted mb-1">Search User</label>
                 <input id="filter-search" type="text" class="form-control form-control-sm"
-                       placeholder="Nama / NIP / email...">
+                       placeholder="Name / NIP / email...">
             </div>
 
             <div class="col-md-4 col-lg mb-2">

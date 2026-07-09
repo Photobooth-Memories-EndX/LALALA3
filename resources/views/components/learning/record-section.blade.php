@@ -7,7 +7,7 @@
 <div class="card border-0 shadow-sm rounded-4 mb-3">
     <div class="card-body p-4">
         <h3 class="mb-1">Learning Record</h3>
-        <div class="text-muted">Riwayat pembelajaran yang sudah selesai.</div>
+        <div class="text-muted">View your completed learning history.</div>
 
         <div class="mt-4">
             <div class="fw-bold mb-1">Average Progress</div>
@@ -21,9 +21,9 @@
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
     <div class="card-body p-4 border-bottom">
-        <h3 class="card-title mb-1">Daftar Riwayat Training</h3>
+        <h3 class="card-title mb-1">Training History</h3>
         <div class="text-muted small">
-            Training yang sudah Anda selesaikan dan status kelayakan sertifikat.
+            Completed training programs and certificate status.
         </div>
     </div>
 
@@ -34,7 +34,7 @@
                     <tr>
                         <th class="text-muted">No</th>
                         <th class="text-muted">Certificate</th>
-                        <th class="text-muted">Nama Kelas</th>
+                        <th class="text-muted">Class</th>
                         <th class="text-muted">Type</th>
                         <th class="text-muted">Classification</th>
                         <th class="text-muted">Duration</th>

@@ -39,7 +39,7 @@
                                     </div>
                                     <div class="row g-3">
                                         <div class="col-6">
-                                            <div class="text-muted small">Nama</div>
+                                            <div class="text-muted small">Name</div>
                                             <div class="fw-bold">{{ $user->name ?? '-' }}</div>
                                         </div>
                                         <div class="col-6">
@@ -68,7 +68,7 @@
                         <div class="d-flex justify-content-center flex-wrap gap-2 mt-4">
                             <a href="{{ route('home.user.index') }}" class="btn btn-primary">
                                 <i class="ti ti-home me-1"></i>
-                                Kembali ke Dashboard
+                                Back to Dashboard
                             </a>
                             <a href="{{ route('user.learning.dashboard') }}" class="btn btn-outline-secondary">
                                 <i class="ti ti-books me-1"></i>

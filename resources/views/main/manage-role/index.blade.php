@@ -13,7 +13,7 @@
                     <div class="page-pretitle">Manage &middot; Role</div>
                     <h2 class="owl-page-title mb-1">Manage Role</h2>
                     <div class="owl-page-subtitle">
-                        Kelola role, division, department, team, dan org unit user.
+                        Manage user roles, divisions, departments, teams, and organizational units.
                     </div>
                 </div>
                 <div class="col-auto ms-auto">

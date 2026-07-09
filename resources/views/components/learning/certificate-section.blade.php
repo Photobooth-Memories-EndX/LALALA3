@@ -8,16 +8,16 @@
         <div class="d-flex align-items-center justify-content-between">
             <div>
                 <h3 class="mb-1">
-                    Sertifikat Saya
+                    My Certificates
                 </h3>
 
                 <div class="text-muted small">
-                    Daftar sertifikat yang telah berhasil Anda generate.
+                    View the certificates you have successfully generated.
                 </div>
             </div>
 
             <span class="badge bg-blue-lt text-blue">
-                {{ $userCertificates->count() }} Sertifikat
+                {{ $userCertificates->count() }} Certificate
             </span>
         </div>
     </div>
@@ -108,13 +108,13 @@
         <i class="ti ti-certificate"></i>
     </span>
 
-    <h3 class="mb-2">
-        Belum Ada Sertifikat
-    </h3>
+<h3 class="mb-2">
+    No Certificates Yet
+</h3>
 
-    <p class="text-muted text-center mb-0">
-        Sertifikat yang berhasil digenerate akan muncul di sini.
-    </p>
+<p class="text-muted text-center mb-0">
+    Your generated certificates will appear here.
+</p>
 
 </div>
 

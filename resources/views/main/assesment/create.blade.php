@@ -7,7 +7,7 @@
                 <div class="col">
                     <div class="owl-eyebrow">Learning Management System</div>
                     <h2 class="page-title mb-1">Manage Assesment</h2>
-                    <div class="text-muted">Buat assessment baru untuk content, playlist, atau global assessment.</div>
+                    <div class="text-muted">Create a new assessment for content, playlists, or global assessments.</div>
                 </div>
                 <div class="col-auto ms-auto d-print-none">
                     <div class="d-flex">
@@ -39,7 +39,7 @@
                                 <div>
                                     <h3 class="card-title mb-1">Create Assesment</h3>
                                     <div class="text-muted small">
-                                        Lengkapi informasi assessment, jadwal, passing grade, dan remedial.
+                                        Complete the assessment details, schedule, passing score, and remedial settings.
                                     </div>
                                 </div>
                             </div>
@@ -51,7 +51,7 @@
         <span>1</span>
         <div>
             <strong>Assessment Type</strong>
-            <small>Pilih assessment digunakan untuk content, playlist, atau global.</small>
+            <small>Select whether this assessment is for content, a playlist, or global use.</small>
         </div>
     </div>
 
@@ -91,7 +91,7 @@
         <span>2</span>
         <div>
             <strong>Basic Information</strong>
-            <small>Masukkan judul, unique code, dan passing grade.</small>
+            <small>Enter the assessment title, unique code, and passing score.</small>
         </div>
     </div>
 
@@ -125,7 +125,7 @@
         <span>3</span>
         <div>
             <strong>Schedule</strong>
-            <small>Atur waktu mulai dan selesai assessment.</small>
+            <small>Set the assessment start and end times.</small>
         </div>
     </div>
 
@@ -155,7 +155,7 @@
         <span>4</span>
         <div>
             <strong>Remedial Setting</strong>
-            <small>Tentukan jumlah remedial yang tersedia.</small>
+            <small>Set the maximum number of remedial attempts.</small>
         </div>
     </div>
 

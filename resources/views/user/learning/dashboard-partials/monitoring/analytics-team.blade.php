@@ -1,7 +1,7 @@
 {{-- Team analytics (role 3/4). Data: $teamAnalytics (lihat LearningAnalyticsService::team). --}}
 <div class="mb-2">
     <h3 class="mb-1">Team Analytics</h3>
-    <div class="text-muted">Ringkasan performa belajar seluruh anggota dalam cakupan Anda.</div>
+    <div class="text-muted">An overview of the learning performance of all members within your scope.</div>
 </div>
 
 {{-- Team summary --}}
@@ -56,7 +56,7 @@
             <thead>
                 <tr>
                     <th class="w-1">#</th>
-                    <th>Nama</th>
+                    <th>Name</th>
                     <th>NIP</th>
                     <th class="text-center">Content Selesai</th>
                     <th class="text-center">Avg Progress</th>

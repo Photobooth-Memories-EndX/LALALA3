@@ -18,7 +18,7 @@
 </div>
 
 <div class="form-group">
-    <label class="form-label certificate-item-label">Nama Target</label>
+    <label class="form-label certificate-item-label">Target Name</label>
     <select name="item_id"
             class="form-control certificate-item-select"
             data-selected-content=""

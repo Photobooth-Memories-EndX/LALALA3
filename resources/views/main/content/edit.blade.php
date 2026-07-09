@@ -94,10 +94,10 @@
                     {{-- Kolom Kiri --}}
                     <div class="col-lg-8">
 
-                        {{-- Informasi Utama --}}
+                        {{-- Main Information --}}
                         <div class="card owl-main-card mb-3">
                             <div class="card-header">
-                                <h3 class="card-title">Informasi Utama</h3>
+                                <h3 class="card-title">Main Information</h3>
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
@@ -325,9 +325,9 @@
                                         <input class="form-check-input" type="checkbox" id="has_deadline_content"
                                             name="has_deadline" value="1"
                                             @if($showContentDeadline) checked @endif>
-                                        <span class="form-check-label fw-medium">Perlu Deadline?</span>
+                                        <span class="form-check-label fw-medium">Set Deadline?</span>
                                     </label>
-                                    <small class="form-hint d-block mt-1">Opsional. Jika dicentang, isi rentang tanggal.</small>
+                                    <small class="form-hint d-block mt-1">Optional. If enabled, specify the date range.</small>
                                 </div>
                                 <div id="content-deadline-fields" style="{{ $showContentDeadline ? '' : 'display:none;' }}">
                                     <div class="mb-2">
@@ -350,7 +350,7 @@
                         {{-- Action Buttons --}}
                         <div class="card owl-main-card">
                             <div class="card-header">
-                                <h3 class="card-title">Aksi</h3>
+                                <h3 class="card-title">Action</h3>
                             </div>
                             <div class="card-body">
                                 <div class="d-grid gap-2">

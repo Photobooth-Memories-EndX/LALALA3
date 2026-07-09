@@ -19,18 +19,20 @@
                         'inactive'     => 'red',
                     ];
                     $titleMap = [
-                        'before_start' => 'Assessment Belum Dibuka',
-                        'expired'      => 'Assessment Sudah Berakhir',
-                        'inactive'     => 'Assessment Tidak Aktif',
+                        'before_start' => 'Assessment Not Yet Available',
+                        'expired'      => 'Assessment Expired',
+                        'inactive'     => 'Assessment Inactive',
                     ];
-                    $msgMap   = [
-                        'before_start' => 'Assessment ini baru dapat diakses sesuai jadwal yang ditentukan.',
-                        'expired'      => 'Periode pengerjaan assessment ini telah berakhir.',
-                        'inactive'     => 'Assessment ini sedang tidak aktif. Silakan hubungi Administrator LMS.',
+
+                    $msgMap = [
+                        'before_start' => 'This assessment will be available according to the scheduled start time.',
+                        'expired'      => 'The assessment period has ended.',
+                        'inactive'     => 'This assessment is currently inactive. Please contact the LMS Administrator.',
                     ];
+
                     $icon    = $iconMap[$reason]  ?? 'ti-circle-x';
                     $color   = $colorMap[$reason] ?? 'red';
-                    $title   = $titleMap[$reason] ?? 'Assessment Tidak Tersedia';
+                    $title   = $titleMap[$reason] ?? 'Assessment Unavailable';
                     $message = $msgMap[$reason]   ?? '';
                 @endphp
 
@@ -88,7 +90,7 @@
                         <div class="d-flex justify-content-center flex-wrap gap-2 mt-4">
                             <a href="{{ route('home.user.index') }}" class="btn btn-primary">
                                 <i class="ti ti-home me-1"></i>
-                                Kembali ke Dashboard
+                                Back to Dashboard
                             </a>
                             <a href="{{ route('user.learning.dashboard') }}" class="btn btn-outline-secondary">
                                 <i class="ti ti-books me-1"></i>

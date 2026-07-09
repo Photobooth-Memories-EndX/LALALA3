@@ -116,7 +116,7 @@ body.dark-mode .content-preview-icon span { color: #9ca3af; }
     <div class="card-header">
         <div>
             <h3 class="card-title">Preview</h3>
-            <p class="text-muted mb-0" style="font-size:12px;">Update otomatis saat pilih file</p>
+            <p class="text-muted mb-0" style="font-size:12px;">Automatically updates when a file is selected.</p>
         </div>
         <span class="badge bg-blue-lt text-blue" style="font-size:10px;">Live</span>
     </div>

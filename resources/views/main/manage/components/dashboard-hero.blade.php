@@ -18,7 +18,7 @@
                 </h2>
 
                 <p class="mb-4" style="opacity:.9">
-                    Kelola seluruh modul OWL LMS dari satu dashboard terpusat.
+                    Manage all OWL LMS modules from a centralized dashboard.
                 </p>
 
                 <div class="d-flex flex-wrap gap-2">

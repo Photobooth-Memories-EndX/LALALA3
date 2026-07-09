@@ -14,7 +14,7 @@
                 </h2>
 
                 <div class="text-muted mt-1">
-                    Tambahkan kategori baru untuk mengelompokkan content dan learning module OWL LMS.
+                    Add a new category to organize content and learning modules in OWL LMS.
                 </div>
             </div>
 
@@ -64,8 +64,7 @@
                         </h1>
 
                         <div class="text-muted">
-                            Kategori digunakan untuk mengelompokkan learning content, playlist,
-                            assessment, dan reporting agar lebih terstruktur.
+                            Categories are used to organize learning content, playlists, assessments, and reports for better organization.
                         </div>
 
                     </div>
@@ -98,7 +97,7 @@
                     </h3>
 
                     <div class="text-muted small">
-                        Isi informasi kategori yang akan digunakan pada OWL LMS.
+                        Enter the category information to be used in OWL LMS.
                     </div>
                 </div>
 
@@ -132,8 +131,7 @@
                             </div>
 
                             <small class="form-hint">
-                                Nama kategori akan digunakan pada content,
-                                playlist, assessment, dan reporting.
+                                Category names are used for content, playlists, assessments, and reporting.
                             </small>
 
                         </div>
@@ -153,15 +151,15 @@
                                 <ul class="mb-0 small">
 
                                     <li>
-                                        Gunakan nama yang jelas dan mudah dipahami.
+                                        Use a clear and easy-to-understand category name.
                                     </li>
 
                                     <li>
-                                        Hindari nama kategori yang terlalu panjang.
+                                        Avoid using overly long category names.
                                     </li>
 
                                     <li>
-                                        Pastikan kategori tidak duplikat.
+                                        Make sure the category name is unique.
                                     </li>
 
                                 </ul>

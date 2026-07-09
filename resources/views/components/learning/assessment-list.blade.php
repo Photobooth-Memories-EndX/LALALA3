@@ -42,7 +42,7 @@
                         <th>Batch</th>
                         <th>Passing Grade</th>
                         <th>Status</th>
-                        <th class="text-end">Aksi</th>
+                        <th class="text-end">Action</th>
                     </tr>
                 </thead>
 

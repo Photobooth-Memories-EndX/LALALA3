@@ -124,12 +124,12 @@
         @if ($slugUrl)
             <a href="{{ $slugUrl }}" class="btn btn-primary w-100 mt-auto">
                 <i class="ti ti-player-play me-1"></i>
-                Lanjutkan Learning
+                Continue Learning
             </a>
         @else
             <button type="button" class="btn btn-primary w-100 mt-auto" disabled>
                 <i class="ti ti-player-play me-1"></i>
-                Lanjutkan Learning
+                Continue Learning
             </button>
         @endif
     </div>

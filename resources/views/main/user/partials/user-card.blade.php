@@ -3,7 +3,7 @@
         <div>
             <h3 class="card-title mb-1">List Active User</h3>
             <div class="text-muted small">
-                Data karyawan aktif, PTKP, dan outsourcing.
+                Manage active employees, PTKP employees, and outsourced employees.
             </div>
         </div>
     </div>
@@ -143,7 +143,7 @@
                                     data-url="{{ route('user.resetpassword', $list->id) }}"
                                     data-method="PUT"
                                     data-title="Reset Password"
-                                    data-message="Yakin ingin reset password user {{ $list->name }}?"
+                                    data-message="Are you sure you want to reset this user's password {{ $list->name }}?"
                                     data-button="Reset"
                                     data-color="warning">
                                     <i class="ti ti-lock-open text-warning"></i>
@@ -157,7 +157,7 @@
                                     data-url="{{ route('user.destroy', $list->id) }}"
                                     data-method="DELETE"
                                     data-title="Delete User"
-                                    data-message="Yakin ingin menghapus user {{ $list->name }}?"
+                                    data-message="Are you sure you want to delete this user {{ $list->name }}?"
                                     data-button="Delete"
                                     data-color="danger">
                                     <i class="ti ti-trash text-danger"></i>

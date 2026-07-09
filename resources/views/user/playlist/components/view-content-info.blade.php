@@ -65,10 +65,10 @@
 
             <div class="row g-3">
                 @foreach ([
-                    'Memahami materi utama pada chapter ini',
-                    'Menyelesaikan progress pembelajaran',
-                    'Meningkatkan pemahaman materi',
-                    'Siap lanjut ke chapter berikutnya',
+                    'Understand the key concepts',
+                    'Complete the learning progress',
+                    'Strengthen your understanding',
+                    'Ready for the next chapter',
                 ] as $learnItem)
                     <div class="col-md-6">
                         <div class="learn-item">
@@ -90,12 +90,12 @@
                     @if ($playlistProgressComplete)
                         <span class="badge bg-success-lt text-success px-3 py-2">
                             <i class="fas fa-check-circle me-1"></i>
-                            Semua Content Selesai
+                            All Content Completed
                         </span>
                     @else
                         <span class="badge bg-secondary-lt text-secondary px-3 py-2">
                             <i class="fas fa-lock me-1"></i>
-                            Progress Belum 100%
+                            Incomplete Progress
                         </span>
                     @endif
 
@@ -103,30 +103,30 @@
                         @if ($playlistAssessmentDone)
                             <span class="badge bg-success-lt text-success px-3 py-2">
                                 <i class="fas fa-tasks me-1"></i>
-                                Playlist Assessment Selesai
+                                Playlist Assessment Completed
                             </span>
                         @else
                             <span class="badge bg-primary-lt text-primary px-3 py-2">
                                 <i class="fas fa-tasks me-1"></i>
-                                Playlist Assessment Tersedia
+                                Playlist Assessment Available
                             </span>
                         @endif
                     @else
                         <span class="badge bg-secondary-lt text-secondary px-3 py-2">
                             <i class="fas fa-info-circle me-1"></i>
-                            Playlist Assessment Tidak Ada
+                            No Playlist Assessment
                         </span>
                     @endif
 
                     @if ($playlistCertificateSetting)
                         <span class="badge bg-green-lt text-green px-3 py-2">
                             <i class="fas fa-certificate me-1"></i>
-                            Sertifikat Tersedia
+                            Certificate Available
                         </span>
                     @else
                         <span class="badge bg-secondary-lt text-secondary px-3 py-2">
                             <i class="fas fa-certificate me-1"></i>
-                            Sertifikat Belum Dikonfigurasi
+                            Certificate Not Configured
                         </span>
                     @endif
 
@@ -154,7 +154,7 @@
                                     class="btn btn-success"
                                     {{ $canGeneratePlaylistCertificate ? '' : 'disabled' }}>
                                 <i class="fas fa-certificate me-2"></i>
-                                Cetak Sertifikat Playlist
+                                Download Playlist Certificate
                             </button>
                         </form>
                     @endif
@@ -165,7 +165,7 @@
 
             @if (!$canGeneratePlaylistCertificate)
                 <div class="text-muted small mt-2">
-                    Sertifikat dapat dicetak setelah seluruh syarat playlist terpenuhi.
+                    The certificate will be available after all playlist requirements have been completed.
                 </div>
             @endif
         </div>

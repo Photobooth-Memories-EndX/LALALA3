@@ -7,7 +7,7 @@
             </h3>
 
             <div class="text-muted small">
-                Daftar assessment yang tersedia di LMS OWL.
+                View all assessments available in OWL LMS.
             </div>
         </div>
     </div>

@@ -9,9 +9,9 @@
                     <div class="col-lg-8">
                         <div class="text-uppercase text-muted small fw-semibold mb-2">Manage Learning</div>
                         <h1 class="display-6 mb-3">Learning dashboard with fast summary and server-side detail table.</h1>
-                        <p class="text-muted mb-4">
+                        {{-- <p class="text-muted mb-4">
                             Ringkasan di halaman ini diambil dari query aggregate, sementara detail learning dibuka melalui halaman tabel server-side agar tetap responsif saat data membesar.
-                        </p>
+                        </p> --}}
                         <div class="d-flex flex-wrap gap-2">
                             <a href="{{ route('learning.manage.all') }}" class="btn btn-primary btn-lg">
                                 <i class="ti ti-table me-1"></i>

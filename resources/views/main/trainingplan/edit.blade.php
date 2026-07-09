@@ -77,7 +77,7 @@
                                 <div>
                                     <h3 class="card-title">Konten Playlist</h3>
                                     <p class="text-muted mb-0" style="font-size:13px;">
-                                        Pilih konten, lalu tarik item untuk mengatur urutan section.
+                                        Select content, then drag and drop items to arrange the section order.
                                     </p>
                                 </div>
                                 <span class="badge bg-blue-lt text-blue">Drag &amp; Drop</span>
@@ -99,7 +99,7 @@
                                     </select>
                                 </div>
                                 <div class="d-flex justify-content-between mt-2">
-                                    <small class="form-hint">Hanya konten yang sudah dipublish. Ketik untuk mencari.</small>
+                                    <small class="form-hint">Only published content is available. Type to search.</small>
                                     <small class="content-select-count" id="content-count-label"></small>
                                 </div>
                                 <div class="mt-3">
@@ -139,7 +139,7 @@
                                     <label class="form-label">{{ $trainingplan->thumbnail_url ? 'Ganti Thumbnail' : 'Upload Thumbnail' }}</label>
                                     <input type="file" name="thumbnail" id="thumbnail" class="form-control"
                                         accept="image/jpg,image/jpeg,image/png,image/webp">
-                                    <small class="form-hint">Opsional. Format: JPG, PNG, WEBP — maks. 2 MB.</small>
+                                    <small class="form-hint">Optional. Format: JPG, PNG, WEBP — maks. 2 MB.</small>
                                 </div>
                             </div>
                         </div>
@@ -161,9 +161,9 @@
                                         <input class="form-check-input" type="checkbox" id="has_deadline"
                                             name="has_deadline" value="1"
                                             @if($showDeadline) checked @endif>
-                                        <span class="form-check-label fw-medium">Perlu Deadline?</span>
+                                        <span class="form-check-label fw-medium">Set Deadline?</span>
                                     </label>
-                                    <small class="form-hint d-block mt-1">Jika dicentang, isi rentang tanggal di bawah.</small>
+                                    <small class="form-hint d-block mt-1">If checked, specify the date range below.</small>
                                 </div>
                                 <div id="deadline-fields" style="{{ $showDeadline ? '' : 'display:none;' }}">
                                     <div class="mb-2">
@@ -182,7 +182,7 @@
 
                         <div class="card owl-main-card">
                             <div class="card-header">
-                                <h3 class="card-title">Aksi</h3>
+                                <h3 class="card-title">Action</h3>
                             </div>
                             <div class="card-body">
                                 <div class="d-grid gap-2">
@@ -255,7 +255,7 @@
                     closeAfterSelect: false,
                     sortField: [],
                     dropdownParent: 'body',
-                    placeholder: 'Ketik untuk mencari konten...',
+                    placeholder: 'Type to search content...',
                     searchField: ['text'],
                     maxOptions: 80,
                     render: {

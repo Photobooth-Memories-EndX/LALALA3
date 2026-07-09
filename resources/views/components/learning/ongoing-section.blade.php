@@ -17,11 +17,11 @@
                         </div>
 
                         <h3 class="display-6 mb-2 text-white">
-                            Lanjutkan Pembelajaran Anda
+                            Continue Your Learning
                         </h3>
 
                         <p class="mb-0 text-white-75">
-                            Selesaikan materi yang sedang berjalan dan tingkatkan progress learning Anda.
+                            Complete ongoing material and increase your learning progress.
                         </p>
                     </div>
 
@@ -43,7 +43,7 @@
 
                             <div class="col-12">
                                 <a href="#learningGrid" class="btn btn-light w-100 btn-lg text-primary fw-semibold">
-                                    Mulai Belajar
+                                    Start Learning
                                 </a>
                             </div>
                         </div>
@@ -112,9 +112,9 @@
         @else
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body text-center py-5">
-                    <div class="empty-title">Belum ada learning berjalan</div>
+                    <div class="empty-title">No learning is currently underway</div>
                     <div class="empty-subtitle text-muted">
-                        Data kelas berjalan akan muncul di sini.
+                        Data for the rotating class will appear here.
                     </div>
                 </div>
             </div>

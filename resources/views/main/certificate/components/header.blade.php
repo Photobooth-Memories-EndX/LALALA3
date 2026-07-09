@@ -6,7 +6,7 @@
         </h2>
 
         <div class="text-muted">
-            Pengaturan syarat sertifikat OWL LMS.
+            Manage OWL LMS certificate requirements.
         </div>
     </div>
 

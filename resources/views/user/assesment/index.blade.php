@@ -8,7 +8,7 @@
         <div class="card border-0 shadow-sm rounded-4 mb-3 assessment-card">
             <div class="card-body">
                 <h3 class="card-title mb-1">Assessment List</h3>
-                <div class="text-muted small">Daftar assessment yang tersedia untuk Anda.</div>
+                <div class="text-muted small">Your Available Assessments.</div>
             </div>
 
             <div class="table-responsive px-3 pb-3">
@@ -22,7 +22,7 @@
                             <th>Batch</th>
                             <th>Passing Grade</th>
                             <th>Status</th>
-                            <th class="text-end">Aksi</th>
+                            <th class="text-end">Action</th>
                         </tr>
                     </thead>
 
@@ -126,7 +126,7 @@
         <div class="card border-0 shadow-sm rounded-4 assessment-card">
             <div class="card-body">
                 <h3 class="card-title mb-1">Assessment Result</h3>
-                <div class="text-muted small">Riwayat hasil assessment Anda.</div>
+                <div class="text-muted small">Your assessment history.</div>
             </div>
 
             <div class="table-responsive px-3 pb-3">

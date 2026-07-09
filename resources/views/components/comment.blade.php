@@ -49,7 +49,7 @@
                         <x-textarea
                             class="comment-textarea"
                             name="description"
-                            placeholder="Tulis komentar..."
+                            placeholder="Add a comment..."
                             onkeyup="countWord(this)"
                             maxlength="1000"
                             rows="3"></x-textarea>
@@ -79,8 +79,8 @@
             @empty
                 <div class="text-center p-4">
                     <i class="ti ti-message-circle-off text-muted" style="font-size:40px;"></i>
-                    <h6 class="mt-2 mb-1">Belum ada komentar</h6>
-                    <div class="text-muted small">Jadilah yang pertama memberikan komentar.</div>
+                    <h6 class="mt-2 mb-1">No Comments Yet</h6>
+                    <div class="text-muted small">Be the first to leave a comment.</div>
                 </div>
             @endforelse
 

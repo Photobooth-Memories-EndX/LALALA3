@@ -31,55 +31,55 @@
 
         <div class="modal-body p-4">
 
-            <div class="alert alert-success py-2 mb-4">
-                Lengkapi informasi user Non-PTKP sebelum membuat akun.
-            </div>
+    <div class="alert alert-success py-2 mb-4">
+        Complete the Non-PTKP user details before creating the account.
+    </div>
 
-            <div class="form-group">
-                <label class="font-weight-bold">
-                    Employee ID
-                </label>
+    <div class="form-group">
+        <label class="font-weight-bold">
+            Employee ID
+        </label>
 
-                <input type="text"
-                    class="form-control"
-                    name="id_employee"
-                    placeholder="Contoh: 10001">
-            </div>
+        <input type="text"
+            class="form-control"
+            name="id_employee"
+            placeholder="e.g., 10001">
+    </div>
 
-            <div class="form-group">
-                <label class="font-weight-bold">
-                    Full Name
-                </label>
+    <div class="form-group">
+        <label class="font-weight-bold">
+            Full Name
+        </label>
 
-                <input type="text"
-                    class="form-control"
-                    name="name"
-                    placeholder="Masukkan nama lengkap">
-            </div>
+        <input type="text"
+            class="form-control"
+            name="name"
+            placeholder="Enter the full name">
+    </div>
 
-            <div class="form-group">
-                <label class="font-weight-bold">
-                    Email Address
-                </label>
+    <div class="form-group">
+        <label class="font-weight-bold">
+            Email Address
+        </label>
 
-                <input type="email"
-                    class="form-control"
-                    name="email"
-                    placeholder="user@company.com">
-            </div>
+        <input type="email"
+            class="form-control"
+            name="email"
+            placeholder="user@company.com">
+    </div>
 
-            <div class="form-group mb-0">
-                <label class="font-weight-bold">
-                    Company Name
-                </label>
+    <div class="form-group mb-0">
+        <label class="font-weight-bold">
+            Company Name
+        </label>
 
-                <input type="text"
-                    class="form-control"
-                    name="company_name"
-                    placeholder="Nama perusahaan/vendor">
-            </div>
+        <input type="text"
+            class="form-control"
+            name="company_name"
+            placeholder="Enter the company or vendor name">
+    </div>
 
-        </div>
+</div>
 
         <div class="modal-footer bg-light">
 

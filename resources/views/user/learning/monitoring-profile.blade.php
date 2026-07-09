@@ -15,7 +15,7 @@
                 </div>
                 <div class="col-auto ms-auto">
                     <a href="{{ route('user.learning.dashboard') }}" class="btn btn-outline-secondary">
-                        <i class="ti ti-arrow-left"></i> Kembali
+                        <i class="ti ti-arrow-left"></i> Back
                     </a>
                 </div>
             </div>

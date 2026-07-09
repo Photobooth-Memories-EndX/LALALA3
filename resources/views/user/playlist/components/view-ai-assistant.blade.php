@@ -48,25 +48,25 @@
                     <button type="button" class="btn btn-light border ai-suggestion-btn text-start"
                             onclick="aiInsertPrompt(this)">
                         <i class="ti ti-file-text me-2 text-primary"></i>
-                        Ringkas materi ini
+                        Summarize this material
                     </button>
 
                     <button type="button" class="btn btn-light border ai-suggestion-btn text-start"
                             onclick="aiInsertPrompt(this)">
                         <i class="ti ti-list-check me-2 text-primary"></i>
-                        Apa poin pentingnya?
+                        What are the key points?
                     </button>
 
                     <button type="button" class="btn btn-light border ai-suggestion-btn text-start"
                             onclick="aiInsertPrompt(this)">
                         <i class="ti ti-help-circle me-2 text-primary"></i>
-                        Buatkan quiz dari materi ini
+                        Create a quiz from this material
                     </button>
 
                     <button type="button" class="btn btn-light border ai-suggestion-btn text-start"
                             onclick="aiInsertPrompt(this)">
                         <i class="ti ti-zoom-question me-2 text-primary"></i>
-                        Jelaskan bagian yang sulit
+                        Explain the difficult parts
                     </button>
                 </div>
             </div>
@@ -79,7 +79,7 @@
                 <input type="text"
                        id="aiChatInput"
                        class="form-control"
-                       placeholder="Tanya sesuatu tentang materi ini...">
+                       placeholder="Type your question...">
                 <button class="btn btn-primary" type="button" onclick="aiSendMessage()">
                     <i class="ti ti-send"></i>
                 </button>

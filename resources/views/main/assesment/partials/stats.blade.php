@@ -66,7 +66,7 @@
                     </div>
 
                     <div class="owl-stat-content">
-                        <div class="owl-stat-label">Avg Passing Grade</div>
+                        <div class="owl-stat-label">Average Passing Grade</div>
                         <div class="owl-stat-number">
                             {{ number_format($assesment->avg('passing_grade') ?? 0, 0) }}
                         </div>

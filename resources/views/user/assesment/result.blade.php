@@ -91,25 +91,25 @@
                             </div>
                         </div>
 
-                        @if (!$isPassed)
-                            <div class="alert alert-warning mt-3 mb-0">
-                                Jika Anda belum lulus dan ingin remedial, silakan tunggu batch berikutnya atau hubungi administrator.
-                            </div>
-                        @else
-                            <div class="alert alert-success mt-3 mb-0">
-                                Selamat! Anda sudah menyelesaikan assessment ini dengan hasil lulus.
-                            </div>
-                        @endif
+                            @if (!$isPassed)
+                                <div class="alert alert-warning mt-3 mb-0">
+                                    If you did not pass and wish to retake the assessment, please wait for the next batch or contact the LMS Administrator.
+                                </div>
+                            @else
+                                <div class="alert alert-success mt-3 mb-0">
+                                    Congratulations! You have successfully passed this assessment.
+                                </div>
+                            @endif
                     </div>
                 </div>
 
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-body">
-                        <h3 class="mb-3">Aksi Selanjutnya</h3>
+                        <h3 class="mb-3">Next Action</h3>
 
                         <div class="d-flex flex-wrap gap-2">
                             <a href="{{ route('user.learning.dashboard') }}" class="btn btn-primary">
-                                Kembali ke Learning Assessment
+                                Back  to Learning Assessment
                             </a>
 
                             <a href="{{ route('user.learning.dashboard') }}" class="btn btn-white">

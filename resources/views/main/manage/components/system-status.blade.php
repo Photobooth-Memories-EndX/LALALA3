@@ -6,7 +6,7 @@
         </h3>
 
         <div class="text-muted small mb-3">
-            Aktivitas upload bulan ini.
+            Monthly Upload Activity
         </div>
 
         <div class="d-flex justify-content-between mb-2">
@@ -36,7 +36,7 @@
         </h3>
 
         <div class="text-muted small mb-3">
-            Author content terbanyak dalam 6 bulan terakhir.
+            Top Content Authors in the Last 6 Months
         </div>
 
         @forelse ($topContributors as $contributor)

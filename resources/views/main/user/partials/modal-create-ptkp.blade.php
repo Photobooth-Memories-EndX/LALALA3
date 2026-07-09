@@ -31,9 +31,9 @@
 
         <div class="modal-body p-4">
 
-            <div class="alert alert-info py-2 mb-4">
-                Klik <strong>Get Data</strong> untuk mengambil data employee dari sistem.
-            </div>
+                <div class="alert alert-info py-2 mb-4">
+                    Click <strong>Get Data</strong> to synchronize employee data from the system.
+                </div>
 
             <div class="form-group mb-4">
 

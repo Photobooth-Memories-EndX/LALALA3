@@ -3,8 +3,8 @@
 
     <div class="card-header bg-white border-0">
         <div>
-            <h3 class="card-title mb-1">Daftar User</h3>
-            <div class="text-muted small">Data user, role, dan organisasi.</div>
+            <h3 class="card-title mb-1">List User</h3>
+            <div class="text-muted small">User, role, and organizational data.</div>
         </div>
     </div>
 
@@ -13,13 +13,13 @@
             <thead>
                 <tr>
                     <th class="text-center">No</th>
-                    <th>Nama</th>
+                    <th>Name</th>
                     <th>NIP</th>
                     <th>Division</th>
                     <th>Department</th>
                     <th>Team</th>
-                    <th>Org Unit</th>
-                    <th>Role Saat Ini</th>
+                    <th>Organization Unit</th>
+                    <th>Current Role</th>
                     <th class="text-right">Action</th>
                 </tr>
             </thead>

@@ -124,7 +124,7 @@
                         </div>
                         <div class="card-footer">
                             <a href="{{ route('playlist.edit', $slug) }}" class="btn btn-light w-100">
-                                Kembali ke Edit Playlist
+                                Back to Edit Playlist
                             </a>
                         </div>
                     </div>

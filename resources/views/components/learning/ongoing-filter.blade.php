@@ -6,7 +6,7 @@
                 <div class="col-lg-4">
                     <h3 class="card-title mb-1">Learning On Going</h3>
                     <div class="text-muted small">
-                        Daftar kelas yang sedang Anda ikuti.
+                        Your Enrolled Classes
                     </div>
                 </div>
 
@@ -23,7 +23,7 @@
                                        id="ongoing_search"
                                        value="{{ request('ongoing_search') }}"
                                        class="form-control rounded-3"
-                                       placeholder="Cari kelas atau klasifikasi">
+                                       placeholder="Search classes or categories">
                             </div>
                         </div>
 
@@ -65,8 +65,8 @@
                     <label class="form-label small text-muted mb-1" for="ongoing_progress_sort">Completion Status / Progress</label>
                     <select name="ongoing_progress_sort" id="ongoing_progress_sort" class="form-select rounded-3">
                         <option value="all" {{ request('ongoing_progress_sort', 'all') == 'all' ? 'selected' : '' }}>All Progress</option>
-                        <option value="progress_highest" {{ request('ongoing_progress_sort') == 'progress_highest' ? 'selected' : '' }}>Progress Tertinggi</option>
-                        <option value="progress_lowest" {{ request('ongoing_progress_sort') == 'progress_lowest' ? 'selected' : '' }}>Progress Terendah</option>
+                        <option value="progress_highest" {{ request('ongoing_progress_sort') == 'progress_highest' ? 'selected' : '' }}>Highest Progress</option>
+                        <option value="progress_lowest" {{ request('ongoing_progress_sort') == 'progress_lowest' ? 'selected' : '' }}>Lowest Progress</option>
                         <option value="not_started" {{ request('ongoing_progress_sort') == 'not_started' ? 'selected' : '' }}>Not Started 0%</option>
                         <option value="in_progress" {{ request('ongoing_progress_sort') == 'in_progress' ? 'selected' : '' }}>In Progress 1% - 99%</option>
                         <option value="almost_done" {{ request('ongoing_progress_sort') == 'almost_done' ? 'selected' : '' }}>Almost Done 80% - 99%</option>
