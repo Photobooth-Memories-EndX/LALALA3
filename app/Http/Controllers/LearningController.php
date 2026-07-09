@@ -131,13 +131,16 @@ class LearningController extends Controller
             ->where('pass', 1)
             ->count();
 
+        $averageProgress = (int) round(ContentUser::where('user_id', $userId)->avg('progress') ?? 0);
+
         return view('user.learning.dashboard', compact(
             'user',
             'learningHours',
             'totalLearning',
             'completedLearning',
             'ongoingLearning',
-            'passedAssessment'
+            'passedAssessment',
+            'averageProgress'
         ));
     }
 

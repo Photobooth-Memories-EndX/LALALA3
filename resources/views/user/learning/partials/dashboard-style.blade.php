@@ -40,6 +40,96 @@
         line-height: 1;
     }
 
+    /* Highlight utama hero: Average Progress besar dengan glass effect */
+    .learning-hero-highlight {
+        background: rgba(255, 255, 255, .16);
+        border: 1px solid rgba(255, 255, 255, .25);
+        border-radius: 1.25rem;
+        padding: 1.5rem 1.75rem;
+        color: #fff;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 10px 30px rgba(13, 46, 110, .18);
+    }
+
+    .learning-hero-highlight-label {
+        font-size: .8rem;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        opacity: .85;
+        margin-bottom: .5rem;
+    }
+
+    .learning-hero-highlight-value {
+        font-size: 3.5rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .learning-hero-highlight-unit {
+        font-size: 1.75rem;
+        font-weight: 700;
+        opacity: .85;
+        margin-left: .15rem;
+    }
+
+    .learning-hero-highlight-bar {
+        height: .6rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .22);
+        margin-top: 1rem;
+        overflow: hidden;
+    }
+
+    .learning-hero-highlight-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: #fff;
+    }
+
+    /* 4 mini card statistik pendukung: grid rapat, tinggi seragam, tanpa overflow */
+    .learning-hero-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .75rem;
+        align-items: stretch;
+    }
+
+    .learning-hero-stats .learning-mini-stat {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        text-align: center;
+        padding: .85rem .6rem;
+    }
+
+    .learning-hero-stats .learning-mini-stat-value {
+        font-size: 1.35rem;
+    }
+
+    @media (max-width: 1199.98px) {
+        .learning-hero-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .learning-hero-highlight-value {
+            font-size: 2.75rem;
+        }
+
+        .learning-hero-cta {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 419.98px) {
+        .learning-hero-stats {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
     .learning-filter-card .form-control,
     .learning-filter-card .form-select {
         min-height: 42px;

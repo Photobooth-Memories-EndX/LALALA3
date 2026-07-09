@@ -7,51 +7,8 @@
 <section class="learning-section-wrapper">
     <div class="learning-section-padding py-4 px-2 px-md-3 learning-dashboard-container">
 
-        <div class="card border-0 shadow-sm rounded-4 learning-hero learning-section-hero mb-4">
-            <div class="card-body p-4 p-lg-5">
-                <div class="row align-items-center g-4">
-                    <div class="col-lg-7">
-                        <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary shadow-sm mb-3 px-3 py-2 rounded-pill">
-                            <i class="ti ti-flame"></i>
-                            <span>{{ $ongoingContentUser->total() ?? 0 }} kelas aktif</span>
-                        </div>
-
-                        <h3 class="display-6 mb-2 text-white">
-                            Continue Your Learning
-                        </h3>
-
-                        <p class="mb-0 text-white-75">
-                            Complete ongoing material and increase your learning progress.
-                        </p>
-                    </div>
-
-                    <div class="col-lg-5">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="learning-mini-stat">
-                                    <div class="learning-mini-stat-label">Total Ongoing</div>
-                                    <div class="learning-mini-stat-value">{{ $ongoingLearning }}</div>
-                                </div>
-                            </div>
-
-                            <div class="col-6">
-                                <div class="learning-mini-stat">
-                                    <div class="learning-mini-stat-label">Average Progress</div>
-                                    <div class="learning-mini-stat-value">{{ $averageProgress }}%</div>
-                                </div>
-                            </div>
-
-                            <div class="col-12">
-                                <a href="#learningGrid" class="btn btn-light w-100 btn-lg text-primary fw-semibold">
-                                    Start Learning
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        {{-- Hero "Continue Your Learning" kini dirender sekali di dashboard.blade.php
+             (x-learning.hero-section) sehingga tampil konsisten di semua tab. --}}
         <x-learning.ongoing-filter />
 
         @if ($ongoingContentUser->count() > 0)

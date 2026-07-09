@@ -23,11 +23,12 @@
 
         <x-learning.tab-navigation />
 
-        <x-learning.summary-cards
+        <x-learning.hero-section
             :total-learning="$totalLearning"
             :completed-learning="$completedLearning"
             :ongoing-learning="$ongoingLearning"
             :passed-assessment="$passedAssessment"
+            :average-progress="$averageProgress ?? 0"
         />
 
         <div id="learning-tab-content">

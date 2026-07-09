@@ -6,6 +6,7 @@
 @php
     $name = $user->name ?? 'User';
     $initial = strtoupper(substr($name, 0, 1));
+    $position = $user->position ?? $user->job_title ?? null;
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 mb-3">
@@ -35,27 +36,22 @@
 
                 <div class="text-muted small">
                     {{ $user->department ?? '-' }}
-                </div>
-            </div>
 
-            {{-- Right Section --}}
-            <div class="col-md-auto text-md-end">
-
-                <div class="fw-semibold">
-                    {{ $user->position ?? $user->job_title ?? '-' }}
+                    @if (!empty($position))
+                        · {{ $position }}
+                    @endif
                 </div>
 
-                <a href="mailto:{{ $user->email ?? '' }}" class="small text-primary d-block">
-                    {{ $user->email ?? '-' }}
-                </a>
+                <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                    <a href="mailto:{{ $user->email ?? '' }}" class="small text-primary text-break">
+                        {{ $user->email ?? '-' }}
+                    </a>
 
-                <div class="mt-3">
                     <span class="badge bg-primary-lt text-primary px-3 py-2">
                         <i class="ti ti-clock me-1"></i>
                         {{ number_format($learningHours ?? 0, 1) }} Learning Hours
                     </span>
                 </div>
-
             </div>
 
         </div>
