@@ -67,6 +67,11 @@
 
 @section('style')
     <link rel="stylesheet" href="{{ $url_ytplayer_css }}">
+
+    @if (in_array($content->type, ['Document', 'SOP/Regulation']))
+        <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
+    @endif
+
     @include('user.playlist.components.view-style')
 
     <style>
@@ -242,6 +247,13 @@
         applyState();
     })();
 </script>
+    <script src="{{ asset('js/learning-progress.js') }}"></script>
     <script src="{{ $url_ytplayer_js }}"></script>
+
+    @if (in_array($content->type, ['Document', 'SOP/Regulation']))
+        <script src="{{ asset('js/pdf.min.js') }}"></script>
+        <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
+    @endif
+
     @include('user.playlist.components.view-player-script')
 @endsection

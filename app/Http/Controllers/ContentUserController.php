@@ -205,6 +205,104 @@ class ContentUserController extends Controller
             ->withFragment('comment');
     }
 
+    /**
+     * Auto learning progress endpoint (MVP).
+     *
+     * Receives raw playback/reading position from the frontend and recomputes
+     * progress server-side — the client-sent progress value is never trusted.
+     * The old PUT progress/{slug} route stays as the manual/fallback flow.
+     */
+    public function updateProgress(Request $request)
+    {
+        $validated = $request->validate([
+            'content_id'       => 'required|integer|exists:content,id',
+            'type'             => 'required|in:document,video',
+            'last_page'        => 'nullable|integer|min:1',
+            'total_pages'      => 'nullable|integer|min:1',
+            'current_time'     => 'nullable|numeric|min:0',
+            'duration_seconds' => 'nullable|numeric|min:0',
+            'status'           => 'nullable|in:in_progress,paused,completed',
+        ]);
+
+        $contentUser = ContentUser::firstOrCreate([
+            'user_id'    => auth()->id(),
+            'content_id' => $validated['content_id'],
+        ]);
+
+        $previousProgress = (int) $contentUser->progress;
+        $computed = null;
+
+        if ($validated['type'] === 'document') {
+            $totalPages = (int) ($validated['total_pages'] ?? $contentUser->total_pages ?? 0);
+            $lastPage   = (int) ($validated['last_page'] ?? 0);
+
+            if ($totalPages > 0) {
+                $contentUser->total_pages = $totalPages;
+            }
+
+            if ($lastPage > 0) {
+                $contentUser->last_page = $totalPages > 0 ? min($lastPage, $totalPages) : $lastPage;
+
+                if ($totalPages > 0) {
+                    $computed = ($contentUser->last_page / $totalPages) * 100;
+                }
+            }
+        } else {
+            $duration    = (float) ($validated['duration_seconds'] ?? $contentUser->duration_seconds ?? 0);
+            $currentTime = $validated['current_time'] ?? null;
+
+            if ($duration > 0) {
+                $contentUser->duration_seconds = (int) round($duration);
+            }
+
+            if ($currentTime !== null) {
+                $currentTime = (float) $currentTime;
+
+                if ($duration > 0) {
+                    $currentTime = min($currentTime, $duration);
+                    $computed = ($currentTime / $duration) * 100;
+                }
+
+                $contentUser->current_time = (int) round($currentTime);
+            }
+        }
+
+        // Progress never decreases (rewinding/re-reading keeps the highest reached).
+        $progress = $previousProgress;
+
+        if ($computed !== null) {
+            $progress = max($previousProgress, max(0, min(100, (int) round($computed))));
+        }
+
+        // "completed" from the client (video ended) is only honored when the
+        // recomputed position actually backs it up.
+        if (($validated['status'] ?? null) === 'completed' && $computed !== null && $computed >= 90) {
+            $progress = 100;
+        }
+
+        $contentUser->progress = $progress;
+
+        if ($progress >= 100) {
+            $contentUser->finish = '1';
+            $contentUser->learning_status = 'completed';
+        } elseif (($validated['status'] ?? null) === 'paused') {
+            $contentUser->learning_status = 'paused';
+        } elseif (($validated['status'] ?? null) === 'in_progress' || $computed !== null) {
+            $contentUser->learning_status = 'in_progress';
+        }
+
+        $contentUser->save();
+
+        return response()->json([
+            'success'      => true,
+            'progress'     => (int) $contentUser->progress,
+            'status'       => $contentUser->learning_status,
+            'finish'       => (int) $contentUser->finish,
+            'current_time' => (int) $contentUser->current_time,
+            'last_page'    => $contentUser->last_page,
+        ]);
+    }
+
     public function progress(Request $request, $slug)
     {
         $content = Content::findBySlug($slug);

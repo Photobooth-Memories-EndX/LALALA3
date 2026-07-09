@@ -25,13 +25,42 @@
                 </div>
 
             @elseif (in_array($content->type, ['Document', 'SOP/Regulation']))
-                <div class="d-flex align-items-center justify-content-center p-5 text-muted">
-                    <div class="text-center">
-                        <i class="fas fa-file-alt fa-3x mb-3 text-primary opacity-50"></i>
-                        <div class="fw-semibold">Document Content</div>
-                        <div class="small mt-1">This chapter is a document type.</div>
+                @if ($getcontentfile)
+                    <div class="playlist-pdfviewer" id="playlist-pdf-shell">
+                        <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 p-2 border-bottom playlist-pdf-toolbar">
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.prev(); return false;" title="Previous Page">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span class="pageno small fw-bold px-2"></span>
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.next(); return false;" title="Next Page">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.setZoom('out')" title="Zoom Out">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.setZoom('in')" title="Zoom In">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.setZoom('width')" title="Fit Width">
+                                <i class="fas fa-arrows-alt-h"></i>
+                            </button>
+                        </div>
+                        <div class="pdfjs-viewer playlist-pdfjs-viewer" style="height:560px; overflow:hidden;"></div>
                     </div>
-                </div>
+                @else
+                    <div class="d-flex align-items-center justify-content-center p-5 text-muted">
+                        <div class="text-center">
+                            <i class="fas fa-file-alt fa-3x mb-3 text-primary opacity-50"></i>
+                            <div class="fw-semibold">Document Content</div>
+                            <div class="small mt-1">No document file available for this chapter.</div>
+                        </div>
+                    </div>
+                @endif
 
             @else
                 <div class="d-flex align-items-center justify-content-center p-5 text-muted">

@@ -25,25 +25,25 @@
         ? route('playlist.user.view', [$playlist->slug, $nextItem->content->slug])
         : '#';
 @endphp
-
 <div class="card border-0 shadow-sm rounded-4 mb-3">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+        <div class="d-flex align-items-center gap-3">
 
             <a href="{{ $previousUrl }}"
-               class="btn btn-outline-secondary {{ !$previousItem ? 'disabled' : '' }}">
+               class="btn btn-outline-secondary flex-fill {{ !$previousItem ? 'disabled' : '' }}">
                 <i class="fas fa-chevron-left me-2"></i>
                 Previous
             </a>
 
             <button type="button"
-                    class="btn btn-primary px-4"
-                    onclick="markContentComplete()">
+                    class="btn btn-primary flex-fill"
+                    disabled>
+                <i class="fas fa-check-circle me-2"></i>
                 Mark as Complete
             </button>
 
             <a href="{{ $nextUrl }}"
-               class="btn btn-outline-secondary {{ !$nextItem ? 'disabled' : '' }}">
+               class="btn btn-outline-secondary flex-fill {{ !$nextItem ? 'disabled' : '' }}">
                 Next
                 <i class="fas fa-chevron-right ms-2"></i>
             </a>

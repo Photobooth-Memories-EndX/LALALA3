@@ -9,7 +9,26 @@ class ContentUser extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'content_id', 'status', 'finish'];
+    protected $fillable = [
+        'user_id',
+        'content_id',
+        'status',
+        'finish',
+        'progress',
+        'last_page',
+        'total_pages',
+        'current_time',
+        'duration_seconds',
+        'learning_status',
+    ];
+
+    protected $casts = [
+        'progress' => 'integer',
+        'last_page' => 'integer',
+        'total_pages' => 'integer',
+        'current_time' => 'integer',
+        'duration_seconds' => 'integer',
+    ];
 
     public function content()
     {

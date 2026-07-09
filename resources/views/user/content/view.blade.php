@@ -723,6 +723,8 @@
 @endsection
 
 @section('script')
+    <script src="{{ asset('js/learning-progress.js') }}"></script>
+
     @if ($content->type == 'Document' || $content->type == 'SOP/Regulation')
         <script src="{{ asset('js/pdf.min.js') }}"></script>
         <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
@@ -748,14 +750,32 @@
             pdfjsLib.GlobalWorkerOptions.workerSrc =
                 "{{ asset('js/pdf.worker.min.js') }}";
 
+            const progressTracker = new OwlLearningProgress({
+                url: "{{ route('content.user.progress.update') }}",
+                csrf: "{{ csrf_token() }}",
+                contentId: {{ (int) $content->id }},
+                type: 'document',
+                onUpdate: window.owlUpdateLearningUi
+            });
+
             let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
                 onDocumentReady: () => {
-                    var progression = {{ (int) $content_user->progress }};
-                    var current_page = (progression * pdfViewer.getPageCount()) / 100;
+                    var totalPages = pdfViewer.getPageCount();
 
-                    if (parseInt(current_page) < pdfViewer.getPageCount()) {
-                        pdfViewer.scrollToPage(parseInt(current_page));
+                    // Resume: prefer the exact saved page, fall back to the
+                    // legacy progress-percentage estimate.
+                    var lastPage = {{ (int) ($content_user->last_page ?? 0) }};
+
+                    if (!lastPage) {
+                        var progression = {{ (int) $content_user->progress }};
+                        lastPage = parseInt((progression * totalPages) / 100);
                     }
+
+                    if (lastPage > 1 && lastPage < totalPages) {
+                        pdfViewer.scrollToPage(lastPage);
+                    }
+
+                    progressTracker.send({ total_pages: totalPages }, true);
 
                     hideContentPlayerSkeleton();
                 },
@@ -768,17 +788,9 @@
                 onActivePageChanged: function (page, pageno) {
                     $(".pageno").text(pageno + "/" + this.getPageCount());
 
-                    $.ajax({
-                        type: "PUT",
-                        url: $('#player_paused').data('url'),
-                        data: {
-                            'current_time': pageno,
-                            'duration': this.getPageCount(),
-                            '_token': '{{ csrf_token() }}'
-                        },
-                        success: function(data) {
-                            console.log(data.success);
-                        }
+                    progressTracker.sendDebounced({
+                        last_page: pageno,
+                        total_pages: this.getPageCount()
                     });
                 }
             });
@@ -931,41 +943,77 @@
                     });
                 @endif
 
+                const progressTracker = new OwlLearningProgress({
+                    url: "{{ route('content.user.progress.update') }}",
+                    csrf: "{{ csrf_token() }}",
+                    contentId: {{ (int) $content->id }},
+                    type: 'video',
+                    onUpdate: window.owlUpdateLearningUi
+                });
+
                 player.on('loadeddata', onDataLoaded);
                 player.on('ready', function() {
                     hideContentPlayerSkeleton();
                 });
 
                 function onDataLoaded() {
-                    var progression = $('#player_progress').val();
-                    var durasi = $('#player_duration').val();
-                    var current_player_time = (progression * durasi) / 100;
+                    // Resume: prefer the exact saved position, fall back to the
+                    // legacy progress-percentage estimate.
+                    var resumeSeconds = {{ (int) ($content_user->current_time ?? 0) }};
 
-                    if (current_player_time < durasi) {
-                        player.currentTime = current_player_time;
+                    if (!resumeSeconds) {
+                        var progression = $('#player_progress').val();
+                        var durasi = $('#player_duration').val();
+                        resumeSeconds = (progression * durasi) / 100;
                     }
 
-                    if (current_player_time <= player.duration) {
-                        player.off('loadeddata', onDataLoaded);
-                        player.currentTime = current_player_time;
+                    if (resumeSeconds > 0 && resumeSeconds < player.duration) {
+                        player.currentTime = resumeSeconds;
                     }
 
+                    player.off('loadeddata', onDataLoaded);
                     hideContentPlayerSkeleton();
                 }
 
-                player.on('pause', function() {
-                    $.ajax({
-                        type: "PUT",
-                        url: $('#player_paused').data('url'),
-                        data: {
-                            'current_time': player.currentTime,
-                            'duration': player.duration,
-                            '_token': '{{ csrf_token() }}'
-                        },
-                        success: function(data) {
-                            console.log(data.success);
-                        }
+                player.on('loadedmetadata', function() {
+                    if (player.duration) {
+                        progressTracker.send({ duration_seconds: player.duration }, true);
+                    }
+                });
+
+                player.on('play', function() {
+                    progressTracker.send({
+                        status: 'in_progress',
+                        current_time: player.currentTime,
+                        duration_seconds: player.duration
+                    }, true);
+                });
+
+                player.on('timeupdate', function() {
+                    if (!player.duration) return;
+
+                    progressTracker.send({
+                        current_time: player.currentTime,
+                        duration_seconds: player.duration
                     });
+                });
+
+                player.on('pause', function() {
+                    if (player.ended) return;
+
+                    progressTracker.send({
+                        status: 'paused',
+                        current_time: player.currentTime,
+                        duration_seconds: player.duration
+                    }, true);
+                });
+
+                player.on('ended', function() {
+                    progressTracker.send({
+                        status: 'completed',
+                        current_time: player.duration,
+                        duration_seconds: player.duration
+                    }, true);
                 });
             });
         </script>
