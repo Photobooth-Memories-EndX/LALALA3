@@ -6,6 +6,7 @@
     'type' => 'Content',
     'progress' => 0,
     'program' => 'optional',
+    'month' => null,
     'year' => 'unknown',
     'active' => '-',
     'statusLabel' => 'ongoing',
@@ -20,6 +21,7 @@
     $type = $type ?? 'Content';
     $progress = (int) ($progress ?? 0);
     $program = strtolower($program ?? 'optional');
+    $month = $month ?? null;
     $year = $year ?? 'unknown';
     $active = $active ?? '-';
     $statusLabel = $statusLabel ?? 'ongoing';
@@ -93,11 +95,17 @@
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-            <span class="badge bg-primary-lt text-primary">
+            <span class="badge bg-blue-lt text-blue">
                 {{ ucfirst($program) }}
             </span>
 
-            <span class="badge bg-gray-100 text-secondary">
+            @if ($month)
+                <span class="badge bg-purple-lt text-purple">
+                    {{ $month }}
+                </span>
+            @endif
+
+            <span class="badge bg-gray-lt text-gray">
                 {{ $year }}
             </span>
 

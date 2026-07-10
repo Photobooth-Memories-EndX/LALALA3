@@ -251,6 +251,16 @@ class LearningController extends Controller
         $activitySort = request('ongoing_activity_sort', 'newest_activity');
         $progressSort = request('ongoing_progress_sort', 'all');
 
+        // Filter tambahan (multi-value / checkbox) — semuanya opsional & bisa dikombinasikan.
+        $types           = array_filter((array) request('ongoing_type', []));
+        $learningStatus  = array_filter((array) request('ongoing_learning_status', []));
+        $progressBuckets = array_filter((array) request('ongoing_progress', []));
+        $durations       = array_filter((array) request('ongoing_duration', []));
+        $months          = array_filter((array) request('ongoing_month', []));
+        $currentTimes    = array_filter((array) request('ongoing_current_time', []));
+        $lastPages       = array_filter((array) request('ongoing_last_page', []));
+        $totalPagesFilt  = array_filter((array) request('ongoing_total_pages', []));
+
         $query = ContentUser::with([
                 'content.classification',
                 'assesment' => fn ($q) => $q->with([
@@ -280,10 +290,95 @@ class LearningController extends Controller
         $query->when($progressSort === 'in_progress', fn ($q) => $q->whereBetween('progress', [1, 99]));
         $query->when($progressSort === 'almost_done', fn ($q) => $q->where('progress', '>=', 80)->where('progress', '<', 100));
 
+        // ── Filter tambahan (data asli content_users & relasi content) ──────────────
+        // Type diambil dari kolom content.type (Video, Document, YouTube, dll).
+        $query->when(!empty($types), fn ($q) => $q->whereHas('content', fn ($c) => $c->whereIn('type', $types)));
+
+        // Learning status diambil dari kolom content_users.learning_status.
+        $query->when(!empty($learningStatus), fn ($q) => $q->whereIn('learning_status', $learningStatus));
+
+        // Bulan berdasarkan content_users.created_at (angka 1-12).
+        $query->when(!empty($months), fn ($q) => $q->whereIn(DB::raw('MONTH(created_at)'), $months));
+
+        // Progress dikelompokkan per rentang; antar pilihan bersifat OR.
+        $query->when(!empty($progressBuckets), function ($q) use ($progressBuckets) {
+            $q->where(function ($sub) use ($progressBuckets) {
+                foreach ($progressBuckets as $bucket) {
+                    switch ($bucket) {
+                        case '0':     $sub->orWhere('progress', 0); break;
+                        case '1-25':  $sub->orWhereBetween('progress', [1, 25]); break;
+                        case '26-50': $sub->orWhereBetween('progress', [26, 50]); break;
+                        case '51-75': $sub->orWhereBetween('progress', [51, 75]); break;
+                        case '76-99': $sub->orWhereBetween('progress', [76, 99]); break;
+                        case '100':   $sub->orWhere('progress', '>=', 100); break;
+                    }
+                }
+            });
+        });
+
+        // Durasi berdasarkan content_users.duration_seconds (detik); antar pilihan OR.
+        $query->when(!empty($durations), function ($q) use ($durations) {
+            $q->where(function ($sub) use ($durations) {
+                foreach ($durations as $d) {
+                    switch ($d) {
+                        case 'lt10':  $sub->orWhere('duration_seconds', '<', 600); break;
+                        case '10-30': $sub->orWhereBetween('duration_seconds', [600, 1800]); break;
+                        case '30-60': $sub->orWhereBetween('duration_seconds', [1801, 3600]); break;
+                        case 'gt60':  $sub->orWhere('duration_seconds', '>', 3600); break;
+                    }
+                }
+            });
+        });
+
+        // Current learning time (content_users.current_time, posisi belajar dalam detik).
+        $query->when(!empty($currentTimes), function ($q) use ($currentTimes) {
+            $q->where(function ($sub) use ($currentTimes) {
+                foreach ($currentTimes as $c) {
+                    switch ($c) {
+                        case 'start':  $sub->orWhere('current_time', '<', 300); break;
+                        case 'middle': $sub->orWhereBetween('current_time', [300, 1800]); break;
+                        case 'almost': $sub->orWhere('current_time', '>', 1800); break;
+                    }
+                }
+            });
+        });
+
+        // Last page (content_users.last_page).
+        $query->when(!empty($lastPages), function ($q) use ($lastPages) {
+            $q->where(function ($sub) use ($lastPages) {
+                foreach ($lastPages as $p) {
+                    switch ($p) {
+                        case '1-10':  $sub->orWhereBetween('last_page', [1, 10]); break;
+                        case '11-20': $sub->orWhereBetween('last_page', [11, 20]); break;
+                        case '21-50': $sub->orWhereBetween('last_page', [21, 50]); break;
+                        case 'gt50':  $sub->orWhere('last_page', '>', 50); break;
+                    }
+                }
+            });
+        });
+
+        // Total pages (content_users.total_pages).
+        $query->when(!empty($totalPagesFilt), function ($q) use ($totalPagesFilt) {
+            $q->where(function ($sub) use ($totalPagesFilt) {
+                foreach ($totalPagesFilt as $p) {
+                    switch ($p) {
+                        case 'lt10':  $sub->orWhere('total_pages', '<', 10); break;
+                        case '10-20': $sub->orWhereBetween('total_pages', [10, 20]); break;
+                        case '21-50': $sub->orWhereBetween('total_pages', [21, 50]); break;
+                        case 'gt50':  $sub->orWhere('total_pages', '>', 50); break;
+                    }
+                }
+            });
+        });
+
         if ($progressSort === 'progress_highest') {
             $query->orderByDesc('progress');
         } elseif ($progressSort === 'progress_lowest') {
             $query->orderBy('progress');
+        } elseif ($activitySort === 'duration_longest') {
+            $query->orderByDesc('duration_seconds');
+        } elseif ($activitySort === 'duration_shortest') {
+            $query->orderBy('duration_seconds');
         } elseif ($activitySort === 'oldest_activity') {
             $query->orderBy('updated_at');
         } else {

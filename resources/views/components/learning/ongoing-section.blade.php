@@ -34,6 +34,12 @@
                                         : 'unknown'
                                 );
 
+                            // Badge bulan: prioritas content_users.created_at, lalu contents.created_at.
+                            $monthSource = $list->created_at ?? ($content->created_at ?? null);
+                            $month = $monthSource
+                                ? \Carbon\Carbon::parse($monthSource)->format('F')
+                                : null;
+
                             $thumbFile = public_path('storage/files/content/' . $content->id . '/thumb.jpg');
                             $thumbnail = file_exists($thumbFile)
                                 ? '/storage/files/content/' . $content->id . '/thumb.jpg'
@@ -51,6 +57,7 @@
                                 :type="$type"
                                 :progress="$progress"
                                 :program="$program"
+                                :month="$month"
                                 :year="$year"
                                 :active="$list->active ?? '-'"
                                 :status-label="$statusLabel"
