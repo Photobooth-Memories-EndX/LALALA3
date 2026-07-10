@@ -2,7 +2,12 @@
     'contentUser',
     'averageProgress' => 0,
     'certificateSettings' => collect(),
+    'completedPlaylists' => null,
 ])
+
+@php
+    $completedPlaylists = $completedPlaylists ?? collect();
+@endphp
 
 {{-- <div class="card border-0 shadow-sm rounded-4 mb-3">
     <div class="card-body p-4">
@@ -253,6 +258,61 @@
                                         </td>
 
                             </tr>
+                    @endforeach
+
+                    {{-- ── Playlist (Training Plan) yang telah selesai 100% ──────────────────── --}}
+                    @foreach ($completedPlaylists as $playlist)
+                        @php
+                            $rowNo       = $sortedContentUser->count() + $loop->iteration;
+                            $finishDate  = $playlist->last_finished_at
+                                ? date('Y-m-d H:i', strtotime($playlist->last_finished_at))
+                                : '-';
+                        @endphp
+                        <tr>
+                            <td class="text-muted">{{ $rowNo }}</td>
+
+                            <td>
+                                <div class="fw-semibold learning-record-title"
+                                     title="{{ $playlist->title ?? '-' }}">
+                                    {{ $playlist->title ?? '-' }}
+                                </div>
+
+                                <div class="text-muted small">
+                                    {{ (int) ($playlist->finished_items ?? 0) }} / {{ (int) ($playlist->total_items ?? 0) }} content selesai
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="badge bg-teal-lt text-teal learning-record-badge">
+                                    <i class="ti ti-playlist me-1"></i>Playlist
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="badge bg-secondary-lt text-secondary">Playlist</span>
+                            </td>
+
+                            <td class="small">-</td>
+
+                            <td>
+                                <div class="learning-record-progress">
+                                    <div class="percent">100%</div>
+                                </div>
+                            </td>
+
+                            <td class="small">{{ $finishDate }}</td>
+
+                            <td>
+                                <span class="badge bg-secondary-lt text-secondary learning-record-badge">-</span>
+                            </td>
+
+                            <td>
+                                <span class="badge bg-secondary-lt text-secondary learning-record-badge">
+                                    <i class="ti ti-certificate-off me-1"></i>
+                                    Not Available
+                                </span>
+                            </td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>

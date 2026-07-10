@@ -1,4 +1,5 @@
 @props([
+    'cardType' => 'content',
     'title' => '-',
     'slug' => null,
     'classification' => '-',
@@ -11,37 +12,60 @@
     'active' => '-',
     'statusLabel' => 'ongoing',
     'thumbnail' => null,
+    // Nama Playlist asal content (badge kecil pada card Content). Kosong = tanpa badge.
+    'playlistNames' => null,
+    // Khusus card Playlist (Training Plan).
+    'moduleCount' => 0,
+    'completedCount' => 0,
+    'continueUrl' => null,
 ])
 
 @php
+    $cardType = $cardType ?? 'content';
+    $isPlaylist = $cardType === 'playlist';
+
     $title = $title ?? '-';
-    $slug = $slug ?? null;
-    $classification = $classification ?? '-';
-    $duration = $duration ?? '-';
-    $type = $type ?? 'Content';
     $progress = (int) ($progress ?? 0);
-    $program = strtolower($program ?? 'optional');
-    $month = $month ?? null;
-    $year = $year ?? 'unknown';
-    $active = $active ?? '-';
-    $statusLabel = $statusLabel ?? 'ongoing';
-    $thumbnail = $thumbnail ?? null;
 
-    $typeLabel = ucwords(str_replace('_', ' ', $type));
-    $typeLower = strtolower($typeLabel);
-
-    if (str_contains($typeLower, 'video') || str_contains($typeLower, 'youtube')) {
-        $placeholderIcon = 'ti ti-video';
-        $typeBadgeClass = 'bg-red text-white';
-    } elseif (str_contains($typeLower, 'pdf') || str_contains($typeLower, 'doc')) {
-        $placeholderIcon = 'ti ti-file-description';
-        $typeBadgeClass = 'bg-yellow text-white';
+    if ($isPlaylist) {
+        // Card Playlist memakai desain yang sama seperti Video/Document, hanya berbeda konten.
+        $typeLabel       = 'Playlist';
+        $placeholderIcon = 'ti ti-playlist';
+        $typeBadgeClass  = 'bg-teal text-white';
+        $moduleCount     = (int) ($moduleCount ?? 0);
+        $completedCount  = (int) ($completedCount ?? 0);
+        $continueUrl     = !blank($continueUrl) ? $continueUrl : null;
+        // Thumbnail playlist; jika kosong dipakai placeholder default Playlist di bawah.
+        $thumbnail       = $thumbnail ?? null;
     } else {
-        $placeholderIcon = 'ti ti-book';
-        $typeBadgeClass = 'bg-blue text-white';
-    }
+        $playlistNames = collect($playlistNames ?? [])->filter()->values();
+        $slug = $slug ?? null;
+        $classification = $classification ?? '-';
+        $duration = $duration ?? '-';
+        $type = $type ?? 'Content';
+        $program = strtolower($program ?? 'optional');
+        $month = $month ?? null;
+        $year = $year ?? 'unknown';
+        $active = $active ?? '-';
+        $statusLabel = $statusLabel ?? 'ongoing';
+        $thumbnail = $thumbnail ?? null;
 
-    $slugUrl = !blank($slug) ? route('content.user.view', $slug) : null;
+        $typeLabel = ucwords(str_replace('_', ' ', $type));
+        $typeLower = strtolower($typeLabel);
+
+        if (str_contains($typeLower, 'video') || str_contains($typeLower, 'youtube')) {
+            $placeholderIcon = 'ti ti-video';
+            $typeBadgeClass = 'bg-red text-white';
+        } elseif (str_contains($typeLower, 'pdf') || str_contains($typeLower, 'doc')) {
+            $placeholderIcon = 'ti ti-file-description';
+            $typeBadgeClass = 'bg-yellow text-white';
+        } else {
+            $placeholderIcon = 'ti ti-book';
+            $typeBadgeClass = 'bg-blue text-white';
+        }
+
+        $slugUrl = !blank($slug) ? route('content.user.view', $slug) : null;
+    }
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 learning-modern-card">
@@ -78,7 +102,11 @@
 
         <div class="position-absolute top-0 end-0 p-3">
             <span class="badge bg-dark text-white bg-opacity-50 shadow-sm">
-                {{ $duration }}
+                @if ($isPlaylist)
+                    {{ $moduleCount }} Modules
+                @else
+                    {{ $duration }}
+                @endif
             </span>
         </div>
     </div>
@@ -90,33 +118,63 @@
             </h3>
 
             <div class="text-muted small line-clamp-2">
-                {{ $classification }}
+                @if ($isPlaylist)
+                    {{ $moduleCount }} Modules
+                @else
+                    {{ $classification }}
+                @endif
             </div>
         </div>
 
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-            <span class="badge bg-blue-lt text-blue">
-                {{ ucfirst($program) }}
-            </span>
-
-            @if ($month)
-                <span class="badge bg-purple-lt text-purple">
-                    {{ $month }}
+        @if ($isPlaylist)
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <span class="badge bg-teal-lt text-teal">
+                    <i class="ti ti-playlist me-1"></i>Playlist
                 </span>
-            @endif
+            </div>
+        @else
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <span class="badge bg-blue-lt text-blue">
+                    {{ ucfirst($program) }}
+                </span>
 
-            <span class="badge bg-gray-lt text-gray">
-                {{ $year }}
-            </span>
+                @if ($month)
+                    <span class="badge bg-purple-lt text-purple">
+                        {{ $month }}
+                    </span>
+                @endif
 
-            <span class="badge bg-green-lt text-green">
-                {{ $statusLabel }}
-            </span>
-        </div>
+                <span class="badge bg-gray-lt text-gray">
+                    {{ $year }}
+                </span>
+
+                <span class="badge bg-green-lt text-green">
+                    {{ $statusLabel }}
+                </span>
+
+                {{-- Badge Playlist asal — hanya tampil bila content berasal dari Playlist.
+                     Bila lebih dari satu, tampilkan satu nama + "+N" agar card tetap ringkas. --}}
+                @if ($playlistNames->isNotEmpty())
+                    <span class="badge bg-teal-lt text-teal" title="Playlist: {{ $playlistNames->implode(', ') }}">
+                        <i class="ti ti-playlist me-1"></i>{{ $playlistNames->first() }}
+                    </span>
+
+                    @if ($playlistNames->count() > 1)
+                        <span class="badge bg-teal-lt text-teal" title="Playlist: {{ $playlistNames->implode(', ') }}">
+                            +{{ $playlistNames->count() - 1 }}
+                        </span>
+                    @endif
+                @endif
+            </div>
+        @endif
 
         <div class="mb-2">
             <div class="d-flex justify-content-between small mb-1">
-                <span class="text-muted">Progress</span>
+                @if ($isPlaylist)
+                    <span class="text-muted">{{ $completedCount }} / {{ $moduleCount }} Completed</span>
+                @else
+                    <span class="text-muted">Progress</span>
+                @endif
                 <span class="fw-semibold">{{ $progress }}%</span>
             </div>
 
@@ -125,12 +183,20 @@
             </div>
         </div>
 
-        <div class="small text-muted mb-3">
-            Aktiv: {{ $active }}
-        </div>
+        @if (! $isPlaylist)
+            <div class="small text-muted mb-3">
+                Aktiv: {{ $active }}
+            </div>
+        @else
+            <div class="small text-muted mb-3">&nbsp;</div>
+        @endif
 
-        @if ($slugUrl)
-            <a href="{{ $slugUrl }}" class="btn btn-primary w-100 mt-auto">
+        @php
+            $cardUrl = $isPlaylist ? $continueUrl : ($slugUrl ?? null);
+        @endphp
+
+        @if ($cardUrl)
+            <a href="{{ $cardUrl }}" class="btn btn-primary w-100 mt-auto">
                 <i class="ti ti-player-play me-1"></i>
                 Continue Learning
             </a>

@@ -1,5 +1,11 @@
+@props([
+    // Daftar Playlist (Training Plan) on-going milik user, dari controller (bebas N+1).
+    'playlists' => null,
+])
+
 @php
     $userId = auth()->id();
+    $playlists = $playlists ?? collect();
 
     // Opsi Type diambil langsung dari data asli (content.type milik user).
     $typeOptions = \App\Models\Content::whereHas('contentuser', fn ($q) => $q->where('user_id', $userId))
@@ -8,6 +14,12 @@
         ->distinct()
         ->orderBy('type')
         ->pluck('type');
+
+    // "playlist" adalah pseudo-type: menampilkan card Playlist (Training Plan), bukan content.type asli.
+    // Hanya ditawarkan bila user memang punya playlist yang sedang dikerjakan.
+    if ($playlists->isNotEmpty() && ! $typeOptions->contains('playlist')) {
+        $typeOptions = $typeOptions->push('playlist')->values();
+    }
 
     // Nilai filter multi-select yang sedang aktif.
     $selType       = (array) request('ongoing_type', []);
@@ -18,6 +30,10 @@
     $selCurrent    = (array) request('ongoing_current_time', []);
     $selLastPage   = (array) request('ongoing_last_page', []);
     $selTotalPages = (array) request('ongoing_total_pages', []);
+    $selPlaylist   = array_map('strval', (array) request('ongoing_playlist', []));
+
+    // Map id => judul playlist untuk label chip.
+    $playlistTitles = $playlists->pluck('title', 'id');
 
     // Nilai filter single-value (dropdown lama yang kini dipindah ke dalam modal).
     $curProgram      = request('ongoing_status', 'all');
@@ -38,6 +54,7 @@
     $advancedCount += count(array_filter($selCurrent));
     $advancedCount += count(array_filter($selLastPage));
     $advancedCount += count(array_filter($selTotalPages));
+    $advancedCount += count(array_filter($selPlaylist));
 
     // ── Opsi filter ─────────────────────────────────────────────────────────────
     $programOptions = [
@@ -210,6 +227,24 @@
                                 <i class="ti ti-x ms-1"></i>
                             </a>
                         @endif
+
+                        {{-- Chip Playlist aktif — bisa dihapus satu per satu tanpa reset filter lain --}}
+                        @foreach (array_filter($selPlaylist) as $plId)
+                            @php
+                                $otherPlaylists = array_values(array_diff($selPlaylist, [(string) $plId]));
+                                $plQuery = collect($baseQuery)->except('ongoing_playlist')->all();
+                                if (!empty($otherPlaylists)) {
+                                    $plQuery['ongoing_playlist'] = $otherPlaylists;
+                                }
+                                $plChipUrl = route('user.learning.dashboard')
+                                    . (!empty($plQuery) ? '?' . http_build_query($plQuery) : '');
+                                $plLabel = $playlistTitles[$plId] ?? ('Playlist #' . $plId);
+                            @endphp
+                            <a href="{{ $plChipUrl }}" class="learning-chip active" title="Hapus filter playlist {{ $plLabel }}">
+                                <i class="ti ti-playlist me-1"></i>{{ $plLabel }}
+                                <i class="ti ti-x ms-1"></i>
+                            </a>
+                        @endforeach
                     </div>
                 </div>
 
@@ -269,6 +304,24 @@
                                                        name="ongoing_type[]" value="{{ $typeOption }}"
                                                        {{ in_array($typeOption, $selType) ? 'checked' : '' }}>
                                                 <span class="form-check-label">{{ ucwords(str_replace('_', ' ', $typeOption)) }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                <hr class="my-3">
+                            @endif
+
+                            {{-- Playlist (multi: ongoing_playlist[]) — hanya playlist yang sedang dikerjakan --}}
+                            @if ($playlists->isNotEmpty())
+                                <div class="learning-filter-group">
+                                    <div class="fw-semibold mb-2">Playlist</div>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @foreach ($playlists as $playlist)
+                                            <label class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="ongoing_playlist[]" value="{{ $playlist->id }}"
+                                                       {{ in_array((string) $playlist->id, $selPlaylist, true) ? 'checked' : '' }}>
+                                                <span class="form-check-label">{{ $playlist->title }}</span>
                                             </label>
                                         @endforeach
                                     </div>

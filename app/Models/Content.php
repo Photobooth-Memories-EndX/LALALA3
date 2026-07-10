@@ -34,6 +34,21 @@ class Content extends Model
         return $this->hasMany(ContentUser::class);
     }
 
+    /**
+     * Playlist (Training Plan) yang memuat content ini.
+     * Dipakai untuk eager-load badge "Playlist" di kartu Learning On Going
+     * tanpa memicu N+1. Pivot memakai tabel trainingplandetail.
+     */
+    public function trainingPlans()
+    {
+        return $this->belongsToMany(
+            TrainingPlan::class,
+            'trainingplandetail',
+            'content_id',
+            'trainingplan_id'
+        );
+    }
+
     public function bookmarkedByUsers()
     {
         return $this->belongsToMany(User::class, 'bookmark_contents')
