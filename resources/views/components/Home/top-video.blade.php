@@ -18,9 +18,9 @@
                 <div class="home-modern-slide-track">
             @foreach($top_video->take(6) as $item)
             <div class="home-modern-slide-item">
-                <a href="{{ route('content.user.view', $item->slug) }}" class="home-modern-video-card">
+                <a href="{{ route('content.user.view', $item->slug) }}" class="home-modern-video-card home-video-card">
 
-                    <div class="home-modern-video-thumb">
+                    <div class="home-modern-video-thumb home-video-thumbnail">
                         @if($item->type === 'YouTube')
                             <img src="https://img.youtube.com/vi/{{ $item->link }}/mqdefault.jpg"
                                  alt="{{ $item->title }}"

@@ -12,18 +12,33 @@
         @forelse($upcomingDeadlines->take(3) as $deadline)
 
             @php
-                $date = \Carbon\Carbon::parse($deadline->todate);
-                $remaining = now()->diffInDays($date, false);
+                $latestResult = $deadline->scores()
+                    ->where('user_id', auth()->id())
+                    ->orderByDesc('id')
+                    ->first();
 
-                if ($remaining <= 1) {
-                    $pc = 'danger';
-                    $pt = 'Critical';
-                } elseif ($remaining <= 3) {
-                    $pc = 'warning';
-                    $pt = 'Medium';
+                $deadlineStatus = 'NOT PASSED';
+                $deadlineStatusClass = 'danger';
+                $deadlineIconClass = 'danger';
+
+                if ($latestResult && $deadline->passing_grade !== null && $latestResult->score !== null && (float) $latestResult->score >= (float) $deadline->passing_grade) {
+                    $deadlineStatus = 'PASSED';
+                    $deadlineStatusClass = 'success';
+                    $deadlineIconClass = 'primary';
+                }
+
+                $now = \Carbon\Carbon::now()->startOfDay();
+                $fromDate = $deadline->fromdate ? \Carbon\Carbon::parse($deadline->fromdate)->startOfDay() : null;
+                $toDate = $deadline->todate ? \Carbon\Carbon::parse($deadline->todate)->startOfDay() : null;
+
+                if ($fromDate && $now->lt($fromDate)) {
+                    $daysDiff = $now->diffInDays($fromDate, false);
+                    $deadlineLabel = 'Starts in ' . $daysDiff . ' days';
+                } elseif ($toDate) {
+                    $daysDiff = $now->diffInDays($toDate, false);
+                    $deadlineLabel = $now->gt($toDate) ? 'Expired' : 'Due in ' . ($daysDiff < 0 ? 0 : $daysDiff) . ' days';
                 } else {
-                    $pc = 'primary';
-                    $pt = 'Normal';
+                    $deadlineLabel = 'Expired';
                 }
             @endphp
 
@@ -32,7 +47,7 @@
 
                 <div class="home-modern-deadline-left">
 
-                    <div class="home-modern-deadline-icon home-modern-deadline-{{ $pc }}">
+                    <div class="home-modern-deadline-icon home-modern-deadline-{{ $deadlineIconClass }}">
                         <i class="ti ti-alarm"></i>
                     </div>
 
@@ -41,18 +56,10 @@
                             {{ Str::limit($deadline->title, 55) }}
                         </div>
                         <div class="home-modern-deadline-meta">
-                            <span class="home-modern-priority-badge home-modern-priority-{{ $pc }}">
-                                {{ $pt }}
+                            <span class="home-modern-priority-badge deadline-status {{ $deadlineStatusClass }}">
+                                {{ $deadlineStatus }}
                             </span>
-                            <span class="ms-2">
-                                @if($remaining <= 0)
-                                    Due Today
-                                @elseif($remaining == 1)
-                                    Due Tomorrow
-                                @else
-                                    Due in {{ $remaining }} days
-                                @endif
-                            </span>
+                            <span class="ms-2">{{ $deadlineLabel }}</span>
                         </div>
                     </div>
 

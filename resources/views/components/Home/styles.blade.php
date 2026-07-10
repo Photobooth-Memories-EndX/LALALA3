@@ -623,6 +623,7 @@ a { text-decoration: none; }
     box-shadow: 0 2px 10px rgba(0,0,0,.05);
     transition: transform .2s, box-shadow .2s;
     height: 100%;
+    border: 1px solid #e2e8f0;
 }
 
 .home-modern-video-card:hover {
@@ -631,14 +632,23 @@ a { text-decoration: none; }
     color: inherit;
 }
 
+.home-video-card {
+    display: flex;
+    flex-direction: column;
+}
+
 .home-modern-video-thumb {
     position: relative;
     overflow: hidden;
 }
 
+.home-video-thumbnail {
+    aspect-ratio: 16 / 9;
+}
+
 .home-modern-video-thumb img {
     width: 100%;
-    height: 175px;
+    height: 100%;
     object-fit: cover;
     display: block;
     transition: transform .3s;
@@ -666,7 +676,11 @@ a { text-decoration: none; }
 }
 
 .home-modern-video-body {
-    padding: 14px 16px;
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
 }
 
 .home-modern-category-badge {
@@ -1265,7 +1279,7 @@ a { text-decoration: none; }
 }
 
 /* =====================================================
-   SLIDE CAROUSEL — responsive 4/2/1 sliding window
+   SLIDE CAROUSEL — responsive 3/2/1 sliding window
    (Top Video + Training Modules tabs)
 ===================================================== */
 
@@ -1283,8 +1297,8 @@ a { text-decoration: none; }
 }
 
 .home-modern-slide-item {
-    flex: 0 0 25%;
-    max-width: 25%;
+    flex: 0 0 33.3333%;
+    max-width: 33.3333%;
     min-width: 0;
     padding: 0 7px;
 }
@@ -1321,6 +1335,18 @@ a { text-decoration: none; }
 
 @media (max-width: 767.98px) {
     .home-modern-slide-item { flex-basis: 100%; max-width: 100%; }
+}
+
+.deadline-status {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, .12);
+}
+
+.deadline-status.success {
+    background: #dcfce7;
+    color: #15803d;
+    border-color: rgba(21, 128, 61, .18);
 }
 
 [data-bs-theme="dark"] .home-modern-slide-nav {
