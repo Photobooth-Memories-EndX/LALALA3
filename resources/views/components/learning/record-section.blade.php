@@ -1,321 +1,235 @@
 @props([
-    'contentUser',
-    'averageProgress' => 0,
-    'certificateSettings' => collect(),
-    'completedPlaylists' => null,
+    // Baris Learning Record (Content + Playlist) dari LearningRecordController::partial().
+    'rows' => collect(),
+    // Opsi dropdown filter dari LearningRecordController::recordFilterOptions().
+    'filterOptions' => [],
 ])
 
 @php
-    $completedPlaylists = $completedPlaylists ?? collect();
+    $types           = collect($filterOptions['types'] ?? []);
+    $classifications = collect($filterOptions['classifications'] ?? []);
+    $playlists       = collect($filterOptions['playlists'] ?? []);
+    $years           = collect($filterOptions['years'] ?? []);
+
+    // Jumlah baris yang siap generate certificate — sumber counter card header.
+    $certReadyCount = $rows->where('cert_state', 'ready')->count();
+
+    $months = [
+        1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+        5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+        9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+    ];
+
+    // Kolom tabel; 'sort' = key data-sort-* pada baris (learning-record.js),
+    // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
+    $columns = [
+        ['label' => 'No',             'width' => '4%'],
+        ['label' => 'Class',          'width' => '26%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Type',           'width' => '9%',  'sort' => 'type',           'type' => 'text'],
+        ['label' => 'Classification', 'width' => '12%', 'sort' => 'classification', 'type' => 'text'],
+        ['label' => 'Duration',       'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
+        ['label' => 'Progress',       'width' => '9%',  'sort' => 'progress',       'type' => 'number'],
+        ['label' => 'Finish Date',    'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
+        ['label' => 'Score Test',     'width' => '8%',  'sort' => 'score',          'type' => 'number'],
+        ['label' => 'Certificate',    'width' => '12%'],
+    ];
 @endphp
-
-{{-- <div class="card border-0 shadow-sm rounded-4 mb-3">
-    <div class="card-body p-4">
-        <h3 class="mb-1">Learning Record</h3>
-        <div class="text-muted">View your completed learning history.</div>
-
-        <div class="mt-4">
-            <div class="fw-bold mb-1">Average Progress</div>
-            <div class="display-6 text-primary mb-2">{{ $averageProgress }}%</div>
-            <div class="progress progress-sm">
-                <div class="progress-bar bg-primary" style="width: {{ $averageProgress }}%"></div>
-            </div>
-        </div>
-    </div>
-</div> --}}
 
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
     <div class="card-body p-4 border-bottom">
-        <h3 class="card-title mb-1">Training History</h3>
-        <div class="text-muted small">
-            Completed training programs and certificate status.
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h3 class="card-title mb-1">Learning Record</h3>
+                <div class="text-muted small">
+                    Completed playlists, contents, and certificate status.
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                @if ($certReadyCount > 0)
+                    {{-- Klik: terapkan filter "Certificate Ready" + scroll ke tabel (learning-record.js). --}}
+                    <button type="button" class="record-cert-ready-card" id="recordCertReadyCard">
+                        <i class="ti ti-certificate"></i>
+                        <span class="record-cert-ready-count">{{ $certReadyCount }}</span>
+                        {{ \Illuminate\Support\Str::plural('Certificate', $certReadyCount) }} Ready
+                    </button>
+                @endif
+
+                <span class="badge bg-green-lt text-green">Status: Completed</span>
+            </div>
+        </div>
+
+        {{-- ── Toolbar filter (client-side — tanpa AJAX, tanpa reload halaman) ── --}}
+        <div class="mt-3" id="recordFilterBar">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-5 col-xl-4">
+                    <label class="form-label small text-muted mb-1" for="recordSearch">Search</label>
+                    <div class="input-icon">
+                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                        <input type="text" class="form-control" id="recordSearch"
+                               placeholder="Search class or classification..." autocomplete="off">
+                    </div>
+                </div>
+
+                {{-- Quick Filter: dua mode tampilan — Content (Video + Document, default)
+                     atau Playlist. Keduanya entity berbeda (progress, assessment,
+                     certificate) sehingga tidak pernah dicampur dalam satu mode
+                     (learning-record.js). --}}
+                <div class="col-12 col-md">
+                    <label class="form-label small text-muted mb-1">Quick Filter</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="record-chip active" data-record-quick="content">Content</button>
+                        <button type="button" class="record-chip" data-record-quick="playlist">Playlist</button>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-auto">
+                    <button type="button" class="btn btn-outline-primary" id="recordMoreFiltersToggle"
+                            aria-expanded="false" aria-controls="recordMoreFilters">
+                        <i class="ti ti-adjustments-horizontal me-1"></i>
+                        More Filters
+                        <span class="badge bg-primary text-white ms-1 d-none" id="recordMoreFiltersCount"></span>
+                        <i class="ti ti-chevron-down ms-1 record-more-caret"></i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Panel More Filters — seluruh filter lanjutan lama dipindah ke sini
+                 (tidak dihapus). Tersembunyi default, dibuka slideDown (learning-record.js). --}}
+            <div class="record-more-filters mt-3" id="recordMoreFilters">
+                {{-- data-record-mode: filter hanya relevan untuk mode tsb — mode lain
+                     menyembunyikannya dan me-reset nilainya (learning-record.js). --}}
+                <div class="row g-2">
+                    <div class="col-6 col-md-4 col-xl-2" data-record-mode="content">
+                        <label class="form-label small text-muted mb-1" for="recordFilterType">Type</label>
+                        <select class="form-select" id="recordFilterType" data-record-filter>
+                            <option value="all">All Type</option>
+                            @foreach ($types as $type)
+                                <option value="{{ $type }}">{{ $type }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-4 col-xl-2" data-record-mode="content">
+                        <label class="form-label small text-muted mb-1" for="recordFilterClassification">Classification</label>
+                        <select class="form-select" id="recordFilterClassification" data-record-filter>
+                            <option value="all">All Classification</option>
+                            @foreach ($classifications as $classification)
+                                <option value="{{ $classification }}">{{ $classification }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-4 col-xl-2" data-record-mode="playlist">
+                        <label class="form-label small text-muted mb-1" for="recordFilterPlaylist">Playlist</label>
+                        <select class="form-select" id="recordFilterPlaylist" data-record-filter>
+                            <option value="all">All Playlist</option>
+                            @foreach ($playlists as $playlist)
+                                <option value="{{ $playlist['id'] }}">{{ $playlist['title'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-4 col-xl-2">
+                        <label class="form-label small text-muted mb-1" for="recordFilterYear">Year</label>
+                        <select class="form-select" id="recordFilterYear" data-record-filter>
+                            <option value="all">Year</option>
+                            @foreach ($years as $year)
+                                <option value="{{ $year }}">{{ $year }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-4 col-xl-2">
+                        <label class="form-label small text-muted mb-1" for="recordFilterMonth">Month</label>
+                        <select class="form-select" id="recordFilterMonth" data-record-filter>
+                            <option value="all">Month</option>
+                            @foreach ($months as $num => $name)
+                                <option value="{{ $num }}">{{ $name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-4 col-xl-2">
+                        <label class="form-label small text-muted mb-1" for="recordFilterCertificate">Certificate</label>
+                        <select class="form-select" id="recordFilterCertificate" data-record-filter>
+                            <option value="all">All Certificate</option>
+                            <option value="ready">Certificate Ready</option>
+                            <option value="none">Not Available</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <button type="button" class="btn btn-outline-secondary" id="recordClearFilter">
+                        <i class="ti ti-refresh me-1"></i>Reset
+                    </button>
+                    <button type="button" class="btn btn-primary" id="recordApplyFilter">
+                        <i class="ti ti-check me-1"></i>Apply
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-vcenter table-hover card-table mb-0 learning-record-table" id="recordTable">
+
+        <div class="table-responsive learning-record-scroll">
+            <table class="table table-vcenter table-hover card-table mb-0 learning-record-table"
+                   id="learningRecordTable" style="width:100%">
                 <thead>
                     <tr>
-                        <th class="text-muted" style="width: 4%">No</th>
-                        <th class="text-muted" style="width: 26%">Class</th>
-                        <th class="text-muted" style="width: 8%">Type</th>
-                        <th class="text-muted" style="width: 13%">Classification</th>
-                        <th class="text-muted" style="width: 8%">Duration</th>
-                        <th class="text-muted" style="width: 9%">Progress</th>
-                        <th class="text-muted" style="width: 12%">Finish Date</th>
-                        <th class="text-muted" style="width: 9%">Score Test</th>
-                        <th class="text-muted" style="width: 11%">Certificate</th>
+                        @foreach ($columns as $column)
+                            @if (isset($column['sort']))
+                                <th class="text-muted record-sortable"
+                                    style="width: {{ $column['width'] }}"
+                                    data-sort-key="{{ $column['sort'] }}"
+                                    data-sort-type="{{ $column['type'] }}">
+                                    {{ $column['label'] }}
+                                    <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                </th>
+                            @else
+                                <th class="text-muted" style="width: {{ $column['width'] }}">{{ $column['label'] }}</th>
+                            @endif
+                        @endforeach
                     </tr>
                 </thead>
-
                 <tbody>
-                    @php
-                        // Pre-sort: records eligible for certificate appear first (priority 1),
-                        // then Not Available (priority 0). Within each group, newest first.
-                        $sortedContentUser = collect($contentUser)
-                            ->filter(fn ($cu) => ($cu->finish ?? '0') == '1')
-                            ->sortByDesc(function ($cu) use ($certificateSettings) {
-                                $content  = $cu->content ?? null;
-                                $progress = (int) ($cu->progress ?? 0);
-
-                                $certSetting = collect($certificateSettings)
-                                    ->where('certificate_type', 'content')
-                                    ->where('content_id', $content->id ?? null)
-                                    ->first();
-
-                                if (!$certSetting || !$certSetting->is_active) {
-                                    return [0, 0];
-                                }
-
-                                $minProgress = $certSetting->minimum_progress ?? null;
-                                $minScore    = $certSetting->minimum_score ?? null;
-
-                                $progressOk = is_null($minProgress) || (int) $minProgress <= 0
-                                    || $progress >= (int) $minProgress;
-
-                                $score = null;
-                                if (!blank($cu->assesment ?? null)) {
-                                    $top = ($cu->assesment->scores ?? collect())
-                                        ->filter(fn ($r) => $r->user_id == $cu->user_id)
-                                        ->sortByDesc('score')
-                                        ->first();
-                                    $score = $top->score ?? null;
-                                }
-
-                                $scoreOk = is_null($minScore) || (int) $minScore <= 0
-                                    || (!is_null($score) && $score >= (int) $minScore);
-
-                                $eligible = ($progressOk && $scoreOk) ? 1 : 0;
-
-                                // Secondary sort: newest updated_at within each group
-                                $ts = optional($cu->updated_at)->timestamp ?? 0;
-
-                                return [$eligible, $ts];
-                            })
-                            ->values();
-                    @endphp
-                    @foreach ($sortedContentUser as $list)
-                            @php
-                                $content = $list->content ?? null;
-                                $progress = (int) ($list->progress ?? 0);
-                                $score = null;
-
-                                if (!blank($list->assesment ?? null)) {
-                                    $datas = $list->assesment->scores ?? collect();
-
-                                    $filter = $datas->filter(function ($assesment_result) use ($list) {
-                                        return $assesment_result->user_id == $list->user_id;
-                                    })->sortByDesc('score')->first();
-
-                                    if (!blank($filter)) {
-                                        $score = $filter->score;
-                                    }
-                                }
-
-                                $type = $content->type ?? 'Content';
-
-                                $typeBadgeClass = match (true) {
-                                    in_array($type, ['Video', 'YouTube']) => 'bg-blue-lt text-blue',
-                                    in_array($type, ['Quiz', 'Assessment', 'Assesment']) => 'bg-purple-lt text-purple',
-                                    default => 'bg-yellow-lt text-yellow',
-                                };
-
-                                $certificateSetting = collect($certificateSettings)
-                                    ->where('certificate_type', 'content')
-                                    ->where('content_id', $content->id ?? null)
-                                    ->first();
-
-                                $minimumProgress = $certificateSetting->minimum_progress ?? null;
-                                $minimumScore = $certificateSetting->minimum_score ?? null;
-
-                                $isProgressPassed = true;
-                                $isScorePassed = true;
-
-                                if (!is_null($minimumProgress) && (int) $minimumProgress > 0) {
-                                    $isProgressPassed = $progress >= (int) $minimumProgress;
-                                }
-
-                                if (!is_null($minimumScore) && (int) $minimumScore > 0) {
-                                    $isScorePassed = !is_null($score)
-                                        && $score >= (int) $minimumScore;
-                                }
-
-                                $canGenerateCertificate = $certificateSetting
-                                    && $certificateSetting->is_active
-                                    && $isProgressPassed
-                                    && $isScorePassed;
-                            @endphp
-
-                            <tr>
-                                <td class="text-muted">{{ $loop->iteration }}</td>
-
-                                
-
-                                <td>
-                                    @if ($content && !empty($content->slug))
-                                        <a href="{{ route('content.user.view', $content->slug) }}"
-                                           class="fw-semibold text-reset learning-record-title"
-                                           title="{{ $content->title ?? '-' }}">
-                                            {{ $content->title ?? '-' }}
-                                        </a>
-                                    @else
-                                        <div class="fw-semibold learning-record-title"
-                                             title="{{ $content->title ?? '-' }}">
-                                            {{ $content->title ?? '-' }}
-                                        </div>
-                                    @endif
-
-                                    <div class="text-muted small">
-                                        {{ ucfirst($list->status ?? '-') }}
-                                    </div>
-                                </td>
-
-                                <td>
-                                    <span class="badge {{ $typeBadgeClass }} learning-record-badge">
-                                        {{ $type }}
-                                    </span>
-                                </td>
-
-                                <td>
-                                    @php
-                                        $classification = $content->classification->classification_name ?? '-';
-
-                                        $colors = [
-                                            'SHE'                     => 'bg-red-lt text-red',
-                                            'Technology'              => 'bg-blue-lt text-blue',
-                                            'Basic & Common Duties'   => 'bg-green-lt text-green',
-                                            'Production'              => 'bg-indigo-lt text-indigo',
-                                            'Commercial'              => 'bg-orange-lt text-orange',
-                                            'Human Resources'         => 'bg-pink-lt text-pink',
-                                            'Leadership'              => 'bg-purple-lt text-purple',
-                                            'Quality'                 => 'bg-cyan-lt text-cyan',
-                                            'IT'                      => 'bg-azure-lt text-azure',
-                                            'Security'                => 'bg-dark-lt text-dark',
-                                        ];
-
-                                        $badgeClass = $colors[$classification] ?? 'bg-secondary-lt text-secondary';
-                                    @endphp
-
-                                    <span class="badge {{ $badgeClass }}">
-                                        {{ $classification }}
-                                    </span>
-                                </td>
-
-                                <td class="small">{{ $content->duration ?? '-' }}</td>
-
-                                <td>
-                                    <div class="learning-record-progress">
-                                        <div class="percent">{{ $progress }}%</div>
-
-                                        @if(!is_null($minimumProgress) && (int) $minimumProgress > 0)
-                                            <div class="minimum {{ $isProgressPassed ? '' : 'is-failed' }}">
-                                                Min {{ $minimumProgress }}%
-                                            </div>
-                                        @endif
-                                    </div>
-                                </td>
-
-                                <td class="small">
-                                    {{ $list->updated_at ? date('Y-m-d H:i', strtotime($list->updated_at)) : '-' }}
-                                </td>
-
-                                <td>
-                                    @if(!is_null($score))
-                                        <span class="badge {{ $isScorePassed ? 'bg-green-lt text-green' : 'bg-red-lt text-red' }} learning-record-badge">
-                                            {{ $score }}
-                                        </span>
-
-                                        @if(!is_null($minimumScore) && (int) $minimumScore > 0)
-                                            <div class="small text-muted mt-1">
-                                                Min {{ $minimumScore }}
-                                            </div>
-                                        @endif
-                                    @else
-                                        <span class="badge bg-secondary-lt text-secondary learning-record-badge">
-                                            -
-                                        </span>
-
-                                        @if(!is_null($minimumScore) && (int) $minimumScore > 0)
-                                            <div class="small text-danger mt-1">
-                                                Butuh score min {{ $minimumScore }}
-                                            </div>
-                                        @endif
-                                    @endif
-                                        <td>
-                                            @if($canGenerateCertificate)
-                                                <a href="{{ route('certificate.generate', $list->id) }}"
-                                                class="btn btn-sm btn-primary learning-record-cert-btn">
-                                                    <i class="ti ti-certificate me-1"></i>
-                                                    Certificate
-                                                </a>
-                                            @else
-                                                <span class="badge bg-secondary-lt text-secondary learning-record-badge">
-                                                    <i class="ti ti-certificate-off me-1"></i>
-                                                    Not Available
-                                                </span>
-                                            @endif
-                                        </td>
-
-                            </tr>
-                    @endforeach
-
-                    {{-- ── Playlist (Training Plan) yang telah selesai 100% ──────────────────── --}}
-                    @foreach ($completedPlaylists as $playlist)
-                        @php
-                            $rowNo       = $sortedContentUser->count() + $loop->iteration;
-                            $finishDate  = $playlist->last_finished_at
-                                ? date('Y-m-d H:i', strtotime($playlist->last_finished_at))
-                                : '-';
-                        @endphp
-                        <tr>
-                            <td class="text-muted">{{ $rowNo }}</td>
-
-                            <td>
-                                <div class="fw-semibold learning-record-title"
-                                     title="{{ $playlist->title ?? '-' }}">
-                                    {{ $playlist->title ?? '-' }}
-                                </div>
-
-                                <div class="text-muted small">
-                                    {{ (int) ($playlist->finished_items ?? 0) }} / {{ (int) ($playlist->total_items ?? 0) }} content selesai
-                                </div>
-                            </td>
-
-                            <td>
-                                <span class="badge bg-teal-lt text-teal learning-record-badge">
-                                    <i class="ti ti-playlist me-1"></i>Playlist
-                                </span>
-                            </td>
-
-                            <td>
-                                <span class="badge bg-secondary-lt text-secondary">Playlist</span>
-                            </td>
-
-                            <td class="small">-</td>
-
-                            <td>
-                                <div class="learning-record-progress">
-                                    <div class="percent">100%</div>
-                                </div>
-                            </td>
-
-                            <td class="small">{{ $finishDate }}</td>
-
-                            <td>
-                                <span class="badge bg-secondary-lt text-secondary learning-record-badge">-</span>
-                            </td>
-
-                            <td>
-                                <span class="badge bg-secondary-lt text-secondary learning-record-badge">
-                                    <i class="ti ti-certificate-off me-1"></i>
-                                    Not Available
-                                </span>
+                    @forelse ($rows as $row)
+                        <x-learning.record-row :row="$row" :index="$loop->iteration" />
+                    @empty
+                        <tr id="recordEmptyRow">
+                            <td colspan="9" class="text-center text-muted py-4">
+                                No completed learning found.
                             </td>
                         </tr>
-                    @endforeach
+                    @endforelse
+
+                    @if ($rows->isNotEmpty())
+                        {{-- Ditampilkan jQuery saat kombinasi filter tidak menghasilkan baris. --}}
+                        <tr id="recordNoMatchRow" class="d-none">
+                            <td colspan="9" class="text-center text-muted py-4">
+                                No records match your search or filter.
+                            </td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
     </div>
+
+    @if ($rows->isNotEmpty())
+        <div class="card-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm w-auto" id="recordPageLength">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+                <span class="text-muted small" id="recordTableInfo"></span>
+            </div>
+
+            <ul class="pagination pagination-sm mb-0" id="recordPagination"></ul>
+        </div>
+    @endif
 </div>

@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\HomeUserController;
 use App\Http\Controllers\LearningController;
+use App\Http\Controllers\LearningMonitoringController;
 use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
 use App\Http\Controllers\AssesmentEditScoreController;
@@ -81,17 +82,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-learning/partial/{tab}', [LearningController::class, 'dashboardPartial'])->name('user.learning.dashboard.partial');
 
     // My Learning monitoring (role 3/4): tabel user scope + detail profile.
-    Route::get('/my-learning/monitoring-user-datatable', [LearningController::class, 'monitoringUserDatatable'])
+    Route::get('/my-learning/monitoring-user-datatable', [LearningMonitoringController::class, 'monitoringUserDatatable'])
         ->name('user.learning.monitoring.user.datatable');
 
     Route::prefix('my-learning/monitoring')->group(function () {
-        Route::get('/{hash}', [LearningController::class, 'monitoringProfile'])
+        Route::get('/{hash}', [LearningMonitoringController::class, 'monitoringProfile'])
             ->name('user.learning.monitoring.profile');
-        Route::get('/{hash}/learning-datatable', [LearningController::class, 'monitoringProfileLearningDatatable'])
+        Route::get('/{hash}/learning-datatable', [LearningMonitoringController::class, 'monitoringProfileLearningDatatable'])
             ->name('user.learning.monitoring.profile.learning.datatable');
-        Route::get('/{hash}/assessment-datatable', [LearningController::class, 'monitoringProfileAssessmentDatatable'])
+        Route::get('/{hash}/assessment-datatable', [LearningMonitoringController::class, 'monitoringProfileAssessmentDatatable'])
             ->name('user.learning.monitoring.profile.assessment.datatable');
-        Route::get('/{hash}/playlist-datatable', [LearningController::class, 'monitoringProfilePlaylistDatatable'])
+        Route::get('/{hash}/playlist-datatable', [LearningMonitoringController::class, 'monitoringProfilePlaylistDatatable'])
             ->name('user.learning.monitoring.profile.playlist.datatable');
     });
 

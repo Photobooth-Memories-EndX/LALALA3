@@ -509,7 +509,11 @@ class LearningAnalyticsService
         return $idsFactory()->select('users.id');
     }
 
-    private function userLearningHours(int $userId): float
+    /**
+     * Total jam belajar seorang user — dipakai juga oleh dashboard My Learning
+     * dan monitoring (public agar tidak diduplikasi di controller).
+     */
+    public function userLearningHours(int $userId): float
     {
         $hours = ContentUser::join('content', 'content.id', '=', 'content_users.content_id')
             ->where('content_users.user_id', $userId)

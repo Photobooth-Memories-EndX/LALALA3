@@ -211,6 +211,20 @@
         white-space: nowrap;
     }
 
+    /* Header tabel Learning Record tetap terlihat saat scroll (sticky). */
+    .learning-record-scroll {
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+
+    .learning-record-scroll thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--tblr-bg-surface, #fff);
+        box-shadow: inset 0 -1px 0 var(--tblr-border-color, #e6e7e9);
+    }
+
     /* Mobile: fixed layout dilepas agar table-responsive bisa scroll horizontal */
     @media (max-width: 767.98px) {
         .learning-record-table {
