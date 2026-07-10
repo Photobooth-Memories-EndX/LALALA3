@@ -13,6 +13,7 @@ use App\Services\CertificateEligibilityService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Learning Record — histori pembelajaran yang telah selesai.
@@ -45,7 +46,13 @@ class LearningRecordController extends Controller
         // Finish Date terbaru — urutan default yang sama seperti sebelumnya.
         $rows = $this->mergeLearningRecord(
             $this->buildContentRows($this->getCompletedContents($userId), $cert),
-            $this->buildPlaylistRows($completedPlaylists, $cert)
+            $this->buildPlaylistRows(
+                $completedPlaylists,
+                $cert,
+                // Slug content pertama tiap playlist — untuk link badge Playlist
+                // (route playlist.user.view butuh pasangan slug playlist + content).
+                $this->playlistFirstContentSlug($completedPlaylists)
+            )
         )->sortByDesc('finish_date')->values();
 
         return view('user.learning.dashboard-partials.record', [
@@ -241,6 +248,7 @@ class LearningRecordController extends Controller
                 'row_kind'        => 'content',
                 'title'           => $content->title ?? '-',
                 'slug'            => $content->slug,
+                'playlist_url'    => null,
                 'subtitle'        => ucfirst($cu->status ?? '-'),
                 'playlist_names'  => $playlists->pluck('title')->filter()->values()->all(),
                 // Id playlist pemilik content — dipakai filter Playlist client-side.
@@ -264,12 +272,38 @@ class LearningRecordController extends Controller
     }
 
     /**
+     * Slug content pertama tiap playlist (urutan content_order) — dipakai untuk
+     * membangun link badge Playlist di kolom Type (presentasi, bukan business
+     * logic). Satu query untuk seluruh playlist, mengikuti pola
+     * LearningOngoingController::playlistNextContent().
+     *
+     * @return \Illuminate\Support\Collection<int, string>  map: trainingplan_id => content slug
+     */
+    private function playlistFirstContentSlug(Collection $playlists): Collection
+    {
+        $planIds = $playlists->pluck('id')->all();
+
+        if (empty($planIds)) {
+            return collect();
+        }
+
+        return DB::table('trainingplandetail as tpd')
+            ->join('content as c', 'c.id', '=', 'tpd.content_id')
+            ->whereIn('tpd.trainingplan_id', $planIds)
+            ->whereNull('c.deleted_at')
+            ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
+            ->get(['tpd.trainingplan_id as plan_id', 'c.slug as slug'])
+            ->groupBy('plan_id')
+            ->map(fn ($items) => $items->first()->slug);
+    }
+
+    /**
      * Normalisasi Playlist selesai menjadi baris tabel dengan struktur kolom
      * yang sama seperti baris Content.
      */
-    private function buildPlaylistRows(Collection $playlists, array $cert): Collection
+    private function buildPlaylistRows(Collection $playlists, array $cert, Collection $firstContentSlugs): Collection
     {
-        return $playlists->map(function (TrainingPlan $plan) use ($cert) {
+        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
             $issued      = $setting ? $cert['certificates']->get($setting->id) : null;
@@ -278,10 +312,16 @@ class LearningRecordController extends Controller
                 ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i')
                 : '';
 
+            $firstSlug = $firstContentSlugs->get($plan->id);
+
             return [
                 'row_kind'        => 'playlist',
                 'title'           => $plan->title ?? '-',
                 'slug'            => null,
+                // Link badge Playlist di kolom Type (route lama, tanpa route baru).
+                'playlist_url'    => ($plan->slug && $firstSlug)
+                    ? route('playlist.user.view', [$plan->slug, $firstSlug])
+                    : null,
                 'subtitle'        => (int) $plan->finished_items . ' / ' . (int) $plan->total_items . ' content selesai',
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],

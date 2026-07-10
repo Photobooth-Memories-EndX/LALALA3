@@ -1,5 +1,7 @@
 @section('style')
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
+{{-- Learning Record: style tabel client-side (dipisah — clean code). --}}
+<link rel="stylesheet" href="{{ asset('css/learning-record.css') }}">
 
 <style>
     .learning-section-padding {
@@ -152,86 +154,7 @@
         color: rgba(255, 255, 255, .75) !important;
     }
 
-    /* Tabel Learning Record: compact, fit di card tanpa horizontal scroll di desktop */
-    .learning-record-table {
-        table-layout: fixed;
-        width: 100%;
-        font-size: 12px;
-    }
-
-    .learning-record-table th,
-    .learning-record-table td {
-        padding: 8px 8px !important;
-        vertical-align: middle;
-        white-space: normal;
-        overflow-wrap: break-word;
-    }
-
-    .learning-record-title {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.35;
-    }
-
-    .learning-record-progress {
-        line-height: 1.2;
-    }
-
-    .learning-record-progress .percent {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .learning-record-progress .minimum {
-        font-size: 10px;
-        color: #16a34a;
-    }
-
-    .learning-record-progress .minimum.is-failed {
-        color: #dc2626;
-    }
-
-    .learning-record-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        padding: 4px 8px;
-        font-size: 11px;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .learning-record-cert-btn {
-        padding: 4px 10px;
-        font-size: 11px;
-        border-radius: 999px;
-        white-space: nowrap;
-    }
-
-    /* Header tabel Learning Record tetap terlihat saat scroll (sticky). */
-    .learning-record-scroll {
-        max-height: 65vh;
-        overflow-y: auto;
-    }
-
-    .learning-record-scroll thead th {
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        background: var(--tblr-bg-surface, #fff);
-        box-shadow: inset 0 -1px 0 var(--tblr-border-color, #e6e7e9);
-    }
-
-    /* Mobile: fixed layout dilepas agar table-responsive bisa scroll horizontal */
-    @media (max-width: 767.98px) {
-        .learning-record-table {
-            table-layout: auto;
-            min-width: 900px;
-        }
-    }
+    /* Style tabel Learning Record dipindah ke css/learning-record.css */
 
     .pagination {
         gap: .4rem;

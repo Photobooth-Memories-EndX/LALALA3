@@ -1,4 +1,8 @@
-@props(['type'])
+@props([
+    'type',
+    // URL halaman Playlist (route playlist.user.view) — hanya terisi pada baris Playlist.
+    'url' => null,
+])
 
 @php
     $class = match (true) {
@@ -9,4 +13,8 @@
     };
 @endphp
 
-<span class="badge {{ $class }} learning-record-badge">@if ($type === 'Playlist')<i class="ti ti-playlist me-1"></i>@endif{{ $type }}</span>
+@if ($type === 'Playlist' && $url)
+    <a href="{{ $url }}" class="badge {{ $class }} learning-record-badge record-playlist-link"><i class="ti ti-playlist me-1"></i>{{ $type }}</a>
+@else
+    <span class="badge {{ $class }} learning-record-badge">@if ($type === 'Playlist')<i class="ti ti-playlist me-1"></i>@endif{{ $type }}</span>
+@endif

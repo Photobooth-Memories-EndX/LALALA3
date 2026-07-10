@@ -3,6 +3,8 @@
 <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
 {{-- ApexCharts: dimuat di awal agar tersedia saat tab Monitoring (AJAX) dirender. --}}
 <script src="{{ asset('Tabler/dist/libs/apexcharts/dist/apexcharts.min.js') }}"></script>
+{{-- Learning Record: search, filter, sorting & pagination client-side (jQuery, tanpa AJAX). --}}
+<script src="{{ asset('js/learning-record.js') }}"></script>
 
 <script>
     var _activeTab = null;
@@ -24,7 +26,7 @@
 
     function initDataTables() {
         // #learningRecordTable tidak di sini — Learning Record dirender penuh oleh
-        // Blade dan ditangani initLearningRecord() (record-script, tanpa DataTables).
+        // Blade dan ditangani initLearningRecord() (learning-record.js, tanpa DataTables).
         var tables = ['#assessmentTable', '#assessmentResultTable'];
         tables.forEach(function (id) {
             if ($(id).length && !$.fn.DataTable.isDataTable(id)) {
@@ -83,7 +85,4 @@
         });
     });
 </script>
-
-{{-- Learning Record: filter + pagination client-side (jQuery, tanpa AJAX). --}}
-@include('user.learning.partials.record-script')
 @endsection

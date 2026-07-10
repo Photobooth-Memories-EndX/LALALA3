@@ -24,13 +24,22 @@
     data-playlists="{{ implode(',', $row['playlist_ids']) }}"
     data-year="{{ $finishTimestamp?->year }}"
     data-month="{{ $finishTimestamp?->month }}"
-    data-cert="{{ $row['cert_state'] }}">
+    data-cert="{{ $row['cert_state'] }}"
+    {{-- Nilai sorting client-side (learning-record.js) — teks di-lowercase agar
+         urutan tidak terpengaruh kapitalisasi. --}}
+    data-sort-title="{{ mb_strtolower($row['title']) }}"
+    data-sort-type="{{ mb_strtolower($row['type']) }}"
+    data-sort-classification="{{ mb_strtolower($row['classification']) }}"
+    data-sort-duration="{{ $row['duration'] }}"
+    data-sort-progress="{{ $row['progress'] }}"
+    data-sort-finish="{{ $row['finish_date'] }}"
+    data-sort-score="{{ $row['score'] ?? '' }}">
 
     <td class="text-muted record-row-index">{{ $index }}</td>
 
     <td><x-learning.record-title-cell :row="$row" /></td>
 
-    <td><x-learning.record-type-badge :type="$row['type']" /></td>
+    <td><x-learning.record-type-badge :type="$row['type']" :url="$row['playlist_url'] ?? null" /></td>
 
     <td><x-learning.record-classification-badge :row="$row" /></td>
 
