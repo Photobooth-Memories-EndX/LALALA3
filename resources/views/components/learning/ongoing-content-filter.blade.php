@@ -1,25 +1,14 @@
-@props([
-    // Daftar Playlist (Training Plan) on-going milik user, dari controller (bebas N+1).
-    'playlists' => null,
-])
-
 @php
     $userId = auth()->id();
-    $playlists = $playlists ?? collect();
 
-    // Opsi Type diambil langsung dari data asli (content.type milik user).
+    // Opsi Type diambil langsung dari data asli (content.type milik user) — hanya
+    // type content (Video, Document, dll); tidak ada unsur Playlist di mode ini.
     $typeOptions = \App\Models\Content::whereHas('contentuser', fn ($q) => $q->where('user_id', $userId))
         ->whereNotNull('type')
         ->where('type', '!=', '')
         ->distinct()
         ->orderBy('type')
         ->pluck('type');
-
-    // "playlist" adalah pseudo-type: menampilkan card Playlist (Training Plan), bukan content.type asli.
-    // Hanya ditawarkan bila user memang punya playlist yang sedang dikerjakan.
-    if ($playlists->isNotEmpty() && ! $typeOptions->contains('playlist')) {
-        $typeOptions = $typeOptions->push('playlist')->values();
-    }
 
     // Nilai filter multi-select yang sedang aktif.
     $selType       = (array) request('ongoing_type', []);
@@ -30,16 +19,34 @@
     $selCurrent    = (array) request('ongoing_current_time', []);
     $selLastPage   = (array) request('ongoing_last_page', []);
     $selTotalPages = (array) request('ongoing_total_pages', []);
-    $selPlaylist   = array_map('strval', (array) request('ongoing_playlist', []));
 
-    // Map id => judul playlist untuk label chip.
-    $playlistTitles = $playlists->pluck('title', 'id');
-
-    // Nilai filter single-value (dropdown lama yang kini dipindah ke dalam modal).
+    // Nilai filter single-value (dipilih di dalam modal All Filters).
     $curProgram      = request('ongoing_status', 'all');
     $curYear         = request('ongoing_year', 'all');
     $curActivitySort = request('ongoing_activity_sort', 'newest_activity');
     $curProgressSort = request('ongoing_progress_sort', 'all');
+
+    // ── Quick dropdown filters (Type / Status / Year / Month) ───────────────────
+    // Status cepat: all|not_started|ongoing|completed|paused (param ongoing_quick_status).
+    $quickStatusOptions = [
+        'all'         => 'All',
+        'not_started' => 'Not Started',
+        'ongoing'     => 'Ongoing',
+        'completed'   => 'Completed',
+        'paused'      => 'Paused',
+    ];
+    $curQuickStatus = (string) request('ongoing_quick_status', 'all');
+    if (! array_key_exists($curQuickStatus, $quickStatusOptions)) {
+        $curQuickStatus = 'all';
+    }
+
+    // Opsi Year otomatis dari data learning user — tidak hardcode.
+    $quickYearOptions = \App\Models\ContentUser::where('user_id', $userId)
+        ->selectRaw('DISTINCT YEAR(created_at) as learning_year')
+        ->orderByDesc('learning_year')
+        ->pluck('learning_year')
+        ->filter()
+        ->values();
 
     // Hitung jumlah filter aktif di dalam modal (Type tidak dihitung karena tampil sbg chip).
     $advancedCount = 0;
@@ -54,7 +61,6 @@
     $advancedCount += count(array_filter($selCurrent));
     $advancedCount += count(array_filter($selLastPage));
     $advancedCount += count(array_filter($selTotalPages));
-    $advancedCount += count(array_filter($selPlaylist));
 
     // ── Opsi filter ─────────────────────────────────────────────────────────────
     $programOptions = [
@@ -135,9 +141,6 @@
     $baseQuery    = request()->except('ongoing_page');
     $selTypeClean = array_values(array_filter($selType));
 
-    $chipAllUrl = route('user.learning.dashboard')
-        . (($q = collect($baseQuery)->except('ongoing_type')->all()) ? '?' . http_build_query($q) : '');
-
     $monthSel = array_map('strval', $selMonth);
 @endphp
 
@@ -145,12 +148,20 @@
     <div class="card-body p-4">
         <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingFilterForm">
 
+            {{-- Quick Status ikut terkirim saat submit form/Apply Filter (state konsisten). --}}
+            @if ($curQuickStatus !== 'all')
+                <input type="hidden" name="ongoing_quick_status" value="{{ $curQuickStatus }}">
+            @endif
+
             <div class="mb-3">
                 <h3 class="card-title mb-1">Learning On Going</h3>
                 <div class="text-muted small">
                     Your Enrolled Classes
                 </div>
             </div>
+
+            {{-- Mode switch: Content (aktif) | Playlist --}}
+            <x-learning.ongoing-mode-switch mode="content" />
 
             {{-- Search bar tetap di atas seperti semula --}}
             <div class="mb-3">
@@ -168,16 +179,112 @@
                 </div>
             </div>
 
+            {{-- ── Quick dropdown filters (Type / Status / Year / Month) ──────────────
+                 Pilihan langsung diterapkan via AJAX (dashboard-script.blade.php),
+                 memakai param & endpoint yang sama dengan filter lain. --}}
+            @php
+                $quickTypeLabel = empty($selTypeClean)
+                    ? null
+                    : (count($selTypeClean) === 1
+                        ? ucwords(str_replace('_', ' ', $selTypeClean[0]))
+                        : count($selTypeClean) . ' Types');
+
+                $activeQuickMonths = array_values(array_filter($selMonth));
+                $quickMonthLabel = empty($activeQuickMonths)
+                    ? 'All'
+                    : (count($activeQuickMonths) === 1
+                        ? ($monthOptions[(int) $activeQuickMonths[0]] ?? $activeQuickMonths[0])
+                        : count($activeQuickMonths) . ' Months');
+            @endphp
+
+            <div class="mb-3 d-flex flex-wrap gap-2 learning-quick-dropdowns">
+                {{-- Dropdown Type (hanya type content: Video, Document, dll) --}}
+                <div class="dropdown">
+                    <button type="button"
+                            class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ !empty($selTypeClean) ? 'active' : '' }}"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        Type{!! $quickTypeLabel ? ': <span class="fw-semibold">' . e($quickTypeLabel) . '</span>' : '' !!}
+                    </button>
+                    <div class="dropdown-menu">
+                        {{-- Klik item aktif = batalkan pilihan (toggle) — tanpa opsi "All". --}}
+                        @foreach ($typeOptions as $typeOption)
+                            <a href="#"
+                               class="dropdown-item ongoing-quick-item {{ $selTypeClean === [(string) $typeOption] ? 'active' : '' }}"
+                               data-param="ongoing_type" data-array="1" data-value="{{ $typeOption }}">
+                                {{ ucwords(str_replace('_', ' ', $typeOption)) }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Dropdown Status --}}
+                <div class="dropdown">
+                    <button type="button"
+                            class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        Status: <span class="fw-semibold">{{ $quickStatusOptions[$curQuickStatus] }}</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        @foreach ($quickStatusOptions as $val => $label)
+                            <a href="#"
+                               class="dropdown-item ongoing-quick-item {{ $curQuickStatus === $val ? 'active' : '' }}"
+                               data-param="ongoing_quick_status" data-value="{{ $val }}">
+                                {{ $label }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Dropdown Year (otomatis dari data) --}}
+                <div class="dropdown">
+                    <button type="button"
+                            class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        Year: <span class="fw-semibold">{{ $curYear === 'all' ? 'All' : $curYear }}</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item ongoing-quick-item {{ $curYear === 'all' ? 'active' : '' }}"
+                           data-param="ongoing_year" data-value="all">All</a>
+                        @foreach ($quickYearOptions as $yearOption)
+                            <a href="#"
+                               class="dropdown-item ongoing-quick-item {{ (string) $curYear === (string) $yearOption ? 'active' : '' }}"
+                               data-param="ongoing_year" data-value="{{ $yearOption }}">
+                                {{ $yearOption }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Dropdown Month --}}
+                <div class="dropdown">
+                    <button type="button"
+                            class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        Month: <span class="fw-semibold">{{ $quickMonthLabel }}</span>
+                    </button>
+                    <div class="dropdown-menu learning-quick-dropdown-scroll">
+                        <a href="#" class="dropdown-item ongoing-quick-item {{ empty($activeQuickMonths) ? 'active' : '' }}"
+                           data-param="ongoing_month" data-array="1" data-value="">All</a>
+                        @foreach ($monthOptions as $num => $label)
+                            <a href="#"
+                               class="dropdown-item ongoing-quick-item {{ $activeQuickMonths === [(string) $num] ? 'active' : '' }}"
+                               data-param="ongoing_month" data-array="1" data-value="{{ $num }}">
+                                {{ $label }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
             <div class="row g-2 align-items-end">
-                {{-- Quick filter chips (Type) — link toggle, tanpa JS, di bawah Search --}}
+                {{-- Quick filter chips (Type content) — link toggle, tanpa JS, di bawah Search --}}
                 <div class="col-12 col-lg">
                     <label class="form-label small text-muted mb-1">Filter Cepat</label>
                     <div class="learning-chip-row d-flex flex-nowrap flex-lg-wrap gap-2 pb-1">
-                        <a href="{{ $chipAllUrl }}"
-                           class="learning-chip {{ empty($selTypeClean) ? 'active' : '' }}">
-                            All
-                        </a>
-
                         @foreach ($typeOptions as $typeOption)
                             @php
                                 $isActiveChip = in_array($typeOption, $selTypeClean);
@@ -227,24 +334,6 @@
                                 <i class="ti ti-x ms-1"></i>
                             </a>
                         @endif
-
-                        {{-- Chip Playlist aktif — bisa dihapus satu per satu tanpa reset filter lain --}}
-                        @foreach (array_filter($selPlaylist) as $plId)
-                            @php
-                                $otherPlaylists = array_values(array_diff($selPlaylist, [(string) $plId]));
-                                $plQuery = collect($baseQuery)->except('ongoing_playlist')->all();
-                                if (!empty($otherPlaylists)) {
-                                    $plQuery['ongoing_playlist'] = $otherPlaylists;
-                                }
-                                $plChipUrl = route('user.learning.dashboard')
-                                    . (!empty($plQuery) ? '?' . http_build_query($plQuery) : '');
-                                $plLabel = $playlistTitles[$plId] ?? ('Playlist #' . $plId);
-                            @endphp
-                            <a href="{{ $plChipUrl }}" class="learning-chip active" title="Hapus filter playlist {{ $plLabel }}">
-                                <i class="ti ti-playlist me-1"></i>{{ $plLabel }}
-                                <i class="ti ti-x ms-1"></i>
-                            </a>
-                        @endforeach
                     </div>
                 </div>
 
@@ -311,24 +400,6 @@
                                 <hr class="my-3">
                             @endif
 
-                            {{-- Playlist (multi: ongoing_playlist[]) — hanya playlist yang sedang dikerjakan --}}
-                            @if ($playlists->isNotEmpty())
-                                <div class="learning-filter-group">
-                                    <div class="fw-semibold mb-2">Playlist</div>
-                                    <div class="d-flex flex-wrap gap-3">
-                                        @foreach ($playlists as $playlist)
-                                            <label class="form-check">
-                                                <input class="form-check-input" type="checkbox"
-                                                       name="ongoing_playlist[]" value="{{ $playlist->id }}"
-                                                       {{ in_array((string) $playlist->id, $selPlaylist, true) ? 'checked' : '' }}>
-                                                <span class="form-check-label">{{ $playlist->title }}</span>
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                <hr class="my-3">
-                            @endif
-
                             {{-- Learning Program (single: ongoing_status) --}}
                             <div class="learning-filter-group">
                                 <div class="fw-semibold mb-2">Learning Program</div>
@@ -356,7 +427,7 @@
                                                {{ $curYear === 'all' ? 'checked' : '' }}>
                                         <span class="form-check-label">All Years</span>
                                     </label>
-                                    @foreach (range(date('Y'), 2020) as $yearOption)
+                                    @foreach ($quickYearOptions as $yearOption)
                                         <label class="form-check">
                                             <input class="form-check-input" type="radio"
                                                    name="ongoing_year" value="{{ $yearOption }}"
@@ -542,58 +613,4 @@
     </div>
 </div>
 
-{{-- Style ditaruh inline (bukan @push) karena komponen ini selalu dirender via AJAX,
-     sehingga @stack di layout utama tidak ikut ter-render. Tag <style> tetap berlaku
-     saat di-inject melalui innerHTML. --}}
-<style>
-    .learning-chip-row {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-    }
-    .learning-chip-row::-webkit-scrollbar { height: 4px; }
-    .learning-chip {
-        display: inline-flex;
-        align-items: center;
-        white-space: nowrap;
-        cursor: pointer;
-        padding: .375rem .875rem;
-        border-radius: 999px;
-        border: 1px solid var(--tblr-border-color, #dbe0e6);
-        background: #fff;
-        color: var(--tblr-body-color, #4b5563);
-        font-size: .8125rem;
-        font-weight: 500;
-        margin-bottom: 0;
-        text-decoration: none;
-        transition: all .15s ease-in-out;
-        user-select: none;
-    }
-    .learning-chip:hover {
-        border-color: var(--tblr-primary, #206bc4);
-        color: var(--tblr-primary, #206bc4);
-    }
-    .learning-chip.active {
-        background: var(--tblr-primary, #206bc4);
-        border-color: var(--tblr-primary, #206bc4);
-        color: #fff;
-    }
-    .learning-filter-group { margin-bottom: 0; }
-    .learning-filter-modal .form-check { margin-bottom: 0; }
-    @media (max-width: 575.98px) {
-        /* Mobile: modal muncul dari bawah seperti bottom-sheet Tokopedia. */
-        .learning-filter-modal {
-            margin: 0;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            max-width: 100%;
-        }
-        .learning-filter-modal .modal-content {
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
-            max-height: 88vh;
-        }
-    }
-</style>
+<x-learning.ongoing-filter-style />

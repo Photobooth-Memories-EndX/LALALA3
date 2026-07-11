@@ -73,6 +73,74 @@
         });
     }
 
+    // ── Quick dropdown filters Learning On Going (Type / Status / Year / Month) ──
+    // Terapkan pilihan via AJAX (tanpa reload halaman): perbarui query string di URL
+    // lalu muat ulang partial tab ongoing memakai endpoint yang sudah ada.
+    function applyOngoingQuickFilter(param, value, isArray) {
+        var params = new URLSearchParams(window.location.search);
+
+        // Hapus nilai lama param tsb (bentuk "param", "param[]" maupun "param[0]")
+        // dan reset pagination agar hasil filter mulai dari halaman pertama.
+        Array.from(params.keys()).forEach(function (key) {
+            if (key === param || key.indexOf(param + '[') === 0 || key === 'ongoing_page') {
+                params.delete(key);
+            }
+        });
+
+        if (value !== '' && value !== 'all') {
+            params.set(isArray ? param + '[]' : param, value);
+        }
+
+        var qs = params.toString();
+        history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+        _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
+        loadLearningTab('ongoing');
+    }
+
+    // Delegated: item dropdown ikut ter-render ulang setiap partial dimuat via AJAX.
+    // Klik item yang sudah aktif = batalkan pilihan (toggle, tanpa opsi "All" pada Type).
+    $(document).on('click', '.ongoing-quick-item', function (e) {
+        e.preventDefault();
+        applyOngoingQuickFilter(
+            String($(this).data('param')),
+            $(this).hasClass('active') ? '' : String($(this).data('value')),
+            $(this).data('array') == 1
+        );
+    });
+
+    // ── Mode switch Learning On Going: Content | Playlist ────────────────────────
+    // Dua flow independen — pindah mode me-reset seluruh filter ongoing, lalu
+    // partial mode terpilih dimuat via AJAX (tanpa reload halaman).
+    $(document).on('click', '.ongoing-mode-btn', function () {
+        var mode   = String($(this).data('mode'));
+        var params = new URLSearchParams(window.location.search);
+
+        Array.from(params.keys()).forEach(function (key) {
+            if (key.indexOf('ongoing_') === 0) {
+                params.delete(key);
+            }
+        });
+
+        if (mode === 'playlist') {
+            params.set('ongoing_mode', 'playlist');
+        }
+
+        var qs = params.toString();
+        history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+        _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
+        loadLearningTab('ongoing');
+    });
+
+    // Back/forward browser: muat ulang partial ongoing sesuai query string URL.
+    window.addEventListener('popstate', function () {
+        if (_activeTab === 'ongoing') {
+            _activeTab = null;
+            loadLearningTab('ongoing');
+        }
+    });
+
     $(function () {
         // Load ongoing tab automatically on page load
         loadLearningTab('ongoing');

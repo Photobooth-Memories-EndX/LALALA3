@@ -196,7 +196,9 @@
         @endphp
 
         @if ($cardUrl)
-            <a href="{{ $cardUrl }}" class="btn btn-primary w-100 mt-auto">
+            {{-- Card Playlist: seluruh card dapat diklik (stretched-link) menuju
+                 halaman playlist /playlist/{playlistSlug}/{contentSlug}. --}}
+            <a href="{{ $cardUrl }}" class="btn btn-primary w-100 mt-auto {{ $isPlaylist ? 'stretched-link' : '' }}">
                 <i class="ti ti-player-play me-1"></i>
                 Continue Learning
             </a>

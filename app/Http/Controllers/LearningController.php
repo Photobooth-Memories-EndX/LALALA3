@@ -69,7 +69,10 @@ class LearningController extends Controller
     public function dashboardPartial(string $tab, CertificateEligibilityService $eligibilityService)
     {
         return match ($tab) {
-            'ongoing'     => app(LearningOngoingController::class)->partial(),
+            // Tab ongoing terdiri dari 2 mode terpisah: Content (default) & Playlist.
+            'ongoing' => request('ongoing_mode') === 'playlist'
+                ? app(LearningOngoingController::class)->playlist()
+                : app(LearningOngoingController::class)->content(),
             'record'      => app(LearningRecordController::class)->partial($eligibilityService),
             'assessment'  => app(LearningRecordController::class)->assessment(),
             'claim'       => view('user.learning.dashboard-partials.claim'),
