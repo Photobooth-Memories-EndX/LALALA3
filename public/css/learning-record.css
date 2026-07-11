@@ -134,6 +134,91 @@ tbody.record-sort-animate tr.record-row {
     animation: recordRowsFade 0.25s ease;
 }
 
+/* ── Card counter "Certificates Ready" di header tabel ─────────────────── */
+
+.record-cert-ready-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    background: #eff6ff;
+    color: #1e40af;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.record-cert-ready-card:hover {
+    background: #dbeafe;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+}
+
+.record-cert-ready-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 11px;
+}
+
+/* ── Quick Filter (pill All / Content / Playlist) ──────────────────────── */
+
+.record-chip {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    cursor: pointer;
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--tblr-border-color, #dbe0e6);
+    background: #fff;
+    color: var(--tblr-body-color, #4b5563);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+    user-select: none;
+}
+
+.record-chip:hover {
+    border-color: var(--tblr-primary, #206bc4);
+    color: var(--tblr-primary, #206bc4);
+}
+
+.record-chip.active {
+    background: var(--tblr-primary, #206bc4);
+    border-color: var(--tblr-primary, #206bc4);
+    color: #fff;
+}
+
+/* ── Panel More Filters ────────────────────────────────────────────────── */
+
+/* Tersembunyi default; dibuka jQuery slideDown ±250 ms (learning-record.js). */
+.record-more-filters {
+    display: none;
+    border: 1px solid var(--tblr-border-color, #e6e7e9);
+    border-radius: 12px;
+    padding: 16px;
+    background: var(--tblr-bg-surface-secondary, #f8fafc);
+}
+
+/* Caret pada tombol More Filters berputar saat panel terbuka. */
+.record-more-caret {
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+#recordMoreFiltersToggle.is-open .record-more-caret {
+    transform: rotate(180deg);
+}
+
 /* ── Badge Playlist (kolom Type) sebagai link ke halaman Playlist ──────── */
 
 .record-playlist-link {

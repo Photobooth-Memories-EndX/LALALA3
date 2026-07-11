@@ -43,7 +43,9 @@ class LearningRecordController extends Controller
         $cert               = $this->certificateContext($eligibilityService);
 
         // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
-        // Finish Date terbaru — urutan default yang sama seperti sebelumnya.
+        // sebagai antrean prioritas: baris yang siap Generate Certificate
+        // selalu paling atas, di dalam tiap kelompok Finish Date terbaru dulu.
+        // Murni pengurutan Collection — query dan business logic tidak berubah.
         $rows = $this->mergeLearningRecord(
             $this->buildContentRows($this->getCompletedContents($userId), $cert),
             $this->buildPlaylistRows(
@@ -53,7 +55,10 @@ class LearningRecordController extends Controller
                 // (route playlist.user.view butuh pasangan slug playlist + content).
                 $this->playlistFirstContentSlug($completedPlaylists)
             )
-        )->sortByDesc('finish_date')->values();
+        )->sortBy([
+            ['cert_priority', 'asc'],
+            ['finish_date', 'desc'],
+        ])->values();
 
         return view('user.learning.dashboard-partials.record', [
             'rows'             => $rows,
@@ -141,10 +146,9 @@ class LearningRecordController extends Controller
         return ContentUser::with([
                 'content.classification',
                 // Playlist pemilik content — untuk badge di kolom Class (bebas N+1).
+                // Catatan: relasi assesment/scores TIDAK dimuat lagi — score kini
+                // diambil dari CertificateEligibilityResult (satu source of truth).
                 'content.trainingPlans' => fn ($q) => $q->select('trainingplan.id', 'trainingplan.title'),
-                'assesment' => fn ($q) => $q->with([
-                    'scores' => fn ($q) => $q->where('user_id', $userId),
-                ]),
             ])
             ->where('user_id', $userId)
             ->where('finish', '1')
@@ -208,37 +212,19 @@ class LearningRecordController extends Controller
         return $contentUsers->map(function (ContentUser $cu) use ($cert) {
             $content = $cu->content;
 
-            $score = null;
-            if ($cu->assesment) {
-                $top   = ($cu->assesment->scores ?? collect())->sortByDesc('score')->first();
-                $score = $top->score ?? null;
-            }
-
             $setting     = $cert['byContent']->get($content->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
-            $issued      = $setting ? $cert['certificates']->get($setting->id) : null;
 
-            // Validasi syarat certificate (progress & score minimum).
-            $progressReady = true;
-            $scoreReady    = true;
+            // Kolom Certificate hanya punya dua status: 'ready' (seluruh syarat
+            // terpenuhi menurut CertificateEligibilityService — source of truth
+            // yang sama dengan endpoint generate) atau 'none' (kolom kosong).
+            // Sudah/belum pernah terbit tidak berpengaruh — generate memakai
+            // firstOrCreate sehingga tidak pernah menduplikasi record.
+            $certState = ($eligibility?->eligible ?? false) ? 'ready' : 'none';
 
-            if ($setting) {
-                if ((int) $setting->minimum_progress > 0) {
-                    $progressReady = (int) $cu->progress >= (int) $setting->minimum_progress;
-                }
-
-                if ($setting->is_assessment_required) {
-                    $scoreReady = !is_null($score) && (float) $score >= (float) $setting->minimum_score;
-                }
-            }
-
-            if ($issued) {
-                $certState = 'issued';
-            } elseif ($progressReady && $scoreReady && ($eligibility['eligible'] ?? false)) {
-                $certState = 'ready';
-            } else {
-                $certState = 'none';
-            }
+            // Antrean prioritas urutan tabel: 1 = siap Generate Certificate,
+            // 2 = selesai tapi belum memenuhi syarat certificate.
+            $certPriority = $certState === 'ready' ? 1 : 2;
 
             $playlists = $content->relationLoaded('trainingPlans')
                 ? $content->trainingPlans
@@ -259,12 +245,13 @@ class LearningRecordController extends Controller
                 'progress'        => (int) ($cu->progress ?? 0),
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'finish_date'     => optional($cu->updated_at)->format('Y-m-d H:i') ?? '',
-                'score'           => is_null($score) ? null : (int) $score,
-                'min_score'       => $setting ? (int) $setting->minimum_score : 0,
-                'progress_ready'  => $progressReady,
-                'score_ready'     => $scoreReady,
+                // Score & ambangnya dari CertificateEligibilityResult — angka
+                // yang sama dengan yang dipakai menentukan tombol Generate.
+                'score'                => $eligibility?->score(),
+                'min_score'            => (int) ($eligibility?->minimumScore ?? 0),
+                'assessment_required'  => (bool) ($eligibility?->assessmentRequired ?? false),
                 'cert_state'      => $certState,
-                'cert_credential' => $issued->credential_id ?? null,
+                'cert_priority'   => $certPriority,
                 'cert_action_url' => route('certificate.generate', $cu->id),
                 'cert_is_form'    => false,
             ];
@@ -306,7 +293,7 @@ class LearningRecordController extends Controller
         return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
-            $issued      = $setting ? $cert['certificates']->get($setting->id) : null;
+            $eligible    = $eligibility?->eligible ?? false;
 
             $finishDate = $plan->last_finished_at
                 ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i')
@@ -331,12 +318,16 @@ class LearningRecordController extends Controller
                 'progress'        => 100,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'finish_date'     => $finishDate,
-                'score'           => null,
-                'min_score'       => $setting ? (int) ($setting->minimum_score ?? 0) : 0,
-                'progress_ready'  => true,
-                'score_ready'     => true,
-                'cert_state'      => $issued ? 'issued' : (($eligibility['eligible'] ?? false) ? 'ready' : 'none'),
-                'cert_credential' => $issued->credential_id ?? null,
+                // Pola sama dengan Content: score dari CertificateEligibilityResult —
+                // playlist ber-assessment kini menampilkan nilai sungguhan.
+                'score'                => $eligibility?->score(),
+                'min_score'            => (int) ($eligibility?->minimumScore ?? 0),
+                'assessment_required'  => (bool) ($eligibility?->assessmentRequired ?? false),
+                // Aturan playlist sudah di CertificateEligibilityService:
+                // tanpa assessment cukup progress; dengan assessment wajib
+                // lulus minimum score.
+                'cert_state'      => $eligible ? 'ready' : 'none',
+                'cert_priority'   => $eligible ? 1 : 2,
                 'cert_action_url' => $setting ? route('certificate.generate.setting', $setting) : null,
                 'cert_is_form'    => true,
             ];
@@ -358,7 +349,7 @@ class LearningRecordController extends Controller
      * Konteks certificate sekali muat: setting aktif, sertifikat terbit, dan
      * hasil eligibility per setting (CertificateEligibilityService yang sudah ada).
      *
-     * @return array{byContent: Collection, byPlaylist: Collection, eligibility: array, certificates: Collection, settings: Collection}
+     * @return array{byContent: Collection, byPlaylist: Collection, eligibility: array<int, \App\Services\CertificateEligibilityResult>, certificates: Collection, settings: Collection}
      */
     private function certificateContext(CertificateEligibilityService $service): array
     {
@@ -414,10 +405,9 @@ class LearningRecordController extends Controller
             ->get()
             ->keyBy('certificate_setting_id');
 
-        $eligibility = [];
-        foreach ($settings as $setting) {
-            $eligibility[$setting->id] = $service->check($setting, $user);
-        }
+        // Satu panggilan batch — service memuat konteks (progress, assessment,
+        // hasil final) sekali untuk seluruh setting, bukan query per setting.
+        $eligibility = $service->checkMany($settings, $user);
 
         return [
             'settings'     => $settings,
@@ -440,7 +430,7 @@ class LearningRecordController extends Controller
         $playlistFinishDates = $completedPlaylists->pluck('last_finished_at', 'id');
 
         return $cert['settings']
-            ->filter(fn ($setting) => $cert['eligibility'][$setting->id]['eligible'] ?? false)
+            ->filter(fn ($setting) => ($cert['eligibility'][$setting->id] ?? null)?->eligible ?? false)
             ->map(function ($setting) use ($cert, $playlistFinishDates) {
                 $eligibility = $cert['eligibility'][$setting->id];
 
@@ -448,13 +438,12 @@ class LearningRecordController extends Controller
                 // playlist -> content terakhir dalam playlist, global -> hasil assessment.
                 $finishedAt = null;
                 if ($setting->certificate_type === 'content') {
-                    $finishedAt = optional($eligibility['learning'] ?? null)->updated_at;
+                    $finishedAt = $eligibility->learning?->updated_at;
                 } elseif ($setting->certificate_type === 'playlist') {
                     $raw        = $playlistFinishDates->get($setting->trainingplan_id);
                     $finishedAt = $raw ? Carbon::parse($raw) : null;
                 }
-                $finishedAt = $finishedAt
-                    ?? optional($eligibility['assessmentResult'] ?? null)->created_at;
+                $finishedAt = $finishedAt ?? $eligibility->assessmentResult?->created_at;
 
                 return [
                     'setting'     => $setting,

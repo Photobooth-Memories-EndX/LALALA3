@@ -2,70 +2,56 @@
 
 namespace App\Services;
 
+use App\Models\Assesment;
 use App\Models\AssesmentResult;
 use App\Models\CertificateSetting;
 use App\Models\ContentUser;
 use App\Models\User;
+use Illuminate\Support\Collection;
 
+/**
+ * Source of truth kelayakan certificate.
+ *
+ * Wajib/tidaknya assessment TIDAK lagi dibaca dari kolom konfigurasi
+ * certificate_settings.is_assessment_required, melainkan dideteksi otomatis
+ * dari relasi data: bila Content/Playlist punya minimal satu assessment aktif
+ * (status != NOT), assessment otomatis wajib — user harus lulus SALAH SATU
+ * di antaranya (post-test atau remedial-nya). Tanpa assessment, cukup progress.
+ * CertificateSetting tetap dipakai sebagai konfigurasi (minimum progress,
+ * minimum score, template, issuer) — bukan penentu eligibility.
+ *
+ * Tipe 'global' adalah pengecualian by-design: setting-nya memang identitas
+ * satu assessment (assessment_id), jadi tetap dievaluasi terhadap id tersebut.
+ *
+ * Seluruh hasil dikembalikan sebagai CertificateEligibilityResult — kontrak
+ * resmi antar layer; UI wajib menampilkan nilai dari objek ini agar tidak ada
+ * dua sumber perhitungan.
+ */
 class CertificateEligibilityService
 {
-    public function check(CertificateSetting $setting, User $user): array
+    public function check(CertificateSetting $setting, User $user): CertificateEligibilityResult
     {
-        if (!$setting->is_active) {
-            return $this->result(false, 'Certificate setting is inactive.');
-        }
-
-        return match ($setting->certificate_type) {
-            'content' => $this->checkContentEligibility($setting, $user),
-            'playlist' => $this->checkPlaylistEligibility($setting, $user),
-            'global' => $this->checkGlobalEligibility($setting, $user),
-            default => $this->result(false, 'Unknown certificate type.'),
-        };
+        return $this->checkMany(collect([$setting]), $user)[$setting->id];
     }
 
-    public function checkContentEligibility(CertificateSetting $setting, User $user): array
+    /**
+     * Evaluasi banyak setting sekaligus dengan konteks yang dimuat sekali
+     * (bebas N+1) — dipakai halaman Learning Record yang mengecek puluhan
+     * setting per user.
+     *
+     * @param  Collection<int, CertificateSetting>  $settings
+     * @return array<int, CertificateEligibilityResult>  map: setting id => hasil
+     */
+    public function checkMany(Collection $settings, User $user): array
     {
-        $learning = ContentUser::where('user_id', $user->id)
-            ->where('content_id', $setting->content_id)
-            ->first();
+        $context = $this->loadContext($settings, $user);
 
-        if (!$learning || (int) $learning->progress < (int) $setting->minimum_progress) {
-            return $this->result(false, 'Minimum content progress has not been reached.');
+        $results = [];
+        foreach ($settings as $setting) {
+            $results[$setting->id] = $this->evaluate($setting, $context);
         }
 
-        return $this->withAssessment($setting, $user, $learning);
-    }
-
-    public function checkPlaylistEligibility(CertificateSetting $setting, User $user): array
-    {
-        $contentIds = $setting->trainingPlan
-            ? $setting->trainingPlan->trainingplandetail->pluck('content_id')->unique()
-            : collect();
-
-        if ($contentIds->isEmpty()) {
-            return $this->result(false, 'Playlist has no content.');
-        }
-
-        $completed = ContentUser::where('user_id', $user->id)
-            ->whereIn('content_id', $contentIds)
-            ->where('progress', '>=', $setting->minimum_progress)
-            ->distinct()
-            ->count('content_id');
-
-        if ($completed !== $contentIds->count()) {
-            return $this->result(false, 'All playlist content must reach the minimum progress.');
-        }
-
-        return $this->withAssessment($setting, $user);
-    }
-
-    public function checkGlobalEligibility(CertificateSetting $setting, User $user): array
-    {
-        if (!$setting->assessment_id) {
-            return $this->result(false, 'Global assessment is not configured.');
-        }
-
-        return $this->withAssessment($setting, $user, null, true);
+        return $results;
     }
 
     public function getAssessmentResult(CertificateSetting $setting, User $user)
@@ -82,23 +68,230 @@ class CertificateEligibilityService
             ->first();
     }
 
-    private function withAssessment(CertificateSetting $setting, User $user, $learning = null, bool $alwaysRequired = false): array
+    // ─── Context loading (query massal — sekali untuk seluruh setting) ──────
+
+    /**
+     * @return array{learnings: Collection, assessmentsByContent: Collection,
+     *               assessmentsByPlaylist: Collection, results: Collection}
+     */
+    private function loadContext(Collection $settings, User $user): array
     {
-        if (!$alwaysRequired && !$setting->is_assessment_required) {
-            return $this->result(true, null, $learning);
-        }
-        if (!$setting->assessment_id) {
-            return $this->result(false, 'Assessment is not configured.');
-        }
-        $assessmentResult = $this->getAssessmentResult($setting, $user);
-        if (!$assessmentResult || (float) $assessmentResult->score < (float) $setting->minimum_score) {
-            return $this->result(false, 'Minimum assessment score has not been reached.');
-        }
-        return $this->result(true, null, $learning, $assessmentResult);
+        $contentIds  = $settings->where('certificate_type', 'content')
+            ->pluck('content_id')->filter()->unique()->values();
+        $playlistIds = $settings->where('certificate_type', 'playlist')
+            ->pluck('trainingplan_id')->filter()->unique()->values();
+
+        // Progress dicek per content: content setting + seluruh isi playlist.
+        $playlistContentIds = $settings->where('certificate_type', 'playlist')
+            ->flatMap(fn ($s) => $this->playlistContentIds($s))
+            ->unique()->values();
+
+        $learningContentIds = $contentIds->merge($playlistContentIds)->unique()->values();
+
+        $learnings = $learningContentIds->isEmpty()
+            ? collect()
+            : ContentUser::where('user_id', $user->id)
+                ->whereIn('content_id', $learningContentIds)
+                ->get()
+                ->keyBy('content_id');
+
+        // Deteksi otomatis: assessment aktif milik content/playlist via FK-nya.
+        // Status "NOT" = nonaktif (konvensi AssesmentUserController) — tidak
+        // dihitung karena user memang tidak bisa mengerjakannya.
+        $assessments = ($contentIds->isEmpty() && $playlistIds->isEmpty())
+            ? collect()
+            : Assesment::where('status', '!=', 'NOT')
+                ->where(function ($q) use ($contentIds, $playlistIds) {
+                    $q->whereIn('content_id', $contentIds)
+                        ->orWhereIn('trainingplan_id', $playlistIds);
+                })
+                ->get();
+
+        // Hasil final user untuk seluruh assessment terdeteksi + assessment_id
+        // milik setting global. Diurutkan score tertinggi (lalu terbaru) agar
+        // unique() menyisakan hasil terbaik per assessment — semantik sama
+        // dengan getAssessmentResult().
+        $assessmentIds = $assessments->pluck('id')
+            ->merge($settings->pluck('assessment_id')->filter())
+            ->unique()->values();
+
+        $results = $assessmentIds->isEmpty()
+            ? collect()
+            : AssesmentResult::where('user_id', $user->id)
+                ->where('final', 1)
+                ->whereIn('assesment_id', $assessmentIds)
+                ->orderByDesc('score')
+                ->orderByDesc('id')
+                ->get()
+                ->unique('assesment_id')
+                ->keyBy('assesment_id');
+
+        return [
+            'learnings'             => $learnings,
+            'assessmentsByContent'  => $assessments->filter(fn ($a) => $a->content_id)->groupBy('content_id'),
+            'assessmentsByPlaylist' => $assessments->filter(fn ($a) => $a->trainingplan_id)->groupBy('trainingplan_id'),
+            'results'               => $results,
+        ];
     }
 
-    private function result(bool $eligible, ?string $reason = null, $learning = null, $assessmentResult = null): array
+    private function playlistContentIds(CertificateSetting $setting): Collection
     {
-        return compact('eligible', 'reason', 'learning', 'assessmentResult');
+        return $setting->trainingPlan
+            ? $setting->trainingPlan->trainingplandetail->pluck('content_id')->unique()->values()
+            : collect();
+    }
+
+    // ─── Evaluasi per setting ────────────────────────────────────────────────
+
+    private function evaluate(CertificateSetting $setting, array $context): CertificateEligibilityResult
+    {
+        if (!$setting->is_active) {
+            return new CertificateEligibilityResult(eligible: false, reason: 'Certificate setting is inactive.');
+        }
+
+        return match ($setting->certificate_type) {
+            'content' => $this->evaluateContent($setting, $context),
+            'playlist' => $this->evaluatePlaylist($setting, $context),
+            'global' => $this->evaluateGlobal($setting, $context),
+            default => new CertificateEligibilityResult(eligible: false, reason: 'Unknown certificate type.'),
+        };
+    }
+
+    private function evaluateContent(CertificateSetting $setting, array $context): CertificateEligibilityResult
+    {
+        $learning = $context['learnings']->get($setting->content_id);
+
+        if (!$learning || (int) $learning->progress < (int) $setting->minimum_progress) {
+            return new CertificateEligibilityResult(
+                eligible: false,
+                reason: 'Minimum content progress has not been reached.',
+                learning: $learning,
+            );
+        }
+
+        return $this->passAssessmentGate(
+            $setting,
+            $context['assessmentsByContent']->get($setting->content_id, collect()),
+            $context,
+            $learning
+        );
+    }
+
+    private function evaluatePlaylist(CertificateSetting $setting, array $context): CertificateEligibilityResult
+    {
+        $contentIds = $this->playlistContentIds($setting);
+
+        if ($contentIds->isEmpty()) {
+            return new CertificateEligibilityResult(eligible: false, reason: 'Playlist has no content.');
+        }
+
+        $completed = $contentIds->filter(function ($contentId) use ($setting, $context) {
+            $learning = $context['learnings']->get($contentId);
+            return $learning && (int) $learning->progress >= (int) $setting->minimum_progress;
+        })->count();
+
+        if ($completed !== $contentIds->count()) {
+            return new CertificateEligibilityResult(
+                eligible: false,
+                reason: 'All playlist content must reach the minimum progress.',
+            );
+        }
+
+        return $this->passAssessmentGate(
+            $setting,
+            $context['assessmentsByPlaylist']->get($setting->trainingplan_id, collect()),
+            $context
+        );
+    }
+
+    private function evaluateGlobal(CertificateSetting $setting, array $context): CertificateEligibilityResult
+    {
+        if (!$setting->assessment_id) {
+            return new CertificateEligibilityResult(eligible: false, reason: 'Global assessment is not configured.');
+        }
+
+        $assessmentResult = $context['results']->get($setting->assessment_id);
+        $minimumScore     = $this->minimumScore($setting);
+
+        if (!$assessmentResult || (float) $assessmentResult->score < $minimumScore) {
+            return new CertificateEligibilityResult(
+                eligible: false,
+                reason: 'Minimum assessment score has not been reached.',
+                assessmentResult: $assessmentResult,
+                assessmentRequired: true,
+                minimumScore: $minimumScore,
+            );
+        }
+
+        return new CertificateEligibilityResult(
+            eligible: true,
+            assessmentResult: $assessmentResult,
+            assessmentRequired: true,
+            minimumScore: $minimumScore,
+        );
+    }
+
+    /**
+     * Gerbang assessment hasil deteksi otomatis. Tanpa assessment aktif:
+     * cukup progress. Dengan assessment (post-test + remedial sebagai baris
+     * terpisah): lulus SALAH SATU sudah memenuhi. Saat gagal, hasil final
+     * terbaik tetap dilampirkan agar UI menampilkan nilai yang sama dengan
+     * yang dievaluasi — bukan perhitungan kedua.
+     */
+    private function passAssessmentGate(
+        CertificateSetting $setting,
+        Collection $assessments,
+        array $context,
+        $learning = null
+    ): CertificateEligibilityResult {
+        if ($assessments->isEmpty()) {
+            return new CertificateEligibilityResult(eligible: true, learning: $learning);
+        }
+
+        $best           = null;
+        $bestAssessment = null;
+
+        foreach ($assessments as $assessment) {
+            $assessmentResult = $context['results']->get($assessment->id);
+            if (!$assessmentResult) {
+                continue;
+            }
+
+            $minimumScore = $this->minimumScore($setting, $assessment);
+
+            if ((float) $assessmentResult->score >= $minimumScore) {
+                return new CertificateEligibilityResult(
+                    eligible: true,
+                    learning: $learning,
+                    assessmentResult: $assessmentResult,
+                    assessmentRequired: true,
+                    minimumScore: $minimumScore,
+                );
+            }
+
+            if (!$best || (float) $assessmentResult->score > (float) $best->score) {
+                $best           = $assessmentResult;
+                $bestAssessment = $assessment;
+            }
+        }
+
+        return new CertificateEligibilityResult(
+            eligible: false,
+            reason: 'Minimum assessment score has not been reached.',
+            learning: $learning,
+            assessmentResult: $best,
+            assessmentRequired: true,
+            minimumScore: $this->minimumScore($setting, $bestAssessment ?? $assessments->first()),
+        );
+    }
+
+    /**
+     * Ambang nilai lulus: minimum_score setting (konfigurasi utama);
+     * bila kosong pakai passing_grade assessment; terakhir default sistem 80
+     * (nilai default kolom minimum_score di schema).
+     */
+    private function minimumScore(CertificateSetting $setting, ?Assesment $assessment = null): float
+    {
+        return (float) ($setting->minimum_score ?? $assessment?->passing_grade ?? 80);
     }
 }

@@ -1,19 +1,25 @@
 @props(['row'])
 
-@if (is_null($row['score']))
-    <span class="badge bg-secondary-lt text-secondary learning-record-badge">-</span>
+{{-- Kolom Score Test — satu source of truth: nilai & ambang berasal dari
+     CertificateEligibilityResult (hasil final terbaik pada assessment aktif),
+     angka yang sama dengan yang menentukan tombol Generate Certificate. --}}
 
-    @if ($row['min_score'] > 0 && $row['row_kind'] === 'content')
-        <div class="small text-danger mt-1">Butuh score min {{ $row['min_score'] }}</div>
-    @endif
+@if (! $row['assessment_required'])
+    {{-- Tidak ada assessment aktif — score bukan syarat certificate. --}}
+    <span class="badge bg-secondary-lt text-secondary learning-record-badge">-</span>
+@elseif (is_null($row['score']))
+    {{-- Assessment wajib tapi belum ada hasil final (Need Assessment). --}}
+    <span class="badge bg-secondary-lt text-secondary learning-record-badge">-</span>
+    <div class="small text-danger mt-1">Belum mengerjakan assessment</div>
 @else
     @php
-        $passed = $row['min_score'] <= 0 || $row['score'] >= $row['min_score'];
+        // Ambang efektif dari service — lulus di sini ⟺ gerbang assessment lolos.
+        $passed = $row['score'] >= $row['min_score'];
     @endphp
 
     <span class="badge {{ $passed ? 'bg-green-lt text-green' : 'bg-red-lt text-red' }} learning-record-badge">{{ $row['score'] }}</span>
 
-    @if ($row['min_score'] > 0)
-        <div class="small text-muted mt-1">Min {{ $row['min_score'] }}</div>
-    @endif
+    <div class="small {{ $passed ? 'text-muted' : 'text-danger' }} mt-1">
+        {{ $passed ? 'Min ' . $row['min_score'] : 'Butuh min ' . $row['min_score'] }}
+    </div>
 @endif

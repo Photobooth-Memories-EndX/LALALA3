@@ -6,6 +6,10 @@
  * file ini hanya mengatur presentation layer: search, filter, sorting,
  * dan pagination. initLearningRecord() dipanggil dari loadLearningTab()
  * (dashboard-script) setiap kali partial tab selesai dimuat.
+ *
+ * Content dan Playlist adalah dua entity dengan business logic berbeda
+ * (progress, assessment, certificate) — keduanya dipisah menjadi dua mode
+ * tampilan lewat Quick Filter dan tidak pernah difilter bersamaan.
  */
 function initLearningRecord() {
     var $table = $('#learningRecordTable');
@@ -15,9 +19,14 @@ function initLearningRecord() {
     }
     $table.data('recordInit', true);
 
-    var $tbody      = $table.find('tbody');
-    // Urutan tampil baris — array biasa agar mudah disusun ulang saat sorting.
-    var rowOrder    = $tbody.find('tr.record-row').toArray();
+    var $tbody = $table.find('tbody');
+
+    // Collection dipisah sejak awal (bukan satu array + if/else kind) —
+    // Quick Filter hanya menentukan collection mana yang dirender.
+    var allRows      = $tbody.find('tr.record-row').toArray();
+    var contentRows  = allRows.filter(function (tr) { return $(tr).data('kind') === 'content'; });
+    var playlistRows = allRows.filter(function (tr) { return $(tr).data('kind') === 'playlist'; });
+
     var $noMatch    = $('#recordNoMatchRow');
     var $info       = $('#recordTableInfo');
     var $pagination = $('#recordPagination');
@@ -25,6 +34,8 @@ function initLearningRecord() {
     var currentPage = 1;
     var sortKey     = null;
     var sortDir     = null;
+    // Mode tampilan aktif: 'content' (Video + Document — default) | 'playlist'.
+    var quickFilter = 'content';
 
     // ── Filter ──────────────────────────────────────────────────────────────
 
@@ -40,36 +51,40 @@ function initLearningRecord() {
         };
     }
 
-    // Replika aturan filter server-side lama (LearningRecordController):
-    //  - "playlist" adalah pseudo-type — hanya baris Playlist yang tampil.
-    //  - Filter type/classification asli menyembunyikan baris Playlist.
-    //  - Filter Playlist: baris Playlist terpilih + Content bagian darinya.
-    function rowMatches($row, f) {
-        var d = $row.data();
+    function activeRows() {
+        return quickFilter === 'playlist' ? playlistRows : contentRows;
+    }
 
-        if (f.type !== 'all') {
-            if (f.type === 'playlist') {
-                if (d.kind !== 'playlist') return false;
-            } else if (d.kind !== 'content' || String(d.type) !== f.type) {
-                return false;
-            }
-        }
-
-        if (f.classification !== 'all' && (d.kind !== 'content' || String(d.classification) !== f.classification)) {
-            return false;
-        }
-
-        if (f.playlist !== 'all') {
-            var ids = String(d.playlists || '').split(',');
-            if (ids.indexOf(f.playlist) === -1) return false;
-        }
-
+    // Filter yang berlaku di kedua mode: Year, Month, Certificate, Search.
+    function commonMatches(d, f) {
         if (f.year !== 'all' && String(d.year) !== f.year) return false;
         if (f.month !== 'all' && String(d.month) !== f.month) return false;
         if (f.certificate !== 'all' && String(d.cert) !== f.certificate) return false;
         if (f.search && String(d.search).indexOf(f.search) === -1) return false;
-
         return true;
+    }
+
+    // Mode Content: Type (Video/Document) + Classification hanya menyaring
+    // baris Content — Playlist tidak pernah ikut dievaluasi.
+    function contentMatches($row, f) {
+        var d = $row.data();
+
+        if (f.type !== 'all' && String(d.type) !== f.type) return false;
+        if (f.classification !== 'all' && String(d.classification) !== f.classification) return false;
+
+        return commonMatches(d, f);
+    }
+
+    // Mode Playlist: filter Playlist memilih satu playlist tertentu —
+    // baris Content tidak pernah ikut dievaluasi.
+    function playlistMatches($row, f) {
+        var d = $row.data();
+
+        if (f.playlist !== 'all' && String(d.playlists || '').split(',').indexOf(f.playlist) === -1) {
+            return false;
+        }
+
+        return commonMatches(d, f);
     }
 
     // ── Sorting (client-side murni — tanpa request server) ─────────────────
@@ -105,15 +120,20 @@ function initLearningRecord() {
     function applySort() {
         var type = $table.find('th[data-sort-key="' + sortKey + '"]').attr('data-sort-type') || 'text';
 
-        rowOrder.sort(function (a, b) {
+        function comparator(a, b) {
             var va  = sortValue(a, sortKey, type);
             var vb  = sortValue(b, sortKey, type);
             var cmp = type === 'text' ? String(va).localeCompare(String(vb)) : va - vb;
             return sortDir === 'desc' ? -cmp : cmp;
-        });
+        }
+
+        // Kedua collection diurutkan dengan comparator sama agar urutan tetap
+        // konsisten saat user berpindah mode.
+        contentRows.sort(comparator);
+        playlistRows.sort(comparator);
 
         // Susun ulang DOM sesuai urutan baru; baris "no match" tetap paling bawah.
-        $.each(rowOrder, function (_, tr) { $tbody.append(tr); });
+        $.each(contentRows.concat(playlistRows), function (_, tr) { $tbody.append(tr); });
         if ($noMatch.length) $tbody.append($noMatch);
     }
 
@@ -186,9 +206,10 @@ function initLearningRecord() {
 
     function render() {
         var f       = filterState();
-        var matched = rowOrder.filter(function (tr) { return rowMatches($(tr), f); });
+        var matcher = quickFilter === 'playlist' ? playlistMatches : contentMatches;
+        var matched = activeRows().filter(function (tr) { return matcher($(tr), f); });
 
-        $(rowOrder).hide();
+        $(allRows).hide();
 
         var total = matched.length;
         var pages = Math.max(1, Math.ceil(total / pageLength));
@@ -208,6 +229,46 @@ function initLearningRecord() {
         buildPagination(pages);
     }
 
+    // ── Quick Filter & More Filters ─────────────────────────────────────────
+
+    function setQuickPill(value) {
+        quickFilter = value;
+        $('#recordFilterBar [data-record-quick]')
+            .removeClass('active')
+            .filter('[data-record-quick="' + value + '"]').addClass('active');
+    }
+
+    // Tampilkan hanya filter lanjutan yang relevan dengan mode aktif:
+    // Type + Classification milik Content, dropdown Playlist milik Playlist.
+    function applyModeVisibility(animate) {
+        var $show = $('#recordMoreFilters [data-record-mode="' + quickFilter + '"]');
+        var $hide = $('#recordMoreFilters [data-record-mode]').not($show);
+
+        $hide.stop(true, true).hide();
+        if (animate) {
+            $show.stop(true, true).fadeIn(200);
+        } else {
+            $show.show();
+        }
+    }
+
+    // Badge jumlah filter lanjutan aktif pada tombol More Filters —
+    // hanya menghitung filter yang relevan dengan mode aktif.
+    function updateFilterBadge() {
+        var count = 0;
+        $('#recordMoreFilters [data-record-filter]').each(function () {
+            var mode = $(this).closest('[data-record-mode]').attr('data-record-mode');
+            if (mode && mode !== quickFilter) return;
+            if (($(this).val() || 'all') !== 'all') count++;
+        });
+        $('#recordMoreFiltersCount').text(count).toggleClass('d-none', count === 0);
+    }
+
+    function closeMoreFilters() {
+        $('#recordMoreFiltersToggle').attr('aria-expanded', 'false').removeClass('is-open');
+        $('#recordMoreFilters').stop(true, true).slideUp(250);
+    }
+
     // ── Events ──────────────────────────────────────────────────────────────
 
     // Search realtime dengan debounce — tanpa reload halaman.
@@ -220,18 +281,66 @@ function initLearningRecord() {
         }, 400);
     });
 
-    // Multi filter: setiap perubahan dropdown langsung dirender ulang.
-    $('#recordFilterBar [data-record-filter]').on('change', function () {
+    // Quick Filter: pindah mode Content ⇄ Playlist — murni client-side.
+    // Filter milik mode lama di-reset agar tidak diam-diam terbawa ke mode baru.
+    $('#recordFilterBar [data-record-quick]').on('click', function () {
+        var value = $(this).attr('data-record-quick');
+        if (value === quickFilter) return;
+
+        setQuickPill(value);
+        if (value === 'playlist') {
+            $('#recordFilterType, #recordFilterClassification').val('all');
+        } else {
+            $('#recordFilterPlaylist').val('all');
+        }
+
+        applyModeVisibility(true);
         currentPage = 1;
+        updateFilterBadge();
+        animateRows();
         render();
     });
 
-    // Clear Filter: reset seluruh input lalu render ulang tabel.
+    // Buka/tutup panel More Filters (slide ±250 ms, tanpa request server).
+    $('#recordMoreFiltersToggle').on('click', function () {
+        var expanded = $(this).attr('aria-expanded') === 'true';
+        $(this).attr('aria-expanded', String(!expanded)).toggleClass('is-open', !expanded);
+        $('#recordMoreFilters').stop(true, true).slideToggle(250);
+    });
+
+    // Apply: filter sudah live saat berubah — tombol ini hanya menutup panel.
+    $('#recordApplyFilter').on('click', function () {
+        currentPage = 1;
+        render();
+        closeMoreFilters();
+    });
+
+    // Multi filter: setiap perubahan dropdown langsung dirender ulang.
+    $('#recordFilterBar [data-record-filter]').on('change', function () {
+        currentPage = 1;
+        updateFilterBadge();
+        render();
+    });
+
+    // Reset: kosongkan search + seluruh filter lanjutan. Mode aktif
+    // dipertahankan — Quick Filter adalah mode tampilan, bukan filter.
     $('#recordClearFilter').on('click', function () {
         $('#recordSearch').val('');
         $('#recordFilterBar [data-record-filter]').val('all');
         currentPage = 1;
+        updateFilterBadge();
         render();
+    });
+
+    // Card "Certificates Ready" (header): terapkan filter Certificate Ready
+    // pada mode aktif lalu scroll halus ke tabel — baris pertama yang tampil
+    // pasti punya tombol Generate Certificate.
+    $('#recordCertReadyCard').on('click', function () {
+        $('#recordFilterCertificate').val('ready');
+        currentPage = 1;
+        updateFilterBadge();
+        render();
+        $table[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     $('#recordPageLength').on('change', function () {
@@ -252,5 +361,6 @@ function initLearningRecord() {
         render();
     });
 
+    applyModeVisibility(false);
     render();
 }

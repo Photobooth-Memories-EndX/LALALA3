@@ -17,7 +17,7 @@ class CertificateGenerateService
     public function generate(CertificateSetting $setting, User $user): Certificate
     {
         $check = $this->eligibility->check($setting, $user);
-        abort_unless($check['eligible'], 403, $check['reason']);
+        abort_unless($check->eligible, 403, $check->reason);
 
         return DB::transaction(function () use ($setting, $user, $check) {
             $certificate = Certificate::firstOrCreate(
@@ -28,15 +28,16 @@ class CertificateGenerateService
                     'source_id' => $setting->sourceId(),
                 ],
                 [
-                    'content_user_id' => optional($check['learning'])->id,
-                    'assessment_result_id' => optional($check['assessmentResult'])->id,
+                    'content_user_id' => $check->learning?->id,
+                    'assessment_result_id' => $check->assessmentResult?->id,
                     'certificate_number' => $this->number(),
                     'credential_id' => 'OWL-' . strtoupper(Str::random(11)),
                     'title' => $setting->sourceTitle(),
                     'participant_name' => $user->name,
-                    'score' => $setting->is_assessment_required || $setting->certificate_type === 'global'
-                        ? optional($check['assessmentResult'])->score
-                        : null,
+                    // Score tercatat bila eligibility ditopang hasil assessment
+                    // (deteksi otomatis service) — tidak lagi membaca flag
+                    // is_assessment_required yang kini murni konfigurasi.
+                    'score' => $check->assessmentResult?->score,
                     'issued_at' => now(),
                 ]
             );
