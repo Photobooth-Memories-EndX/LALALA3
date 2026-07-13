@@ -335,7 +335,7 @@
                                                 <span class="badge bg-{{ $typeColor }}-lt">{{ $list->type }}</span>
                                             </td>
                                             <td>{{ $list->classification->classification_name ?? '-' }}</td>
-                                            <td>{{ $list->duration ?: '-' }}</td>
+                                            <td>{{ \App\Support\DurationFormatter::format($list->duration) }}</td>
                                             <td>{{ $list->date ? \Carbon\Carbon::parse($list->date)->format('d/m/Y') : '-' }}</td>
                                             <td>
                                                 @php $isActive = $list->active == 'Active'; @endphp

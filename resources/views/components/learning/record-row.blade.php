@@ -30,7 +30,7 @@
     data-sort-title="{{ mb_strtolower($row['title']) }}"
     data-sort-type="{{ mb_strtolower($row['type']) }}"
     data-sort-classification="{{ mb_strtolower($row['classification']) }}"
-    data-sort-duration="{{ $row['duration'] }}"
+    data-sort-duration="{{ $row['duration_sort'] ?? -1 }}"
     data-sort-progress="{{ $row['progress'] }}"
     data-sort-finish="{{ $row['finish_date'] }}"
     data-sort-score="{{ $row['score'] ?? '' }}">

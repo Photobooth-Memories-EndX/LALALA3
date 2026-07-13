@@ -65,7 +65,7 @@
                                     <i class="ti ti-player-play-filled"></i>
                                 </div>
                                 @if($item->duration)
-                                <span class="home-modern-duration-badge">{{ $item->duration }}</span>
+                                <span class="home-modern-duration-badge">{{ \App\Support\DurationFormatter::format($item->duration) }}</span>
                                 @endif
                             </div>
 

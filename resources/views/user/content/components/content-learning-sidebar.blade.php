@@ -57,7 +57,7 @@
 
             <span class="fw-semibold text-dark">
                 <i class="ti ti-clock me-1 text-muted"></i>
-                {{ $content->duration ?? 'Self-paced' }}
+                {{ \App\Support\DurationFormatter::format($content->duration, 'Self-paced') }}
             </span>
 
         </div>
@@ -92,7 +92,7 @@
 
                 <span class="badge rounded-pill bg-secondary-lt text-secondary px-3 py-2">
                     <i class="ti ti-clock me-1"></i>
-                    {{ $content->duration ?? 'Flexible' }}
+                    {{ \App\Support\DurationFormatter::format($content->duration, 'Flexible') }}
                 </span>
             </div>
 

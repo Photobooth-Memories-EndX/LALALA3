@@ -25,7 +25,7 @@
                 <td>{{ $list->user->team }}</td>
                 <td>{{ $list->content->title }}</td>
                 <td>{{ $list->content->classification->classification_name ?? '' }}</td>
-                <td>{{ $list->content->duration }}</td>
+                <td>{{ \App\Support\DurationFormatter::format($list->content->duration ?? null) }}</td>
                 <td>{{ $list->created_at }}</td>
                 <td>{{ $list->progress }}%</td>
             </tr>

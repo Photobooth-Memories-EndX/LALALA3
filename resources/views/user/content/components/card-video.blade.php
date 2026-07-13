@@ -23,7 +23,7 @@
 
             <span class="ms-auto text-muted small">
                 <i class="ti ti-clock"></i>
-                {{ $item->duration ?? '-' }}
+                {{ \App\Support\DurationFormatter::format($item->duration) }}
             </span>
         </div>
 

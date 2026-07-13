@@ -256,12 +256,16 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="form-label">Duration (mm:ss)</label>
-                                    <input type="text" class="form-control" placeholder="00:00"
+                                    <label class="form-label">Duration (HH:MM:SS)</label>
+                                    <input type="text" class="form-control @error('duration') is-invalid @enderror" placeholder="00:06:26"
                                         name="duration" id="duration"
-                                        value="{{ $content->duration ?? '' }}"
-                                        data-mask="00:00" data-mask-visible="true" autocomplete="off">
-                                    <small class="form-hint">Format mm:ss. Wajib untuk Video & YouTube.</small>
+                                        value="{{ old('duration', \App\Support\DurationFormatter::format($content->duration, '')) }}"
+                                        pattern="^(\d+:[0-5]\d|\d{2}:[0-5]\d:[0-5]\d)$"
+                                        autocomplete="off">
+                                    @error('duration')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-hint">Format HH:MM:SS. Input mm:ss lama tetap diterima dan disimpan sebagai HH:MM:SS.</small>
                                 </div>
                             </div>
                         </div>

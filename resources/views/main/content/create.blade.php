@@ -130,11 +130,16 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="form-label">Duration (mm:ss)</label>
-                                    <input type="text" class="form-control" placeholder="00:00"
+                                    <label class="form-label">Duration (HH:MM:SS)</label>
+                                    <input type="text" class="form-control @error('duration') is-invalid @enderror" placeholder="00:06:26"
                                         name="duration" id="duration"
-                                        data-mask="00:00" data-mask-visible="true" autocomplete="off">
-                                    <small class="form-hint">Format: mm:ss. Required for Video and YouTube content.</small>
+                                        value="{{ old('duration') }}"
+                                        pattern="^(\d+:[0-5]\d|\d{2}:[0-5]\d:[0-5]\d)$"
+                                        autocomplete="off">
+                                    @error('duration')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-hint">Format: HH:MM:SS. Legacy mm:ss input is still accepted and will be saved as HH:MM:SS.</small>
                                 </div>
                             </div>
                         </div>

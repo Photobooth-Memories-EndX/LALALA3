@@ -23,7 +23,7 @@
                             $title = $content->title ?? '-';
                             $slug = $content->slug ?? null;
                             $progress = (int) ($list->progress ?? 0);
-                            $duration = $content->duration ?? '-';
+                            $duration = \App\Support\DurationFormatter::format($content->duration);
                             $type = strtolower($content->type ?? 'content');
                             $program = strtolower($list->status ?? 'optional');
 

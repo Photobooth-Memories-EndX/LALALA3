@@ -28,7 +28,7 @@
                         <span class="home-modern-category-badge">Video Learning</span>
                         <h4 class="home-modern-video-title">{{ Str::limit($item->title, 65) }}</h4>
                         <div class="home-modern-video-meta">
-                            <i class="ti ti-clock me-1"></i>{{ $item->duration ?? '15 Min' }}
+                            <i class="ti ti-clock me-1"></i>{{ \App\Support\DurationFormatter::format($item->duration, '15 Min') }}
                         </div>
                     </div>
 

@@ -49,7 +49,7 @@
 
             <span class="btn btn-light border-0 shadow-none text-muted">
                 <i class="far fa-clock me-2"></i>
-                {{ $content->duration ?? '-' }}
+                {{ \App\Support\DurationFormatter::format($content->duration) }}
             </span>
         </div>
 

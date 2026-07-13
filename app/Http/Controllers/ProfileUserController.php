@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\ContentUser;
+use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
 
 class ProfileUserController extends Controller
@@ -39,14 +40,7 @@ class ProfileUserController extends Controller
         ->first() ?? '-';
 
     $learningHours = $validContent->sum(function ($item) {
-        $duration = $item->content->duration ?? '00:00';
-
-        $parts = explode(':', $duration);
-
-        $minutes = (int) ($parts[0] ?? 0);
-        $seconds = (int) ($parts[1] ?? 0);
-
-        return $minutes / 60;
+        return DurationFormatter::toHours($item->content->duration ?? null);
     });
 
     $learningHours = round($learningHours, 1);

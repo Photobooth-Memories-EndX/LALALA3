@@ -168,18 +168,10 @@
 
 {{-- DURATION --}}
 @if (($content->type == 'Video') || ($content->type == 'YouTube'))
-
-    @php
-        $time_duration = explode(':', $content->duration);
-
-        $minutes = (int)$time_duration[0];
-        $seconds = (int)$time_duration[1];
-    @endphp
-
     <input
         type="hidden"
         id="player_duration"
-        value="{{ ($minutes*60)+$seconds }}"
+        value="{{ \App\Support\DurationFormatter::toSeconds($content->duration) ?? 0 }}"
     >
 
 @endif

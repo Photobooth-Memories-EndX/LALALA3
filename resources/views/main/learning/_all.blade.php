@@ -128,7 +128,7 @@
 
                                 </td>
                                 <td><a href="{{ route('learning.manage.category', $list->content->classification->slug) }}" class="text-reset">{{ $list->content->classification->classification_name ?? '' }}</a></td>
-                                <td>{{ $list->content->duration }}</td>
+                                <td>{{ \App\Support\DurationFormatter::format($list->content->duration ?? null) }}</td>
                                 <td>{{ $list->content->date }}</td>
 
                                 <td>

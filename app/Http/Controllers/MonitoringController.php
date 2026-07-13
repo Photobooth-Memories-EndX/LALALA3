@@ -8,6 +8,7 @@ use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Models\User;
 use App\Services\LearningAnalyticsService;
+use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
@@ -634,10 +635,7 @@ class MonitoringController extends Controller
             ->first() ?? '-';
 
         $learningHours = round($content->sum(function ($item) {
-            $parts   = explode(':', $item->content->duration ?? '00:00');
-            $minutes = (int) ($parts[0] ?? 0);
-
-            return $minutes / 60;
+            return DurationFormatter::toHours($item->content->duration ?? null);
         }), 1);
 
         return [

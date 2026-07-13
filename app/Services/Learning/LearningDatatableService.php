@@ -3,6 +3,7 @@
 namespace App\Services\Learning;
 
 use App\Models\ContentUser;
+use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -27,7 +28,7 @@ class LearningDatatableService
             ->addColumn('employee', fn ($row) => $this->employeeColumn($row))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
             ->addColumn('classification_name', fn ($row) => $this->classificationColumn($row))
-            ->addColumn('duration', fn ($row) => e($row->content->duration ?? '-'))
+            ->addColumn('duration', fn ($row) => e(DurationFormatter::format($row->content->duration ?? null)))
             ->addColumn('learning_date', fn ($row) => optional($row->created_at)->format('d M Y'))
             ->addColumn('progress_bar', fn ($row) => $this->progressBar($row))
             ->addColumn('action', fn ($row) => $this->actionColumn($row))

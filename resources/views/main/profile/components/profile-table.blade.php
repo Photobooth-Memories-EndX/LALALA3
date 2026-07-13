@@ -150,7 +150,7 @@
                                 </td>
 
                                 <td>
-                                    {{ $contentItem->duration ?? '-' }}
+                                    {{ \App\Support\DurationFormatter::format($contentItem->duration ?? null) }}
                                 </td>
 
                                 <td>

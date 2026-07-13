@@ -72,12 +72,7 @@
             @endif
 
             @if (in_array($content->type, ['Video', 'YouTube']))
-                @php
-                    $time_duration = explode(':', $content->duration ?? '0:00');
-                    $minutes = (int) ($time_duration[0] ?? 0);
-                    $seconds = (int) ($time_duration[1] ?? 0);
-                @endphp
-                <input type="hidden" id="player_duration" value="{{ ($minutes * 60) + $seconds }}">
+                <input type="hidden" id="player_duration" value="{{ \App\Support\DurationFormatter::toSeconds($content->duration) ?? 0 }}">
             @endif
 
             <input type="hidden" id="player_progress" value="{{ $content_user->progress ?? 0 }}">

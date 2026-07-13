@@ -51,7 +51,7 @@
                 @if($content->duration)
                     <span class="content-detail-meta">
                         <i class="ti ti-clock me-1"></i>
-                        {{ $content->duration }}
+                        {{ \App\Support\DurationFormatter::format($content->duration) }}
                     </span>
                 @endif
 

@@ -7,6 +7,7 @@ use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Services\Learning\LearningDatatableService;
+use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -27,14 +28,7 @@ class LearningManageController extends Controller
         $learningHours = ContentUser::with('content')
             ->get()
             ->sum(function ($item) {
-                $duration = $item->content->duration ?? '00:00';
-
-                $parts = explode(':', $duration);
-
-                $minutes = (int) ($parts[0] ?? 0);
-                $seconds = (int) ($parts[1] ?? 0);
-
-                return ($minutes / 60) + ($seconds / 3600);
+                return DurationFormatter::toHours($item->content->duration ?? null);
             });
 
         $learningHours = round($learningHours, 1);
@@ -81,7 +75,11 @@ class LearningManageController extends Controller
                                 WHEN content_users.id IS NOT NULL 
                                     AND content.duration IS NOT NULL 
                                     AND content.duration != ''
-                                THEN TIME_TO_SEC(CONCAT('00:', content.duration)) / 3600
+                                THEN CASE
+                                    WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2
+                                    THEN TIME_TO_SEC(content.duration) / 3600
+                                    ELSE TIME_TO_SEC(CONCAT('00:', content.duration)) / 3600
+                                END
                                 ELSE 0 
                             END
                         ), 0
@@ -193,25 +191,6 @@ class LearningManageController extends Controller
             return 0;
         }
 
-        $parts = explode(':', $duration);
-
-        // Format 00:10:30 = jam:menit:detik
-        if (count($parts) === 3) {
-            $hours = (int) $parts[0];
-            $minutes = (int) $parts[1];
-            $seconds = (int) $parts[2];
-
-            return $hours + ($minutes / 60) + ($seconds / 3600);
-        }
-
-        // Format 10:30 = menit:detik
-        if (count($parts) === 2) {
-            $minutes = (int) $parts[0];
-            $seconds = (int) $parts[1];
-
-            return ($minutes / 60) + ($seconds / 3600);
-        }
-
-        return 0;
+        return DurationFormatter::toHours($duration);
 }
 }

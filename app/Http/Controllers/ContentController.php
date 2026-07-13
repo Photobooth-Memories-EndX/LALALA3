@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Classification;
 use App\Models\ContentUser;
 use App\Models\User;
+use App\Support\DurationFormatter;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
@@ -189,6 +190,14 @@ class ContentController extends Controller
     {
         Log::info('ContentController@store called', ['user_id' => auth()->id(), 'payload' => $request->all()]);
 
+        $request->validate([
+            'duration' => ['nullable', function ($attribute, $value, $fail) {
+                if (!DurationFormatter::isValid($value)) {
+                    $fail('The duration format must be HH:MM:SS or mm:ss.');
+                }
+            }],
+        ]);
+
         if ($request->type == "YouTube") {
             parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
             // $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
@@ -197,13 +206,14 @@ class ContentController extends Controller
             $ytid = null;
         }
         $hasDeadline = $request->boolean('has_deadline');
+        $duration = DurationFormatter::normalize($request->duration);
         $newcontent = new Content([
             'title'            => $request->title,
             'type'             => $request->type,
             'classification_id' => $request->classification,
             'date'             => $request->date,
             'author'           => $request->author,
-            'duration'         => $request->duration,
+            'duration'         => $duration,
             'description'      => $request->description,
             'playlistonly'     => $request->playlistonly,
             'link'             => $ytid,
@@ -284,6 +294,14 @@ class ContentController extends Controller
     }
     public function update(Request $request, Content $content)
     {
+        $request->validate([
+            'duration' => ['nullable', function ($attribute, $value, $fail) {
+                if (!DurationFormatter::isValid($value)) {
+                    $fail('The duration format must be HH:MM:SS or mm:ss.');
+                }
+            }],
+        ]);
+
         $path = public_path('storage/files/content/' . $request->id . '');
         $arraydoc = array();
         if ($request->type == "YouTube") {
@@ -373,6 +391,7 @@ class ContentController extends Controller
             $redirmessage = "-";
         }
         $hasDeadlineUpdate = $request->boolean('has_deadline');
+        $duration = DurationFormatter::normalize($request->duration);
         Content::where('id', $request->contentid)
             ->update([
                 'title'            => $request->title,
@@ -380,7 +399,7 @@ class ContentController extends Controller
                 'classification_id' => $request->classification,
                 'date'             => $request->date,
                 'author'           => $request->author,
-                'duration'         => $request->duration,
+                'duration'         => $duration,
                 'description'      => $request->description,
                 'playlistonly'     => $request->playlistonly,
                 'active'           => $active,

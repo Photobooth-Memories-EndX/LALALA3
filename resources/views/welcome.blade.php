@@ -174,7 +174,7 @@ class="img-fluid rounded-top">
 </h4>
 
 <span class="badge bg-primary">
-{{ $item->duration }}
+{{ \App\Support\DurationFormatter::format($item->duration) }}
 </span>
 
 </div>

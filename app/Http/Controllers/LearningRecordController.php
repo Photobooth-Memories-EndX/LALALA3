@@ -10,6 +10,7 @@ use App\Models\ContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Services\CertificateEligibilityService;
+use App\Support\DurationFormatter;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -241,7 +242,8 @@ class LearningRecordController extends Controller
                 'playlist_ids'    => $playlists->pluck('id')->values()->all(),
                 'type'            => $content->type ?? 'Content',
                 'classification'  => $content->classification->classification_name ?? '-',
-                'duration'        => $content->duration ?: '-',
+                'duration'        => DurationFormatter::formatForLearningRecord($content->duration),
+                'duration_sort'   => DurationFormatter::toSeconds($content->duration) ?? -1,
                 'progress'        => (int) ($cu->progress ?? 0),
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'finish_date'     => optional($cu->updated_at)->format('Y-m-d H:i') ?? '',
@@ -315,6 +317,7 @@ class LearningRecordController extends Controller
                 'type'            => 'Playlist',
                 'classification'  => 'Playlist',
                 'duration'        => '-',
+                'duration_sort'   => -1,
                 'progress'        => 100,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'finish_date'     => $finishDate,
