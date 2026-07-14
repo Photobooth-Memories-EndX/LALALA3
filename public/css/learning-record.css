@@ -7,15 +7,31 @@
 .learning-record-table {
     table-layout: fixed;
     width: 100%;
-    font-size: 12px;
+    font-size: 12.5px;
+    line-height: 1.25;
 }
 
 .learning-record-table th,
 .learning-record-table td {
-    padding: 8px 8px !important;
+    padding: 5px 6px !important;
     vertical-align: middle;
     white-space: normal;
     overflow-wrap: break-word;
+}
+
+.learning-record-table th {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0;
+}
+
+.learning-record-table tbody tr.record-row {
+    transition: background-color 0.15s ease;
+}
+
+.learning-record-table tbody tr.record-row:hover {
+    background: var(--tblr-bg-surface-secondary, #f8fafc);
 }
 
 .learning-record-title {
@@ -23,7 +39,18 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.35;
+    line-height: 1.2;
+}
+
+.learning-record-title-text {
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.learning-record-subtitle {
+    margin-top: 1px;
+    font-size: 11px;
+    line-height: 1.15;
 }
 
 .learning-record-link,
@@ -32,6 +59,7 @@
     text-decoration: none;
     font-weight: 600;
     cursor: pointer;
+    line-height: 1.2;
 }
 
 .learning-record-link:hover,
@@ -41,7 +69,7 @@
 }
 
 .learning-record-progress {
-    line-height: 1.2;
+    line-height: 1.08;
 }
 
 .learning-record-progress .percent {
@@ -50,7 +78,8 @@
 }
 
 .learning-record-progress .minimum {
-    font-size: 10px;
+    margin-top: 1px;
+    font-size: 11px;
     color: #16a34a;
 }
 
@@ -63,16 +92,40 @@
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    padding: 4px 8px;
+    padding: 2px 6px;
     font-size: 11px;
     font-weight: 600;
+    line-height: 1.15;
     white-space: nowrap;
 }
 
+.learning-classification-badge {
+    max-width: 92px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    text-align: left;
+    justify-content: flex-start;
+    align-items: flex-start;
+    line-height: 1.15;
+}
+
 .learning-record-cert-btn {
-    padding: 4px 10px;
+    min-height: 24px;
+    padding: 2px 7px;
     font-size: 11px;
     border-radius: 999px;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.learning-record-table form {
+    margin: 0;
+}
+
+.learning-record-duration {
+    font-size: 12px;
+    line-height: 1.15;
     white-space: nowrap;
 }
 
@@ -94,7 +147,7 @@
 @media (max-width: 767.98px) {
     .learning-record-table {
         table-layout: auto;
-        min-width: 900px;
+        min-width: 980px;
     }
 }
 
@@ -105,12 +158,24 @@
     user-select: none;
 }
 
+.record-sort-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    vertical-align: middle;
+}
+
+.record-sort-label {
+    min-width: 0;
+}
+
 /* Ikon ▲▼ ditumpuk vertikal di samping label header. */
 .record-sort-icons {
     display: inline-flex;
     flex-direction: column;
+    flex: 0 0 auto;
     vertical-align: middle;
-    margin-left: 4px;
     font-size: 7px;
     line-height: 0.9;
     color: #cbd5e1;

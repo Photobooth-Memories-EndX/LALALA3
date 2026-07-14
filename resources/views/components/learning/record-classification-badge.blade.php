@@ -1,7 +1,7 @@
 @props(['row'])
 
 @if ($row['row_kind'] === 'playlist')
-    <span class="badge bg-secondary-lt text-secondary">Playlist</span>
+    <span class="badge bg-secondary-lt text-secondary learning-record-badge learning-classification-badge">Playlist</span>
 @else
     @php
         $colors = [
@@ -18,5 +18,5 @@
         ];
     @endphp
 
-    <span class="badge {{ $colors[$row['classification']] ?? 'bg-secondary-lt text-secondary' }}">{{ $row['classification'] }}</span>
+    <span class="badge {{ $colors[$row['classification']] ?? 'bg-secondary-lt text-secondary' }} learning-record-badge learning-classification-badge">{{ $row['classification'] }}</span>
 @endif

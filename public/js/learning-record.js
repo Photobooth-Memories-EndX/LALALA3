@@ -45,6 +45,7 @@ function initLearningRecord() {
             type:           $('#recordFilterType').val() || 'all',
             classification: $('#recordFilterClassification').val() || 'all',
             playlist:       $('#recordFilterPlaylist').val() || 'all',
+            learningHour:   $('#recordFilterLearningHour').val() || 'all',
             year:           $('#recordFilterYear').val() || 'all',
             month:          $('#recordFilterMonth').val() || 'all',
             certificate:    $('#recordFilterCertificate').val() || 'all'
@@ -61,6 +62,7 @@ function initLearningRecord() {
     function commonMatches(d, f) {
         if (f.year !== 'all' && String(d.year) !== f.year) return false;
         if (f.month !== 'all' && String(d.month) !== f.month) return false;
+        if (f.learningHour !== 'all' && String(d.learningHour) !== f.learningHour) return false;
         if (f.certificate !== 'all' && String(d.cert) !== f.certificate) return false;
         if (f.search && String(d.search).indexOf(f.search) === -1) return false;
         return true;
@@ -137,11 +139,12 @@ function initLearningRecord() {
 
         // Kedua collection diurutkan dengan comparator sama agar urutan tetap
         // konsisten saat user berpindah mode.
+        allRows.sort(comparator);
         contentRows.sort(comparator);
         playlistRows.sort(comparator);
 
         // Susun ulang DOM sesuai urutan baru; baris "no match" tetap paling bawah.
-        $.each(contentRows.concat(playlistRows), function (_, tr) { $tbody.append(tr); });
+        $.each(quickFilter === 'all' ? allRows : contentRows.concat(playlistRows), function (_, tr) { $tbody.append(tr); });
         if ($noMatch.length) $tbody.append($noMatch);
     }
 

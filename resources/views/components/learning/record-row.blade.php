@@ -11,6 +11,14 @@
 
     // Search memakai title + classification untuk Content dan Playlist.
     $searchText = $row['title'] . ' ' . $row['classification'];
+    $durationSeconds = max(0, (int) ($row['duration_sort'] ?? 0));
+    $durationDisplay = sprintf(
+        '%02d:%02d:%02d',
+        intdiv($durationSeconds, 3600),
+        intdiv($durationSeconds % 3600, 60),
+        $durationSeconds % 60
+    );
+    $learningHourDisplay = str_replace([' hours', ' hour'], [' h', ' h'], $row['learning_hour'] ?? '-');
 @endphp
 
 <tr class="record-row"
@@ -19,6 +27,7 @@
     data-type="{{ $row['type'] }}"
     data-classification="{{ $row['classification'] }}"
     data-playlists="{{ implode(',', $row['playlist_ids']) }}"
+    data-learning-hour="{{ $row['learning_hour_value'] ?? '' }}"
     data-year="{{ $finishTimestamp?->year }}"
     data-month="{{ $finishTimestamp?->month }}"
     data-cert="{{ $row['cert_state'] }}"
@@ -28,6 +37,7 @@
     data-sort-type="{{ mb_strtolower($row['type']) }}"
     data-sort-classification="{{ mb_strtolower($row['classification']) }}"
     data-sort-duration="{{ $row['duration_sort'] ?? -1 }}"
+    data-sort-learning-hour="{{ $row['learning_hour_bucket'] ?? 0 }}"
     data-sort-progress="{{ $row['progress'] }}"
     data-sort-finish="{{ $row['finish_date'] }}"
     data-sort-score="{{ $row['score'] ?? '' }}">
@@ -40,7 +50,9 @@
 
     <td><x-learning.record-classification-badge :row="$row" /></td>
 
-    <td class="small">{{ $row['duration'] }}</td>
+    <td class="learning-record-duration">{{ $durationDisplay }}</td>
+
+    <td class="learning-record-duration">{{ $learningHourDisplay }}</td>
 
     <td><x-learning.record-progress-cell :row="$row" /></td>
 

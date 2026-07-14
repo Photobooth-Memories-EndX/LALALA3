@@ -10,6 +10,7 @@
     $classifications = collect($filterOptions['classifications'] ?? []);
     $playlists       = collect($filterOptions['playlists'] ?? []);
     $years           = collect($filterOptions['years'] ?? []);
+    $learningHours   = collect($filterOptions['learningHours'] ?? []);
 
     // Jumlah baris yang siap generate certificate — sumber counter card header.
     $certReadyCount = $rows->where('cert_state', 'ready')->count();
@@ -24,14 +25,15 @@
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
         ['label' => 'No',             'width' => '4%'],
-        ['label' => 'Class',          'width' => '26%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Class',          'width' => '23%', 'sort' => 'title',          'type' => 'text'],
         ['label' => 'Type',           'width' => '9%',  'sort' => 'type',           'type' => 'text'],
         ['label' => 'Classification', 'width' => '12%', 'sort' => 'classification', 'type' => 'text'],
         ['label' => 'Duration',       'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
+        ['label' => 'Learning Hour',  'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
         ['label' => 'Progress',       'width' => '9%',  'sort' => 'progress',       'type' => 'number'],
         ['label' => 'Finish Date',    'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
         ['label' => 'Score Test',     'width' => '8%',  'sort' => 'score',          'type' => 'number'],
-        ['label' => 'Certificate',    'width' => '12%'],
+        ['label' => 'Certificate',    'width' => '11%'],
     ];
 @endphp
 
@@ -161,6 +163,16 @@
                     </div>
 
                     <div class="col-6 col-md-4 col-xl-2">
+                        <label class="form-label small text-muted mb-1" for="recordFilterLearningHour">Learning Hour</label>
+                        <select class="form-select" id="recordFilterLearningHour" data-record-filter>
+                            <option value="all">All</option>
+                            @foreach ($learningHours as $learningHour)
+                                <option value="{{ $learningHour['value'] }}">{{ $learningHour['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-4 col-xl-2">
                         <label class="form-label small text-muted mb-1" for="recordFilterCertificate">Certificate</label>
                         <select class="form-select" id="recordFilterCertificate" data-record-filter>
                             <option value="all">All Certificate</option>
@@ -195,8 +207,10 @@
                                     style="width: {{ $column['width'] }}"
                                     data-sort-key="{{ $column['sort'] }}"
                                     data-sort-type="{{ $column['type'] }}">
-                                    {{ $column['label'] }}
-                                    <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    <span class="record-sort-header">
+                                        <span class="record-sort-label">{{ $column['label'] }}</span>
+                                        <span class="record-sort-icons" aria-hidden="true"><span class="record-sort-asc">&#9650;</span><span class="record-sort-desc">&#9660;</span></span>
+                                    </span>
                                 </th>
                             @else
                                 <th class="text-muted" style="width: {{ $column['width'] }}">{{ $column['label'] }}</th>
@@ -209,7 +223,7 @@
                         <x-learning.record-row :row="$row" :index="$loop->iteration" />
                     @empty
                         <tr id="recordEmptyRow">
-                            <td colspan="9" class="text-center text-muted py-4">
+                            <td colspan="10" class="text-center text-muted py-4">
                                 No completed learning found.
                             </td>
                         </tr>
@@ -218,7 +232,7 @@
                     @if ($rows->isNotEmpty())
                         {{-- Ditampilkan jQuery saat kombinasi filter tidak menghasilkan baris. --}}
                         <tr id="recordNoMatchRow" class="d-none">
-                            <td colspan="9" class="text-center text-muted py-4">
+                            <td colspan="10" class="text-center text-muted py-4">
                                 No records match your search or filter.
                             </td>
                         </tr>

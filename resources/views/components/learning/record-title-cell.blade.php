@@ -8,9 +8,9 @@
 @elseif (!empty($row['playlist_url']))
     <a href="{{ $row['playlist_url'] }}" class="learning-record-link">{{ $row['title'] }}</a>
 @else
-    <div class="fw-semibold">{{ $row['title'] }}</div>
+    <div class="learning-record-title-text">{{ $row['title'] }}</div>
 @endif
 
 @if (!empty($row['subtitle']))
-    <div class="text-muted small mb-1">{{ $row['subtitle'] }}</div>
+    <div class="learning-record-subtitle text-muted">{{ $row['subtitle'] }}</div>
 @endif

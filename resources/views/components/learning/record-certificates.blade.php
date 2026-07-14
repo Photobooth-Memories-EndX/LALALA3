@@ -18,7 +18,8 @@
                     </div>
                 </div>
 
-                <span class="badge bg-green-lt text-green">
+                {{-- Badge diubah menjadi kotak rounded-2 --}}
+                <span class="badge bg-green-lt text-green rounded-2 text-nowrap">
                     {{ $items->count() }} Ready
                 </span>
             </div>
@@ -37,7 +38,6 @@
                             default    => 'bg-azure-lt text-azure',
                         };
 
-                        // "Training Plan" tidak dipakai di tampilan user — istilahnya Playlist.
                         $typeLabel = $setting->certificate_type === 'playlist'
                             ? 'Playlist'
                             : ucfirst($setting->certificate_type);
@@ -47,10 +47,12 @@
                         <div class="card h-100 border shadow-sm rounded-3">
                             <div class="card-body p-3">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge {{ $typeBadge }}">{{ $typeLabel }}</span>
+                                    {{-- Badge tipe diubah menjadi kotak rounded-2 --}}
+                                    <span class="badge {{ $typeBadge }} rounded-2 text-nowrap">{{ $typeLabel }}</span>
 
-                                    <span class="badge bg-green-lt text-green">
-                                        <i class="ti ti-circle-check me-1"></i>Certificate Ready
+                                    {{-- Status badge diubah menjadi kotak rounded-2 --}}
+                                    <span class="badge bg-green-lt text-green rounded-2 text-nowrap">
+                                        <i class="ti ti-circle-check me-1"></i>Ready
                                     </span>
                                 </div>
 
@@ -66,16 +68,18 @@
                                     @endif
                                 </div>
 
+                                {{-- Tombol di bawah ini ditambahkan rounded-2 untuk menjadikannya kotak --}}
                                 @if ($certificate)
                                     <a href="{{ route('certificate.download', $certificate->credential_id) }}"
-                                       class="btn btn-sm btn-success w-100">
+                                       class="btn btn-sm btn-success w-100 rounded-2 text-nowrap">
                                         <i class="ti ti-download me-1"></i>
                                         Download Certificate
                                     </a>
+                                ------------------------------------------------------------
                                 @else
                                     <form method="POST" action="{{ route('certificate.generate.setting', $setting) }}">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                                        <button type="submit" class="btn btn-sm btn-primary w-100 rounded-2 text-nowrap">
                                             <i class="ti ti-certificate me-1"></i>
                                             Generate Certificate
                                         </button>

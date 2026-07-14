@@ -10,6 +10,7 @@ use App\Models\ContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Services\CertificateEligibilityService;
+use App\Services\Learning\LearningHourService;
 use App\Support\DurationFormatter;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -32,6 +33,10 @@ use Illuminate\Support\Facades\DB;
  */
 class LearningRecordController extends Controller
 {
+    public function __construct(private readonly LearningHourService $learningHourService)
+    {
+    }
+
     /**
      * HTML fragment tab "record" pada My Learning dashboard.
      * Dipanggil dari LearningController::dashboardPartial (routing only).
@@ -65,7 +70,7 @@ class LearningRecordController extends Controller
             'rows'             => $rows,
             // Section prioritas paling atas: certificate yang sudah memenuhi syarat.
             'certificateReady' => $this->certificateReady($cert, $completedPlaylists),
-            'filterOptions'    => $this->recordFilterOptions($userId, $completedPlaylists),
+            'filterOptions'    => $this->recordFilterOptions($userId, $completedPlaylists, $rows),
         ]);
     }
 
@@ -101,7 +106,7 @@ class LearningRecordController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function recordFilterOptions(int $userId, Collection $completedPlaylists): array
+    private function recordFilterOptions(int $userId, Collection $completedPlaylists, Collection $rows): array
     {
         $base = ContentUser::query()
             ->join('content', 'content.id', '=', 'content_users.content_id')
@@ -132,6 +137,7 @@ class LearningRecordController extends Controller
             'classifications' => $classifications,
             'playlists'       => $completedPlaylists->map(fn ($p) => ['id' => $p->id, 'title' => $p->title])->values(),
             'years'           => $years,
+            'learningHours'   => $this->learningHourService->filterOptions($rows->pluck('learning_hour_bucket')),
         ];
     }
 
@@ -238,6 +244,7 @@ class LearningRecordController extends Controller
             $playlists = $content->relationLoaded('trainingPlans')
                 ? $content->trainingPlans
                 : collect();
+            $learningHourBucket = $this->learningHourService->bucket($content->duration);
 
             return [
                 'row_kind'        => 'content',
@@ -252,6 +259,9 @@ class LearningRecordController extends Controller
                 'classification'  => $content->classification->classification_name ?? '-',
                 'duration'        => DurationFormatter::formatForLearningRecord($content->duration),
                 'duration_sort'   => DurationFormatter::toSeconds($content->duration) ?? -1,
+                'learning_hour'   => $this->learningHourService->formatHours($learningHourBucket),
+                'learning_hour_bucket' => $learningHourBucket,
+                'learning_hour_value'  => $this->learningHourService->value($learningHourBucket),
                 'progress'        => (int) ($cu->progress ?? 0),
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'finish_date'     => optional($cu->updated_at)->format('Y-m-d H:i') ?? '',
@@ -311,6 +321,7 @@ class LearningRecordController extends Controller
 
             $firstSlug = $firstContentSlugs->get($plan->id);
             $durationSeconds = (int) ($plan->total_duration_seconds ?? 0);
+            $learningHourBucket = $this->learningHourService->bucketFromSeconds($durationSeconds);
 
             return [
                 'row_kind'        => 'playlist',
@@ -327,6 +338,9 @@ class LearningRecordController extends Controller
                 'classification'  => 'Playlist',
                 'duration'        => $this->formatDurationSeconds($durationSeconds),
                 'duration_sort'   => $durationSeconds,
+                'learning_hour'   => $this->learningHourService->formatHours($learningHourBucket),
+                'learning_hour_bucket' => $learningHourBucket,
+                'learning_hour_value'  => $this->learningHourService->value($learningHourBucket),
                 'progress'        => 100,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'finish_date'     => $finishDate,
