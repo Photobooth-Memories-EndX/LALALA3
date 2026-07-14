@@ -78,7 +78,8 @@
                 <div class="col-12 col-md">
                     <label class="form-label small text-muted mb-1">Quick Filter</label>
                     <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="record-chip active" data-record-quick="content">Content</button>
+                        <button type="button" class="record-chip active" data-record-quick="all">All</button>
+                        <button type="button" class="record-chip" data-record-quick="content">Content</button>
                         <button type="button" class="record-chip" data-record-quick="playlist">Playlist</button>
                     </div>
                 </div>

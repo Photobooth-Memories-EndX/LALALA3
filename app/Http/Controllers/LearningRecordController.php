@@ -196,6 +196,14 @@ class LearningRecordController extends Controller
                     ->where('content_users.finish', '1'),
                 'last_finished_at'
             )
+            ->selectSub(
+                ContentUser::selectRaw('COALESCE(SUM(content_users.duration_seconds), 0)')
+                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
+                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
+                    ->where('content_users.user_id', $userId)
+                    ->where('content_users.finish', '1'),
+                'total_duration_seconds'
+            )
             ->orderByDesc('last_finished_at')
             ->get()
             ->filter(fn (TrainingPlan $p) => (int) $p->total_items > 0 && (int) $p->finished_items >= (int) $p->total_items)
@@ -302,6 +310,7 @@ class LearningRecordController extends Controller
                 : '';
 
             $firstSlug = $firstContentSlugs->get($plan->id);
+            $durationSeconds = (int) ($plan->total_duration_seconds ?? 0);
 
             return [
                 'row_kind'        => 'playlist',
@@ -316,8 +325,8 @@ class LearningRecordController extends Controller
                 'playlist_ids'    => [$plan->id],
                 'type'            => 'Playlist',
                 'classification'  => 'Playlist',
-                'duration'        => '-',
-                'duration_sort'   => -1,
+                'duration'        => $this->formatDurationSeconds($durationSeconds),
+                'duration_sort'   => $durationSeconds,
                 'progress'        => 100,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'finish_date'     => $finishDate,
@@ -344,6 +353,28 @@ class LearningRecordController extends Controller
     private function mergeLearningRecord(Collection $contentRows, Collection $playlistRows): Collection
     {
         return $contentRows->concat($playlistRows)->values();
+    }
+
+    private function formatDurationSeconds(int $seconds): string
+    {
+        if ($seconds <= 0) {
+            return '-';
+        }
+
+        $hours   = intdiv($seconds, 3600);
+        $minutes = intdiv($seconds % 3600, 60);
+
+        $parts = [];
+
+        if ($hours > 0) {
+            $parts[] = $hours . ' ' . ($hours === 1 ? 'hour' : 'hours');
+        }
+
+        if ($minutes > 0 || $hours === 0) {
+            $parts[] = $minutes . ' min';
+        }
+
+        return implode(' ', $parts);
     }
 
     // ─── Certificate ────────────────────────────────────────────────────────────

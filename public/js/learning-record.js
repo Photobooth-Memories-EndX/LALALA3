@@ -35,7 +35,7 @@ function initLearningRecord() {
     var sortKey     = null;
     var sortDir     = null;
     // Mode tampilan aktif: 'content' (Video + Document — default) | 'playlist'.
-    var quickFilter = 'content';
+    var quickFilter = 'all';
 
     // ── Filter ──────────────────────────────────────────────────────────────
 
@@ -52,7 +52,9 @@ function initLearningRecord() {
     }
 
     function activeRows() {
-        return quickFilter === 'playlist' ? playlistRows : contentRows;
+        if (quickFilter === 'content') return contentRows;
+        if (quickFilter === 'playlist') return playlistRows;
+        return allRows;
     }
 
     // Filter yang berlaku di kedua mode: Year, Month, Certificate, Search.
@@ -85,6 +87,12 @@ function initLearningRecord() {
         }
 
         return commonMatches(d, f);
+    }
+
+    function allMatches($row, f) {
+        return $row.data('kind') === 'playlist'
+            ? playlistMatches($row, f)
+            : contentMatches($row, f);
     }
 
     // ── Sorting (client-side murni — tanpa request server) ─────────────────
@@ -206,7 +214,9 @@ function initLearningRecord() {
 
     function render() {
         var f       = filterState();
-        var matcher = quickFilter === 'playlist' ? playlistMatches : contentMatches;
+        var matcher = quickFilter === 'playlist'
+            ? playlistMatches
+            : (quickFilter === 'content' ? contentMatches : allMatches);
         var matched = activeRows().filter(function (tr) { return matcher($(tr), f); });
 
         $(allRows).hide();
@@ -241,7 +251,9 @@ function initLearningRecord() {
     // Tampilkan hanya filter lanjutan yang relevan dengan mode aktif:
     // Type + Classification milik Content, dropdown Playlist milik Playlist.
     function applyModeVisibility(animate) {
-        var $show = $('#recordMoreFilters [data-record-mode="' + quickFilter + '"]');
+        var $show = quickFilter === 'all'
+            ? $('#recordMoreFilters [data-record-mode]')
+            : $('#recordMoreFilters [data-record-mode="' + quickFilter + '"]');
         var $hide = $('#recordMoreFilters [data-record-mode]').not($show);
 
         $hide.stop(true, true).hide();
@@ -258,7 +270,7 @@ function initLearningRecord() {
         var count = 0;
         $('#recordMoreFilters [data-record-filter]').each(function () {
             var mode = $(this).closest('[data-record-mode]').attr('data-record-mode');
-            if (mode && mode !== quickFilter) return;
+            if (mode && quickFilter !== 'all' && mode !== quickFilter) return;
             if (($(this).val() || 'all') !== 'all') count++;
         });
         $('#recordMoreFiltersCount').text(count).toggleClass('d-none', count === 0);
@@ -290,7 +302,7 @@ function initLearningRecord() {
         setQuickPill(value);
         if (value === 'playlist') {
             $('#recordFilterType, #recordFilterClassification').val('all');
-        } else {
+        } else if (value === 'content') {
             $('#recordFilterPlaylist').val('all');
         }
 

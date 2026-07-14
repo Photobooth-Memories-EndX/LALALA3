@@ -9,11 +9,8 @@
     // Nilai untuk filter client-side (jQuery mencocokkan data-attribute, bukan HTML).
     $finishTimestamp = $row['finish_date'] !== '' ? \Illuminate\Support\Carbon::parse($row['finish_date']) : null;
 
-    // Search: baris Content dicari pada title + classification, baris Playlist pada title saja
-    // (perilaku sama seperti filter server-side sebelumnya).
-    $searchText = $row['row_kind'] === 'content'
-        ? $row['title'] . ' ' . $row['classification']
-        : $row['title'];
+    // Search memakai title + classification untuk Content dan Playlist.
+    $searchText = $row['title'] . ' ' . $row['classification'];
 @endphp
 
 <tr class="record-row"
