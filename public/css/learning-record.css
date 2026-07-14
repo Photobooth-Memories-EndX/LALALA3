@@ -26,6 +26,20 @@
     line-height: 1.35;
 }
 
+.learning-record-link,
+.learning-record-link:visited {
+    color: var(--tblr-primary, #206bc4);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.learning-record-link:hover,
+.learning-record-link:focus {
+    color: var(--tblr-primary, #206bc4);
+    text-decoration: underline;
+}
+
 .learning-record-progress {
     line-height: 1.2;
 }

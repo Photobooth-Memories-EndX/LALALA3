@@ -35,8 +35,8 @@
     ];
 @endphp
 
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-    <div class="card-body p-4 border-bottom">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-body p-4 border-bottom">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div>
                 <h3 class="card-title mb-1">Learning Record</h3>
@@ -55,7 +55,7 @@
                     </button>
                 @endif
 
-                <span class="badge bg-green-lt text-green">Status: Completed</span>
+                {{-- <span class="badge bg-green-lt text-green">Status: Completed</span> --}}
             </div>
         </div>
 
@@ -71,6 +71,8 @@
                     </div>
                 </div>
 
+                
+
                 {{-- Quick Filter: dua mode tampilan — Content (Video + Document, default)
                      atau Playlist. Keduanya entity berbeda (progress, assessment,
                      certificate) sehingga tidak pernah dicampur dalam satu mode
@@ -79,20 +81,27 @@
                     <label class="form-label small text-muted mb-1">Quick Filter</label>
                     <div class="d-flex flex-wrap gap-2">
                         <button type="button" class="record-chip active" data-record-quick="all">All</button>
-                        <button type="button" class="record-chip" data-record-quick="content">Content</button>
-                        <button type="button" class="record-chip" data-record-quick="playlist">Playlist</button>
+                        {{-- <button type="button" class="record-chip" data-record-quick="content">Content</button>
+                        <button type="button" class="record-chip" data-record-quick="playlist">Playlist</button> --}}
                     </div>
                 </div>
 
-                <div class="col-12 col-md-auto">
-                    <button type="button" class="btn btn-outline-primary" id="recordMoreFiltersToggle"
-                            aria-expanded="false" aria-controls="recordMoreFilters">
-                        <i class="ti ti-adjustments-horizontal me-1"></i>
-                        More Filters
-                        <span class="badge bg-primary text-white ms-1 d-none" id="recordMoreFiltersCount"></span>
-                        <i class="ti ti-chevron-down ms-1 record-more-caret"></i>
-                    </button>
-                </div>
+                    <div class="col-12 col-md-auto d-flex align-items-center gap-2">
+                        {{-- TOMBOL DOWNLOAD EXCEL --}}
+                        <a href="#" class="btn btn-outline-success d-flex align-items-center gap-1" id="btnDownloadExcel">
+                            <i class="ti ti-file-spreadsheet fs-2"></i>
+                            <span>Download Excel</span>
+                        </a>
+                        {{-- TOMBOL MORE FILTERS --}}
+                        <button type="button" class="btn btn-outline-primary d-flex align-items-center" id="recordMoreFiltersToggle"
+                                aria-expanded="false" aria-controls="recordMoreFilters">
+                            <i class="ti ti-adjustments-horizontal me-1"></i>
+                            More Filters
+                            <span class="badge bg-primary text-white ms-1 d-none" id="recordMoreFiltersCount"></span>
+                            <i class="ti ti-chevron-down ms-1 record-more-caret"></i>
+                        </button>
+
+                    </div>
             </div>
 
             {{-- Panel More Filters — seluruh filter lanjutan lama dipindah ke sini

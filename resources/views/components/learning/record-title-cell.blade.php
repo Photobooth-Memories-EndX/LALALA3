@@ -4,7 +4,9 @@
      badge Playlist tidak lagi ditampilkan di kolom ini (cukup di kolom Type). --}}
 
 @if ($row['slug'])
-    <a href="{{ route('content.user.view', $row['slug']) }}" class="fw-semibold text-reset">{{ $row['title'] }}</a>
+    <a href="{{ route('content.user.view', $row['slug']) }}" class="learning-record-link">{{ $row['title'] }}</a>
+@elseif (!empty($row['playlist_url']))
+    <a href="{{ $row['playlist_url'] }}" class="learning-record-link">{{ $row['title'] }}</a>
 @else
     <div class="fw-semibold">{{ $row['title'] }}</div>
 @endif
