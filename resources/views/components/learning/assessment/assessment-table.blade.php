@@ -3,16 +3,20 @@
 ])
 
 <div class="table-responsive">
-    <table class="table table-vcenter card-table" id="assessmentTable">
+    <table class="table table-vcenter table-hover card-table mb-0 assessment-table" id="assessmentTable">
         <thead>
             <tr>
-                <th>No</th>
-                <th>Assessment</th>
-                <th>Datetime</th>
-                <th>Type</th>
-                <th>Batch</th>
-                <th>Passing Grade</th>
-                <th>Status</th>
+                @foreach (['No', 'Assessment', 'Datetime', 'Type', 'Batch', 'Passing Grade', 'Status'] as $heading)
+                    <th class="assessment-sort-heading" data-assessment-column="{{ $loop->index }}">
+                        <span class="record-sort-header">
+                            <span class="record-sort-label">{{ $heading }}</span>
+                            <span class="record-sort-icons" aria-hidden="true">
+                                <span class="record-sort-asc">&#9650;</span>
+                                <span class="record-sort-desc">&#9660;</span>
+                            </span>
+                        </span>
+                    </th>
+                @endforeach
                 <th class="text-end">Action</th>
             </tr>
         </thead>

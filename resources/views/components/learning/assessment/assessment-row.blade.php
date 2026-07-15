@@ -20,19 +20,33 @@
     $typeLabel = $assessment->type == 'trainingplan'
         ? 'Playlist'
         : ucwords(str_replace('_', ' ', $assessment->type ?? '-'));
+
+    $assessmentUrl = !empty($assessment->slug)
+        ? route('assesment.user.view', $assessment->slug)
+        : null;
 @endphp
 
-<tr>
-    <td>{{ $index }}</td>
+<tr class="assessment-row">
+    <td class="text-muted">{{ $index }}</td>
 
-    <td>
-        <div class="fw-semibold">{{ $assessment->title ?? '-' }}</div>
-        <div class="text-muted small">
+    <td data-order="{{ mb_strtolower($assessment->title ?? '') }}">
+        @if ($assessmentUrl)
+            <a href="{{ $assessmentUrl }}"
+               class="fw-semibold text-primary assessment-title assessment-title-link">
+                {{ $assessment->title ?? '-' }}
+            </a>
+        @else
+            <div class="fw-semibold text-primary assessment-title">{{ $assessment->title ?? '-' }}</div>
+        @endif
+
+        {{-- Jika subtitle juga ingin diubah menjadi biru muda/muted, bisa gunakan text-primary-lt (jika pakai Tabler) --}}
+        {{-- Atau jika ingin tetap abu-abu biarkan text-muted, namun di bawah ini saya ubah ke text-primary agar semuanya biru --}}
+        <div class="text-primary small opacity-75 assessment-subtitle">
             {{ $assessment->trainingplan->title ?? 'Assessment' }}
         </div>
     </td>
 
-    <td>
+    <td data-order="{{ $assessment->fromdate ? strtotime($assessment->fromdate) : 0 }}">
         @if (($assessment->timer ?? 'n') == 'y')
             <div class="small">
                 From: {{ $assessment->fromdate ? date('d/m/y H:i', strtotime($assessment->fromdate)) : '-' }}
@@ -46,9 +60,10 @@
     </td>
 
     <td>
-        <span class="badge bg-blue-lt text-blue">
-            {{ $typeLabel }}
-        </span>
+        <x-learning.assessment.assessment-type
+            :type="$assessment->type"
+            :label="$typeLabel"
+        />
     </td>
 
     <td>{{ $assessment->batch ?? '-' }}</td>
@@ -64,7 +79,7 @@
 
     <td class="text-end">
         <x-learning.assessment.assessment-action
-            :assessment="$assessment"
+            :url="$assessmentUrl"
             :is-completed="$isCompleted"
             :is-passed="$isPassed"
         />
