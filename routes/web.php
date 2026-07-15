@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\HomeUserController;
 use App\Http\Controllers\LearningController;
+use App\Http\Controllers\LearningRecordExportController;
 use App\Http\Controllers\LearningMonitoringController;
 use App\Http\Controllers\LearningOngoingController;
 use App\Http\Controllers\NewsUserController;
@@ -81,6 +82,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/my-learning', [LearningController::class, 'dashboard'])->name('user.learning.dashboard');
     Route::get('/my-learning/partial/{tab}', [LearningController::class, 'dashboardPartial'])->name('user.learning.dashboard.partial');
+    Route::get('/my-learning/learning-record/export', [LearningRecordExportController::class, 'download'])->name('user.learning.record.export');
 
     // Learning On Going — dua mode terpisah (fragment AJAX): Content & Playlist.
     Route::get('/my-learning/content', [LearningOngoingController::class, 'content'])->name('user.learning.ongoing.content');

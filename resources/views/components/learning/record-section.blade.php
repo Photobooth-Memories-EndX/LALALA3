@@ -21,6 +21,18 @@
         9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
     ];
 
+    $filterType = request('record_filter_type', 'all');
+    $filterClassification = request('record_filter_classification', 'all');
+    $filterYear = request('record_filter_year', 'all');
+    $filterMonth = request('record_filter_month', 'all');
+
+    $typeOptions = [
+        'all' => 'All',
+        'Video' => 'Video',
+        'Document' => 'Document',
+        'Playlist' => 'Playlist',
+    ];
+
     // Kolom tabel; 'sort' = key data-sort-* pada baris (learning-record.js),
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
@@ -48,6 +60,9 @@
             </div>
 
             <div class="d-flex align-items-center gap-2">
+                {{-- <a href="{{ route('user.learning.record.export') }}" data-export-url="{{ route('user.learning.record.export') }}" class="btn btn-outline-primary btn-sm" id="recordDownloadExcel">
+                    <i class="ti ti-file-spreadsheet mr-1"></i>Download Excel
+                </a> --}}
                 @if ($certReadyCount > 0)
                     {{-- Klik: terapkan filter "Certificate Ready" + scroll ke tabel (learning-record.js). --}}
                     <button type="button" class="record-cert-ready-card" id="recordCertReadyCard">
@@ -74,61 +89,138 @@
                 </div>
             </div>
 
-  <div class="row record-fast-filter-row align-items-end">
+            <div class="mb-3">
+                <label class="form-label small text-muted mb-2">Filter Cepat</label>
 
-                {{-- Quick Filter: dua mode tampilan — Content (Video + Document, default)
-                     atau Playlist. Keduanya entity berbeda (progress, assessment,
-                     certificate) sehingga tidak pernah dicampur dalam satu mode
-                     (learning-record.js). --}}
-                <div class="col-6 col-md-3 col-xl-2 mb-2">
-                    <label class="form-label small text-muted mb-1" for="recordFilterType">Type</label>
-                    {{-- Ditambahkan class form-select-sm --}}
-                    <select class="form-select form-select-sm" id="recordFilterType" data-record-filter>
-                        <option value="all">All</option>
-                        <option value="Video">Video</option>
-                        <option value="Document">Document</option>
-                        <option value="Playlist">Playlist</option>
-                    </select>
+                <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns">
+                    {{-- Dropdown Type --}}
+                    <div class="dropdown">
+                        <button type="button"
+                                class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $filterType !== 'all' ? 'active' : '' }}"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            Type: <span class="fw-semibold">{{ $typeOptions[$filterType] ?? 'All' }}</span>
+                        </button>
+
+                        <div class="dropdown-menu">
+                            @foreach ($typeOptions as $value => $label)
+                                <a href="#"
+                                   class="dropdown-item record-quick-item {{ $filterType === $value ? 'active' : '' }}"
+                                   data-param="record_filter_type"
+                                   data-value="{{ $value }}">
+                                    {{ $label }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Classification --}}
+                    <div class="dropdown">
+                        <button type="button"
+                                class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $filterClassification !== 'all' ? 'active' : '' }}"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            Classification:
+                            <span class="fw-semibold">
+                                {{ $filterClassification === 'all' ? 'All' : $filterClassification }}
+                            </span>
+                        </button>
+
+                        <div class="dropdown-menu learning-quick-dropdown-scroll">
+                            <a href="#"
+                               class="dropdown-item record-quick-item {{ $filterClassification === 'all' ? 'active' : '' }}"
+                               data-param="record_filter_classification"
+                               data-value="all">
+                                All Classification
+                            </a>
+
+                            @foreach ($classifications as $classification)
+                                <a href="#"
+                                   class="dropdown-item record-quick-item {{ (string) $filterClassification === (string) $classification ? 'active' : '' }}"
+                                   data-param="record_filter_classification"
+                                   data-value="{{ e($classification) }}">
+                                    {{ $classification }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Year --}}
+                    <div class="dropdown">
+                        <button type="button"
+                                class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $filterYear !== 'all' ? 'active' : '' }}"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            Year:
+                            <span class="fw-semibold">
+                                {{ $filterYear === 'all' ? 'All' : $filterYear }}
+                            </span>
+                        </button>
+
+                        <div class="dropdown-menu">
+                            <a href="#"
+                               class="dropdown-item record-quick-item {{ $filterYear === 'all' ? 'active' : '' }}"
+                               data-param="record_filter_year"
+                               data-value="all">
+                                All
+                            </a>
+
+                            @foreach ($years as $year)
+                                <a href="#"
+                                   class="dropdown-item record-quick-item {{ (string) $filterYear === (string) $year ? 'active' : '' }}"
+                                   data-param="record_filter_year"
+                                   data-value="{{ $year }}">
+                                    {{ $year }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Month --}}
+                    <div class="dropdown">
+                        <button type="button"
+                                class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $filterMonth !== 'all' ? 'active' : '' }}"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            Month:
+                            <span class="fw-semibold">
+                                {{ $filterMonth === 'all' ? 'All' : ($months[(int) $filterMonth] ?? 'All') }}
+                            </span>
+                        </button>
+
+                        <div class="dropdown-menu learning-quick-dropdown-scroll">
+                            <a href="#"
+                               class="dropdown-item record-quick-item {{ $filterMonth === 'all' ? 'active' : '' }}"
+                               data-param="record_filter_month"
+                               data-value="all">
+                                All
+                            </a>
+
+                            @foreach ($months as $num => $name)
+                                <a href="#"
+                                   class="dropdown-item record-quick-item {{ (string) $filterMonth === (string) $num ? 'active' : '' }}"
+                                   data-param="record_filter_month"
+                                   data-value="{{ $num }}">
+                                    {{ $name }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
-
-                <div class="col-6 col-md-4 col-xl-3 mb-2">
-                    <label class="form-label small text-muted mb-1" for="recordFilterClassification">Classification</label>
-                    {{-- Ditambahkan class form-select-sm --}}
-                    <select class="form-select form-select-sm" id="recordFilterClassification" data-record-filter>
-                        <option value="all">All Classification</option>
-                        @foreach ($classifications as $classification)
-                            <option value="{{ $classification }}">{{ $classification }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-6 col-md-2 col-xl-2 mb-2">
-                    <label class="form-label small text-muted mb-1" for="recordFilterYear">Year</label>
-                    {{-- Ditambahkan class form-select-sm --}}
-                    <select class="form-select form-select-sm" id="recordFilterYear" data-record-filter>
-                        <option value="all">All</option>
-                        @foreach ($years as $year)
-                            <option value="{{ $year }}">{{ $year }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-6 col-md-3 col-xl-2 mb-2">
-                    <label class="form-label small text-muted mb-1" for="recordFilterMonth">Month</label>
-                    {{-- Ditambahkan class form-select-sm --}}
-                    <select class="form-select form-select-sm" id="recordFilterMonth" data-record-filter>
-                        <option value="all">All</option>
-                        @foreach ($months as $num => $name)
-                            <option value="{{ $num }}">{{ $name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
             </div>
+
+            {{-- Hidden inputs untuk menjaga state form saat disubmit jika menggunakan form tradisional --}}
+            <input type="hidden" name="record_filter_type" id="hidden_record_filter_type" value="{{ $filterType }}">
+            <input type="hidden" name="record_filter_classification" id="hidden_record_filter_classification" value="{{ $filterClassification }}">
+            <input type="hidden" name="record_filter_year" id="hidden_record_filter_year" value="{{ $filterYear }}">
+            <input type="hidden" name="record_filter_month" id="hidden_record_filter_month" value="{{ $filterMonth }}">
 
             <div class="record-filter-actions">
                 {{-- TOMBOL DOWNLOAD EXCEL --}}
-                <a href="#" class="btn btn-outline-success record-filter-action-btn" id="btnDownloadExcel">
+                <a href="{{ route('user.learning.record.export') }}"
+                   data-export-url="{{ route('user.learning.record.export') }}"
+                   class="btn btn-outline-success record-filter-action-btn"
+                   id="recordDownloadExcel">
                     <i class="ti ti-file-spreadsheet"></i>
                     <span>Download Excel</span>
                 </a>
@@ -200,7 +292,7 @@
                         @endforeach
                     </div>
 
-                    <div class="record-filter-section">
+                    {{-- <div class="record-filter-section">
                         <div class="record-filter-title">Activity Sort</div>
                         @foreach (['newest' => 'Newest Activity', 'oldest' => 'Oldest Activity', 'recent' => 'Recently Accessed', 'longest' => 'Longest Duration', 'shortest' => 'Shortest Duration'] as $value => $label)
                             <label class="form-check">
@@ -208,8 +300,8 @@
                                 <span class="form-check-label">{{ $label }}</span>
                             </label>
                         @endforeach
-                    </div>
-
+                    </div> --}}
+{{-- 
                     <div class="record-filter-section">
                         <div class="record-filter-title">Completion Status</div>
                         @foreach (['all' => 'All Progress', 'highest' => 'Highest Progress', 'lowest' => 'Lowest Progress', 'not_started' => 'Not Started', 'in_progress' => 'In Progress', 'almost_done' => 'Almost Done', 'completed' => 'Completed'] as $value => $label)
@@ -218,7 +310,7 @@
                                 <span class="form-check-label">{{ $label }}</span>
                             </label>
                         @endforeach
-                    </div>
+                    </div> --}}
 
                     <div class="record-filter-section">
                         <div class="record-filter-title">Learning Status</div>
@@ -230,7 +322,7 @@
                         @endforeach
                     </div>
 
-                    <div class="record-filter-section">
+                    {{-- <div class="record-filter-section">
                         <div class="record-filter-title">Progress</div>
                         @foreach (['0' => '0%', '1-25' => '1-25%', '26-50' => '26-50%', '51-75' => '51-75%', '76-99' => '76-99%', '100' => '100%'] as $value => $label)
                             <label class="form-check">
@@ -238,7 +330,7 @@
                                 <span class="form-check-label">{{ $label }}</span>
                             </label>
                         @endforeach
-                    </div>
+                    </div> --}}
 
                     <div class="record-filter-section">
                         <div class="record-filter-title">Month</div>

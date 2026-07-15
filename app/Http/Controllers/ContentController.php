@@ -409,6 +409,8 @@ class ContentController extends Controller
                 'to_date'          => $hasDeadlineUpdate ? $request->to_date : null,
             ]);
 
+        app(\App\Services\PlaylistDurationService::class)->refreshForContent((int) $request->contentid);
+
         return to_route('content.edit', $getcontent->slug)->with('success', $message)->with($redir, $redirmessage);
     }
     public function assign(Request $request)

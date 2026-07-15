@@ -264,6 +264,22 @@ tbody.record-sort-animate tr.record-row {
     border-radius: 6px;
 }
 
+.learning-quick-dropdowns .dropdown-toggle.active {
+    color: #206bc4;
+    border-color: #206bc4;
+    background: rgba(32, 107, 196, 0.08);
+}
+
+.learning-quick-dropdowns .dropdown-item.active {
+    color: #fff;
+    background-color: #206bc4;
+}
+
+.learning-quick-dropdown-scroll {
+    max-height: 260px;
+    overflow-y: auto;
+}
+
 .record-fast-filter-row {
     margin-left: -6px;
     margin-right: -6px;

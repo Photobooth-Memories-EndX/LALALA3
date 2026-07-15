@@ -13,17 +13,17 @@
                 Assessment
             </button>
 
-            <button class="btn btn-white learning-tab-btn" data-target="#tab-claim" type="button">
+            {{-- <button class="btn btn-white learning-tab-btn" data-target="#tab-claim" type="button">
                 Klaim Learning Hour
-            </button>
+            </button> --}}
 
             <button class="btn btn-white learning-tab-btn" data-target="#tab-certificate" type="button">
                 Certificate
             </button>
 
-            <button class="btn btn-white learning-tab-btn" data-target="#tab-monitoring" type="button">
+            {{-- <button class="btn btn-white learning-tab-btn" data-target="#tab-monitoring" type="button">
                 Monitoring Progress
-            </button>
+            </button> --}}
         </div>
     </div>
 </div>

@@ -175,6 +175,7 @@ class TrainingPlanController extends Controller
                 }
             }
 
+            app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
             DB::commit();
             $addmessage = $request->action == "publish" ? " and published" : "";
             return to_route('playlist.edit', $trainingplan->slug)->with('success', 'Playlist successfully saved ' . $addmessage);
@@ -296,6 +297,7 @@ class TrainingPlanController extends Controller
                 }
             }
 
+            app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
             DB::commit();
 
             session()->flash('success', 'Playlist updated successfully');

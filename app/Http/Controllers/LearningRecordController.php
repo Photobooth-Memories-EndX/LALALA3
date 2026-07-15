@@ -173,7 +173,7 @@ class LearningRecordController extends Controller
     private function getCompletedPlaylists(int $userId)
     {
         return TrainingPlan::query()
-            ->select('trainingplan.id', 'trainingplan.title', 'trainingplan.slug', 'trainingplan.thumbnail')
+            ->select('trainingplan.id', 'trainingplan.title', 'trainingplan.slug', 'trainingplan.thumbnail', 'trainingplan.total_duration_seconds')
             ->whereExists(function ($q) use ($userId) {
                 $q->from('trainingplandetail')
                     ->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')
@@ -201,14 +201,6 @@ class LearningRecordController extends Controller
                     ->where('content_users.user_id', $userId)
                     ->where('content_users.finish', '1'),
                 'last_finished_at'
-            )
-            ->selectSub(
-                ContentUser::selectRaw('COALESCE(SUM(content_users.duration_seconds), 0)')
-                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId)
-                    ->where('content_users.finish', '1'),
-                'total_duration_seconds'
             )
             ->orderByDesc('last_finished_at')
             ->get()

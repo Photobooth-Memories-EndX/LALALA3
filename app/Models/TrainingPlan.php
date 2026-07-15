@@ -21,6 +21,7 @@ class TrainingPlan extends Model
     protected $dates = ['deleted_at'];
 
     protected $casts = [
+        'total_duration_seconds' => 'integer',
         'has_deadline' => 'boolean',
         'from_date'    => 'date',
         'to_date'      => 'date',

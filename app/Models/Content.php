@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use App\Models\ContentUser;
+use App\Services\PlaylistDurationService;
 
 class Content extends Model
 {
@@ -17,6 +18,18 @@ class Content extends Model
     protected $table = 'content';
     protected $guarded = ['id'];
     protected $dates = ['deleted_at'];
+
+    protected static function booted(): void
+    {
+        static::saved(function (Content $content) {
+            if (!$content->wasChanged('duration')) {
+                return;
+            }
+
+            $planIds = $content->trainingPlans()->pluck('trainingplan.id');
+            app(PlaylistDurationService::class)->refreshMany($planIds);
+        });
+    }
 
     protected $casts = [
         'has_deadline' => 'boolean',
