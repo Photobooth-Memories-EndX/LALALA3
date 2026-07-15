@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 {{-- Learning Record: style tabel client-side (dipisah — clean code). --}}
 <link rel="stylesheet" href="{{ asset('css/learning-record.css') }}">
+@include('user.learning.partials.assessment-style')
 
 <style>
     .learning-section-padding {

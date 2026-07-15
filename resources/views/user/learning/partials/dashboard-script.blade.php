@@ -24,17 +24,6 @@
         '</div>';
     }
 
-    function initDataTables() {
-        // #learningRecordTable tidak di sini — Learning Record dirender penuh oleh
-        // Blade dan ditangani initLearningRecord() (learning-record.js, tanpa DataTables).
-        var tables = ['#assessmentTable', '#assessmentResultTable'];
-        tables.forEach(function (id) {
-            if ($(id).length && !$.fn.DataTable.isDataTable(id)) {
-                $(id).DataTable({ ordering: false, pageLength: 10, autoWidth: false });
-            }
-        });
-    }
-
     function loadLearningTab(tab) {
         if (_activeTab === tab) return;
         _activeTab = tab;
@@ -62,7 +51,7 @@
         })
         .then(function (html) {
             $('#learning-tab-content').html(html);
-            initDataTables();
+            initLearningAssessment();
             initLearningRecord();
         })
         .catch(function () {
@@ -153,4 +142,5 @@
         });
     });
 </script>
+@include('user.learning.partials.assessment-script')
 @endsection

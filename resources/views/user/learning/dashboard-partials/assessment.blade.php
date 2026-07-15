@@ -1,4 +1,1 @@
-<x-learning.assessment-section
-    :assessments="$assessments"
-    :result="$result"
-/>
+<x-learning.assessment.assessment-section :assessments="$assessments" />

@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\Auth;
  * Seluruh business logic per-tab didelegasikan ke controller khusus:
  *
  *  - Learning On Going  -> LearningOngoingController
- *  - Learning Record    -> LearningRecordController (termasuk assessment & certificate)
+ *  - Learning Record    -> LearningRecordController
+ *  - Assessment         -> LearningAssessmentController
  *  - Monitoring         -> LearningMonitoringController
  */
 class LearningController extends Controller
@@ -74,7 +75,7 @@ class LearningController extends Controller
                 ? app(LearningOngoingController::class)->playlist()
                 : app(LearningOngoingController::class)->content(),
             'record'      => app(LearningRecordController::class)->partial($eligibilityService),
-            'assessment'  => app(LearningRecordController::class)->assessment(),
+            'assessment'  => app(LearningAssessmentController::class)->partial(),
             'claim'       => view('user.learning.dashboard-partials.claim'),
             'certificate' => app(LearningRecordController::class)->certificate(),
             'monitoring'  => app(LearningMonitoringController::class)->partial(),
