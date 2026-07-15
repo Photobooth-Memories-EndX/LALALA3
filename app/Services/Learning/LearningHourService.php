@@ -2,12 +2,41 @@
 
 namespace App\Services\Learning;
 
+use App\Models\ContentUser;
+use App\Models\User;
 use Illuminate\Support\Collection;
 
 class LearningHourService
 {
     private const BUCKET_SECONDS = 1800;
     private const BUCKET_HOURS = 0.5;
+
+    /**
+     * Canonical total used by every user-facing Learning Hour summary.
+     *
+     * Playlist duration is deliberately not added: a playlist is composed of
+     * the same completed content and would otherwise count it a second time.
+     */
+    public function getTotalLearningHours(User|int $user, ?Collection $completedContentUsers = null): float
+    {
+        return $this->getCompletedContentLearningHours($user, $completedContentUsers);
+    }
+
+    public function getCompletedContentLearningHours(
+        User|int $user,
+        ?Collection $completedContentUsers = null
+    ): float {
+        $durations = $completedContentUsers === null
+            ? $this->completedContentDurations($this->userId($user))
+            : $completedContentUsers
+                ->filter(fn ($contentUser) => $contentUser->content !== null
+                    && (string) $contentUser->finish === '1'
+                    && $contentUser->content->deleted_at === null)
+                ->unique('content_id')
+                ->pluck('content.duration');
+
+        return $this->calculateTotal($durations);
+    }
 
     public function calculate(?string $duration): float
     {
@@ -23,6 +52,13 @@ class LearningHourService
         }
 
         return (float) (ceil($seconds / self::BUCKET_SECONDS) * self::BUCKET_HOURS);
+    }
+
+    private function calculateTotal(Collection $durations): float
+    {
+        return (float) $durations->sum(
+            fn ($duration) => $this->calculate(is_string($duration) ? $duration : null)
+        );
     }
 
     public function bucket(?string $duration): float
@@ -94,5 +130,24 @@ class LearningHourService
         }
 
         return is_numeric($duration) ? (int) $duration : 0;
+    }
+
+    private function completedContentDurations(int $userId): Collection
+    {
+        return ContentUser::query()
+            ->join('content', 'content.id', '=', 'content_users.content_id')
+            ->where('content_users.user_id', $userId)
+            ->where('content_users.finish', '1')
+            ->whereNull('content.deleted_at')
+            ->whereNotNull('content.duration')
+            ->where('content.duration', '!=', '')
+            ->distinct()
+            ->get(['content.id as content_id', 'content.duration'])
+            ->pluck('duration');
+    }
+
+    private function userId(User|int $user): int
+    {
+        return $user instanceof User ? (int) $user->getKey() : $user;
     }
 }

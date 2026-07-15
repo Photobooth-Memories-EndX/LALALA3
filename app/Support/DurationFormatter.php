@@ -35,6 +35,18 @@ class DurationFormatter
         return self::normalize($duration) ?? '';
     }
 
+    public static function fromSeconds(int $seconds): string
+    {
+        $seconds = max(0, $seconds);
+
+        return sprintf(
+            '%02d:%02d:%02d',
+            intdiv($seconds, 3600),
+            intdiv($seconds % 3600, 60),
+            $seconds % 60
+        );
+    }
+
     public static function format(?string $duration, string $fallback = '-'): string
     {
         $formatted = self::normalize($duration);

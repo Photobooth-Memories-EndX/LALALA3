@@ -29,4 +29,10 @@ class DurationFormatterTest extends TestCase
         $this->assertSame('1 hour 15 min', DurationFormatter::formatForLearningRecord('01:15:00'));
         $this->assertSame('2 hours 45 min', DurationFormatter::formatForLearningRecord('02:45:00'));
     }
+
+    public function test_it_formats_aggregated_seconds_as_hms(): void
+    {
+        $this->assertSame('18:42:30', DurationFormatter::fromSeconds(67350));
+        $this->assertSame('00:00:00', DurationFormatter::fromSeconds(-1));
+    }
 }

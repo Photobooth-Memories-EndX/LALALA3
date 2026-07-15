@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
@@ -58,6 +59,25 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             }
         }
 
+        $durationSeconds = (int) $this->rows->sum(
+            fn (array $row) => max(0, (int) ($row['duration_seconds'] ?? 0))
+        );
+        $learningHours = $hours->getTotalLearningHours($user, $contentUsers);
+
+        $output[] = array_fill(0, count($this->headings()), '');
+        $output[] = [
+            'TOTAL',
+            '',
+            '',
+            '',
+            DurationFormatter::fromSeconds($durationSeconds),
+            $hours->value($learningHours) . ' Hours',
+            '',
+            '',
+            '',
+            '',
+        ];
+
         return $output;
     }
 
@@ -86,6 +106,25 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
                     $sheet->getStyle('C' . ($row - count($item['children'])) . ':J' . ($row - 1))->getAlignment()->setIndent(1);
                 }
             }
+
+
+            $summaryRow = $sheet->getHighestRow();
+            $sheet->getStyle('A' . $summaryRow . ':J' . $summaryRow)->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'EDEDED'],
+                ],
+                'borders' => [
+                    'top' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['rgb' => '808080'],
+                    ],
+                ],
+            ]);
+            $sheet->getStyle('E' . $summaryRow . ':F' . $summaryRow)
+                ->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         }];
     }
 
@@ -137,7 +176,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             ->map(fn (ContentUser $contentUser) => $this->contentRow($contentUser, $cert, $hours, true))
             ->values()
             ->all();
-        return ['type' => 'Playlist', 'title' => $plan->title ?? '-', 'classification' => 'Playlist', 'duration' => $this->duration($seconds), 'learning_hour' => $hours->formatFromSeconds($seconds), 'progress' => '100%', 'finish_date' => $plan->last_finished_at ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i') : '', 'score' => $result?->score() ?? '', 'certificate' => ($result?->eligible ?? false) ? 'Ready' : '', 'date' => $plan->last_finished_at, 'children' => $children, 'playlist_id' => $plan->id];
+        return ['type' => 'Playlist', 'title' => $plan->title ?? '-', 'classification' => 'Playlist', 'duration' => $this->duration($seconds), 'learning_hour' => $hours->formatFromSeconds($seconds), 'progress' => '100%', 'finish_date' => $plan->last_finished_at ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i') : '', 'score' => $result?->score() ?? '', 'certificate' => ($result?->eligible ?? false) ? 'Ready' : '', 'date' => $plan->last_finished_at, 'duration_seconds' => $seconds, 'learning_hour_value' => $hours->value($hours->bucketFromSeconds($seconds)), 'children' => $children, 'playlist_id' => $plan->id];
     }
 
     private function excelRow(array $row, $number): array

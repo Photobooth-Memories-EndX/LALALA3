@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AssesmentResult;
 use App\Models\Certificate;
 use App\Models\ContentUser;
+use App\Services\Learning\LearningHourService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -29,6 +30,10 @@ class LearningAnalyticsService
             ELSE 0
         END
     ";
+
+    public function __construct(private readonly LearningHourService $learningHourService)
+    {
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -515,14 +520,7 @@ class LearningAnalyticsService
      */
     public function userLearningHours(int $userId): float
     {
-        $hours = ContentUser::join('content', 'content.id', '=', 'content_users.content_id')
-            ->where('content_users.user_id', $userId)
-            ->whereNull('content.deleted_at')
-            ->whereNotNull('content.duration')
-            ->where('content.duration', '!=', '')
-            ->sum(DB::raw(self::HOURS_EXPR));
-
-        return round((float) $hours, 1);
+        return $this->learningHourService->getTotalLearningHours($userId);
     }
 
     /**
