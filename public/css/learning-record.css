@@ -250,6 +250,67 @@ tbody.record-sort-animate tr.record-row {
 
 /* ── Quick Filter (pill All / Content / Playlist) ──────────────────────── */
 
+.record-filter-shell {
+    width: 100%;
+}
+
+.record-search-row {
+    margin-bottom: 14px;
+}
+
+.record-filter-shell .form-control,
+.record-filter-shell .form-select {
+    min-height: 42px;
+    border-radius: 6px;
+}
+
+.record-fast-filter-row {
+    margin-left: -6px;
+    margin-right: -6px;
+}
+
+.record-fast-filter-row > [class*="col-"] {
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.record-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.record-filter-action-btn {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 6px;
+    padding: 8px 14px;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.record-filter-reset-link {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    padding: 8px 4px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.record-filter-reset-link:hover,
+.record-filter-reset-link:focus {
+    text-decoration: none;
+}
+
 .record-chip {
     display: inline-flex;
     align-items: center;
@@ -286,6 +347,90 @@ tbody.record-sort-animate tr.record-row {
     border-radius: 12px;
     padding: 16px;
     background: var(--tblr-bg-surface-secondary, #f8fafc);
+}
+
+.record-filter-modal .record-more-filters {
+    display: block;
+    border: 0;
+    border-radius: 0;
+    padding: 0 1.5rem;
+    background: var(--tblr-bg-surface, #fff);
+}
+
+.record-filter-modal .modal-header,
+.record-filter-modal .modal-footer {
+    border-color: var(--tblr-border-color, #e6e7e9);
+}
+
+#recordMoreFiltersModal .modal-dialog {
+    max-width: 760px;
+}
+
+.record-filter-modal .modal-body {
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+}
+
+.record-filter-sections {
+    display: block;
+}
+
+.record-filter-section {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--tblr-border-color, #e6e7e9);
+}
+
+.record-filter-section:last-child {
+    border-bottom: 0;
+}
+
+.record-filter-title {
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--tblr-body-color, #1f2937);
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+
+.record-filter-section .form-check {
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.record-filter-section .form-check:last-child {
+    margin-bottom: 0;
+}
+
+.record-filter-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+}
+
+.record-filter-modal-footer .btn {
+    min-height: 42px;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 600;
+}
+
+@media (max-width: 575.98px) {
+    .record-filter-actions {
+        justify-content: flex-start;
+    }
+
+    .record-filter-action-btn,
+    .record-filter-reset-link {
+        width: 100%;
+    }
+
+    .record-filter-modal .record-more-filters {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
 }
 
 /* Caret pada tombol More Filters berputar saat panel terbuka. */

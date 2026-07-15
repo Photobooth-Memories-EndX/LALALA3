@@ -39,16 +39,36 @@ function initLearningRecord() {
 
     // ── Filter ──────────────────────────────────────────────────────────────
 
+    function checkedValues(name) {
+        return $('input[name="' + name + '"]:checked').map(function () {
+            return String($(this).val());
+        }).get();
+    }
+
+    function checkedValue(name, fallback) {
+        return String($('input[name="' + name + '"]:checked').val() || fallback);
+    }
+
     function filterState() {
         return {
             search:         ($('#recordSearch').val() || '').toLowerCase().trim(),
             type:           $('#recordFilterType').val() || 'all',
+            modalTypes:     checkedValues('recordModalType[]'),
+            program:        checkedValue('recordModalProgram', 'all'),
             classification: $('#recordFilterClassification').val() || 'all',
             playlist:       $('#recordFilterPlaylist').val() || 'all',
-            learningHour:   $('#recordFilterLearningHour').val() || 'all',
+            learningHour:   checkedValue('recordModalLearningHour', 'all'),
+            duration:       checkedValue('recordModalDuration', 'all'),
+            activitySort:   checkedValue('recordModalActivitySort', 'all'),
+            completion:     checkedValue('recordModalCompletion', 'all'),
+            learningStatus: checkedValues('recordModalLearningStatus[]'),
+            progressRanges: checkedValues('recordModalProgress[]'),
+            modalYear:      checkedValue('recordModalYear', 'all'),
+            modalMonths:    checkedValues('recordModalMonth[]'),
+            scoreTest:      checkedValue('recordModalScoreTest', 'all'),
             year:           $('#recordFilterYear').val() || 'all',
             month:          $('#recordFilterMonth').val() || 'all',
-            certificate:    $('#recordFilterCertificate').val() || 'all'
+            certificate:    checkedValue('recordModalCertificate', 'all')
         };
     }
 
@@ -58,11 +78,89 @@ function initLearningRecord() {
         return allRows;
     }
 
-    // Filter yang berlaku di kedua mode: Year, Month, Certificate, Search.
-    function commonMatches(d, f) {
+    function rowNumber($row, name, fallback) {
+        var raw = $row.attr('data-' + name);
+        var n = parseFloat(raw);
+        return isNaN(n) ? fallback : n;
+    }
+
+    function rangeMatches(value, range) {
+        if (range === 'all') return true;
+        if (range.indexOf('gt') === 0) return value > parseFloat(range.replace('gt', ''));
+        if (range.indexOf('-') === -1) return value === parseFloat(range);
+
+        var parts = range.split('-');
+        return value >= parseFloat(parts[0]) && value <= parseFloat(parts[1]);
+    }
+
+    function anyRangeMatches(value, ranges) {
+        if (!ranges || !ranges.length) return true;
+        return ranges.some(function (range) {
+            return rangeMatches(value, range);
+        });
+    }
+
+    function selectedTypeMatches(d, selectedTypes) {
+        if (!selectedTypes || !selectedTypes.length || selectedTypes.indexOf('all') !== -1) return true;
+
+        var rowType = String(d.type || '');
+        return selectedTypes.some(function (type) {
+            if (type === 'Playlist') return String(d.kind) === 'playlist';
+            if (type === 'Video') return rowType === 'Video' || rowType === 'YouTube';
+            return rowType === type;
+        });
+    }
+
+    function dateMatches(raw, mode) {
+        if (mode === 'all' || mode === 'newest' || mode === 'oldest') return true;
+        if (!raw) return false;
+
+        var date = new Date(String(raw).replace(' ', 'T'));
+        if (isNaN(date.getTime())) return false;
+
+        var now = new Date();
+        var thisMonth = now.getMonth();
+        var thisYear = now.getFullYear();
+        var lastMonthDate = new Date(thisYear, thisMonth - 1, 1);
+
+        if (mode === 'this_month') {
+            return date.getFullYear() === thisYear && date.getMonth() === thisMonth;
+        }
+        if (mode === 'last_month') {
+            return date.getFullYear() === lastMonthDate.getFullYear() && date.getMonth() === lastMonthDate.getMonth();
+        }
+        if (mode === 'this_year') {
+            return date.getFullYear() === thisYear;
+        }
+
+        return true;
+    }
+
+    // Filter yang berlaku di semua baris: Year, Month, Certificate, Search, dan filter modal.
+    function commonMatches($row, d, f) {
+        var durationSeconds = rowNumber($row, 'sort-duration', -1);
+        var learningHour = rowNumber($row, 'learning-hour', -1);
+        var score = rowNumber($row, 'sort-score', -1);
+        var progress = rowNumber($row, 'sort-progress', 0);
+        var finish = $row.attr('data-sort-finish') || '';
+
         if (f.year !== 'all' && String(d.year) !== f.year) return false;
+        if (f.modalYear !== 'all' && String(d.year) !== f.modalYear) return false;
         if (f.month !== 'all' && String(d.month) !== f.month) return false;
-        if (f.learningHour !== 'all' && String(d.learningHour) !== f.learningHour) return false;
+        if (f.modalMonths.length && f.modalMonths.indexOf(String(d.month)) === -1) return false;
+        if (f.duration !== 'all' && !rangeMatches(durationSeconds, f.duration)) return false;
+        if (f.learningHour !== 'all' && !rangeMatches(learningHour, f.learningHour)) return false;
+        if (f.program !== 'all' && String(d.learningProgram) !== f.program) return false;
+        if (f.learningStatus.length && f.learningStatus.indexOf(String(d.learningStatus)) === -1) return false;
+        if (!anyRangeMatches(progress, f.progressRanges)) return false;
+        if (f.completion === 'not_started' && progress !== 0) return false;
+        if (f.completion === 'in_progress' && !(progress > 0 && progress <= 75)) return false;
+        if (f.completion === 'almost_done' && !(progress >= 76 && progress < 100)) return false;
+        if (f.completion === 'completed' && progress !== 100) return false;
+        if (f.scoreTest === 'none' && score >= 0) return false;
+        if (f.scoreTest === 'lt60' && !(score >= 0 && score < 60)) return false;
+        if (f.scoreTest === '60-79' && !(score >= 60 && score <= 79)) return false;
+        if (f.scoreTest === '80-100' && !(score >= 80 && score <= 100)) return false;
         if (f.certificate !== 'all' && String(d.cert) !== f.certificate) return false;
         if (f.search && String(d.search).indexOf(f.search) === -1) return false;
         return true;
@@ -73,10 +171,11 @@ function initLearningRecord() {
     function contentMatches($row, f) {
         var d = $row.data();
 
+        if (!selectedTypeMatches(d, f.modalTypes)) return false;
         if (f.type !== 'all' && String(d.type) !== f.type) return false;
         if (f.classification !== 'all' && String(d.classification) !== f.classification) return false;
 
-        return commonMatches(d, f);
+        return commonMatches($row, d, f);
     }
 
     // Mode Playlist: filter Playlist memilih satu playlist tertentu —
@@ -84,17 +183,29 @@ function initLearningRecord() {
     function playlistMatches($row, f) {
         var d = $row.data();
 
+        if (!selectedTypeMatches(d, f.modalTypes)) return false;
         if (f.playlist !== 'all' && String(d.playlists || '').split(',').indexOf(f.playlist) === -1) {
             return false;
         }
 
-        return commonMatches(d, f);
+        return commonMatches($row, d, f);
     }
 
     function allMatches($row, f) {
-        return $row.data('kind') === 'playlist'
-            ? playlistMatches($row, f)
-            : contentMatches($row, f);
+        var d = $row.data();
+        var rowType = String(d.type || '');
+
+        if (!selectedTypeMatches(d, f.modalTypes)) return false;
+        if (f.type === 'Playlist' && String(d.kind) !== 'playlist') return false;
+        if (f.type === 'Video' && !(rowType === 'Video' || rowType === 'YouTube')) return false;
+        if (f.type === 'Document' && rowType !== 'Document') return false;
+        if (f.classification !== 'all' && String(d.classification) !== f.classification) return false;
+
+        if (f.playlist !== 'all' && String(d.playlists || '').split(',').indexOf(f.playlist) === -1) {
+            return false;
+        }
+
+        return commonMatches($row, d, f);
     }
 
     // ── Sorting (client-side murni — tanpa request server) ─────────────────
@@ -222,6 +333,31 @@ function initLearningRecord() {
             : (quickFilter === 'content' ? contentMatches : allMatches);
         var matched = activeRows().filter(function (tr) { return matcher($(tr), f); });
 
+        if (f.activitySort === 'newest' || f.activitySort === 'oldest' || f.activitySort === 'recent') {
+            matched.sort(function (a, b) {
+                var va = $(a).attr('data-sort-finish') || '';
+                var vb = $(b).attr('data-sort-finish') || '';
+                var cmp = String(va).localeCompare(String(vb));
+                return f.activitySort === 'oldest' ? cmp : -cmp;
+            });
+        }
+
+        if (f.activitySort === 'longest' || f.activitySort === 'shortest') {
+            matched.sort(function (a, b) {
+                var va = rowNumber($(a), 'sort-duration', -1);
+                var vb = rowNumber($(b), 'sort-duration', -1);
+                return f.activitySort === 'shortest' ? va - vb : vb - va;
+            });
+        }
+
+        if (f.completion === 'highest' || f.completion === 'lowest') {
+            matched.sort(function (a, b) {
+                var va = rowNumber($(a), 'sort-progress', 0);
+                var vb = rowNumber($(b), 'sort-progress', 0);
+                return f.completion === 'lowest' ? va - vb : vb - va;
+            });
+        }
+
         $(allRows).hide();
 
         var total = matched.length;
@@ -271,17 +407,25 @@ function initLearningRecord() {
     // hanya menghitung filter yang relevan dengan mode aktif.
     function updateFilterBadge() {
         var count = 0;
-        $('#recordMoreFilters [data-record-filter]').each(function () {
-            var mode = $(this).closest('[data-record-mode]').attr('data-record-mode');
-            if (mode && quickFilter !== 'all' && mode !== quickFilter) return;
-            if (($(this).val() || 'all') !== 'all') count++;
+        $('#recordMoreFilters input[type="radio"][data-record-modal-filter]:checked').each(function () {
+            if (String($(this).val()) !== 'all' && String($(this).val()) !== 'newest') count++;
+        });
+        $('#recordMoreFilters input[type="checkbox"][data-record-modal-filter]:checked').each(function () {
+            if (String($(this).val()) !== 'all') count++;
         });
         $('#recordMoreFiltersCount').text(count).toggleClass('d-none', count === 0);
     }
 
     function closeMoreFilters() {
-        $('#recordMoreFiltersToggle').attr('aria-expanded', 'false').removeClass('is-open');
-        $('#recordMoreFilters').stop(true, true).slideUp(250);
+        $('#recordMoreFiltersModal').modal('hide');
+    }
+
+    function resetRecordFilters() {
+        $('#recordSearch').val('');
+        $('#recordFilterBar select[data-record-filter]').val('all');
+        $('#recordMoreFilters input[type="checkbox"][data-record-modal-filter]').prop('checked', false);
+        $('#recordMoreFilters input[name="recordModalType[]"][value="all"]').prop('checked', true);
+        $('#recordMoreFilters input[type="radio"][value="all"]').prop('checked', true);
     }
 
     // ── Events ──────────────────────────────────────────────────────────────
@@ -317,21 +461,26 @@ function initLearningRecord() {
     });
 
     // Buka/tutup panel More Filters (slide ±250 ms, tanpa request server).
-    $('#recordMoreFiltersToggle').on('click', function () {
-        var expanded = $(this).attr('aria-expanded') === 'true';
-        $(this).attr('aria-expanded', String(!expanded)).toggleClass('is-open', !expanded);
-        $('#recordMoreFilters').stop(true, true).slideToggle(250);
+    $('#recordMoreFiltersModal').on('shown.bs.modal', function () {
+        $('#recordFilterType').trigger('focus');
     });
 
     // Apply: filter sudah live saat berubah — tombol ini hanya menutup panel.
-    $('#recordApplyFilter').on('click', function () {
+    $('#recordApplyFilter, .record-apply-filter').on('click', function () {
         currentPage = 1;
         render();
         closeMoreFilters();
     });
 
-    // Multi filter: setiap perubahan dropdown langsung dirender ulang.
-    $('#recordFilterBar [data-record-filter]').on('change', function () {
+    // Multi filter: setiap perubahan kontrol langsung dirender ulang.
+    $('#recordFilterBar [data-record-filter], #recordMoreFilters [data-record-modal-filter]').on('change', function () {
+        if ($(this).attr('name') === 'recordModalType[]') {
+            if ($(this).val() === 'all' && this.checked) {
+                $('#recordMoreFilters input[name="recordModalType[]"]').not(this).prop('checked', false);
+            } else if ($(this).val() !== 'all' && this.checked) {
+                $('#recordMoreFilters input[name="recordModalType[]"][value="all"]').prop('checked', false);
+            }
+        }
         currentPage = 1;
         updateFilterBadge();
         render();
@@ -339,9 +488,8 @@ function initLearningRecord() {
 
     // Reset: kosongkan search + seluruh filter lanjutan. Mode aktif
     // dipertahankan — Quick Filter adalah mode tampilan, bukan filter.
-    $('#recordClearFilter').on('click', function () {
-        $('#recordSearch').val('');
-        $('#recordFilterBar [data-record-filter]').val('all');
+    $('#recordClearFilter, .record-clear-filter').on('click', function () {
+        resetRecordFilters();
         currentPage = 1;
         updateFilterBadge();
         render();

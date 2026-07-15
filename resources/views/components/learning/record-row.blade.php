@@ -11,6 +11,11 @@
 
     // Search memakai title + classification untuk Content dan Playlist.
     $searchText = $row['title'] . ' ' . $row['classification'];
+    $learningProgram = str_contains(strtolower($row['subtitle'] ?? ''), 'mandatory') ? 'mandatory'
+        : (str_contains(strtolower($row['subtitle'] ?? ''), 'optional') ? 'optional' : '');
+    $progressValue = (int) ($row['progress'] ?? 0);
+    $learningStatus = $progressValue >= 100 ? 'completed'
+        : ($progressValue <= 0 ? 'not_started' : 'ongoing');
     $durationSeconds = max(0, (int) ($row['duration_sort'] ?? 0));
     $durationDisplay = sprintf(
         '%02d:%02d:%02d',
@@ -26,6 +31,8 @@
     data-search="{{ mb_strtolower($searchText) }}"
     data-type="{{ $row['type'] }}"
     data-classification="{{ $row['classification'] }}"
+    data-learning-program="{{ $learningProgram }}"
+    data-learning-status="{{ $learningStatus }}"
     data-playlists="{{ implode(',', $row['playlist_ids']) }}"
     data-learning-hour="{{ $row['learning_hour_value'] ?? '' }}"
     data-year="{{ $finishTimestamp?->year }}"
