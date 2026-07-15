@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assesment;
 use App\Models\AssesmentResult;
+use App\Services\Learning\CompletedPlaylistService;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -14,6 +15,10 @@ use Illuminate\Support\Facades\Auth;
  */
 class LearningAssessmentController extends Controller
 {
+    public function __construct(private readonly CompletedPlaylistService $completedPlaylistService)
+    {
+    }
+
     /**
      * Render the Assessment tab fragment requested by the learning dashboard.
      */
@@ -21,14 +26,17 @@ class LearningAssessmentController extends Controller
     {
         $user   = Auth::user();
         $userId = Auth::id();
+        $completedPlaylistIds = $this->completedPlaylistService
+            ->forUser((int) $userId)
+            ->pluck('id');
 
         return view('user.learning.dashboard-partials.assessment', [
-            'assessments' => $this->getUserAssessments($user, $userId),
+            'assessments' => $this->getUserAssessments($user, $userId, $completedPlaylistIds),
             'result'      => $this->getUserAssessmentResults($userId),
         ]);
     }
 
-    private function getUserAssessments($user, $userId)
+    private function getUserAssessments($user, $userId, $completedPlaylistIds)
     {
         return Assesment::with([
                 'assesments_assigned',
@@ -36,7 +44,7 @@ class LearningAssessmentController extends Controller
                 'scores'      => fn ($q) => $q->where('user_id', $userId),
                 'trainingplan',
             ])
-            ->where(function ($query) use ($user, $userId) {
+            ->where(function ($query) use ($user, $userId, $completedPlaylistIds) {
                 $query->whereHas('assesments_assigned', function ($q) use ($user) {
                     $q->where('assigned_id', $user->id_emp)
                         ->orWhere('assigned_id', $user->id_team ?? $user->id_tean)
@@ -46,6 +54,11 @@ class LearningAssessmentController extends Controller
                     $q->whereHas('contentuser', function ($q) use ($userId) {
                         $q->where('progress', '>=', 100)->where('user_id', $userId);
                     });
+                })
+                ->orWhere(function ($q) use ($completedPlaylistIds) {
+                    $q->where('type', 'trainingplan')
+                        ->where('status', 'OK')
+                        ->whereIn('trainingplan_id', $completedPlaylistIds);
                 })
                 ->orWhereHas('scores', function ($q) use ($userId) {
                     $q->where('user_id', $userId);

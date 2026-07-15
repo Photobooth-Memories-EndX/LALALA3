@@ -6,8 +6,8 @@ use App\Models\Certificate;
 use App\Models\CertificateSetting;
 use App\Models\ContentUser;
 use App\Models\TrainingPlan;
-use App\Models\TrainingPlanDetail;
 use App\Services\CertificateEligibilityService;
+use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningHourService;
 use App\Support\DurationFormatter;
 use Illuminate\Support\Carbon;
@@ -31,8 +31,10 @@ use Illuminate\Support\Facades\DB;
  */
 class LearningRecordController extends Controller
 {
-    public function __construct(private readonly LearningHourService $learningHourService)
-    {
+    public function __construct(
+        private readonly LearningHourService $learningHourService,
+        private readonly CompletedPlaylistService $completedPlaylistService,
+    ) {
     }
 
     /**
@@ -43,7 +45,7 @@ class LearningRecordController extends Controller
     {
         $userId = (int) Auth::id();
 
-        $completedPlaylists = $this->getCompletedPlaylists($userId);
+        $completedPlaylists = $this->completedPlaylistService->forUser($userId);
         $cert               = $this->certificateContext($eligibilityService);
 
         // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
@@ -145,50 +147,6 @@ class LearningRecordController extends Controller
             ->where('finish', '1')
             ->get()
             ->filter(fn ($cu) => $cu->content !== null)
-            ->values();
-    }
-
-    /**
-     * Playlist (Training Plan) yang telah 100% selesai — agregasi SQL via subquery,
-     * tanpa query di dalam foreach.
-     *
-     * @return \Illuminate\Support\Collection<int, TrainingPlan>
-     */
-    private function getCompletedPlaylists(int $userId)
-    {
-        return TrainingPlan::query()
-            ->select('trainingplan.id', 'trainingplan.title', 'trainingplan.slug', 'trainingplan.thumbnail', 'trainingplan.total_duration_seconds')
-            ->whereExists(function ($q) use ($userId) {
-                $q->from('trainingplandetail')
-                    ->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId)
-                    ->where('content_users.finish', '1');
-            })
-            ->selectSub(
-                TrainingPlanDetail::selectRaw('COUNT(*)')
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id'),
-                'total_items'
-            )
-            ->selectSub(
-                ContentUser::selectRaw('COUNT(*)')
-                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId)
-                    ->where('content_users.finish', '1'),
-                'finished_items'
-            )
-            ->selectSub(
-                ContentUser::selectRaw('MAX(content_users.updated_at)')
-                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId)
-                    ->where('content_users.finish', '1'),
-                'last_finished_at'
-            )
-            ->orderByDesc('last_finished_at')
-            ->get()
-            ->filter(fn (TrainingPlan $p) => (int) $p->total_items > 0 && (int) $p->finished_items >= (int) $p->total_items)
             ->values();
     }
 
