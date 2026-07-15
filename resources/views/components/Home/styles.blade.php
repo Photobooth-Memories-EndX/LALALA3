@@ -23,236 +23,463 @@ a { text-decoration: none; }
    HERO
 ===================================================== */
 
-.home-modern-hero {
-    background: linear-gradient(135deg, #0f2247 0%, #1e3a8a 100%);
-    border-radius: 24px;
-    padding: 36px 40px;
-    position: relative;
-    overflow: hidden;
+.home-modern-hero{
+    background:linear-gradient(
+        135deg,
+        #0041b9 0%,
+        #1248a7 45%,
+        #2a72ca 100%
+    );
+    border-radius:24px;
+    padding:52px 56px;
+    position:relative;
+    overflow:hidden;
+    min-height:340px;
 }
 
-.home-modern-hero::before {
-    content: '';
-    position: absolute;
-    width: 380px;
-    height: 380px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.04);
-    top: -160px;
-    right: -100px;
-    pointer-events: none;
+.home-modern-hero::before{
+    content:"";
+    position:absolute;
+    width:420px;
+    height:420px;
+    border-radius:50%;
+    background:rgba(255,255,255,.04);
+    top:-180px;
+    right:-120px;
 }
 
-.home-modern-hero::after {
-    content: '';
-    position: absolute;
-    width: 220px;
-    height: 220px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.03);
-    bottom: -90px;
-    left: 35%;
-    pointer-events: none;
+.home-modern-hero::after{
+    content:"";
+    position:absolute;
+    width:240px;
+    height:240px;
+    border-radius:50%;
+    background:rgba(255,255,255,.03);
+    left:35%;
+    bottom:-110px;
 }
 
-.home-modern-hero-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(255,255,255,.12);
-    color: rgba(255,255,255,.9);
-    padding: 6px 14px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .3px;
-    margin-bottom: 16px;
+/* =====================================================
+   GRID
+===================================================== */
+
+.home-modern-hero .row{
+    min-height:240px;
 }
 
-.home-modern-hero-greeting {
-    font-size: 20px;
-    font-weight: 400;
-    color: rgba(255,255,255,.72);
-    margin-bottom: 2px;
-    line-height: 1.2;
+.home-modern-hero .col-lg-8{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
 }
 
-.home-modern-hero-name {
-    font-size: 34px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 8px;
-    line-height: 1.15;
+.home-modern-hero .col-lg-4{
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
-.home-modern-hero-subtitle {
-    font-size: 15px;
-    color: rgba(255,255,255,.72);
-    margin-bottom: 0;
+/* =====================================================
+   LABEL
+===================================================== */
+
+.home-modern-hero-label{
+
+    display:inline-flex;
+    align-items:center;
+
+    gap:6px;
+
+    background:rgba(255,255,255,.12);
+
+    color:#fff;
+
+    padding:8px 16px;
+
+    border-radius:999px;
+
+    font-size:12px;
+
+    font-weight:600;
+
+    width:fit-content;
+
+    margin-bottom:28px;
 }
 
-.home-modern-hero-stats {
-    display: flex;
-    gap: 10px;
-    margin-top: 16px;
-    flex-wrap: wrap;
+/* =====================================================
+   PROFILE
+===================================================== */
+
+.home-modern-hero-greeting{
+
+    font-size:20px;
+
+    font-weight:400;
+
+    color:rgba(255,255,255,.75);
+
+    line-height:1.2;
+
+    margin-bottom:12px;
 }
 
-.home-modern-hero-stat-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 7px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 500;
-    color: rgba(255,255,255,.85);
+.home-modern-hero-name{
+
+    font-size:48px;
+
+    font-weight:700;
+
+    color:#fff;
+
+    line-height:1.08;
+
+    margin-bottom:18px;
+
+    letter-spacing:-0.5px;
 }
 
-.home-modern-hero-stat-pill strong {
-    font-size: 15px;
-    font-weight: 700;
-    color: #fff;
+.home-modern-hero-subtitle{
+
+    font-size:17px;
+
+    color:rgba(255,255,255,.75);
+
+    line-height:1.8;
+
+    margin-bottom:34px;
 }
 
-.home-modern-hero-stat-blue { background: rgba(56,189,248,.15); }
-.home-modern-hero-stat-green { background: rgba(34,197,94,.15); }
+/* =====================================================
+   KEEP LEARNING
+===================================================== */
 
-.home-modern-hero-badges {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-    flex-wrap: wrap;
+.home-modern-hero-stats{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:20px;
+
+    margin-top:0;
 }
 
-.home-modern-badge-streak {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(251,191,36,.15);
-    color: #fde68a;
-    padding: 7px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
+.home-modern-hero-stat-pill{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:11px 22px;
+
+    border-radius:12px;
+
+    background:rgba(255, 255, 255, 0.15);
+
+    color:#fff;
+
+    font-size:18px;
+
+    font-weight:600;
+
+    transition:.25s;
 }
 
-.home-modern-badge-progress {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(34,197,94,.15);
-    color: #86efac;
-    padding: 7px 14px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
+.home-modern-hero-stat-pill:hover{
+
+    background:rgba(34,197,94,.25);
+
+    transform:translateY(-2px);
 }
 
-/* Donut */
-.home-modern-donut-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* =====================================================
+   DONUT
+===================================================== */
+
+.home-modern-donut-wrap{
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:18px;
+
+    width:100%;
 }
 
-.home-modern-donut-outer {
-    width: 184px;
-    height: 184px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    box-shadow: 0 10px 28px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.06);
-    transition: transform .25s ease, box-shadow .25s ease;
+.home-modern-donut-outer{
+
+    width:190px;
+
+    height:190px;
+
+    border-radius:50%;
+
+    position:relative;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    box-shadow:
+
+        0 12px 32px rgba(0,0,0,.30),
+
+        inset 0 0 0 1px rgba(255,255,255,.06);
+
+    transition:.25s;
 }
 
-.home-modern-donut-outer:hover {
-    transform: scale(1.03);
-    box-shadow: 0 16px 40px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.08);
+.home-modern-donut-outer:hover{
+
+    transform:scale(1.03);
 }
 
-.home-modern-donut-hit {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: transparent;
-    cursor: pointer;
-    transition: background .2s ease;
+.home-modern-donut-inner{
+
+    width:136px;
+
+    height:136px;
+
+    border-radius:50%;
+
+    background:#0044ff85;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
 }
 
-.home-modern-donut-hit-completed:hover { background: rgba(34,197,94,.28); }
-.home-modern-donut-hit-ongoing:hover { background: rgba(56,189,248,.28); }
+.home-modern-donut-inner strong{
 
-.home-modern-donut-inner {
-    width: 132px;
-    height: 132px;
-    border-radius: 50%;
-    background: #0f2247;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+    font-size:31px;
+
+    color:#fff;
+
+    font-weight:700;
+
+    line-height:1;
 }
 
-.home-modern-donut-inner strong {
-    font-size: 30px;
-    font-weight: 700;
-    line-height: 1;
-    color: #fff;
-    display: block;
+.home-modern-donut-inner small{
+
+    margin-top:8px;
+
+    color:rgba(255,255,255,.7);
+
+    font-size:11px;
 }
 
-.home-modern-donut-inner small {
-    font-size: 11px;
-    color: rgba(255,255,255,.7);
-    margin-top: 5px;
-    display: block;
+/* =====================================================
+   COMPLETED / ONGOING
+===================================================== */
+
+.home-modern-stats-row{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:30px;
+
+    margin-top:2px;
 }
 
-.home-modern-donut-legend {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    margin-top: 12px;
+.home-modern-stat-item{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    color:rgba(255,255,255,.82);
+
+    font-size:20px;
+
+    font-weight:500;
 }
 
-.home-modern-donut-legend-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: rgba(255,255,255,.75);
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background .2s ease, color .2s ease;
+.home-modern-stat-item strong{
+
+    color:#fff;
+
+    font-size:15px;
+
+    font-weight:700;
 }
 
-.home-modern-donut-legend-item:hover {
-    background: rgba(255,255,255,.08);
-    color: #fff;
+.home-modern-stat-dot{
+
+    width:8px;
+
+    height:8px;
+
+    border-radius:50%;
 }
 
-.home-modern-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    flex-shrink: 0;
+.home-modern-stat-dot.completed{
+
+    background:#22c55e;
 }
 
-.home-modern-dot.completed { background: #22c55e; }
-.home-modern-dot.ongoing { background: #38bdf8; }
+.home-modern-stat-dot.ongoing{
 
-.home-modern-donut-wrap:has(.home-modern-donut-legend-item.completed:hover) .home-modern-donut-hit-completed {
-    background: rgba(34,197,94,.28);
+    background:#38bdf8;
 }
-.home-modern-donut-wrap:has(.home-modern-donut-legend-item.ongoing:hover) .home-modern-donut-hit-ongoing {
-    background: rgba(56,189,248,.28);
+
+/* =====================================================
+   LEARNING HOUR
+===================================================== */
+
+.home-modern-learning-hours{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:10px;
+
+    min-width:190px;
+
+    height:48px;
+
+    margin-top:4px;
+
+    border-radius:10px;
+
+    background:rgba(255,255,255,.12);
+
+    /*border:1px solid rgba(255,255,255,.18);*/
+
+    backdrop-filter:blur(10px);
+
+    color:#fff;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    transition:.25s;
+}
+
+.home-modern-learning-hours:hover{
+
+    background:rgba(255,255,255,.18);
+
+    border-color:rgba(255,255,255,.28);
+}
+
+.home-modern-learning-hours i{
+
+    font-size:16px;
+}
+
+/* =====================================================
+   HIT AREA
+===================================================== */
+
+.home-modern-donut-hit{
+
+    position:absolute;
+
+    inset:0;
+
+    border-radius:50%;
+
+    cursor:pointer;
+
+    background:transparent;
+
+    transition:.2s;
+}
+
+.home-modern-donut-hit-completed:hover{
+
+    background:rgba(34,197,94,.28);
+}
+
+.home-modern-donut-hit-ongoing:hover{
+
+    background:rgba(56,189,248,.28);
+}
+
+/* =====================================================
+   HIDE LEGEND
+===================================================== */
+
+.home-modern-donut-legend,
+.home-modern-donut-legend-item{
+    display:none;
+}
+
+.home-modern-donut-wrap:has(.home-modern-donut-legend-item.completed:hover)
+.home-modern-donut-hit-completed{
+    display:none;
+}
+
+.home-modern-donut-wrap:has(.home-modern-donut-legend-item.ongoing:hover)
+.home-modern-donut-hit-ongoing{
+    display:none;
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width:991px){
+
+.home-modern-hero{
+
+padding:40px 30px;
+
+text-align:center;
+
+}
+
+.home-modern-hero .col-lg-8{
+
+align-items:center;
+
+margin-bottom:40px;
+
+}
+
+.home-modern-hero-name{
+
+font-size:38px;
+
+}
+
+.home-modern-hero-subtitle{
+
+margin-bottom:28px;
+
+}
+
+.home-modern-stats-row{
+
+gap:18px;
+
+}
+
 }
 
 /* =====================================================
@@ -714,6 +941,23 @@ a { text-decoration: none; }
     color: #64748b;
     display: flex;
     align-items: center;
+}
+
+/* =====================================================
+   DOCUMENT THUMBNAILS — 16:9 Landscape
+===================================================== */
+
+.home-modern-document-thumb {
+    aspect-ratio: 16 / 9;
+    background: #f8fafc;
+}
+
+.home-modern-document-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .3s;
 }
 
 /* =====================================================

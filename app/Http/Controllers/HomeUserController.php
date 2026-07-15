@@ -8,13 +8,14 @@ use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\EventPhoto;
 use App\Models\TrainingPlan;
+use App\Services\LearningAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 
 class HomeUserController extends Controller
 {
-    public function index()
+    public function index(LearningAnalyticsService $analyticsService)
     {
         // Content has no image column: the thumbnail comes from YouTube
         // (via `link`) or from storage/files/content/{id}/thumb.jpg on disk,
@@ -157,6 +158,9 @@ class HomeUserController extends Controller
 
         $totalPlaylist = $playlist->count();
 
+        // Learning Hours — reused from My Learning page (same calculation)
+        $learningHours = $analyticsService->userLearningHours((int) auth()->id());
+
         return view(
             'homepage',
             compact(
@@ -177,6 +181,7 @@ class HomeUserController extends Controller
                 'upcomingDeadlines',
                 'continueCourse',
                 'continuePeriod',
+                'learningHours',
             )
         );
     }

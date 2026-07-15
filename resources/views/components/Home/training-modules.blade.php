@@ -105,7 +105,7 @@
                     <div class="home-modern-slide-item">
                         <a href="{{ route('content.user.view', $pdf->slug) }}" class="home-modern-video-card">
 
-                            <div class="home-modern-video-thumb">
+                            <div class="home-modern-video-thumb home-modern-document-thumb">
                                 @php
                                     $docSrc = 'storage/files/content/' . $pdf->id . '/thumb.jpg';
                                     $docUrl = (\File::exists(public_path($docSrc)) && !is_dir(public_path($docSrc)))
@@ -114,7 +114,7 @@
                                 <img src="{{ $docUrl }}"
                                      alt="{{ $pdf->title }}"
                                      onerror="this.src='{{ asset('pdf.png') }}'"
-                                     style="object-fit:contain; background:#f8fafc;">
+                                     class="home-modern-document-img">
                             </div>
 
                             <div class="home-modern-video-body">
