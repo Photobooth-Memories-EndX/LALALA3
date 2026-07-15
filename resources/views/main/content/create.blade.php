@@ -14,7 +14,7 @@
         <div class="container-xl">
             <div class="row align-items-center">
                 <div class="col">
-                    <div class="page-pretitle">Manage / Content</div>
+                    <div class="page-pretitle">Manage / Content</div>/
                     <h2 class="owl-page-title mb-1">{{ $title }}</h2>
                     <div class="owl-page-subtitle">Complete the form below to add new content.</div>
                 </div>

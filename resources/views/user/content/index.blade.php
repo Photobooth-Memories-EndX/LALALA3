@@ -34,6 +34,10 @@
 
         [data-bs-theme="dark"] .content-card-deadline,
         body.dark-mode .content-card-deadline { color: #94a3b8; }
+
+        .content-advanced-empty {
+            display: none;
+        }
     </style>
 @endsection
 
@@ -43,7 +47,7 @@
 
         @php
             $selectedCategory = $classifications->firstWhere('id', $filterClassification);
-            $hasActiveFilter = filled($filterSearch) || filled($filterClassification) || filled($filterType) || filled($filterAuthor) || filled($filterViewOrder) || $filterDateOrder !== 'newest';
+            $hasActiveFilter = filled($filterSearch) || filled($filterClassification) || filled($filterType) || filled($filterAuthor) || filled($filterViewOrder) || $filterDateOrder !== 'newest' || filled(request('from_date')) || filled(request('to_date')) || request('duration', 'all') !== 'all' || filled(request('total_pages'));
         @endphp
 
         {{-- HERO --}}
@@ -97,7 +101,8 @@
 
                 <div class="row row-cards">
                     @forelse ($contents as $item)
-                        <div class="col-sm-6 col-xl-4">
+                        <div class="col-sm-6 col-xl-4 content-grid-item"
+                             data-content-duration="{{ $item->duration }}">
                             @if (in_array($item->type, ['Video', 'YouTube']))
                                 @include('user.content.components.card-video', ['item' => $item])
                             @else
@@ -122,6 +127,18 @@
                             </div>
                         </div>
                     @endforelse
+                </div>
+
+                <div id="contentAdvancedEmpty" class="content-advanced-empty mt-3">
+                    <div class="empty card card-body rounded-4 shadow-sm border-0">
+                        <div class="empty-img">
+                            <i class="ti ti-filter-off" style="font-size: 64px;"></i>
+                        </div>
+                        <p class="empty-title">Content not found for selected filters</p>
+                        <p class="empty-subtitle text-muted">
+                            Tidak ada content pada halaman ini yang sesuai dengan kombinasi filter lanjutan.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="mt-4">
@@ -207,4 +224,87 @@
 
     </div>
 </div>
+@endsection
+
+@section('script')
+    <script>
+        $(function () {
+            const selectedDuration = @json(request('duration', 'all'));
+
+            function parseDurationToSeconds(value) {
+                if (!value) {
+                    return null;
+                }
+
+                const parts = String(value)
+                    .trim()
+                    .split(':')
+                    .map(function (part) {
+                        return Number(part);
+                    });
+
+                if (parts.some(function (part) { return Number.isNaN(part); })) {
+                    return null;
+                }
+
+                if (parts.length === 2) {
+                    return (parts[0] * 60) + parts[1];
+                }
+
+                if (parts.length === 3) {
+                    return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+                }
+
+                return null;
+            }
+
+            function durationMatchesBucket(seconds, bucket) {
+                if (!bucket || bucket === 'all') {
+                    return true;
+                }
+
+                if (seconds === null) {
+                    return false;
+                }
+
+                switch (bucket) {
+                    case 'lt10':
+                        return seconds < 600;
+                    case '10-30':
+                        return seconds >= 600 && seconds <= 1800;
+                    case '30-60':
+                        return seconds > 1800 && seconds <= 3600;
+                    case 'gt60':
+                        return seconds > 3600;
+                    default:
+                        return true;
+                }
+            }
+
+            function applyAdvancedContentFilters() {
+                if (selectedDuration === 'all') {
+                    return;
+                }
+
+                let visibleCount = 0;
+
+                $('.content-grid-item').each(function () {
+                    const $item = $(this);
+                    const seconds = parseDurationToSeconds($item.data('content-duration'));
+                    const durationMatches = durationMatchesBucket(seconds, selectedDuration);
+                    const isVisible = durationMatches;
+
+                    $item.toggleClass('d-none', !isVisible);
+
+                    if (isVisible) {
+                        visibleCount++;
+                    }
+                });
+
+                $('#contentAdvancedEmpty').toggle(visibleCount === 0);
+            }
+
+            applyAdvancedContentFilters();
+        });
+    </script>
 @endsection

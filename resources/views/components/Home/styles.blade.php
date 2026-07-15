@@ -20,466 +20,291 @@
 a { text-decoration: none; }
 
 /* =====================================================
-   HERO
+   HERO CONTAINER
 ===================================================== */
-
-.home-modern-hero{
-    background:linear-gradient(
-        135deg,
-        #0041b9 0%,
-        #1248a7 45%,
-        #2a72ca 100%
-    );
-    border-radius:24px;
-    padding:52px 56px;
-    position:relative;
-    overflow:hidden;
-    min-height:340px;
+.home-modern-hero {
+    background: linear-gradient(135deg, #0041b9 0%, #1248a7 45%, #2a72ca 100%);
+    border-radius: 24px;
+    padding: 16px 56px;
+    position: relative;
+    overflow: hidden;
+    min-height: 340px;
 }
 
-.home-modern-hero::before{
-    content:"";
-    position:absolute;
-    width:420px;
-    height:420px;
-    border-radius:50%;
-    background:rgba(255,255,255,.04);
-    top:-180px;
-    right:-120px;
+.home-modern-hero::before {
+    content: "";
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .04);
+    top: -150px;
+    right: -120px;
+    pointer-events: none;
 }
 
-.home-modern-hero::after{
-    content:"";
-    position:absolute;
-    width:240px;
-    height:240px;
-    border-radius:50%;
-    background:rgba(255,255,255,.03);
-    left:35%;
-    bottom:-110px;
+.home-modern-hero::after {
+    content: "";
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .03);
+    left: 35%;
+    bottom: -110px;
+    pointer-events: none;
 }
 
 /* =====================================================
-   GRID
+   LAYOUT GRID
 ===================================================== */
-
-.home-modern-hero .row{
-    min-height:240px;
+.home-modern-hero .row {
+    min-height: 240px;
 }
 
-.home-modern-hero .col-lg-8{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
+.home-modern-hero .col-lg-8 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-.home-modern-hero .col-lg-4{
-    display:flex;
-    justify-content:center;
-    align-items:center;
+.home-modern-hero .col-lg-4 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* =====================================================
-   LABEL
+   TYPOGRAPHY & ACTIONS
 ===================================================== */
+.home-modern-hero-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    width: fit-content;
+    margin-bottom: 28px;
+}
 
-.home-modern-hero-label{
+.home-modern-hero-greeting {
+    font-size: 20px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, .75);
+    line-height: 1.2;
+    margin-bottom: 12px;
+}
 
-    display:inline-flex;
-    align-items:center;
+.home-modern-hero-name {
+    font-size: 48px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.08;
+    margin-bottom: 18px;
+    letter-spacing: -0.5px;
+}
 
-    gap:6px;
+.home-modern-hero-subtitle {
+    font-size: 17px;
+    color: rgba(255, 255, 255, .75);
+    line-height: 1.8;
+    margin-bottom: 34px;
+}
 
-    background:rgba(255,255,255,.12);
+.home-modern-hero-stat-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 22px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    transition: .25s;
+}
 
-    color:#fff;
-
-    padding:8px 16px;
-
-    border-radius:999px;
-
-    font-size:12px;
-
-    font-weight:600;
-
-    width:fit-content;
-
-    margin-bottom:28px;
+.home-modern-hero-stat-pill:hover {
+    background: rgba(34, 197, 94, .25);
+    transform: translateY(-2px);
 }
 
 /* =====================================================
-   PROFILE
+   RIGHT AREA SECTION (SUMMARY TITLE & DONUT)
 ===================================================== */
-
-.home-modern-hero-greeting{
-
-    font-size:20px;
-
-    font-weight:400;
-
-    color:rgba(255,255,255,.75);
-
-    line-height:1.2;
-
-    margin-bottom:12px;
+.home-modern-donut-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 200px; /* Dipersempit sedikit agar teks pas di bawah diameter lingkaran */
 }
 
-.home-modern-hero-name{
-
-    font-size:48px;
-
-    font-weight:700;
-
-    color:#fff;
-
-    line-height:1.08;
-
-    margin-bottom:18px;
-
-    letter-spacing:-0.5px;
-}
-
-.home-modern-hero-subtitle{
-
-    font-size:17px;
-
-    color:rgba(255,255,255,.75);
-
-    line-height:1.8;
-
-    margin-bottom:34px;
-}
-
-/* =====================================================
-   KEEP LEARNING
-===================================================== */
-
-.home-modern-hero-stats{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:20px;
-
-    margin-top:0;
-}
-
-.home-modern-hero-stat-pill{
-
-    display:inline-flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    padding:11px 22px;
-
-    border-radius:12px;
-
-    background:rgba(255, 255, 255, 0.15);
-
-    color:#fff;
-
-    font-size:18px;
-
-    font-weight:600;
-
-    transition:.25s;
-}
-
-.home-modern-hero-stat-pill:hover{
-
-    background:rgba(34,197,94,.25);
-
-    transform:translateY(-2px);
-}
-
-/* =====================================================
-   DONUT
-===================================================== */
-
-.home-modern-donut-wrap{
-
-    display:flex;
-
-    flex-direction:column;
-
-    justify-content:center;
-
-    align-items:center;
-
-    gap:18px;
-
-    width:100%;
-}
-
-.home-modern-donut-outer{
-
-    width:190px;
-
-    height:190px;
-
-    border-radius:50%;
-
-    position:relative;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    box-shadow:
-
-        0 12px 32px rgba(0,0,0,.30),
-
-        inset 0 0 0 1px rgba(255,255,255,.06);
-
-    transition:.25s;
-}
-
-.home-modern-donut-outer:hover{
-
-    transform:scale(1.03);
-}
-
-.home-modern-donut-inner{
-
-    width:136px;
-
-    height:136px;
-
-    border-radius:50%;
-
-    background:#0044ff85;
-
-    display:flex;
-
-    flex-direction:column;
-
-    justify-content:center;
-
-    align-items:center;
-}
-
-.home-modern-donut-inner strong{
-
-    font-size:31px;
-
-    color:#fff;
-
-    font-weight:700;
-
-    line-height:1;
-}
-
-.home-modern-donut-inner small{
-
-    margin-top:8px;
-
-    color:rgba(255,255,255,.7);
-
-    font-size:11px;
-}
-
-/* =====================================================
-   COMPLETED / ONGOING
-===================================================== */
-
-.home-modern-stats-row{
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    gap:30px;
-
-    margin-top:2px;
-}
-
-.home-modern-stat-item{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
-    color:rgba(255,255,255,.82);
-
-    font-size:20px;
-
-    font-weight:500;
-}
-
-.home-modern-stat-item strong{
-
-    color:#fff;
-
-    font-size:15px;
-
-    font-weight:700;
-}
-
-.home-modern-stat-dot{
-
-    width:8px;
-
-    height:8px;
-
-    border-radius:50%;
-}
-
-.home-modern-stat-dot.completed{
-
-    background:#22c55e;
-}
-
-.home-modern-stat-dot.ongoing{
-
-    background:#38bdf8;
-}
-
-/* =====================================================
-   LEARNING HOUR
-===================================================== */
-
-.home-modern-learning-hours{
-
-    display:inline-flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:10px;
-
-    min-width:190px;
-
-    height:48px;
-
-    margin-top:4px;
-
-    border-radius:10px;
-
-    background:rgba(255,255,255,.12);
-
-    /*border:1px solid rgba(255,255,255,.18);*/
-
-    backdrop-filter:blur(10px);
-
-    color:#fff;
-
-    font-size:14px;
-
-    font-weight:600;
-
-    transition:.25s;
-}
-
-.home-modern-learning-hours:hover{
-
-    background:rgba(255,255,255,.18);
-
-    border-color:rgba(255,255,255,.28);
-}
-
-.home-modern-learning-hours i{
-
+.home-modern-summary-title {
+    color: rgba(255, 255, 255, 0.85);
     font-size:16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-align: center;
+    margin-bottom: 2px;
+    width: 100%;
+}
+
+.home-modern-donut-outer {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .15), inset 0 0 0 1px rgba(255, 255, 255, .06);
+    transition: .25s;
+}
+
+.home-modern-donut-outer:hover {
+    transform: scale(1.02);
+}
+
+.home-modern-donut-inner {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #114fb7;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+}
+
+.home-modern-donut-inner strong {
+    font-size: 34px;
+    color: #fff;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.home-modern-donut-inner small {
+    margin-top: 4px;
+    color: rgba(255, 255, 255, .65);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
 }
 
 /* =====================================================
-   HIT AREA
+   CLEAN & OPEN LIST DESIGN (NO BOX / NO TABLE)
 ===================================================== */
-
-.home-modern-donut-hit{
-
-    position:absolute;
-
-    inset:0;
-
-    border-radius:50%;
-
-    cursor:pointer;
-
-    background:transparent;
-
-    transition:.2s;
+.tabler-clean-list-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 4px;
 }
 
-.home-modern-donut-hit-completed:hover{
-
-    background:rgba(34,197,94,.28);
+.tabler-clean-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
 
-.home-modern-donut-hit-ongoing:hover{
+.tabler-clean-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-    background:rgba(56,189,248,.28);
+.tabler-clean-meta .clean-label {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.clean-value {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+/* Status Indicator Dots */
+.home-modern-stat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.home-modern-stat-dot.total {
+    background: #e2e8f0;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+.home-modern-stat-dot.completed {
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.home-modern-stat-dot.ongoing {
+    background: #38bdf8;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
 }
 
 /* =====================================================
-   HIDE LEGEND
+   HIT AREA HOVER
 ===================================================== */
-
-.home-modern-donut-legend,
-.home-modern-donut-legend-item{
-    display:none;
+.home-modern-donut-hit {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    background: transparent;
+    transition: .2s;
+    z-index: 1;
 }
 
-.home-modern-donut-wrap:has(.home-modern-donut-legend-item.completed:hover)
-.home-modern-donut-hit-completed{
-    display:none;
+.home-modern-donut-hit-completed:hover {
+    background: rgba(34, 197, 94, .12);
 }
 
-.home-modern-donut-wrap:has(.home-modern-donut-legend-item.ongoing:hover)
-.home-modern-donut-hit-ongoing{
-    display:none;
+.home-modern-donut-hit-ongoing:hover {
+    background: rgba(56, 189, 248, .12);
 }
 
 /* =====================================================
    RESPONSIVE
 ===================================================== */
+@media (max-width: 991px) {
+    .home-modern-hero {
+        padding: 40px 30px;
+        text-align: center;
+    }
 
-@media (max-width:991px){
+    .home-modern-hero .col-lg-8 {
+        align-items: center;
+        margin-bottom: 32px;
+    }
 
-.home-modern-hero{
+    .home-modern-hero-name {
+        font-size: 38px;
+    }
 
-padding:40px 30px;
+    .home-modern-hero-subtitle {
+        margin-bottom: 24px;
+    }
 
-text-align:center;
-
-}
-
-.home-modern-hero .col-lg-8{
-
-align-items:center;
-
-margin-bottom:40px;
-
-}
-
-.home-modern-hero-name{
-
-font-size:38px;
-
-}
-
-.home-modern-hero-subtitle{
-
-margin-bottom:28px;
-
-}
-
-.home-modern-stats-row{
-
-gap:18px;
-
-}
-
+    .home-modern-donut-wrap {
+        margin: 0 auto;
+    }
 }
 
 /* =====================================================

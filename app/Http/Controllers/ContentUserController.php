@@ -22,6 +22,8 @@ class ContentUserController extends Controller
         $filterDateOrder = $request->date_order ?? 'newest';
         $filterAuthor = $request->author;
         $filterViewOrder = $request->view_order;
+        $filterFromDate = $request->from_date;
+        $filterToDate = $request->to_date;
 
         $classifications = Classification::select('id', 'classification_name', 'slug')
             ->orderBy('classification_name', 'asc')
@@ -60,6 +62,14 @@ class ContentUserController extends Controller
             $queryContent->where('author', $filterAuthor);
         }
 
+        if ($request->filled('from_date')) {
+            $queryContent->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $queryContent->whereDate('created_at', '<=', $request->to_date);
+        }
+
         if ($filterViewOrder === 'most_viewed') {
             $queryContent->orderBy('views', 'desc');
         } elseif ($filterViewOrder === 'least_viewed') {
@@ -83,7 +93,9 @@ class ContentUserController extends Controller
             'filterClassification',
             'filterDateOrder',
             'filterAuthor',
-            'filterViewOrder'
+            'filterViewOrder',
+            'filterFromDate',
+            'filterToDate'
         ));
     }
 
