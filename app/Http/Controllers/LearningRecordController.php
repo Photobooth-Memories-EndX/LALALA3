@@ -46,6 +46,7 @@ class LearningRecordController extends Controller
         $userId = (int) Auth::id();
 
         $completedPlaylists = $this->completedPlaylistService->forUser($userId);
+        $completedContents  = $this->getCompletedContents($userId);
         $cert               = $this->certificateContext($eligibilityService);
 
         // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
@@ -53,13 +54,14 @@ class LearningRecordController extends Controller
         // selalu paling atas, di dalam tiap kelompok Finish Date terbaru dulu.
         // Murni pengurutan Collection — query dan business logic tidak berubah.
         $rows = $this->mergeLearningRecord(
-            $this->buildContentRows($this->getCompletedContents($userId), $cert),
+            $this->buildContentRows($completedContents, $cert),
             $this->buildPlaylistRows(
                 $completedPlaylists,
                 $cert,
                 // Slug content pertama tiap playlist — untuk link badge Playlist
                 // (route playlist.user.view butuh pasangan slug playlist + content).
-                $this->playlistFirstContentSlug($completedPlaylists)
+                $this->playlistFirstContentSlug($completedPlaylists),
+                $completedContents
             )
         )->sortBy([
             ['cert_priority', 'asc'],
@@ -198,7 +200,10 @@ class LearningRecordController extends Controller
                 'learning_hour_value'  => $this->learningHourService->value($learningHourBucket),
                 'progress'        => (int) ($cu->progress ?? 0),
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
-                'finish_date'     => optional($cu->updated_at)->format('Y-m-d H:i') ?? '',
+                'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
+                'finish_date'     => (int) $cu->finish === 1
+                    ? (optional($cu->updated_at)->format('Y-m-d H:i:s') ?? '')
+                    : '',
                 // Score & ambangnya dari CertificateEligibilityResult — angka
                 // yang sama dengan yang dipakai menentukan tombol Generate.
                 'score'                => $eligibility?->score(),
@@ -242,15 +247,25 @@ class LearningRecordController extends Controller
      * Normalisasi Playlist selesai menjadi baris tabel dengan struktur kolom
      * yang sama seperti baris Content.
      */
-    private function buildPlaylistRows(Collection $playlists, array $cert, Collection $firstContentSlugs): Collection
+    private function buildPlaylistRows(
+        Collection $playlists,
+        array $cert,
+        Collection $firstContentSlugs,
+        Collection $contentUsers
+    ): Collection
     {
-        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs) {
+        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
             $eligible    = $eligibility?->eligible ?? false;
 
+            $startDate = $contentUsers
+                ->filter(fn (ContentUser $cu) => $cu->content->trainingPlans->contains('id', $plan->id))
+                ->pluck('created_at')
+                ->filter()
+                ->min();
             $finishDate = $plan->last_finished_at
-                ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i')
+                ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i:s')
                 : '';
 
             $firstSlug = $firstContentSlugs->get($plan->id);
@@ -277,6 +292,7 @@ class LearningRecordController extends Controller
                 'learning_hour_value'  => $this->learningHourService->value($learningHourBucket),
                 'progress'        => 100,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
+                'start_date'      => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',
                 'finish_date'     => $finishDate,
                 // Pola sama dengan Content: score dari CertificateEligibilityResult —
                 // playlist ber-assessment kini menampilkan nilai sungguhan.

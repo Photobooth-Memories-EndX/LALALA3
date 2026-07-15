@@ -8,6 +8,10 @@
 @php
     // Nilai untuk filter client-side (jQuery mencocokkan data-attribute, bukan HTML).
     $finishTimestamp = $row['finish_date'] !== '' ? \Illuminate\Support\Carbon::parse($row['finish_date']) : null;
+    $startDateDisplay = ($row['start_date'] ?? '') !== ''
+        ? \Illuminate\Support\Carbon::parse($row['start_date'])->format('d/m/y H:i:s')
+        : '-';
+    $finishDateDisplay = $finishTimestamp?->format('d/m/y H:i:s') ?? '-';
 
     // Search memakai title + classification untuk Content dan Playlist.
     $searchText = $row['title'] . ' ' . $row['classification'];
@@ -63,7 +67,10 @@
 
     <td><x-learning.record-progress-cell :row="$row" /></td>
 
-    <td class="small">{{ $row['finish_date'] !== '' ? $row['finish_date'] : '-' }}</td>
+    <td class="text-muted small">
+        <div class="text-nowrap"><strong>Start&nbsp;&nbsp;:</strong> {{ $startDateDisplay }}</div>
+        <div class="text-nowrap mt-1"><strong>Finish :</strong> {{ $finishDateDisplay }}</div>
+    </td>
 
     <td><x-learning.record-score-cell :row="$row" /></td>
 

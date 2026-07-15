@@ -19,6 +19,39 @@
     overflow-wrap: break-word;
 }
 
+/*
+ * Override hanya kolom compact yang memiliki width inline dari Blade.
+ * Class tetap fleksibel dan mengambil sisa lebar tabel.
+ */
+.learning-record-table th:nth-child(2),
+.learning-record-table td:nth-child(2) {
+    width: auto !important;
+}
+
+.learning-record-table th:nth-child(3),
+.learning-record-table td:nth-child(3) {
+    width: 8% !important;
+}
+
+.learning-record-table th:nth-child(5),
+.learning-record-table td:nth-child(5),
+.learning-record-table th:nth-child(6),
+.learning-record-table td:nth-child(6),
+.learning-record-table th:nth-child(9),
+.learning-record-table td:nth-child(9) {
+    width: 7% !important;
+}
+
+.learning-record-table th:nth-child(7),
+.learning-record-table td:nth-child(7) {
+    width: 8% !important;
+}
+
+.learning-record-table th:nth-child(10),
+.learning-record-table td:nth-child(10) {
+    width: 10% !important;
+}
+
 .learning-record-table th {
     font-size: 12px;
     font-weight: 600;

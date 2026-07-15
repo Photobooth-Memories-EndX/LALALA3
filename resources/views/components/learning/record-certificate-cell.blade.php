@@ -1,25 +1,23 @@
 @props(['row'])
 
-{{-- Kolom Certificate — satu aksi tunggal: Generate Certificate tampil selama
-     seluruh syarat terpenuhi (walau sertifikat sudah pernah dibuat — backend
-     memakai firstOrCreate lalu redirect ke /certificate/{credential_id},
-     jadi tidak pernah menduplikasi record). Selain itu kolom dibiarkan kosong;
-     detail kekurangan syarat sudah terlihat di kolom Progress dan Score. --}}
-
+{{-- Kolom Certificate — Hanya menampilkan icon jika ready, dan tanda minus (-) jika belum ready --}}
 @if ($row['cert_state'] === 'ready')
-    @if ($row['cert_is_form'])
-        <form method="POST" action="{{ $row['cert_action_url'] }}">
-            @csrf
-            <button class="btn btn-primary btn-sm w-100 learning-record-cert-btn">
-                <i class="ti ti-certificate me-1"></i>
-                Generate Certificate
-            </button>
-        </form>
-    @else
-        <a href="{{ $row['cert_action_url'] }}"
-           class="btn btn-primary btn-sm w-100 learning-record-cert-btn">
-            <i class="ti ti-certificate me-1"></i>
-            Generate Certificate
-        </a>
-    @endif
+    <div class="d-flex justify-content-center">
+        @if ($row['cert_is_form'])
+            <form method="POST" action="{{ $row['cert_action_url'] }}" class="w-100">
+                @csrf
+                <button class="btn btn-primary btn-sm px-2 learning-record-cert-btn" title="Generate Certificate">
+                    <i class="ti ti-certificate fs-3"></i>
+                </button>
+            </form>
+        @else
+            <a href="{{ $row['cert_action_url'] }}"
+               class="btn btn-primary btn-sm px-2 learning-record-cert-btn" 
+               title="Generate Certificate">
+                <i class="ti ti-certificate fs-3"></i>
+            </a>
+        @endif
+    </div>
+@else
+    <div class="text-center text-muted">-</div>
 @endif

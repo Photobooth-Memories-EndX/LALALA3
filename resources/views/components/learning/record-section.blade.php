@@ -43,7 +43,7 @@
         ['label' => 'Duration',       'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
         ['label' => 'Learning Hour',  'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
         ['label' => 'Progress',       'width' => '9%',  'sort' => 'progress',       'type' => 'number'],
-        ['label' => 'Finish Date',    'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
+        ['label' => 'Date Time',    'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
         ['label' => 'Score Test',     'width' => '8%',  'sort' => 'score',          'type' => 'number'],
         ['label' => 'Certificate',    'width' => '11%'],
     ];
