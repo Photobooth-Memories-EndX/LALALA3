@@ -99,13 +99,11 @@
                             @endif
                         </button>
 
-
-                            <a href="{{ route('content.user.index') }}"
-                               class="btn btn-outline-secondary rounded-3 flex-fill flex-xl-grow-0">
-                                <i class="ti ti-refresh me-1"></i>
-                                Reset
-                            </a>
-                       
+                        <a href="{{ route('content.user.index') }}"
+                           class="btn content-reset-btn rounded-3 flex-fill flex-xl-grow-0 {{ $activeFilterCount > 0 ? 'is-active' : '' }}">
+                            <i class="ti ti-refresh me-1"></i>
+                            Reset
+                        </a>
                     </div>
                 </div>
             </div>
@@ -255,7 +253,7 @@
 
                         <div class="modal-footer border-0 pt-0">
                             <a href="{{ route('content.user.index') }}"
-                               class="btn btn-outline-secondary rounded-3">
+                               class="btn content-reset-btn rounded-3 {{ $activeFilterCount > 0 ? 'is-active' : '' }}">
                                 <i class="ti ti-refresh me-1"></i>
                                 Reset
                             </a>

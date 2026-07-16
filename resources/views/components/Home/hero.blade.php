@@ -1,4 +1,6 @@
 @php
+    $user = auth()->user();
+
     $ongoingCourseVal = $ongoingCourse ?? 84;
     $completedCourseVal = $completedCourse ?? 58;
 
@@ -29,109 +31,484 @@
             $x = 50 + 50 * sin($rad);
             $y = 50 - 50 * cos($rad);
 
-            $points[] = round($x,2).'%' . ' ' . round($y,2).'%';
+            $points[] = round($x, 2) . '%' . ' ' . round($y, 2) . '%';
         }
 
-        return 'polygon('.implode(', ', $points).')';
+        return 'polygon(' . implode(', ', $points) . ')';
     };
 
-    $completedSlicePath = $donutSlicePolygon(0,$completedPercent);
-    $ongoingSlicePath = $donutSlicePolygon($completedPercent,100);
+    $completedSlicePath = $donutSlicePolygon(0, $completedPercent);
+    $ongoingSlicePath = $donutSlicePolygon($completedPercent, 100);
+
+    $defaultHeroImage = asset('img/owl-dashboard.png');
+    $heroImageValue = data_get($user, 'hero_image')
+        ?? data_get($user, 'cover_image')
+        ?? data_get($user, 'cover')
+        ?? data_get($user, 'background_image');
+
+    $heroImage = $defaultHeroImage;
+
+    if (filled($heroImageValue)) {
+        $heroImage = \Illuminate\Support\Str::startsWith($heroImageValue, ['http://', 'https://'])
+            ? $heroImageValue
+            : asset('storage/profile/' . ltrim($heroImageValue, '/'));
+    }
+
+    $avatarImage = filled(data_get($user, 'avatar'))
+        ? asset('storage/profile/' . $user->avatar)
+        : asset('storage/profile/default.jpg');
 @endphp
 
-<div class="home-modern-hero">
-    <div class="row align-items-center">
+<div class="home-modern-hero compact-home-hero" style="--hero-bg-image: url('{{ $heroImage }}');">
+    <div class="compact-hero-bg-preview" aria-hidden="true"></div>
 
-        {{-- ===================================================== --}}
-        {{-- LEFT SIDE --}}
-        {{-- ===================================================== --}}
-        <div class="col-lg-8">
-            <span class="home-modern-hero-label">
-                <i class="ti ti-school me-1"></i>
-                Learning Management System
-            </span>
+    <div class="compact-hero-toolbar">
+        <label class="compact-hero-upload" for="homeHeroCoverInput">
+            <i class="ti ti-photo-up"></i>
+            <span>Change cover</span>
+        </label>
+        <input type="file"
+               id="homeHeroCoverInput"
+               class="d-none"
+               accept="image/png,image/jpeg,image/jpg,image/webp">
+    </div>
 
-            <h1 class="home-modern-hero-greeting">Welcome back,</h1>
-            <h1 class="home-modern-hero-name">{{ auth()->user()->name ?? 'ESTIHONO HERMAWAN' }}</h1>
+    <div class="row align-items-center g-3 compact-hero-content">
+        <div class="col-lg-7">
+            <div class="compact-hero-profile">
+                <span class="compact-hero-avatar" style="background-image: url('{{ $avatarImage }}');"></span>
+                <div>
+                    <span class="home-modern-hero-label compact-hero-label">
+                        <i class="ti ti-school"></i>
+                        Learning Management System
+                    </span>
+                    <h1 class="home-modern-hero-greeting compact-hero-greeting">Welcome back,</h1>
+                    <h2 class="home-modern-hero-name compact-hero-name">{{ $user->name ?? 'ESTIHONO HERMAWAN' }}</h2>
+                </div>
+            </div>
 
-            <p class="home-modern-hero-subtitle">
-                Continuing journey as <strong>{{ auth()->user()->team ?? 'Training Team' }}</strong>
+            <p class="home-modern-hero-subtitle compact-hero-subtitle">
+                Continuing journey as <strong>{{ $user->team ?? 'Training Team' }}</strong>
             </p>
 
             <div class="home-modern-hero-actions">
-                <span class="home-modern-hero-stat-pill home-modern-hero-stat-green">
-                    <strong>Keep Learning 🔥</strong>
+                <span class="home-modern-hero-stat-pill compact-hero-pill">
+                    <i class="ti ti-flame me-1"></i>
+                    <strong>Keep Learning</strong>
                 </span>
             </div>
         </div>
 
-        {{-- ===================================================== --}}
-        {{-- RIGHT SIDE (SUMMARY & DONUT) --}}
-        {{-- ===================================================== --}}
-        <div class="col-lg-4 mt-4 mt-lg-0">
-            <div class="home-modern-donut-wrap">
-
-                {{-- Judul Ringkasan --}}
-                <div class="home-modern-summary-title">
-                    Your Learning Summary
-                </div>
-
-                {{-- Lingkaran Donut Chart (Learning Hours) --}}
-                <div class="home-modern-donut-outer"
+        <div class="col-lg-5 mt-3 mt-lg-0">
+            <div class="compact-summary-panel">
+                <div class="home-modern-donut-outer compact-donut"
                      style="background: conic-gradient(#22c55e 0%, #22c55e {{ $donutBlendStart }}%, #38bdf8 {{ $donutBlendEnd }}%, #38bdf8 100%);">
 
                     <div class="home-modern-donut-hit home-modern-donut-hit-completed"
                          style="clip-path:{{ $completedSlicePath }}"
-                         data-bs-toggle="tooltip" data-bs-placement="top"
+                         data-bs-toggle="tooltip"
+                         data-bs-placement="top"
                          title="Completed {{ $completedCourseVal }} Learning">
                     </div>
 
                     <div class="home-modern-donut-hit home-modern-donut-hit-ongoing"
                          style="clip-path:{{ $ongoingSlicePath }}"
-                         data-bs-toggle="tooltip" data-bs-placement="top"
+                         data-bs-toggle="tooltip"
+                         data-bs-placement="top"
                          title="On Going {{ $ongoingCourseVal }} Learning">
                     </div>
 
-                    <div class="home-modern-donut-inner">
+                    <div class="home-modern-donut-inner compact-donut-inner">
                         <strong>{{ $learningHours }}</strong>
                         <small>Learning Hours</small>
                     </div>
                 </div>
 
-                {{-- Tampilan List Bersih & Terbuka (Tanpa Table / Tanpa Box) --}}
-                <div class="tabler-clean-list-container">
-
-                    <!-- Row Total Course -->
-                    <div class="tabler-clean-row">
-                        <div class="tabler-clean-meta">
-                            <span class="home-modern-stat-dot total"></span>
-                            <span class="clean-label">Total Course</span>
-                        </div>
-                        <div class="clean-value">{{ $totalCourseVal }}</div>
+                <div class="compact-summary-detail">
+                    <div class="home-modern-summary-title compact-summary-title">
+                        Your Learning Summary
                     </div>
 
-                    <!-- Row Completed -->
-                    <div class="tabler-clean-row">
-                        <div class="tabler-clean-meta">
-                            <span class="home-modern-stat-dot completed"></span>
-                            <span class="clean-label">Completed</span>
+                    <div class="tabler-clean-list-container compact-summary-list">
+                        <div class="tabler-clean-row compact-summary-row">
+                            <div class="tabler-clean-meta">
+                                <span class="home-modern-stat-dot total"></span>
+                                <span class="clean-label">Total Course</span>
+                            </div>
+                            <div class="clean-value">{{ $totalCourseVal }}</div>
                         </div>
-                        <div class="clean-value">{{ $completedCourseVal }}</div>
-                    </div>
 
-                    <!-- Row On Going -->
-                    <div class="tabler-clean-row">
-                        <div class="tabler-clean-meta">
-                            <span class="home-modern-stat-dot ongoing"></span>
-                            <span class="clean-label">On Going</span>
+                        <div class="tabler-clean-row compact-summary-row">
+                            <div class="tabler-clean-meta">
+                                <span class="home-modern-stat-dot completed"></span>
+                                <span class="clean-label">Completed</span>
+                            </div>
+                            <div class="clean-value">{{ $completedCourseVal }}</div>
                         </div>
-                        <div class="clean-value">{{ $ongoingCourseVal }}</div>
-                    </div>
 
+                        <div class="tabler-clean-row compact-summary-row">
+                            <div class="tabler-clean-meta">
+                                <span class="home-modern-stat-dot ongoing"></span>
+                                <span class="clean-label">On Going</span>
+                            </div>
+                            <div class="clean-value">{{ $ongoingCourseVal }}</div>
+                        </div>
+                    </div>
                 </div>
-
             </div>
         </div>
-
     </div>
 </div>
+
+<style>
+    .compact-home-hero {
+        isolation: isolate;
+        min-height: 238px;
+        padding: 28px 34px;
+        border-radius: 22px;
+        background-image:
+            linear-gradient(90deg, rgba(7, 23, 57, .9) 0%, rgba(18, 72, 167, .82) 48%, rgba(42, 114, 202, .66) 100%),
+            var(--hero-bg-image);
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 18px 44px rgba(15, 23, 42, .16);
+    }
+
+    .compact-home-hero::before {
+        width: 300px;
+        height: 300px;
+        top: -126px;
+        right: -96px;
+        background: rgba(255, 255, 255, .08);
+        z-index: -1;
+    }
+
+    .compact-home-hero::after {
+        display: none;
+    }
+
+    .compact-home-hero .row {
+        min-height: 182px;
+    }
+
+    .compact-hero-bg-preview {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        background-image: var(--hero-bg-image);
+        background-size: cover;
+        background-position: center;
+        transform: scale(1.02);
+    }
+
+    .compact-hero-bg-preview::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .16), transparent 32%),
+            linear-gradient(90deg, rgba(6, 22, 52, .9), rgba(20, 72, 156, .76));
+    }
+
+    .compact-hero-toolbar {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        z-index: 3;
+    }
+
+    .compact-hero-upload {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        padding: 7px 11px;
+        border: 1px solid rgba(255, 255, 255, .2);
+        border-radius: 999px;
+        background: rgba(15, 23, 42, .34);
+        color: rgba(255, 255, 255, .9);
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+        transition: background-color .2s, border-color .2s, transform .2s;
+    }
+
+    .compact-hero-upload:hover {
+        color: #fff;
+        background: rgba(37, 99, 235, .55);
+        border-color: rgba(255, 255, 255, .38);
+        transform: translateY(-1px);
+    }
+
+    .compact-hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .compact-hero-profile {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    .compact-hero-avatar {
+        width: 58px;
+        height: 58px;
+        flex: 0 0 58px;
+        border-radius: 18px;
+        background-size: cover;
+        background-position: center;
+        border: 2px solid rgba(255, 255, 255, .72);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, .22);
+    }
+
+    .compact-hero-label {
+        gap: 6px;
+        padding: 6px 11px;
+        margin-bottom: 8px;
+        font-size: 11px;
+        background: rgba(255, 255, 255, .14);
+        backdrop-filter: blur(8px);
+    }
+
+    .compact-hero-greeting {
+        margin: 0 0 3px;
+        font-size: 15px;
+    }
+
+    .compact-hero-name {
+        margin: 0;
+        font-size: clamp(26px, 3.2vw, 38px);
+        line-height: 1.04;
+        letter-spacing: 0;
+    }
+
+    .compact-hero-subtitle {
+        max-width: 560px;
+        margin: 13px 0 16px;
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .compact-hero-pill {
+        gap: 4px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        background: rgba(255, 255, 255, .16);
+        backdrop-filter: blur(8px);
+    }
+
+    .compact-summary-panel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        width: 100%;
+        min-height: 164px;
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, .14);
+        border-radius: 20px;
+        background: rgba(15, 23, 42, .2);
+        backdrop-filter: blur(12px);
+    }
+
+    .compact-donut {
+        width: 132px;
+        height: 132px;
+        flex: 0 0 132px;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(255, 255, 255, .08);
+    }
+
+    .compact-donut-inner {
+        width: 96px;
+        height: 96px;
+        background: rgba(12, 37, 83, .92);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+    }
+
+    .compact-donut-inner strong {
+        font-size: 25px;
+    }
+
+    .compact-donut-inner small {
+        width: 72px;
+        margin-top: 4px;
+        font-size: 8px;
+        line-height: 1.2;
+        text-align: center;
+    }
+
+    .compact-summary-detail {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 170px;
+        max-width: 220px;
+        align-self: stretch;
+    }
+
+    .compact-summary-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        margin: 0 0 8px;
+        font-size: 14px;
+        line-height: 1.25;
+        letter-spacing: 0;
+    }
+
+    .compact-summary-list {
+        gap: 8px;
+        padding-top: 0;
+    }
+
+    .compact-summary-row {
+        gap: 16px;
+        min-height: 24px;
+    }
+
+    .compact-summary-row .clean-label {
+        font-size: 13px;
+    }
+
+    .compact-summary-row .clean-value {
+        font-size: 14px;
+    }
+
+    @media (max-width: 991.98px) {
+        .compact-home-hero {
+            min-height: auto;
+            padding: 28px 24px;
+            text-align: left;
+        }
+
+        .compact-home-hero .row {
+            min-height: 0;
+        }
+
+        .compact-home-hero .col-lg-8 {
+            align-items: flex-start;
+            margin-bottom: 0;
+        }
+
+        .compact-summary-panel {
+            justify-content: flex-start;
+            max-width: 520px;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .compact-home-hero {
+            padding: 54px 18px 20px;
+            border-radius: 18px;
+        }
+
+        .compact-hero-toolbar {
+            top: 12px;
+            right: 12px;
+        }
+
+        .compact-hero-upload span {
+            display: none;
+        }
+
+        .compact-hero-upload {
+            width: 34px;
+            height: 34px;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .compact-hero-profile {
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .compact-hero-avatar {
+            width: 48px;
+            height: 48px;
+            flex-basis: 48px;
+            border-radius: 15px;
+        }
+
+        .compact-hero-name {
+            font-size: 24px;
+            overflow-wrap: anywhere;
+        }
+
+        .compact-hero-subtitle {
+            font-size: 13px;
+            margin: 12px 0 14px;
+        }
+
+        .compact-summary-panel {
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 12px;
+        }
+
+        .compact-donut {
+            width: 124px;
+            height: 124px;
+            flex-basis: 124px;
+        }
+
+        .compact-donut-inner {
+            width: 90px;
+            height: 90px;
+        }
+
+        .compact-summary-detail {
+            width: 100%;
+            max-width: 260px;
+            min-width: 0;
+        }
+
+        .compact-summary-title {
+            min-height: auto;
+        }
+    }
+
+    [data-bs-theme="dark"] .compact-home-hero {
+        background-image:
+            linear-gradient(90deg, rgba(3, 10, 24, .94) 0%, rgba(11, 31, 68, .86) 54%, rgba(20, 74, 122, .7) 100%),
+            var(--hero-bg-image);
+        box-shadow: 0 18px 42px rgba(0, 0, 0, .34);
+    }
+
+    [data-bs-theme="dark"] .compact-hero-bg-preview::after {
+        background:
+            radial-gradient(circle at 82% 20%, rgba(96, 165, 250, .13), transparent 32%),
+            linear-gradient(90deg, rgba(2, 8, 20, .94), rgba(10, 30, 64, .84));
+    }
+
+    [data-bs-theme="dark"] .compact-summary-panel {
+        background: rgba(2, 8, 20, .38);
+        border-color: rgba(255, 255, 255, .1);
+    }
+
+    [data-bs-theme="dark"] .compact-donut-inner {
+        background: rgba(5, 18, 39, .94);
+    }
+</style>
+
+<script>
+    $(function () {
+        $('#homeHeroCoverInput').on('change', function () {
+            const file = this.files && this.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            const previewUrl = URL.createObjectURL(file);
+            $('.compact-home-hero').css('--hero-bg-image', `url("${previewUrl}")`);
+        });
+    });
+</script>
