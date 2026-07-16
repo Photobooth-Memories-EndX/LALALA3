@@ -6,7 +6,7 @@
 
 @if ($isCompleted)
     @if ($isPassed)
-        <span class="badge bg-green-lt text-green learning-record-badge assessment-status-badge">Completed</span>
+        <span class="badge bg-green-lt text-green learning-record-badge assessment-status-badge">Passed</span>
     @else
         <span class="badge bg-red-lt text-red learning-record-badge assessment-status-badge">Failed</span>
     @endif

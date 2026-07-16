@@ -24,12 +24,44 @@
     $assessmentUrl = !empty($assessment->slug)
         ? route('assesment.user.view', $assessment->slug)
         : null;
+
+    $filterType = match (strtolower((string) ($assessment->type ?? ''))) {
+        'trainingplan', 'playlist' => 'playlist',
+        'content' => 'content',
+        'global' => 'global',
+        default => strtolower((string) ($assessment->type ?? '')),
+    };
+    $filterStatus = $isPassed ? 'passed' : ($isCompleted ? 'failed' : 'not_started');
+    $filterDate = $assessment->fromdate ?? null;
+    $filterTimestamp = $filterDate ? strtotime((string) $filterDate) : false;
+    $filterYear = $filterTimestamp ? date('Y', $filterTimestamp) : '';
+    $filterMonth = $filterTimestamp ? date('n', $filterTimestamp) : '';
+    $contentTitles = collect($assessment->contents ?? [])->pluck('title')->filter();
+    $searchText = collect([
+        $assessment->title ?? null,
+        $assessment->trainingplan->title ?? null,
+    ])->merge($contentTitles)->filter()->implode(' ');
+    $today = strtotime(date('Y-m-d'));
+    $fromDate = !empty($assessment->fromdate) ? strtotime(date('Y-m-d', strtotime($assessment->fromdate))) : null;
+    $toDate = !empty($assessment->todate) ? strtotime(date('Y-m-d', strtotime($assessment->todate))) : null;
+    $availability = $fromDate && $today < $fromDate
+        ? 'upcoming'
+        : ($toDate && $today > $toDate ? 'expired' : 'available');
 @endphp
 
-<tr class="assessment-row">
+<tr class="assessment-row"
+    data-assessment-type="{{ $filterType }}"
+    data-assessment-status="{{ $filterStatus }}"
+    data-assessment-year="{{ $filterYear }}"
+    data-assessment-month="{{ $filterMonth }}"
+    data-assessment-date="{{ $filterTimestamp ?: '' }}"
+    data-assessment-batch="{{ $assessment->batch ?? '' }}"
+    data-assessment-grade="{{ $assessment->passing_grade ?? '' }}"
+    data-assessment-score="{{ $finalResult->score ?? '' }}"
+    data-assessment-availability="{{ $availability }}">
     <td class="text-muted">{{ $index }}</td>
 
-    <td data-order="{{ mb_strtolower($assessment->title ?? '') }}">
+    <td data-order="{{ mb_strtolower($assessment->title ?? '') }}" data-search="{{ $searchText }}">
         @if ($assessmentUrl)
             <a href="{{ $assessmentUrl }}"
                class="fw-semibold text-primary assessment-title assessment-title-link">

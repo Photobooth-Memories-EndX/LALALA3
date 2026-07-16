@@ -3,6 +3,83 @@
         min-width: 900px;
     }
 
+    .assessment-filter-shell .dropdown-menu {
+        min-width: 10rem;
+    }
+
+    .assessment-filter-actions {
+        margin-left: auto;
+    }
+
+    .assessment-filter-modal {
+        border: 0;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .assessment-more-filters {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0;
+        max-height: calc(100vh - 220px);
+        padding: 0 1.5rem;
+        overflow-y: auto;
+    }
+
+    .assessment-filter-section {
+        min-width: 0;
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid var(--tblr-border-color, #e6e7e9);
+    }
+
+    .assessment-filter-section:nth-child(odd) {
+        padding-left: 0;
+        border-right: 1px solid var(--tblr-border-color, #e6e7e9);
+    }
+
+    .assessment-filter-section:nth-child(even) {
+        padding-right: 0;
+    }
+
+    .assessment-filter-title {
+        margin-bottom: .75rem;
+        color: var(--tblr-body-color, #1f2937);
+        font-size: .75rem;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+
+    .assessment-filter-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem 1rem;
+    }
+
+    .assessment-filter-options .form-check {
+        min-width: 5.5rem;
+        margin: 0;
+    }
+
+    .assessment-datatable-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--tblr-border-color, #e6e7e9);
+        background: var(--tblr-bg-surface, #fff);
+    }
+
+    .assessment-datatable-footer .dataTables_info,
+    .assessment-datatable-footer .dataTables_paginate {
+        padding-top: 0;
+    }
+
+    .assessment-datatable-footer .pagination {
+        margin: 0;
+    }
+
     .assessment-table th,
     .assessment-table td {
         vertical-align: middle;
@@ -112,6 +189,32 @@
     @media (max-width: 767.98px) {
         .assessment-table {
             min-width: 860px;
+        }
+
+        .assessment-quick-dropdowns .dropdown {
+            flex: 1 1 calc(50% - .5rem);
+        }
+
+        .assessment-quick-dropdowns .dropdown-toggle {
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .assessment-datatable-footer {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .assessment-more-filters {
+            display: block;
+            padding: 0 1rem;
+        }
+
+        .assessment-filter-section,
+        .assessment-filter-section:nth-child(odd),
+        .assessment-filter-section:nth-child(even) {
+            padding: 1rem 0;
+            border-right: 0;
         }
     }
 </style>
