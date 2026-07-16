@@ -51,33 +51,18 @@
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-body p-4 border-bottom">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div>
+        <div class="record-filter-shell" id="recordFilterBar">
+            <div class="row g-3 align-items-start">
+            <div class="col-12 col-lg-6">
                 <h3 class="card-title mb-1">Learning Record</h3>
                 <div class="text-muted small">
                     Completed playlists, contents, and certificate status.
                 </div>
-            </div>
 
-            <div class="d-flex align-items-center gap-2">
-                {{-- <a href="{{ route('user.learning.record.export') }}" data-export-url="{{ route('user.learning.record.export') }}" class="btn btn-outline-primary btn-sm" id="recordDownloadExcel">
-                    <i class="ti ti-file-spreadsheet mr-1"></i>Download Excel
-                </a> --}}
-                @if ($certReadyCount > 0)
-                    {{-- Klik: terapkan filter "Certificate Ready" + scroll ke tabel (learning-record.js). --}}
-                    <button type="button" class="record-cert-ready-card" id="recordCertReadyCard">
-                        <i class="ti ti-certificate"></i>
-                        <span class="record-cert-ready-count">{{ $certReadyCount }}</span>
-                        {{ \Illuminate\Support\Str::plural('Certificate', $certReadyCount) }} Ready
-                    </button>
-                @endif
-
-                {{-- <span class="badge bg-green-lt text-green">Status: Completed</span> --}}
-            </div>
         </div>
 
         {{-- ── Toolbar filter (client-side — tanpa AJAX, tanpa reload halaman) ── --}}
-        <div class="mt-3 record-filter-shell" id="recordFilterBar">
+        <div class="col-12 col-lg-6">
             <div class="record-search-row">
                 <div class="w-100">
                     <label class="form-label small text-muted mb-1" for="recordSearch">Search</label>
@@ -88,8 +73,10 @@
                     </div>
                 </div>
             </div>
+        </div>
+        </div>
 
-            <div class="learning-record-filter-row">
+            <div class="learning-record-filter-row mt-3">
                 <div class="learning-record-fast-filter">
                     <label class="form-label small text-muted mb-2">Filter Cepat</label>
 

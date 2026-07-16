@@ -36,10 +36,8 @@
 
 <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
     <div class="card-body p-4 border-bottom">
-        <x-learning.assessment.assessment-header />
-
-        <div class="mt-3 record-filter-shell assessment-filter-shell" id="assessmentFilterBar">
-            <div class="record-search-row">
+        <div class="record-filter-shell assessment-filter-shell" id="assessmentFilterBar">
+            <x-learning.assessment.assessment-header>
                 <label class="form-label small text-muted mb-1" for="assessmentSearch">Search</label>
                 <div class="input-icon">
                     <span class="input-icon-addon"><i class="ti ti-search"></i></span>
@@ -50,9 +48,9 @@
                            value="{{ request('assessment_search') }}"
                            autocomplete="off">
                 </div>
-            </div>
+            </x-learning.assessment.assessment-header>
 
-            <div class="learning-record-filter-row mb-0">
+            <div class="learning-record-filter-row mt-3 mb-0">
                 <div class="learning-record-fast-filter">
                     <label class="form-label small text-muted mb-2">Fast Filter</label>
 

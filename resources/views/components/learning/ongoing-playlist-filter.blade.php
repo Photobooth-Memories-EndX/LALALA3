@@ -50,36 +50,54 @@
                 <input type="hidden" name="ongoing_quick_status" value="{{ $curQuickStatus }}">
             @endif
 
-            <div class="mb-3">
-                <h3 class="card-title mb-1">Learning On Going</h3>
-                <div class="text-muted small">
-                    Your Enrolled Playlists
+            <div class="row g-3 align-items-start mb-3 learning-filter-header">
+                <div class="col-12 col-lg-6">
+                    <h3 class="card-title mb-1">Learning On Going</h3>
+                    <div class="text-muted small">
+                        Your Enrolled Playlists
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6">
+                    <label class="form-label small text-muted mb-1" for="ongoing_search">Search</label>
+                    <div class="input-icon">
+                        <span class="input-icon-addon">
+                            <i class="ti ti-search"></i>
+                        </span>
+                        <input type="text"
+                               name="ongoing_search"
+                               id="ongoing_search"
+                               value="{{ request('ongoing_search') }}"
+                               class="form-control rounded-3"
+                               placeholder="Search playlists">
+                    </div>
                 </div>
             </div>
 
-            {{-- Mode switch: Content | Playlist (aktif) --}}
-            <x-learning.ongoing-mode-switch mode="playlist" />
+            <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-lg-between gap-3 mb-3 learning-filter-mode-row">
+                {{-- Mode switch: Content | Playlist (aktif) --}}
+                <x-learning.ongoing-mode-switch mode="playlist" />
 
-            {{-- Search bar --}}
-            <div class="mb-3">
-                <label class="form-label small text-muted mb-1" for="ongoing_search">Search</label>
-                <div class="input-icon">
-                    <span class="input-icon-addon">
-                        <i class="ti ti-search"></i>
-                    </span>
-                    <input type="text"
-                           name="ongoing_search"
-                           id="ongoing_search"
-                           value="{{ request('ongoing_search') }}"
-                           class="form-control rounded-3"
-                           placeholder="Search playlists">
+                <div class="learning-filter-mode-actions">
+                    <div class="d-flex gap-2 learning-filter-actions justify-content-lg-end">
+                        <button type="submit" class="btn btn-primary rounded-3 flex-fill flex-lg-grow-0">
+                            <i class="ti ti-filter me-1"></i>
+                            Filter
+                        </button>
+
+                        <a href="{{ $resetUrl }}"
+                           class="btn btn-outline-secondary rounded-3 flex-fill flex-lg-grow-0">
+                            <i class="ti ti-refresh me-1"></i>
+                            Reset
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <div class="row g-2 align-items-end">
+            <div>
                 {{-- Quick dropdown filters (Status / Year / Month) — diterapkan via AJAX. --}}
-                <div class="col-12 col-lg">
-                    <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns">
+                <div class="w-100">
+                    <div class="d-flex flex-wrap flex-lg-nowrap gap-2 learning-quick-dropdowns learning-filter-dropdown-row">
                         {{-- Dropdown Status --}}
                         <div class="dropdown">
                             <button type="button"
@@ -143,21 +161,6 @@
                     </div>
                 </div>
 
-                {{-- Aksi: Filter, Reset --}}
-                <div class="col-12 col-lg-auto">
-                    <div class="d-flex gap-2 learning-filter-actions justify-content-lg-end">
-                        <button type="submit" class="btn btn-primary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-filter me-1"></i>
-                            Filter
-                        </button>
-
-                        <a href="{{ $resetUrl }}"
-                           class="btn btn-outline-secondary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-refresh me-1"></i>
-                            Reset
-                        </a>
-                    </div>
-                </div>
             </div>
 
         </form>

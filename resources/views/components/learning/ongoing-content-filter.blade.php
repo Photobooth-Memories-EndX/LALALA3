@@ -153,29 +153,58 @@
                 <input type="hidden" name="ongoing_quick_status" value="{{ $curQuickStatus }}">
             @endif
 
-            <div class="mb-3">
-                <h3 class="card-title mb-1">Learning On Going</h3>
-                <div class="text-muted small">
-                    Your Enrolled Classes
+            <div class="row g-3 align-items-start mb-3 learning-filter-header">
+                <div class="col-12 col-lg-6">
+                    <h3 class="card-title mb-1">Learning On Going</h3>
+                    <div class="text-muted small">
+                        Your Enrolled Classes
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6">
+                    <label class="form-label small text-muted mb-1" for="ongoing_search">Search</label>
+                    <div class="input-icon">
+                        <span class="input-icon-addon">
+                            <i class="ti ti-search"></i>
+                        </span>
+                        <input type="text"
+                               name="ongoing_search"
+                               id="ongoing_search"
+                               value="{{ request('ongoing_search') }}"
+                               class="form-control rounded-3"
+                               placeholder="Search classes or categories">
+                    </div>
                 </div>
             </div>
 
-            {{-- Mode switch: Content (aktif) | Playlist --}}
-            <x-learning.ongoing-mode-switch mode="content" />
+            <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-lg-between gap-3 mb-3 learning-filter-mode-row">
+                {{-- Mode switch: Content (aktif) | Playlist --}}
+                <x-learning.ongoing-mode-switch mode="content" />
 
-            {{-- Search bar tetap di atas seperti semula --}}
-            <div class="mb-3">
-                <label class="form-label small text-muted mb-1" for="ongoing_search">Search</label>
-                <div class="input-icon">
-                    <span class="input-icon-addon">
-                        <i class="ti ti-search"></i>
-                    </span>
-                    <input type="text"
-                           name="ongoing_search"
-                           id="ongoing_search"
-                           value="{{ request('ongoing_search') }}"
-                           class="form-control rounded-3"
-                           placeholder="Search classes or categories">
+                <div class="learning-filter-mode-actions">
+                    <div class="d-flex gap-2 learning-filter-actions justify-content-lg-end">
+                        <button type="button"
+                                class="btn btn-outline-primary rounded-3 flex-fill flex-lg-grow-0 position-relative"
+                                data-bs-toggle="modal"
+                                data-bs-target="#ongoingMoreFiltersModal">
+                            <i class="ti ti-adjustments-horizontal me-1"></i>
+                            More Filters
+                            @if ($advancedCount > 0)
+                                <span class="badge bg-primary text-white ms-1">{{ $advancedCount }}</span>
+                            @endif
+                        </button>
+
+                        <button type="submit" class="btn btn-primary rounded-3 flex-fill flex-lg-grow-0">
+                            <i class="ti ti-filter me-1"></i>
+                            Filter
+                        </button>
+
+                        <a href="{{ route('user.learning.dashboard') }}"
+                           class="btn btn-outline-secondary rounded-3 flex-fill flex-lg-grow-0">
+                            <i class="ti ti-refresh me-1"></i>
+                            Reset
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -197,7 +226,7 @@
                         : count($activeQuickMonths) . ' Months');
             @endphp
 
-            <div class="mb-3 d-flex flex-wrap gap-2 learning-quick-dropdowns">
+            <div class="d-flex flex-wrap flex-lg-nowrap gap-2 learning-quick-dropdowns learning-filter-dropdown-row">
                 {{-- Dropdown Type (hanya type content: Video, Document, dll) --}}
                 <div class="dropdown">
                     <button type="button"
@@ -276,91 +305,6 @@
                                 {{ $label }}
                             </a>
                         @endforeach
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-2 align-items-end">
-                {{-- Quick filter chips (Type content) — link toggle, tanpa JS, di bawah Search --}}
-                <div class="col-12 col-lg">
-                    <label class="form-label small text-muted mb-1">Filter Cepat</label>
-                    <div class="learning-chip-row d-flex flex-nowrap flex-lg-wrap gap-2 pb-1">
-                        @foreach ($typeOptions as $typeOption)
-                            @php
-                                $isActiveChip = in_array($typeOption, $selTypeClean);
-                                $nextTypes = $isActiveChip
-                                    ? array_values(array_diff($selTypeClean, [$typeOption]))
-                                    : array_merge($selTypeClean, [$typeOption]);
-                                $chipQuery = collect($baseQuery)->except('ongoing_type')->all();
-                                if (!empty($nextTypes)) {
-                                    $chipQuery['ongoing_type'] = $nextTypes;
-                                }
-                                $chipUrl = route('user.learning.dashboard')
-                                    . (!empty($chipQuery) ? '?' . http_build_query($chipQuery) : '');
-                            @endphp
-
-                            <a href="{{ $chipUrl }}" class="learning-chip {{ $isActiveChip ? 'active' : '' }}">
-                                {{ ucwords(str_replace('_', ' ', $typeOption)) }}
-                            </a>
-                        @endforeach
-
-                        {{-- Chip Month aktif — bisa dihapus satu per satu tanpa reset filter lain --}}
-                        @foreach (array_filter($selMonth) as $mNum)
-                            @php
-                                $mNum = (int) $mNum;
-                                $otherMonths = array_values(array_diff(array_map('intval', array_filter($selMonth)), [$mNum]));
-                                $mQuery = collect($baseQuery)->except('ongoing_month')->all();
-                                if (!empty($otherMonths)) {
-                                    $mQuery['ongoing_month'] = $otherMonths;
-                                }
-                                $mUrl = route('user.learning.dashboard')
-                                    . (!empty($mQuery) ? '?' . http_build_query($mQuery) : '');
-                            @endphp
-                            <a href="{{ $mUrl }}" class="learning-chip active" title="Hapus filter bulan {{ $monthOptions[$mNum] ?? $mNum }}">
-                                {{ $monthOptions[$mNum] ?? $mNum }}
-                                <i class="ti ti-x ms-1"></i>
-                            </a>
-                        @endforeach
-
-                        {{-- Chip Year aktif --}}
-                        @if ($curYear !== 'all')
-                            @php
-                                $yQuery = collect($baseQuery)->except('ongoing_year')->all();
-                                $yUrl = route('user.learning.dashboard')
-                                    . (!empty($yQuery) ? '?' . http_build_query($yQuery) : '');
-                            @endphp
-                            <a href="{{ $yUrl }}" class="learning-chip active" title="Hapus filter tahun {{ $curYear }}">
-                                {{ $curYear }}
-                                <i class="ti ti-x ms-1"></i>
-                            </a>
-                        @endif
-                    </div>
-                </div>
-
-                {{-- Aksi: More Filters, Filter, Reset --}}
-                <div class="col-12 col-lg-auto">
-                    <div class="d-flex gap-2 learning-filter-actions justify-content-lg-end">
-                        <button type="button"
-                                class="btn btn-outline-primary rounded-3 flex-fill flex-lg-grow-0 position-relative"
-                                data-bs-toggle="modal"
-                                data-bs-target="#ongoingMoreFiltersModal">
-                            <i class="ti ti-adjustments-horizontal me-1"></i>
-                            More Filters
-                            @if ($advancedCount > 0)
-                                <span class="badge bg-primary text-white ms-1">{{ $advancedCount }}</span>
-                            @endif
-                        </button>
-
-                        <button type="submit" class="btn btn-primary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-filter me-1"></i>
-                            Filter
-                        </button>
-
-                        <a href="{{ route('user.learning.dashboard') }}"
-                           class="btn btn-outline-secondary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-refresh me-1"></i>
-                            Reset
-                        </a>
                     </div>
                 </div>
             </div>

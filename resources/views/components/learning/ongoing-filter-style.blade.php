@@ -2,40 +2,14 @@
      sehingga @stack di layout utama tidak ikut ter-render. Tag <style> tetap berlaku
      saat di-inject melalui innerHTML. Dipakai bersama oleh mode Content & Playlist. --}}
 <style>
-    .learning-chip-row {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-    }
-    .learning-chip-row::-webkit-scrollbar { height: 4px; }
-    .learning-chip {
-        display: inline-flex;
-        align-items: center;
-        white-space: nowrap;
-        cursor: pointer;
-        padding: .375rem .875rem;
-        border-radius: 999px;
-        border: 1px solid var(--tblr-border-color, #dbe0e6);
-        background: #fff;
-        color: var(--tblr-body-color, #4b5563);
-        font-size: .8125rem;
-        font-weight: 500;
-        margin-bottom: 0;
-        text-decoration: none;
-        transition: all .15s ease-in-out;
-        user-select: none;
-    }
-    .learning-chip:hover {
-        border-color: var(--tblr-primary, #206bc4);
-        color: var(--tblr-primary, #206bc4);
-    }
-    .learning-chip.active {
-        background: var(--tblr-primary, #206bc4);
-        border-color: var(--tblr-primary, #206bc4);
-        color: #fff;
-    }
     .learning-filter-group { margin-bottom: 0; }
     .learning-filter-modal .form-check { margin-bottom: 0; }
+    .learning-filter-mode-row .learning-mode-switch {
+        margin-bottom: 0 !important;
+    }
+    .learning-filter-mode-actions {
+        flex: 0 0 auto;
+    }
     /* Quick dropdown filters (Type / Status / Year / Month) */
     .learning-quick-dropdowns .dropdown-toggle.active {
         border-color: var(--tblr-primary, #206bc4);
@@ -49,6 +23,12 @@
     .learning-quick-dropdown-scroll {
         max-height: 280px;
         overflow-y: auto;
+    }
+    @media (max-width: 991.98px) {
+        .learning-filter-mode-actions,
+        .learning-filter-mode-actions .learning-filter-actions {
+            width: 100%;
+        }
     }
     @media (max-width: 575.98px) {
         /* Mobile: modal muncul dari bawah seperti bottom-sheet Tokopedia. */
