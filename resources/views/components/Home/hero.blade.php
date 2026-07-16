@@ -41,43 +41,66 @@
     $ongoingSlicePath = $donutSlicePolygon($completedPercent, 100);
 
     $defaultHeroImage = asset('img/owl-dashboard.png');
-    $heroImageValue = data_get($user, 'hero_image')
-        ?? data_get($user, 'cover_image')
-        ?? data_get($user, 'cover')
-        ?? data_get($user, 'background_image');
+    $coverFiles = glob(public_path('storage/profile/cover_' . $user->id . '.*')) ?: [];
+    $coverFile = count($coverFiles) ? basename($coverFiles[0]) : null;
+    $heroImage = $coverFile ? asset('storage/profile/' . $coverFile) : $defaultHeroImage;
 
-    $heroImage = $defaultHeroImage;
+    $avatarFile = filled(data_get($user, 'avatar'))
+        ? public_path('storage/profile/' . $user->avatar)
+        : null;
 
-    if (filled($heroImageValue)) {
-        $heroImage = \Illuminate\Support\Str::startsWith($heroImageValue, ['http://', 'https://'])
-            ? $heroImageValue
-            : asset('storage/profile/' . ltrim($heroImageValue, '/'));
+    if ($avatarFile && file_exists($avatarFile)) {
+        $avatarImage = asset('storage/profile/' . $user->avatar);
+    } else {
+        $avatarImage = asset('storage/profile/default.jpg');
     }
-
-    $avatarImage = filled(data_get($user, 'avatar'))
-        ? asset('storage/profile/' . $user->avatar)
-        : asset('storage/profile/default.jpg');
 @endphp
 
 <div class="home-modern-hero compact-home-hero" style="--hero-bg-image: url('{{ $heroImage }}');">
     <div class="compact-hero-bg-preview" aria-hidden="true"></div>
 
     <div class="compact-hero-toolbar">
-        <label class="compact-hero-upload" for="homeHeroCoverInput">
-            <i class="ti ti-photo-up"></i>
-            <span>Change cover</span>
-        </label>
-        <input type="file"
-               id="homeHeroCoverInput"
-               class="d-none"
-               accept="image/png,image/jpeg,image/jpg,image/webp">
+        <form action="{{ route('user.updateprofile') }}"
+              method="POST"
+              enctype="multipart/form-data"
+              class="compact-hero-upload-form"
+              id="homeHeroCoverForm">
+            @csrf
+            <input type="hidden" name="source" value="home">
+            <label class="compact-hero-upload" for="homeHeroCoverInput">
+                <i class="ti ti-photo-up"></i>
+                <span>Change cover</span>
+            </label>
+            <input type="file"
+                   name="cover"
+                   id="homeHeroCoverInput"
+                   class="d-none"
+                   accept="image/png,image/jpeg,image/jpg,image/webp">
+        </form>
     </div>
 
     <div class="row align-items-center g-3 compact-hero-content">
         <div class="col-lg-7">
             <div class="compact-hero-profile">
-                <span class="compact-hero-avatar" style="background-image: url('{{ $avatarImage }}');"></span>
-                <div>
+                <div class="compact-hero-avatar-wrap">
+                    <form action="{{ route('user.updateprofile') }}"
+                          method="POST"
+                          enctype="multipart/form-data"
+                          id="homeHeroAvatarForm">
+                        @csrf
+                        <input type="hidden" name="source" value="home">
+                        <input type="file"
+                               name="avatar"
+                               id="homeHeroAvatarInput"
+                               class="d-none"
+                               accept="image/png,image/jpeg,image/jpg,image/webp">
+                        <label class="compact-hero-avatar"
+                               for="homeHeroAvatarInput"
+                               style="background-image: url('{{ $avatarImage }}');"
+                               title="Change profile photo"></label>
+                    </form>
+                </div>
+                <div class="compact-hero-user-info">
                     <span class="home-modern-hero-label compact-hero-label">
                         <i class="ti ti-school"></i>
                         Learning Management System
@@ -86,10 +109,11 @@
                     <h2 class="home-modern-hero-name compact-hero-name">{{ $user->name ?? 'ESTIHONO HERMAWAN' }}</h2>
                 </div>
             </div>
+            <div class="compact-avatar-message" id="homeHeroAvatarMessage" aria-live="polite"></div>
 
-            <p class="home-modern-hero-subtitle compact-hero-subtitle">
-                Continuing journey as <strong>{{ $user->team ?? 'Training Team' }}</strong>
-            </p>
+                    <p class="home-modern-hero-subtitle compact-hero-subtitle">
+                        Continuing journey as <strong>{{ $user->team ?? 'Training Team' }}</strong>
+                    </p>
 
             <div class="home-modern-hero-actions">
                 <span class="home-modern-hero-stat-pill compact-hero-pill">
@@ -242,6 +266,10 @@
         transform: translateY(-1px);
     }
 
+    .compact-hero-upload-form {
+        margin: 0;
+    }
+
     .compact-hero-content {
         position: relative;
         z-index: 2;
@@ -250,19 +278,82 @@
     .compact-hero-profile {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 18px;
         min-width: 0;
+        width: 100%;
+    }
+
+    .compact-hero-avatar-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        flex: 0 0 64px;
+        min-width: 64px;
+    }
+
+    .compact-hero-avatar-wrap form {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        margin: 0;
+    }
+
+    .compact-hero-user-info {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
     }
 
     .compact-hero-avatar {
-        width: 58px;
-        height: 58px;
-        flex: 0 0 58px;
+        display: block;
+        width: 64px;
+        height: 64px;
+        flex: 0 0 64px;
+        min-width: 64px;
+        max-width: 64px;
         border-radius: 18px;
         background-size: cover;
-        background-position: center;
+        background-position: center center;
+        background-repeat: no-repeat;
         border: 2px solid rgba(255, 255, 255, .72);
         box-shadow: 0 12px 28px rgba(15, 23, 42, .22);
+        cursor: pointer;
+        transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .compact-hero-avatar:hover {
+        border-color: rgba(255, 255, 255, .95);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, .28);
+    }
+
+    .compact-hero-avatar.is-uploading {
+        cursor: wait;
+        opacity: .7;
+    }
+
+    .compact-avatar-message {
+        width: 100%;
+        min-height: 14px;
+        margin: 8px 0 0 82px;
+        color: rgba(255, 255, 255, .78);
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.3;
+        text-align: left;
+    }
+
+    .compact-avatar-message.is-success {
+        color: #bbf7d0;
+    }
+
+    .compact-avatar-message.is-error {
+        color: #fecaca;
     }
 
     .compact-hero-label {
@@ -284,6 +375,7 @@
         font-size: clamp(26px, 3.2vw, 38px);
         line-height: 1.04;
         letter-spacing: 0;
+        overflow-wrap: anywhere;
     }
 
     .compact-hero-subtitle {
@@ -306,38 +398,40 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 20px;
-        width: 100%;
-        min-height: 164px;
-        padding: 14px;
+        gap: 12px;
+        width: max-content;
+        max-width: 100%;
+        min-height: 0;
+        padding: 10px 12px;
+        margin: 0 auto;
         border: 1px solid rgba(255, 255, 255, .14);
-        border-radius: 20px;
+        border-radius: 18px;
         background: rgba(15, 23, 42, .2);
         backdrop-filter: blur(12px);
     }
 
     .compact-donut {
-        width: 132px;
-        height: 132px;
-        flex: 0 0 132px;
+        width: 118px;
+        height: 118px;
+        flex: 0 0 118px;
         box-shadow: 0 14px 28px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(255, 255, 255, .08);
     }
 
     .compact-donut-inner {
-        width: 96px;
-        height: 96px;
+        width: 86px;
+        height: 86px;
         background: rgba(12, 37, 83, .92);
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
     }
 
     .compact-donut-inner strong {
-        font-size: 25px;
+        font-size: 22px;
     }
 
     .compact-donut-inner small {
-        width: 72px;
+        width: 66px;
         margin-top: 4px;
-        font-size: 8px;
+        font-size: 7px;
         line-height: 1.2;
         text-align: center;
     }
@@ -346,8 +440,8 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        min-width: 170px;
-        max-width: 220px;
+        min-width: 150px;
+        max-width: 190px;
         align-self: stretch;
     }
 
@@ -355,29 +449,29 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 34px;
-        margin: 0 0 8px;
-        font-size: 14px;
+        min-height: 28px;
+        margin: 0 0 6px;
+        font-size: 13px;
         line-height: 1.25;
         letter-spacing: 0;
     }
 
     .compact-summary-list {
-        gap: 8px;
+        gap: 6px;
         padding-top: 0;
     }
 
     .compact-summary-row {
-        gap: 16px;
-        min-height: 24px;
+        gap: 12px;
+        min-height: 22px;
     }
 
     .compact-summary-row .clean-label {
-        font-size: 13px;
+        font-size: 12px;
     }
 
     .compact-summary-row .clean-value {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     @media (max-width: 991.98px) {
@@ -398,7 +492,8 @@
 
         .compact-summary-panel {
             justify-content: flex-start;
-            max-width: 520px;
+            width: max-content;
+            max-width: 100%;
         }
     }
 
@@ -426,14 +521,32 @@
 
         .compact-hero-profile {
             gap: 12px;
-            align-items: flex-start;
+            align-items: center;
+        }
+
+        .compact-hero-avatar-wrap {
+            width: 54px;
+            height: 54px;
+            flex-basis: 54px;
+            min-width: 54px;
+        }
+
+        .compact-hero-avatar-wrap form {
+            width: 54px;
+            height: 54px;
         }
 
         .compact-hero-avatar {
-            width: 48px;
-            height: 48px;
-            flex-basis: 48px;
+            width: 54px;
+            height: 54px;
+            flex-basis: 54px;
+            min-width: 54px;
+            max-width: 54px;
             border-radius: 15px;
+        }
+
+        .compact-avatar-message {
+            margin-left: 66px;
         }
 
         .compact-hero-name {
@@ -450,18 +563,19 @@
             flex-direction: column;
             align-items: center;
             gap: 12px;
-            padding: 14px 12px;
+            width: 100%;
+            padding: 12px;
         }
 
         .compact-donut {
-            width: 124px;
-            height: 124px;
-            flex-basis: 124px;
+            width: 112px;
+            height: 112px;
+            flex-basis: 112px;
         }
 
         .compact-donut-inner {
-            width: 90px;
-            height: 90px;
+            width: 82px;
+            height: 82px;
         }
 
         .compact-summary-detail {
@@ -509,6 +623,74 @@
 
             const previewUrl = URL.createObjectURL(file);
             $('.compact-home-hero').css('--hero-bg-image', `url("${previewUrl}")`);
+            $('#homeHeroCoverForm').trigger('submit');
+        });
+
+        const avatarMaxSize = 2 * 1024 * 1024;
+        const avatarAllowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+        function setAvatarMessage(message, type) {
+            $('#homeHeroAvatarMessage')
+                .text(message || '')
+                .removeClass('is-success is-error')
+                .addClass(type ? 'is-' + type : '');
+        }
+
+        $('#homeHeroAvatarInput').on('change', function () {
+            const input = this;
+            const file = this.files && this.files[0];
+            const $avatar = $('.compact-hero-avatar');
+
+            if (!file) {
+                return;
+            }
+
+            if (!avatarAllowedTypes.includes(file.type)) {
+                setAvatarMessage('Use JPG, PNG, or WEBP.', 'error');
+                input.value = '';
+                return;
+            }
+
+            if (file.size > avatarMaxSize) {
+                setAvatarMessage('Max file size is 2 MB.', 'error');
+                input.value = '';
+                return;
+            }
+
+            const previewUrl = URL.createObjectURL(file);
+            $('.compact-hero-avatar').css('background-image', `url("${previewUrl}")`);
+            setAvatarMessage('Uploading...', '');
+            $avatar.addClass('is-uploading');
+
+            const formData = new FormData($('#homeHeroAvatarForm')[0]);
+
+            $.ajax({
+                url: $('#homeHeroAvatarForm').attr('action'),
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'Accept': 'application/json'
+                },
+                success: function (response) {
+                    if (response.avatar_url) {
+                        $('.compact-hero-avatar').css('background-image', `url("${response.avatar_url}")`);
+                    }
+                    setAvatarMessage(response.message || 'Photo updated.', 'success');
+                },
+                error: function (xhr) {
+                    const message = xhr.responseJSON && xhr.responseJSON.message
+                        ? xhr.responseJSON.message
+                        : 'Upload failed.';
+                    setAvatarMessage(message, 'error');
+                },
+                complete: function () {
+                    $avatar.removeClass('is-uploading');
+                    input.value = '';
+                    URL.revokeObjectURL(previewUrl);
+                }
+            });
         });
     });
 </script>

@@ -133,7 +133,7 @@
         }
 
         .content-hero-actions {
-            min-width: 240px;
+            min-width: 2px;
         }
 
         .content-meta-chip,

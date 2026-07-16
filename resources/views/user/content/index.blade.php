@@ -2,18 +2,41 @@
 
 @section('style')
     <style>
+        :root {
+            --owl-ui-radius: 20px;
+            --owl-hero-radius: 24px;
+            --owl-ui-shadow: 0 2px 12px rgba(15, 23, 42, .05);
+            --owl-ui-shadow-hover: 0 10px 28px rgba(15, 23, 42, .10);
+            --owl-ui-border: #e2e8f0;
+            --owl-ui-surface: #fff;
+            --owl-ui-text: #0f172a;
+            --owl-ui-muted: #64748b;
+        }
+
         .content-filter-card {
-            border-radius: 18px;
+            border-radius: var(--owl-ui-radius) !important;
+            border: 1px solid var(--owl-ui-border) !important;
+            box-shadow: var(--owl-ui-shadow) !important;
+            overflow: hidden;
         }
 
         .content-hero-card {
-            border-radius: 18px;
+            border-radius: 22px !important;
         }
 
         .content-hero-surface {
+            min-height: 238px;
+            padding: 28px 34px !important;
+            display: flex;
+            align-items: center;
             background:
                 radial-gradient(circle at 85% 20%, rgba(255, 255, 255, .24), transparent 28%),
-                linear-gradient(135deg, #2f6de1 0%, #4d8df5 58%, #5da0ff 100%);
+                linear-gradient(135deg, #0041b9 0%, #1248a7 45%, #2a72ca 100%);
+        }
+
+        .content-hero-surface > .row {
+            width: 100%;
+            min-height: 182px;
         }
 
         .content-hero-count {
@@ -21,8 +44,10 @@
             flex-direction: column;
             align-items: flex-end;
             justify-content: center;
+            width: 100%;
             line-height: 1;
             color: #fff;
+            text-align: right;
         }
 
         .content-hero-count strong {
@@ -33,12 +58,24 @@
         }
 
         .content-hero-count span {
-            margin-top: 8px;
+            margin-bottom: 8px;
             font-size: 15px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: .08em;
             color: rgba(255, 255, 255, .78);
+        }
+
+        .content-hero-copy h1 {
+            font-size: clamp(30px, 3.4vw, 44px);
+            line-height: 1.04;
+            letter-spacing: 0;
+        }
+
+        .content-hero-copy p {
+            max-width: 580px;
+            font-size: 15px;
+            line-height: 1.65;
         }
 
         .content-reset-btn {
@@ -68,7 +105,10 @@
         }
 
         .content-quick-filter {
-            border-radius: 18px;
+            border-radius: var(--owl-ui-radius) !important;
+            border: 1px solid var(--owl-ui-border) !important;
+            box-shadow: var(--owl-ui-shadow) !important;
+            overflow: hidden;
         }
 
         .content-quick-filter .card-body {
@@ -89,8 +129,8 @@
             padding: 12px 14px;
             border: 1px solid #e2e8f0;
             border-radius: 14px;
-            background: #fff;
-            color: #0f172a;
+            background: var(--owl-ui-surface);
+            color: var(--owl-ui-text);
             font-weight: 600;
             text-decoration: none;
             transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
@@ -115,14 +155,24 @@
             font-size: 18px;
         }
 
+        .content-card-thumb {
+            border-radius: 0;
+        }
+
         .content-card {
             height: 100%;
+            border: 1px solid var(--owl-ui-border);
+            border-radius: var(--owl-ui-radius);
+            box-shadow: var(--owl-ui-shadow);
+            overflow: hidden;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
         }
 
         .content-card .card-body {
             display: flex;
             flex-direction: column;
             height: 100%;
+            padding: 18px;
         }
 
         .content-card-action {
@@ -130,7 +180,7 @@
         }
 
         .learning-path-card {
-            border-radius: 18px;
+            border-radius: var(--owl-ui-radius) !important;
         }
 
         .learning-path-card .card-body {
@@ -140,7 +190,7 @@
         .learning-path-card:hover,
         .content-card:hover {
             transform: translateY(-3px);
-            transition: all .2s ease;
+            box-shadow: var(--owl-ui-shadow-hover);
         }
 
         /* ── Deadline row in content cards ────────────────────────── */
@@ -162,11 +212,47 @@
             display: none;
         }
 
+        .content-empty-card,
+        .content-filter-empty-card {
+            border-radius: var(--owl-ui-radius) !important;
+            border: 1px solid var(--owl-ui-border) !important;
+            box-shadow: var(--owl-ui-shadow) !important;
+            overflow: hidden;
+        }
+
+        .learning-filter-modal .modal-content {
+            border-radius: var(--owl-ui-radius) !important;
+            overflow: hidden;
+        }
+
+        .learning-filter-modal .form-control,
+        .learning-filter-modal .form-select,
+        .content-filter-card .form-control,
+        .content-filter-card .form-select,
+        .content-filter-card .btn {
+            border-radius: 12px !important;
+        }
+
+        .content-pagination-wrap .pagination {
+            gap: .4rem;
+        }
+
+        .content-pagination-wrap .page-link {
+            min-width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px !important;
+            border-color: #dbe4f0;
+            font-weight: 600;
+        }
+
         [data-bs-theme="dark"] .content-hero-surface,
         body.dark-mode .content-hero-surface {
             background:
-                radial-gradient(circle at 85% 20%, rgba(96, 165, 250, .22), transparent 30%),
-                linear-gradient(135deg, #0b1f44 0%, #12376f 58%, #175c8f 100%);
+                radial-gradient(circle at 85% 20%, rgba(255, 255, 255, .10), transparent 28%),
+                linear-gradient(135deg, #0c1e38 0%, #132e6a 100%) !important;
         }
 
         [data-bs-theme="dark"] .content-reset-btn,
@@ -192,6 +278,40 @@
         [data-bs-theme="dark"] .content-quick-filter,
         body.dark-mode .content-quick-filter {
             background: #152235;
+            border: 1px solid rgba(255, 255, 255, .07);
+            box-shadow: none !important;
+        }
+
+        [data-bs-theme="dark"] .content-filter-card,
+        body.dark-mode .content-filter-card,
+        [data-bs-theme="dark"] .content-card,
+        body.dark-mode .content-card,
+        [data-bs-theme="dark"] .content-empty-card,
+        body.dark-mode .content-empty-card,
+        [data-bs-theme="dark"] .content-filter-empty-card,
+        body.dark-mode .content-filter-empty-card {
+            background: #152235;
+            border-color: rgba(255, 255, 255, .07);
+            color: #f1f5f9;
+            box-shadow: none !important;
+        }
+
+        [data-bs-theme="dark"] .content-card .card-body,
+        body.dark-mode .content-card .card-body {
+            background: #152235 !important;
+            border-radius: 0 0 var(--owl-ui-radius) var(--owl-ui-radius);
+        }
+
+        [data-bs-theme="dark"] .content-card-title a,
+        body.dark-mode .content-card-title a {
+            color: #f1f5f9;
+        }
+
+        [data-bs-theme="dark"] .content-card-meta,
+        [data-bs-theme="dark"] .content-card .text-muted,
+        body.dark-mode .content-card-meta,
+        body.dark-mode .content-card .text-muted {
+            color: #94a3b8 !important;
         }
 
         [data-bs-theme="dark"] .content-quick-filter-item,
@@ -213,6 +333,41 @@
             background: rgba(37, 99, 235, .2);
         }
 
+        [data-bs-theme="dark"] .learning-filter-modal .modal-content,
+        body.dark-mode .learning-filter-modal .modal-content {
+            background: #152235;
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, .07);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, .34);
+        }
+
+        [data-bs-theme="dark"] .learning-filter-modal .form-control,
+        [data-bs-theme="dark"] .learning-filter-modal .form-select,
+        [data-bs-theme="dark"] .content-filter-card .form-control,
+        [data-bs-theme="dark"] .content-filter-card .form-select,
+        body.dark-mode .learning-filter-modal .form-control,
+        body.dark-mode .learning-filter-modal .form-select,
+        body.dark-mode .content-filter-card .form-control,
+        body.dark-mode .content-filter-card .form-select {
+            background: #192d45;
+            border-color: rgba(255, 255, 255, .08);
+            color: #f1f5f9;
+        }
+
+        [data-bs-theme="dark"] .content-pagination-wrap .page-link,
+        body.dark-mode .content-pagination-wrap .page-link {
+            background: #152235;
+            border-color: rgba(255, 255, 255, .08);
+            color: #93c5fd;
+        }
+
+        [data-bs-theme="dark"] .content-pagination-wrap .page-item.active .page-link,
+        body.dark-mode .content-pagination-wrap .page-item.active .page-link {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #fff;
+        }
+
         @media (max-width: 991.98px) {
             .content-quick-filter-list {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -220,8 +375,13 @@
         }
 
         @media (max-width: 767.98px) {
+            .content-hero-surface {
+                min-height: auto;
+            }
+
             .content-hero-count {
                 align-items: flex-start;
+                text-align: left;
             }
 
             .content-hero-count strong {
@@ -246,27 +406,27 @@
 
         {{-- HERO --}}
         <div class="card content-hero-card mb-4 overflow-hidden border-0 shadow-sm">
-            <div class="card-body content-hero-surface p-4 p-lg-5 text-white">
+            <div class="card-body content-hero-surface text-white">
                 <div class="row align-items-center g-4">
-                    <div class="col-lg-8">
+                    <div class="col-lg-8 content-hero-copy">
                         <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-3 px-3 py-2 rounded-pill">
                             <i class="ti ti-sparkles"></i>
                             Learning Content
                         </div>
 
                         <h1 class="mb-2 fw-bold">
-                            {{ $selectedCategory->classification_name ?? 'All Learning Content' }}
+                            {{ $selectedCategory->classification_name ?? 'Build your next skill' }}
                         </h1>
 
                         <p class="mb-0 text-white-75">
-                           Find learning materials by category, content type, and newest additions on a single page.
+                           Explore curated videos, documents, and learning materials that help you keep growing every day.
                         </p>
                     </div>
 
-                    <div class="col-lg-4 text-lg-end">
+                    <div class="col-lg-4 d-flex justify-content-lg-end">
                         <div class="content-hero-count">
+                            <span>All Content</span>
                             <strong>{{ $contents->total() }}</strong>
-                            <span>Content</span>
                         </div>
                     </div>
                 </div>
@@ -276,55 +436,6 @@
         {{-- @include('user.content.components.learning-paths') --}}
 
         @include('user.content.components.content-search-filter')
-
-        {{-- QUICK FILTER --}}
-        <div class="card content-quick-filter mb-4 border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                    <div>
-                        <h3 class="card-title mb-1">
-                            <i class="ti ti-bolt me-1 text-primary"></i>
-                            Quick Filter
-                        </h3>
-                        <div class="text-muted small">Access common content filters faster.</div>
-                    </div>
-                </div>
-
-                <div class="content-quick-filter-list">
-                    <a href="{{ route('content.user.index', ['type' => 'Video']) }}"
-                       class="content-quick-filter-item">
-                        <span class="content-quick-filter-icon text-primary">
-                            <i class="ti ti-video"></i>
-                        </span>
-                        <span>Video Content</span>
-                    </a>
-
-                    <a href="{{ route('content.user.index', ['type' => 'YouTube']) }}"
-                       class="content-quick-filter-item">
-                        <span class="content-quick-filter-icon text-danger">
-                            <i class="ti ti-brand-youtube"></i>
-                        </span>
-                        <span>YouTube Content</span>
-                    </a>
-
-                    <a href="{{ route('content.user.index', ['type' => 'Document']) }}"
-                       class="content-quick-filter-item">
-                        <span class="content-quick-filter-icon text-success">
-                            <i class="ti ti-file-text"></i>
-                        </span>
-                        <span>Document Content</span>
-                    </a>
-
-                    <a href="{{ route('content.user.index', ['date_order' => 'newest']) }}"
-                       class="content-quick-filter-item">
-                        <span class="content-quick-filter-icon text-warning">
-                            <i class="ti ti-clock"></i>
-                        </span>
-                        <span>Newest Content</span>
-                    </a>
-                </div>
-            </div>
-        </div>
 
         {{-- MAIN CONTENT --}}
         <div class="d-flex align-items-center mb-3">
@@ -337,7 +448,7 @@
         </div>
 
         <div class="row row-cards">
-            @forelse ($contents as $item)
+            @forelse ($contents->getCollection()->take(12) as $item)
                 <div class="col-12 col-md-6 col-lg-4 col-xl-3 content-grid-item"
                      data-content-duration="{{ $item->duration }}">
                     @if (in_array($item->type, ['Video', 'YouTube']))
@@ -348,7 +459,7 @@
                 </div>
             @empty
                 <div class="col-12">
-                    <div class="empty card card-body rounded-4 shadow-sm border-0">
+                    <div class="empty card card-body content-empty-card">
                         <div class="empty-img">
                             <i class="ti ti-folder-off" style="font-size: 64px;"></i>
                         </div>
@@ -367,7 +478,7 @@
         </div>
 
         <div id="contentAdvancedEmpty" class="content-advanced-empty mt-3">
-            <div class="empty card card-body rounded-4 shadow-sm border-0">
+            <div class="empty card card-body content-filter-empty-card">
                 <div class="empty-img">
                     <i class="ti ti-filter-off" style="font-size: 64px;"></i>
                 </div>
@@ -378,7 +489,7 @@
             </div>
         </div>
 
-        <div class="mt-4">
+        <div class="mt-4 content-pagination-wrap">
             {{ $contents->links() }}
         </div>
 

@@ -1,4 +1,4 @@
-<div class="card border-0 shadow-sm rounded-4 mb-3">
+<div class="card border-0 shadow-sm rounded-4 mb-2 learning-tab-card">
     <div class="card-body py-2">
         <div class="d-flex flex-wrap gap-2" role="tablist">
             <button class="btn btn-primary learning-tab-btn" data-target="#tab-ongoing" type="button">

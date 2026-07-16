@@ -84,13 +84,19 @@ document.addEventListener("DOMContentLoaded", function () {
             return Math.max(0, items - visible);
         }
 
+        function getStepWidth() {
+            var firstItem = track.children[0];
+            return firstItem ? firstItem.getBoundingClientRect().width : 0;
+        }
+
         function update() {
             var visible = getVisibleCount();
             var maxIndex = getMaxIndex(visible);
+            var stepWidth = getStepWidth();
 
             if (index > maxIndex) index = maxIndex;
 
-            track.style.transform = 'translateX(-' + (index * (100 / visible)) + '%)';
+            track.style.transform = 'translate3d(-' + (index * stepWidth) + 'px, 0, 0)';
 
             var hideNav = items <= visible;
             prevBtn.classList.toggle('d-none', hideNav);
@@ -121,6 +127,10 @@ document.addEventListener("DOMContentLoaded", function () {
         carousel.addEventListener('mouseleave', startAutoplay);
 
         window.addEventListener('resize', update);
+
+        document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (tab) {
+            tab.addEventListener('shown.bs.tab', update);
+        });
 
         update();
         startAutoplay();

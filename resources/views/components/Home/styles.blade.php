@@ -1362,12 +1362,13 @@ a { text-decoration: none; }
 
 .home-modern-slide-track {
     display: flex;
-    transition: transform .4s ease;
+    transition: transform .38s cubic-bezier(.22, .61, .36, 1);
+    will-change: transform;
 }
 
 .home-modern-slide-item {
-    flex: 0 0 33.3333%;
-    max-width: 33.3333%;
+    flex: 0 0 25%;
+    max-width: 25%;
     min-width: 0;
     padding: 0 7px;
 }

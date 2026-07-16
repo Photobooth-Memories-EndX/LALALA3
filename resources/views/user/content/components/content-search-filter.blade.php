@@ -3,6 +3,16 @@
     $filterToDate = request('to_date');
     $filterDuration = request('duration', 'all');
     $filterTotalPages = array_values(array_filter((array) request('total_pages', [])));
+    $selectedMonth = request('month', '');
+    $selectedYear = request('year', '');
+
+    if (blank($selectedMonth) && filled($filterFromDate)) {
+        $selectedMonth = \Carbon\Carbon::parse($filterFromDate)->format('m');
+    }
+
+    if (blank($selectedYear) && filled($filterFromDate)) {
+        $selectedYear = \Carbon\Carbon::parse($filterFromDate)->format('Y');
+    }
 
     $durationOptions = [
         'lt10'  => '< 10 Menit',
@@ -31,22 +41,32 @@
     $activeFilterCount += filled($filterSearch) ? 1 : 0;
     $activeFilterCount += filled($filterClassification) ? 1 : 0;
     $activeFilterCount += filled($filterType) ? 1 : 0;
+
+    $monthOptions = collect(range(1, 12))->mapWithKeys(function ($month) {
+        $value = str_pad((string) $month, 2, '0', STR_PAD_LEFT);
+        return [$value => \Carbon\Carbon::create(null, $month, 1)->format('F')];
+    });
+
+    $yearNow = (int) now()->format('Y');
+    $yearOptions = range($yearNow, $yearNow - 5);
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 mb-4 learning-filter-card content-filter-card">
-    <div class="card-body p-4">
+    <div class="card-body p-3 p-lg-4">
         <form method="GET" action="{{ route('content.user.index') }}" id="contentFilterForm">
-            <div class="mb-3">
-                <h3 class="card-title mb-1">All Content</h3>
-                <div class="text-muted small">
-                    Find learning materials by search, type, and category.
-                </div>
-            </div>
+            <input type="hidden" name="from_date" id="contentFilterFromDateHidden" value="{{ $filterFromDate }}">
+            <input type="hidden" name="to_date" id="contentFilterToDateHidden" value="{{ $filterToDate }}">
 
-            <div class="row g-2 align-items-end">
-                <div class="col-12 col-lg-4 col-xl-3">
-                    <label class="form-label small text-muted mb-1" for="contentSearch">Search</label>
-                    <div class="input-icon">
+            <div class="content-filter-top">
+                <div class="content-filter-heading">
+                    <h3 class="card-title mb-1">All Content</h3>
+                    <div class="text-muted small">
+                        Find learning materials by search, type, and category.
+                    </div>
+                </div>
+
+                <div class="content-filter-search">
+                    <div class="input-icon flex-grow-1">
                         <span class="input-icon-addon">
                             <i class="ti ti-search"></i>
                         </span>
@@ -57,9 +77,26 @@
                                class="form-control rounded-3"
                                placeholder="Search content...">
                     </div>
-                </div>
 
-                <div class="col-12 col-sm-6 col-lg-3 col-xl-3">
+                    <button type="submit" class="btn btn-primary rounded-3 content-filter-icon-btn" title="Search">
+                        <i class="ti ti-search"></i>
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-outline-primary rounded-3 content-filter-icon-btn position-relative"
+                            data-bs-toggle="modal"
+                            data-bs-target="#contentMoreFiltersModal"
+                            title="More filters">
+                        <i class="ti ti-adjustments-horizontal"></i>
+                        @if ($modalFilterCount > 0)
+                            <span class="badge bg-primary text-white content-filter-count">{{ $modalFilterCount }}</span>
+                        @endif
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-2 align-items-end content-filter-compact-row">
+                <div class="col-12 col-sm-6 col-lg-2">
                     <label class="form-label small text-muted mb-1" for="contentFilterClassification">Category / Classification</label>
                     <select name="classification" id="contentFilterClassification" class="form-select rounded-3" onchange="this.form.submit()">
                         <option value="">All Categories</option>
@@ -71,7 +108,7 @@
                     </select>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-2 col-xl-2">
+                <div class="col-12 col-sm-6 col-lg-2">
                     <label class="form-label small text-muted mb-1" for="contentFilterType">Type</label>
                     <select name="type" id="contentFilterType" class="form-select rounded-3" onchange="this.form.submit()">
                         <option value="">All Types</option>
@@ -81,23 +118,38 @@
                     </select>
                 </div>
 
-                <div class="col-12 col-lg-3 col-xl-4">
-                    <div class="d-flex gap-2 learning-filter-actions justify-content-xl-end">
-                        <button type="submit" class="btn btn-primary rounded-3 flex-fill flex-xl-grow-0">
-                            <i class="ti ti-search me-1"></i>
-                            Search
-                        </button>
+                <div class="col-12 col-sm-6 col-lg-2">
+                    <label class="form-label small text-muted mb-1" for="contentFilterMonth">Month</label>
+                    <select name="month" id="contentFilterMonth" class="form-select rounded-3">
+                        <option value="">All Months</option>
+                        @foreach ($monthOptions as $value => $label)
+                            <option value="{{ $value }}" {{ $selectedMonth == $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                        <button type="button"
-                                class="btn btn-outline-primary rounded-3 flex-fill flex-xl-grow-0 position-relative"
-                                data-bs-toggle="modal"
-                                data-bs-target="#contentMoreFiltersModal">
-                            <i class="ti ti-adjustments-horizontal me-1"></i>
-                            More Filters
-                            @if ($modalFilterCount > 0)
-                                <span class="badge bg-primary text-white ms-1">{{ $modalFilterCount }}</span>
-                            @endif
-                        </button>
+                <div class="col-12 col-sm-6 col-lg-2">
+                    <label class="form-label small text-muted mb-1" for="contentFilterYear">Year</label>
+                    <select name="year" id="contentFilterYear" class="form-select rounded-3">
+                        <option value="">All Years</option>
+                        @foreach ($yearOptions as $year)
+                            <option value="{{ $year }}" {{ (string) $selectedYear === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-12 col-lg-4">
+                    <label class="form-label small text-muted mb-1">Quick Filter</label>
+                    <div class="d-flex flex-wrap gap-2 learning-filter-actions">
+                        <a href="{{ route('content.user.index', ['date_order' => 'newest']) }}"
+                           class="btn btn-outline-primary rounded-3 flex-fill flex-lg-grow-0">
+                            <i class="ti ti-clock me-1"></i>Newest
+                        </a>
+
+                        <a href="{{ route('content.user.index', ['type' => 'Video']) }}"
+                           class="btn btn-outline-primary rounded-3 flex-fill flex-lg-grow-0">
+                            <i class="ti ti-video me-1"></i>Video
+                        </a>
 
                         <a href="{{ route('content.user.index') }}"
                            class="btn content-reset-btn rounded-3 flex-fill flex-xl-grow-0 {{ $activeFilterCount > 0 ? 'is-active' : '' }}">
@@ -144,7 +196,6 @@
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small text-muted mb-1" for="contentFilterFromDate">From Date</label>
                                         <input type="date"
-                                               name="from_date"
                                                id="contentFilterFromDate"
                                                value="{{ $filterFromDate }}"
                                                class="form-control rounded-3">
@@ -152,7 +203,6 @@
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small text-muted mb-1" for="contentFilterToDate">To Date</label>
                                         <input type="date"
-                                               name="to_date"
                                                id="contentFilterToDate"
                                                value="{{ $filterToDate }}"
                                                class="form-control rounded-3">
@@ -270,3 +320,102 @@
 </div>
 
 <x-learning.ongoing-filter-style />
+
+<style>
+    .content-filter-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .content-filter-heading {
+        min-width: 0;
+    }
+
+    .content-filter-search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: min(100%, 520px);
+    }
+
+    .content-filter-icon-btn {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .content-filter-count {
+        position: absolute;
+        top: -7px;
+        right: -7px;
+        min-width: 18px;
+        height: 18px;
+        padding: 2px 5px;
+        border-radius: 999px;
+        font-size: 10px;
+        line-height: 14px;
+    }
+
+    .content-filter-compact-row .form-label {
+        white-space: nowrap;
+    }
+
+    @media (max-width: 991.98px) {
+        .content-filter-top {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .content-filter-search {
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    $(function () {
+        function syncContentMonthYearRange() {
+            const month = $('#contentFilterMonth').val();
+            const year = $('#contentFilterYear').val();
+
+            if (month && year) {
+                const lastDay = new Date(Number(year), Number(month), 0).getDate();
+                $('#contentFilterFromDateHidden').val(year + '-' + month + '-01');
+                $('#contentFilterToDateHidden').val(year + '-' + month + '-' + String(lastDay).padStart(2, '0'));
+            } else {
+                $('#contentFilterFromDateHidden').val('');
+                $('#contentFilterToDateHidden').val('');
+            }
+        }
+
+        $('#contentFilterMonth, #contentFilterYear').on('change', function () {
+            syncContentMonthYearRange();
+            $('#contentFilterForm').trigger('submit');
+        });
+
+        $('#contentMoreFiltersModal').on('show.bs.modal', function () {
+            $('#contentFilterFromDate').attr('name', 'from_date');
+            $('#contentFilterToDate').attr('name', 'to_date');
+            $('#contentFilterFromDateHidden, #contentFilterToDateHidden').prop('disabled', true);
+        });
+
+        $('#contentMoreFiltersModal').on('hidden.bs.modal', function () {
+            $('#contentFilterFromDate').removeAttr('name');
+            $('#contentFilterToDate').removeAttr('name');
+            $('#contentFilterFromDateHidden, #contentFilterToDateHidden').prop('disabled', false);
+        });
+
+        $('#contentFilterForm').on('submit', function () {
+            if (!$('#contentMoreFiltersModal').hasClass('show')) {
+                syncContentMonthYearRange();
+            }
+        });
+    });
+</script>

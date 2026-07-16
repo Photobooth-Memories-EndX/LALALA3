@@ -8,370 +8,284 @@
 ])
 
 @php
-    $name = $user->name ?? 'User';
-    $initial = strtoupper(substr($name, 0, 1));
-    $position = $user->position ?? $user->job_title ?? null;
+    $totalLearning = (int) ($totalLearning ?? 0);
+    $completedLearning = (int) ($completedLearning ?? 0);
+    $ongoingLearning = (int) ($ongoingLearning ?? 0);
+    $passedAssessment = (int) ($passedAssessment ?? 0);
 @endphp
 
-<div class="card border-0 shadow rounded-4 overflow-hidden learning-hero mb-4">
-    <div class="card-body p-4 p-xl-5">
+<div class="card border-0 shadow-sm overflow-hidden learning-hero mb-4">
+    <div class="card-body">
+        <div class="row align-items-center g-4 learning-hero-row">
+            <div class="col-lg-6">
+                <div class="learning-hero-copy">
+                    <span class="learning-hero-label">
+                        <i class="ti ti-school"></i>
+                        My Learning
+                    </span>
 
-        <div class="row align-items-center h-100">
+                    <h2 class="learning-hero-name">Learning Dashboard</h2>
 
-            {{-- ================= AREA 1: PROFILE (55%) ================= --}}
-            <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
-
-                <div class="d-flex flex-column align-items-center align-lg-items-start text-center text-lg-start h-100 justify-content-center">
-
-                    {{-- Avatar --}}
-                    <div
-                        class="avatar rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center mb-3 mb-lg-0 me-lg-4"
-                        style="width:140px;height:140px;font-size:64px;flex-shrink:0;">
-                        {{ $initial }}
-                    </div>
-
-                    {{-- Profile --}}
-                    <div class="flex-grow-1">
-
-                        <h2 class="text-white fw-bold mb-3"
-                            style="font-size:1.9rem;line-height:1.2;">
-                            {{ $name }}
-                        </h2>
-
-                        <div class="text-white-75 mb-2" style="font-size:15px;font-weight:600;letter-spacing:.3px;">
-                            {{ $user->id_emp ?? '-' }}
-
-                            @if(!empty($user->team))
-                                • {{ $user->team }}
-                            @endif
-                        </div>
-
-                        <div class="text-white-75 mb-2" style="font-size:15px;font-weight:500;">
-                            {{ $user->department ?? '-' }}
-
-                            @if(!empty($position))
-                                • {{ $position }}
-                            @endif
-                        </div>
-
-                        <div class="text-white-75"
-                             style="font-size:14px;">
-                            {{ $user->email ?? '-' }}
-                        </div>
-
-                    </div>
-
+                    <p class="learning-hero-description">
+                        Track your ongoing learning, review records, assessments, and certificates in one place.
+                    </p>
                 </div>
-
             </div>
 
-            {{-- ================= AREA 2: LEARNING HOUR (20%) ================= --}}
-            <div class="col-lg-3 col-md-12 mb-4 mb-lg-0">
-
+            <div class="col-lg-2">
                 <div class="learning-hour-card">
-
-                    <div class="learning-hour-label">
-                        Learning Hour
-                    </div>
-
-                    <div class="learning-hour-value">
-                        {{ $learningHours }}
-                    </div>
-
-                    <div class="learning-hour-unit">
-                        Hours
-                    </div>
-
+                    <strong>{{ $learningHours }}</strong>
+                    <span>Learning Hours</span>
                 </div>
-
             </div>
 
-            {{-- ================= AREA 3: STATISTICS (25%) ================= --}}
-            <div class="col-lg-3 col-md-12">
-
-                <div class="row g-2">
-
-                    <div class="col-6">
-                        <div class="learning-mini-stat">
-
-                            <div class="learning-mini-stat-label">
-                                TOTAL LEARNING
-                            </div>
-
-                            <div class="learning-mini-stat-value">
-                                {{ $totalLearning }}
-                            </div>
-
-                        </div>
+            <div class="col-lg-4">
+                <div class="learning-hero-stats">
+                    <div class="learning-mini-stat learning-stat-total">
+                        <div class="learning-mini-stat-label">Total Learning</div>
+                        <div class="learning-mini-stat-value">{{ $totalLearning }}</div>
                     </div>
 
-                    <div class="col-6">
-                        <div class="learning-mini-stat">
-
-                            <div class="learning-mini-stat-label">
-                                COMPLETED
-                            </div>
-
-                            <div class="learning-mini-stat-value">
-                                {{ $completedLearning }}
-                            </div>
-
-                        </div>
+                    <div class="learning-mini-stat learning-stat-completed">
+                        <div class="learning-mini-stat-label">Completed</div>
+                        <div class="learning-mini-stat-value">{{ $completedLearning }}</div>
                     </div>
 
-                    <div class="col-6">
-                        <div class="learning-mini-stat">
-
-                            <div class="learning-mini-stat-label">
-                                ON GOING
-                            </div>
-
-                            <div class="learning-mini-stat-value">
-                                {{ $ongoingLearning }}
-                            </div>
-
-                        </div>
+                    <div class="learning-mini-stat learning-stat-ongoing">
+                        <div class="learning-mini-stat-label">On Going</div>
+                        <div class="learning-mini-stat-value">{{ $ongoingLearning }}</div>
                     </div>
 
-                    <div class="col-6">
-                        <div class="learning-mini-stat">
-
-                            <div class="learning-mini-stat-label">
-                                ASSESSMENT PASS
-                            </div>
-
-                            <div class="learning-mini-stat-value">
-                                {{ $passedAssessment }}
-                            </div>
-
-                        </div>
+                    <div class="learning-mini-stat learning-stat-assessment">
+                        <div class="learning-mini-stat-label">Assessment Pass</div>
+                        <div class="learning-mini-stat-value">{{ $passedAssessment }}</div>
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
 </div>
 
 <style>
 /* =====================================================
-   LEARNING HERO CARD — 3-Column Layout
+   LEARNING HERO CARD
 ===================================================== */
 
 .learning-hero {
-background:linear-gradient(
-        135deg,
-        #0041b9 0%,
-        #1248a7 45%,
-        #2a72ca 100%
-    );
+    position: relative;
+    isolation: isolate;
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .16), transparent 31%),
+        linear-gradient(135deg, #0041b9 0%, #1248a7 45%, #2a72ca 100%);
+    color: #fff;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, .16) !important;
 }
 
 .learning-hero .card-body {
-    min-height: 280px;
+    min-height: 238px;
+    padding: 28px 34px;
+    background: transparent !important;
+    display: flex;
+    align-items: center;
 }
 
-/* Area 1: Profile */
-.learning-hero h2 {
-    font-size: 1.9rem;
+.learning-hero::before {
+    content: "";
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    top: -126px;
+    right: -96px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .08);
+    pointer-events: none;
+    z-index: -1;
 }
 
-@media (min-width: 992px) {
-    .learning-hero .row {
-        display: flex;
-        align-items: center;
-    }
-
-    .learning-hero .col-lg-6 .avatar {
-        margin-right: 1.5rem;
-        margin-bottom: 0;
-    }
-
-    .learning-hero .col-lg-6 {
-        display: flex;
-        align-items: center;
-    }
-
-    .learning-hero .col-lg-6 .d-flex {
-        flex-direction: row !important;
-        text-align: left !important;
-    }
+.learning-hero-row {
+    min-height: 182px;
+    width: 100%;
 }
 
-/* Area 2: Learning Hour Card */
-.learning-hour-card {
+.learning-hero-copy {
+    min-width: 0;
+}
+
+.learning-hero-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    margin-bottom: 8px;
+    border-radius: 999px;
     background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    padding: 45px 15px;
-    min-height: 120px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    backdrop-filter: blur(8px);
+}
+
+.learning-hero-name {
+    margin: 0 0 12px;
+    color: #fff;
+    font-size: clamp(30px, 3.4vw, 44px);
+    font-weight: 700;
+    line-height: 1.04;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+}
+
+.learning-hero-description {
+    max-width: 560px;
+    margin: 0;
+    color: rgba(255, 255, 255, .78);
+    font-size: 15px;
+    line-height: 1.65;
+}
+
+.learning-hour-card {
+    width: 158px;
+    margin: 0 auto;
+    min-height: 118px;
+    padding: 18px 14px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .08);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .12);
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     text-align: center;
-    backdrop-filter: blur(12px);
-    transition: 0.25s ease;
+    transition: transform .2s ease, box-shadow .2s ease;
 }
 
 .learning-hour-card:hover {
     transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 16px 28px rgba(15, 23, 42, .16);
 }
 
-.learning-hour-label {
-    color: rgba(255, 255, 255, 0.78);
-    font-size: 0.875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 8px;
-}
-
-.learning-hour-value {
+.learning-hour-card strong {
     color: #fff;
-    font-size: 3rem;
+    font-size: 42px;
     font-weight: 700;
     line-height: 1;
-    margin-bottom: 4px;
 }
 
-.learning-hour-unit {
-    color: rgba(255, 255, 255, 0.72);
-    font-size: 0.875rem;
-    font-weight: 500;
+.learning-hour-card span {
+    margin-top: 6px;
+    color: rgba(255, 255, 255, .68);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: .8px;
 }
 
-/* Area 3: Statistics */
-.learning-mini-stat{
-
-    width:100%;
-
-    height:96px;
-
-    padding:16px 18px;
-
-    border-radius:16px;
-
-    background:rgba(255,255,255,.12);
-
-    border:1px solid rgba(255,255,255,.16);
-
-    display:flex;
-
-    flex-direction:column;
-
-    justify-content:space-between;
-
-    transition:.25s;
+.learning-hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
 }
 
-.learning-mini-stat-label{
-
-    min-height:30px;
-
-    display:flex;
-
-    align-items:flex-start;
-
-    color:rgba(255,255,255,.75);
-
-    font-size:11px;
-
-    font-weight:700;
-
-    line-height:1.2;
-
-    text-transform:uppercase;
+.learning-mini-stat {
+    min-height: 58px;
+    padding: 8px 9px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid rgba(255, 255, 255, .18);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .12);
+    transition: transform .2s ease, box-shadow .2s ease;
 }
 
-.learning-mini-stat-value{
-
-    font-size:30px;
-
-    font-weight:700;
-
-    color:#fff;
-
-    line-height:1;
+.learning-mini-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 28px rgba(15, 23, 42, .18);
 }
 
-/* Responsive */
-@media (max-width: 991px) {
+.learning-stat-total {
+    background: linear-gradient(135deg, rgba(59, 130, 246, .96), rgba(37, 99, 235, .86));
+}
+
+.learning-stat-completed {
+    background: linear-gradient(135deg, rgba(34, 197, 94, .96), rgba(22, 163, 74, .86));
+}
+
+.learning-stat-ongoing {
+    background: linear-gradient(135deg, rgba(14, 165, 233, .96), rgba(2, 132, 199, .86));
+}
+
+.learning-stat-assessment {
+    background: linear-gradient(135deg, rgba(245, 158, 11, .98), rgba(217, 119, 6, .88));
+}
+
+.learning-mini-stat-label {
+    min-height: 18px;
+    color: rgba(255, 255, 255, .82);
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-transform: uppercase;
+}
+
+.learning-mini-stat-value {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+[data-bs-theme="dark"] .learning-hero {
+    background:
+        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .08), transparent 31%),
+        linear-gradient(135deg, #0c1e38 0%, #132e6a 100%);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, .34) !important;
+}
+
+[data-bs-theme="dark"] .learning-hour-card {
+    background: rgba(255, 255, 255, .06);
+    border-color: rgba(255, 255, 255, .12);
+}
+
+@media (max-width: 991.98px) {
     .learning-hero .card-body {
         min-height: auto;
-        padding: 2rem 1rem;
+        padding: 28px 24px;
     }
 
-    .learning-hero .row {
-        margin: 0;
-    }
-
-    .learning-hero .col-lg-6,
-    .learning-hero .col-lg-3 {
-        margin-bottom: 2rem;
-    }
-
-    .learning-hero .col-lg-6 .d-flex {
-        text-align: center !important;
-        align-items: center !important;
-        flex-direction: column !important;
-    }
-
-    .learning-hero .col-lg-6 .avatar {
-        margin-right: 0 !important;
-        margin-bottom: 1rem;
+    .learning-hero-row {
+        min-height: 0;
     }
 
     .learning-hour-card {
-        min-height: 100px;
-    }
-
-    .learning-hour-value {
-        font-size: 2.2rem;
-    }
-
-    .learning-hour-label {
-        font-size: 0.8rem;
-    }
-
-    .learning-hour-unit {
-        font-size: 0.8rem;
-    }
-
-    .learning-mini-stat {
-        min-height: 80px;
-        margin-top: 10px;
-    }
-
-    .learning-mini-stat-value {
-        font-size: 1.7rem;
+        margin-left: 0;
     }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767.98px) {
+    .learning-hero {
+        border-radius: 18px;
+    }
+
     .learning-hero .card-body {
-        padding: 1.5rem 1rem;
+        padding: 22px 18px;
     }
 
-    .learning-hour-label {
-        font-size: 12px;
+    .learning-hero-name {
+        font-size: 26px;
     }
 
-    .learning-hour-value {
-        font-size: 2.2rem;
-        margin-bottom: 4px;
+    .learning-hour-card {
+        width: 142px;
+        min-height: 104px;
     }
 
-    .learning-hour-unit {
-        font-size: 12px;
-    }
-
-    .learning-hero h2 {
-        font-size: 1.5rem;
+    .learning-hour-card strong {
+        font-size: 34px;
     }
 }
 </style>
