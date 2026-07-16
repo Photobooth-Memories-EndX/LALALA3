@@ -3,60 +3,111 @@
  * mengikuti prinsip clean code: Blade = struktur, CSS = tampilan, JS = perilaku).
  */
 
-/* Tabel Learning Record: compact, fit di card tanpa horizontal scroll di desktop */
+/* Tabel Learning Record: tetap compact dengan ruang baca yang cukup. */
 .learning-record-table {
-    table-layout: fixed;
+    table-layout: auto;
     width: 100%;
+    min-width: 1180px;
     font-size: 12.5px;
-    line-height: 1.25;
+    line-height: 1.35;
 }
 
-.learning-record-table th,
 .learning-record-table td {
-    padding: 5px 6px !important;
+    padding: 12px 14px !important;
     vertical-align: middle;
     white-space: normal;
     overflow-wrap: break-word;
 }
 
-/*
- * Override hanya kolom compact yang memiliki width inline dari Blade.
- * Class tetap fleksibel dan mengambil sisa lebar tabel.
- */
+/* Header sedikit lega dan konsisten, termasuk saat sticky. */
+.learning-record-table th {
+    padding: 12px 14px !important;
+    vertical-align: middle;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+/* Class fleksibel; kolom data compact memakai min-width agar tidak berhimpitan. */
+.learning-record-table th:nth-child(1),
+.learning-record-table td:nth-child(1) {
+    width: 52px !important;
+    min-width: 52px;
+    text-align: center;
+}
+
 .learning-record-table th:nth-child(2),
 .learning-record-table td:nth-child(2) {
     width: auto !important;
+    min-width: 240px;
 }
 
 .learning-record-table th:nth-child(3),
 .learning-record-table td:nth-child(3) {
-    width: 8% !important;
+    width: 90px !important;
+    min-width: 90px;
+}
+
+.learning-record-table th:nth-child(4),
+.learning-record-table td:nth-child(4) {
+    width: 130px !important;
+    min-width: 130px;
 }
 
 .learning-record-table th:nth-child(5),
-.learning-record-table td:nth-child(5),
+.learning-record-table td:nth-child(5) {
+    width: 100px !important;
+    min-width: 100px;
+}
+
 .learning-record-table th:nth-child(6),
-.learning-record-table td:nth-child(6),
-.learning-record-table th:nth-child(9),
-.learning-record-table td:nth-child(9) {
-    width: 7% !important;
+.learning-record-table td:nth-child(6) {
+    width: 110px !important;
+    min-width: 110px;
 }
 
 .learning-record-table th:nth-child(7),
 .learning-record-table td:nth-child(7) {
-    width: 8% !important;
+    width: 100px !important;
+    min-width: 100px;
+}
+
+.learning-record-table th:nth-child(8),
+.learning-record-table td:nth-child(8) {
+    width: 180px !important;
+    min-width: 180px;
+}
+
+.learning-record-table th:nth-child(9),
+.learning-record-table td:nth-child(9) {
+    width: 110px !important;
+    min-width: 110px;
 }
 
 .learning-record-table th:nth-child(10),
 .learning-record-table td:nth-child(10) {
-    width: 10% !important;
+    width: 100px !important;
+    min-width: 100px;
 }
 
-.learning-record-table th {
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: 0;
+/* Kolom metrik, Date Time, dan aksi rata tengah; Class tetap rata kiri. */
+.learning-record-table th:nth-child(3),
+.learning-record-table td:nth-child(3),
+.learning-record-table th:nth-child(5),
+.learning-record-table td:nth-child(5),
+.learning-record-table th:nth-child(6),
+.learning-record-table td:nth-child(6),
+.learning-record-table th:nth-child(7),
+.learning-record-table td:nth-child(7),
+.learning-record-table th:nth-child(8),
+.learning-record-table td:nth-child(8),
+.learning-record-table th:nth-child(9),
+.learning-record-table td:nth-child(9),
+.learning-record-table th:nth-child(10),
+.learning-record-table td:nth-child(10) {
+    text-align: center;
 }
 
 .learning-record-table tbody tr.record-row {
@@ -72,12 +123,12 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.2;
+    line-height: 1.35;
 }
 
 .learning-record-title-text {
     font-weight: 600;
-    line-height: 1.2;
+    line-height: inherit;
 }
 
 .learning-record-subtitle {
@@ -92,7 +143,7 @@
     text-decoration: none;
     font-weight: 600;
     cursor: pointer;
-    line-height: 1.2;
+    line-height: inherit;
 }
 
 .learning-record-link:hover,
@@ -102,22 +153,12 @@
 }
 
 .learning-record-progress {
-    line-height: 1.08;
+    line-height: 1.2;
 }
 
 .learning-record-progress .percent {
     font-weight: 600;
     color: #1f2937;
-}
-
-.learning-record-progress .minimum {
-    margin-top: 1px;
-    font-size: 11px;
-    color: #16a34a;
-}
-
-.learning-record-progress .minimum.is-failed {
-    color: #dc2626;
 }
 
 .learning-record-badge {
@@ -133,7 +174,9 @@
 }
 
 .learning-classification-badge {
-    max-width: 92px;
+    max-width: 112px;
+    padding-left: 10px;
+    padding-right: 10px;
     white-space: normal;
     overflow-wrap: anywhere;
     word-break: normal;
@@ -154,12 +197,27 @@
 
 .learning-record-table form {
     margin: 0;
+    text-align: center;
 }
 
-.learning-record-duration {
+.learning-record-duration,
+.learning-record-learning-hour {
     font-size: 12px;
-    line-height: 1.15;
+    line-height: 1.25;
     white-space: nowrap;
+}
+
+.learning-record-datetime {
+    line-height: 1.4;
+    text-align: center;
+}
+
+.learning-record-date-row {
+    text-align: center;
+}
+
+.learning-record-date-row + .learning-record-date-row {
+    margin-top: 4px;
 }
 
 /* Header tabel Learning Record tetap terlihat saat scroll (sticky). */
@@ -176,11 +234,16 @@
     box-shadow: inset 0 -1px 0 var(--tblr-border-color, #e6e7e9);
 }
 
-/* Mobile: fixed layout dilepas agar table-responsive bisa scroll horizontal */
+/* Pada viewport sempit, wrapper responsive menyediakan horizontal scroll. */
 @media (max-width: 767.98px) {
     .learning-record-table {
-        table-layout: auto;
-        min-width: 980px;
+        min-width: 1120px;
+    }
+
+    .learning-record-table th,
+    .learning-record-table td {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
     }
 }
 
@@ -194,7 +257,7 @@
 .record-sort-header {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 7px;
     max-width: 100%;
     vertical-align: middle;
 }
@@ -313,6 +376,31 @@ tbody.record-sort-animate tr.record-row {
     overflow-y: auto;
 }
 
+.learning-record-filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.learning-record-fast-filter {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.learning-quick-dropdowns {
+    align-items: center;
+    gap: 12px !important;
+}
+
+.learning-quick-dropdowns .dropdown-toggle {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+}
+
 .record-fast-filter-row {
     margin-left: -6px;
     margin-right: -6px;
@@ -327,9 +415,10 @@ tbody.record-sort-animate tr.record-row {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 12px;
-    margin-top: 8px;
-    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 0;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
 }
 
 .record-filter-action-btn {
@@ -464,6 +553,17 @@ tbody.record-sort-animate tr.record-row {
     border-radius: 6px;
     padding: 8px 16px;
     font-weight: 600;
+}
+
+@media (max-width: 1199.98px) {
+    .learning-record-fast-filter,
+    .record-filter-actions {
+        flex-basis: 100%;
+    }
+
+    .record-filter-actions {
+        flex-wrap: wrap;
+    }
 }
 
 @media (max-width: 575.98px) {

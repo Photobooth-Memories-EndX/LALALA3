@@ -39,12 +39,12 @@
         ['label' => 'No',             'width' => '4%'],
         ['label' => 'Class',          'width' => '23%', 'sort' => 'title',          'type' => 'text'],
         ['label' => 'Type',           'width' => '9%',  'sort' => 'type',           'type' => 'text'],
-        ['label' => 'Classification', 'width' => '12%', 'sort' => 'classification', 'type' => 'text'],
+        ['label' => 'Classification', 'width' => '10%', 'sort' => 'classification', 'type' => 'text'],
         ['label' => 'Duration',       'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
         ['label' => 'Learning Hour',  'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
         ['label' => 'Progress',       'width' => '9%',  'sort' => 'progress',       'type' => 'number'],
         ['label' => 'Date Time',    'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
-        ['label' => 'Score Test',     'width' => '8%',  'sort' => 'score',          'type' => 'number'],
+        ['label' => 'Assessment Score',     'width' => '10%',  'sort' => 'score',          'type' => 'number'],
         ['label' => 'Certificate',    'width' => '11%'],
     ];
 @endphp
@@ -89,10 +89,11 @@
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label small text-muted mb-2">Filter Cepat</label>
+            <div class="learning-record-filter-row">
+                <div class="learning-record-fast-filter">
+                    <label class="form-label small text-muted mb-2">Filter Cepat</label>
 
-                <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns">
+                    <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns">
                     {{-- Dropdown Type --}}
                     <div class="dropdown">
                         <button type="button"
@@ -206,6 +207,32 @@
                             @endforeach
                         </div>
                     </div>
+                    </div>
+                </div>
+
+                <div class="record-filter-actions">
+                    {{-- TOMBOL DOWNLOAD EXCEL --}}
+                    <a href="{{ route('user.learning.record.export') }}"
+                       data-export-url="{{ route('user.learning.record.export') }}"
+                       class="btn btn-outline-success record-filter-action-btn"
+                       id="recordDownloadExcel">
+                        <i class="ti ti-file-spreadsheet"></i>
+                        <span>Download Excel</span>
+                    </a>
+                    {{-- TOMBOL MORE FILTERS --}}
+                    <button type="button" class="btn btn-outline-primary record-filter-action-btn" id="recordMoreFiltersToggle"
+                            data-toggle="modal" data-target="#recordMoreFiltersModal"
+                            aria-controls="recordMoreFiltersModal">
+                        <i class="ti ti-adjustments-horizontal"></i>
+                        <span>More Filters</span>
+                        <span class="badge bg-primary text-white d-none" id="recordMoreFiltersCount"></span>
+                    </button>
+                    <button type="button" class="btn btn-primary record-apply-filter record-filter-action-btn">
+                        <i class="ti ti-check"></i><span>Apply Filter</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary record-clear-filter record-filter-action-btn">
+                        Reset
+                    </button>
                 </div>
             </div>
 
@@ -214,31 +241,6 @@
             <input type="hidden" name="record_filter_classification" id="hidden_record_filter_classification" value="{{ $filterClassification }}">
             <input type="hidden" name="record_filter_year" id="hidden_record_filter_year" value="{{ $filterYear }}">
             <input type="hidden" name="record_filter_month" id="hidden_record_filter_month" value="{{ $filterMonth }}">
-
-            <div class="record-filter-actions">
-                {{-- TOMBOL DOWNLOAD EXCEL --}}
-                <a href="{{ route('user.learning.record.export') }}"
-                   data-export-url="{{ route('user.learning.record.export') }}"
-                   class="btn btn-outline-success record-filter-action-btn"
-                   id="recordDownloadExcel">
-                    <i class="ti ti-file-spreadsheet"></i>
-                    <span>Download Excel</span>
-                </a>
-                {{-- TOMBOL MORE FILTERS --}}
-                <button type="button" class="btn btn-outline-primary record-filter-action-btn" id="recordMoreFiltersToggle"
-                        data-toggle="modal" data-target="#recordMoreFiltersModal"
-                        aria-controls="recordMoreFiltersModal">
-                    <i class="ti ti-adjustments-horizontal"></i>
-                    <span>More Filters</span>
-                    <span class="badge bg-primary text-white d-none" id="recordMoreFiltersCount"></span>
-                </button>
-                <button type="button" class="btn btn-primary record-apply-filter record-filter-action-btn">
-                    <i class="ti ti-check"></i><span>Apply Filter</span>
-                </button>
-                <button type="button" class="btn btn-link text-muted record-clear-filter record-filter-reset-link">
-                    Reset
-                </button>
-            </div>
 
             {{-- Panel More Filters — seluruh filter lanjutan lama dipindah ke sini
                  (tidak dihapus). Tersembunyi default, dibuka slideDown (learning-record.js). --}}

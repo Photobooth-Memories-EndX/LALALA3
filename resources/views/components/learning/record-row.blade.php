@@ -63,13 +63,13 @@
 
     <td class="learning-record-duration">{{ $durationDisplay }}</td>
 
-    <td class="learning-record-duration">{{ $learningHourDisplay }}</td>
+    <td class="learning-record-learning-hour">{{ $learningHourDisplay }}</td>
 
     <td><x-learning.record-progress-cell :row="$row" /></td>
 
-    <td class="text-muted small">
-        <div class="text-nowrap"><strong>Start&nbsp;&nbsp;:</strong> {{ $startDateDisplay }}</div>
-        <div class="text-nowrap mt-1"><strong>Finish :</strong> {{ $finishDateDisplay }}</div>
+    <td class="text-muted small learning-record-datetime">
+        <div class="learning-record-date-row text-nowrap"><strong>Start&nbsp;&nbsp;:</strong> {{ $startDateDisplay }}</div>
+        <div class="learning-record-date-row text-nowrap"><strong>Finish :</strong> {{ $finishDateDisplay }}</div>
     </td>
 
     <td><x-learning.record-score-cell :row="$row" /></td>
