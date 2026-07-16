@@ -55,7 +55,7 @@
     data-assessment-year="{{ $filterYear }}"
     data-assessment-month="{{ $filterMonth }}"
     data-assessment-date="{{ $filterTimestamp ?: '' }}"
-    data-assessment-batch="{{ $assessment->batch ?? '' }}"
+    data-assessment-batch="{{ $finalResult->batch ?? '' }}"
     data-assessment-grade="{{ $assessment->passing_grade ?? '' }}"
     data-assessment-score="{{ $finalResult->score ?? '' }}"
     data-assessment-availability="{{ $availability }}">
@@ -98,7 +98,7 @@
         />
     </td>
 
-    <td>{{ $assessment->batch ?? '-' }}</td>
+    <td>{{ $finalResult->batch ?? '-' }}</td>
     <td>{{ $assessment->passing_grade ?? '-' }}</td>
 
     <td>

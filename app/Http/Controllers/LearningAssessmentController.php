@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AssessmentExport;
 use App\Models\Assesment;
 use App\Models\AssesmentResult;
 use App\Services\Learning\CompletedPlaylistService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * My Learning Assessment tab.
@@ -38,6 +40,23 @@ class LearningAssessmentController extends Controller
             'filterOptions' => $this->getFilterOptions($assessmentQuery),
             'result'      => $this->getUserAssessmentResults($userId),
         ]);
+    }
+
+    public function download(Request $request)
+    {
+        $user = Auth::user();
+        $userId = (int) Auth::id();
+        $completedPlaylistIds = $this->completedPlaylistService
+            ->forUser($userId)
+            ->pluck('id');
+        $assessmentQuery = $this->getUserAssessmentQuery($user, $userId, $completedPlaylistIds);
+        $assessments = $this->applyFilters($assessmentQuery, $request, $userId)
+            ->get();
+
+        return Excel::download(
+            AssessmentExport::forMyLearning($assessments, $userId),
+            'Assessment_List_' . now()->format('Y-m-d') . '.xlsx'
+        );
     }
 
     private function getUserAssessmentQuery($user, $userId, $completedPlaylistIds)

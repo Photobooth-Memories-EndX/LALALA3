@@ -11,9 +11,11 @@
         <span class="badge bg-red-lt text-red learning-record-badge assessment-status-badge">Failed</span>
     @endif
 
-    <div class="small text-muted mt-1">
-        Score: {{ $finalResult->score ?? '-' }}
-    </div>
+    @if ($finalResult->score !== null)
+        <div class="small text-muted mt-1 assessment-score">
+            Score: {{ $finalResult->score }}
+        </div>
+    @endif
 @else
     <span class="badge bg-orange-lt text-orange learning-record-badge assessment-status-badge">Not Started</span>
 @endif

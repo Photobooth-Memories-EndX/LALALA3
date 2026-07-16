@@ -177,37 +177,8 @@
         });
 
         $('#assessmentDownloadExcel').off('.learningAssessment').on('click.learningAssessment', function () {
-            var headings = [];
-            $table.find('thead th').slice(0, 7).each(function () {
-                headings.push($.trim($(this).find('.record-sort-label').text() || $(this).text()));
-            });
-
-            var rows = assessmentTable.rows({ search: 'applied', order: 'applied' }).nodes().toArray().map(function (row) {
-                return $(row).find('td').slice(0, 7).map(function () {
-                    return $.trim($(this).text().replace(/\s+/g, ' '));
-                }).get();
-            });
-
-            function excelCell(value) {
-                return String(value == null ? '' : value)
-                    .replace(/\t/g, ' ')
-                    .replace(/\r?\n/g, ' ');
-            }
-
-            var spreadsheetRows = [headings].concat(rows).map(function (row) {
-                return row.map(excelCell).join('\t');
-            });
-            var blob = new Blob(['\ufeff' + spreadsheetRows.join('\r\n')], {
-                type: 'application/vnd.ms-excel;charset=utf-8'
-            });
-            var url = URL.createObjectURL(blob);
-            var link = document.createElement('a');
-            link.href = url;
-            link.download = 'assessment-list-' + new Date().toISOString().slice(0, 10) + '.xls';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            var query = window.location.search || '';
+            window.location.href = @json(route('user.learning.assessment.export')) + query;
         });
 
         assessmentTable.on('order.dt', updateAssessmentSortIcons);
