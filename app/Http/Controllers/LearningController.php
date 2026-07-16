@@ -75,7 +75,7 @@ class LearningController extends Controller
                 ? app(LearningOngoingController::class)->playlist()
                 : app(LearningOngoingController::class)->content(),
             'record'      => app(LearningRecordController::class)->partial($eligibilityService),
-            'assessment'  => app(LearningAssessmentController::class)->partial(),
+            'assessment'  => app(LearningAssessmentController::class)->partial(request()),
             'claim'       => view('user.learning.dashboard-partials.claim'),
             'certificate' => app(LearningRecordController::class)->certificate(),
             'monitoring'  => app(LearningMonitoringController::class)->partial(),

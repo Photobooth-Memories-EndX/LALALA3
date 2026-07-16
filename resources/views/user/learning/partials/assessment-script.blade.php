@@ -7,66 +7,6 @@
             return;
         }
 
-        if (!window._assessmentDataTableFilterRegistered) {
-            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-                if (!settings.nTable || settings.nTable.id !== 'assessmentTable') {
-                    return true;
-                }
-
-                var $row = $(settings.aoData[dataIndex].nTr);
-                var state = window._assessmentFilterState || {};
-
-                if (!$row.length) {
-                    return true;
-                }
-
-                var type = String(state.type || 'all');
-                var status = String(state.status || 'all');
-                var year = String(state.year || 'all');
-                var month = String(state.month || 'all');
-                var batch = String(state.batch || 'all');
-                var grade = String(state.grade || 'all');
-                var scoreFilter = String(state.score || 'all');
-                var result = String(state.result || 'all');
-                var availability = String(state.availability || 'all');
-                var dateFilter = String(state.date || 'all');
-                var rowStatus = String($row.attr('data-assessment-status') || 'not_started');
-                var rawScore = String($row.attr('data-assessment-score') || '');
-                var score = rawScore === '' ? null : parseFloat(rawScore);
-
-                if (type !== 'all' && String($row.attr('data-assessment-type')) !== type) return false;
-                if (year !== 'all' && String($row.attr('data-assessment-year')) !== year) return false;
-                if (month !== 'all' && String($row.attr('data-assessment-month')) !== month) return false;
-                if (status !== 'all' && rowStatus !== status) return false;
-                if (batch !== 'all' && String($row.attr('data-assessment-batch')) !== batch) return false;
-                if (grade !== 'all' && String($row.attr('data-assessment-grade')) !== grade) return false;
-                if (result !== 'all' && rowStatus !== result) return false;
-                if (availability !== 'all' && String($row.attr('data-assessment-availability')) !== availability) return false;
-
-                if (scoreFilter === 'none' && score !== null) return false;
-                if (scoreFilter === '0_59' && !(score !== null && score >= 0 && score < 60)) return false;
-                if (scoreFilter === '60_79' && !(score !== null && score >= 60 && score < 80)) return false;
-                if (scoreFilter === '80_100' && !(score !== null && score >= 80 && score <= 100)) return false;
-
-                if (dateFilter === 'this_month' || dateFilter === 'last_month' || dateFilter === 'this_year') {
-                    var timestamp = parseInt($row.attr('data-assessment-date'), 10);
-                    if (!timestamp) return false;
-
-                    var rowDate = new Date(timestamp * 1000);
-                    var now = new Date();
-                    if (dateFilter === 'this_month' && (rowDate.getFullYear() !== now.getFullYear() || rowDate.getMonth() !== now.getMonth())) return false;
-                    if (dateFilter === 'this_year' && rowDate.getFullYear() !== now.getFullYear()) return false;
-                    if (dateFilter === 'last_month') {
-                        var lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                        if (rowDate.getFullYear() !== lastMonth.getFullYear() || rowDate.getMonth() !== lastMonth.getMonth()) return false;
-                    }
-                }
-
-                return true;
-            });
-            window._assessmentDataTableFilterRegistered = true;
-        }
-
         var assessmentTable = $table.DataTable({
                 ordering: true,
                 order: [],
@@ -122,7 +62,14 @@
                 .find('.fw-semibold').text(label);
         }
 
-        function applyQuickFilters() {
+        function reloadAssessment(params) {
+            var query = params.toString();
+            history.pushState({}, '', window.location.pathname + (query ? '?' + query : ''));
+            _activeTab = null;
+            loadLearningTab('assessment');
+        }
+
+        function collectAssessmentFilterState() {
             var state = {};
             $('#assessmentFilterBar [data-assessment-filter]').each(function () {
                 state[String($(this).data('assessment-filter'))] = String($(this).attr('data-selected-value') || 'all');
@@ -133,27 +80,62 @@
             state.result = String($('input[name="assessmentModalResult"]:checked').val() || 'all');
             state.date = String($('input[name="assessmentModalDate"]:checked').val() || 'all');
             state.availability = String($('input[name="assessmentModalAvailability"]:checked').val() || 'all');
-            window._assessmentFilterState = state;
-
-            var advancedCount = ['batch', 'grade', 'score', 'result', 'date', 'availability'].filter(function (key) {
-                return state[key] !== 'all';
-            }).length;
-            $('#assessmentMoreFiltersCount').text(advancedCount).toggleClass('d-none', advancedCount === 0);
-
-            if (state.date === 'newest' || state.date === 'oldest') {
-                assessmentTable.order([2, state.date === 'newest' ? 'desc' : 'asc']);
-            }
-            assessmentTable.page('first').draw();
-            $('#assessmentMoreFiltersModal').modal('hide');
+            return state;
         }
 
-        var searchTimer = null;
+        function buildAssessmentParams(state, search) {
+            var params = new URLSearchParams(window.location.search);
+            Array.from(params.keys()).forEach(function (key) {
+                if (key.indexOf('assessment_filter_') === 0 || key === 'assessment_search') {
+                    params.delete(key);
+                }
+            });
+
+            Object.keys(state).forEach(function (key) {
+                if (state[key] !== 'all') {
+                    params.set('assessment_filter_' + key, state[key]);
+                }
+            });
+
+            if (search) params.set('assessment_search', search);
+            return params;
+        }
+
+        function updateAdvancedFilterBadge() {
+            var advancedNames = [
+                'assessmentModalBatch',
+                'assessmentModalGrade',
+                'assessmentModalScore',
+                'assessmentModalResult',
+                'assessmentModalDate',
+                'assessmentModalAvailability'
+            ];
+            var activeCount = advancedNames.reduce(function (count, name) {
+                var value = String($('input[name="' + name + '"]:checked').val() || 'all');
+                return count + (value !== 'all' ? 1 : 0);
+            }, 0);
+
+            $('#assessmentMoreFiltersCount')
+                .toggleClass('d-none', activeCount === 0)
+                .text(activeCount || '');
+        }
+
+        function applyAssessmentFilters() {
+            clearTimeout(window.learningAssessmentSearchTimer);
+            var state = collectAssessmentFilterState();
+            var search = $.trim($('#assessmentSearch').val());
+            reloadAssessment(buildAssessmentParams(state, search));
+        }
+
         $('#assessmentSearch').off('.learningAssessment').on('input.learningAssessment', function () {
-            var value = this.value;
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(function () {
-                assessmentTable.search(value).page('first').draw();
-            }, 300);
+            var value = $.trim(this.value);
+            clearTimeout(window.learningAssessmentSearchTimer);
+            window.learningAssessmentSearchTimer = setTimeout(function () {
+                var params = new URLSearchParams(window.location.search);
+                params.delete('assessment_search');
+                if (value) params.set('assessment_search', value);
+                reloadAssessment(params);
+            }, 450);
         });
 
         $('.assessment-quick-item').off('.learningAssessment').on('click.learningAssessment', function (event) {
@@ -162,27 +144,36 @@
             setDropdownValue($item.closest('[data-assessment-filter]'), String($item.data('value')), $.trim($item.text()));
         });
 
-        $('#assessmentApplyFilter, .assessment-apply-filter').off('.learningAssessment').on('click.learningAssessment', applyQuickFilters);
+        $('#assessmentApplyFilter, .assessment-apply-filter').off('.learningAssessment').on('click.learningAssessment', applyAssessmentFilters);
 
         function resetAdvancedFilters() {
-            $('input[name="assessmentModalBatch"][value="all"], input[name="assessmentModalGrade"][value="all"], input[name="assessmentModalScore"][value="all"], input[name="assessmentModalResult"][value="all"], input[name="assessmentModalAvailability"][value="all"]').prop('checked', true);
-            $('input[name="assessmentModalDate"]').prop('checked', false);
+            $('#assessmentMoreFiltersModal input[type="radio"][value="all"]').prop('checked', true);
+            updateAdvancedFilterBadge();
         }
 
         $('#assessmentModalReset').off('.learningAssessment').on('click.learningAssessment', function () {
             resetAdvancedFilters();
         });
 
+        $('#assessmentMoreFiltersModal input[type="radio"]')
+            .off('.learningAssessment')
+            .on('change.learningAssessment', updateAdvancedFilterBadge);
+
         $('#assessmentResetFilter').off('.learningAssessment').on('click.learningAssessment', function () {
+            clearTimeout(window.learningAssessmentSearchTimer);
             $('#assessmentSearch').val('');
-            assessmentTable.search('');
             $('#assessmentFilterBar [data-assessment-filter]').each(function () {
                 setDropdownValue($(this), 'all', 'All');
             });
             resetAdvancedFilters();
-            window._assessmentFilterState = {};
-            $('#assessmentMoreFiltersCount').text('').addClass('d-none');
-            assessmentTable.order([]).page('first').draw();
+
+            var params = new URLSearchParams(window.location.search);
+            Array.from(params.keys()).forEach(function (key) {
+                if (key.indexOf('assessment_filter_') === 0 || key === 'assessment_search') {
+                    params.delete(key);
+                }
+            });
+            reloadAssessment(params);
         });
 
         $('#assessmentDownloadExcel').off('.learningAssessment').on('click.learningAssessment', function () {
@@ -218,11 +209,6 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         });
-
-        $('#assessmentFilterBar [data-assessment-filter]').attr({
-            'data-selected-value': 'all'
-        });
-        window._assessmentFilterState = {};
 
         assessmentTable.on('order.dt', updateAssessmentSortIcons);
         updateAssessmentSortIcons();

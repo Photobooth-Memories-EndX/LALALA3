@@ -26,11 +26,26 @@
 
     function loadLearningTab(tab) {
         if (_activeTab === tab) return;
+
+        var $openAssessmentModal = $('#assessmentMoreFiltersModal.show');
+        if ($openAssessmentModal.length) {
+            $openAssessmentModal
+                .one('hidden.bs.modal.learningAssessment', function () {
+                    loadLearningTab(tab);
+                })
+                .modal('hide');
+            return;
+        }
+
         _activeTab = tab;
 
         // Update active button state
         $('.learning-tab-btn').removeClass('btn-primary').addClass('btn-white');
         $('.learning-tab-btn[data-target="#tab-' + tab + '"]').removeClass('btn-white').addClass('btn-primary');
+
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable('#assessmentTable')) {
+            $('#assessmentTable').DataTable().destroy();
+        }
 
         // Show skeleton while loading
         $('#learning-tab-content').html(skeletonHtml());

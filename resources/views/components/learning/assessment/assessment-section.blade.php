@@ -1,22 +1,13 @@
 @props([
     'assessments',
+    'filterOptions' => [],
 ])
 
 @php
     $assessmentItems = collect($assessments ?? []);
-    $assessmentYears = $assessmentItems
-        ->map(function ($assessment) {
-            $date = $assessment->fromdate ?? null;
-            $timestamp = $date ? strtotime((string) $date) : false;
-
-            return $timestamp ? (int) date('Y', $timestamp) : null;
-        })
-        ->filter()
-        ->unique()
-        ->sortDesc()
-        ->values();
-    $assessmentBatches = $assessmentItems->pluck('batch')->filter(fn ($value) => $value !== '')->unique()->sort()->values();
-    $assessmentPassingGrades = $assessmentItems->pluck('passing_grade')->filter(fn ($value) => $value !== '')->unique()->sort()->values();
+    $assessmentYears = collect($filterOptions['years'] ?? []);
+    $assessmentBatches = collect($filterOptions['batches'] ?? []);
+    $assessmentPassingGrades = collect($filterOptions['passingGrades'] ?? []);
 
     $months = [
         1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
@@ -28,6 +19,19 @@
         'type' => ['all' => 'All', 'content' => 'Content', 'playlist' => 'Playlist', 'global' => 'Global'],
         'status' => ['all' => 'All', 'not_started' => 'Not Started', 'passed' => 'Passed', 'failed' => 'Failed'],
     ];
+    $activeFilters = [
+        'type' => request('assessment_filter_type', 'all'),
+        'status' => request('assessment_filter_status', 'all'),
+        'year' => request('assessment_filter_year', 'all'),
+        'month' => request('assessment_filter_month', 'all'),
+        'batch' => request('assessment_filter_batch', 'all'),
+        'grade' => request('assessment_filter_grade', 'all'),
+        'score' => request('assessment_filter_score', 'all'),
+        'result' => request('assessment_filter_result', 'all'),
+        'date' => request('assessment_filter_date', 'all'),
+        'availability' => request('assessment_filter_availability', 'all'),
+    ];
+    $activeAdvancedCount = collect($activeFilters)->only(['batch', 'grade', 'score', 'result', 'date', 'availability'])->filter(fn ($value) => $value !== 'all')->count();
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
@@ -43,6 +47,7 @@
                            class="form-control"
                            id="assessmentSearch"
                            placeholder="Search assessment..."
+                           value="{{ request('assessment_search') }}"
                            autocomplete="off">
                 </div>
             </div>
@@ -53,42 +58,42 @@
 
                     <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns assessment-quick-dropdowns">
                         @foreach ($quickFilters as $filter => $options)
-                            <div class="dropdown" data-assessment-filter="{{ $filter }}">
-                                <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle"
+                            <div class="dropdown" data-assessment-filter="{{ $filter }}" data-selected-value="{{ $activeFilters[$filter] }}">
+                                <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $activeFilters[$filter] !== 'all' ? 'active' : '' }}"
                                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    {{ ucfirst($filter) }}: <span class="fw-semibold">All</span>
+                                    {{ ucfirst($filter) }}: <span class="fw-semibold">{{ $options[$activeFilters[$filter]] ?? 'All' }}</span>
                                 </button>
                                 <div class="dropdown-menu">
                                     @foreach ($options as $value => $label)
-                                        <a href="#" class="dropdown-item assessment-quick-item {{ $value === 'all' ? 'active' : '' }}"
+                                        <a href="#" class="dropdown-item assessment-quick-item {{ $activeFilters[$filter] === $value ? 'active' : '' }}"
                                            data-value="{{ $value }}">{{ $label }}</a>
                                     @endforeach
                                 </div>
                             </div>
                         @endforeach
 
-                        <div class="dropdown" data-assessment-filter="year">
-                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle"
+                        <div class="dropdown" data-assessment-filter="year" data-selected-value="{{ $activeFilters['year'] }}">
+                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $activeFilters['year'] !== 'all' ? 'active' : '' }}"
                                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Year: <span class="fw-semibold">All</span>
+                                Year: <span class="fw-semibold">{{ $activeFilters['year'] === 'all' ? 'All' : $activeFilters['year'] }}</span>
                             </button>
                             <div class="dropdown-menu learning-quick-dropdown-scroll">
-                                <a href="#" class="dropdown-item assessment-quick-item active" data-value="all">All</a>
+                                <a href="#" class="dropdown-item assessment-quick-item {{ $activeFilters['year'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
                                 @foreach ($assessmentYears as $year)
-                                    <a href="#" class="dropdown-item assessment-quick-item" data-value="{{ $year }}">{{ $year }}</a>
+                                    <a href="#" class="dropdown-item assessment-quick-item {{ (string) $activeFilters['year'] === (string) $year ? 'active' : '' }}" data-value="{{ $year }}">{{ $year }}</a>
                                 @endforeach
                             </div>
                         </div>
 
-                        <div class="dropdown" data-assessment-filter="month">
-                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle"
+                        <div class="dropdown" data-assessment-filter="month" data-selected-value="{{ $activeFilters['month'] }}">
+                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $activeFilters['month'] !== 'all' ? 'active' : '' }}"
                                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Month: <span class="fw-semibold">All</span>
+                                Month: <span class="fw-semibold">{{ $activeFilters['month'] === 'all' ? 'All' : ($months[(int) $activeFilters['month']] ?? 'All') }}</span>
                             </button>
                             <div class="dropdown-menu learning-quick-dropdown-scroll">
-                                <a href="#" class="dropdown-item assessment-quick-item active" data-value="all">All</a>
+                                <a href="#" class="dropdown-item assessment-quick-item {{ $activeFilters['month'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
                                 @foreach ($months as $number => $month)
-                                    <a href="#" class="dropdown-item assessment-quick-item" data-value="{{ $number }}">{{ $month }}</a>
+                                    <a href="#" class="dropdown-item assessment-quick-item {{ (string) $activeFilters['month'] === (string) $number ? 'active' : '' }}" data-value="{{ $number }}">{{ $month }}</a>
                                 @endforeach
                             </div>
                         </div>
@@ -102,7 +107,7 @@
                     <button type="button" class="btn btn-outline-primary record-filter-action-btn"
                             data-toggle="modal" data-target="#assessmentMoreFiltersModal">
                         <i class="ti ti-adjustments-horizontal"></i><span>More Filters</span>
-                        <span class="badge bg-primary text-white d-none" id="assessmentMoreFiltersCount"></span>
+                        <span class="badge bg-primary text-white {{ $activeAdvancedCount ? '' : 'd-none' }}" id="assessmentMoreFiltersCount">{{ $activeAdvancedCount ?: '' }}</span>
                     </button>
                     <button type="button" class="btn btn-primary record-filter-action-btn" id="assessmentApplyFilter">
                         <i class="ti ti-check"></i><span>Apply Filter</span>
@@ -134,9 +139,9 @@
                     <div class="assessment-filter-section">
                         <div class="assessment-filter-title">Batch</div>
                         <div class="assessment-filter-options">
-                            <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalBatch" value="all" checked><span class="form-check-label">All</span></label>
+                            <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalBatch" value="all" {{ $activeFilters['batch'] === 'all' ? 'checked' : '' }}><span class="form-check-label">All</span></label>
                             @foreach ($assessmentBatches as $batch)
-                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalBatch" value="{{ $batch }}"><span class="form-check-label">{{ $batch }}</span></label>
+                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalBatch" value="{{ $batch }}" {{ (string) $activeFilters['batch'] === (string) $batch ? 'checked' : '' }}><span class="form-check-label">{{ $batch }}</span></label>
                             @endforeach
                         </div>
                     </div>
@@ -144,9 +149,9 @@
                     <div class="assessment-filter-section">
                         <div class="assessment-filter-title">Passing Grade</div>
                         <div class="assessment-filter-options">
-                            <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalGrade" value="all" checked><span class="form-check-label">All</span></label>
+                            <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalGrade" value="all" {{ $activeFilters['grade'] === 'all' ? 'checked' : '' }}><span class="form-check-label">All</span></label>
                             @foreach ($assessmentPassingGrades as $grade)
-                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalGrade" value="{{ $grade }}"><span class="form-check-label">{{ $grade }}</span></label>
+                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalGrade" value="{{ $grade }}" {{ (string) $activeFilters['grade'] === (string) $grade ? 'checked' : '' }}><span class="form-check-label">{{ $grade }}</span></label>
                             @endforeach
                         </div>
                     </div>
@@ -155,7 +160,7 @@
                         <div class="assessment-filter-title">Assessment Score</div>
                         <div class="assessment-filter-options">
                             @foreach (['all' => 'All', 'none' => 'No Score', '0_59' => '0 - 59', '60_79' => '60 - 79', '80_100' => '80 - 100'] as $value => $label)
-                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalScore" value="{{ $value }}" {{ $value === 'all' ? 'checked' : '' }}><span class="form-check-label">{{ $label }}</span></label>
+                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalScore" value="{{ $value }}" {{ $activeFilters['score'] === $value ? 'checked' : '' }}><span class="form-check-label">{{ $label }}</span></label>
                             @endforeach
                         </div>
                     </div>
@@ -164,7 +169,7 @@
                         <div class="assessment-filter-title">Assessment Result</div>
                         <div class="assessment-filter-options">
                             @foreach (['all' => 'All', 'passed' => 'Passed', 'failed' => 'Failed'] as $value => $label)
-                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalResult" value="{{ $value }}" {{ $value === 'all' ? 'checked' : '' }}><span class="form-check-label">{{ $label }}</span></label>
+                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalResult" value="{{ $value }}" {{ $activeFilters['result'] === $value ? 'checked' : '' }}><span class="form-check-label">{{ $label }}</span></label>
                             @endforeach
                         </div>
                     </div>
@@ -172,8 +177,8 @@
                     <div class="assessment-filter-section">
                         <div class="assessment-filter-title">Date</div>
                         <div class="assessment-filter-options">
-                            @foreach (['newest' => 'Newest', 'oldest' => 'Oldest', 'this_month' => 'This Month', 'last_month' => 'Last Month', 'this_year' => 'This Year'] as $value => $label)
-                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalDate" value="{{ $value }}"><span class="form-check-label">{{ $label }}</span></label>
+                            @foreach (['all' => 'All', 'newest' => 'Newest', 'oldest' => 'Oldest', 'this_month' => 'This Month', 'last_month' => 'Last Month', 'this_year' => 'This Year'] as $value => $label)
+                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalDate" value="{{ $value }}" {{ $activeFilters['date'] === $value ? 'checked' : '' }}><span class="form-check-label">{{ $label }}</span></label>
                             @endforeach
                         </div>
                     </div>
@@ -182,7 +187,7 @@
                         <div class="assessment-filter-title">Availability</div>
                         <div class="assessment-filter-options">
                             @foreach (['all' => 'All', 'available' => 'Available', 'upcoming' => 'Upcoming', 'expired' => 'Expired'] as $value => $label)
-                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalAvailability" value="{{ $value }}" {{ $value === 'all' ? 'checked' : '' }}><span class="form-check-label">{{ $label }}</span></label>
+                                <label class="form-check"><input class="form-check-input" type="radio" name="assessmentModalAvailability" value="{{ $value }}" {{ $activeFilters['availability'] === $value ? 'checked' : '' }}><span class="form-check-label">{{ $label }}</span></label>
                             @endforeach
                         </div>
                     </div>
