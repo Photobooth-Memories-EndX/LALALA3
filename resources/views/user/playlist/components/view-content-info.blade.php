@@ -37,15 +37,13 @@
 
         {{-- Meta --}}
         <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="btn btn-light border-0 shadow-none text-muted">
-                <i class="fas fa-eye me-2"></i>
-                {{ $content->views ?? 0 }} Views
-            </span>
-
-            <a href="#comment" class="btn btn-light border-0 shadow-none text-muted">
+            <button type="button"
+                    class="btn btn-light border-0 shadow-none text-muted"
+                    data-bs-toggle="modal"
+                    data-bs-target="#playlistCommentModal">
                 <i class="far fa-comment-dots me-2"></i>
                 {{ $commentTotal }} Comments
-            </a>
+            </button>
 
             <span class="btn btn-light border-0 shadow-none text-muted">
                 <i class="far fa-clock me-2"></i>
@@ -57,27 +55,16 @@
         <div class="chapter-description-box mb-4">
             <h4 class="fs-5 fw-bold mb-2">Overview</h4>
 
-            <p class="mb-3 text-muted">
+            <div class="overview-text is-collapsed text-muted" id="playlistOverviewText">
                 {!! nl2br($content->description) !!}
-            </p>
-
-            <h4 class="fs-5 fw-bold mb-3">What you'll learn:</h4>
-
-            <div class="row g-3">
-                @foreach ([
-                    'Understand the key concepts',
-                    'Complete the learning progress',
-                    'Strengthen your understanding',
-                    'Ready for the next chapter',
-                ] as $learnItem)
-                    <div class="col-md-6">
-                        <div class="learn-item">
-                            <i class="fas fa-check-circle text-success"></i>
-                            <span>{{ $learnItem }}</span>
-                        </div>
-                    </div>
-                @endforeach
             </div>
+
+            <button type="button"
+                    class="btn btn-link px-0 py-1 mt-2 overview-toggle"
+                    data-read-more="Read More"
+                    data-read-less="Read Less">
+                Read More
+            </button>
         </div>
 
         {{-- Playlist Actions --}}

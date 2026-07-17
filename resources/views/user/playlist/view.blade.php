@@ -44,7 +44,28 @@
                         'playlist' => $playlist,
                     ])
                     @include('user.playlist.components.view-content-info')
+                </div>
 
+                <div class="learning-right-panel">
+                    @include('user.playlist.components.view-ai-assistant')
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade playlist-comment-modal" id="playlistCommentModal" tabindex="-1" aria-labelledby="playlistCommentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 rounded-4">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="playlistCommentModalLabel">
+                        <i class="far fa-comment-dots me-2"></i>
+                        Comments
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
                     <div class="view-comment-wrapper">
                         <x-comment
                             :content="$content"
@@ -54,13 +75,7 @@
                         />
                     </div>
                 </div>
-
-                <div class="learning-right-panel">
-                    @include('user.playlist.components.view-ai-assistant')
-                </div>
-
             </div>
-
         </div>
     </div>
 @endsection
@@ -245,6 +260,33 @@
 
         window.toggleLearningPanel = toggleLearningPanel;
         applyState();
+
+        function syncPlayerFullscreenState() {
+            var player = document.getElementById('contentContainer');
+            var overlay = document.querySelector('.fullscreen-player-overlays');
+            if (!player) return;
+
+            var fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement || null;
+            var isFullscreen = fullscreenElement && (fullscreenElement === player || fullscreenElement.contains(player) || player.contains(fullscreenElement));
+            player.classList.toggle('is-fullscreen', !!isFullscreen);
+
+            if (!overlay) return;
+            if (isFullscreen && fullscreenElement && !fullscreenElement.contains(overlay)) {
+                fullscreenElement.appendChild(overlay);
+            } else if (!isFullscreen && overlay.parentElement !== player) {
+                player.insertBefore(overlay, player.firstChild);
+            }
+        }
+
+        document.addEventListener('fullscreenchange', syncPlayerFullscreenState);
+        document.addEventListener('webkitfullscreenchange', syncPlayerFullscreenState);
+
+        $(document).on('click', '.overview-toggle', function () {
+            var $button = $(this);
+            var $overview = $('#playlistOverviewText');
+            var expanded = !$overview.toggleClass('is-collapsed').hasClass('is-collapsed');
+            $button.text(expanded ? $button.data('read-less') : $button.data('read-more'));
+        });
     })();
 </script>
     <script src="{{ asset('js/learning-progress.js') }}"></script>

@@ -2,15 +2,12 @@
     <div class="card-body p-3">
 
         <div class="d-flex align-items-center justify-content-between mb-3">
-            <h3 class="mb-0 fs-4 fw-bold">Playlist</h3>
+            <h3 class="mb-0 fs-4 fw-bold">Content List</h3>
             <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small">
-                    {{ $content_all->count() }} Lessons
-                </span>
                 <button type="button"
                         class="panel-header-toggle"
                         onclick="toggleLearningPanel('left')"
-                        title="Tutup Playlist">
+                        title="Tutup Content List">
                     <i class="fas fa-list-ul"></i>
                 </button>
             </div>
@@ -75,6 +72,15 @@
                             <div class="progress lesson-progress">
                                 <div class="progress-bar" style="width: {{ $learningProgress }}%"></div>
                             </div>
+
+                            @if ($isActive && !empty($assessmentContent))
+                                <div class="mt-2">
+                                    <span class="btn btn-xs btn-outline-primary disabled px-2 py-1">
+                                        <i class="fas fa-clipboard-check me-1"></i>
+                                        Assessment
+                                    </span>
+                                </div>
+                            @endif
                         </div>
 
                     </a>

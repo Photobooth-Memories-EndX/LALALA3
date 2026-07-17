@@ -7,6 +7,18 @@
         @endphp
 
         <div id="contentContainer" class="learning-player">
+            @if (in_array($content->type, ['Video', 'YouTube']))
+                <div class="fullscreen-player-overlays" aria-hidden="true">
+                    <span class="fullscreen-pill fullscreen-pill-left">
+                        <i class="fas fa-list-ul me-1"></i>
+                        Content List
+                    </span>
+                    <span class="fullscreen-pill fullscreen-pill-right">
+                        <i class="fas fa-robot me-1"></i>
+                        AI Assistant
+                    </span>
+                </div>
+            @endif
 
             @if ($content->type == 'Video')
                 <video id="player" playsinline controls
