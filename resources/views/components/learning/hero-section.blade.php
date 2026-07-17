@@ -46,30 +46,46 @@
     $ongoingSlicePath = $donutSlicePolygon($completedPercent, 100);
 
     $defaultHeroImage = asset('img/owl-dashboard.png');
-    $coverFiles = ($user && $user->id) ? (glob(public_path('storage/profile/cover_' . $user->id . '.*')) ?: []) : [];
-    $coverFile = count($coverFiles) ? basename($coverFiles[0]) : null;
-    $heroImage = $coverFile ? asset('storage/profile/' . $coverFile) : $defaultHeroImage;
+    $heroImage = filled($user?->hero_background)
+        ? asset('storage/' . $user->hero_background)
+        : $defaultHeroImage;
 @endphp
 
-<div class="home-modern-hero compact-home-hero learning-home-hero mb-4" style="--hero-bg-image: url('{{ $heroImage }}');">
+<div class="home-modern-hero compact-home-hero learning-home-hero mb-4"
+     data-hero-background
+     data-background-url="{{ $heroImage }}"
+     style="--hero-bg-image: url('{{ $heroImage }}');">
     <div class="compact-hero-bg-preview" aria-hidden="true"></div>
 
     <div class="compact-hero-toolbar">
-        <form action="{{ route('user.updateprofile') }}"
+        <form action="{{ route('home.user.hero-background.update') }}"
               method="POST"
               enctype="multipart/form-data"
-              class="compact-hero-upload-form"
+              class="compact-hero-upload-form js-hero-background-form"
               id="learningHeroCoverForm">
             @csrf
-            <label class="compact-hero-upload" for="learningHeroCoverInput">
-                <i class="ti ti-photo-up"></i>
-                <span>Change cover</span>
+            <input type="hidden" name="source" value="learning">
+            <label class="compact-hero-upload js-hero-background-trigger"
+                   for="learningHeroCoverInput"
+                   title="Change Background"
+                   aria-label="Change Background"
+                   data-hero-tooltip>
+                <i class="ti ti-camera" aria-hidden="true"></i>
+                <span class="sr-only visually-hidden">Change Background</span>
             </label>
             <input type="file"
-                   name="cover"
+                   name="hero_background"
                    id="learningHeroCoverInput"
-                   class="d-none"
+                   class="d-none js-hero-background-input"
                    accept="image/png,image/jpeg,image/jpg,image/webp">
+            <button type="submit"
+                    class="compact-hero-save d-none js-hero-background-save"
+                    title="Saving..."
+                    aria-label="Saving..."
+                    data-hero-tooltip>
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                <span class="sr-only visually-hidden">Saving...</span>
+            </button>
         </form>
     </div>
 
@@ -159,6 +175,8 @@
     </div>
 </div>
 
+@include('components.shared.hero-crop-modal')
+
 <style>
     .learning-home-hero {
         isolation: isolate;
@@ -166,7 +184,7 @@
         padding: 28px 34px;
         border-radius: 22px;
         background-image:
-            linear-gradient(90deg, rgba(7, 23, 57, .9) 0%, rgba(18, 72, 167, .82) 48%, rgba(42, 114, 202, .66) 100%),
+            linear-gradient(90deg, rgba(8, 22, 52, .94) 0%, rgba(15, 52, 110, .88) 52%, rgba(24, 74, 138, .78) 100%),
             var(--hero-bg-image);
         background-size: cover;
         background-position: center;
@@ -211,8 +229,8 @@
         position: absolute;
         inset: 0;
         background:
-            radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .16), transparent 32%),
-            linear-gradient(90deg, rgba(6, 22, 52, .9), rgba(20, 72, 156, .76));
+            radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
+            linear-gradient(90deg, rgba(8, 22, 52, .9), rgba(18, 58, 118, .74));
     }
 
     .compact-hero-toolbar {
@@ -571,7 +589,7 @@
     [data-bs-theme="dark"] .learning-home-hero,
     body.dark-mode .learning-home-hero {
         background-image:
-            linear-gradient(90deg, rgba(3, 10, 24, .94) 0%, rgba(11, 31, 68, .86) 54%, rgba(20, 74, 122, .7) 100%),
+            linear-gradient(90deg, rgba(3, 10, 24, .96) 0%, rgba(11, 31, 68, .9) 54%, rgba(20, 61, 105, .8) 100%),
             var(--hero-bg-image);
         box-shadow: 0 18px 42px rgba(0, 0, 0, .34);
     }
@@ -580,7 +598,7 @@
     body.dark-mode .learning-home-hero .compact-hero-bg-preview::after {
         background:
             radial-gradient(circle at 82% 20%, rgba(96, 165, 250, .13), transparent 32%),
-            linear-gradient(90deg, rgba(2, 8, 20, .94), rgba(10, 30, 64, .84));
+            linear-gradient(90deg, rgba(2, 8, 20, .96), rgba(10, 30, 64, .88));
     }
 
     [data-bs-theme="dark"] .learning-home-hero .compact-summary-panel,
@@ -594,30 +612,3 @@
         background: rgba(5, 18, 39, .94);
     }
 </style>
-
-<script>
-    $(function () {
-        $('#learningHeroCoverInput').on('change', function () {
-            const file = this.files && this.files[0];
-
-            if (!file) {
-                return;
-            }
-
-            const $form = $('#learningHeroCoverForm');
-            const previewUrl = URL.createObjectURL(file);
-            $('.learning-home-hero').css('--hero-bg-image', `url("${previewUrl}")`);
-
-            $.ajax({
-                url: $form.attr('action'),
-                method: 'POST',
-                data: new FormData($form[0]),
-                processData: false,
-                contentType: false,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-        });
-    });
-</script>

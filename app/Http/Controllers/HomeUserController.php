@@ -12,6 +12,7 @@ use App\Services\LearningAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class HomeUserController extends Controller
@@ -89,10 +90,8 @@ class HomeUserController extends Controller
             ->get();
 
         // User Learning Data
-        $content_user = ContentUser::where(
-                'user_id',
-                auth()->id()
-            )->get();
+        $heroSummary = $analyticsService->heroSummary((int) auth()->id());
+        $content_user = $heroSummary['content_user'];
 
         $upcomingDeadlines = Assesment::whereNotNull('todate')
             ->whereDate('todate', '>=', now())
@@ -106,13 +105,9 @@ class HomeUserController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $completedCourse = $content_user
-            ->where('finish', 1)
-            ->count();
+        $completedCourse = $heroSummary['completedCourse'];
 
-        $ongoingCourse = $content_user
-            ->where('finish', 0)
-            ->count();
+        $ongoingCourse = $heroSummary['ongoingCourse'];
 
         $totalCourse = $completedCourse + $ongoingCourse;
 
@@ -160,7 +155,7 @@ class HomeUserController extends Controller
         $totalPlaylist = $playlist->count();
 
         // Learning Hours — reused from My Learning page (same calculation)
-        $learningHours = $analyticsService->userLearningHours((int) auth()->id());
+        $learningHours = $heroSummary['learningHours'];
 
         return view(
             'homepage',
@@ -189,6 +184,24 @@ class HomeUserController extends Controller
 
     public function updateHeroBackground(Request $request)
     {
+        $uploadLog = Log::build([
+            'driver' => 'single',
+            'path' => storage_path('logs/laravel.log'),
+            'level' => 'debug',
+        ]);
+
+        $uploadLog->info('Hero background upload request received.', [
+            'user_id' => optional($request->user())->id,
+            'input_keys' => array_keys($request->except('_token')),
+            'has_file' => $request->hasFile('hero_background'),
+            'file' => $request->hasFile('hero_background') ? [
+                'name' => $request->file('hero_background')->getClientOriginalName(),
+                'mime' => $request->file('hero_background')->getMimeType(),
+                'size' => $request->file('hero_background')->getSize(),
+                'error' => $request->file('hero_background')->getError(),
+            ] : null,
+        ]);
+
         $request->validate([
             'hero_background' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ], [
@@ -197,12 +210,7 @@ class HomeUserController extends Controller
 
         $user = $request->user();
         $background = $request->file('hero_background');
-        $destination = public_path('storage/files/thumbnail');
-        $uploadLog = Log::build([
-            'driver' => 'single',
-            'path' => storage_path('logs/laravel.log'),
-            'level' => 'debug',
-        ]);
+        $disk = Storage::disk('public');
 
         $fileName = sprintf(
             'background_%s_%s.%s',
@@ -211,63 +219,55 @@ class HomeUserController extends Controller
             strtolower($background->extension())
         );
         $relativePath = 'files/thumbnail/' . $fileName;
-        $newFilePath = $destination . DIRECTORY_SEPARATOR . $fileName;
         $oldRelativePath = $user->hero_background;
 
         try {
-            if (!File::exists($destination) && !File::makeDirectory($destination, 0755, true)) {
-                throw new \RuntimeException('Unable to create the background upload directory.');
+            $storedPath = $disk->putFileAs('files/thumbnail', $background, $fileName);
+
+            if ($storedPath !== $relativePath) {
+                throw new \RuntimeException('The uploaded background could not be stored.');
             }
-        } catch (\Throwable $exception) {
-            $uploadLog->error('Hero background directory creation failed.', [
+
+            $uploadLog->info('Hero background file stored.', [
                 'user_id' => $user->id,
-                'directory' => $destination,
-                'exception' => $exception,
+                'path' => $storedPath,
             ]);
-
-            return response()->json([
-                'message' => 'Upload directory could not be created.',
-            ], 500);
-        }
-
-        if (!File::isDirectory($destination) || !File::isWritable($destination)) {
-            $uploadLog->error('Hero background directory is not writable.', [
-                'user_id' => $user->id,
-                'directory' => $destination,
-            ]);
-
-            return response()->json([
-                'message' => 'Directory not writable.',
-            ], 500);
-        }
-
-        try {
-            $background->move($destination, $fileName);
         } catch (\Throwable $exception) {
             $uploadLog->error('Hero background file move failed.', [
                 'user_id' => $user->id,
-                'destination' => $newFilePath,
+                'destination' => $relativePath,
                 'exception' => $exception,
             ]);
 
             return response()->json([
-                'message' => 'Upload failed while saving the file.',
+                'message' => 'Upload failed while saving the file: ' . $exception->getMessage(),
             ], 500);
         }
 
         try {
-            if (!$user->update(['hero_background' => $relativePath])) {
+            $user->hero_background = $relativePath;
+
+            if (!$user->save()) {
                 throw new \RuntimeException('The user background path was not updated.');
             }
+
+            $user->refresh();
+
+            if ($user->hero_background !== $relativePath) {
+                throw new \RuntimeException('The saved user background path could not be verified.');
+            }
+
+            $uploadLog->info('Hero background database path updated.', [
+                'user_id' => $user->id,
+                'path' => $user->hero_background,
+            ]);
         } catch (\Throwable $exception) {
             try {
-                if (File::exists($newFilePath) && !is_dir($newFilePath)) {
-                    File::delete($newFilePath);
-                }
+                $disk->delete($relativePath);
             } catch (\Throwable $cleanupException) {
                 $uploadLog->error('Failed to clean up a Hero background after a database error.', [
                     'user_id' => $user->id,
-                    'path' => $newFilePath,
+                    'path' => $relativePath,
                     'exception' => $cleanupException,
                 ]);
             }
@@ -279,7 +279,7 @@ class HomeUserController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Database update failed. The previous background is unchanged.',
+                'message' => 'Database update failed: ' . $exception->getMessage(),
             ], 500);
         }
 
@@ -291,30 +291,32 @@ class HomeUserController extends Controller
         if ($oldRelativePath
             && $oldRelativePath !== $relativePath
             && preg_match($ownedBackgroundPattern, $oldRelativePath)) {
-            $oldFilePath = public_path('storage/' . $oldRelativePath);
-
             try {
-                if (File::exists($oldFilePath)
-                    && !is_dir($oldFilePath)
-                    && !File::delete($oldFilePath)) {
+                if ($disk->exists($oldRelativePath) && !$disk->delete($oldRelativePath)) {
                     $uploadLog->warning('The previous Hero background could not be deleted.', [
                         'user_id' => $user->id,
-                        'path' => $oldFilePath,
+                        'path' => $oldRelativePath,
                     ]);
                 }
             } catch (\Throwable $exception) {
                 $uploadLog->error('Deleting the previous Hero background failed.', [
                     'user_id' => $user->id,
-                    'path' => $oldFilePath,
+                    'path' => $oldRelativePath,
                     'exception' => $exception,
                 ]);
             }
         }
 
+        $imageUrl = asset('storage/' . $relativePath) . '?v=' . now()->timestamp;
+
         return response()->json([
+            'success' => true,
             'message' => 'Background updated successfully.',
+            'image_url' => $imageUrl,
+            'image_path' => $relativePath,
+            // Keep the existing response keys for older clients of this endpoint.
             'background_path' => $relativePath,
-            'background_url' => asset('storage/' . $relativePath) . '?v=' . now()->timestamp,
+            'background_url' => $imageUrl,
         ]);
     }
 

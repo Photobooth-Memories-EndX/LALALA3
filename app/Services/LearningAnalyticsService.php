@@ -524,6 +524,21 @@ class LearningAnalyticsService
     }
 
     /**
+     * Dataset tunggal untuk Hero Home dan halaman lain yang memakai Hero Home.
+     */
+    public function heroSummary(int $userId): array
+    {
+        $contentUser = ContentUser::where('user_id', $userId)->get();
+
+        return [
+            'content_user' => $contentUser,
+            'completedCourse' => $contentUser->where('finish', 1)->count(),
+            'ongoingCourse' => $contentUser->where('finish', 0)->count(),
+            'learningHours' => $this->userLearningHours($userId),
+        ];
+    }
+
+    /**
      * Petakan hasil group-by-bulan ke deret 12 bulan kontinu.
      */
     private function mapMonthly($keyedRows, bool $float = false): array

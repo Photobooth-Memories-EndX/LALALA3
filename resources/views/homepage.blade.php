@@ -16,18 +16,7 @@
         <div class="container-xl py-4">
 
             {{-- ── Dashboard Header ── --}}
-            <div class="home-modern-db-header">
-                <div>
-                    <h1 class="home-modern-db-title">Learning Dashboard</h1>
-                    <p class="home-modern-db-subtitle">Continue your learning journey</p>
-                </div>
-                <button type="button"
-                        class="home-modern-assessment-btn"
-                        id="btn-assessment-access">
-                    <i class="ti ti-clipboard-list"></i>
-                    Assessment Access
-                </button>
-            </div>
+            @include('components.Home.page-header')
             
             {{-- ── Main 2-Column Layout ── --}}
             <div class="row g-4">
@@ -76,4 +65,6 @@
 @endsection
 
 {{-- Scripts: ApexCharts + Assessment AJAX --}}
-@include('components.Home.scripts')
+@section('script')
+    @include('components.Home.scripts')
+@endsection

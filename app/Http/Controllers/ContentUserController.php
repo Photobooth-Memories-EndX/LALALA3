@@ -8,13 +8,14 @@ use App\Models\Classification;
 use App\Models\Comment;
 use App\Models\Content;
 use App\Models\ContentUser;
+use App\Services\LearningAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ContentUserController extends Controller
 {
 
-    public function index(Request $request)
+    public function index(Request $request, LearningAnalyticsService $analyticsService)
     {
         $filterSearch = $request->s;
         $filterType = $request->type;
@@ -83,8 +84,9 @@ class ContentUserController extends Controller
         }
 
         $contents = $queryContent->paginate(12)->appends(request()->query());
+        $heroSummary = $analyticsService->heroSummary((int) Auth::id());
 
-        return view('user.content.index', compact(
+        return view('user.content.index', array_merge(compact(
             'contents',
             'classifications',
             'authors',
@@ -96,7 +98,7 @@ class ContentUserController extends Controller
             'filterViewOrder',
             'filterFromDate',
             'filterToDate'
-        ));
+        ), $heroSummary));
     }
 
         public function view($slug)
