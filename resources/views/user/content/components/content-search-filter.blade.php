@@ -75,7 +75,7 @@
                                id="contentSearch"
                                value="{{ $filterSearch }}"
                                class="form-control rounded-3"
-                               placeholder="Search content...">
+                               placeholder="Search Content">
                     </div>
 
                     <button type="submit" class="btn btn-primary rounded-3 content-filter-icon-btn" title="Search">
@@ -95,8 +95,8 @@
                 </div>
             </div>
 
-            <div class="row g-2 align-items-end content-filter-compact-row">
-                <div class="col-12 col-sm-6 col-lg-2">
+            <div class="content-filter-inline-row">
+                <div class="content-filter-field content-filter-field-category">
                     <label class="form-label small text-muted mb-1" for="contentFilterClassification">Category / Classification</label>
                     <select name="classification" id="contentFilterClassification" class="form-select rounded-3" onchange="this.form.submit()">
                         <option value="">All Categories</option>
@@ -108,7 +108,7 @@
                     </select>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-2">
+                <div class="content-filter-field content-filter-field-type">
                     <label class="form-label small text-muted mb-1" for="contentFilterType">Type</label>
                     <select name="type" id="contentFilterType" class="form-select rounded-3" onchange="this.form.submit()">
                         <option value="">All Types</option>
@@ -118,7 +118,7 @@
                     </select>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-2">
+                <div class="content-filter-field content-filter-field-month">
                     <label class="form-label small text-muted mb-1" for="contentFilterMonth">Month</label>
                     <select name="month" id="contentFilterMonth" class="form-select rounded-3">
                         <option value="">All Months</option>
@@ -128,7 +128,7 @@
                     </select>
                 </div>
 
-                <div class="col-12 col-sm-6 col-lg-2">
+                <div class="content-filter-field content-filter-field-year">
                     <label class="form-label small text-muted mb-1" for="contentFilterYear">Year</label>
                     <select name="year" id="contentFilterYear" class="form-select rounded-3">
                         <option value="">All Years</option>
@@ -136,27 +136,6 @@
                             <option value="{{ $year }}" {{ (string) $selectedYear === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
                         @endforeach
                     </select>
-                </div>
-
-                <div class="col-12 col-lg-4">
-                    <label class="form-label small text-muted mb-1">Quick Filter</label>
-                    <div class="d-flex flex-wrap gap-2 learning-filter-actions">
-                        <a href="{{ route('content.user.index', ['date_order' => 'newest']) }}"
-                           class="btn btn-outline-primary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-clock me-1"></i>Newest
-                        </a>
-
-                        <a href="{{ route('content.user.index', ['type' => 'Video']) }}"
-                           class="btn btn-outline-primary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-video me-1"></i>Video
-                        </a>
-
-                        <a href="{{ route('content.user.index') }}"
-                           class="btn content-reset-btn rounded-3 flex-fill flex-xl-grow-0 {{ $activeFilterCount > 0 ? 'is-active' : '' }}">
-                            <i class="ti ti-refresh me-1"></i>
-                            Reset
-                        </a>
-                    </div>
                 </div>
             </div>
 
@@ -324,13 +303,25 @@
 <style>
     .content-filter-top {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
-        gap: 14px;
+        gap: 16px;
         margin-bottom: 14px;
     }
 
     .content-filter-heading {
+        min-width: 0;
+        padding-top: 2px;
+    }
+
+    .content-filter-inline-row {
+        display: grid;
+        grid-template-columns: minmax(240px, 1.45fr) minmax(160px, .95fr) minmax(160px, .95fr) minmax(130px, .75fr);
+        gap: 10px;
+        align-items: end;
+    }
+
+    .content-filter-field {
         min-width: 0;
     }
 
@@ -338,7 +329,13 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        width: min(100%, 520px);
+        width: min(100%, 540px);
+        flex: 0 1 540px;
+    }
+
+    .content-filter-card .form-control,
+    .content-filter-card .form-select {
+        min-height: 42px;
     }
 
     .content-filter-icon-btn {
@@ -363,8 +360,14 @@
         line-height: 14px;
     }
 
-    .content-filter-compact-row .form-label {
+    .content-filter-inline-row .form-label {
         white-space: nowrap;
+    }
+
+    @media (max-width: 1199.98px) {
+        .content-filter-inline-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @media (max-width: 991.98px) {
@@ -375,6 +378,17 @@
 
         .content-filter-search {
             width: 100%;
+            flex-basis: auto;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .content-filter-inline-row {
+            grid-template-columns: 1fr;
+        }
+
+        .content-filter-inline-row .form-label {
+            white-space: normal;
         }
     }
 </style>

@@ -82,7 +82,7 @@ class ContentUserController extends Controller
             }
         }
 
-        $contents = $queryContent->paginate(9)->appends(request()->query());
+        $contents = $queryContent->paginate(12)->appends(request()->query());
 
         return view('user.content.index', compact(
             'contents',

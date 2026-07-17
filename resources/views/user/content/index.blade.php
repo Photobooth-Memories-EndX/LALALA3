@@ -104,57 +104,6 @@
             color: #fff;
         }
 
-        .content-quick-filter {
-            border-radius: var(--owl-ui-radius) !important;
-            border: 1px solid var(--owl-ui-border) !important;
-            box-shadow: var(--owl-ui-shadow) !important;
-            overflow: hidden;
-        }
-
-        .content-quick-filter .card-body {
-            padding: 18px 20px;
-        }
-
-        .content-quick-filter-list {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .content-quick-filter-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-height: 54px;
-            padding: 12px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            background: var(--owl-ui-surface);
-            color: var(--owl-ui-text);
-            font-weight: 600;
-            text-decoration: none;
-            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
-        }
-
-        .content-quick-filter-item:hover {
-            transform: translateY(-2px);
-            border-color: #bfdbfe;
-            box-shadow: 0 10px 24px rgba(37, 99, 235, .1);
-            color: #1d4ed8;
-        }
-
-        .content-quick-filter-icon {
-            width: 34px;
-            height: 34px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex: 0 0 34px;
-            border-radius: 10px;
-            background: #eff6ff;
-            font-size: 18px;
-        }
-
         .content-card-thumb {
             border-radius: 0;
         }
@@ -275,13 +224,6 @@
             box-shadow: 0 8px 20px rgba(59, 130, 246, .18);
         }
 
-        [data-bs-theme="dark"] .content-quick-filter,
-        body.dark-mode .content-quick-filter {
-            background: #152235;
-            border: 1px solid rgba(255, 255, 255, .07);
-            box-shadow: none !important;
-        }
-
         [data-bs-theme="dark"] .content-filter-card,
         body.dark-mode .content-filter-card,
         [data-bs-theme="dark"] .content-card,
@@ -312,25 +254,6 @@
         body.dark-mode .content-card-meta,
         body.dark-mode .content-card .text-muted {
             color: #94a3b8 !important;
-        }
-
-        [data-bs-theme="dark"] .content-quick-filter-item,
-        body.dark-mode .content-quick-filter-item {
-            background: #192d45;
-            border-color: rgba(255, 255, 255, .08);
-            color: #e2e8f0;
-        }
-
-        [data-bs-theme="dark"] .content-quick-filter-item:hover,
-        body.dark-mode .content-quick-filter-item:hover {
-            border-color: rgba(96, 165, 250, .36);
-            color: #93c5fd;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, .22);
-        }
-
-        [data-bs-theme="dark"] .content-quick-filter-icon,
-        body.dark-mode .content-quick-filter-icon {
-            background: rgba(37, 99, 235, .2);
         }
 
         [data-bs-theme="dark"] .learning-filter-modal .modal-content,
@@ -368,12 +291,6 @@
             color: #fff;
         }
 
-        @media (max-width: 991.98px) {
-            .content-quick-filter-list {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
         @media (max-width: 767.98px) {
             .content-hero-surface {
                 min-height: auto;
@@ -387,10 +304,6 @@
             .content-hero-count strong {
                 font-size: 44px;
             }
-
-            .content-quick-filter-list {
-                grid-template-columns: 1fr;
-            }
         }
     </style>
 @endsection
@@ -401,6 +314,7 @@
 
         @php
             $selectedCategory = $classifications->firstWhere('id', $filterClassification);
+            $activeCategoryLabel = $selectedCategory->classification_name ?? 'All Categories';
             $hasActiveFilter = filled($filterSearch) || filled($filterClassification) || filled($filterType) || filled($filterAuthor) || filled($filterViewOrder) || $filterDateOrder !== 'newest' || filled(request('from_date')) || filled(request('to_date')) || request('duration', 'all') !== 'all' || filled(request('total_pages'));
         @endphp
 
@@ -415,17 +329,17 @@
                         </div>
 
                         <h1 class="mb-2 fw-bold">
-                            {{ $selectedCategory->classification_name ?? 'Build your next skill' }}
+                            All Content
                         </h1>
 
                         <p class="mb-0 text-white-75">
-                           Explore curated videos, documents, and learning materials that help you keep growing every day.
+                            Explore curated videos, documents, and learning materials that help you keep growing every day.
                         </p>
                     </div>
 
                     <div class="col-lg-4 d-flex justify-content-lg-end">
                         <div class="content-hero-count">
-                            <span>All Content</span>
+                            <span>{{ $activeCategoryLabel }}</span>
                             <strong>{{ $contents->total() }}</strong>
                         </div>
                     </div>
