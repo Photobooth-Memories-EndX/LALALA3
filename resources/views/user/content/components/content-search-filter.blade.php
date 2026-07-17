@@ -41,6 +41,8 @@
     $activeFilterCount += filled($filterSearch) ? 1 : 0;
     $activeFilterCount += filled($filterClassification) ? 1 : 0;
     $activeFilterCount += filled($filterType) ? 1 : 0;
+    $activeFilterCount += filled($selectedMonth) ? 1 : 0;
+    $activeFilterCount += filled($selectedYear) ? 1 : 0;
 
     $monthOptions = collect(range(1, 12))->mapWithKeys(function ($month) {
         $value = str_pad((string) $month, 2, '0', STR_PAD_LEFT);
@@ -92,13 +94,20 @@
                             <span class="badge bg-primary text-white content-filter-count">{{ $modalFilterCount }}</span>
                         @endif
                     </button>
+
+                    <a href="{{ route('content.user.index') }}"
+                       class="btn content-reset-btn rounded-3 content-filter-reset-btn {{ $activeFilterCount > 0 ? 'is-active' : '' }}"
+                       title="Reset filters">
+                        <i class="ti ti-refresh"></i>
+                        <span>Reset</span>
+                    </a>
                 </div>
             </div>
 
             <div class="content-filter-inline-row">
                 <div class="content-filter-field content-filter-field-category">
                     <label class="form-label small text-muted mb-1" for="contentFilterClassification">Category / Classification</label>
-                    <select name="classification" id="contentFilterClassification" class="form-select rounded-3" onchange="this.form.submit()">
+                    <select name="classification" id="contentFilterClassification" class="form-select rounded-3 content-auto-submit">
                         <option value="">All Categories</option>
                         @foreach ($classifications as $classification)
                             <option value="{{ $classification->id }}" {{ $filterClassification == $classification->id ? 'selected' : '' }}>
@@ -110,7 +119,7 @@
 
                 <div class="content-filter-field content-filter-field-type">
                     <label class="form-label small text-muted mb-1" for="contentFilterType">Type</label>
-                    <select name="type" id="contentFilterType" class="form-select rounded-3" onchange="this.form.submit()">
+                    <select name="type" id="contentFilterType" class="form-select rounded-3 content-auto-submit">
                         <option value="">All Types</option>
                         <option value="Document" {{ $filterType == 'Document' ? 'selected' : '' }}>Document</option>
                         <option value="Video" {{ $filterType == 'Video' ? 'selected' : '' }}>Video</option>
@@ -329,8 +338,8 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        width: min(100%, 540px);
-        flex: 0 1 540px;
+        width: min(100%, 620px);
+        flex: 0 1 620px;
     }
 
     .content-filter-card .form-control,
@@ -346,6 +355,17 @@
         align-items: center;
         justify-content: center;
         padding: 0;
+    }
+
+    .content-filter-reset-btn {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex: 0 0 auto;
+        padding: 0 14px;
+        white-space: nowrap;
     }
 
     .content-filter-count {
@@ -390,19 +410,41 @@
         .content-filter-inline-row .form-label {
             white-space: normal;
         }
+
+        .content-filter-search {
+            flex-wrap: wrap;
+        }
+
+        .content-filter-search .input-icon {
+            flex-basis: 100%;
+        }
+
+        .content-filter-reset-btn {
+            flex: 1 1 auto;
+        }
     }
 </style>
 
 <script>
     $(function () {
+        const defaultYear = '{{ $yearNow }}';
+
         function syncContentMonthYearRange() {
             const month = $('#contentFilterMonth').val();
-            const year = $('#contentFilterYear').val();
+            let year = $('#contentFilterYear').val();
+
+            if (month && !year) {
+                year = defaultYear;
+                $('#contentFilterYear').val(year);
+            }
 
             if (month && year) {
                 const lastDay = new Date(Number(year), Number(month), 0).getDate();
                 $('#contentFilterFromDateHidden').val(year + '-' + month + '-01');
                 $('#contentFilterToDateHidden').val(year + '-' + month + '-' + String(lastDay).padStart(2, '0'));
+            } else if (year) {
+                $('#contentFilterFromDateHidden').val(year + '-01-01');
+                $('#contentFilterToDateHidden').val(year + '-12-31');
             } else {
                 $('#contentFilterFromDateHidden').val('');
                 $('#contentFilterToDateHidden').val('');
@@ -411,6 +453,10 @@
 
         $('#contentFilterMonth, #contentFilterYear').on('change', function () {
             syncContentMonthYearRange();
+            $('#contentFilterForm').trigger('submit');
+        });
+
+        $('.content-auto-submit').on('change', function () {
             $('#contentFilterForm').trigger('submit');
         });
 
