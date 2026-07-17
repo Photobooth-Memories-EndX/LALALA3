@@ -41,16 +41,18 @@
     $ongoingSlicePath = $donutSlicePolygon($completedPercent, 100);
 
     $defaultHeroImage = asset('img/owl-dashboard.png');
-    $coverFiles = glob(public_path('storage/profile/cover_' . $user->id . '.*')) ?: [];
-    $coverFile = count($coverFiles) ? basename($coverFiles[0]) : null;
-    $heroImage = $coverFile ? asset('storage/profile/' . $coverFile) : $defaultHeroImage;
+    $heroImage = filled($user->hero_background)
+        ? asset('storage/' . $user->hero_background)
+        : $defaultHeroImage;
 @endphp
 
-<div class="home-modern-hero compact-home-hero" style="--hero-bg-image: url('{{ $heroImage }}');">
+<div class="home-modern-hero compact-home-hero"
+     data-background-url="{{ $heroImage }}"
+     style="--hero-bg-image: url('{{ $heroImage }}');">
     <div class="compact-hero-bg-preview" aria-hidden="true"></div>
 
     <div class="compact-hero-toolbar">
-        <form action="{{ route('user.updateprofile') }}"
+        <form action="{{ route('home.user.hero-background.update') }}"
               method="POST"
               enctype="multipart/form-data"
               class="compact-hero-upload-form"
@@ -59,13 +61,19 @@
             <input type="hidden" name="source" value="home">
             <label class="compact-hero-upload" for="homeHeroCoverInput">
                 <i class="ti ti-photo-up"></i>
-                <span>Change cover</span>
+                <span>Change Background</span>
             </label>
             <input type="file"
-                   name="cover"
+                   name="hero_background"
                    id="homeHeroCoverInput"
                    class="d-none"
                    accept="image/png,image/jpeg,image/jpg,image/webp">
+            <button type="submit"
+                    class="compact-hero-save d-none"
+                    id="homeHeroCoverSave">
+                <i class="ti ti-device-floppy"></i>
+                <span>Save</span>
+            </button>
         </form>
     </div>
 
@@ -239,7 +247,30 @@
     }
 
     .compact-hero-upload-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
         margin: 0;
+    }
+
+    .compact-hero-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 11px;
+        border: 1px solid rgba(187, 247, 208, .5);
+        border-radius: 999px;
+        background: rgba(22, 163, 74, .8);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .compact-hero-save:disabled {
+        cursor: wait;
+        opacity: .7;
     }
 
     .compact-hero-content {
@@ -492,19 +523,3 @@
         background: rgba(5, 18, 39, .94);
     }
 </style>
-
-<script>
-    $(function () {
-        $('#homeHeroCoverInput').on('change', function () {
-            const file = this.files && this.files[0];
-
-            if (!file) {
-                return;
-            }
-
-            const previewUrl = URL.createObjectURL(file);
-            $('.compact-home-hero').css('--hero-bg-image', `url("${previewUrl}")`);
-            $('#homeHeroCoverForm').trigger('submit');
-        });
-    });
-</script>

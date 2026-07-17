@@ -65,6 +65,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logoutpage');
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [HomeUserController::class, 'index'])->name('home.user.index');
     Route::get('/upcoming-deadline',[HomeUserController::class, 'upcomingDeadline'])->name('home.upcoming.deadline');
+    Route::post('/hero-background', [HomeUserController::class, 'updateHeroBackground'])
+        ->name('home.user.hero-background.update');
 
     Route::view('/trainingplan', 'user.trainingplan-user.index')->name('trainingplan.user.index');
 

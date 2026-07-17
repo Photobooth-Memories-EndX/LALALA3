@@ -37,6 +37,7 @@ class User extends Authenticatable
         'ssohash',
         'sap_code',
         'role',
+        'hero_background',
     ];
 
     /**

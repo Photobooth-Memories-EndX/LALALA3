@@ -3,6 +3,231 @@
 <script>
 
 /* =====================================================
+   HERO BACKGROUND — Local preview and AJAX upload
+===================================================== */
+
+$(function () {
+    var $hero = $('.compact-home-hero');
+    var $form = $('#homeHeroCoverForm');
+    var $input = $('#homeHeroCoverInput');
+    var $saveButton = $('#homeHeroCoverSave');
+    var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    var allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+    var maxSize = 5 * 1024 * 1024;
+    var targetSize = 100 * 1024;
+    var maxWidth = 1920;
+    var qualities = [0.8, 0.75, 0.70, 0.65, 0.60];
+    var previewUrl = null;
+    var compressedBackground = null;
+    var compressionSequence = 0;
+    var saveButtonDefaultHtml = $saveButton.html();
+
+    if (!$hero.length || !$form.length) return;
+
+    function setHeroBackground(url) {
+        $hero.css('--hero-bg-image', 'url("' + url + '")');
+    }
+
+    function clearPreviewUrl() {
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            previewUrl = null;
+        }
+    }
+
+    function resetHeroToSavedBackground() {
+        setHeroBackground($hero.attr('data-background-url'));
+    }
+
+    function supportsWebP() {
+        var canvas = document.createElement('canvas');
+
+        return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+    }
+
+    function loadImage(file) {
+        return new Promise(function (resolve, reject) {
+            var image = new Image();
+            var sourceUrl = URL.createObjectURL(file);
+
+            image.onload = function () {
+                URL.revokeObjectURL(sourceUrl);
+                resolve(image);
+            };
+            image.onerror = function () {
+                URL.revokeObjectURL(sourceUrl);
+                reject(new Error('The selected image could not be read.'));
+            };
+            image.src = sourceUrl;
+        });
+    }
+
+    function canvasToBlob(canvas, mimeType, quality) {
+        return new Promise(function (resolve, reject) {
+            canvas.toBlob(function (blob) {
+                if (!blob) {
+                    reject(new Error('The browser could not compress this image.'));
+                    return;
+                }
+
+                resolve(blob);
+            }, mimeType, quality);
+        });
+    }
+
+    async function compressImage(file) {
+        var image = await loadImage(file);
+        var scale = image.naturalWidth > maxWidth
+            ? maxWidth / image.naturalWidth
+            : 1;
+        var width = Math.max(1, Math.round(image.naturalWidth * scale));
+        var height = Math.max(1, Math.round(image.naturalHeight * scale));
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+
+        if (!context) {
+            throw new Error('Canvas compression is not supported by this browser.');
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+
+        var mimeType = supportsWebP() ? 'image/webp' : 'image/jpeg';
+        var blob = null;
+
+        for (var index = 0; index < qualities.length; index++) {
+            blob = await canvasToBlob(canvas, mimeType, qualities[index]);
+
+            if (blob.size <= targetSize) break;
+        }
+
+        return {
+            blob: blob,
+            fileName: 'hero-background.' + (mimeType === 'image/webp' ? 'webp' : 'jpg')
+        };
+    }
+
+    $input.on('change', async function () {
+        var input = this;
+        var file = this.files && this.files[0];
+        var extension = file && file.name.indexOf('.') !== -1
+            ? file.name.split('.').pop().toLowerCase()
+            : '';
+        var selectionId = ++compressionSequence;
+
+        if (!file) return;
+
+        clearPreviewUrl();
+        compressedBackground = null;
+        resetHeroToSavedBackground();
+
+        if (allowedTypes.indexOf(file.type) === -1
+            && allowedExtensions.indexOf(extension) === -1) {
+            window.alert('Use a JPG, JPEG, PNG, or WEBP image.');
+            this.value = '';
+            $saveButton.addClass('d-none');
+            return;
+        }
+
+        if (file.size > maxSize) {
+            window.alert('Maximum image size is 5 MB.');
+            this.value = '';
+            $saveButton.addClass('d-none');
+            return;
+        }
+
+        $saveButton
+            .removeClass('d-none')
+            .prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span>Compressing...</span>');
+
+        try {
+            var compressed = await compressImage(file);
+
+            if (selectionId !== compressionSequence) return;
+
+            compressedBackground = compressed;
+            previewUrl = URL.createObjectURL(compressed.blob);
+            setHeroBackground(previewUrl);
+            $saveButton
+                .prop('disabled', false)
+                .html(saveButtonDefaultHtml);
+        } catch (error) {
+            if (selectionId !== compressionSequence) return;
+
+            input.value = '';
+            resetHeroToSavedBackground();
+            $saveButton
+                .prop('disabled', false)
+                .addClass('d-none')
+                .html(saveButtonDefaultHtml);
+            window.alert(error.message || 'Image compression failed.');
+        }
+    });
+
+    $form.on('submit', function (event) {
+        event.preventDefault();
+
+        if (!compressedBackground) {
+            window.alert('Choose a background image first.');
+            return;
+        }
+
+        var formData = new FormData($form[0]);
+
+        formData.set(
+            'hero_background',
+            compressedBackground.blob,
+            compressedBackground.fileName
+        );
+
+        $saveButton
+            .prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm" aria-hidden="true"></span><span>Saving...</span>');
+
+        $.ajax({
+            url: $form.attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': $form.find('input[name="_token"]').val()
+            },
+            success: function (response) {
+                if (response.background_url) {
+                    $hero.attr('data-background-url', response.background_url);
+                    setHeroBackground(response.background_url);
+                }
+
+                window.alert(response.message || 'Background updated successfully.');
+            },
+            error: function (xhr) {
+                var message = xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message
+                    : 'Upload failed. HTTP status: ' + xhr.status + '.';
+
+                resetHeroToSavedBackground();
+                window.alert(message);
+            },
+            complete: function () {
+                clearPreviewUrl();
+                compressedBackground = null;
+                $input.val('');
+                $saveButton
+                    .prop('disabled', false)
+                    .addClass('d-none')
+                    .html(saveButtonDefaultHtml);
+            }
+        });
+    });
+});
+
+/* =====================================================
    HERO DONUT — Bootstrap tooltips on hover
 ===================================================== */
 
