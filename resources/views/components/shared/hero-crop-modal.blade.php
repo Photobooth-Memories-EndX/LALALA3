@@ -47,11 +47,6 @@
                 border-width: 2px;
             }
 
-            [data-hero-background] .compact-hero-bg-preview {
-                filter: blur(1.5px);
-                transform: scale(1.035);
-            }
-
             .hero-crop-modal .modal-content {
                 overflow: hidden;
                 border: 1px solid rgba(148, 163, 184, .22);
@@ -84,12 +79,23 @@
             }
 
             .hero-crop-preview {
+                position: relative;
                 width: 100%;
-                aspect-ratio: 16 / 9;
+                aspect-ratio: var(--hero-crop-aspect-ratio);
                 overflow: hidden;
                 border: 1px solid rgba(148, 163, 184, .24);
-                border-radius: 12px;
+                border-radius: 22px;
                 background: #0f172a;
+            }
+
+            .hero-crop-preview::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background:
+                    radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
+                    linear-gradient(90deg, rgba(8, 22, 52, .9), rgba(18, 58, 118, .74));
             }
 
             .hero-crop-zoom {
@@ -128,7 +134,10 @@
                 <div class="modal-header border-0">
                     <div>
                         <h3 class="modal-title mb-1" id="heroBackgroundCropTitle">Crop Hero Background</h3>
-                        <div class="text-muted small">Drag the image and adjust zoom. Crop ratio is 16:9; the final Hero image is resized to 1600 × 600.</div>
+                        <div class="text-muted small">
+                            Drag the image and adjust zoom. The fixed crop frame matches the
+                            <span id="heroCropDimensions">Hero</span> design.
+                        </div>
                     </div>
                     <button type="button"
                             class="btn-close"

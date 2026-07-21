@@ -1,11 +1,10 @@
 @extends('layouts.sidebar-master')
 
 @section('style')
-    <link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet"/>
-    @include('components.Home.styles')
     <style>
         :root {
             --owl-ui-radius: 20px;
+            --owl-hero-radius: 24px;
             --owl-ui-shadow: 0 2px 12px rgba(15, 23, 42, .05);
             --owl-ui-shadow-hover: 0 10px 28px rgba(15, 23, 42, .10);
             --owl-ui-border: #e2e8f0;
@@ -19,6 +18,64 @@
             border: 1px solid var(--owl-ui-border) !important;
             box-shadow: var(--owl-ui-shadow) !important;
             overflow: hidden;
+        }
+
+        .content-hero-card {
+            border-radius: 22px !important;
+        }
+
+        .content-hero-surface {
+            min-height: 238px;
+            padding: 28px 34px !important;
+            display: flex;
+            align-items: center;
+            background:
+                radial-gradient(circle at 85% 20%, rgba(255, 255, 255, .24), transparent 28%),
+                linear-gradient(135deg, #0041b9 0%, #1248a7 45%, #2a72ca 100%);
+        }
+
+        .content-hero-surface > .row {
+            width: 100%;
+            min-height: 182px;
+        }
+
+        .content-hero-count {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            width: 100%;
+            line-height: 1;
+            color: #fff;
+            text-align: right;
+        }
+
+        .content-hero-count strong {
+            font-size: clamp(48px, 7vw, 82px);
+            font-weight: 800;
+            letter-spacing: 0;
+            text-shadow: 0 12px 34px rgba(15, 23, 42, .22);
+        }
+
+        .content-hero-count span {
+            margin-bottom: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: rgba(255, 255, 255, .78);
+        }
+
+        .content-hero-copy h1 {
+            font-size: clamp(30px, 3.4vw, 44px);
+            line-height: 1.04;
+            letter-spacing: 0;
+        }
+
+        .content-hero-copy p {
+            max-width: 580px;
+            font-size: 15px;
+            line-height: 1.65;
         }
 
         .content-reset-btn {
@@ -140,6 +197,13 @@
             font-weight: 600;
         }
 
+        [data-bs-theme="dark"] .content-hero-surface,
+        body.dark-mode .content-hero-surface {
+            background:
+                radial-gradient(circle at 85% 20%, rgba(255, 255, 255, .10), transparent 28%),
+                linear-gradient(135deg, #0c1e38 0%, #132e6a 100%) !important;
+        }
+
         [data-bs-theme="dark"] .content-reset-btn,
         body.dark-mode .content-reset-btn {
             color: #93c5fd;
@@ -227,21 +291,60 @@
             color: #fff;
         }
 
+        @media (max-width: 767.98px) {
+            .content-hero-surface {
+                min-height: auto;
+            }
+
+            .content-hero-count {
+                align-items: flex-start;
+                text-align: left;
+            }
+
+            .content-hero-count strong {
+                font-size: 44px;
+            }
+        }
     </style>
 @endsection
 
 @section('content')
 <div class="page-body">
-    <div class="container-xl py-4">
+    <div class="container-xl">
+
+        @php
+            $selectedCategory = $classifications->firstWhere('id', $filterClassification);
+            $activeCategoryLabel = $selectedCategory->classification_name ?? 'All Categories';
+            $hasActiveFilter = filled($filterSearch) || filled($filterClassification) || filled($filterType) || filled($filterAuthor) || filled($filterViewOrder) || $filterDateOrder !== 'newest' || filled(request('from_date')) || filled(request('to_date')) || request('duration', 'all') !== 'all' || filled(request('total_pages'));
+        @endphp
 
         {{-- HERO --}}
-        @include('components.Home.page-header', [
-            'heroPageTitle' => 'All Content',
-            'heroPageSubtitle' => 'Browse all available learning materials, videos, documents, and playlists.',
-        ])
+        <div class="card content-hero-card mb-4 overflow-hidden border-0 shadow-sm">
+            <div class="card-body content-hero-surface text-white">
+                <div class="row align-items-center g-4">
+                    <div class="col-lg-8 content-hero-copy">
+                        <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-3 px-3 py-2 rounded-pill">
+                            <i class="ti ti-sparkles"></i>
+                            Learning Content
+                        </div>
 
-        <div class="row g-4 mb-4">
-            @include('components.Home.hero')
+                        <h1 class="mb-2 fw-bold">
+                            All Content
+                        </h1>
+
+                        <p class="mb-0 text-white-75">
+                            Explore curated videos, documents, and learning materials that help you keep growing every day.
+                        </p>
+                    </div>
+
+                    <div class="col-lg-4 d-flex justify-content-lg-end">
+                        <div class="content-hero-count">
+                            <span>{{ $activeCategoryLabel }}</span>
+                            <strong>{{ $contents->total() }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- @include('user.content.components.learning-paths') --}}
@@ -306,12 +409,9 @@
 
     </div>
 </div>
-
-@include('components.Home.assessment-modal')
 @endsection
 
 @section('script')
-    @include('components.Home.scripts')
     <script>
         $(function () {
             const selectedDuration = @json(request('duration', 'all'));
@@ -393,3 +493,4 @@
         });
     </script>
 @endsection
+

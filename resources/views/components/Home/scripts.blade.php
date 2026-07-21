@@ -20,14 +20,15 @@ $(function () {
     var $cropImage = $('#heroCropImage');
     var $zoom = $('#heroCropZoom');
     var $applyButton = $('#heroCropApply');
+    var $cropPreview = $('#heroCropPreview');
+    var $cropDimensions = $('#heroCropDimensions');
     var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     var allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
     var maxSize = 5 * 1024 * 1024;
-    var targetSize = 150 * 1024;
-    var maximumSize = 200 * 1024;
-    var outputWidth = 1600;
-    var outputHeight = 900;
-    var compressionQualities = [0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.10];
+    var maximumSize = 150 * 1024;
+    var outputWidth = parseInt($hero.attr('data-hero-width'), 10);
+    var outputHeight = parseInt($hero.attr('data-hero-height'), 10);
+    var compressionQualities = [0.80, 0.78, 0.75];
     var previewUrl = null;
     var compressedBackground = null;
     var cropper = null;
@@ -35,7 +36,9 @@ $(function () {
     var cropWasApplied = false;
     var applyButtonDefaultHtml = $applyButton.html();
 
-    if (!$hero.length || !$input.length || !$modal.length || !$cropImage.length) {
+    if (!$hero.length || !$input.length || !$modal.length || !$cropImage.length
+        || !Number.isFinite(outputWidth) || outputWidth <= 0
+        || !Number.isFinite(outputHeight) || outputHeight <= 0) {
         console.error('[Hero Crop] Required frontend elements are missing.', {
             hero: $hero.length,
             input: $input.length,
@@ -44,6 +47,10 @@ $(function () {
         });
         return;
     }
+
+    var heroAspectRatio = outputWidth / outputHeight;
+    $cropPreview.css('--hero-crop-aspect-ratio', outputWidth + ' / ' + outputHeight);
+    $cropDimensions.text(outputWidth + ' × ' + outputHeight + ' Hero');
 
     console.debug('[Hero Crop] Frontend handler initialized.');
 
@@ -175,12 +182,17 @@ $(function () {
     }
 
     async function compressCanvas(sourceCanvas) {
-        var mimeType = supportsWebP() ? 'image/webp' : 'image/jpeg';
+        var mimeType = 'image/webp';
+        var detailCanvas = sourceCanvas;
         var workingCanvas = sourceCanvas;
-        var fallback = null;
 
-        // Try quality first. If a very detailed image is still over 200 KB,
-        // reduce the canvas dimensions and repeat until the hard limit is met.
+        if (!supportsWebP()) {
+            throw new Error('This browser cannot create WebP images. Please use a current browser.');
+        }
+
+        // Keep the exported file at the exact Hero dimensions. For unusually
+        // detailed images, reduce effective image detail between attempts and
+        // redraw it onto an exact-size canvas instead of changing its ratio.
         for (var resizeAttempt = 0; resizeAttempt < 8; resizeAttempt++) {
             for (var index = 0; index < compressionQualities.length; index++) {
                 var blob = await canvasToBlob(
@@ -189,40 +201,23 @@ $(function () {
                     compressionQualities[index]
                 );
 
-                if (blob.size <= targetSize) {
+                if (blob.size <= maximumSize) {
                     return {
                         blob: blob,
-                        fileName: 'hero-background.' + (mimeType === 'image/webp' ? 'webp' : 'jpg')
+                        fileName: 'hero-background.webp'
                     };
                 }
-
-                if (blob.size <= maximumSize && (!fallback || blob.size < fallback.size)) {
-                    fallback = blob;
-                }
             }
 
-            if (fallback) {
-                return {
-                    blob: fallback,
-                    fileName: 'hero-background.' + (mimeType === 'image/webp' ? 'webp' : 'jpg')
-                };
-            }
-
-            workingCanvas = resizeCanvas(
-                workingCanvas,
-                Math.max(320, Math.round(workingCanvas.width * 0.82)),
-                Math.max(120, Math.round(workingCanvas.height * 0.82))
+            detailCanvas = resizeCanvas(
+                detailCanvas,
+                Math.max(640, Math.round(detailCanvas.width * 0.85)),
+                Math.max(240, Math.round(detailCanvas.height * 0.85))
             );
+            workingCanvas = resizeCanvas(detailCanvas, outputWidth, outputHeight);
         }
 
-        if (fallback) {
-            return {
-                blob: fallback,
-                fileName: 'hero-background.' + (mimeType === 'image/webp' ? 'webp' : 'jpg')
-            };
-        }
-
-        throw new Error('The image could not be compressed below 200 KB.');
+        throw new Error('The image could not be compressed below 150 KB.');
     }
 
     $input.on('change', function () {
@@ -325,10 +320,15 @@ $(function () {
         try {
             console.debug('[Hero Crop] Initializing Cropper.js.');
             cropper = new window.Cropper($cropImage[0], {
-                aspectRatio: 16 / 9,
+                aspectRatio: heroAspectRatio,
                 viewMode: 1,
                 dragMode: 'move',
                 autoCropArea: 1,
+                cropBoxMovable: false,
+                cropBoxResizable: false,
+                toggleDragModeOnDblclick: false,
+                scalable: false,
+                rotatable: false,
                 responsive: true,
                 restore: false,
                 background: false,
@@ -381,13 +381,14 @@ $(function () {
 
         try {
             var croppedCanvas = cropper.getCroppedCanvas({
+                width: outputWidth,
+                height: outputHeight,
                 fillColor: '#ffffff',
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high'
             });
-            var resizedCanvas = resizeCanvas(croppedCanvas, outputWidth, outputHeight);
 
-            compressedBackground = await compressCanvas(resizedCanvas);
+            compressedBackground = await compressCanvas(croppedCanvas);
             clearPreviewUrl();
             previewUrl = URL.createObjectURL(compressedBackground.blob);
             setHeroBackground(previewUrl);

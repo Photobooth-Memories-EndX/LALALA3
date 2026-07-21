@@ -48,6 +48,8 @@
 
 <div class="home-modern-hero compact-home-hero"
      data-hero-background
+     data-hero-width="1600"
+     data-hero-height="600"
      data-background-url="{{ $heroImage }}"
      style="--hero-bg-image: url('{{ $heroImage }}');">
     <div class="compact-hero-bg-preview" aria-hidden="true"></div>
@@ -185,6 +187,7 @@
             var(--hero-bg-image);
         background-size: cover;
         background-position: center;
+        background-repeat: no-repeat;
         box-shadow: 0 18px 44px rgba(15, 23, 42, .16);
     }
 
@@ -212,7 +215,7 @@
         background-image: var(--hero-bg-image);
         background-size: cover;
         background-position: center;
-        transform: scale(1.02);
+        background-repeat: no-repeat;
     }
 
     .compact-hero-bg-preview::after {
