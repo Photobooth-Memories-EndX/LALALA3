@@ -109,6 +109,12 @@
         .learning-hero-cta {
             width: 100%;
         }
+
+        /* Keep right-column menus inside the viewport on the two-column row. */
+        .learning-filter-dropdown-row .dropdown:nth-child(even) .dropdown-menu.show {
+            right: 0 !important;
+            left: auto !important;
+        }
     }
 
     @media (max-width: 419.98px) {
@@ -125,6 +131,59 @@
 
     .learning-filter-card .form-label {
         font-weight: 600;
+    }
+
+    /*
+     * Learning On Going filter layer
+     *
+     * The generic card rule above intentionally clips regular cards, but a
+     * dropdown cannot escape an overflow-clipping ancestor. Keep that behavior
+     * for learning cards and open only the filter's ancestor chain.
+     */
+    #learning-tab-content,
+    .learning-section-wrapper,
+    .learning-section-wrapper > .learning-section-padding,
+    .learning-filter-card,
+    .learning-filter-card > .card-body,
+    .learning-filter-card form {
+        overflow: visible !important;
+    }
+
+    /* Match the filter edges to the existing Hero inside .container-xl. */
+    .learning-section-wrapper > .learning-section-padding {
+        width: 100%;
+        max-width: none;
+        margin-right: 0;
+        margin-left: 0;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .learning-filter-card {
+        position: relative;
+        border-radius: 22px !important;
+    }
+
+    .learning-filter-dropdown-row,
+    .learning-filter-dropdown-row .dropdown {
+        position: relative;
+        overflow: visible;
+    }
+
+    /*
+     * Override Popper's per-item flip so the four quick filters never become
+     * a mixed up/down row. All menus consistently open below their trigger.
+     */
+    .learning-filter-dropdown-row .dropdown-menu {
+        z-index: 1085;
+    }
+
+    .learning-filter-dropdown-row .dropdown-menu.show {
+        top: 100% !important;
+        right: auto !important;
+        bottom: auto !important;
+        left: 0 !important;
+        transform: translateY(.25rem) !important;
     }
 
     /* Tombol Filter/Reset sejajar & sama tinggi dengan input di baris filter */
