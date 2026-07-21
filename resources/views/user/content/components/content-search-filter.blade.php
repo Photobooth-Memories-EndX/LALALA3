@@ -1,18 +1,8 @@
 @php
-    $filterFromDate = request('from_date');
-    $filterToDate = request('to_date');
     $filterDuration = request('duration', 'all');
     $filterTotalPages = array_values(array_filter((array) request('total_pages', [])));
     $selectedMonth = request('month', '');
     $selectedYear = request('year', '');
-
-    if (blank($selectedMonth) && filled($filterFromDate)) {
-        $selectedMonth = \Carbon\Carbon::parse($filterFromDate)->format('m');
-    }
-
-    if (blank($selectedYear) && filled($filterFromDate)) {
-        $selectedYear = \Carbon\Carbon::parse($filterFromDate)->format('Y');
-    }
 
     $durationOptions = [
         'lt10'  => '< 10 Menit',
@@ -30,9 +20,14 @@
 
     $modalFilterCount = 0;
     $modalFilterCount += filled($filterAuthor) ? 1 : 0;
-    $modalFilterCount += filled($filterFromDate) ? 1 : 0;
-    $modalFilterCount += filled($filterToDate) ? 1 : 0;
-    $modalFilterCount += $filterDateOrder !== 'newest' ? 1 : 0;
+    $modalFilterCount += filled($filterDeadlineFromDate) ? 1 : 0;
+    $modalFilterCount += filled($filterDeadlineToDate) ? 1 : 0;
+    $modalFilterCount += filled($filterCreatedFromDate) ? 1 : 0;
+    $modalFilterCount += filled($filterCreatedToDate) ? 1 : 0;
+    $modalFilterCount += filled($filterUpdatedFromDate) ? 1 : 0;
+    $modalFilterCount += filled($filterUpdatedToDate) ? 1 : 0;
+    $modalFilterCount += $filterDeadlineStatus !== 'all' ? 1 : 0;
+    $modalFilterCount += $filterSort !== 'newest_course' ? 1 : 0;
     $modalFilterCount += filled($filterViewOrder) ? 1 : 0;
     $modalFilterCount += $filterDuration !== 'all' ? 1 : 0;
     $modalFilterCount += count($filterTotalPages);
@@ -49,16 +44,13 @@
         return [$value => \Carbon\Carbon::create(null, $month, 1)->format('F')];
     });
 
-    $yearNow = (int) now()->format('Y');
+    $yearNow = (int) \Carbon\Carbon::now()->format('Y');
     $yearOptions = range($yearNow, $yearNow - 5);
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 mb-4 learning-filter-card content-filter-card">
     <div class="card-body p-3 p-lg-4">
         <form method="GET" action="{{ route('content.user.index') }}" id="contentFilterForm">
-            <input type="hidden" name="from_date" id="contentFilterFromDateHidden" value="{{ $filterFromDate }}">
-            <input type="hidden" name="to_date" id="contentFilterToDateHidden" value="{{ $filterToDate }}">
-
             <div class="content-filter-top">
                 <div class="content-filter-heading">
                     <h3 class="card-title mb-1">All Content</h3>
@@ -128,7 +120,7 @@
                 </div>
 
                 <div class="content-filter-field content-filter-field-month">
-                    <label class="form-label small text-muted mb-1" for="contentFilterMonth">Month</label>
+                    <label class="form-label small text-muted mb-1" for="contentFilterMonth">Created Month</label>
                     <select name="month" id="contentFilterMonth" class="form-select rounded-3">
                         <option value="">All Months</option>
                         @foreach ($monthOptions as $value => $label)
@@ -138,7 +130,7 @@
                 </div>
 
                 <div class="content-filter-field content-filter-field-year">
-                    <label class="form-label small text-muted mb-1" for="contentFilterYear">Year</label>
+                    <label class="form-label small text-muted mb-1" for="contentFilterYear">Created Year</label>
                     <select name="year" id="contentFilterYear" class="form-select rounded-3">
                         <option value="">All Years</option>
                         @foreach ($yearOptions as $year)
@@ -179,20 +171,22 @@
                             <hr class="my-3">
 
                             <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Date Range</div>
+                                <div class="fw-semibold mb-2">Deadline Date</div>
                                 <div class="row g-3">
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small text-muted mb-1" for="contentFilterFromDate">From Date</label>
+                                        <label class="form-label small text-muted mb-1" for="contentFilterDeadlineFromDate">From Date</label>
                                         <input type="date"
-                                               id="contentFilterFromDate"
-                                               value="{{ $filterFromDate }}"
+                                               name="deadline_from_date"
+                                               id="contentFilterDeadlineFromDate"
+                                               value="{{ $filterDeadlineFromDate }}"
                                                class="form-control rounded-3">
                                     </div>
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small text-muted mb-1" for="contentFilterToDate">To Date</label>
+                                        <label class="form-label small text-muted mb-1" for="contentFilterDeadlineToDate">To Date</label>
                                         <input type="date"
-                                               id="contentFilterToDate"
-                                               value="{{ $filterToDate }}"
+                                               name="deadline_to_date"
+                                               id="contentFilterDeadlineToDate"
+                                               value="{{ $filterDeadlineToDate }}"
                                                class="form-control rounded-3">
                                     </div>
                                 </div>
@@ -201,20 +195,73 @@
                             <hr class="my-3">
 
                             <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Sort Date</div>
-                                <div class="d-flex flex-wrap gap-3">
-                                    <label class="form-check">
-                                        <input class="form-check-input" type="radio"
-                                               name="date_order" value="newest"
-                                               {{ $filterDateOrder === 'newest' ? 'checked' : '' }}>
-                                        <span class="form-check-label">Newest</span>
-                                    </label>
-                                    <label class="form-check">
-                                        <input class="form-check-input" type="radio"
-                                               name="date_order" value="oldest"
-                                               {{ $filterDateOrder === 'oldest' ? 'checked' : '' }}>
-                                        <span class="form-check-label">Oldest</span>
-                                    </label>
+                                <div class="fw-semibold mb-2">Created Date</div>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="contentFilterCreatedFromDate">From Date</label>
+                                        <input type="date"
+                                               name="created_from_date"
+                                               id="contentFilterCreatedFromDate"
+                                               value="{{ $filterCreatedFromDate }}"
+                                               class="form-control rounded-3">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="contentFilterCreatedToDate">To Date</label>
+                                        <input type="date"
+                                               name="created_to_date"
+                                               id="contentFilterCreatedToDate"
+                                               value="{{ $filterCreatedToDate }}"
+                                               class="form-control rounded-3">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            {{-- <div class="learning-filter-group">
+                                <div class="fw-semibold mb-2">Updated Date</div>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="contentFilterUpdatedFromDate">From Date</label>
+                                        <input type="date"
+                                               name="updated_from_date"
+                                               id="contentFilterUpdatedFromDate"
+                                               value="{{ $filterUpdatedFromDate }}"
+                                               class="form-control rounded-3">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="contentFilterUpdatedToDate">To Date</label>
+                                        <input type="date"
+                                               name="updated_to_date"
+                                               id="contentFilterUpdatedToDate"
+                                               value="{{ $filterUpdatedToDate }}"
+                                               class="form-control rounded-3">
+                                    </div>
+                                </div>
+                            </div> --}}
+
+                            <hr class="my-3">
+
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="contentFilterDeadlineStatus">Deadline</label>
+                                    <select name="deadline_status" id="contentFilterDeadlineStatus" class="form-select rounded-3">
+                                        <option value="all" {{ $filterDeadlineStatus === 'all' ? 'selected' : '' }}>All</option>
+                                        <option value="expired" {{ $filterDeadlineStatus === 'expired' ? 'selected' : '' }}>Expired</option>
+                                        <option value="today" {{ $filterDeadlineStatus === 'today' ? 'selected' : '' }}>Today</option>
+                                        <option value="less_than_7_days" {{ $filterDeadlineStatus === 'less_than_7_days' ? 'selected' : '' }}>Less than 7 Days</option>
+                                        <option value="less_than_30_days" {{ $filterDeadlineStatus === 'less_than_30_days' ? 'selected' : '' }}>Less than 30 Days</option>
+                                        <option value="more_than_30_days" {{ $filterDeadlineStatus === 'more_than_30_days' ? 'selected' : '' }}>More than 30 Days</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="contentFilterSort">Quick Filter</label>
+                                    <select name="sort" id="contentFilterSort" class="form-select rounded-3">
+                                        <option value="newest_course" {{ $filterSort === 'newest_course' ? 'selected' : '' }}>Newest Course</option>
+                                        <option value="oldest_course" {{ $filterSort === 'oldest_course' ? 'selected' : '' }}>Oldest Course</option>
+                                        <option value="recently_updated" {{ $filterSort === 'recently_updated' ? 'selected' : '' }}>Recently Updated</option>
+                                        <option value="old_update" {{ $filterSort === 'old_update' ? 'selected' : '' }}>Old Update</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -429,30 +476,11 @@
     $(function () {
         const defaultYear = '{{ $yearNow }}';
 
-        function syncContentMonthYearRange() {
-            const month = $('#contentFilterMonth').val();
-            let year = $('#contentFilterYear').val();
-
-            if (month && !year) {
-                year = defaultYear;
-                $('#contentFilterYear').val(year);
-            }
-
-            if (month && year) {
-                const lastDay = new Date(Number(year), Number(month), 0).getDate();
-                $('#contentFilterFromDateHidden').val(year + '-' + month + '-01');
-                $('#contentFilterToDateHidden').val(year + '-' + month + '-' + String(lastDay).padStart(2, '0'));
-            } else if (year) {
-                $('#contentFilterFromDateHidden').val(year + '-01-01');
-                $('#contentFilterToDateHidden').val(year + '-12-31');
-            } else {
-                $('#contentFilterFromDateHidden').val('');
-                $('#contentFilterToDateHidden').val('');
-            }
-        }
-
         $('#contentFilterMonth, #contentFilterYear').on('change', function () {
-            syncContentMonthYearRange();
+            if ($('#contentFilterMonth').val() && !$('#contentFilterYear').val()) {
+                $('#contentFilterYear').val(defaultYear);
+            }
+
             $('#contentFilterForm').trigger('submit');
         });
 
@@ -460,22 +488,5 @@
             $('#contentFilterForm').trigger('submit');
         });
 
-        $('#contentMoreFiltersModal').on('show.bs.modal', function () {
-            $('#contentFilterFromDate').attr('name', 'from_date');
-            $('#contentFilterToDate').attr('name', 'to_date');
-            $('#contentFilterFromDateHidden, #contentFilterToDateHidden').prop('disabled', true);
-        });
-
-        $('#contentMoreFiltersModal').on('hidden.bs.modal', function () {
-            $('#contentFilterFromDate').removeAttr('name');
-            $('#contentFilterToDate').removeAttr('name');
-            $('#contentFilterFromDateHidden, #contentFilterToDateHidden').prop('disabled', false);
-        });
-
-        $('#contentFilterForm').on('submit', function () {
-            if (!$('#contentMoreFiltersModal').hasClass('show')) {
-                syncContentMonthYearRange();
-            }
-        });
     });
 </script>

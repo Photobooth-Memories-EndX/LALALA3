@@ -9,6 +9,7 @@ use App\Models\Comment;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Services\LearningAnalyticsService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,8 +24,28 @@ class ContentUserController extends Controller
         $filterDateOrder = $request->date_order ?? 'newest';
         $filterAuthor = $request->author;
         $filterViewOrder = $request->view_order;
-        $filterFromDate = $request->from_date;
-        $filterToDate = $request->to_date;
+        $filterSort = $request->filled('sort') ? $request->sort
+            : null;
+        $filterSort = $filterSort
+            ?? ($filterDateOrder === 'oldest' ? 'oldest_course' : 'newest_course');
+        $filterDeadlineStatus = $request->deadline_status ?? 'all';
+
+        // Keep the legacy from_date/to_date parameters as aliases for the
+        // original created-date filter so previously shared URLs still work.
+        $filterCreatedFromDate = $request->filled('created_from_date')
+            ? $request->created_from_date
+            : $request->from_date;
+        $filterCreatedToDate = $request->filled('created_to_date')
+            ? $request->created_to_date
+            : $request->to_date;
+        $filterDeadlineFromDate = $request->deadline_from_date;
+        $filterDeadlineToDate = $request->deadline_to_date;
+        $filterUpdatedFromDate = $request->updated_from_date;
+        $filterUpdatedToDate = $request->updated_to_date;
+        $today = Carbon::today();
+        $todayDate = $today->toDateString();
+        $sevenDaysFromToday = $today->copy()->addDays(7)->toDateString();
+        $thirtyDaysFromToday = $today->copy()->addDays(30)->toDateString();
 
         $classifications = Classification::select('id', 'classification_name', 'slug')
             ->orderBy('classification_name', 'asc')
@@ -63,27 +84,123 @@ class ContentUserController extends Controller
             $queryContent->where('author', $filterAuthor);
         }
 
-        if ($request->filled('from_date')) {
-            $queryContent->whereDate('created_at', '>=', $request->from_date);
+        if (filled($filterDeadlineFromDate) && filled($filterDeadlineToDate)) {
+            $queryContent->whereBetween('content.date', [
+                $filterDeadlineFromDate,
+                $filterDeadlineToDate,
+            ]);
+        } elseif (filled($filterDeadlineFromDate)) {
+            $queryContent->whereDate('content.date', '>=', $filterDeadlineFromDate);
+        } elseif (filled($filterDeadlineToDate)) {
+            $queryContent->whereDate('content.date', '<=', $filterDeadlineToDate);
         }
 
-        if ($request->filled('to_date')) {
-            $queryContent->whereDate('created_at', '<=', $request->to_date);
+        if (filled($filterCreatedFromDate)) {
+            $queryContent->whereDate('content.created_at', '>=', $filterCreatedFromDate);
         }
 
-        if ($filterViewOrder === 'most_viewed') {
-            $queryContent->orderBy('views', 'desc');
-        } elseif ($filterViewOrder === 'least_viewed') {
-            $queryContent->orderBy('views', 'asc');
-        } else {
-            if ($filterDateOrder === 'oldest') {
-                $queryContent->orderBy('created_at', 'asc');
-            } else {
-                $queryContent->orderBy('created_at', 'desc');
+        if (filled($filterCreatedToDate)) {
+            $queryContent->whereDate('content.created_at', '<=', $filterCreatedToDate);
+        }
+
+        if (filled($filterUpdatedFromDate)) {
+            $queryContent->whereDate('content.updated_at', '>=', $filterUpdatedFromDate);
+        }
+
+        if (filled($filterUpdatedToDate)) {
+            $queryContent->whereDate('content.updated_at', '<=', $filterUpdatedToDate);
+        }
+
+        if ($request->filled('month')) {
+            $queryContent->whereMonth('content.created_at', (int) $request->month);
+            $queryContent->whereYear('content.created_at', (int) ($request->year ?: $today->year));
+        } elseif ($request->filled('year')) {
+            $queryContent->whereYear('content.created_at', (int) $request->year);
+        }
+
+        switch ($filterDeadlineStatus) {
+            case 'expired':
+                $queryContent->whereDate('content.date', '<', $todayDate);
+                break;
+            case 'today':
+                $queryContent->whereDate('content.date', $todayDate);
+                break;
+            case 'less_than_7_days':
+                $queryContent->whereDate('content.date', '>', $todayDate)
+                    ->whereDate('content.date', '<=', $sevenDaysFromToday);
+                break;
+            case 'less_than_30_days':
+                $queryContent->whereDate('content.date', '>', $todayDate)
+                    ->whereDate('content.date', '<=', $thirtyDaysFromToday);
+                break;
+            case 'more_than_30_days':
+                $queryContent->whereDate('content.date', '>', $thirtyDaysFromToday);
+                break;
+        }
+
+        $durationRange = match ($request->get('duration', 'all')) {
+            'lt10' => [null, 600, false, true],
+            '10-30' => [600, 1800, true, false],
+            '30-60' => [1800, 3600, false, false],
+            'gt60' => [3600, null, false, false],
+            default => null,
+        };
+
+        if ($durationRange !== null) {
+            // Supports both legacy mm:ss and normalized HH:mm:ss values.
+            $durationInSeconds = "CASE
+                WHEN content.duration IS NULL OR TRIM(content.duration) = '' THEN NULL
+                WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 1 THEN
+                    CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 60
+                    + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
+                WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2 THEN
+                    CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 3600
+                    + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(content.duration, ':', 2), ':', -1) AS UNSIGNED) * 60
+                    + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
+                ELSE NULL
+            END";
+
+            [$minimum, $maximum, $includeMinimum, $excludeMaximum] = $durationRange;
+
+            if ($minimum !== null) {
+                $queryContent->whereRaw(
+                    $durationInSeconds . ($includeMinimum ? ' >= ?' : ' > ?'),
+                    [$minimum]
+                );
+            }
+
+            if ($maximum !== null) {
+                $queryContent->whereRaw(
+                    $durationInSeconds . ($excludeMaximum ? ' < ?' : ' <= ?'),
+                    [$maximum]
+                );
             }
         }
 
-        $contents = $queryContent->paginate(12)->appends(request()->query());
+        if ($filterViewOrder === 'most_viewed') {
+            $queryContent->orderBy('content.views', 'desc');
+        } elseif ($filterViewOrder === 'least_viewed') {
+            $queryContent->orderBy('content.views', 'asc');
+        }
+
+        switch ($filterSort) {
+            case 'oldest_course':
+                $queryContent->orderBy('content.created_at', 'asc');
+                break;
+            case 'recently_updated':
+                $queryContent->orderBy('content.updated_at', 'desc');
+                break;
+            case 'old_update':
+                $queryContent->orderBy('content.updated_at', 'asc');
+                break;
+            default:
+                $queryContent->orderBy('content.created_at', 'desc');
+                break;
+        }
+
+        $queryContent->orderBy('content.id', 'desc');
+
+        $contents = $queryContent->paginate(12)->appends($request->query());
         $heroSummary = $analyticsService->heroSummary((int) Auth::id());
 
         return view('user.content.index', array_merge(compact(
@@ -93,11 +210,16 @@ class ContentUserController extends Controller
             'filterSearch',
             'filterType',
             'filterClassification',
-            'filterDateOrder',
             'filterAuthor',
             'filterViewOrder',
-            'filterFromDate',
-            'filterToDate'
+            'filterSort',
+            'filterDeadlineStatus',
+            'filterDeadlineFromDate',
+            'filterDeadlineToDate',
+            'filterCreatedFromDate',
+            'filterCreatedToDate',
+            'filterUpdatedFromDate',
+            'filterUpdatedToDate'
         ), $heroSummary));
     }
 

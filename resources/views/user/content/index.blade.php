@@ -124,6 +124,68 @@
             padding: 18px;
         }
 
+        .content-card-title {
+            min-height: 48px;
+            line-height: 1.45;
+        }
+
+        .content-card-title a {
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .content-card-details {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+        }
+
+        .content-card-meta {
+            min-height: 22px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .content-card-dates {
+            min-height: 96px;
+            padding: 10px 0;
+            border-top: 1px solid rgba(98, 105, 118, .14);
+        }
+
+        .content-card-date-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+            min-height: 22px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .content-card-date-row i {
+            flex: 0 0 auto;
+            margin-top: 2px;
+            font-size: 14px;
+        }
+
+        .content-card-deadline-state {
+            font-weight: 600;
+        }
+
+        .content-card-deadline-state.is-expired {
+            color: #d63939;
+        }
+
+        .content-card-deadline-state.is-today {
+            color: #f59f00;
+        }
+
+        .content-card-deadline-state.is-upcoming {
+            color: #2fb344;
+        }
+
         .content-card-action {
             margin-top: auto;
         }
@@ -142,27 +204,7 @@
             box-shadow: var(--owl-ui-shadow-hover);
         }
 
-        /* ── Deadline row in content cards ────────────────────────── */
-        .content-card-deadline {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            min-height: 22px;
-            margin-top: 6px;
-            font-size: 12px;
-            color: #64748b;
-        }
-        .content-card-deadline i { flex: 0 0 auto; font-size: 14px; }
-
-        [data-bs-theme="dark"] .content-card-deadline,
-        body.dark-mode .content-card-deadline { color: #94a3b8; }
-
-        .content-advanced-empty {
-            display: none;
-        }
-
-        .content-empty-card,
-        .content-filter-empty-card {
+        .content-empty-card {
             border-radius: var(--owl-ui-radius) !important;
             border: 1px solid var(--owl-ui-border) !important;
             box-shadow: var(--owl-ui-shadow) !important;
@@ -229,9 +271,7 @@
         [data-bs-theme="dark"] .content-card,
         body.dark-mode .content-card,
         [data-bs-theme="dark"] .content-empty-card,
-        body.dark-mode .content-empty-card,
-        [data-bs-theme="dark"] .content-filter-empty-card,
-        body.dark-mode .content-filter-empty-card {
+        body.dark-mode .content-empty-card {
             background: #152235;
             border-color: rgba(255, 255, 255, .07);
             color: #f1f5f9;
@@ -250,10 +290,17 @@
         }
 
         [data-bs-theme="dark"] .content-card-meta,
+        [data-bs-theme="dark"] .content-card-date-row,
         [data-bs-theme="dark"] .content-card .text-muted,
         body.dark-mode .content-card-meta,
+        body.dark-mode .content-card-date-row,
         body.dark-mode .content-card .text-muted {
             color: #94a3b8 !important;
+        }
+
+        [data-bs-theme="dark"] .content-card-dates,
+        body.dark-mode .content-card-dates {
+            border-top-color: rgba(255, 255, 255, .08);
         }
 
         [data-bs-theme="dark"] .learning-filter-modal .modal-content,
@@ -315,7 +362,6 @@
         @php
             $selectedCategory = $classifications->firstWhere('id', $filterClassification);
             $activeCategoryLabel = $selectedCategory->classification_name ?? 'All Categories';
-            $hasActiveFilter = filled($filterSearch) || filled($filterClassification) || filled($filterType) || filled($filterAuthor) || filled($filterViewOrder) || $filterDateOrder !== 'newest' || filled(request('from_date')) || filled(request('to_date')) || request('duration', 'all') !== 'all' || filled(request('total_pages'));
         @endphp
 
         {{-- HERO --}}
@@ -362,9 +408,8 @@
         </div>
 
         <div class="row row-cards">
-            @forelse ($contents->getCollection()->take(12) as $item)
-                <div class="col-12 col-md-6 col-lg-4 col-xl-3 content-grid-item"
-                     data-content-duration="{{ $item->duration }}">
+            @forelse ($contents as $item)
+                <div class="col-12 col-md-6 col-lg-4 col-xl-3 content-grid-item">
                     @if (in_array($item->type, ['Video', 'YouTube']))
                         @include('user.content.components.card-video', ['item' => $item])
                     @else
@@ -391,106 +436,11 @@
             @endforelse
         </div>
 
-        <div id="contentAdvancedEmpty" class="content-advanced-empty mt-3">
-            <div class="empty card card-body content-filter-empty-card">
-                <div class="empty-img">
-                    <i class="ti ti-filter-off" style="font-size: 64px;"></i>
-                </div>
-                <p class="empty-title">Content not found for selected filters</p>
-                <p class="empty-subtitle text-muted">
-                    Tidak ada content pada halaman ini yang sesuai dengan kombinasi filter lanjutan.
-                </p>
-            </div>
-        </div>
-
         <div class="mt-4 content-pagination-wrap">
             {{ $contents->links() }}
         </div>
 
     </div>
 </div>
-@endsection
-
-@section('script')
-    <script>
-        $(function () {
-            const selectedDuration = @json(request('duration', 'all'));
-
-            function parseDurationToSeconds(value) {
-                if (!value) {
-                    return null;
-                }
-
-                const parts = String(value)
-                    .trim()
-                    .split(':')
-                    .map(function (part) {
-                        return Number(part);
-                    });
-
-                if (parts.some(function (part) { return Number.isNaN(part); })) {
-                    return null;
-                }
-
-                if (parts.length === 2) {
-                    return (parts[0] * 60) + parts[1];
-                }
-
-                if (parts.length === 3) {
-                    return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
-                }
-
-                return null;
-            }
-
-            function durationMatchesBucket(seconds, bucket) {
-                if (!bucket || bucket === 'all') {
-                    return true;
-                }
-
-                if (seconds === null) {
-                    return false;
-                }
-
-                switch (bucket) {
-                    case 'lt10':
-                        return seconds < 600;
-                    case '10-30':
-                        return seconds >= 600 && seconds <= 1800;
-                    case '30-60':
-                        return seconds > 1800 && seconds <= 3600;
-                    case 'gt60':
-                        return seconds > 3600;
-                    default:
-                        return true;
-                }
-            }
-
-            function applyAdvancedContentFilters() {
-                if (selectedDuration === 'all') {
-                    return;
-                }
-
-                let visibleCount = 0;
-
-                $('.content-grid-item').each(function () {
-                    const $item = $(this);
-                    const seconds = parseDurationToSeconds($item.data('content-duration'));
-                    const durationMatches = durationMatchesBucket(seconds, selectedDuration);
-                    const isVisible = durationMatches;
-
-                    $item.toggleClass('d-none', !isVisible);
-
-                    if (isVisible) {
-                        visibleCount++;
-                    }
-                });
-
-                $('#contentAdvancedEmpty').toggle(visibleCount === 0);
-            }
-
-            applyAdvancedContentFilters();
-        });
-    </script>
 @endsection
 

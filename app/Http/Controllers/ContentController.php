@@ -8,6 +8,7 @@ use App\Models\Classification;
 use App\Models\ContentUser;
 use App\Models\User;
 use App\Support\DurationFormatter;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
@@ -16,6 +17,10 @@ class ContentController extends Controller
     public function index(Request $request)
     {
         $query = Content::query()->with('classification');
+        $today = Carbon::today();
+        $todayDate = $today->toDateString();
+        $sevenDaysFromToday = $today->copy()->addDays(7)->toDateString();
+        $thirtyDaysFromToday = $today->copy()->addDays(30)->toDateString();
 
         if ($request->filled('s')) {
             $search = $request->s;
@@ -55,34 +60,91 @@ class ContentController extends Controller
                 });
             } elseif ($request->deadline === 'expired') {
                 $query->where('has_deadline', 1)
-                      ->whereDate('to_date', '<', now()->toDateString());
+                      ->whereDate('to_date', '<', $todayDate);
             } elseif ($request->deadline === 'active') {
                 $query->where('has_deadline', 1)
-                      ->whereDate('from_date', '<=', now()->toDateString())
-                      ->whereDate('to_date', '>=', now()->toDateString());
+                      ->whereDate('from_date', '<=', $todayDate)
+                      ->whereDate('to_date', '>=', $todayDate);
             }
         }
 
-        if ($request->filled('date_from')) {
-            $query->whereDate('date', '>=', $request->date_from);
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('content.date', [$request->date_from, $request->date_to]);
+        } elseif ($request->filled('date_from')) {
+            $query->whereDate('content.date', '>=', $request->date_from);
+        } elseif ($request->filled('date_to')) {
+            $query->whereDate('content.date', '<=', $request->date_to);
         }
 
-        if ($request->filled('date_to')) {
-            $query->whereDate('date', '<=', $request->date_to);
+        if ($request->filled('deadline_from_date') && $request->filled('deadline_to_date')) {
+            $query->whereBetween('content.date', [
+                $request->deadline_from_date,
+                $request->deadline_to_date,
+            ]);
+        } elseif ($request->filled('deadline_from_date')) {
+            $query->whereDate('content.date', '>=', $request->deadline_from_date);
+        } elseif ($request->filled('deadline_to_date')) {
+            $query->whereDate('content.date', '<=', $request->deadline_to_date);
+        }
+
+        if ($request->filled('created_from_date')) {
+            $query->whereDate('content.created_at', '>=', $request->created_from_date);
+        }
+
+        if ($request->filled('created_to_date')) {
+            $query->whereDate('content.created_at', '<=', $request->created_to_date);
+        }
+
+        if ($request->filled('updated_from_date')) {
+            $query->whereDate('content.updated_at', '>=', $request->updated_from_date);
+        }
+
+        if ($request->filled('updated_to_date')) {
+            $query->whereDate('content.updated_at', '<=', $request->updated_to_date);
+        }
+
+        switch ($request->get('deadline_status')) {
+            case 'expired':
+                $query->whereDate('content.date', '<', $todayDate);
+                break;
+            case 'today':
+                $query->whereDate('content.date', $todayDate);
+                break;
+            case 'less_than_7_days':
+                $query->whereDate('content.date', '>', $todayDate)
+                    ->whereDate('content.date', '<=', $sevenDaysFromToday);
+                break;
+            case 'less_than_30_days':
+                $query->whereDate('content.date', '>', $todayDate)
+                    ->whereDate('content.date', '<=', $thirtyDaysFromToday);
+                break;
+            case 'more_than_30_days':
+                $query->whereDate('content.date', '>', $thirtyDaysFromToday);
+                break;
         }
 
         switch ($request->get('sort')) {
+            case 'oldest_course':
             case 'oldest':
-                $query->oldest();
+                $query->orderBy('content.created_at', 'asc');
+                break;
+            case 'recently_updated':
+                $query->orderBy('content.updated_at', 'desc');
+                break;
+            case 'old_update':
+                $query->orderBy('content.updated_at', 'asc');
+                break;
+            case 'newest_course':
+                $query->orderBy('content.created_at', 'desc');
                 break;
             case 'views':
-                $query->orderByDesc('views');
+                $query->orderBy('content.views', 'desc');
                 break;
             case 'title':
-                $query->orderBy('title');
+                $query->orderBy('content.title');
                 break;
             default:
-                $query->latest();
+                $query->orderBy('content.created_at', 'desc');
                 break;
         }
 
@@ -135,7 +197,7 @@ class ContentController extends Controller
         $name = [];
         $original_name = [];
         foreach ($request->file('file') as $key => $value) {
-            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . date('YmdHi') . '.' . $value->getClientOriginalExtension();
+            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . Carbon::now()->format('YmdHi') . '.' . $value->getClientOriginalExtension();
             $destinationPath = 'storage/files/tmp/';
             $value->move($destinationPath, $image);
             $name[] = $image;
@@ -164,7 +226,7 @@ class ContentController extends Controller
         $name = [];
         $original_name = [];
         foreach ($request->file('file') as $key => $value) {
-            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . date('YmdHi') . '.' . $value->getClientOriginalExtension();
+            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . Carbon::now()->format('YmdHi') . '.' . $value->getClientOriginalExtension();
             $destinationPath = 'storage/files/tmp/thumb/';
             $value->move($destinationPath, $image);
             $name[] = $image;
