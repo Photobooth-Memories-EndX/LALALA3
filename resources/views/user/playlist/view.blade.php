@@ -55,13 +55,17 @@
         </div>
     </div>
 
+    @php
+        $commentTotal = method_exists($comment, 'total') ? $comment->total() : $comment->count();
+    @endphp
+
     <div class="modal fade playlist-comment-modal" id="playlistCommentModal" tabindex="-1" aria-labelledby="playlistCommentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content border-0 rounded-4">
                 <div class="modal-header">
                     <h5 class="modal-title" id="playlistCommentModalLabel">
                         <i class="far fa-comment-dots me-2"></i>
-                        Comments
+                        {{ $commentTotal }} Comments
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -90,59 +94,122 @@
     @include('user.playlist.components.view-style')
 
     <style>
+        .playlist-comment-modal .modal-dialog {
+            width: min(70vw, 920px);
+            max-width: min(70vw, 920px);
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .playlist-comment-modal .modal-content {
+            max-height: 70vh;
+            overflow: hidden;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, .24);
+        }
+
+        .playlist-comment-modal .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .playlist-comment-modal .modal-title {
+            display: inline-flex;
+            align-items: center;
+            color: #0f172a;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .playlist-comment-modal .modal-body {
+            padding: 0;
+            background: #f8fafc;
+            overflow-y: auto;
+        }
+
         .view-comment-wrapper {
-            margin-top: 16px;
-            padding: 24px 28px;
-            border-radius: 20px;
-            background: #ffffff;
-            box-shadow: 0 1px 6px rgba(15, 23, 42, .07);
+            padding: 18px 20px 20px;
+            background: #f8fafc;
+        }
+
+        .view-comment-wrapper.is-loading-comments,
+        .view-comment-wrapper .comment-ajax-root.is-loading-comments {
+            opacity: .65;
+            pointer-events: none;
+            transition: opacity .18s ease;
         }
 
         .view-comment-wrapper #comment {
             padding: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
         }
 
         .view-comment-wrapper #comment .card-header {
-            padding: 18px 0 !important;
+            padding: 0 0 16px !important;
+            background: transparent !important;
         }
 
         .view-comment-wrapper #comment .card-body {
             padding: 0 !important;
+            background: transparent !important;
+        }
+
+        .view-comment-wrapper .comment-count {
+            display: none !important;
         }
 
         .view-comment-wrapper .comment-thread-root {
             padding: 16px 20px !important;
         }
 
+        .view-comment-wrapper .comment-thread {
+            margin-bottom: 12px !important;
+            padding: 16px !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 14px !important;
+            background: #ffffff !important;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+        }
+
+        .view-comment-wrapper .comment-thread:last-child {
+            margin-bottom: 0 !important;
+        }
+
         .view-comment-wrapper .comment-thread-reply {
-            margin-top: 12px !important;
-            padding: 12px 16px 12px 18px !important;
+            margin-top: 10px !important;
+            padding: 12px 14px !important;
             border-left: 3px solid #bfdbfe !important;
             background: #f8fafc !important;
             border-radius: 12px !important;
         }
 
-        .view-comment-wrapper .comment-replies {
-            margin-top: 12px !important;
-            padding-left: 40px !important;
+        .view-comment-wrapper .comment-bubble {
+            background: transparent !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
         }
 
-        .view-comment-wrapper .comment-replies-nested {
-            margin-top: 10px !important;
-            padding-left: 40px !important;
+        .view-comment-wrapper .comment-name {
+            margin-bottom: 5px !important;
+            color: #0f172a;
+            font-size: 13px !important;
         }
 
-        .view-comment-wrapper .comment-replies .comment-replies {
-            padding-left: 40px !important;
+        .view-comment-wrapper .comment-text {
+            color: #334155;
+            font-size: 13px !important;
+            line-height: 1.55 !important;
         }
 
-        .view-comment-wrapper .comment-card {
-            padding: 14px 18px !important;
-            border-radius: 12px !important;
+        .view-comment-wrapper .comment-meta {
+            margin-top: 8px !important;
+            padding-left: 0 !important;
+            gap: 12px !important;
         }
 
-        .view-comment-wrapper .comment-card-reply {
-            background: rgba(255, 255, 255, .88) !important;
+        .view-comment-wrapper .replies-block,
+        .view-comment-wrapper .reply-form {
+            margin-left: 42px !important;
         }
 
         .view-comment-wrapper textarea,
@@ -162,9 +229,19 @@
             background: #0f172a;
         }
 
+        body[data-bs-theme="dark"] .playlist-comment-modal .modal-title,
+        body.dark-mode .playlist-comment-modal .modal-title {
+            color: #e5e7eb;
+        }
+
+        body[data-bs-theme="dark"] .playlist-comment-modal .modal-body,
+        body.dark-mode .playlist-comment-modal .modal-body {
+            background: #0f172a;
+        }
+
         body[data-bs-theme="dark"] .view-comment-wrapper,
         body.dark-mode .view-comment-wrapper {
-            background: #162235;
+            background: #0f172a;
             color: #e5e7eb;
         }
 
@@ -187,15 +264,20 @@
             border-left-color: #3b82f6 !important;
         }
 
-        body[data-bs-theme="dark"] .view-comment-wrapper .comment-card,
-        body.dark-mode .view-comment-wrapper .comment-card {
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-thread,
+        body.dark-mode .view-comment-wrapper .comment-thread {
             background: rgba(15, 23, 42, .72) !important;
             border-color: rgba(148, 163, 184, .16) !important;
         }
 
-        body[data-bs-theme="dark"] .view-comment-wrapper .comment-card-reply,
-        body.dark-mode .view-comment-wrapper .comment-card-reply {
-            background: rgba(17, 24, 39, .88) !important;
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-name,
+        body.dark-mode .view-comment-wrapper .comment-name {
+            color: #f8fafc;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-text,
+        body.dark-mode .view-comment-wrapper .comment-text {
+            color: #cbd5e1;
         }
 
         body[data-bs-theme="dark"] .view-comment-wrapper textarea,
@@ -215,19 +297,36 @@
         }
 
         @media (max-width: 768px) {
+            .playlist-comment-modal .modal-dialog {
+                display: flex;
+                align-items: center;
+                width: 90vw;
+                max-width: 90vw;
+                min-height: 100%;
+                margin: 0 auto;
+            }
+
+            .playlist-comment-modal .modal-content {
+                max-height: 75vh;
+                width: 100%;
+            }
+
+            .playlist-comment-modal .modal-body {
+                max-height: calc(75vh - 58px);
+                overflow-y: auto;
+            }
+
             .view-comment-wrapper {
-                padding: 16px 14px;
-                margin-top: 12px;
+                padding: 14px;
             }
 
-            .view-comment-wrapper .comment-replies,
-            .view-comment-wrapper .comment-replies-nested,
-            .view-comment-wrapper .comment-replies .comment-replies {
-                padding-left: 16px !important;
+            .view-comment-wrapper .comment-thread {
+                padding: 14px !important;
             }
 
-            .view-comment-wrapper .comment-thread-reply {
-                padding: 12px 10px 12px 14px !important;
+            .view-comment-wrapper .replies-block,
+            .view-comment-wrapper .reply-form {
+                margin-left: 30px !important;
             }
         }
     </style>
@@ -287,6 +386,7 @@
             var expanded = !$overview.toggleClass('is-collapsed').hasClass('is-collapsed');
             $button.text(expanded ? $button.data('read-less') : $button.data('read-more'));
         });
+
     })();
 </script>
     <script src="{{ asset('js/learning-progress.js') }}"></script>

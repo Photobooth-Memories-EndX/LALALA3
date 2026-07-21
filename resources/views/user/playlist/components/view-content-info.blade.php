@@ -17,13 +17,18 @@
                     {{ $content->title }}
                 </h2>
 
-                <div class="d-flex flex-wrap gap-2">
-                    <span class="badge bg-blue-lt text-blue">
-                        {{ $content->classification->classification_name ?? 'Learning' }}
-                    </span>
-
-                    <span class="badge bg-green-lt text-green">
-                        {{ $content->type ?? 'Content' }}
+                <div class="overview-inline-meta text-muted">
+                    <button type="button"
+                            class="overview-meta-button"
+                            data-bs-toggle="modal"
+                            data-bs-target="#playlistCommentModal">
+                        <i class="far fa-comment-dots me-1"></i>
+                        {{ $commentTotal }} Comments
+                    </button>
+                    <span class="overview-meta-separator">&bull;</span>
+                    <span>
+                        <i class="far fa-clock me-1"></i>
+                        {{ \App\Support\DurationFormatter::format($content->duration) }}
                     </span>
                 </div>
             </div>
@@ -35,25 +40,9 @@
             </button>
         </div>
 
-        {{-- Meta --}}
-        <div class="d-flex flex-wrap gap-2 mb-3">
-            <button type="button"
-                    class="btn btn-light border-0 shadow-none text-muted"
-                    data-bs-toggle="modal"
-                    data-bs-target="#playlistCommentModal">
-                <i class="far fa-comment-dots me-2"></i>
-                {{ $commentTotal }} Comments
-            </button>
-
-            <span class="btn btn-light border-0 shadow-none text-muted">
-                <i class="far fa-clock me-2"></i>
-                {{ \App\Support\DurationFormatter::format($content->duration) }}
-            </span>
-        </div>
-
         {{-- Overview --}}
         <div class="chapter-description-box mb-4">
-            <h4 class="fs-5 fw-bold mb-2">Overview</h4>
+            <h4 class="fs-6 fw-bold mb-2">Overview</h4>
 
             <div class="overview-text is-collapsed text-muted" id="playlistOverviewText">
                 {!! nl2br($content->description) !!}

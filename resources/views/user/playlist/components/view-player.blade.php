@@ -15,7 +15,7 @@
                     </span>
                     <span class="fullscreen-pill fullscreen-pill-right">
                         <i class="fas fa-robot me-1"></i>
-                        AI Assistant
+                        Chat AI
                     </span>
                 </div>
             @endif

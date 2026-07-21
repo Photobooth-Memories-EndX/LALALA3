@@ -9,7 +9,6 @@
             : asset('default-video.jpg');
     }
 
-    $heroThumb = $playlist->thumbnail_url ?: $lastWatchedThumb;
     $playlistProgress = $percentageProgressPlaylist ?? 0;
     $chapterTotal = ($content_all ?? collect())->count();
     $playlistViews = $playlist->views ?? $playlist->view ?? $playlist->total_views ?? 0;
@@ -22,12 +21,15 @@
 @endphp
 
 <div class="card border-0 shadow-sm overflow-hidden mb-3 view-hero-card">
-    <div class="view-hero-bg" @if($heroThumb) style="background-image: url('{{ $heroThumb }}')" @endif>
+    <div class="view-hero-bg">
         <div class="view-hero-overlay">
             <div class="view-hero-content text-white w-100">
 
                 <div class="view-hero-copy">
-                    <span class="badge bg-primary mb-2">Playlist</span>
+                    <span class="view-hero-badge mb-2">
+                        <i class="fas fa-layer-group me-1"></i>
+                        Playlist
+                    </span>
 
                     <h1 class="view-hero-title">
                         {{ $playlist->title }}
@@ -43,7 +45,7 @@
                             {{ number_format($playlistViews) }} Playlist Views
                         </span>
                         <span>
-                            <i class="fas fa-users me-1"></i>
+                            <i class="fas fa-users-cog me-1"></i>
                             {{ $content->author ?? '-' }}
                         </span>
                         <span>
@@ -57,6 +59,9 @@
                     </div>
 
                     <div class="view-hero-bottom">
+                        <span class="badge bg-white text-primary">
+                            {{ $content->classification->classification_name ?? 'Learning' }}
+                        </span>
                         <span class="badge bg-success">{{ $content->type ?? 'Content' }}</span>
                         <span class="badge bg-dark bg-opacity-75">{{ number_format($playlistProgress) }}% Progress</span>
                     </div>
@@ -66,10 +71,7 @@
                     <span class="view-hero-continue-thumb" style="background-image: url('{{ $lastWatchedThumb }}')">
                         <i class="fas fa-play"></i>
                     </span>
-                    <span>
-                        <span class="small text-white-50 d-block">Last watched</span>
-                        <strong>Continue Learning</strong>
-                    </span>
+                    <strong>Continue Learning</strong>
                 </a>
 
             </div>

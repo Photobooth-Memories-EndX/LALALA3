@@ -21,7 +21,7 @@
     $commentTotal = method_exists($comment, 'total') ? $comment->total() : $comment->count();
 @endphp
 
-<div class="mt-3 mb-4">
+<div class="mt-3 mb-4 comment-ajax-root" data-comment-refresh-url="{{ request()->fullUrl() }}">
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden" id="comment">
 
         {{-- ── Composer ── --}}
@@ -107,6 +107,12 @@
 
     /* ── Full-width composer / reply input (beats any inherited width) ── */
     .comment-form { width: 100% !important; }
+
+    .comment-ajax-root.is-loading-comments {
+        opacity: .65;
+        pointer-events: none;
+        transition: opacity .18s ease;
+    }
 
     .comment-input-wrapper {
         flex: 1 1 auto !important;
@@ -280,34 +286,201 @@
         remaining.textContent = len >= 1000 ? '' : (1000 - len) + ' characters remaining';
     }
 
-    // Event delegation: keeps working even after comments are re-rendered/paginated,
-    // and does NOT depend on the Bootstrap JS bundle being present.
-    document.addEventListener('click', function (e) {
+    (function ($) {
+        if (!$ || window.owlCommentAjaxInitialized) return;
+        window.owlCommentAjaxInitialized = true;
 
-        // Reply button -> toggle the (shared) reply form for that root comment.
-        var replyBtn = e.target.closest('.comment-reply-toggle');
-        if (replyBtn) {
-            var form = document.getElementById(replyBtn.dataset.target);
-            if (form) {
-                form.classList.toggle('d-none');
-                if (!form.classList.contains('d-none')) {
-                    var ta = form.querySelector('textarea');
-                    if (ta) ta.focus();
+        function selectorEscape(value) {
+            if ($.escapeSelector) return $.escapeSelector(value);
+            return String(value).replace(/([ #;&,.+*~':"!^$[\]()=>|\/@])/g, '\\$1');
+        }
+
+        function getScrollable($root) {
+            var $modalBody = $root.closest('.modal').find('.modal-body').first();
+            return $modalBody.length ? $modalBody : $();
+        }
+
+        function getState($root) {
+            var $scrollable = getScrollable($root);
+
+            return {
+                pageScrollTop: $(window).scrollTop(),
+                modalScrollTop: $scrollable.length ? $scrollable.scrollTop() : 0,
+                activeElementId: document.activeElement ? document.activeElement.id : '',
+                openReplyForms: $root.find('.reply-form:not(.d-none)').map(function () {
+                    return this.id;
+                }).get(),
+                openReplyLists: $root.find('.reply-list:not(.d-none)').map(function () {
+                    return this.id;
+                }).get(),
+                openReplyToggles: $root.find('.comment-replies-toggle.open').map(function () {
+                    return $(this).data('target');
+                }).get()
+            };
+        }
+
+        function restoreState($root, state) {
+            var $scrollable = getScrollable($root);
+
+            state.openReplyForms.forEach(function (id) {
+                $root.find('#' + selectorEscape(id)).removeClass('d-none');
+            });
+
+            state.openReplyLists.forEach(function (id) {
+                $root.find('#' + selectorEscape(id)).removeClass('d-none');
+            });
+
+            state.openReplyToggles.forEach(function (target) {
+                $root.find('.comment-replies-toggle[data-target="' + target + '"]').addClass('open');
+            });
+
+            if ($scrollable.length) {
+                $scrollable.scrollTop(state.modalScrollTop);
+            }
+
+            $(window).scrollTop(state.pageScrollTop);
+        }
+
+        function findFreshRoot(response, $root) {
+            var parsedHtml = $.parseHTML(response, document, true);
+            var $html = $('<div>').append(parsedHtml);
+            var modalId = $root.closest('.modal').attr('id');
+            var $freshRoot = $();
+
+            if (modalId) {
+                $freshRoot = $html.find('#' + selectorEscape(modalId) + ' .comment-ajax-root').first();
+            }
+
+            if (!$freshRoot.length) {
+                $freshRoot = $html.find('.comment-ajax-root').first();
+            }
+
+            return $freshRoot;
+        }
+
+        function replaceRoot($root, response, state) {
+            var $freshRoot = findFreshRoot(response, $root);
+
+            if (!$freshRoot.length) return $root;
+
+            $root.html($freshRoot.html());
+            $root.attr('data-comment-refresh-url', $freshRoot.attr('data-comment-refresh-url') || $root.attr('data-comment-refresh-url'));
+            restoreState($root, state);
+
+            return $root;
+        }
+
+        function refreshComments($root, url, state, updateHistory) {
+            if (!$root.length || $root.hasClass('is-loading-comments')) return;
+
+            $root.addClass('is-loading-comments');
+
+            $.ajax({
+                url: url,
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-            }
-            return;
+            }).done(function (response) {
+                replaceRoot($root, response, state);
+                $root.attr('data-comment-refresh-url', url);
+
+                if (updateHistory && window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, url);
+                }
+            }).always(function () {
+                $root.removeClass('is-loading-comments');
+                restoreState($root, state);
+            });
         }
 
-        // View replies / Hide replies -> toggle the reply list + swap the label.
-        var repliesBtn = e.target.closest('.comment-replies-toggle');
-        if (repliesBtn) {
-            var list = document.getElementById(repliesBtn.dataset.target);
-            if (list) {
-                list.classList.toggle('d-none');
-                repliesBtn.classList.toggle('open', !list.classList.contains('d-none'));
+        $(document).on('click', '.comment-reply-toggle', function (event) {
+            event.preventDefault();
+
+            var $button = $(this);
+            var $root = $button.closest('.comment-ajax-root');
+            var targetId = $button.data('target');
+            var $form = $root.find('#' + selectorEscape(targetId));
+
+            if (!$form.length) return;
+
+            $form.toggleClass('d-none');
+
+            if (!$form.hasClass('d-none')) {
+                var textarea = $form.find('textarea').first();
+                if (textarea.length) textarea.trigger('focus');
             }
-            return;
-        }
-    });
+
+            if ($root.length) {
+                $root.attr('data-comment-refresh-url', $root.attr('data-comment-refresh-url') || document.URL);
+            }
+        });
+
+        $(document).on('click', '.comment-replies-toggle', function (event) {
+            event.preventDefault();
+
+            var $button = $(this);
+            var $root = $button.closest('.comment-ajax-root');
+            var targetId = $button.data('target');
+            var $list = $root.find('#' + selectorEscape(targetId));
+
+            if (!$list.length) return;
+
+            $list.toggleClass('d-none');
+            $button.toggleClass('open', !$list.hasClass('d-none'));
+        });
+
+        $(document).on('click', '.comment-ajax-root .comment-pagination a, .comment-ajax-root .pagination a', function (event) {
+            event.preventDefault();
+
+            var $link = $(this);
+            var href = $link.attr('href');
+            var $root = $link.closest('.comment-ajax-root');
+
+            if (!href || !$root.length) return;
+
+            refreshComments($root, href, getState($root), true);
+        });
+
+        $(document).on('submit', '.comment-ajax-root form', function (event) {
+            event.preventDefault();
+
+            var $form = $(this);
+            var $root = $form.closest('.comment-ajax-root');
+            var action = $form.attr('action');
+            var method = ($form.attr('method') || 'POST').toUpperCase();
+            var state = getState($root);
+
+            if (!action || action === '#' || !$root.length || $root.hasClass('is-loading-comments')) return;
+
+            $root.addClass('is-loading-comments');
+
+            $.ajax({
+                url: action,
+                method: method,
+                data: $form.serialize(),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function (response, textStatus, jqXHR) {
+                var currentUrl = $root.attr('data-comment-refresh-url') || document.URL;
+                var responseUrl = jqXHR && jqXHR.responseURL ? jqXHR.responseURL : currentUrl;
+                var freshRoot = findFreshRoot(response, $root);
+
+                if (freshRoot.length) {
+                    replaceRoot($root, response, state);
+                    $root.attr('data-comment-refresh-url', responseUrl);
+                    return;
+                }
+
+                refreshComments($root, currentUrl, state, false);
+            }).fail(function () {
+                restoreState($root, state);
+            }).always(function () {
+                $root.removeClass('is-loading-comments');
+                restoreState($root, state);
+            });
+        });
+    })(window.jQuery);
 </script>
 @endpush
