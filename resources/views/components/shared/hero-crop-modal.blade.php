@@ -3,50 +3,6 @@
         <link rel="stylesheet"
               href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
         <style>
-            [data-hero-background] .compact-hero-upload,
-            [data-hero-background] .compact-hero-save {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 42px;
-                height: 42px;
-                min-width: 42px;
-                padding: 0;
-                border: 1px solid rgba(255, 255, 255, .28);
-                border-radius: 50%;
-                background: rgba(255, 255, 255, .18);
-                color: #fff;
-                box-shadow: 0 8px 24px rgba(5, 15, 35, .18);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                transition: background-color .2s ease, transform .2s ease, border-color .2s ease;
-            }
-
-            [data-hero-background] .compact-hero-upload:hover,
-            [data-hero-background] .compact-hero-save:hover {
-                color: #fff;
-                background: rgba(255, 255, 255, .3);
-                border-color: rgba(255, 255, 255, .5);
-                transform: translateY(-1px);
-            }
-
-            [data-hero-background] .compact-hero-upload i,
-            [data-hero-background] .compact-hero-save i {
-                font-size: 20px;
-                line-height: 1;
-            }
-
-            [data-hero-background] .compact-hero-save:disabled {
-                cursor: wait;
-                opacity: .9;
-            }
-
-            [data-hero-background] .compact-hero-save .spinner-border {
-                width: 18px;
-                height: 18px;
-                border-width: 2px;
-            }
-
             .hero-crop-modal .modal-content {
                 overflow: hidden;
                 border: 1px solid rgba(148, 163, 184, .22);
@@ -95,7 +51,14 @@
                 pointer-events: none;
                 background:
                     radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
-                    linear-gradient(90deg, rgba(8, 22, 52, .9), rgba(18, 58, 118, .74));
+                    linear-gradient(90deg, rgba(8, 22, 52, .94) 0%, rgba(15, 52, 110, .88) 52%, rgba(24, 74, 138, .78) 100%);
+            }
+
+            [data-bs-theme="dark"] .hero-crop-preview::after,
+            body.dark-mode .hero-crop-preview::after {
+                background:
+                    radial-gradient(circle at 82% 20%, rgba(96, 165, 250, .13), transparent 32%),
+                    linear-gradient(90deg, rgba(3, 10, 24, .96) 0%, rgba(11, 31, 68, .9) 54%, rgba(20, 61, 105, .8) 100%);
             }
 
             .hero-crop-zoom {
@@ -109,13 +72,6 @@
             }
 
             @media (max-width: 767.98px) {
-                [data-hero-background] .compact-hero-upload,
-                [data-hero-background] .compact-hero-save {
-                    width: 40px;
-                    height: 40px;
-                    min-width: 40px;
-                }
-
                 .hero-crop-stage {
                     min-height: 280px;
                 }

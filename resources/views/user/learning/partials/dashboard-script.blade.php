@@ -1,5 +1,5 @@
 @section('script')
-@include('components.Home.scripts')
+@include('components.shared.hero-upload-script')
 <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
 {{-- ApexCharts: dimuat di awal agar tersedia saat tab Monitoring (AJAX) dirender. --}}
