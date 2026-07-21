@@ -51,14 +51,7 @@
                 pointer-events: none;
                 background:
                     radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
-                    linear-gradient(90deg, rgba(8, 22, 52, .94) 0%, rgba(15, 52, 110, .88) 52%, rgba(24, 74, 138, .78) 100%);
-            }
-
-            [data-bs-theme="dark"] .hero-crop-preview::after,
-            body.dark-mode .hero-crop-preview::after {
-                background:
-                    radial-gradient(circle at 82% 20%, rgba(96, 165, 250, .13), transparent 32%),
-                    linear-gradient(90deg, rgba(3, 10, 24, .96) 0%, rgba(11, 31, 68, .9) 54%, rgba(20, 61, 105, .8) 100%);
+                    linear-gradient(90deg, rgba(8, 22, 52, .28) 0%, rgba(15, 52, 110, .24) 45%, rgba(24, 74, 138, .18) 100%);
             }
 
             .hero-crop-zoom {
@@ -71,9 +64,23 @@
                 color: #f8fafc;
             }
 
+            @media (max-width: 991.98px) {
+                .hero-crop-preview::after {
+                    background:
+                        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
+                        linear-gradient(90deg, rgba(8, 22, 52, .34) 0%, rgba(15, 52, 110, .30) 45%, rgba(24, 74, 138, .26) 100%);
+                }
+            }
+
             @media (max-width: 767.98px) {
                 .hero-crop-stage {
                     min-height: 280px;
+                }
+
+                .hero-crop-preview::after {
+                    background:
+                        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
+                        linear-gradient(90deg, rgba(8, 22, 52, .40) 0%, rgba(15, 52, 110, .36) 45%, rgba(24, 74, 138, .32) 100%);
                 }
             }
         </style>

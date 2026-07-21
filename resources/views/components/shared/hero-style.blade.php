@@ -3,8 +3,8 @@
         <style>
             .shared-learning-hero {
                 --hero-overlay:
-                    radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
-                    linear-gradient(90deg, rgba(8, 22, 52, .94) 0%, rgba(15, 52, 110, .88) 52%, rgba(24, 74, 138, .78) 100%);
+                    radial-gradient(circle at 82% 80%, rgba(255, 255, 255, .12), transparent 90%),
+                    linear-gradient(10deg, rgba(8, 22, 52, .28) 0%, rgba(15, 52, 110, .24) 70%, rgba(24, 74, 138, .18) 100%);
                 isolation: isolate;
                 position: relative;
                 min-height: 238px;
@@ -134,6 +134,7 @@
                 font-size: 11px;
                 font-weight: 600;
                 line-height: 1;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
                 backdrop-filter: blur(8px);
                 -webkit-backdrop-filter: blur(8px);
             }
@@ -145,6 +146,7 @@
                 font-weight: 400;
                 line-height: 1.2;
                 letter-spacing: 0;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
             }
 
             .shared-hero-name {
@@ -155,6 +157,7 @@
                 line-height: 1.04;
                 letter-spacing: 0;
                 overflow-wrap: anywhere;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
             }
 
             .shared-hero-subtitle {
@@ -165,6 +168,7 @@
                 font-weight: 400;
                 line-height: 1.55;
                 letter-spacing: 0;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
             }
 
             .shared-hero-pill {
@@ -179,6 +183,7 @@
                 font-size: 13px;
                 font-weight: 600;
                 line-height: 1.2;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
                 backdrop-filter: blur(8px);
                 -webkit-backdrop-filter: blur(8px);
             }
@@ -195,7 +200,7 @@
                 padding: 10px 12px;
                 border: 1px solid rgba(255, 255, 255, .14);
                 border-radius: 18px;
-                background: rgba(15, 23, 42, .2);
+                background: rgba(18, 25, 45, .45);
                 backdrop-filter: blur(12px);
                 -webkit-backdrop-filter: blur(12px);
             }
@@ -289,6 +294,7 @@
                 line-height: 1.25;
                 letter-spacing: 0;
                 text-align: center;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
             }
 
             .shared-hero-summary-list {
@@ -319,6 +325,7 @@
                 font-size: 12px;
                 font-weight: 500;
                 line-height: 1.2;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
             }
 
             .shared-hero-summary-value {
@@ -326,6 +333,7 @@
                 font-size: 13px;
                 font-weight: 700;
                 line-height: 1.2;
+                text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
             }
 
             .shared-hero-stat-dot {
@@ -353,9 +361,6 @@
 
             [data-bs-theme="dark"] .shared-learning-hero,
             body.dark-mode .shared-learning-hero {
-                --hero-overlay:
-                    radial-gradient(circle at 82% 20%, rgba(96, 165, 250, .13), transparent 32%),
-                    linear-gradient(90deg, rgba(3, 10, 24, .96) 0%, rgba(11, 31, 68, .9) 54%, rgba(20, 61, 105, .8) 100%);
                 box-shadow: 0 18px 42px rgba(0, 0, 0, .34);
             }
 
@@ -372,6 +377,9 @@
 
             @media (max-width: 991.98px) {
                 .shared-learning-hero {
+                    --hero-overlay:
+                        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
+                        linear-gradient(90deg, rgba(8, 22, 52, .34) 0%, rgba(15, 52, 110, .30) 45%, rgba(24, 74, 138, .26) 100%);
                     min-height: auto;
                     padding: 28px 24px;
                     text-align: left;
@@ -388,6 +396,9 @@
 
             @media (max-width: 767.98px) {
                 .shared-learning-hero {
+                    --hero-overlay:
+                        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
+                        linear-gradient(90deg, rgba(8, 22, 52, .40) 0%, rgba(15, 52, 110, .36) 45%, rgba(24, 74, 138, .32) 100%);
                     padding: 54px 18px 20px;
                     border-radius: 18px;
                 }
