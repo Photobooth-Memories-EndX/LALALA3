@@ -46,6 +46,9 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         $contentUsersById = $contentUsers->keyBy('content_id');
 
         $contentRows = $contentUsers->map(fn (ContentUser $cu) => $this->contentRow($cu, $certificate, $hours));
+        $contentRowsById = $contentUsers->mapWithKeys(
+            fn (ContentUser $cu, int $index) => [(int) $cu->content_id => $contentRows->get($index)]
+        );
         $playlistRows = $playlists->map(fn (TrainingPlan $plan) => $this->playlistRows($plan, $contentUsersById, $certificate, $hours));
 
         $this->rows = $this->applyFilters($contentRows->concat($playlistRows)->values());
@@ -59,10 +62,27 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             }
         }
 
-        $durationSeconds = (int) $this->rows->sum(
+        $filteredContentIds = $contentRowsById
+            ->filter(fn (array $row) => $this->applyFilters(collect([$row]))->isNotEmpty())
+            ->keys();
+        $filteredPlaylistIds = $this->rows
+            ->filter(fn (array $row) => $row['type'] === 'Playlist')
+            ->pluck('playlist_id');
+        $playlistChildContentIds = $playlists
+            ->whereIn('id', $filteredPlaylistIds)
+            ->flatMap(fn (TrainingPlan $plan) => $plan->trainingplandetail->pluck('content_id'));
+        $totalContentIds = $filteredContentIds
+            ->merge($playlistChildContentIds)
+            ->unique()
+            ->values();
+        $totalRows = $contentRowsById->only($totalContentIds->all());
+
+        $durationSeconds = (int) $totalRows->sum(
             fn (array $row) => max(0, (int) ($row['duration_seconds'] ?? 0))
         );
-        $learningHours = $hours->getTotalLearningHours($user, $contentUsers);
+        $learningHours = (float) $totalRows->sum(
+            fn (array $row) => (float) ($row['learning_hour_value'] ?? 0)
+        );
 
         $output[] = array_fill(0, count($this->headings()), '');
         $output[] = [
