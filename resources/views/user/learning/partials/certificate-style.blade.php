@@ -1,6 +1,8 @@
 <style>
     .certificate-table {
-        min-width: 1180px;
+        width: 100% !important;
+        min-width: 1120px;
+        table-layout: fixed;
     }
 
     .certificate-table-wrap {
@@ -12,12 +14,48 @@
         top: 0;
         z-index: 2;
         background: var(--tblr-bg-surface, #fff);
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .025em;
         white-space: nowrap;
     }
 
     .certificate-table th,
     .certificate-table td {
+        padding: .85rem 1rem;
         vertical-align: middle;
+    }
+
+    .certificate-table tbody td {
+        height: 106px;
+    }
+
+    .certificate-col-no {
+        width: 56px;
+    }
+
+    .certificate-col-main {
+        width: auto;
+    }
+
+    .certificate-col-type {
+        width: 120px;
+    }
+
+    .certificate-col-credential {
+        width: 180px;
+    }
+
+    .certificate-col-issued {
+        width: 96px;
+    }
+
+    .certificate-col-status {
+        width: 122px;
+    }
+
+    .certificate-col-action {
+        width: 126px;
     }
 
     .certificate-table tbody tr.certificate-row > td {
@@ -28,8 +66,40 @@
         background: var(--tblr-bg-surface-secondary, #f8fafc);
     }
 
-    .certificate-expand-column {
-        width: 42px;
+    .certificate-card-shell,
+    .certificate-card-shell > .card-body:first-child,
+    .certificate-filter-shell,
+    .certificate-filter-shell .learning-record-filter-row,
+    .certificate-filter-shell .learning-record-fast-filter,
+    .certificate-quick-dropdowns {
+        overflow: visible !important;
+    }
+
+    .certificate-card-shell {
+        position: relative;
+    }
+
+    .certificate-card-shell > .card-body:first-child,
+    .certificate-filter-shell {
+        position: relative;
+        z-index: 20;
+    }
+
+    .certificate-quick-dropdowns .dropdown {
+        position: relative;
+    }
+
+    .certificate-filter-shell .dropdown-menu {
+        min-width: 10rem;
+        z-index: 1085;
+    }
+
+    .certificate-filter-shell .dropdown-menu.show {
+        top: 100% !important;
+        right: auto !important;
+        bottom: auto !important;
+        left: 0 !important;
+        transform: translateY(.25rem) !important;
     }
 
     .certificate-number {
@@ -38,24 +108,50 @@
         white-space: nowrap;
     }
 
-    .certificate-title,
-    .certificate-target {
-        max-width: 280px;
+    .certificate-title {
+        display: -webkit-box;
         margin-top: .2rem;
+        overflow: hidden;
         color: var(--tblr-body-color, #1f2937);
+        font-weight: 600;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+        word-break: normal;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
     }
 
-    .certificate-target {
-        display: -webkit-box;
-        overflow: hidden;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
+    .certificate-participant {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        margin-top: .35rem;
+        line-height: 1.2;
+    }
+
+    .certificate-participant i {
+        flex: 0 0 auto;
+        font-size: 1rem;
     }
 
     .certificate-type-badge,
     .certificate-status-badge {
-        min-height: 25px;
+        display: inline-flex;
+        min-height: 28px;
+        align-items: center;
+        justify-content: center;
         padding: 5px 10px;
+        border-radius: 7px;
+        line-height: 1;
+        text-transform: uppercase;
+    }
+
+    .certificate-type-badge {
+        min-width: 82px;
+    }
+
+    .certificate-status-badge {
+        min-width: 98px;
     }
 
     .certificate-playlist-badge {
@@ -65,19 +161,85 @@
     .certificate-copy-btn {
         display: inline-flex;
         align-items: center;
-        max-width: 190px;
+        max-width: 100%;
         font-weight: 600;
         text-decoration: none;
         white-space: nowrap;
     }
 
     .certificate-copy-btn span {
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .certificate-actions .btn {
-        min-height: 32px;
+    .certificate-issued-date {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .certificate-issued-date strong {
+        margin-top: .15rem;
+        color: var(--tblr-secondary, #626976);
+        font-size: .78rem;
+        font-weight: 600;
+    }
+
+    .certificate-action-dropdown {
+        display: inline-block;
+    }
+
+    .certificate-action-trigger {
+        display: inline-flex;
+        min-height: 34px;
+        align-items: center;
+        gap: .35rem;
+        justify-content: center;
+        width: 102px;
+        white-space: nowrap;
+    }
+
+    .certificate-action-menu {
+        min-width: 230px;
+        padding: .4rem;
+        border-radius: .75rem;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .16);
+        z-index: 1080;
+    }
+
+    .certificate-action-menu .dropdown-item {
+        display: flex;
+        width: 100%;
+        max-width: none;
+        min-height: 38px;
+        align-items: center;
+        gap: .65rem;
+        padding: .55rem .7rem;
+        border-radius: .5rem;
+        font-weight: 500;
+        transition: color .15s ease, background-color .15s ease;
+    }
+
+    .certificate-action-menu .dropdown-item i {
+        width: 1.1rem;
+        flex: 0 0 auto;
+        color: var(--tblr-secondary, #626976);
+        font-size: 1.05rem;
+    }
+
+    .certificate-action-menu .dropdown-item:hover,
+    .certificate-action-menu .dropdown-item:focus {
+        background: var(--tblr-bg-surface-secondary, #f1f5f9);
+        color: var(--tblr-primary, #206bc4);
+    }
+
+    .certificate-action-menu .dropdown-item:hover i,
+    .certificate-action-menu .dropdown-item:focus i {
+        color: currentColor;
     }
 
     .certificate-sort-heading {
@@ -102,41 +264,6 @@
     .certificate-sort-heading.is-sorted i {
         color: var(--tblr-primary, #206bc4);
         opacity: 1;
-    }
-
-    .certificate-detail-child {
-        padding: 0 !important;
-        background: var(--tblr-bg-surface-secondary, #f8fafc);
-    }
-
-    .certificate-detail-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1rem;
-        padding: 1.25rem 1.5rem 1.5rem 4.5rem;
-        border-left: 3px solid var(--tblr-primary, #206bc4);
-        animation: certificate-detail-in .2s ease;
-    }
-
-    .certificate-detail-item {
-        min-width: 0;
-    }
-
-    .certificate-detail-item > span {
-        display: block;
-        margin-bottom: .25rem;
-        color: var(--tblr-secondary, #626976);
-        font-size: .75rem;
-    }
-
-    .certificate-detail-item strong,
-    .certificate-detail-item a {
-        display: block;
-        overflow-wrap: anywhere;
-    }
-
-    .certificate-detail-wide {
-        grid-column: span 2;
     }
 
     .certificate-pagination {
@@ -230,21 +357,12 @@
         padding: .25rem 0;
     }
 
-    @keyframes certificate-detail-in {
-        from { opacity: 0; transform: translateY(-4px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
     @media (max-width: 991.98px) {
         .certificate-filter-actions {
             width: 100%;
             margin-left: 0;
         }
 
-        .certificate-detail-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            padding-left: 1.5rem;
-        }
     }
 
     @media (max-width: 767.98px) {
@@ -257,13 +375,8 @@
             width: 100%;
         }
 
-        .certificate-more-filters,
-        .certificate-detail-grid {
+        .certificate-more-filters {
             grid-template-columns: minmax(0, 1fr);
-        }
-
-        .certificate-detail-wide {
-            grid-column: auto;
         }
 
         .certificate-pagination {
@@ -279,16 +392,12 @@
     }
 
     [data-bs-theme="dark"] .certificate-table tbody tr.certificate-row:hover > td,
-    [data-bs-theme="dark"] .certificate-detail-child,
-    body.dark-mode .certificate-table tbody tr.certificate-row:hover > td,
-    body.dark-mode .certificate-detail-child {
+    body.dark-mode .certificate-table tbody tr.certificate-row:hover > td {
         background: #192d45;
     }
 
     [data-bs-theme="dark"] .certificate-title,
-    [data-bs-theme="dark"] .certificate-target,
-    body.dark-mode .certificate-title,
-    body.dark-mode .certificate-target {
+    body.dark-mode .certificate-title {
         color: #f1f5f9;
     }
 
@@ -305,5 +414,33 @@
         background: #192d45;
         border-color: rgba(255, 255, 255, .08);
         color: #f1f5f9;
+    }
+
+    [data-bs-theme="dark"] .certificate-filter-shell .dropdown-menu,
+    [data-bs-theme="dark"] .certificate-action-menu,
+    body.dark-mode .certificate-filter-shell .dropdown-menu,
+    body.dark-mode .certificate-action-menu {
+        background: #192d45;
+        border-color: rgba(255, 255, 255, .09);
+        color: #f1f5f9;
+    }
+
+    [data-bs-theme="dark"] .certificate-filter-shell .dropdown-item,
+    [data-bs-theme="dark"] .certificate-action-menu .dropdown-item,
+    body.dark-mode .certificate-filter-shell .dropdown-item,
+    body.dark-mode .certificate-action-menu .dropdown-item {
+        color: #e2e8f0;
+    }
+
+    [data-bs-theme="dark"] .certificate-filter-shell .dropdown-item:hover,
+    [data-bs-theme="dark"] .certificate-filter-shell .dropdown-item:focus,
+    [data-bs-theme="dark"] .certificate-action-menu .dropdown-item:hover,
+    [data-bs-theme="dark"] .certificate-action-menu .dropdown-item:focus,
+    body.dark-mode .certificate-filter-shell .dropdown-item:hover,
+    body.dark-mode .certificate-filter-shell .dropdown-item:focus,
+    body.dark-mode .certificate-action-menu .dropdown-item:hover,
+    body.dark-mode .certificate-action-menu .dropdown-item:focus {
+        background: #213a57;
+        color: #93c5fd;
     }
 </style>

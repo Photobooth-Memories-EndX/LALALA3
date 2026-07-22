@@ -157,27 +157,6 @@
             reloadCertificate(target.searchParams, false);
         });
 
-        function toggleCertificateDetail($trigger) {
-            var $row = $trigger.closest('.certificate-row');
-            var rowApi = certificateTable.row($row);
-            var expanded = rowApi.child.isShown();
-
-            if (expanded) {
-                rowApi.child.hide();
-            } else {
-                rowApi.child($row.find('.certificate-detail-template').html(), 'certificate-detail-child').show();
-            }
-
-            $row.toggleClass('is-expanded', !expanded);
-            $row.find('.certificate-expand-btn')
-                .attr('aria-expanded', String(!expanded))
-                .find('i').toggleClass('ti-chevron-right', expanded).toggleClass('ti-chevron-down', !expanded);
-        }
-
-        $('.certificate-expand-btn, .certificate-detail-btn').off('.learningCertificate').on('click.learningCertificate', function () {
-            toggleCertificateDetail($(this));
-        });
-
         $('.certificate-copy-btn').off('.learningCertificate').on('click.learningCertificate', function () {
             var $button = $(this);
             var value = String($button.data('copy'));

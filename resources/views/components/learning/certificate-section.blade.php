@@ -23,9 +23,11 @@
         'certificate_target',
     ];
     $advancedCount = collect($advancedKeys)->filter(fn ($key) => request()->filled($key))->count();
+    // UI-only feature flag. Export handler and backend remain available.
+    $showCertificateExportButton = false;
 @endphp
 
-<div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden certificate-card-shell">
+<div class="card border-0 shadow-sm rounded-4 mb-3 certificate-card-shell">
     <div class="card-body p-4 border-bottom">
         <div class="record-filter-shell certificate-filter-shell" id="certificateFilterBar">
             <div class="row g-3 align-items-start">
@@ -96,9 +98,11 @@
                 </div>
 
                 <div class="record-filter-actions certificate-filter-actions">
-                    <button type="button" class="btn btn-outline-success record-filter-action-btn" id="certificateDownloadExcel">
-                        <i class="ti ti-file-spreadsheet"></i><span>Download Excel</span>
-                    </button>
+                    @if ($showCertificateExportButton)
+                        <button type="button" class="btn btn-outline-success record-filter-action-btn" id="certificateDownloadExcel">
+                            <i class="ti ti-file-spreadsheet"></i><span>Download Excel</span>
+                        </button>
+                    @endif
                     <button type="button" class="btn btn-outline-primary record-filter-action-btn" data-toggle="modal" data-target="#certificateMoreFiltersModal">
                         <i class="ti ti-adjustments-horizontal"></i><span>More Filters</span>
                         <span class="badge bg-primary text-white {{ $advancedCount ? '' : 'd-none' }}" id="certificateMoreFiltersCount">{{ $advancedCount ?: '' }}</span>
