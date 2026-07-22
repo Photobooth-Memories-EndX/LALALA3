@@ -1,31 +1,34 @@
 @once
     @push('styles')
         <style>
-            .shared-learning-hero {
-                --hero-overlay-width: 70%;
-                --hero-overlay:
-                    linear-gradient(90deg,
-                        rgba(var(--owl-primary-rgb), .45) 0%,
-                        rgba(var(--owl-primary-rgb), .42) 10%,
-                        rgba(var(--owl-primary-rgb), .38) 20%,
-                        rgba(var(--owl-primary-rgb), .32) 35%,
-                        rgba(var(--owl-primary-rgb), .24) 50%,
-                        rgba(var(--owl-primary-rgb), .16) 60%,
-                        rgba(var(--owl-primary-rgb), .08) 70%,
-                        rgba(var(--owl-primary-rgb), .03) 82%,
-                        rgba(var(--owl-primary-rgb), 0) 100%);
-                isolation: isolate;
-                position: relative;
-                min-height: 238px;
-                overflow: hidden;
-                padding: 28px 34px;
-                border-radius: 22px;
-                background-image: var(--hero-bg-image);
-                background-position: center;
-                background-size: cover;
-                background-repeat: no-repeat;
-                box-shadow: 0 20px 45px rgba(15, 23, 42, .12);
-            }
+.shared-learning-hero {
+    /* 1. Atur lebar overlay menjadi 70% untuk Desktop */
+    --hero-overlay-width: 70%;
+
+    /* 2. Tingkatkan nilai alpha/opacity pada gradien (misal: 0.82 -> 0.0) agar lebih pekat */
+    --hero-overlay: linear-gradient(
+        90deg,
+        rgba(var(--owl-primary-rgb), .82) 0%,
+        rgba(var(--owl-primary-rgb), .75) 18%,
+        rgba(var(--owl-primary-rgb), .60) 35%,
+        rgba(var(--owl-primary-rgb), .40) 70%,
+        rgba(var(--owl-primary-rgb), .20) 80%,
+        rgba(var(--owl-primary-rgb), .08) 95%,
+        rgba(var(--owl-primary-rgb), 0) 100%
+    );
+
+    isolation: isolate;
+    position: relative;
+    min-height: 238px;
+    overflow: hidden;
+    padding: 28px 34px;
+    border-radius: 22px;
+    background-image: var(--hero-bg-image);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, .12);
+}
 
             .shared-learning-hero::before {
                 content: "";
@@ -65,31 +68,53 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                width: 42px;
                 height: 42px;
                 min-width: 42px;
                 margin: 0;
-                padding: 0;
-                border: 1px solid rgba(255, 255, 255, .28);
-                border-radius: 50%;
-                background: rgba(255, 255, 255, .18);
-                color: #fff;
-                box-shadow: 0 8px 24px rgba(5, 15, 35, .18);
+                border: 1px solid rgba(15, 23, 42, .06);
+                border-radius: 12px;
+                background: #fff;
+                color: #1f2937;
+                box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
                 font-size: 12px;
                 font-weight: 600;
                 line-height: 1;
                 cursor: pointer;
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                transition: background-color .2s ease, transform .2s ease, border-color .2s ease;
+                transition: background-color .25s ease, box-shadow .25s ease,
+                    border-color .25s ease, color .25s ease, transform .25s ease;
+            }
+
+            .shared-hero-upload {
+                width: 42px;
+                padding: 0;
+            }
+
+            .shared-hero-save {
+                width: 42px;
+                padding: 0;
             }
 
             .shared-hero-upload:hover,
             .shared-hero-save:hover {
-                color: #fff;
-                background: rgba(255, 255, 255, .3);
-                border-color: rgba(255, 255, 255, .5);
+                color: #111827;
+                background: #f8fafc;
+                border-color: rgba(15, 23, 42, .1);
+                box-shadow: 0 14px 30px rgba(15, 23, 42, .16);
                 transform: translateY(-1px);
+            }
+
+            .shared-hero-upload:active,
+            .shared-hero-save:active {
+                background: #f1f5f9;
+                box-shadow: 0 6px 16px rgba(15, 23, 42, .12);
+                transform: translateY(0);
+            }
+
+            .shared-hero-upload:focus-visible,
+            .shared-hero-save:focus-visible,
+            .shared-hero-upload-form:focus-within .shared-hero-upload {
+                outline: 3px solid rgba(var(--owl-primary-rgb), .38);
+                outline-offset: 3px;
             }
 
             .shared-hero-upload i,
@@ -411,7 +436,13 @@
                     right: 12px;
                 }
 
-                .shared-hero-upload,
+                .shared-hero-upload {
+                    width: 40px;
+                    height: 40px;
+                    min-width: 40px;
+                    padding: 0;
+                }
+
                 .shared-hero-save {
                     width: 40px;
                     height: 40px;
