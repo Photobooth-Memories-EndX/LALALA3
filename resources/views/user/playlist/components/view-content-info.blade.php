@@ -2,7 +2,7 @@
     $commentTotal = method_exists($comment, 'total') ? $comment->total() : $comment->count();
 @endphp
 
-<div class="card border-0 shadow-sm rounded-4 mb-3">
+<div class="card border-0 shadow-sm rounded-4 mb-3 view-content-info-card">
     <div class="card-body p-4">
 
         {{-- Header --}}

@@ -135,9 +135,11 @@
         pointer-events: none;
         position: absolute;
         inset: 10px 12px auto 12px;
-        z-index: 60;
+        z-index: 1002;
         justify-content: space-between;
         gap: 10px;
+        width: auto;
+        overflow: visible;
     }
 
     .fullscreen-pill {
@@ -146,7 +148,7 @@
         justify-content: center;
         gap: 6px;
         min-height: 28px;
-        width: auto;
+        width: fit-content;
         max-width: none;
         padding: 5px 10px;
         border-radius: 999px;
@@ -185,10 +187,11 @@
 
         .fullscreen-pill {
             min-height: 26px;
+            width: fit-content;
+            max-width: none;
             padding: 5px 8px;
             font-size: 10px;
             gap: 5px;
-            max-width: calc(50% - 4px);
             overflow: visible;
         }
 
@@ -528,10 +531,11 @@
     .restore-toggle-btn {
         display: none;
         position: absolute;
-        z-index: 40;
+        z-index: 1001;
         top: 16px;
-        width: 32px;
-        height: 32px;
+        width: fit-content;
+        min-width: max-content;
+        min-height: 32px;
         border-radius: 10px;
         border: 1px solid #d1d5db;
         background: #f3f4f6;
@@ -540,9 +544,18 @@
         cursor: pointer;
         align-items: center;
         justify-content: center;
+        gap: 6px;
         font-size: 13px;
-        padding: 0;
+        line-height: 1.2;
+        padding: 7px 10px;
+        white-space: nowrap;
+        overflow: visible;
         transition: background .2s ease, border-color .2s ease, color .2s ease;
+    }
+
+    .restore-toggle-btn i,
+    .restore-toggle-btn span {
+        flex: 0 0 auto;
     }
 
     .restore-toggle-btn:hover {
@@ -556,8 +569,8 @@
     .restore-right { right: 8px; }
 
     /* Tampilkan restore button hanya saat panel collapsed */
-    .playlist-learning-layout.left-collapsed  .restore-left  { display: inline-flex; }
-    .playlist-learning-layout.right-collapsed .restore-right { display: inline-flex; }
+    .playlist-learning-layout.left-collapsed  .restore-left  { display: flex; }
+    .playlist-learning-layout.right-collapsed .restore-right { display: flex; }
 
     body[data-bs-theme="dark"] .restore-toggle-btn,
     body.dark-mode .restore-toggle-btn {
@@ -576,7 +589,9 @@
 
     @media (max-width: 991px) {
         .playlist-learning-layout {
-            display: block;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .learning-left-panel,
@@ -587,14 +602,64 @@
             margin-bottom: 16px;
         }
 
+        .learning-main-panel {
+            display: flex;
+            flex-direction: column;
+            order: 1;
+        }
+
+        .learning-left-panel {
+            order: 2;
+        }
+
+        .learning-right-panel {
+            order: 3;
+        }
+
+        .view-player-card {
+            order: 1;
+        }
+
+        .view-content-info-card {
+            order: 2;
+        }
+
+        .view-navigation-card {
+            order: 3;
+        }
+
         .playlist-learning-layout.left-collapsed .learning-left-panel,
         .playlist-learning-layout.right-collapsed .learning-right-panel {
             display: none;
         }
 
-        /* Restore buttons tidak relevan di mobile — panel toggle via panel-header-toggle */
+        /* Restore buttons stay available on mobile when panels are collapsed. */
         .restore-toggle-btn {
-            display: none !important;
+            position: absolute;
+            z-index: 1001;
+            top: 12px;
+            width: fit-content;
+            min-width: max-content;
+            min-height: 32px;
+            gap: 6px;
+            padding: 7px 10px;
+            white-space: nowrap;
+            overflow: visible;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .restore-left {
+            left: 12px;
+        }
+
+        .restore-right {
+            right: 12px;
+        }
+
+        .playlist-learning-layout.left-collapsed .restore-left,
+        .playlist-learning-layout.right-collapsed .restore-right {
+            display: flex;
         }
     }
 

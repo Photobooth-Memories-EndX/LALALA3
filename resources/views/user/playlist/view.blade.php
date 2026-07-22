@@ -20,19 +20,21 @@
                 {{-- Restore buttons: hanya muncul saat panel di-collapse, posisi absolute di tepi layout --}}
                 <button type="button"
                         class="restore-toggle-btn restore-left"
-                        onclick="toggleLearningPanel('left')"
+                        onclick="toggleLearningPanel('left', this)"
                         title="Buka Playlist">
-                    <i class="fas fa-list-ul"></i>
+                    <i class="fas fa-bars"></i>
+                    <span>Content List</span>
                 </button>
 
                 <button type="button"
                         class="restore-toggle-btn restore-right"
-                        onclick="toggleLearningPanel('right')"
+                        onclick="toggleLearningPanel('right', this)"
                         title="Buka AI Assistant">
                     <i class="fas fa-robot"></i>
+                    <span>AI Assistant</span>
                 </button>
 
-                <div class="learning-left-panel">
+                <div id="content-list" class="learning-left-panel">
                     @include('user.playlist.components.view-playlist-sidebar')
                 </div>
 
@@ -46,7 +48,7 @@
                     @include('user.playlist.components.view-content-info')
                 </div>
 
-                <div class="learning-right-panel">
+                <div id="ai-assistant" class="learning-right-panel">
                     @include('user.playlist.components.view-ai-assistant')
                 </div>
 
@@ -97,18 +99,21 @@
         .playlist-comment-modal .modal-dialog {
             width: min(70vw, 920px);
             max-width: min(70vw, 920px);
+            height: 88vh;
             margin-left: auto;
             margin-right: auto;
         }
 
         .playlist-comment-modal .modal-content {
-            max-height: 70vh;
+            height: 88vh;
+            max-height: 88vh;
             overflow: hidden;
             box-shadow: 0 24px 70px rgba(15, 23, 42, .24);
         }
 
         .playlist-comment-modal .modal-header {
-            padding: 16px 20px;
+            flex: 0 0 auto;
+            padding: 12px 16px;
             border-bottom: 1px solid #e5e7eb;
         }
 
@@ -116,19 +121,28 @@
             display: inline-flex;
             align-items: center;
             color: #0f172a;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 800;
         }
 
         .playlist-comment-modal .modal-body {
+            min-height: 0;
             padding: 0;
             background: #f8fafc;
-            overflow-y: auto;
+            overflow: hidden;
         }
 
         .view-comment-wrapper {
-            padding: 18px 20px 20px;
+            height: 100%;
+            min-height: 0;
+            padding: 12px 14px 14px;
             background: #f8fafc;
+        }
+
+        .view-comment-wrapper .comment-ajax-root {
+            height: 100%;
+            min-height: 0;
+            margin: 0 !important;
         }
 
         .view-comment-wrapper.is-loading-comments,
@@ -139,36 +153,64 @@
         }
 
         .view-comment-wrapper #comment {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
             padding: 0 !important;
             background: transparent !important;
             box-shadow: none !important;
+            overflow: hidden !important;
         }
 
         .view-comment-wrapper #comment .card-header {
-            padding: 0 0 16px !important;
+            flex: 0 0 auto;
+            padding: 0 0 10px !important;
             background: transparent !important;
         }
 
         .view-comment-wrapper #comment .card-body {
+            flex: 1 1 auto;
+            min-height: 0;
             padding: 0 !important;
             background: transparent !important;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
         }
 
         .view-comment-wrapper .comment-count {
             display: none !important;
         }
 
+        .view-comment-wrapper .comment-form > .d-flex {
+            gap: 8px !important;
+        }
+
+        .view-comment-wrapper .comment-form .avatar,
+        .view-comment-wrapper .comment-item-root > .flex-shrink-0 .avatar {
+            width: 38px !important;
+            height: 38px !important;
+            font-size: 13px !important;
+        }
+
+        .view-comment-wrapper .comment-item-reply > .flex-shrink-0 .avatar {
+            width: 30px !important;
+            height: 30px !important;
+            font-size: 11px !important;
+        }
+
         .view-comment-wrapper .comment-thread-root {
-            padding: 16px 20px !important;
+            padding: 12px 14px !important;
         }
 
         .view-comment-wrapper .comment-thread {
-            margin-bottom: 12px !important;
-            padding: 16px !important;
+            margin-bottom: 8px !important;
+            padding: 12px 14px !important;
             border: 1px solid #e2e8f0 !important;
-            border-radius: 14px !important;
+            border-radius: 12px !important;
             background: #ffffff !important;
-            box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, .04);
         }
 
         .view-comment-wrapper .comment-thread:last-child {
@@ -176,11 +218,11 @@
         }
 
         .view-comment-wrapper .comment-thread-reply {
-            margin-top: 10px !important;
-            padding: 12px 14px !important;
+            margin-top: 6px !important;
+            padding: 10px 12px !important;
             border-left: 3px solid #bfdbfe !important;
             background: #f8fafc !important;
-            border-radius: 12px !important;
+            border-radius: 10px !important;
         }
 
         .view-comment-wrapper .comment-bubble {
@@ -190,38 +232,93 @@
         }
 
         .view-comment-wrapper .comment-name {
-            margin-bottom: 5px !important;
+            margin-bottom: 2px !important;
             color: #0f172a;
             font-size: 13px !important;
+            line-height: 1.25 !important;
         }
 
         .view-comment-wrapper .comment-text {
             color: #334155;
             font-size: 13px !important;
-            line-height: 1.55 !important;
+            line-height: 1.42 !important;
         }
 
         .view-comment-wrapper .comment-meta {
-            margin-top: 8px !important;
+            margin-top: 4px !important;
             padding-left: 0 !important;
-            gap: 12px !important;
+            gap: 8px !important;
+            font-size: 11px !important;
+            line-height: 1.2 !important;
+        }
+
+        .view-comment-wrapper .comment-action {
+            font-size: 11px !important;
+            gap: 3px !important;
+        }
+
+        .view-comment-wrapper .comment-action i {
+            font-size: 14px !important;
         }
 
         .view-comment-wrapper .replies-block,
         .view-comment-wrapper .reply-form {
-            margin-left: 42px !important;
+            margin-left: 34px !important;
+        }
+
+        .view-comment-wrapper .replies-block {
+            margin-top: 6px !important;
+        }
+
+        .view-comment-wrapper .reply-list {
+            margin-top: 8px !important;
+        }
+
+        .view-comment-wrapper .comment-replies-toggle {
+            padding: 4px 8px !important;
+            font-size: 12px !important;
         }
 
         .view-comment-wrapper textarea,
         .view-comment-wrapper .form-control,
         .view-comment-wrapper .modern-comment-input {
-            padding: 12px 16px !important;
-            border-radius: 10px !important;
+            padding: 8px 10px !important;
+            border-radius: 9px !important;
+            font-size: 13px !important;
+            line-height: 1.35 !important;
+        }
+
+        .view-comment-wrapper .comment-textarea {
+            min-height: 74px !important;
+            max-height: 80px !important;
+            resize: vertical;
+        }
+
+        .view-comment-wrapper .comment-reply-textarea {
+            min-height: 38px !important;
+            max-height: 56px !important;
+        }
+
+        .view-comment-wrapper .comment-submit-row {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 8px !important;
+            margin-top: 6px !important;
+        }
+
+        .view-comment-wrapper .comment-submit-row .btn {
+            flex: 0 0 auto;
+            padding: 5px 12px !important;
         }
 
         .view-comment-wrapper .pagination {
-            margin: 20px 0 0;
+            margin: 10px 0 0;
             justify-content: center;
+        }
+
+        .view-comment-wrapper .comment-pagination {
+            padding: 10px 0 0 !important;
         }
 
         body[data-bs-theme="dark"] .learning-view-page,
@@ -302,31 +399,65 @@
                 align-items: center;
                 width: 90vw;
                 max-width: 90vw;
-                min-height: 100%;
+                height: 90vh;
+                min-height: 90vh;
                 margin: 0 auto;
             }
 
             .playlist-comment-modal .modal-content {
-                max-height: 75vh;
+                height: 90vh;
+                max-height: 90vh;
                 width: 100%;
             }
 
             .playlist-comment-modal .modal-body {
-                max-height: calc(75vh - 58px);
-                overflow-y: auto;
+                min-height: 0;
+                max-height: none;
+                overflow: hidden;
             }
 
             .view-comment-wrapper {
-                padding: 14px;
+                padding: 10px;
             }
 
             .view-comment-wrapper .comment-thread {
-                padding: 14px !important;
+                margin-bottom: 8px !important;
+                padding: 12px !important;
             }
 
             .view-comment-wrapper .replies-block,
             .view-comment-wrapper .reply-form {
-                margin-left: 30px !important;
+                margin-left: 28px !important;
+            }
+
+            .view-comment-wrapper .comment-form .avatar,
+            .view-comment-wrapper .comment-item-root > .flex-shrink-0 .avatar {
+                width: 36px !important;
+                height: 36px !important;
+            }
+
+            .view-comment-wrapper .comment-item-reply > .flex-shrink-0 .avatar {
+                width: 28px !important;
+                height: 28px !important;
+            }
+
+            .view-comment-wrapper .comment-textarea {
+                min-height: 70px !important;
+                max-height: 78px !important;
+            }
+
+            .view-comment-wrapper .comment-submit-row {
+                flex-direction: row !important;
+                align-items: center !important;
+            }
+
+            .view-comment-wrapper .comment-submit-row #note_remaining {
+                min-width: 0;
+                font-size: 11px !important;
+            }
+
+            .view-comment-wrapper .comment-submit-row .btn {
+                padding: 5px 10px !important;
             }
         }
     </style>
@@ -338,6 +469,9 @@
         var layout  = document.getElementById('playlistLearningLayout');
         var LS_LEFT  = 'owl_playlist_left_collapsed';
         var LS_RIGHT = 'owl_playlist_right_collapsed';
+        var mobileQuery = window.matchMedia('(max-width: 991px)');
+        var mobileScrollTimer = null;
+        var mobileScrollInProgress = false;
 
         function applyState() {
             if (!layout) return;
@@ -345,8 +479,73 @@
             if (localStorage.getItem(LS_RIGHT) === '1') layout.classList.add('right-collapsed');
         }
 
-        function toggleLearningPanel(side) {
+        function isMobileView() {
+            return mobileQuery.matches;
+        }
+
+        function setRestoreButtonVisibility(button, visible) {
+            if (!button) return;
+            button.style.display = visible ? 'flex' : '';
+        }
+
+        function setMobileRestoreButtonsVisible(visible) {
+            setRestoreButtonVisibility(document.querySelector('.restore-left'), visible);
+            setRestoreButtonVisibility(document.querySelector('.restore-right'), visible);
+        }
+
+        function updateMobileRestoreButtons() {
+            if (!isMobileView()) {
+                setMobileRestoreButtonsVisible(false);
+                return;
+            }
+
+            if (mobileScrollInProgress) return;
+
+            var player = document.getElementById('contentContainer');
+            if (!player) return;
+
+            var rect = player.getBoundingClientRect();
+            var playerStillInView = rect.bottom > 80 && rect.top < window.innerHeight;
+            setMobileRestoreButtonsVisible(playerStillInView);
+        }
+
+        function scrollToLearningSection(side) {
+            var targetId = side === 'left' ? 'content-list' : 'ai-assistant';
+            var target = document.getElementById(targetId);
+            if (!target) return;
+
+            setMobileRestoreButtonsVisible(true);
+            mobileScrollInProgress = true;
+
+            if (side === 'left') {
+                layout.classList.remove('left-collapsed');
+                localStorage.setItem(LS_LEFT, '0');
+            }
+
+            if (side === 'right') {
+                layout.classList.remove('right-collapsed');
+                localStorage.setItem(LS_RIGHT, '0');
+            }
+
+            window.requestAnimationFrame(function () {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                clearTimeout(mobileScrollTimer);
+                mobileScrollTimer = setTimeout(function () {
+                    mobileScrollInProgress = false;
+                    updateMobileRestoreButtons();
+                }, 900);
+            });
+        }
+
+        function toggleLearningPanel(side, trigger) {
             if (!layout) return;
+
+            if (isMobileView() && trigger && trigger.classList.contains('restore-toggle-btn')) {
+                scrollToLearningSection(side);
+                return;
+            }
+
             if (side === 'left') {
                 layout.classList.toggle('left-collapsed');
                 localStorage.setItem(LS_LEFT, layout.classList.contains('left-collapsed') ? '1' : '0');
@@ -355,10 +554,16 @@
                 layout.classList.toggle('right-collapsed');
                 localStorage.setItem(LS_RIGHT, layout.classList.contains('right-collapsed') ? '1' : '0');
             }
+
+            updateMobileRestoreButtons();
         }
 
         window.toggleLearningPanel = toggleLearningPanel;
         applyState();
+        updateMobileRestoreButtons();
+
+        window.addEventListener('scroll', updateMobileRestoreButtons, { passive: true });
+        window.addEventListener('resize', updateMobileRestoreButtons);
 
         function syncPlayerFullscreenState() {
             var player = document.getElementById('contentContainer');

@@ -1,4 +1,4 @@
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3 view-player-card">
     <div class="card-body p-0">
 
         @php
@@ -10,12 +10,12 @@
             @if (in_array($content->type, ['Video', 'YouTube']))
                 <div class="fullscreen-player-overlays" aria-hidden="true">
                     <span class="fullscreen-pill fullscreen-pill-left">
-                        <i class="fas fa-list-ul me-1"></i>
+                        <i class="fas fa-bars me-1"></i>
                         Content List
                     </span>
                     <span class="fullscreen-pill fullscreen-pill-right">
                         <i class="fas fa-robot me-1"></i>
-                        Chat AI
+                        AI Assistant
                     </span>
                 </div>
             @endif

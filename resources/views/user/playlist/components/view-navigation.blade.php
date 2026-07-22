@@ -1,4 +1,4 @@
-<div class="card border-0 shadow-sm rounded-4 mb-3">
+<div class="card border-0 shadow-sm rounded-4 mb-3 view-navigation-card">
     <div class="card-body">
         <div class="d-flex flex-wrap align-items-center gap-2">
 
