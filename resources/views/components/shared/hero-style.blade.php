@@ -2,9 +2,18 @@
     @push('styles')
         <style>
             .shared-learning-hero {
+                --hero-overlay-width: 70%;
                 --hero-overlay:
-                    radial-gradient(circle at 82% 80%, rgba(255, 255, 255, .12), transparent 90%),
-                    linear-gradient(10deg, rgba(8, 22, 52, .28) 0%, rgba(15, 52, 110, .24) 70%, rgba(24, 74, 138, .18) 100%);
+                    linear-gradient(90deg,
+                        rgba(var(--owl-primary-rgb), .45) 0%,
+                        rgba(var(--owl-primary-rgb), .42) 10%,
+                        rgba(var(--owl-primary-rgb), .38) 20%,
+                        rgba(var(--owl-primary-rgb), .32) 35%,
+                        rgba(var(--owl-primary-rgb), .24) 50%,
+                        rgba(var(--owl-primary-rgb), .16) 60%,
+                        rgba(var(--owl-primary-rgb), .08) 70%,
+                        rgba(var(--owl-primary-rgb), .03) 82%,
+                        rgba(var(--owl-primary-rgb), 0) 100%);
                 isolation: isolate;
                 position: relative;
                 min-height: 238px;
@@ -15,29 +24,22 @@
                 background-position: center;
                 background-size: cover;
                 background-repeat: no-repeat;
-                box-shadow: 0 18px 44px rgba(15, 23, 42, .16);
+                box-shadow: 0 20px 45px rgba(15, 23, 42, .12);
             }
 
             .shared-learning-hero::before {
                 content: "";
                 position: absolute;
-                inset: 0;
+                inset: 0 auto 0 0;
                 z-index: 0;
+                width: var(--hero-overlay-width);
+                border-radius: inherit;
                 background: var(--hero-overlay);
                 pointer-events: none;
             }
 
             .shared-learning-hero::after {
-                content: "";
-                position: absolute;
-                top: -126px;
-                right: -96px;
-                z-index: 1;
-                width: 300px;
-                height: 300px;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, .08);
-                pointer-events: none;
+                content: none;
             }
 
             .shared-learning-hero > .row {
@@ -377,9 +379,7 @@
 
             @media (max-width: 991.98px) {
                 .shared-learning-hero {
-                    --hero-overlay:
-                        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
-                        linear-gradient(90deg, rgba(8, 22, 52, .34) 0%, rgba(15, 52, 110, .30) 45%, rgba(24, 74, 138, .26) 100%);
+                    --hero-overlay-width: 72%;
                     min-height: auto;
                     padding: 28px 24px;
                     text-align: left;
@@ -396,11 +396,14 @@
 
             @media (max-width: 767.98px) {
                 .shared-learning-hero {
-                    --hero-overlay:
-                        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
-                        linear-gradient(90deg, rgba(8, 22, 52, .40) 0%, rgba(15, 52, 110, .36) 45%, rgba(24, 74, 138, .32) 100%);
+                    --hero-overlay-width: 92%;
                     padding: 54px 18px 20px;
                     border-radius: 18px;
+                }
+
+                .shared-learning-hero::before {
+                    inset: 0 auto auto 0;
+                    height: min(48%, 260px);
                 }
 
                 .shared-hero-toolbar {
