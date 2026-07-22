@@ -49,10 +49,11 @@
             <div class="learning-record-filter-row mt-3 mb-0">
                 <div class="learning-record-fast-filter">
                     <label class="form-label small text-muted mb-2">Fast Filter</label>
-                    <div class="d-flex flex-wrap gap-2 certificate-quick-dropdowns">
+                    <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns certificate-quick-dropdowns">
                         <div class="dropdown" data-certificate-filter="type" data-selected-value="{{ $active['type'] }}">
+                            <input type="hidden" class="certificate-quick-value" name="certificate_filter_type" value="{{ $active['type'] }}">
                             <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $active['type'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
-                                Type: <span class="fw-semibold">{{ $types[$active['type']] ?? 'All' }}</span>
+                                Type: <span class="fw-semibold certificate-filter-value">{{ $types[$active['type']] ?? 'All' }}</span>
                             </button>
                             <div class="dropdown-menu">
                                 @foreach ($types as $value => $label)
@@ -62,8 +63,9 @@
                         </div>
 
                         <div class="dropdown" data-certificate-filter="year" data-selected-value="{{ $active['year'] }}">
+                            <input type="hidden" class="certificate-quick-value" name="certificate_filter_year" value="{{ $active['year'] }}">
                             <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $active['year'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
-                                Year: <span class="fw-semibold">{{ $active['year'] === 'all' ? 'All' : $active['year'] }}</span>
+                                Year: <span class="fw-semibold certificate-filter-value">{{ $active['year'] === 'all' ? 'All' : $active['year'] }}</span>
                             </button>
                             <div class="dropdown-menu certificate-dropdown-scroll">
                                 <a href="#" class="dropdown-item certificate-quick-item {{ $active['year'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
@@ -74,8 +76,9 @@
                         </div>
 
                         <div class="dropdown" data-certificate-filter="month" data-selected-value="{{ $active['month'] }}">
+                            <input type="hidden" class="certificate-quick-value" name="certificate_filter_month" value="{{ $active['month'] }}">
                             <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $active['month'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
-                                Month: <span class="fw-semibold">{{ $active['month'] === 'all' ? 'All' : ($months[(int) $active['month']] ?? 'All') }}</span>
+                                Month: <span class="fw-semibold certificate-filter-value">{{ $active['month'] === 'all' ? 'All' : ($months[(int) $active['month']] ?? 'All') }}</span>
                             </button>
                             <div class="dropdown-menu certificate-dropdown-scroll">
                                 <a href="#" class="dropdown-item certificate-quick-item {{ $active['month'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
@@ -86,8 +89,9 @@
                         </div>
 
                         <div class="dropdown" data-certificate-filter="status" data-selected-value="{{ $active['status'] }}">
+                            <input type="hidden" class="certificate-quick-value" name="certificate_filter_status" value="{{ $active['status'] }}">
                             <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $active['status'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
-                                Status: <span class="fw-semibold">{{ $active['status'] === 'generated' ? 'Generated' : 'All' }}</span>
+                                Status: <span class="fw-semibold certificate-filter-value">{{ $active['status'] === 'generated' ? 'Generated' : 'All' }}</span>
                             </button>
                             <div class="dropdown-menu">
                                 <a href="#" class="dropdown-item certificate-quick-item {{ $active['status'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
@@ -121,54 +125,116 @@
     <div class="modal fade" id="certificateMoreFiltersModal" tabindex="-1" role="dialog" aria-labelledby="certificateMoreFiltersTitle" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content certificate-filter-modal">
-                <div class="modal-header">
-                    <div>
-                        <h5 class="modal-title mb-0" id="certificateMoreFiltersTitle">More Filters</h5>
-                        <div class="text-muted small">Advanced certificate filters</div>
+                <div class="modal-header certificate-filter-modal-header">
+                    <div class="d-flex align-items-center">
+                        <span class="certificate-filter-modal-icon" aria-hidden="true"><i class="ti ti-adjustments-horizontal"></i></span>
+                        <div>
+                            <h5 class="modal-title mb-1" id="certificateMoreFiltersTitle">More Filters</h5>
+                            <div class="text-muted small">Advanced Certificate Filters</div>
+                        </div>
                     </div>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </div>
                 <div class="modal-body certificate-more-filters">
-                    @foreach ([
-                        'certificate_number' => ['Certificate Number', 'text', 'OWL-CERT-...'],
-                        'certificate_credential' => ['Credential ID', 'text', 'OWL-...'],
-                        'certificate_participant' => ['Participant Name', 'text', 'Participant name'],
-                        'certificate_target' => ['Target Name', 'text', 'Content, playlist or assessment'],
-                        'certificate_issuer' => ['Issuer', 'text', 'Issuer name'],
-                        'certificate_date_from' => ['Issued From', 'date', ''],
-                        'certificate_date_to' => ['Issued To', 'date', ''],
-                    ] as $name => [$label, $type, $placeholder])
-                        <div class="certificate-filter-field">
-                            <label class="form-label" for="{{ $name }}">{{ $label }}</label>
-                            <input class="form-control certificate-advanced-input" id="{{ $name }}" name="{{ $name }}" type="{{ $type }}"
-                                   value="{{ request($name) }}" placeholder="{{ $placeholder }}" @if($name === 'certificate_issuer') list="certificateIssuerList" @endif>
+                    <section class="certificate-filter-section" aria-labelledby="certificateInformationHeading">
+                        <div class="certificate-filter-section-heading">
+                            <i class="ti ti-certificate" aria-hidden="true"></i>
+                            <h6 id="certificateInformationHeading">Certificate Information</h6>
                         </div>
-                    @endforeach
+                        <div class="row g-4 certificate-filter-grid">
+                            <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
+                                <label class="form-label" for="certificate_number">Certificate Number</label>
+                                <input class="form-control certificate-advanced-input" id="certificate_number" name="certificate_number" type="text"
+                                       value="{{ request('certificate_number') }}" placeholder="OWL-CERT-...">
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
+                                <label class="form-label" for="certificate_credential">Credential ID</label>
+                                <input class="form-control certificate-advanced-input" id="certificate_credential" name="certificate_credential" type="text"
+                                       value="{{ request('certificate_credential') }}" placeholder="OWL-...">
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
+                                <label class="form-label" for="certificateAdvancedType">Certificate Type</label>
+                                <select class="form-select" id="certificateAdvancedType">
+                                    @foreach ($types as $value => $label)
+                                        <option value="{{ $value }}" {{ $active['type'] === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </section>
 
-                    <div class="certificate-filter-field">
-                        <label class="form-label" for="certificateAdvancedType">Certificate Type</label>
-                        <select class="form-select" id="certificateAdvancedType">
-                            @foreach ($types as $value => $label)
-                                <option value="{{ $value }}" {{ $active['type'] === $value ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <section class="certificate-filter-section" aria-labelledby="certificateParticipantHeading">
+                        <div class="certificate-filter-section-heading">
+                            <i class="ti ti-user" aria-hidden="true"></i>
+                            <h6 id="certificateParticipantHeading">Participant</h6>
+                        </div>
+                        <div class="row g-4 certificate-filter-grid">
+                            <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
+                                <label class="form-label" for="certificate_participant">Participant Name</label>
+                                <input class="form-control certificate-advanced-input" id="certificate_participant" name="certificate_participant" type="text"
+                                       value="{{ request('certificate_participant') }}" placeholder="Participant name">
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
+                                <label class="form-label" for="certificate_issuer">Issuer</label>
+                                <input class="form-control certificate-advanced-input" id="certificate_issuer" name="certificate_issuer" type="text"
+                                       value="{{ request('certificate_issuer') }}" placeholder="Issuer name" list="certificateIssuerList">
+                            </div>
+                        </div>
+                    </section>
 
-                    <div class="certificate-filter-field">
-                        <label class="form-label" for="certificateSort">Sorting</label>
-                        <select class="form-select" id="certificateSort">
-                            @foreach (['issued_desc' => 'Newest', 'issued_asc' => 'Oldest', 'number_asc' => 'Certificate Number A-Z', 'number_desc' => 'Certificate Number Z-A', 'participant_asc' => 'Participant A-Z', 'participant_desc' => 'Participant Z-A', 'target_asc' => 'Target Name A-Z', 'target_desc' => 'Target Name Z-A'] as $value => $label)
-                                <option value="{{ $value }}" {{ $active['sort'] === $value ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <section class="certificate-filter-section" aria-labelledby="certificateTargetHeading">
+                        <div class="certificate-filter-section-heading">
+                            <i class="ti ti-focus-2" aria-hidden="true"></i>
+                            <h6 id="certificateTargetHeading">Target</h6>
+                        </div>
+                        <div class="row g-4 certificate-filter-grid">
+                            <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
+                                <label class="form-label" for="certificate_target">Target Name</label>
+                                <input class="form-control certificate-advanced-input" id="certificate_target" name="certificate_target" type="text"
+                                       value="{{ request('certificate_target') }}" placeholder="Content, playlist or assessment">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="certificate-filter-section" aria-labelledby="certificateIssuedDateHeading">
+                        <div class="certificate-filter-section-heading">
+                            <i class="ti ti-calendar" aria-hidden="true"></i>
+                            <h6 id="certificateIssuedDateHeading">Issued Date</h6>
+                        </div>
+                        <div class="row g-4 certificate-filter-grid">
+                            <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
+                                <label class="form-label" for="certificate_date_from">Issued From</label>
+                                <div class="input-icon certificate-date-input">
+                                    <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
+                                    <input class="form-control certificate-advanced-input" id="certificate_date_from" name="certificate_date_from" type="date"
+                                           value="{{ request('certificate_date_from') }}">
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
+                                <label class="form-label" for="certificate_date_to">Issued To</label>
+                                <div class="input-icon certificate-date-input">
+                                    <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
+                                    <input class="form-control certificate-advanced-input" id="certificate_date_to" name="certificate_date_to" type="date"
+                                           value="{{ request('certificate_date_to') }}">
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
+                                <label class="form-label" for="certificateSort">Sorting</label>
+                                <select class="form-select" id="certificateSort">
+                                    @foreach (['issued_desc' => 'Newest', 'issued_asc' => 'Oldest', 'number_asc' => 'Certificate Number A-Z', 'number_desc' => 'Certificate Number Z-A', 'participant_asc' => 'Participant A-Z', 'participant_desc' => 'Participant Z-A', 'target_asc' => 'Target Name A-Z', 'target_desc' => 'Target Name Z-A'] as $value => $label)
+                                        <option value="{{ $value }}" {{ $active['sort'] === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </section>
                 </div>
                 <datalist id="certificateIssuerList">
                     @foreach (collect($filterOptions['issuers'] ?? []) as $issuer)<option value="{{ $issuer }}">@endforeach
                 </datalist>
-                <div class="modal-footer">
+                <div class="modal-footer certificate-filter-modal-footer justify-content-end">
                     <button type="button" class="btn btn-outline-primary" id="certificateModalReset">Reset</button>
-                    <button type="button" class="btn btn-primary certificate-apply-filter">Apply Filter</button>
+                    <button type="button" class="btn btn-primary certificate-apply-filter"><i class="ti ti-check"></i><span>Apply Filter</span></button>
                 </div>
             </div>
         </div>

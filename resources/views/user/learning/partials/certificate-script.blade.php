@@ -44,11 +44,30 @@
 
         function setQuickValue($dropdown, value, label) {
             $dropdown.attr('data-selected-value', value);
+            $dropdown.find('.certificate-quick-value').val(value);
             $dropdown.find('.certificate-quick-item').removeClass('active')
                 .filter('[data-value="' + value + '"]').addClass('active');
             $dropdown.find('.dropdown-toggle')
                 .toggleClass('active', value !== 'all')
-                .find('.fw-semibold').text(label);
+                .find('.certificate-filter-value').text(label);
+        }
+
+        function hydrateQuickFilters() {
+            $('#certificateFilterBar [data-certificate-filter]').each(function () {
+                var $dropdown = $(this);
+                var value = String($dropdown.find('.certificate-quick-value').val()
+                    || $dropdown.attr('data-selected-value')
+                    || 'all');
+                var $activeItem = $dropdown.find('.certificate-quick-item').filter(function () {
+                    return String($(this).data('value')) === value;
+                }).first();
+                var label = $activeItem.length ? $.trim($activeItem.text()) : 'All';
+
+                setQuickValue($dropdown, value, label);
+            });
+
+            var type = String($('#certificateFilterBar [data-certificate-filter="type"] .certificate-quick-value').val() || 'all');
+            $('#certificateAdvancedType').val(type);
         }
 
         function updateAdvancedCount() {
@@ -65,11 +84,11 @@
             var params = cleanCertificateParams(certificateParams());
             var search = $.trim($('#certificateSearch').val());
 
-            $('#certificateFilterBar [data-certificate-filter]').each(function () {
-                var name = String($(this).data('certificate-filter'));
-                var value = String($(this).attr('data-selected-value') || 'all');
+            $('#certificateFilterBar .certificate-quick-value').each(function () {
+                var name = String(this.name);
+                var value = String($(this).val() || 'all');
                 if (value !== 'all') {
-                    params.set('certificate_filter_' + name, value);
+                    params.set(name, value);
                 }
             });
 
@@ -188,6 +207,7 @@
             sanitize: false
         });
 
+        hydrateQuickFilters();
         updateAdvancedCount();
     }
 </script>

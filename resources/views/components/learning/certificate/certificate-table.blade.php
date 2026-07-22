@@ -9,6 +9,12 @@
         'participant' => ['participant_asc', 'participant_desc'],
         'issued' => ['issued_asc', 'issued_desc'],
     ];
+    $certificateSortDirection = $activeSort === 'number_asc'
+        ? 'asc'
+        : ($activeSort === 'number_desc' ? 'desc' : null);
+    $issuedSortDirection = $activeSort === 'issued_asc'
+        ? 'asc'
+        : ($activeSort === 'issued_desc' ? 'desc' : null);
 @endphp
 
 @if ($certificates->count())
@@ -19,14 +25,16 @@
                     <th class="certificate-col-no text-center">NO</th>
                     <th class="certificate-col-main">
                         <button type="button" class="certificate-sort-heading {{ in_array($activeSort, $sortColumns['certificate'], true) ? 'is-sorted' : '' }}" data-sort="{{ $activeSort === 'number_asc' ? 'number_desc' : 'number_asc' }}">
-                            CERTIFICATE <i class="ti {{ $activeSort === 'number_desc' ? 'ti-chevron-down' : 'ti-chevron-up' }}"></i>
+                            CERTIFICATE
+                            <i class="ti certificate-sort-icon {{ $certificateSortDirection === 'asc' ? 'ti-arrow-up' : ($certificateSortDirection === 'desc' ? 'ti-arrow-down' : 'ti-arrows-sort') }}" aria-hidden="true"></i>
                         </button>
                     </th>
                     <th class="certificate-col-type text-center">CERTIFICATE TYPE</th>
                     <th class="certificate-col-credential">CREDENTIAL ID</th>
                     <th class="certificate-col-issued text-center">
                         <button type="button" class="certificate-sort-heading {{ in_array($activeSort, $sortColumns['issued'], true) ? 'is-sorted' : '' }}" data-sort="{{ $activeSort === 'issued_asc' ? 'issued_desc' : 'issued_asc' }}">
-                            ISSUED DATE <i class="ti {{ $activeSort === 'issued_desc' ? 'ti-chevron-down' : 'ti-chevron-up' }}"></i>
+                            ISSUED DATE
+                            <i class="ti certificate-sort-icon {{ $issuedSortDirection === 'asc' ? 'ti-arrow-up' : ($issuedSortDirection === 'desc' ? 'ti-arrow-down' : 'ti-arrows-sort') }}" aria-hidden="true"></i>
                         </button>
                     </th>
                     <th class="certificate-col-status text-center">STATUS</th>
