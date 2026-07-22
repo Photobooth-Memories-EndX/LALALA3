@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CertificateExport;
 use App\Models\Certificate;
 use App\Models\CertificateSetting;
 use App\Models\ContentUser;
@@ -10,10 +11,12 @@ use App\Services\CertificateEligibilityService;
 use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningHourService;
 use App\Support\DurationFormatter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Learning Record — histori pembelajaran yang telah selesai.
@@ -81,9 +84,116 @@ class LearningRecordController extends Controller
      */
     public function certificate()
     {
-        $userCertificates = Certificate::where('user_id', Auth::id())->latest()->get();
+        $query = $this->certificateListQuery((int) Auth::id());
+        $query = $this->applyCertificateFilters($query);
 
-        return view('user.learning.dashboard-partials.certificate', compact('userCertificates'));
+        if (request()->boolean('certificate_export')) {
+            return Excel::download(
+                new CertificateExport($query->get()),
+                'My_Certificates_' . now()->format('Y-m-d') . '.xlsx'
+            );
+        }
+
+        $userCertificates = $query
+            ->paginate(10, ['*'], 'certificate_page')
+            ->withQueryString();
+
+        $filterOptions = [
+            'years' => Certificate::query()
+                ->where('user_id', Auth::id())
+                ->whereNotNull('issued_at')
+                ->selectRaw('YEAR(issued_at) as year')
+                ->distinct()
+                ->orderByDesc('year')
+                ->pluck('year'),
+            'issuers' => CertificateSetting::query()
+                ->whereIn('id', Certificate::query()
+                    ->select('certificate_setting_id')
+                    ->where('user_id', Auth::id()))
+                ->whereNotNull('issuer_name')
+                ->where('issuer_name', '!=', '')
+                ->distinct()
+                ->orderBy('issuer_name')
+                ->pluck('issuer_name'),
+        ];
+
+        return view('user.learning.dashboard-partials.certificate', compact('userCertificates', 'filterOptions'));
+    }
+
+    private function certificateListQuery(int $userId): Builder
+    {
+        return Certificate::query()
+            ->select([
+                'id',
+                'user_id',
+                'certificate_setting_id',
+                'assessment_result_id',
+                'certificate_type',
+                'source_id',
+                'certificate_number',
+                'credential_id',
+                'credential_url',
+                'title',
+                'participant_name',
+                'score',
+                'issued_at',
+                'created_at',
+            ])
+            ->with([
+                'user:id,name',
+                'certificateSetting:id,certificate_type,content_id,trainingplan_id,assessment_id,issuer_name,use_default_template,certificate_template,custom_background,background_image',
+                'certificateSetting.content:id,title',
+                'certificateSetting.assessment:id,title',
+                'certificateSetting.trainingPlan:id,title',
+                'certificateSetting.trainingPlan.trainingplandetail:id,trainingplan_id,content_id,content_order',
+                'certificateSetting.trainingPlan.trainingplandetail.content:id,title',
+            ])
+            ->where('user_id', $userId);
+    }
+
+    private function applyCertificateFilters(Builder $query): Builder
+    {
+        $search = trim((string) request('certificate_search', ''));
+        $type = (string) request('certificate_filter_type', 'all');
+        $year = (string) request('certificate_filter_year', 'all');
+        $month = (string) request('certificate_filter_month', 'all');
+        $sort = (string) request('certificate_sort', 'issued_desc');
+
+        $query
+            ->when($search !== '', function ($q) use ($search) {
+                $keyword = '%' . $search . '%';
+                $q->where(function ($filter) use ($keyword) {
+                    $filter->where('certificate_number', 'like', $keyword)
+                        ->orWhere('credential_id', 'like', $keyword)
+                        ->orWhere('participant_name', 'like', $keyword)
+                        ->orWhere('title', 'like', $keyword)
+                        ->orWhere('certificate_type', 'like', $keyword);
+                });
+            })
+            ->when(in_array($type, ['content', 'playlist', 'global'], true), fn ($q) => $q->where('certificate_type', $type))
+            ->when($year !== 'all' && ctype_digit($year), fn ($q) => $q->whereYear('issued_at', (int) $year))
+            ->when($month !== 'all' && ctype_digit($month), fn ($q) => $q->whereMonth('issued_at', (int) $month))
+            ->when(request()->filled('certificate_number'), fn ($q) => $q->where('certificate_number', 'like', '%' . trim((string) request('certificate_number')) . '%'))
+            ->when(request()->filled('certificate_credential'), fn ($q) => $q->where('credential_id', 'like', '%' . trim((string) request('certificate_credential')) . '%'))
+            ->when(request()->filled('certificate_participant'), fn ($q) => $q->where('participant_name', 'like', '%' . trim((string) request('certificate_participant')) . '%'))
+            ->when(request()->filled('certificate_target'), fn ($q) => $q->where('title', 'like', '%' . trim((string) request('certificate_target')) . '%'))
+            ->when(request()->filled('certificate_issuer'), function ($q) {
+                $issuer = trim((string) request('certificate_issuer'));
+                $q->whereHas('certificateSetting', fn ($setting) => $setting->where('issuer_name', 'like', '%' . $issuer . '%'));
+            })
+            ->when(request()->filled('certificate_date_from'), fn ($q) => $q->whereDate('issued_at', '>=', request('certificate_date_from')))
+            ->when(request()->filled('certificate_date_to'), fn ($q) => $q->whereDate('issued_at', '<=', request('certificate_date_to')));
+
+        return match ($sort) {
+            'issued_asc' => $query->orderBy('issued_at')->orderBy('id'),
+            'number_asc' => $query->orderBy('certificate_number')->orderBy('id'),
+            'number_desc' => $query->orderByDesc('certificate_number')->orderByDesc('id'),
+            'participant_asc' => $query->orderBy('participant_name')->orderBy('id'),
+            'participant_desc' => $query->orderByDesc('participant_name')->orderByDesc('id'),
+            'target_asc' => $query->orderBy('title')->orderBy('id'),
+            'target_desc' => $query->orderByDesc('title')->orderByDesc('id'),
+            default => $query->orderByDesc('issued_at')->orderByDesc('id'),
+        };
     }
 
     // ─── Filter options ─────────────────────────────────────────────────────────

@@ -28,9 +28,9 @@
     function loadLearningTab(tab) {
         if (_activeTab === tab) return;
 
-        var $openAssessmentModal = $('#assessmentMoreFiltersModal.show');
-        if ($openAssessmentModal.length) {
-            $openAssessmentModal
+        var $openFilterModal = $('#assessmentMoreFiltersModal.show, #certificateMoreFiltersModal.show');
+        if ($openFilterModal.length) {
+            $openFilterModal
                 .one('hidden.bs.modal.learningAssessment', function () {
                     loadLearningTab(tab);
                 })
@@ -46,6 +46,9 @@
 
         if ($.fn.DataTable && $.fn.DataTable.isDataTable('#assessmentTable')) {
             $('#assessmentTable').DataTable().destroy();
+        }
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable('#certificateTable')) {
+            $('#certificateTable').DataTable().destroy();
         }
 
         // Show skeleton while loading
@@ -68,6 +71,7 @@
         .then(function (html) {
             $('#learning-tab-content').html(html);
             initLearningAssessment();
+            initLearningCertificate();
             initLearningRecord();
         })
         .catch(function () {
@@ -143,6 +147,9 @@
         if (_activeTab === 'ongoing') {
             _activeTab = null;
             loadLearningTab('ongoing');
+        } else if (_activeTab === 'certificate') {
+            _activeTab = null;
+            loadLearningTab('certificate');
         }
     });
 
@@ -159,4 +166,5 @@
     });
 </script>
 @include('user.learning.partials.assessment-script')
+@include('user.learning.partials.certificate-script')
 @endsection
