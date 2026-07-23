@@ -16,6 +16,9 @@
 
     isolation: isolate;
     position: relative;
+    width: 100%;
+    aspect-ratio: 1600 / 320;
+    box-sizing: border-box;
     min-height: 238px;
     overflow: hidden;
     padding: 28px 34px;
@@ -401,6 +404,7 @@
             @media (max-width: 991.98px) {
                 .shared-learning-hero {
                     --hero-overlay-width: 72%;
+                    aspect-ratio: auto;
                     min-height: auto;
                     padding: 28px 24px;
                     text-align: left;

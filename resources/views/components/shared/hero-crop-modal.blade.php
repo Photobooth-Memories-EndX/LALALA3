@@ -99,7 +99,7 @@
                         <h3 class="modal-title mb-1" id="heroBackgroundCropTitle">Crop Hero Background</h3>
                         <div class="text-muted small">
                             Drag the image and adjust zoom. The fixed crop frame matches the
-                            <span id="heroCropDimensions">Hero</span> design.
+                            <span id="heroCropDimensions">1600 × 320 Hero</span> design.
                         </div>
                     </div>
                     <button type="button"

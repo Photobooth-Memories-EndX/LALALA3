@@ -16,8 +16,8 @@ $(function () {
     var $cropPreview = $('#heroCropPreview');
     var $cropDimensions = $('#heroCropDimensions');
     var $resetButton = $('#heroCropReset');
-    var outputWidth = Number.parseInt($hero.attr('data-hero-width'), 10);
-    var outputHeight = Number.parseInt($hero.attr('data-hero-height'), 10);
+    var outputWidth = 1600;
+    var outputHeight = 320;
     var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     var allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
     var maximumUploadSize = 5 * 1024 * 1024;
@@ -37,7 +37,6 @@ $(function () {
         return;
     }
 
-    var heroAspectRatio = outputWidth / outputHeight;
     $cropPreview.css('--hero-crop-aspect-ratio', outputWidth + ' / ' + outputHeight);
     $cropDimensions.text(outputWidth + ' × ' + outputHeight + ' Hero');
 
@@ -185,7 +184,7 @@ $(function () {
 
         try {
             cropper = new window.Cropper($cropImage[0], {
-                aspectRatio: heroAspectRatio,
+                aspectRatio: 1600 / 320,
                 viewMode: 1,
                 dragMode: 'move',
                 autoCropArea: 1,
@@ -307,8 +306,8 @@ $(function () {
 
         try {
             var croppedCanvas = cropper.getCroppedCanvas({
-                width: outputWidth,
-                height: outputHeight,
+                width: 1600,
+                height: 320,
                 fillColor: '#ffffff',
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high'
