@@ -41,8 +41,13 @@
     ])
 
     {{-- Reply form (single, hidden by default, always attaches to this root comment) --}}
-    <div id="reply-form-{{ $comment->id }}" class="reply-form d-none mt-2">
-        <x-form action="{{ $url }}" method="post" class="comment-form w-100">
+    <div id="reply-form-{{ $comment->id }}"
+         class="reply-form d-none mt-2"
+         data-comment-id="{{ $comment->id }}">
+        <x-form action="{{ $url }}"
+                method="post"
+                class="comment-form comment-reply-form w-100"
+                data-comment-id="{{ $comment->id }}">
             <input type="hidden" name="parent_id" value="{{ $comment->id }}">
             <input type="hidden" name="playlistslug" value="{{ $hiddenplaylistslug }}">
 

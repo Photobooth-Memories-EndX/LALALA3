@@ -342,7 +342,7 @@
         }
 
         function findFreshRoot(response, $root) {
-            var parsedHtml = $.parseHTML(response, document, true);
+            var parsedHtml = $.parseHTML(response, document, false);
             var $html = $('<div>').append(parsedHtml);
             var modalId = $root.closest('.modal').attr('id');
             var $freshRoot = $();
@@ -388,11 +388,93 @@
                 if (updateHistory && window.history && window.history.replaceState) {
                     window.history.replaceState({}, document.title, url);
                 }
+            }).fail(function (xhr) {
+                showCommentError($root, xhr, 'Daftar komentar tidak dapat dimuat ulang.');
             }).always(function () {
                 $root.removeClass('is-loading-comments');
                 restoreState($root, state);
             });
         }
+
+        function clearCommentError($root) {
+            $root.find('.comment-ajax-error').remove();
+        }
+
+        function getCommentErrorMessage(xhr, fallback) {
+            var response = xhr && xhr.responseJSON ? xhr.responseJSON : {};
+            var errors = response.errors || {};
+            var firstField = Object.keys(errors)[0];
+
+            if (firstField && errors[firstField] && errors[firstField][0]) {
+                return errors[firstField][0];
+            }
+
+            if (response.message && xhr.status !== 500) return response.message;
+            if (xhr.status === 404) return 'Komentar atau endpoint tidak ditemukan.';
+            if (xhr.status === 419) return 'Sesi telah berakhir. Muat ulang halaman lalu coba lagi.';
+            if (xhr.status === 422) return 'Data komentar tidak valid.';
+            if (xhr.status >= 500) return 'Server gagal memproses komentar. Silakan coba lagi.';
+
+            return fallback;
+        }
+
+        function showCommentError($root, xhr, fallback) {
+            var message = getCommentErrorMessage(xhr, fallback);
+            var $error = $('<div>', {
+                class: 'alert alert-danger comment-ajax-error mx-3 mt-3 mb-0',
+                role: 'alert',
+                text: message
+            });
+
+            clearCommentError($root);
+            $root.find('#comment').prepend($error);
+            console.error('Comment request failed:', xhr.status, message);
+        }
+
+        function csrfToken() {
+            return $('meta[name="csrf-token"]').attr('content') || '';
+        }
+
+        $(document).on('click', '.comment-ajax-root .comment-like-toggle', function (event) {
+            event.preventDefault();
+
+            var $button = $(this);
+            var $root = $button.closest('.comment-ajax-root');
+            var commentId = $button.data('comment-id');
+            var url = $button.data('url');
+
+            if (!commentId || !url || $button.data('requestPending')) return;
+
+            var shouldLike = $button.attr('aria-pressed') !== 'true';
+            $button.data('requestPending', true).prop('disabled', true).attr('aria-busy', 'true');
+            clearCommentError($root);
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: {
+                    liked: shouldLike ? 1 : 0
+                },
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            }).done(function (response) {
+                var liked = Boolean(response.liked);
+
+                $button.attr('aria-pressed', liked ? 'true' : 'false');
+                $button.toggleClass('is-liked', liked);
+                $button.find('i')
+                    .toggleClass('ti-heart', !liked)
+                    .toggleClass('ti-heart-filled', liked);
+                $button.find('.comment-like-count').text(response.likes_count);
+            }).fail(function (xhr) {
+                showCommentError($root, xhr, 'Like tidak dapat diperbarui.');
+            }).always(function () {
+                $button.removeData('requestPending').prop('disabled', false).removeAttr('aria-busy');
+            });
+        });
 
         $(document).on('click', '.comment-reply-toggle', function (event) {
             event.preventDefault();
@@ -404,9 +486,11 @@
 
             if (!$form.length) return;
 
-            $form.toggleClass('d-none');
+            var shouldOpen = $form.hasClass('d-none');
+            $root.find('.reply-form').addClass('d-none');
+            $form.toggleClass('d-none', !shouldOpen);
 
-            if (!$form.hasClass('d-none')) {
+            if (shouldOpen) {
                 var textarea = $form.find('textarea').first();
                 if (textarea.length) textarea.trigger('focus');
             }
@@ -414,6 +498,52 @@
             if ($root.length) {
                 $root.attr('data-comment-refresh-url', $root.attr('data-comment-refresh-url') || document.URL);
             }
+        });
+
+        $(document).on('submit', '.comment-ajax-root .comment-reply-form', function (event) {
+            event.preventDefault();
+
+            var $form = $(this);
+            var $root = $form.closest('.comment-ajax-root');
+            var rootCommentId = $form.data('comment-id');
+            var action = $form.attr('action');
+
+            if (!action || action === '#' || !rootCommentId || $form.data('requestPending')) return;
+
+            $form.data('requestPending', true);
+            $form.find(':submit').prop('disabled', true);
+            clearCommentError($root);
+
+            $.ajax({
+                url: action,
+                method: 'POST',
+                data: $form.serialize(),
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            }).done(function () {
+                var state = getState($root);
+                var repliesId = 'replies-' + rootCommentId;
+
+                state.openReplyForms = [];
+                if (state.openReplyLists.indexOf(repliesId) === -1) state.openReplyLists.push(repliesId);
+                if (state.openReplyToggles.indexOf(repliesId) === -1) state.openReplyToggles.push(repliesId);
+
+                $form.get(0).reset();
+                refreshComments(
+                    $root,
+                    $root.attr('data-comment-refresh-url') || document.URL,
+                    state,
+                    false
+                );
+            }).fail(function (xhr) {
+                showCommentError($root, xhr, 'Reply tidak dapat dikirim.');
+            }).always(function () {
+                $form.removeData('requestPending');
+                $form.find(':submit').prop('disabled', false);
+            });
         });
 
         $(document).on('click', '.comment-replies-toggle', function (event) {
@@ -442,7 +572,7 @@
             refreshComments($root, href, getState($root), true);
         });
 
-        $(document).on('submit', '.comment-ajax-root form', function (event) {
+        $(document).on('submit', '.comment-ajax-root form:not(.comment-reply-form)', function (event) {
             event.preventDefault();
 
             var $form = $(this);
@@ -465,7 +595,9 @@
             }).done(function (response, textStatus, jqXHR) {
                 var currentUrl = $root.attr('data-comment-refresh-url') || document.URL;
                 var responseUrl = jqXHR && jqXHR.responseURL ? jqXHR.responseURL : currentUrl;
-                var freshRoot = findFreshRoot(response, $root);
+                var freshRoot = typeof response === 'string'
+                    ? findFreshRoot(response, $root)
+                    : $();
 
                 if (freshRoot.length) {
                     replaceRoot($root, response, state);
@@ -474,7 +606,8 @@
                 }
 
                 refreshComments($root, currentUrl, state, false);
-            }).fail(function () {
+            }).fail(function (xhr) {
+                showCommentError($root, xhr, 'Komentar tidak dapat dikirim.');
                 restoreState($root, state);
             }).always(function () {
                 $root.removeClass('is-loading-comments');

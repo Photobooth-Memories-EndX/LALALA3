@@ -38,16 +38,19 @@
         <div class="d-flex align-items-center flex-wrap gap-3 mt-1 comment-meta">
             <span class="text-muted">{{ $item->created_at->diffForHumans() }}</span>
 
-            <form action="{{ route('comment.like', $item->id) }}" method="POST" class="d-inline m-0">
-                @csrf
-                <button type="submit" class="btn btn-link p-0 comment-action {{ $likeClass }}">
-                    <i class="ti {{ $likeIcon }}"></i>
-                    <span>{{ $item->likes_count }}</span>
-                </button>
-            </form>
+            <button type="button"
+                    class="btn btn-link p-0 comment-action comment-like-toggle {{ $likeClass }}"
+                    data-comment-id="{{ $item->id }}"
+                    data-url="{{ route('comment.like', $item->id) }}"
+                    aria-pressed="{{ $item->is_liked ? 'true' : 'false' }}">
+                <i class="ti {{ $likeIcon }}"></i>
+                <span class="comment-like-count">{{ $item->likes_count }}</span>
+            </button>
 
             <button type="button"
                     class="btn btn-link p-0 comment-action text-muted comment-reply-toggle"
+                    data-comment-id="{{ $item->id }}"
+                    data-parent-id="{{ $rootId }}"
                     data-target="reply-form-{{ $rootId }}">
                 Reply
             </button>

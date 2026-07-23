@@ -8,6 +8,7 @@ use App\Models\EventPhoto;
 use App\Models\News;
 use Illuminate\Http\Request;
 use App\Models\CommentLike;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CommentController extends Controller
@@ -30,7 +31,7 @@ class CommentController extends Controller
         $comment->description = $request->input('description');
         $comment->save();
 
-        return to_route('content.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');
+        return $this->createdResponse($request, $comment, 'content.user.view', $slug);
     }
 
     public function storecontentplaylist(Request $request, $slug)
@@ -51,7 +52,12 @@ class CommentController extends Controller
         $comment->description = $request->input('description');
         $comment->save();
 
-        return to_route('playlist.user.view', [$request->playlistslug, $slug])->with('success', 'Comment posted successfully.')->withFragment('comment');
+        return $this->createdResponse(
+            $request,
+            $comment,
+            'playlist.user.view',
+            [$request->playlistslug, $slug]
+        );
     }
 
     public function storenews(Request $request, $slug)
@@ -72,7 +78,7 @@ class CommentController extends Controller
         $comment->description = $request->input('description');
         $comment->save();
 
-        return to_route('news.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');
+        return $this->createdResponse($request, $comment, 'news.user.view', $slug);
     }
 
     public function storeeventphoto(Request $request, $slug)
@@ -92,7 +98,25 @@ class CommentController extends Controller
         $comment->description   = $request->input('description');
         $comment->save();
 
-        return to_route('gallery.user.view', $slug)->with('success', 'Comment posted successfully.')->withFragment('comment');
+        return $this->createdResponse($request, $comment, 'gallery.user.view', $slug);
+    }
+
+    private function createdResponse(Request $request, Comment $comment, string $route, $parameters)
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Comment posted successfully.',
+                'comment' => [
+                    'id' => $comment->id,
+                    'parent_id' => $comment->parent_id,
+                    'description' => $comment->description,
+                ],
+            ], 201);
+        }
+
+        return to_route($route, $parameters)
+            ->with('success', 'Comment posted successfully.')
+            ->withFragment('comment');
     }
 
     /**
@@ -203,33 +227,49 @@ class CommentController extends Controller
         return back()->with('success', 'Comment deleted successfully.');
     }
 
-    public function toggleLike($id)
+    public function toggleLike(Request $request, $id)
     {
         Log::info('CommentController@toggleLike called', ['id' => $id, 'user_id' => auth()->id()]);
-        $comment = Comment::findOrFail($id);
+        $data = $request->validate([
+            'liked' => 'nullable|boolean',
+        ]);
 
-        $like = CommentLike::query()
-            ->where('comment_id', $comment->id)
-            ->where('user_id', auth()->id())
-            ->first();
+        $result = DB::transaction(function () use ($id, $data) {
+            $comment = Comment::query()->lockForUpdate()->findOrFail($id);
+            $like = CommentLike::query()
+                ->where('comment_id', $comment->id)
+                ->where('user_id', auth()->id())
+                ->first();
+            $shouldLike = array_key_exists('liked', $data)
+                ? (bool) $data['liked']
+                : !$like;
 
-        if ($like) {
-            $like->delete();
+            if ($shouldLike && !$like) {
+                $reference = $comment->resolvedReference();
 
-            return back()
-                ->with('success', 'Like removed.')
-                ->withFragment('comment');
+                CommentLike::create([
+                    'comment_id' => $comment->id,
+                    'user_id' => auth()->id(),
+                    'reference_type' => $reference['reference_type'],
+                    'reference_id' => $reference['reference_id'],
+                ]);
+            } elseif (!$shouldLike && $like) {
+                $like->delete();
+            }
+
+            return [
+                'comment_id' => $comment->id,
+                'liked' => $shouldLike,
+                'likes_count' => $comment->likes()->count(),
+            ];
+        });
+
+        if ($request->expectsJson()) {
+            return response()->json($result);
         }
 
-        $reference = $comment->resolvedReference();
-
-        CommentLike::create([
-    'comment_id' => $comment->id,
-    'user_id' => auth()->id(),
-]);
-
         return back()
-            ->with('success', 'Comment liked.')
+            ->with('success', $result['liked'] ? 'Comment liked.' : 'Like removed.')
             ->withFragment('comment');
     }
 }
