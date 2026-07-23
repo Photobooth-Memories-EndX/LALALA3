@@ -5,7 +5,7 @@
 
             <div class="modal-header">
                 <h5 class="modal-title d-flex align-items-center gap-2" id="assessment-access-title">
-                    <i class="ti ti-clipboard-list text-warning"></i>
+                    <i class="ti ti-clipboard-list home-modern-text-primary"></i>
                     Assessment Access
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

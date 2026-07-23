@@ -2,16 +2,21 @@
     @push('styles')
         <style>
 .shared-learning-hero {
+    --owl-primary-rgb: 5, 80, 125;
+    --kp-hero-primary-rgb: 5, 80, 125;
+    --kp-hero-dark-rgb: 3, 59, 92;
+    --kp-hero-light-rgb: 105, 179, 231;
+
 /* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
     --hero-overlay-width: 58%;
 
     /* 2. Buat gradasi memudar lebih lembut (smooth gradient stops) */
     --hero-overlay: linear-gradient(
         90deg,
-        rgba(var(--owl-primary-rgb), .90) 0%,
-        rgba(var(--owl-primary-rgb), .85) 50%,  /* Solid di area teks utama */
-        rgba(var(--owl-primary-rgb), .45) 80%,  /* Memudar sangat lembut di tengah */
-        rgba(var(--owl-primary-rgb), 0) 100%    /* Menyatu sempurna dengan gambar */
+        rgba(var(--kp-hero-dark-rgb), .96) 0%,
+        rgba(var(--kp-hero-primary-rgb), .88) 50%,
+        rgba(var(--kp-hero-light-rgb), .46) 80%,
+        rgba(var(--kp-hero-light-rgb), 0) 100%
     );
 
     display: flex;
@@ -232,7 +237,7 @@
                 padding: 10px 12px;
                 border: 1px solid rgba(255, 255, 255, .14);
                 border-radius: 18px;
-                background: rgba(18, 25, 45, .45);
+                background: rgba(var(--kp-hero-dark-rgb), .52);
                 backdrop-filter: blur(12px);
                 -webkit-backdrop-filter: blur(12px);
             }
@@ -265,11 +270,11 @@
             }
 
             .shared-hero-donut-hit-completed:hover {
-                background: rgba(34, 197, 94, .12);
+                background: rgba(var(--kp-hero-primary-rgb), .16);
             }
 
             .shared-hero-donut-hit-ongoing:hover {
-                background: rgba(56, 189, 248, .12);
+                background: rgba(var(--kp-hero-light-rgb), .18);
             }
 
             .shared-hero-donut-inner {
@@ -282,7 +287,7 @@
                 height: 86px;
                 flex-direction: column;
                 border-radius: 50%;
-                background: rgba(12, 37, 83, .92);
+                background: rgba(var(--kp-hero-dark-rgb), .94);
                 box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
             }
 
@@ -382,13 +387,13 @@
             }
 
             .shared-hero-stat-dot.completed {
-                background: #22c55e;
-                box-shadow: 0 0 8px rgba(34, 197, 94, .5);
+                background: rgb(var(--kp-hero-primary-rgb));
+                box-shadow: 0 0 8px rgba(var(--kp-hero-primary-rgb), .5);
             }
 
             .shared-hero-stat-dot.ongoing {
-                background: #38bdf8;
-                box-shadow: 0 0 8px rgba(56, 189, 248, .5);
+                background: rgb(var(--kp-hero-light-rgb));
+                box-shadow: 0 0 8px rgba(var(--kp-hero-light-rgb), .5);
             }
 
             [data-bs-theme="dark"] .shared-learning-hero,
@@ -399,12 +404,12 @@
             [data-bs-theme="dark"] .shared-hero-summary,
             body.dark-mode .shared-hero-summary {
                 border-color: rgba(255, 255, 255, .1);
-                background: rgba(2, 8, 20, .38);
+                background: rgba(var(--kp-hero-dark-rgb), .48);
             }
 
             [data-bs-theme="dark"] .shared-hero-donut-inner,
             body.dark-mode .shared-hero-donut-inner {
-                background: rgba(5, 18, 39, .94);
+                background: rgba(2, 42, 67, .96);
             }
 
             @media (min-width: 992px) {
@@ -453,11 +458,11 @@
                     --hero-overlay-width: 100%;
                     --hero-overlay: linear-gradient(
                         180deg,
-                        rgb(var(--owl-primary-rgb)) 0%,
-                        rgba(var(--owl-primary-rgb), .92) 38%,
-                        rgba(var(--owl-primary-rgb), .68) 60%,
-                        rgba(var(--owl-primary-rgb), .34) 80%,
-                        rgba(var(--owl-primary-rgb), 0) 100%
+                        rgba(var(--kp-hero-dark-rgb), .98) 0%,
+                        rgba(var(--kp-hero-primary-rgb), .92) 38%,
+                        rgba(var(--kp-hero-light-rgb), .68) 68%,
+                        rgba(var(--kp-hero-light-rgb), .34) 84%,
+                        rgba(var(--kp-hero-light-rgb), 0) 100%
                     );
 
                     padding: 54px 18px 20px;

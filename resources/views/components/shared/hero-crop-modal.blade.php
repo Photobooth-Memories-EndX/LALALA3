@@ -49,26 +49,45 @@
                 position: absolute;
                 inset: 0;
                 pointer-events: none;
-                background:
-                    radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
-                    linear-gradient(90deg, rgba(8, 22, 52, .28) 0%, rgba(15, 52, 110, .24) 45%, rgba(24, 74, 138, .18) 100%);
+                background: linear-gradient(
+                    90deg,
+                    rgba(3, 59, 92, .32) 0%,
+                    rgba(5, 80, 125, .26) 48%,
+                    rgba(105, 179, 231, .18) 100%
+                );
             }
 
             .hero-crop-zoom {
-                accent-color: #2563eb;
+                accent-color: #05507d;
+            }
+
+            .hero-crop-modal .btn-primary {
+                border-color: #05507d;
+                background: #05507d;
+                color: #fff;
+            }
+
+            .hero-crop-modal .btn-primary:hover,
+            .hero-crop-modal .btn-primary:focus {
+                border-color: #69b3e7;
+                background: #69b3e7;
+                color: #022a43;
             }
 
             [data-bs-theme="dark"] .hero-crop-modal .modal-content,
             body.dark-mode .hero-crop-modal .modal-content {
-                background: #142238;
+                background: #072b42;
                 color: #f8fafc;
             }
 
             @media (max-width: 991.98px) {
                 .hero-crop-preview::after {
-                    background:
-                        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
-                        linear-gradient(90deg, rgba(8, 22, 52, .34) 0%, rgba(15, 52, 110, .30) 45%, rgba(24, 74, 138, .26) 100%);
+                    background: linear-gradient(
+                        90deg,
+                        rgba(3, 59, 92, .38) 0%,
+                        rgba(5, 80, 125, .32) 48%,
+                        rgba(105, 179, 231, .24) 100%
+                    );
                 }
             }
 
@@ -78,9 +97,12 @@
                 }
 
                 .hero-crop-preview::after {
-                    background:
-                        radial-gradient(circle at 82% 20%, rgba(255, 255, 255, .12), transparent 32%),
-                        linear-gradient(90deg, rgba(8, 22, 52, .40) 0%, rgba(15, 52, 110, .36) 45%, rgba(24, 74, 138, .32) 100%);
+                    background: linear-gradient(
+                        90deg,
+                        rgba(3, 59, 92, .44) 0%,
+                        rgba(5, 80, 125, .38) 48%,
+                        rgba(105, 179, 231, .30) 100%
+                    );
                 }
             }
         </style>

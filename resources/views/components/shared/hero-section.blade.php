@@ -99,7 +99,7 @@
         <div class="col-lg-5 mt-3 mt-lg-0">
             <div class="shared-hero-summary">
                 <div class="shared-hero-donut"
-                     style="background: conic-gradient(#22c55e 0%, #22c55e {{ $donutBlendStart }}%, #38bdf8 {{ $donutBlendEnd }}%, #38bdf8 100%);">
+                     style="background: conic-gradient(#05507d 0%, #05507d {{ $donutBlendStart }}%, #69b3e7 {{ $donutBlendEnd }}%, #69b3e7 100%);">
                     <div class="shared-hero-donut-hit shared-hero-donut-hit-completed"
                          style="clip-path: {{ $completedSlicePath }}"
                          data-bs-toggle="tooltip"
