@@ -1,0 +1,520 @@
+(function (window, document) {
+    'use strict';
+
+    function OwlPdfReader(config) {
+        this.config = Object.assign({
+            shellId: 'pdfviewer-shell',
+            viewerSelector: '.owl-pdf-viewer',
+            downloadButtonId: 'pdf-download-btn',
+            fullscreenButtonId: 'pdf-fs-btn',
+            fullscreenIconId: 'pdf-fs-icon',
+            readingModeButtonId: 'pdf-reading-mode-btn',
+            readingModeIconId: 'pdf-reading-mode-icon',
+            readingModeLabelId: 'pdf-reading-mode-label'
+        }, config || {});
+
+        this.viewer = null;
+        this.pdfUrl = '';
+        this.rotation = 0;
+        this.restoringView = false;
+        this.changingLayout = false;
+        this.documentReady = false;
+        this.modeTransitionTimer = null;
+    }
+
+    OwlPdfReader.prototype.getShell = function () {
+        return document.getElementById(this.config.shellId);
+    };
+
+    OwlPdfReader.prototype.getViewerElement = function () {
+        return document.querySelector(this.config.viewerSelector);
+    };
+
+    OwlPdfReader.prototype.getViewerOptions = function (callbacks) {
+        var reader = this;
+        var handlers = callbacks || {};
+
+        return {
+            extraPagesToLoad: 0,
+
+            onNewPage: function (page, pageno) {
+                var pageElement = page.get(0);
+                var isActive = Number(pageno) === 1;
+
+                pageElement.classList.toggle('owl-pdf-page-active', isActive);
+                pageElement.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+            },
+
+            onDocumentReady: function () {
+                try {
+                    if (typeof handlers.onDocumentReady === 'function') {
+                        handlers.onDocumentReady.call(this);
+                    }
+                } finally {
+                    reader.documentReady = true;
+                }
+            },
+
+            onZoomChange: function (zoom) {
+                reader.updateZoomLabel(zoom);
+
+                if (typeof handlers.onZoomChange === 'function') {
+                    handlers.onZoomChange.call(this, zoom);
+                }
+            },
+
+            onActivePageChanged: function (page, pageno) {
+                if (!pageno) return;
+
+                reader.syncSinglePage(pageno);
+                reader.updatePageLabel(pageno, this.getPageCount());
+
+                if (
+                    reader.documentReady
+                    && !reader.restoringView
+                    && !reader.changingLayout
+                    && typeof handlers.onActivePageChanged === 'function'
+                ) {
+                    handlers.onActivePageChanged.call(this, page, pageno);
+                }
+            }
+        };
+    };
+
+    OwlPdfReader.prototype.attach = function (viewer, pdfUrl) {
+        this.viewer = viewer;
+        this.pdfUrl = pdfUrl || '';
+
+        this.patchVisibleAreaMeasurement();
+        this.bindControls();
+        this.updateDownloadLink();
+
+        return this;
+    };
+
+    OwlPdfReader.prototype.updateDownloadLink = function () {
+        var button = document.getElementById(this.config.downloadButtonId);
+
+        if (button && this.pdfUrl) {
+            button.href = this.pdfUrl;
+        }
+    };
+
+    OwlPdfReader.prototype.updateZoomLabel = function (zoom) {
+        var shell = this.getShell();
+        var label = shell ? shell.querySelector('.zoomval') : null;
+
+        if (label) {
+            zoom = parseInt(zoom * 10000, 10) / 100;
+            label.textContent = zoom + '%';
+        }
+    };
+
+    OwlPdfReader.prototype.updatePageLabel = function (page, totalPages) {
+        var shell = this.getShell();
+        var label = shell ? shell.querySelector('.pageno') : null;
+
+        if (label) {
+            label.textContent = page + '/' + totalPages;
+        }
+    };
+
+    OwlPdfReader.prototype.syncSinglePage = function (pageno) {
+        var reader = this;
+        var viewerElement = this.getViewerElement();
+
+        if (!viewerElement || !pageno) return;
+
+        viewerElement.querySelectorAll('.pdfpage').forEach(function (pageElement) {
+            var isActive = Number(pageElement.dataset.page) === Number(pageno);
+
+            pageElement.classList.toggle('owl-pdf-page-active', isActive);
+            pageElement.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+        });
+
+        viewerElement.scrollTop = 0;
+        viewerElement.scrollLeft = 0;
+
+        var refreshPage = function () {
+            if (!reader.viewer) return;
+
+            var activePage = reader.viewer.getActivePage();
+            var activePageNumber = activePage && typeof activePage.data === 'function'
+                ? activePage.data('page')
+                : null;
+
+            if (
+                Number(activePageNumber) === Number(pageno)
+                && typeof reader.viewer.refreshAll === 'function'
+            ) {
+                reader.viewer.refreshAll();
+            }
+        };
+
+        if (typeof window.requestAnimationFrame === 'function') {
+            window.requestAnimationFrame(refreshPage);
+        } else {
+            setTimeout(refreshPage, 0);
+        }
+    };
+
+    OwlPdfReader.prototype.patchVisibleAreaMeasurement = function () {
+        var reader = this;
+
+        if (!this.viewer || typeof this.viewer._areaOfPageVisible !== 'function') {
+            return;
+        }
+
+        var measureVisibleArea = this.viewer._areaOfPageVisible;
+
+        this.viewer._areaOfPageVisible = function (page) {
+            if (
+                page
+                && typeof page.hasClass === 'function'
+                && !page.hasClass('owl-pdf-page-active')
+            ) {
+                return 0;
+            }
+
+            return measureVisibleArea.call(reader.viewer, page);
+        };
+    };
+
+    OwlPdfReader.prototype.getViewState = function () {
+        var activePage = this.viewer ? this.viewer.getActivePage() : null;
+        var pageNumber = activePage && typeof activePage.data === 'function'
+            ? activePage.data('page')
+            : 1;
+
+        return {
+            page: pageNumber || 1,
+            zoom: this.viewer && typeof this.viewer.getZoom === 'function'
+                ? this.viewer.getZoom()
+                : 1
+        };
+    };
+
+    OwlPdfReader.prototype.rotate = function (delta) {
+        var reader = this;
+
+        if (!this.viewer || !this.viewer.getPageCount()) {
+            return Promise.resolve();
+        }
+
+        var viewState = this.getViewState();
+        var rotationResult;
+
+        this.rotation = (this.rotation + delta + 360) % 360;
+        this.restoringView = true;
+
+        if (typeof this.viewer.setRotation === 'function') {
+            rotationResult = this.viewer.setRotation(this.rotation);
+        } else if (typeof this.viewer.rotate === 'function') {
+            rotationResult = this.viewer.rotate(this.rotation);
+        } else {
+            var viewerElement = this.getViewerElement();
+            if (viewerElement) {
+                viewerElement.style.transform = 'rotate(' + this.rotation + 'deg)';
+            }
+        }
+
+        return Promise.resolve(rotationResult).then(function () {
+            if (typeof reader.viewer.setZoom === 'function') {
+                reader.viewer.setZoom(viewState.zoom);
+            }
+
+            var currentState = reader.getViewState();
+            if (currentState.page !== viewState.page) {
+                reader.viewer.scrollToPage(
+                    Math.min(viewState.page, reader.viewer.getPageCount())
+                );
+            }
+
+            reader.restoringView = false;
+        }, function () {
+            reader.restoringView = false;
+        });
+    };
+
+    OwlPdfReader.prototype.setReadingMode = function (mode) {
+        var reader = this;
+        var shell = this.getShell();
+
+        if (!shell || !this.viewer) return;
+
+        var mobileQuery = typeof window.matchMedia === 'function'
+            ? window.matchMedia('(max-width: 575.98px)')
+            : null;
+
+        if (mobileQuery && mobileQuery.matches) {
+            mode = 'portrait';
+        }
+
+        var isLandscape = mode === 'landscape';
+        var viewState = this.getViewState();
+        var button = document.getElementById(this.config.readingModeButtonId);
+        var icon = document.getElementById(this.config.readingModeIconId);
+        var label = document.getElementById(this.config.readingModeLabelId);
+
+        this.changingLayout = true;
+        shell.classList.toggle('owl-pdf-mode-portrait', !isLandscape);
+        shell.classList.toggle('owl-pdf-mode-landscape', isLandscape);
+        shell.dataset.pdfReadingMode = isLandscape ? 'landscape' : 'portrait';
+
+        if (button) {
+            button.setAttribute('aria-pressed', isLandscape ? 'true' : 'false');
+            button.title = isLandscape
+                ? 'Switch to Portrait layout'
+                : 'Switch to Landscape layout';
+        }
+        if (icon) {
+            icon.className = isLandscape
+                ? 'ti ti-rectangle'
+                : 'ti ti-rectangle-vertical';
+        }
+        if (label) {
+            label.textContent = isLandscape ? 'Landscape' : 'Portrait';
+        }
+
+        if (this.modeTransitionTimer) {
+            clearTimeout(this.modeTransitionTimer);
+        }
+
+        this.modeTransitionTimer = setTimeout(function () {
+            if (typeof reader.viewer.refreshAll === 'function') {
+                reader.viewer.refreshAll();
+            }
+
+            if (
+                typeof reader.viewer.getZoom === 'function'
+                && Math.abs(reader.viewer.getZoom() - viewState.zoom) > 0.0001
+            ) {
+                reader.viewer.setZoom(viewState.zoom);
+            }
+
+            var currentState = reader.getViewState();
+            if (currentState.page !== viewState.page) {
+                reader.viewer.scrollToPage(viewState.page);
+            }
+
+            reader.changingLayout = false;
+            reader.modeTransitionTimer = null;
+        }, 340);
+    };
+
+    OwlPdfReader.prototype.toggleReadingMode = function () {
+        var shell = this.getShell();
+        if (!shell) return;
+
+        this.setReadingMode(
+            shell.classList.contains('owl-pdf-mode-landscape')
+                ? 'portrait'
+                : 'landscape'
+        );
+    };
+
+    OwlPdfReader.prototype.print = function () {
+        var reader = this;
+        var frame = document.createElement('iframe');
+        var handled = false;
+
+        frame.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:0;height:0;border:none;';
+
+        function removePrintFrame() {
+            if (frame.parentNode) {
+                frame.parentNode.removeChild(frame);
+            }
+        }
+
+        function openPrintFallback() {
+            if (handled) return;
+            handled = true;
+            removePrintFrame();
+            window.open(reader.pdfUrl, '_blank', 'noopener');
+        }
+
+        frame.onload = function () {
+            try {
+                if (!frame.contentWindow || typeof frame.contentWindow.print !== 'function') {
+                    throw new Error('Browser print is unavailable.');
+                }
+
+                frame.contentWindow.focus();
+                frame.contentWindow.print();
+                handled = true;
+                setTimeout(removePrintFrame, 3000);
+            } catch (error) {
+                openPrintFallback();
+            }
+        };
+        frame.onerror = openPrintFallback;
+        frame.src = this.pdfUrl;
+        document.body.appendChild(frame);
+        setTimeout(openPrintFallback, 5000);
+    };
+
+    OwlPdfReader.prototype.syncFullscreenButton = function () {
+        var shell = this.getShell();
+        var icon = document.getElementById(this.config.fullscreenIconId);
+        var button = document.getElementById(this.config.fullscreenButtonId);
+        var fullscreenElement = document.fullscreenElement
+            || document.webkitFullscreenElement
+            || null;
+        var isFullscreen = fullscreenElement === shell;
+
+        if (icon) {
+            icon.className = isFullscreen ? 'ti ti-minimize' : 'ti ti-maximize';
+        }
+        if (button) {
+            button.title = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+            button.setAttribute('aria-pressed', isFullscreen ? 'true' : 'false');
+        }
+    };
+
+    OwlPdfReader.prototype.toggleFullscreen = function () {
+        var shell = this.getShell();
+        if (!shell) return;
+
+        var fullscreenElement = document.fullscreenElement
+            || document.webkitFullscreenElement
+            || null;
+        var fullscreenAction;
+        var actionResult;
+
+        if (!fullscreenElement) {
+            fullscreenAction = shell.requestFullscreen
+                || shell.webkitRequestFullscreen
+                || shell.mozRequestFullScreen;
+
+            if (fullscreenAction) {
+                actionResult = fullscreenAction.call(shell);
+            }
+        } else {
+            fullscreenAction = document.exitFullscreen
+                || document.webkitExitFullscreen
+                || document.mozCancelFullScreen;
+
+            if (fullscreenAction) {
+                actionResult = fullscreenAction.call(document);
+            }
+        }
+
+        if (actionResult && typeof actionResult.catch === 'function') {
+            actionResult.catch(function () {});
+        }
+    };
+
+    OwlPdfReader.prototype.bindControls = function () {
+        var reader = this;
+        var shell = this.getShell();
+        var viewerElement = this.getViewerElement();
+
+        if (!shell || shell.dataset.owlPdfReaderBound === 'true') return;
+
+        shell.dataset.owlPdfReaderBound = 'true';
+
+        document.addEventListener('fullscreenchange', function () {
+            reader.syncFullscreenButton();
+        });
+        document.addEventListener('webkitfullscreenchange', function () {
+            reader.syncFullscreenButton();
+        });
+
+        if (typeof window.matchMedia === 'function') {
+            var mobileQuery = window.matchMedia('(max-width: 575.98px)');
+            var enforceMobileMode = function (event) {
+                if (
+                    event.matches
+                    && shell.classList.contains('owl-pdf-mode-landscape')
+                ) {
+                    reader.setReadingMode('portrait');
+                }
+            };
+
+            if (typeof mobileQuery.addEventListener === 'function') {
+                mobileQuery.addEventListener('change', enforceMobileMode);
+            } else if (typeof mobileQuery.addListener === 'function') {
+                mobileQuery.addListener(enforceMobileMode);
+            }
+        }
+
+        if (viewerElement) {
+            viewerElement.addEventListener('wheel', function (event) {
+                if (!event.ctrlKey || !reader.viewer) return;
+
+                event.preventDefault();
+                reader.viewer.setZoom(event.deltaY < 0 ? 'in' : 'out');
+            }, { passive: false });
+
+            viewerElement.addEventListener('dblclick', function () {
+                if (reader.viewer) {
+                    reader.viewer.setZoom('width');
+                }
+            });
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (!reader.viewer) return;
+
+            var tag = (event.target.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || event.target.isContentEditable) {
+                return;
+            }
+
+            if (event.ctrlKey) {
+                switch (event.key) {
+                    case '+':
+                    case '=':
+                        event.preventDefault();
+                        reader.viewer.setZoom('in');
+                        break;
+                    case '-':
+                        event.preventDefault();
+                        reader.viewer.setZoom('out');
+                        break;
+                    case '0':
+                        event.preventDefault();
+                        reader.viewer.setZoom('fit');
+                        break;
+                }
+                return;
+            }
+
+            switch (event.key) {
+                case 'PageDown':
+                case 'ArrowRight':
+                    event.preventDefault();
+                    reader.viewer.next();
+                    break;
+                case 'PageUp':
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    reader.viewer.prev();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    reader.viewer.first();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    reader.viewer.last();
+                    break;
+                case ' ':
+                    event.preventDefault();
+                    if (event.shiftKey) {
+                        reader.viewer.prev();
+                    } else {
+                        reader.viewer.next();
+                    }
+                    break;
+                case 'f':
+                case 'F':
+                    event.preventDefault();
+                    reader.viewer.setZoom('width');
+                    break;
+            }
+        });
+    };
+
+    window.OwlPdfReader = OwlPdfReader;
+}(window, document));

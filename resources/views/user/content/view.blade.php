@@ -110,6 +110,7 @@
 
     @if ($content->type == 'Document' || $content->type == 'SOP/Regulation')
         <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/owl-pdf-reader.css') }}">
     @endif
 
     <style>
@@ -485,22 +486,6 @@
             width: 46%;
         }
 
-        .pdf-toolbar {
-            padding: 14px;
-            background: rgba(248, 250, 252, .92);
-            border-bottom: 1px solid #e5e7eb;
-            border-radius: 1rem 1rem 0 0;
-            backdrop-filter: blur(12px);
-            z-index: 3;
-        }
-
-        .pdfjs-viewer {
-            height: 800px !important;
-            background: #f1f5f9;
-            border-radius: 0 0 1rem 1rem;
-            overflow: hidden;
-        }
-
         .comment-empty-icon {
             font-size: 48px;
         }
@@ -554,149 +539,9 @@
             border-color: rgba(148, 163, 184, .18);
         }
 
-        body[data-bs-theme="dark"] .pdf-toolbar,
-        body.dark-mode .pdf-toolbar {
-            background: rgba(15, 23, 42, .92);
-            border-color: rgba(255, 255, 255, .08);
-        }
-
-        body[data-bs-theme="dark"] .pdfjs-viewer,
-        body.dark-mode .pdfjs-viewer {
-            background: #0f172a;
-        }
-
-        /* ── PDF Toolbar enhanced ──────────────────────────────────── */
-        .pdf-tb-inner {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            align-items: center;
-            justify-content: center;
-        }
-        .pdf-tb-group {
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-        .pdf-tb-sep {
-            width: 1px;
-            height: 22px;
-            background: rgba(148, 163, 184, .35);
-            flex-shrink: 0;
-        }
-        .pdf-tb-btn {
-            padding: 4px 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            line-height: 1;
-        }
-        .pdf-tb-label {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: .03em;
-        }
-        .pdf-tb-pageno,
-        .pdf-tb-zoomval {
-            min-width: 56px;
-            text-align: center;
-            padding: 3px 6px;
-            background: rgba(148, 163, 184, .15);
-            border-radius: 6px;
-            font-size: 12px;
-        }
-
-        /* ── PDF toolbar icon color — light mode (explicit dark icons) ── */
-        .pdf-toolbar .pdf-tb-btn,
-        .pdf-toolbar a.pdf-tb-btn {
-            color: #374151 !important;
-            background: rgba(15, 23, 42, .06);
-            border-color: rgba(15, 23, 42, .14);
-        }
-        .pdf-toolbar .pdf-tb-btn i,
-        .pdf-toolbar a.pdf-tb-btn i,
-        .pdf-toolbar .pdf-tb-label {
-            color: #374151 !important;
-        }
-        .pdf-toolbar .pdf-tb-btn:hover,
-        .pdf-toolbar a.pdf-tb-btn:hover {
-            background: rgba(15, 23, 42, .12);
-            color: #111827 !important;
-        }
-        .pdf-toolbar .pdf-tb-btn:hover i,
-        .pdf-toolbar a.pdf-tb-btn:hover i { color: #111827 !important; }
-        .pdf-toolbar .pdf-tb-pageno,
-        .pdf-toolbar .pdf-tb-zoomval { color: #374151; }
-
-        /* ── PDF toolbar icon color — dark mode (explicit light icons) ── */
-        body[data-bs-theme="dark"] .pdf-toolbar .pdf-tb-btn,
-        body[data-bs-theme="dark"] .pdf-toolbar a.pdf-tb-btn,
-        body.dark-mode .pdf-toolbar .pdf-tb-btn,
-        body.dark-mode .pdf-toolbar a.pdf-tb-btn {
-            color: #f1f5f9 !important;
-            background: rgba(255, 255, 255, .07);
-            border-color: rgba(255, 255, 255, .14);
-        }
-        body[data-bs-theme="dark"] .pdf-toolbar .pdf-tb-btn i,
-        body[data-bs-theme="dark"] .pdf-toolbar a.pdf-tb-btn i,
-        body[data-bs-theme="dark"] .pdf-toolbar .pdf-tb-label,
-        body.dark-mode .pdf-toolbar .pdf-tb-btn i,
-        body.dark-mode .pdf-toolbar a.pdf-tb-btn i,
-        body.dark-mode .pdf-toolbar .pdf-tb-label { color: #f1f5f9 !important; }
-        body[data-bs-theme="dark"] .pdf-toolbar .pdf-tb-btn:hover,
-        body[data-bs-theme="dark"] .pdf-toolbar a.pdf-tb-btn:hover,
-        body.dark-mode .pdf-toolbar .pdf-tb-btn:hover,
-        body.dark-mode .pdf-toolbar a.pdf-tb-btn:hover {
-            background: rgba(255, 255, 255, .14);
-            color: #ffffff !important;
-        }
-        body[data-bs-theme="dark"] .pdf-toolbar .pdf-tb-btn:hover i,
-        body[data-bs-theme="dark"] .pdf-toolbar a.pdf-tb-btn:hover i,
-        body.dark-mode .pdf-toolbar .pdf-tb-btn:hover i,
-        body.dark-mode .pdf-toolbar a.pdf-tb-btn:hover i { color: #ffffff !important; }
-        body[data-bs-theme="dark"] .pdf-toolbar .pdf-tb-pageno,
-        body[data-bs-theme="dark"] .pdf-toolbar .pdf-tb-zoomval,
-        body.dark-mode .pdf-toolbar .pdf-tb-pageno,
-        body.dark-mode .pdf-toolbar .pdf-tb-zoomval { color: #e5e7eb; }
-
-        /* Fullscreen mode */
-        #pdfviewer-shell:fullscreen {
-            display: flex;
-            flex-direction: column;
-            background: #1e293b;
-        }
-        #pdfviewer-shell:fullscreen .pdf-toolbar {
-            border-radius: 0;
-        }
-        #pdfviewer-shell:fullscreen .pdfjs-viewer {
-            flex: 1;
-            height: auto !important;
-            border-radius: 0;
-        }
-        #pdfviewer-shell:-webkit-full-screen { display: flex; flex-direction: column; background: #1e293b; }
-        #pdfviewer-shell:-webkit-full-screen .pdf-toolbar { border-radius: 0; }
-        #pdfviewer-shell:-webkit-full-screen .pdfjs-viewer { flex: 1; height: auto !important; border-radius: 0; }
-
-        /* Dark mode toolbar elements */
-        body[data-bs-theme="dark"] .pdf-tb-sep,
-        body.dark-mode .pdf-tb-sep { background: rgba(255, 255, 255, .18); }
-
-        body[data-bs-theme="dark"] .pdf-tb-pageno,
-        body.dark-mode .pdf-tb-pageno,
-        body[data-bs-theme="dark"] .pdf-tb-zoomval,
-        body.dark-mode .pdf-tb-zoomval { background: rgba(255, 255, 255, .1); color: #e5e7eb; }
-
-        /* Responsive: hide some buttons on very small screens */
-        @media (max-width: 480px) { .pdf-tb-hide-xs { display: none !important; } }
-        @media (max-width: 640px) { .pdf-tb-sep-md { display: none !important; } }
-
         @media (max-width: 768px) {
             .content-detail-title {
                 font-size: 1.45rem;
-            }
-
-            .pdfjs-viewer {
-                height: 600px !important;
             }
 
             .content-hero-actions {
@@ -728,6 +573,7 @@
     @if ($content->type == 'Document' || $content->type == 'SOP/Regulation')
         <script src="{{ asset('js/pdf.min.js') }}"></script>
         <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
+        <script src="{{ asset('js/owl-pdf-reader.js') }}"></script>
 
         <script>
             function hideContentPlayerSkeleton() {
@@ -758,166 +604,68 @@
                 onUpdate: window.owlUpdateLearningUi
             });
 
-            let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
-                onDocumentReady: () => {
-                    var totalPages = pdfViewer.getPageCount();
-
-                    // Resume: prefer the exact saved page, fall back to the
-                    // legacy progress-percentage estimate.
-                    var lastPage = {{ (int) ($content_user->last_page ?? 0) }};
-
-                    if (!lastPage) {
-                        var progression = {{ (int) $content_user->progress }};
-                        lastPage = parseInt((progression * totalPages) / 100);
-                    }
-
-                    if (lastPage > 1 && lastPage < totalPages) {
-                        pdfViewer.scrollToPage(lastPage);
-                    }
-
-                    progressTracker.send({ total_pages: totalPages }, true);
-
-                    hideContentPlayerSkeleton();
-                },
-
-                onZoomChange: function (zoom) {
-                    zoom = parseInt(zoom * 10000) / 100;
-                    $(".zoomval").text(zoom + "%");
-                },
-
-                onActivePageChanged: function (page, pageno) {
-                    $(".pageno").text(pageno + "/" + this.getPageCount());
-
-                    progressTracker.sendDebounced({
-                        last_page: pageno,
-                        total_pages: this.getPageCount()
-                    });
-                }
+            var contentPdfReader = new OwlPdfReader({
+                shellId: 'pdfviewer-shell',
+                viewerSelector: '.content-pdfjs-viewer'
             });
+
+            var pdfViewer = window.pdfViewer = new PDFjsViewer(
+                $(".content-pdfjs-viewer"),
+                contentPdfReader.getViewerOptions({
+                    onDocumentReady: function () {
+                        var totalPages = pdfViewer.getPageCount();
+
+                        // Resume: prefer the exact saved page, fall back to the
+                        // legacy progress-percentage estimate.
+                        var lastPage = {{ (int) ($content_user->last_page ?? 0) }};
+
+                        if (!lastPage) {
+                            var progression = {{ (int) $content_user->progress }};
+                            lastPage = parseInt((progression * totalPages) / 100);
+                        }
+
+                        if (lastPage > 1 && lastPage < totalPages) {
+                            pdfViewer.scrollToPage(lastPage);
+                        }
+
+                        progressTracker.send({ total_pages: totalPages }, true);
+
+                        hideContentPlayerSkeleton();
+                    },
+
+                    onActivePageChanged: function (page, pageno) {
+                        progressTracker.sendDebounced({
+                            last_page: pageno,
+                            total_pages: this.getPageCount()
+                        });
+                    }
+                }));
+
+            contentPdfReader.attach(pdfViewer, pdfFile);
+
+            window.pdfRotateLeft = function () {
+                return contentPdfReader.rotate(-90);
+            };
+            window.pdfRotateRight = function () {
+                return contentPdfReader.rotate(90);
+            };
+            window.pdfToggleReadingMode = function () {
+                return contentPdfReader.toggleReadingMode();
+            };
+            window.pdfDoPrint = function () {
+                return contentPdfReader.print();
+            };
+            window.pdfToggleFullscreen = function () {
+                return contentPdfReader.toggleFullscreen();
+            };
 
             if (fileName) {
                 pdfViewer.loadDocument(pdfFile).then(function () {
                     pdfViewer.setZoom("width");
                     hideContentPlayerSkeleton();
-                    // Set download link once document is ready
-                    var dlBtn = document.getElementById('pdf-download-btn');
-                    if (dlBtn) dlBtn.href = pdfFile;
                 });
             }
 
-            // ── Rotate ─────────────────────────────────────────────────────
-            var _pdfRotDeg = 0;
-            function _applyRotate() {
-                if (typeof pdfViewer.setRotation === 'function') {
-                    pdfViewer.setRotation(_pdfRotDeg);
-                } else if (typeof pdfViewer.rotate === 'function') {
-                    pdfViewer.rotate(_pdfRotDeg);
-                } else {
-                    // CSS fallback on the viewer canvas area
-                    var el = document.querySelector('.pdfjs-viewer');
-                    if (el) el.style.transform = 'rotate(' + _pdfRotDeg + 'deg)';
-                }
-            }
-            function pdfRotateLeft()  { _pdfRotDeg = (_pdfRotDeg - 90 + 360) % 360; _applyRotate(); }
-            function pdfRotateRight() { _pdfRotDeg = (_pdfRotDeg + 90) % 360;        _applyRotate(); }
-
-            // ── Print ──────────────────────────────────────────────────────
-            function pdfDoPrint() {
-                var f = document.createElement('iframe');
-                f.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:0;height:0;border:none;';
-                f.src = pdfFile;
-                document.body.appendChild(f);
-                f.onload = function () {
-                    try {
-                        f.contentWindow.print();
-                    } catch (e) {
-                        window.open(pdfFile, '_blank');
-                    }
-                    setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 3000);
-                };
-            }
-
-            // ── Fullscreen ─────────────────────────────────────────────────
-            function pdfToggleFullscreen() {
-                var shell = document.getElementById('pdfviewer-shell');
-                if (!shell) return;
-                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                    (shell.requestFullscreen || shell.webkitRequestFullscreen || shell.mozRequestFullScreen).call(shell);
-                } else {
-                    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document);
-                }
-            }
-            document.addEventListener('fullscreenchange', function () {
-                var icon = document.getElementById('pdf-fs-icon');
-                if (!icon) return;
-                icon.className = document.fullscreenElement ? 'ti ti-minimize' : 'ti ti-maximize';
-            });
-            document.addEventListener('webkitfullscreenchange', function () {
-                var icon = document.getElementById('pdf-fs-icon');
-                if (!icon) return;
-                icon.className = document.webkitFullscreenElement ? 'ti ti-minimize' : 'ti ti-maximize';
-            });
-
-            // ── Ctrl+Wheel zoom on the viewer ──────────────────────────────
-            (function () {
-                var viewerEl = document.querySelector('.pdfjs-viewer');
-                if (!viewerEl) return;
-                viewerEl.addEventListener('wheel', function (e) {
-                    if (!e.ctrlKey) return;
-                    e.preventDefault();
-                    pdfViewer.setZoom(e.deltaY < 0 ? 'in' : 'out');
-                }, { passive: false });
-                // Double-click → Fit Width
-                viewerEl.addEventListener('dblclick', function () {
-                    pdfViewer.setZoom('width');
-                });
-            }());
-
-            // ── Keyboard shortcuts ─────────────────────────────────────────
-            document.addEventListener('keydown', function (e) {
-                if (!pdfViewer) return;
-                // Skip when focus is inside a text field
-                var tag = (e.target.tagName || '').toLowerCase();
-                if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
-
-                // Ctrl combos
-                if (e.ctrlKey) {
-                    switch (e.key) {
-                        case '+': case '=':
-                            e.preventDefault(); pdfViewer.setZoom('in');  break;
-                        case '-':
-                            e.preventDefault(); pdfViewer.setZoom('out'); break;
-                        case '0':
-                            e.preventDefault(); pdfViewer.setZoom('fit'); break;
-                    }
-                    return;
-                }
-
-                // Non-Ctrl
-                switch (e.key) {
-                    case 'PageDown':
-                        e.preventDefault(); pdfViewer.next();  break;
-                    case 'PageUp':
-                        e.preventDefault(); pdfViewer.prev();  break;
-                    case 'ArrowRight':
-                        e.preventDefault(); pdfViewer.next();  break;
-                    case 'ArrowLeft':
-                        e.preventDefault(); pdfViewer.prev();  break;
-                    case 'Home':
-                        e.preventDefault(); pdfViewer.first(); break;
-                    case 'End':
-                        e.preventDefault(); pdfViewer.last();  break;
-                    case ' ':
-                        // Space / Shift+Space — prevent page scroll
-                        if (document.querySelector('.pdfviewer')) {
-                            e.preventDefault();
-                            if (e.shiftKey) pdfViewer.prev(); else pdfViewer.next();
-                        }
-                        break;
-                    case 'f': case 'F':
-                        e.preventDefault(); pdfViewer.setZoom('width'); break;
-                }
-            });
         </script>
     @endif
 

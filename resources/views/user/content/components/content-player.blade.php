@@ -49,13 +49,19 @@
             {{-- DOCUMENT --}}
             @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
 
-                <div class="pdfviewer" id="pdfviewer-shell">
+                <div class="pdfviewer owl-pdf-reader owl-pdf-mode-portrait owl-pdf-single-page"
+                    id="pdfviewer-shell">
 
                     {{-- PDF TOOLBAR --}}
-                    @include('components.shared.pdf-toolbar')
+                    @include('components.shared.pdf-toolbar', [
+                        'toolbarClass' => 'owl-pdf-toolbar',
+                        'showReadingMode' => true,
+                    ])
 
                     {{-- PDF VIEWER --}}
-                    <div class="pdfjs-viewer"></div>
+                    <div class="owl-pdf-reader-stage">
+                        <div class="pdfjs-viewer owl-pdf-viewer content-pdfjs-viewer"></div>
+                    </div>
 
                 </div>
 

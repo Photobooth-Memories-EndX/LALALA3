@@ -96,6 +96,7 @@
 
     @if (in_array($content->type, ['Document', 'SOP/Regulation']))
         <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/owl-pdf-reader.css') }}">
     @endif
 
     @include('user.playlist.components.view-style')
@@ -595,6 +596,7 @@
     @if (in_array($content->type, ['Document', 'SOP/Regulation']))
         <script src="{{ asset('js/pdf.min.js') }}"></script>
         <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
+        <script src="{{ asset('js/owl-pdf-reader.js') }}"></script>
     @endif
 
     @include('user.playlist.components.view-player-script')
