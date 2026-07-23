@@ -451,8 +451,11 @@
 
     /* ===== Playlist Learning Layout (3-column grid) ===== */
 
-    .playlist-learning-layout {
+    .playlist-learning-shell {
         position: relative;
+    }
+
+    .playlist-learning-layout {
         display: grid;
         grid-template-columns: 280px minmax(0, 1fr) 300px;
         gap: 16px;
@@ -569,8 +572,8 @@
     .restore-right { right: 8px; }
 
     /* Tampilkan restore button hanya saat panel collapsed */
-    .playlist-learning-layout.left-collapsed  .restore-left  { display: flex; }
-    .playlist-learning-layout.right-collapsed .restore-right { display: flex; }
+    .playlist-learning-shell:has(.playlist-learning-layout.left-collapsed)  > .restore-left  { display: flex; }
+    .playlist-learning-shell:has(.playlist-learning-layout.right-collapsed) > .restore-right { display: flex; }
 
     body[data-bs-theme="dark"] .restore-toggle-btn,
     body.dark-mode .restore-toggle-btn {
@@ -588,32 +591,84 @@
     }
 
     @media (max-width: 991px) {
+        .playlist-learning-shell {
+            position: static;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            column-gap: 8px;
+            row-gap: 12px;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible;
+        }
+
         .playlist-learning-layout {
+            position: static;
+            flex: 0 0 100%;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 0;
+            align-items: stretch;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible;
         }
 
         .learning-left-panel,
         .learning-right-panel {
+            display: none;
+            position: static;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
             overflow: visible;
             opacity: 1 !important;
             pointer-events: auto !important;
-            margin-bottom: 16px;
+            transform: none;
         }
 
         .learning-main-panel {
-            display: flex;
-            flex-direction: column;
+            display: block;
+            position: static;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            transform: none;
+        }
+
+        .view-playlist-card,
+        .view-ai-card,
+        .ai-card {
+            position: static !important;
+            top: auto !important;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible !important;
+            transform: none;
+        }
+
+        .learning-main-panel {
             order: 1;
+            margin-bottom: 16px;
         }
 
         .learning-left-panel {
             order: 2;
+            margin-bottom: 24px;
         }
 
         .learning-right-panel {
             order: 3;
+            margin-top: 0;
+            margin-bottom: 0;
         }
 
         .view-player-card {
@@ -628,18 +683,22 @@
             order: 3;
         }
 
-        .playlist-learning-layout.left-collapsed .learning-left-panel,
-        .playlist-learning-layout.right-collapsed .learning-right-panel {
-            display: none;
+        .playlist-learning-layout.mobile-left-open .learning-left-panel,
+        .playlist-learning-layout.mobile-right-open .learning-right-panel {
+            display: block;
         }
 
-        /* Restore buttons stay available on mobile when panels are collapsed. */
         .restore-toggle-btn {
-            position: absolute;
-            z-index: 1001;
-            top: 12px;
-            width: fit-content;
-            min-width: max-content;
+            display: inline-flex !important;
+            position: static !important;
+            flex: 0 1 auto;
+            z-index: auto;
+            top: auto;
+            right: auto;
+            left: auto;
+            width: auto;
+            max-width: calc(50% - 4px);
+            min-width: 0;
             min-height: 32px;
             gap: 6px;
             padding: 7px 10px;
@@ -650,16 +709,17 @@
         }
 
         .restore-left {
-            left: 12px;
+            margin-right: auto;
         }
 
         .restore-right {
-            right: 12px;
+            margin-left: auto;
         }
 
-        .playlist-learning-layout.left-collapsed .restore-left,
-        .playlist-learning-layout.right-collapsed .restore-right {
-            display: flex;
+        .restore-toggle-btn[aria-expanded="true"] {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
         }
     }
 

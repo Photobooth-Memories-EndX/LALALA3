@@ -1,0 +1,3616 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+<meta name="csrf-token" content="">
+<title>Online Knowledge Learning</title>
+<link rel="shortcut icon" href="http://localhost/owl.png" type="image/x-icon">
+    <link rel="stylesheet" href=http://localhost/Tabler/dist/css/tabler.min.css?1684106062>
+<link rel="stylesheet" href=http://localhost/Tabler/dist/css/demo.min.css?1684106062>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    @import url('https://rsms.me/inter/inter.css');
+
+    :root {
+        --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+        --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+
+        --tblr-primary-rgb: 37, 99, 235;
+        --tblr-primary: rgb(var(--tblr-primary-rgb));
+        --tblr-secondary: 29, 78, 216;
+        --tblr-body-color: #0f172a;
+        --tblr-bg-surface: #ffffff;
+        --tblr-border-color: #e6e7e9;
+        --tblr-muted: #64748b;
+
+        --owl-primary-rgb: var(--tblr-primary-rgb);
+        --owl-primary: var(--tblr-primary, rgb(var(--owl-primary-rgb)));
+        --owl-secondary: var(--tblr-secondary, #1d4ed8);
+        --owl-primary-light: #3b82f6;
+        --owl-accent: #f8fbff;
+        --owl-surface: var(--tblr-bg-surface, #ffffff);
+        --owl-surface-alt: #f8fafc;
+        --owl-text: var(--tblr-body-color, #0f172a);
+        --owl-text-secondary: #475569;
+        --owl-text-tertiary: #94a3b8;
+        --owl-border: var(--tblr-border-color, #e6e7e9);
+        --owl-border-soft: rgba(226, 232, 240, 0.75);
+        --owl-shadow: 0 15px 40px rgba(15, 23, 42, 0.08);
+        --owl-shadow-md: 0 12px 30px rgba(15, 23, 42, 0.08);
+        --owl-shadow-lg: 0 18px 70px rgba(15, 23, 42, 0.12);
+    }
+
+    body[data-bs-theme="dark"], body.dark-mode {
+        --owl-body-bg: #020617;
+        --owl-body-color: #f8fafc;
+        --owl-text: #f8fafc;
+        --owl-text-secondary: #cbd5e1;
+        --owl-text-tertiary: #94a3b8;
+        --owl-surface: #111827;
+        --owl-surface-alt: #1f2937;
+        --owl-border: #334155;
+        --owl-border-soft: rgba(148, 163, 184, 0.24);
+        --owl-shadow: 0 15px 40px rgba(15, 23, 42, 0.32);
+        --owl-shadow-md: 0 12px 30px rgba(15, 23, 42, 0.24);
+        --owl-shadow-lg: 0 18px 70px rgba(15, 23, 42, 0.32);
+    }
+
+    body {
+        font-feature-settings: "cv03", "cv04", "cv11";
+        color: var(--owl-body-color);
+        background: var(--owl-body-bg);
+        transition: background 0.25s ease, color 0.25s ease;
+    }
+    /* .navbar-vertical {
+        background-color: #ffffff !important;
+        border-right: 1px solid #e6e7e9 !important;
+    } */
+
+        .navbar-vertical {
+        background-color: var(--owl-surface) !important;
+        border-right: 1px solid var(--owl-border) !important;
+    }
+
+    .navbar-vertical .nav-link,
+    .navbar-vertical .nav-link-icon,
+    .navbar-vertical .nav-link-title,
+    .navbar-vertical .ti {
+        /* color: #111827 !important; */
+        color: var(--owl-body-color) !important;
+    }
+
+    .navbar-vertical .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: 12px;
+        margin-bottom: 6px;
+        font-weight: 600;
+        transition: all .2s ease;
+    }
+
+    .navbar-vertical .nav-link:hover,
+    .navbar-vertical .nav-item.active > .nav-link {
+        background: #eef3ff !important;
+        color: #206bc4 !important;
+        /* background: rgba(37, 99, 235, 0.12) !important;
+        color: var(--tblr-primary) !important; */
+    }
+
+    .navbar-vertical .nav-link:hover .ti,
+    .navbar-vertical .nav-link:hover .nav-link-title,
+    .navbar-vertical .nav-item.active > .nav-link .ti,
+    .navbar-vertical .nav-item.active > .nav-link .nav-link-title {
+        /* color: #206bc4 !important; */
+        color: var(--tblr-primary) !important;
+
+
+    }
+
+    .navbar-vertical .badge {
+        margin-left: auto;
+    }
+
+    .navbar-vertical .dropdown-menu {
+        border-radius: 12px;
+        /* border: 1px solid #e6e7e9; */
+        border: 1px solid var(--owl-border);
+        background: var(--owl-surface);
+    }
+
+    .navbar-vertical .dropdown-item {
+        display: flex;
+        align-items: center;
+        /* color: #111827 !important; */
+        color: var(--owl-body-color) !important;
+        font-weight: 500;
+    }
+
+    .navbar-vertical .dropdown-item .ti {
+        /* color: #111827 !important; */
+        color: var(--owl-body-color) !important;
+    }
+
+    .avatar-default-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        /* background: #eef3ff;
+        color: #206bc4; */
+        background: var(--tblr-primary-lt);
+        color: var(--tblr-primary);
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .navbar-vertical,
+    body[data-bs-theme="dark"] .navbar-vertical {
+        background-color: #111827 !important;
+        border-right: 1px solid #1f2937 !important;
+    }
+
+    [data-bs-theme="dark"] .navbar-vertical .nav-link,
+    [data-bs-theme="dark"] .navbar-vertical .nav-link-icon,
+    [data-bs-theme="dark"] .navbar-vertical .nav-link-title,
+    [data-bs-theme="dark"] .navbar-vertical .ti,
+    body[data-bs-theme="dark"] .navbar-vertical .nav-link,
+    body[data-bs-theme="dark"] .navbar-vertical .nav-link-icon,
+    body[data-bs-theme="dark"] .navbar-vertical .nav-link-title,
+    body[data-bs-theme="dark"] .navbar-vertical .ti {
+        color: #f9fafb !important;
+    }
+
+    [data-bs-theme="dark"] .navbar-vertical .nav-link:hover,
+    [data-bs-theme="dark"] .navbar-vertical .nav-item.active > .nav-link,
+    body[data-bs-theme="dark"] .navbar-vertical .nav-link:hover,
+    body[data-bs-theme="dark"] .navbar-vertical .nav-item.active > .nav-link {
+        background: rgba(255,255,255,.10) !important;
+    }
+
+    [data-bs-theme="dark"] .navbar-vertical .dropdown-menu,
+    body[data-bs-theme="dark"] .navbar-vertical .dropdown-menu {
+        background: #1f2937 !important;
+        border-color: #374151 !important;
+    }
+
+    [data-bs-theme="dark"] .navbar-vertical .dropdown-item,
+    [data-bs-theme="dark"] .navbar-vertical .dropdown-item .ti,
+    body[data-bs-theme="dark"] .navbar-vertical .dropdown-item,
+    body[data-bs-theme="dark"] .navbar-vertical .dropdown-item .ti {
+        color: #f9fafb !important;
+    }
+
+    .navbar-vertical,
+    .navbar-vertical .navbar-collapse,
+    .navbar-vertical .navbar-nav {
+        overflow: visible;
+    }
+
+    .navbar-vertical .dropdown-menu {
+        z-index: 1050;
+    }
+
+    .app-topbar {
+        position: relative;
+        z-index: 1030;
+        background: var(--tblr-bg-surface, #ffffff);
+        border-bottom: 1px solid var(--tblr-border-color, #e6e7e9);
+    }
+
+    .app-topbar .ti,
+    .app-topbar .nav-link {
+        color: var(--tblr-body-color);
+    }
+
+    .topbar-search {
+        max-width: 520px;
+        min-width: 260px;
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    .topbar-search .form-control {
+        background: var(--tblr-bg-surface);
+        color: var(--tblr-body-color);
+        border-color: var(--tblr-border-color);
+    }
+
+    .topbar-search .form-control::placeholder {
+        color: var(--tblr-muted);
+    }
+
+    .topbar-search .input-icon-addon {
+        color: var(--tblr-muted);
+    }
+
+    .badge-notification {
+        position: absolute;
+        top: 2px;
+        right: -6px;
+        min-width: 16px;
+        height: 16px;
+        padding: 2px 5px;
+        font-size: 10px;
+        line-height: 12px;
+        border-radius: 999px;
+    }
+
+    .avatar-default-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--tblr-primary-lt);
+        color: var(--tblr-primary);
+        font-size: 18px;
+    }
+
+    @media (max-width: 767.98px) {
+        .topbar-search {
+            display: none !important;
+        }
+    }
+
+    /* all content  */
+     .content-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        border-radius: 18px;
+        overflow: hidden;
+    }
+
+    .content-card .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 18px;
+    }
+
+    .content-card-thumb {
+        height: 170px;
+        background-size: cover;
+        background-position: center;
+        background-color: #f1f5f9;
+    }
+
+    .content-card-title {
+        min-height: 52px;
+        font-size: 16px;
+        line-height: 1.4;
+    }
+
+    .content-card-meta {
+        font-size: 13px;
+    }
+
+    .content-card-action {
+        margin-top: auto;
+    }
+
+    @media (max-width: 768px) {
+        .content-card-thumb {
+            height: 190px;
+        }
+    }
+
+
+    [data-bs-theme="dark"] .card,
+    [data-theme="dark"] .card,
+    body.theme-dark .card {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .card-header,
+    [data-theme="dark"] .card-header,
+    body.theme-dark .card-header {
+        background-color: var(--tblr-bg-surface-secondary, #1f2d3d) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .card-body,
+    [data-theme="dark"] .card-body,
+    body.theme-dark .card-body {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+    }
+
+    [data-bs-theme="dark"] .table,
+    [data-theme="dark"] .table,
+    body.theme-dark .table {
+        color: var(--tblr-body-color, #dce6f1) !important;
+        background-color: transparent !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .table thead th,
+    [data-theme="dark"] .table thead th,
+    body.theme-dark .table thead th {
+        background-color: var(--tblr-bg-surface-secondary, #223247) !important;
+        color: var(--tblr-muted, #8fa3b8) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .table tbody tr,
+    [data-theme="dark"] .table tbody tr,
+    body.theme-dark .table tbody tr {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+    }
+
+    [data-bs-theme="dark"] .table tbody td,
+    [data-theme="dark"] .table tbody td,
+    body.theme-dark .table tbody td {
+        background-color: transparent !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .table-hover tbody tr:hover,
+    [data-bs-theme="dark"] .table-hover tbody tr:hover td,
+    [data-theme="dark"] .table-hover tbody tr:hover,
+    [data-theme="dark"] .table-hover tbody tr:hover td,
+    body.theme-dark .table-hover tbody tr:hover,
+    body.theme-dark .table-hover tbody tr:hover td {
+        background-color: var(--tblr-bg-surface-secondary, #223247) !important;
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .bg-white,
+    [data-theme="dark"] .bg-white,
+    body.theme-dark .bg-white {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+    }
+
+    [data-bs-theme="dark"] .bg-light,
+    [data-theme="dark"] .bg-light,
+    body.theme-dark .bg-light {
+        background-color: var(--tblr-bg-surface-secondary, #223247) !important;
+    }
+
+    [data-bs-theme="dark"] .text-dark,
+    [data-theme="dark"] .text-dark,
+    body.theme-dark .text-dark {
+        color: var(--tblr-body-color, #dce6f1) !important;
+    }
+
+    [data-bs-theme="dark"] .text-muted,
+    [data-theme="dark"] .text-muted,
+    body.theme-dark .text-muted {
+        color: var(--tblr-muted, #8fa3b8) !important;
+    }
+
+    [data-bs-theme="dark"] .form-control,
+    [data-bs-theme="dark"] .form-select,
+    [data-theme="dark"] .form-control,
+    [data-theme="dark"] .form-select,
+    body.theme-dark .form-control,
+    body.theme-dark .form-select {
+        background-color: var(--tblr-bg-surface, #111827) !important;
+        color: var(--tblr-body-color, #ffffff) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .form-control:focus,
+    [data-bs-theme="dark"] .form-select:focus,
+    [data-theme="dark"] .form-control:focus,
+    [data-theme="dark"] .form-select:focus,
+    body.theme-dark .form-control:focus,
+    body.theme-dark .form-select:focus {
+        background-color: var(--tblr-bg-surface, #111827) !important;
+        color: #ffffff !important;
+        border-color: var(--tblr-primary, #206bc4) !important;
+        box-shadow: 0 0 0 .25rem rgba(32, 107, 196, .25) !important;
+    }
+
+    [data-bs-theme="dark"] .btn-light,
+    [data-theme="dark"] .btn-light,
+    body.theme-dark .btn-light {
+        background-color: var(--tblr-bg-surface-secondary, #223247) !important;
+        border-color: var(--tblr-border-color, #33465f) !important;
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .page-title,
+    [data-theme="dark"] .page-title,
+    body.theme-dark .page-title {
+        color: var(--tblr-body-color, #ffffff) !important;
+    }
+
+    [data-bs-theme="dark"] .breadcrumb a,
+    [data-theme="dark"] .breadcrumb a,
+    body.theme-dark .breadcrumb a {
+        color: var(--tblr-primary, #4299e1) !important;
+    }
+
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection,
+    [data-theme="dark"] .select2-container--bootstrap-5 .select2-selection,
+    body.theme-dark .select2-container--bootstrap-5 .select2-selection {
+        background-color: var(--tblr-bg-surface, #111827) !important;
+        color: #ffffff !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+    }
+
+    [data-bs-theme="dark"] .select2-container--bootstrap-5 .select2-selection__rendered,
+    [data-theme="dark"] .select2-container--bootstrap-5 .select2-selection__rendered,
+    body.theme-dark .select2-container--bootstrap-5 .select2-selection__rendered {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .select2-dropdown,
+    [data-theme="dark"] .select2-dropdown,
+    body.theme-dark .select2-dropdown {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        border-color: var(--tblr-border-color, #25384d) !important;
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .select2-results__option,
+    [data-theme="dark"] .select2-results__option,
+    body.theme-dark .select2-results__option {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .select2-results__option--highlighted,
+    [data-theme="dark"] .select2-results__option--highlighted,
+    body.theme-dark .select2-results__option--highlighted {
+        background-color: var(--tblr-primary, #206bc4) !important;
+        color: #ffffff !important;
+    }
+
+</style>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+        <link rel="stylesheet" href="http://localhost/Tabler/dist/libs/plyr/dist/plyr.css?1684106062">
+
+            <link rel="stylesheet" href="http://localhost/Tabler/dist/pdfjs-viewer.min.css">
+    
+    <style>
+    .learning-view-page {
+        background: #f5f7fb;
+        min-height: 100vh;
+    }
+
+    .rounded-4 {
+        border-radius: 18px !important;
+    }
+
+    .view-hero-card {
+        min-height: 230px;
+    }
+
+    .view-hero-bg {
+        min-height: 230px;
+        background:
+            radial-gradient(circle at 82% 18%, rgba(255, 255, 255, .16), transparent 30%),
+            linear-gradient(90deg, rgba(7, 23, 57, .96) 0%, rgba(18, 72, 167, .9) 50%, rgba(42, 114, 202, .76) 100%);
+        background-size: cover;
+        background-position: center;
+    }
+
+    .view-hero-overlay {
+        height: 100%;
+        display: flex;
+        align-items: stretch;
+        background: transparent;
+    }
+
+    .view-hero-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 28px;
+        padding: 28px 32px;
+    }
+
+    .view-hero-copy {
+        min-width: 0;
+        max-width: 820px;
+    }
+
+    .view-hero-title {
+        font-size: 2rem;
+        line-height: 1.15;
+        font-weight: 800;
+        margin: 0 0 14px;
+        overflow-wrap: anywhere;
+    }
+
+    .view-hero-meta,
+    .view-hero-bottom {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 16px;
+    }
+
+    .view-hero-meta {
+        font-size: 13px;
+        opacity: .94;
+        margin-bottom: 14px;
+    }
+
+    .view-hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, .15);
+        border: 1px solid rgba(255, 255, 255, .18);
+        font-size: 12px;
+        font-weight: 700;
+        backdrop-filter: blur(8px);
+    }
+
+    .view-hero-continue {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        width: min(280px, 32%);
+        min-width: 230px;
+        padding: 12px;
+        border-radius: 14px;
+        color: #fff;
+        text-decoration: none;
+        background: rgba(15, 23, 42, .28);
+        border: 1px solid rgba(255, 255, 255, .18);
+        backdrop-filter: blur(10px);
+        text-align: center;
+    }
+
+    .view-hero-continue:hover {
+        color: #fff;
+        background: rgba(37, 99, 235, .85);
+    }
+
+    .view-hero-continue-thumb {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        height: auto;
+        border-radius: 10px;
+        background-size: cover;
+        background-position: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-shadow: inset 0 0 0 999px rgba(0, 0, 0, .26);
+    }
+
+    .view-hero-continue strong {
+        font-size: 14px;
+        line-height: 1.2;
+    }
+
+    .learning-player video,
+    .learning-player .plyr {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        background: #000;
+    }
+
+    .learning-player {
+        position: relative;
+    }
+
+    .fullscreen-player-overlays {
+        display: none;
+        pointer-events: none;
+        position: absolute;
+        inset: 10px 12px auto 12px;
+        z-index: 1002;
+        justify-content: space-between;
+        gap: 10px;
+        width: auto;
+        overflow: visible;
+    }
+
+    .fullscreen-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 28px;
+        width: fit-content;
+        max-width: none;
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, .16);
+        background: rgba(15, 23, 42, .46);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: visible;
+        text-indent: 0;
+        backdrop-filter: blur(10px);
+    }
+
+    .fullscreen-pill i {
+        flex: 0 0 auto;
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    .learning-player:fullscreen .fullscreen-player-overlays,
+    .learning-player:-webkit-full-screen .fullscreen-player-overlays,
+    :fullscreen > .fullscreen-player-overlays,
+    :-webkit-full-screen > .fullscreen-player-overlays,
+    .plyr--fullscreen .fullscreen-player-overlays,
+    .learning-player.is-fullscreen .fullscreen-player-overlays {
+        display: flex;
+    }
+
+    @media (max-width: 576px) {
+        .fullscreen-player-overlays {
+            inset: 8px 8px auto 8px;
+            gap: 8px;
+        }
+
+        .fullscreen-pill {
+            min-height: 26px;
+            width: fit-content;
+            max-width: none;
+            padding: 5px 8px;
+            font-size: 10px;
+            gap: 5px;
+            overflow: visible;
+        }
+
+        .fullscreen-pill i {
+            font-size: 11px;
+        }
+    }
+
+    .playlist-list .list-group-item {
+        color: inherit;
+        transition: .2s ease;
+    }
+
+    .playlist-list .list-group-item:hover {
+        background: #f1f5ff;
+    }
+
+    .playlist-list .active-lesson {
+        background: #eaf1ff;
+        border: 1px solid #3b82f6 !important;
+    }
+
+    .chapter-description-box {
+        background: #f8fafc;
+        border: 1px solid #edf2f7;
+        border-radius: 14px;
+        padding: 16px;
+    }
+
+    .overview-inline-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+    }
+
+    .overview-meta-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .overview-meta-button:hover {
+        color: #2563eb;
+    }
+
+    .overview-meta-separator {
+        color: #94a3b8;
+    }
+
+    .overview-text {
+        font-size: 14px;
+        line-height: 1.65;
+    }
+
+    .overview-text.is-collapsed {
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .overview-toggle {
+        font-weight: 700;
+    }
+
+    .btn-icon {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ai-message-box {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 12px;
+        font-size: 13px;
+        color: #475569;
+    }
+
+    .ai-suggestion-btn {
+        border-radius: 12px;
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+
+    .ai-input-group .form-control {
+        border-radius: 12px 0 0 12px;
+        font-size: 13px;
+    }
+
+    .ai-input-group .btn {
+        border-radius: 0 12px 12px 0;
+    }
+
+    /* Playlist sidebar */
+    .view-playlist-card {
+        max-height: calc(100vh - 110px);
+    }
+
+    .playlist-scroll-area {
+        max-height: 640px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .playlist-scroll-area::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .playlist-scroll-area::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+
+    .playlist-lesson-item {
+        display: flex;
+        gap: 10px;
+        text-decoration: none;
+        color: #0f172a;
+        padding: 8px;
+        border-radius: 14px;
+        margin-bottom: 8px;
+        border: 1px solid transparent;
+        transition: .2s ease;
+    }
+
+    .playlist-lesson-item:hover {
+        background: #f1f5ff;
+        color: #0f172a;
+    }
+
+    .playlist-lesson-item.is-active {
+        background: #eaf1ff;
+        border-color: #3b82f6;
+    }
+
+    .lesson-thumb {
+        width: 62px;
+        height: 46px;
+        border-radius: 12px;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .lesson-play-icon,
+    .lesson-done-icon {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+    }
+
+    .lesson-play-icon {
+        background: rgba(37, 99, 235, .92);
+        color: #fff;
+    }
+
+    .lesson-done-icon {
+        background: rgba(22, 163, 74, .92);
+        color: #fff;
+    }
+
+    .lesson-info {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .lesson-title {
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: #0f172a;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .lesson-meta {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    .lesson-progress {
+        height: 4px;
+        margin-top: 5px;
+        background: #e5e7eb;
+    }
+
+    .btn-xs {
+        font-size: 11px;
+        line-height: 1.2;
+        border-radius: 8px;
+    }
+
+    /* AI card */
+    .view-ai-card,
+    .ai-card {
+        display: block !important;
+        width: 100%;
+        min-height: 520px;
+    }
+
+    @media (max-width: 1199px) {
+        .view-ai-card,
+        .ai-card {
+            min-height: auto;
+        }
+    }
+
+    @media (max-width: 991px) {
+        .view-hero-content {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 24px;
+        }
+
+        .view-hero-title {
+            font-size: 1.35rem;
+        }
+
+        .view-hero-continue {
+            max-width: none;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .sticky-top {
+            position: static !important;
+        }
+
+        .view-ai-card,
+        .ai-card {
+            min-height: auto;
+        }
+    }
+
+    /* ===== Playlist Learning Layout (3-column grid) ===== */
+
+    .playlist-learning-shell {
+        position: relative;
+    }
+
+    .playlist-learning-layout {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr) 300px;
+        gap: 16px;
+        align-items: start;
+        transition: grid-template-columns .3s ease;
+    }
+
+    .learning-left-panel,
+    .learning-right-panel {
+        min-width: 0;
+        overflow: hidden;
+        transition: opacity .25s ease;
+    }
+
+    .learning-main-panel {
+        min-width: 0;
+    }
+
+    .playlist-learning-layout.left-collapsed {
+        grid-template-columns: 0 minmax(0, 1fr) 300px;
+    }
+
+    .playlist-learning-layout.right-collapsed {
+        grid-template-columns: 280px minmax(0, 1fr) 0;
+    }
+
+    .playlist-learning-layout.left-collapsed.right-collapsed {
+        grid-template-columns: 0 minmax(0, 1fr) 0;
+    }
+
+    .playlist-learning-layout.left-collapsed .learning-left-panel,
+    .playlist-learning-layout.right-collapsed .learning-right-panel {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* ---- Tombol di dalam header card (collapse panel) ---- */
+    .panel-header-toggle {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #f1f5f9;
+        color: #64748b;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        padding: 0;
+        transition: background .2s ease, border-color .2s ease, color .2s ease;
+    }
+
+    .panel-header-toggle:hover {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+    }
+
+    body[data-bs-theme="dark"] .panel-header-toggle,
+    body.dark-mode .panel-header-toggle {
+        background: #1e293b;
+        border-color: #334155;
+        color: #94a3b8;
+    }
+
+    body[data-bs-theme="dark"] .panel-header-toggle:hover,
+    body.dark-mode .panel-header-toggle:hover {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+    }
+
+    /* ---- Tombol restore (muncul saat panel di-collapse) ---- */
+    .restore-toggle-btn {
+        display: none;
+        position: absolute;
+        z-index: 1001;
+        top: 16px;
+        width: fit-content;
+        min-width: max-content;
+        min-height: 32px;
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        background: #f3f4f6;
+        color: #6b7280;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, .12);
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 13px;
+        line-height: 1.2;
+        padding: 7px 10px;
+        white-space: nowrap;
+        overflow: visible;
+        transition: background .2s ease, border-color .2s ease, color .2s ease;
+    }
+
+    .restore-toggle-btn i,
+    .restore-toggle-btn span {
+        flex: 0 0 auto;
+    }
+
+    .restore-toggle-btn:hover {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, .30);
+    }
+
+    .restore-left  { left: 8px; }
+    .restore-right { right: 8px; }
+
+    /* Tampilkan restore button hanya saat panel collapsed */
+    .playlist-learning-shell:has(.playlist-learning-layout.left-collapsed)  > .restore-left  { display: flex; }
+    .playlist-learning-shell:has(.playlist-learning-layout.right-collapsed) > .restore-right { display: flex; }
+
+    body[data-bs-theme="dark"] .restore-toggle-btn,
+    body.dark-mode .restore-toggle-btn {
+        background: #1e293b;
+        border-color: #334155;
+        color: #94a3b8;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .30);
+    }
+
+    body[data-bs-theme="dark"] .restore-toggle-btn:hover,
+    body.dark-mode .restore-toggle-btn:hover {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+    }
+
+    @media (max-width: 991px) {
+        .playlist-learning-shell {
+            position: static;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            column-gap: 8px;
+            row-gap: 12px;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible;
+        }
+
+        .playlist-learning-layout {
+            position: static;
+            flex: 0 0 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            align-items: stretch;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible;
+        }
+
+        .learning-left-panel,
+        .learning-right-panel {
+            display: none;
+            position: static;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            transform: none;
+        }
+
+        .learning-main-panel {
+            display: block;
+            position: static;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            transform: none;
+        }
+
+        .view-playlist-card,
+        .view-ai-card,
+        .ai-card {
+            position: static !important;
+            top: auto !important;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: visible !important;
+            transform: none;
+        }
+
+        .learning-main-panel {
+            order: 1;
+            margin-bottom: 16px;
+        }
+
+        .learning-left-panel {
+            order: 2;
+            margin-bottom: 24px;
+        }
+
+        .learning-right-panel {
+            order: 3;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        .view-player-card {
+            order: 1;
+        }
+
+        .view-content-info-card {
+            order: 2;
+        }
+
+        .view-navigation-card {
+            order: 3;
+        }
+
+        .playlist-learning-layout.mobile-left-open .learning-left-panel,
+        .playlist-learning-layout.mobile-right-open .learning-right-panel {
+            display: block;
+        }
+
+        .restore-toggle-btn {
+            display: inline-flex !important;
+            position: static !important;
+            flex: 0 1 auto;
+            z-index: auto;
+            top: auto;
+            right: auto;
+            left: auto;
+            width: auto;
+            max-width: calc(50% - 4px);
+            min-width: 0;
+            min-height: 32px;
+            gap: 6px;
+            padding: 7px 10px;
+            white-space: nowrap;
+            overflow: visible;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .restore-left {
+            margin-right: auto;
+        }
+
+        .restore-right {
+            margin-left: auto;
+        }
+
+        .restore-toggle-btn[aria-expanded="true"] {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+        }
+    }
+
+    body[data-bs-theme="dark"] .chapter-description-box,
+    body.dark-mode .chapter-description-box {
+        background: #111827;
+        border-color: #334155;
+    }
+
+    body[data-bs-theme="dark"] .view-hero-bg,
+    body.dark-mode .view-hero-bg {
+        background:
+            radial-gradient(circle at 82% 18%, rgba(96, 165, 250, .14), transparent 30%),
+            linear-gradient(90deg, rgba(3, 10, 24, .98) 0%, rgba(11, 31, 68, .92) 55%, rgba(20, 74, 122, .78) 100%);
+    }
+
+    body[data-bs-theme="dark"] .overview-meta-button:hover,
+    body.dark-mode .overview-meta-button:hover {
+        color: #93c5fd;
+    }
+
+    body[data-bs-theme="dark"] .playlist-comment-modal .modal-content,
+    body.dark-mode .playlist-comment-modal .modal-content {
+        background: #162235;
+        color: #e5e7eb;
+    }
+
+    body[data-bs-theme="dark"] .playlist-comment-modal .modal-header,
+    body.dark-mode .playlist-comment-modal .modal-header {
+        border-color: rgba(148, 163, 184, .18);
+    }
+</style>
+
+    <style>
+        .playlist-comment-modal .modal-dialog {
+            width: min(70vw, 920px);
+            max-width: min(70vw, 920px);
+            height: 88vh;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .playlist-comment-modal .modal-content {
+            height: 88vh;
+            max-height: 88vh;
+            overflow: hidden;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, .24);
+        }
+
+        .playlist-comment-modal .modal-header {
+            flex: 0 0 auto;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .playlist-comment-modal .modal-title {
+            display: inline-flex;
+            align-items: center;
+            color: #0f172a;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .playlist-comment-modal .modal-body {
+            min-height: 0;
+            padding: 0;
+            background: #f8fafc;
+            overflow: hidden;
+        }
+
+        .view-comment-wrapper {
+            height: 100%;
+            min-height: 0;
+            padding: 12px 14px 14px;
+            background: #f8fafc;
+        }
+
+        .view-comment-wrapper .comment-ajax-root {
+            height: 100%;
+            min-height: 0;
+            margin: 0 !important;
+        }
+
+        .view-comment-wrapper.is-loading-comments,
+        .view-comment-wrapper .comment-ajax-root.is-loading-comments {
+            opacity: .65;
+            pointer-events: none;
+            transition: opacity .18s ease;
+        }
+
+        .view-comment-wrapper #comment {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+            padding: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+        }
+
+        .view-comment-wrapper #comment .card-header {
+            flex: 0 0 auto;
+            padding: 0 0 10px !important;
+            background: transparent !important;
+        }
+
+        .view-comment-wrapper #comment .card-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            padding: 0 !important;
+            background: transparent !important;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+        }
+
+        .view-comment-wrapper .comment-count {
+            display: none !important;
+        }
+
+        .view-comment-wrapper .comment-form > .d-flex {
+            gap: 8px !important;
+        }
+
+        .view-comment-wrapper .comment-form .avatar,
+        .view-comment-wrapper .comment-item-root > .flex-shrink-0 .avatar {
+            width: 38px !important;
+            height: 38px !important;
+            font-size: 13px !important;
+        }
+
+        .view-comment-wrapper .comment-item-reply > .flex-shrink-0 .avatar {
+            width: 30px !important;
+            height: 30px !important;
+            font-size: 11px !important;
+        }
+
+        .view-comment-wrapper .comment-thread-root {
+            padding: 12px 14px !important;
+        }
+
+        .view-comment-wrapper .comment-thread {
+            margin-bottom: 8px !important;
+            padding: 12px 14px !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            background: #ffffff !important;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, .04);
+        }
+
+        .view-comment-wrapper .comment-thread:last-child {
+            margin-bottom: 0 !important;
+        }
+
+        .view-comment-wrapper .comment-thread-reply {
+            margin-top: 6px !important;
+            padding: 10px 12px !important;
+            border-left: 3px solid #bfdbfe !important;
+            background: #f8fafc !important;
+            border-radius: 10px !important;
+        }
+
+        .view-comment-wrapper .comment-bubble {
+            background: transparent !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+        }
+
+        .view-comment-wrapper .comment-name {
+            margin-bottom: 2px !important;
+            color: #0f172a;
+            font-size: 13px !important;
+            line-height: 1.25 !important;
+        }
+
+        .view-comment-wrapper .comment-text {
+            color: #334155;
+            font-size: 13px !important;
+            line-height: 1.42 !important;
+        }
+
+        .view-comment-wrapper .comment-meta {
+            margin-top: 4px !important;
+            padding-left: 0 !important;
+            gap: 8px !important;
+            font-size: 11px !important;
+            line-height: 1.2 !important;
+        }
+
+        .view-comment-wrapper .comment-action {
+            font-size: 11px !important;
+            gap: 3px !important;
+        }
+
+        .view-comment-wrapper .comment-action i {
+            font-size: 14px !important;
+        }
+
+        .view-comment-wrapper .replies-block,
+        .view-comment-wrapper .reply-form {
+            margin-left: 34px !important;
+        }
+
+        .view-comment-wrapper .replies-block {
+            margin-top: 6px !important;
+        }
+
+        .view-comment-wrapper .reply-list {
+            margin-top: 8px !important;
+        }
+
+        .view-comment-wrapper .comment-replies-toggle {
+            padding: 4px 8px !important;
+            font-size: 12px !important;
+        }
+
+        .view-comment-wrapper textarea,
+        .view-comment-wrapper .form-control,
+        .view-comment-wrapper .modern-comment-input {
+            padding: 8px 10px !important;
+            border-radius: 9px !important;
+            font-size: 13px !important;
+            line-height: 1.35 !important;
+        }
+
+        .view-comment-wrapper .comment-textarea {
+            min-height: 74px !important;
+            max-height: 80px !important;
+            resize: vertical;
+        }
+
+        .view-comment-wrapper .comment-reply-textarea {
+            min-height: 38px !important;
+            max-height: 56px !important;
+        }
+
+        .view-comment-wrapper .comment-submit-row {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 8px !important;
+            margin-top: 6px !important;
+        }
+
+        .view-comment-wrapper .comment-submit-row .btn {
+            flex: 0 0 auto;
+            padding: 5px 12px !important;
+        }
+
+        .view-comment-wrapper .pagination {
+            margin: 10px 0 0;
+            justify-content: center;
+        }
+
+        .view-comment-wrapper .comment-pagination {
+            padding: 10px 0 0 !important;
+        }
+
+        body[data-bs-theme="dark"] .learning-view-page,
+        body.dark-mode .learning-view-page {
+            background: #0f172a;
+        }
+
+        body[data-bs-theme="dark"] .playlist-comment-modal .modal-title,
+        body.dark-mode .playlist-comment-modal .modal-title {
+            color: #e5e7eb;
+        }
+
+        body[data-bs-theme="dark"] .playlist-comment-modal .modal-body,
+        body.dark-mode .playlist-comment-modal .modal-body {
+            background: #0f172a;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper,
+        body.dark-mode .view-comment-wrapper {
+            background: #0f172a;
+            color: #e5e7eb;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .card,
+        body.dark-mode .view-comment-wrapper .card {
+            background: transparent !important;
+            color: #e5e7eb !important;
+            border-color: rgba(148, 163, 184, .18) !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-thread-reply,
+        body.dark-mode .view-comment-wrapper .comment-thread-reply {
+            background: #111827 !important;
+            border-left-color: #2563eb !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-replies .comment-thread-reply,
+        body.dark-mode .view-comment-wrapper .comment-replies .comment-thread-reply {
+            background: #1f2937 !important;
+            border-left-color: #3b82f6 !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-thread,
+        body.dark-mode .view-comment-wrapper .comment-thread {
+            background: rgba(15, 23, 42, .72) !important;
+            border-color: rgba(148, 163, 184, .16) !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-name,
+        body.dark-mode .view-comment-wrapper .comment-name {
+            color: #f8fafc;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-text,
+        body.dark-mode .view-comment-wrapper .comment-text {
+            color: #cbd5e1;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper textarea,
+        body[data-bs-theme="dark"] .view-comment-wrapper .form-control,
+        body[data-bs-theme="dark"] .view-comment-wrapper .modern-comment-input,
+        body.dark-mode .view-comment-wrapper textarea,
+        body.dark-mode .view-comment-wrapper .form-control,
+        body.dark-mode .view-comment-wrapper .modern-comment-input {
+            background: #0f172a !important;
+            color: #e5e7eb !important;
+            border-color: #334155 !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .text-muted,
+        body.dark-mode .view-comment-wrapper .text-muted {
+            color: #94a3b8 !important;
+        }
+
+        @media (max-width: 768px) {
+            .playlist-comment-modal .modal-dialog {
+                display: flex;
+                align-items: center;
+                width: 90vw;
+                max-width: 90vw;
+                height: 90vh;
+                min-height: 90vh;
+                margin: 0 auto;
+            }
+
+            .playlist-comment-modal .modal-content {
+                height: 90vh;
+                max-height: 90vh;
+                width: 100%;
+            }
+
+            .playlist-comment-modal .modal-body {
+                min-height: 0;
+                max-height: none;
+                overflow: hidden;
+            }
+
+            .view-comment-wrapper {
+                padding: 10px;
+            }
+
+            .view-comment-wrapper .comment-thread {
+                margin-bottom: 8px !important;
+                padding: 12px !important;
+            }
+
+            .view-comment-wrapper .replies-block,
+            .view-comment-wrapper .reply-form {
+                margin-left: 28px !important;
+            }
+
+            .view-comment-wrapper .comment-form .avatar,
+            .view-comment-wrapper .comment-item-root > .flex-shrink-0 .avatar {
+                width: 36px !important;
+                height: 36px !important;
+            }
+
+            .view-comment-wrapper .comment-item-reply > .flex-shrink-0 .avatar {
+                width: 28px !important;
+                height: 28px !important;
+            }
+
+            .view-comment-wrapper .comment-textarea {
+                min-height: 70px !important;
+                max-height: 78px !important;
+            }
+
+            .view-comment-wrapper .comment-submit-row {
+                flex-direction: row !important;
+                align-items: center !important;
+            }
+
+            .view-comment-wrapper .comment-submit-row #note_remaining {
+                min-width: 0;
+                font-size: 11px !important;
+            }
+
+            .view-comment-wrapper .comment-submit-row .btn {
+                padding: 5px 10px !important;
+            }
+        }
+    </style>
+    <style>
+    /* ── Comment count heading (YouTube-style) ── */
+    .comment-count {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1f2937;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    /* ── Full-width composer / reply input (beats any inherited width) ── */
+    .comment-form { width: 100% !important; }
+
+    .comment-ajax-root.is-loading-comments {
+        opacity: .65;
+        pointer-events: none;
+        transition: opacity .18s ease;
+    }
+
+    .comment-input-wrapper {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .comment-textarea {
+        display: block;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 84px;
+        resize: vertical;
+        border-radius: 8px;
+    }
+
+    .comment-reply-textarea { min-height: 40px; }
+
+    .comment-submit-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+
+    /* ── Comment / reply rows ── */
+    .comment-thread { padding: 14px 16px; }
+
+    .comment-item-root { width: 100%; }
+
+    /* Replies stay compact: no extra gap between reply items */
+    .comment-item-reply {
+        width: 100%;
+        margin-top: 0;
+    }
+
+    .comment-bubble {
+        background: #f4f6fb;
+        border-radius: 14px;
+        padding: 10px 14px;
+        line-height: 1.45;
+        word-break: break-word;
+    }
+
+    /* Author on top, comment text below (Facebook-style) */
+    .comment-name {
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    .comment-text {
+        font-size: 13px;
+        line-height: 1.5;
+        color: #1f2937;
+    }
+
+    .comment-meta { font-size: 12px; padding-left: 4px; }
+
+    /* Action buttons (like / reply) as inline text links */
+    .comment-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280 !important;
+        text-decoration: none;
+        line-height: 1;
+    }
+    .comment-action:hover { color: #374151 !important; }
+    .comment-action.is-liked { color: #e0245e !important; }
+    .comment-action i { font-size: 16px; }
+
+    /* ── Reply form (indented to align with replies) ── */
+    .reply-form {
+        width: auto;
+        margin-left: 40px;
+    }
+
+    /* ── Replies block: indented under the parent, flat left-aligned list ── */
+    .replies-block {
+        margin-top: 8px;
+        margin-left: 40px;
+    }
+
+    /* Gap only between the parent comment and the reply list, not between replies */
+    .reply-list { margin-top: 18px; }
+
+    /* ── Show/hide replies toggle (Facebook/YouTube-style) ── */
+    .comment-replies-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px !important;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #2563eb !important;
+        transition: background-color .15s ease, color .15s ease;
+    }
+    .comment-replies-toggle:hover {
+        background: #eaf1ff;
+        color: #1d4ed8 !important;
+    }
+
+    .replies-chevron {
+        font-size: 16px;
+        line-height: 1;
+        transition: transform .2s ease;
+    }
+    .comment-replies-toggle.open .replies-chevron { transform: rotate(180deg); }
+
+    /* Label swaps based on the `open` class toggled by JS */
+    .comment-replies-toggle .replies-label-hide { display: none; }
+    .comment-replies-toggle.open .replies-label-show { display: none; }
+    .comment-replies-toggle.open .replies-label-hide { display: inline; }
+
+    /* ── Pagination ── */
+    .comment-pagination { display: flex; justify-content: center; }
+    .comment-pagination nav { width: 100%; }
+    .comment-pagination nav > div:first-child { display: none !important; }
+    .comment-pagination nav > div:last-child {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+    .comment-pagination .pagination {
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+
+    /* ── Dark mode ── */
+    [data-bs-theme="dark"] .comment-count {
+        color: #e5e7eb;
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+    [data-bs-theme="dark"] .comment-replies-toggle { color: #93c5fd !important; }
+    [data-bs-theme="dark"] .comment-replies-toggle:hover {
+        background: rgba(37, 99, 235, 0.15);
+        color: #bfdbfe !important;
+    }
+    [data-bs-theme="dark"] .card-header,
+    [data-bs-theme="dark"] .card-body {
+        background-color: var(--tblr-card-bg, #1e293b) !important;
+    }
+    [data-bs-theme="dark"] .comment-bubble { background: rgba(255, 255, 255, 0.06); }
+    [data-bs-theme="dark"] .comment-text { color: #e5e7eb; }
+
+    /* ── Mobile ── */
+    @media (max-width: 576px) {
+        .comment-submit-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .comment-thread { padding: 12px; }
+    }
+</style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body data-bs-theme="light" class="">
+    <script>
+        (function() {
+            const validThemes = ['light', 'dark'];
+            const params = new URLSearchParams(window.location.search);
+            const urlTheme = params.get('theme');
+            const storedTheme = localStorage.getItem('owl-dark-mode');
+            const normalize = (value) => {
+                if (!value) return null;
+                const normalized = String(value).trim().toLowerCase();
+                if (normalized === 'true') return 'dark';
+                if (normalized === 'false') return 'light';
+                return validThemes.includes(normalized) ? normalized : null;
+            };
+            let theme = normalize(urlTheme) || normalize(storedTheme);
+            if (!theme) {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            localStorage.setItem('owl-dark-mode', theme);
+            document.documentElement.dataset.bsTheme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            document.body.dataset.bsTheme = theme;
+            document.body.classList.toggle('dark-mode', theme === 'dark');
+        })();
+    </script>
+    <script src="http://localhost/Tabler/dist/js/demo-theme.min.js"></script>
+
+    <div class="page">
+        <aside class="navbar navbar-vertical navbar-expand-lg d-print-none">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <h1 class="navbar-brand navbar-brand-autodark">
+            <a href="http://localhost">
+                <img src="http://localhost/owl.png" width="110" height="32" alt="OWL LMS" class="navbar-brand-image">
+            </a>
+        </h1>
+
+        <div class="collapse navbar-collapse" id="sidebar-menu">
+            <ul class="navbar-nav pt-lg-3">
+                <li class="nav-item active">
+                    <a class="nav-link" href="http://localhost">
+                        <span class="nav-link-icon"><i class="ti ti-home"></i></span>
+                        <span class="nav-link-title">Home</span>
+                    </a>
+                </li>
+
+                <li class="nav-item ">
+                    <a class="nav-link" href="http://localhost/my-learning">
+                        <span class="nav-link-icon"><i class="ti ti-book-2"></i></span>
+                        <span class="nav-link-title">My Learning</span>
+
+                                            </a>
+                </li>
+
+                <li class="nav-item ">
+                    <a class="nav-link" href="http://localhost/content">
+                        <span class="nav-link-icon">
+                            <i class="ti ti-category-2"></i>
+                        </span>
+                        <span class="nav-link-title">
+                            All Content
+                        </span>
+                    </a>
+                </li>
+
+                <li class="nav-item ">
+                    <a class="nav-link" href="http://localhost/playlist">
+                        <span class="nav-link-icon"><i class="ti ti-playlist"></i></span>
+                        <span class="nav-link-title">Playlist</span>
+                    </a>
+                </li>
+
+                <li class="nav-item ">
+                    <a class="nav-link" href="http://localhost/news">
+                        <span class="nav-link-icon"><i class="ti ti-news"></i></span>
+                        <span class="nav-link-title">News</span>
+                    </a>
+                </li>
+
+                <li class="nav-item ">
+                    <a class="nav-link" href="http://localhost/gallery">
+                        <span class="nav-link-icon"><i class="ti ti-photo-heart"></i></span>
+                        <span class="nav-link-title">Gallery</span>
+                    </a>
+                </li>
+
+                <li class="nav-item ">
+                    <a class="nav-link" href="http://localhost/trainingplan">
+                        <span class="nav-link-icon"><i class="ti ti-clipboard-list"></i></span>
+                        <span class="nav-link-title">Training Plan</span>
+                    </a>
+                </li>
+                
+                                    <li class="nav-item ">
+                        <a class="nav-link" href="http://localhost/manage">
+                            <span class="nav-link-icon"><i class="ti ti-settings"></i></span>
+                            <span class="nav-link-title">Manage</span>
+                        </a>
+                    </li>
+                
+            </ul>
+        </div>
+    </div>
+</aside>
+
+<header class="navbar navbar-expand-md d-print-none app-topbar">
+    <div class="container-fluid">
+
+        
+        <div class="topbar-search d-none d-md-flex flex-grow-1">
+            <form action="http://localhost/search/all"
+                  method="get"
+                  autocomplete="off"
+                  novalidate
+                  class="w-100">
+
+                <div class="input-icon w-100">
+                    <span class="input-icon-addon">
+                        <i class="ti ti-search"></i>
+                    </span>
+
+                    <input type="text"
+                           name="s"
+                           class="form-control"
+                           placeholder="Search learning, content, news..."
+                           aria-label="Search in website">
+                </div>
+            </form>
+        </div>
+
+        
+        <div class="navbar-nav flex-row align-items-center ms-auto">
+
+            
+            <div class="nav-item d-none d-md-flex me-3">
+                <a href="http://localhost/?theme=dark"
+                   class="nav-link px-0 hide-theme-dark"
+                   title="Enable dark mode"
+                   data-bs-toggle="tooltip"
+                   data-bs-placement="bottom">
+                    <i class="ti ti-moon fs-2"></i>
+                </a>
+
+                <a href="http://localhost/?theme=light"
+                   class="nav-link px-0 hide-theme-light"
+                   title="Enable light mode"
+                   data-bs-toggle="tooltip"
+                   data-bs-placement="bottom">
+                    <i class="ti ti-sun fs-2"></i>
+                </a>
+            </div>
+
+            
+            <div class="nav-item dropdown me-3">
+                <a href="#"
+                   class="nav-link px-0 position-relative"
+                   data-bs-toggle="dropdown"
+                   role="button"
+                   aria-expanded="false"
+                   aria-label="Open notifications">
+
+                    <i class="ti ti-bell fs-2"></i>
+
+                                    </a>
+
+                <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                    <div class="dropdown-header">
+                        Notifications
+                    </div>
+
+                                            <span class="dropdown-item text-muted">
+                            <i class="ti ti-bell-off me-2"></i>
+                            No notifications
+                        </span>
+                                    </div>
+            </div>
+
+            
+
+            <div class="nav-item dropdown">
+                <a href="#"
+                   class="nav-link d-flex lh-1 text-reset p-0"
+                   data-bs-toggle="dropdown"
+                   data-bs-auto-close="outside"
+                   role="button"
+                   aria-expanded="false"
+                   aria-label="Open user menu">
+
+                                            <span class="avatar avatar-sm avatar-default-icon">
+                            <i class="ti ti-user"></i>
+                        </span>
+                    
+                    <div class="d-none d-xl-block ps-2">
+                        <div>
+                            Edi Kusumaedi (813032)
+                        </div>
+                        <div class="mt-1 small text-muted" style="font-size: 7pt">
+                            GA Management Team
+                        </div>
+                    </div>
+                </a>
+
+                <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                    <a href="http://localhost/myprofile" class="dropdown-item">
+                        <i class="ti ti-user me-2"></i>
+                        Profile
+                    </a>
+
+                    <form action="http://localhost/logout" method="POST">
+                        <input type="hidden" name="_token" value="">                        <button type="submit" class="dropdown-item">
+                            <i class="ti ti-logout me-2"></i>
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</header>
+
+        <div class="page-wrapper">
+                <div class="page-body learning-view-page">
+        <div class="container-xl">
+
+            <a href="http://localhost" class="btn btn-link px-0 mb-3">
+                <i class="fas fa-arrow-left me-2"></i> Back
+            </a>
+
+            <div class="card border-0 shadow-sm overflow-hidden mb-3 view-hero-card">
+    <div class="view-hero-bg">
+        <div class="view-hero-overlay">
+            <div class="view-hero-content text-white w-100">
+
+                <div class="view-hero-copy">
+                    <span class="view-hero-badge mb-2">
+                        <i class="fas fa-layer-group me-1"></i>
+                        Playlist
+                    </span>
+
+                    <h1 class="view-hero-title">
+                        Basic Facility Management
+                    </h1>
+
+                    <div class="view-hero-meta">
+                        <span>
+                            <i class="fas fa-list me-1"></i>
+                            10 Chapters
+                        </span>
+                        <span>
+                            <i class="fas fa-eye me-1"></i>
+                            0 Playlist Views
+                        </span>
+                        <span>
+                            <i class="fas fa-users-cog me-1"></i>
+                            Athur
+                        </span>
+                        <span>
+                            <i class="far fa-calendar-alt me-1"></i>
+                            -
+                        </span>
+                        <span>
+                            <i class="far fa-clock me-1"></i>
+                            05:00:00
+                        </span>
+                    </div>
+
+                    <div class="view-hero-bottom">
+                        <span class="badge bg-white text-primary">
+                            Maintenance
+                        </span>
+                        <span class="badge bg-success">Document</span>
+                        <span class="badge bg-dark bg-opacity-75">5% Progress</span>
+                    </div>
+                </div>
+
+                <a href="#contentContainer" class="view-hero-continue">
+                    <span class="view-hero-continue-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                        <i class="fas fa-play"></i>
+                    </span>
+                    <strong>Continue Learning</strong>
+                </a>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+            <div class="playlist-learning-shell">
+                <button type="button"
+                        class="restore-toggle-btn restore-left"
+                        onclick="toggleLearningPanel('left', this)"
+                        aria-controls="content-list"
+                        aria-expanded="false"
+                        title="Buka Playlist">
+                    <i class="fas fa-bars"></i>
+                    <span>Content List</span>
+                </button>
+
+                <button type="button"
+                        class="restore-toggle-btn restore-right"
+                        onclick="toggleLearningPanel('right', this)"
+                        aria-controls="ai-assistant"
+                        aria-expanded="false"
+                        title="Buka AI Assistant">
+                    <i class="fas fa-robot"></i>
+                    <span>AI Assistant</span>
+                </button>
+
+                <div id="playlistLearningLayout" class="playlist-learning-layout">
+
+                    <div id="content-list" class="learning-left-panel">
+                        <div class="card border-0 shadow-sm rounded-4 sticky-top view-playlist-card" style="top: 1rem;">
+    <div class="card-body p-3">
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="mb-0 fs-4 fw-bold">Content List</h3>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button"
+                        class="panel-header-toggle"
+                        onclick="toggleLearningPanel('left')"
+                        title="Tutup Content List">
+                    <i class="fas fa-list-ul"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <div class="input-icon">
+                <span class="input-icon-addon">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text"
+                       class="form-control form-control-sm rounded-3"
+                       placeholder="Search in playlist..."
+                       id="playlistSearchInput">
+            </div>
+        </div>
+
+        <div class="playlist-scroll-area" id="playlistLessonList">
+                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-terminology"
+                       class="playlist-lesson-item is-active"
+                       data-title="[basic facility management] terminology">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 1: [Basic Facility Management] Terminology
+                            </div>
+
+                            <div class="lesson-meta">
+                                50%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 50%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-mechanical-element"
+                       class="playlist-lesson-item "
+                       data-title="[basic facility management] mechanical element">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 2: [Basic Facility Management] Mechanical element
+                            </div>
+
+                            <div class="lesson-meta">
+                                0%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 0%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-lubrication"
+                       class="playlist-lesson-item "
+                       data-title="[basic facility management] lubrication">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 3: [Basic Facility Management] Lubrication
+                            </div>
+
+                            <div class="lesson-meta">
+                                0%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 0%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-simple-diagnosis"
+                       class="playlist-lesson-item "
+                       data-title="[basic facility management] simple diagnosis">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 4: [Basic Facility Management] Simple Diagnosis
+                            </div>
+
+                            <div class="lesson-meta">
+                                0%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 0%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-sistem-umum-kelistrikan-part-1"
+                       class="playlist-lesson-item "
+                       data-title="[basic facility management] sistem umum kelistrikan part 1">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 5: [Basic Facility Management] Sistem Umum Kelistrikan Part 1
+                            </div>
+
+                            <div class="lesson-meta">
+                                0%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 0%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-sistem-umum-kelistrikan-part-2"
+                       class="playlist-lesson-item "
+                       data-title="[basic facility management] sistem umum kelistrikan part 2">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 6: [Basic Facility Management] Sistem Umum Kelistrikan Part 2
+                            </div>
+
+                            <div class="lesson-meta">
+                                3%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 3%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-sistem-umum-kelistrikan-part-3"
+                       class="playlist-lesson-item "
+                       data-title="basic facility management] sistem umum kelistrikan part 3">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 7: Basic Facility Management] Sistem Umum Kelistrikan Part 3
+                            </div>
+
+                            <div class="lesson-meta">
+                                0%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 0%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-sistem-kendali-part-1"
+                       class="playlist-lesson-item "
+                       data-title="[basic facility management] sistem kendali part 1">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 8: [Basic Facility Management] Sistem Kendali Part 1
+                            </div>
+
+                            <div class="lesson-meta">
+                                0%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 0%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-sistem-kendali-part-2"
+                       class="playlist-lesson-item "
+                       data-title="[basic facility management] sistem kendali part 2">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 9: [Basic Facility Management] Sistem Kendali Part 2
+                            </div>
+
+                            <div class="lesson-meta">
+                                0%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 0%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                            
+                                    <a href="http://localhost/playlist/basic-facility-management/basic-facility-management-sistem-kendali-part-3"
+                       class="playlist-lesson-item "
+                       data-title="[basic facility management] sistem kendali part 3">
+
+                        <div class="lesson-thumb" style="background-image: url('http://localhost/default-video.jpg')">
+                                                            <div class="lesson-play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                                    </div>
+
+                        <div class="lesson-info">
+                            <div class="lesson-title">
+                                Ch. 10: [Basic Facility Management] Sistem Kendali Part 3
+                            </div>
+
+                            <div class="lesson-meta">
+                                0%
+                            </div>
+
+                            <div class="progress lesson-progress">
+                                <div class="progress-bar" style="width: 0%"></div>
+                            </div>
+
+                                                    </div>
+
+                    </a>
+                                    </div>
+
+    </div>
+</div>
+                    </div>
+
+                    <div class="learning-main-panel">
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3 view-player-card">
+    <div class="card-body p-0">
+
+        
+        <div id="contentContainer" class="learning-player">
+            
+                                                <div class="playlist-pdfviewer" id="playlist-pdf-shell">
+                        <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 p-2 border-bottom playlist-pdf-toolbar">
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.prev(); return false;" title="Previous Page">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span class="pageno small fw-bold px-2"></span>
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.next(); return false;" title="Next Page">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.setZoom('out')" title="Zoom Out">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.setZoom('in')" title="Zoom In">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                onclick="playlistPdfViewer.setZoom('width')" title="Fit Width">
+                                <i class="fas fa-arrows-alt-h"></i>
+                            </button>
+                        </div>
+                        <div class="pdfjs-viewer playlist-pdfjs-viewer" style="height:560px; overflow:hidden;"></div>
+                    </div>
+                
+            
+            
+            <input type="hidden" id="player_progress" value="50">
+            <input type="hidden" data-url="http://localhost/content/progress/basic-facility-management-terminology" id="player_paused">
+
+        </div>
+    </div>
+</div>
+                        <div class="card border-0 shadow-sm rounded-4 mb-3 view-navigation-card">
+    <div class="card-body">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+
+                            <a href="#"
+                   class="btn btn-primary flex-fill disabled"
+                   aria-disabled="true">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    Assessment Playlist
+                </a>
+            
+            <button type="button"
+                    class="btn btn-outline-secondary flex-fill"
+                    disabled>
+                <i class="fas fa-tasks me-2"></i>
+                My Task
+            </button>
+
+                            <form method="POST"
+                      action="http://localhost/certificate/generate-setting/206"
+                      class="flex-fill m-0">
+                    <input type="hidden" name="_token" value="">
+                    <button type="submit"
+                            class="btn btn-success w-100"
+                            disabled>
+                        <i class="fas fa-certificate me-2"></i>
+                        Certificate
+                    </button>
+                </form>
+            
+        </div>
+    </div>
+</div>
+                        <div class="card border-0 shadow-sm rounded-4 mb-3 view-content-info-card">
+    <div class="card-body p-4">
+
+        
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div class="min-w-0">
+                <div class="text-muted small mb-1">
+                    13 February 2024
+                    by Athur
+                </div>
+
+                <h2 class="mb-2 fs-2 fw-bold">
+                    [Basic Facility Management] Terminology
+                </h2>
+
+                <div class="overview-inline-meta text-muted">
+                    <button type="button"
+                            class="overview-meta-button"
+                            data-bs-toggle="modal"
+                            data-bs-target="#playlistCommentModal">
+                        <i class="far fa-comment-dots me-1"></i>
+                        39 Comments
+                    </button>
+                    <span class="overview-meta-separator">&bull;</span>
+                    <span>
+                        <i class="far fa-clock me-1"></i>
+                        00:30:00
+                    </span>
+                </div>
+            </div>
+
+            <button type="button"
+                    class="btn btn-icon btn-outline-secondary rounded-3"
+                    onclick="shareContent()">
+                <i class="fas fa-share-alt"></i>
+            </button>
+        </div>
+
+        
+        <div class="chapter-description-box mb-4">
+            <h4 class="fs-6 fw-bold mb-2">Overview</h4>
+
+            <div class="overview-text is-collapsed text-muted" id="playlistOverviewText">
+                Terminology from 6 subject in basic facility Management training program
+            </div>
+
+            <button type="button"
+                    class="btn btn-link px-0 py-1 mt-2 overview-toggle"
+                    data-read-more="Read More"
+                    data-read-less="Read Less">
+                Read More
+            </button>
+        </div>
+
+        
+        <div class="border-top pt-3 mt-4">
+            <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">
+
+                
+                <div class="d-flex flex-wrap align-items-center gap-2">
+
+                                            <span class="badge bg-secondary-lt text-secondary px-3 py-2">
+                            <i class="fas fa-lock me-1"></i>
+                            Incomplete Progress
+                        </span>
+                    
+                                                                        <span class="badge bg-primary-lt text-primary px-3 py-2">
+                                <i class="fas fa-tasks me-1"></i>
+                                Playlist Assessment Available
+                            </span>
+                                            
+                                            <span class="badge bg-green-lt text-green px-3 py-2">
+                            <i class="fas fa-certificate me-1"></i>
+                            Certificate Available
+                        </span>
+                    
+                </div>
+
+                
+                <div class="d-flex flex-wrap align-items-center gap-2">
+
+                                            <a href="#"
+                           class="btn btn-primary disabled"
+                           aria-disabled="true">
+                            <i class="fas fa-tasks me-2"></i>
+                            Kerjakan Assessment
+                        </a>
+                    
+                                            <form method="POST"
+                              action="http://localhost/certificate/generate-setting/206"
+                              class="d-inline-block m-0">
+                            <input type="hidden" name="_token" value="">
+                            <button type="submit"
+                                    class="btn btn-success"
+                                    disabled>
+                                <i class="fas fa-certificate me-2"></i>
+                                Download Playlist Certificate
+                            </button>
+                        </form>
+                    
+                </div>
+
+            </div>
+
+                            <div class="text-muted small mt-2">
+                    The certificate will be available after all playlist requirements have been completed.
+                </div>
+                    </div>
+
+        
+        
+
+    </div>
+</div>
+                    </div>
+
+                    <div id="ai-assistant" class="learning-right-panel">
+                        <div class="card border-0 shadow-sm rounded-4 sticky-top view-ai-card ai-card" style="top: 1rem;">
+    <div class="card-body p-0 d-flex flex-column" style="height: 100%;">
+
+        
+        <div class="p-4 pb-3 border-bottom">
+            <div class="d-flex align-items-center gap-3">
+                <div class="flex-shrink-0 rounded-3 bg-primary-lt d-flex align-items-center justify-content-center"
+                     style="width:40px;height:40px;font-size:20px;">
+                    🤖
+                </div>
+                <div class="flex-fill min-w-0">
+                    <div class="fw-bold lh-1 mb-1" style="font-size:14px;">AI Assistant</div>
+                    <div class="text-muted lh-1" style="font-size:11px;">Powered by AI</div>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <span class="badge bg-success rounded-pill" style="font-size:10px;">● Online</span>
+                    <button type="button"
+                            class="panel-header-toggle"
+                            onclick="toggleLearningPanel('right')"
+                            title="Tutup AI Assistant">
+                        <i class="fas fa-robot"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="p-4 d-flex flex-column gap-3 flex-fill" style="overflow-y: auto;">
+
+            
+            <div class="ai-message-box">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="ti ti-sparkles text-primary" style="font-size:15px;"></i>
+                    <span class="fw-semibold text-dark" style="font-size:12px;">Learning Assistant</span>
+                </div>
+                <span class="text-secondary" style="font-size:13px; line-height:1.5;">
+                    Hi! I'm your learning assistant. Ask me anything about this lesson.
+                </span>
+            </div>
+
+            
+            <div>
+                <div class="text-uppercase text-muted fw-semibold mb-2" style="font-size:10px; letter-spacing:.06em;">
+                    Suggested Prompts
+                </div>
+
+                <div class="d-flex flex-column gap-2">
+                    <button type="button" class="btn btn-light border ai-suggestion-btn text-start"
+                            onclick="aiInsertPrompt(this)">
+                        <i class="ti ti-file-text me-2 text-primary"></i>
+                        Summarize this material
+                    </button>
+
+                    <button type="button" class="btn btn-light border ai-suggestion-btn text-start"
+                            onclick="aiInsertPrompt(this)">
+                        <i class="ti ti-list-check me-2 text-primary"></i>
+                        What are the key points?
+                    </button>
+
+                    <button type="button" class="btn btn-light border ai-suggestion-btn text-start"
+                            onclick="aiInsertPrompt(this)">
+                        <i class="ti ti-help-circle me-2 text-primary"></i>
+                        Create a quiz from this material
+                    </button>
+
+                    <button type="button" class="btn btn-light border ai-suggestion-btn text-start"
+                            onclick="aiInsertPrompt(this)">
+                        <i class="ti ti-zoom-question me-2 text-primary"></i>
+                        Explain the difficult parts
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        
+        <div class="p-4 pt-3 border-top">
+            <div class="input-group ai-input-group">
+                <input type="text"
+                       id="aiChatInput"
+                       class="form-control"
+                       placeholder="Type your question...">
+                <button class="btn btn-primary" type="button" onclick="aiSendMessage()">
+                    <i class="ti ti-send"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    
+    <div class="modal fade playlist-comment-modal" id="playlistCommentModal" tabindex="-1" aria-labelledby="playlistCommentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content border-0 rounded-4">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="playlistCommentModalLabel">
+                        <i class="far fa-comment-dots me-2"></i>
+                        39 Comments
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="view-comment-wrapper">
+                        <div class="mt-3 mb-4 comment-ajax-root" data-comment-refresh-url="http://localhost">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" id="comment">
+
+        
+        <div class="card-header border-0 bg-white p-4">
+
+            <div class="comment-count mb-3">39 Comments</div>
+
+            <form method=POST action="http://localhost/content/basic-facility-management-terminology/commentplaylist/store" class="comment-form w-100">
+    <input type="hidden" name="_token" value="">    
+    <input type="hidden" value="basic-facility-management" name="playlistslug">
+
+                <div class="d-flex gap-3 align-items-start w-100">
+
+                    <div class="flex-shrink-0">
+                                                    <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
+                                E
+                            </span>
+                                            </div>
+
+                    <div class="comment-input-wrapper flex-grow-1 w-100">
+                        <textarea  class="form-control comment-textarea" name="description" placeholder="Add a comment..." onkeyup="countWord(this)" maxlength="1000" rows="3"></textarea>
+
+                        <div class="comment-submit-row">
+                            <span id="note_remaining" class="text-muted small">1000 characters remaining</span>
+
+                            <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">
+                                <i class="ti ti-send me-1"></i>Submit
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+</form>
+
+        </div>
+
+        
+        <div class="card-body p-0 bg-white">
+                            <div class="comment-thread border-bottom" id="comment-12499">
+
+    
+    <div class="d-flex gap-2 align-items-start comment-item comment-item-root">
+
+    <div class="flex-shrink-0">
+                    <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
+                N
+            </span>
+            </div>
+
+    <div class="flex-fill min-w-0 w-100">
+        <div class="comment-bubble">
+            <div class="fw-semibold comment-name">NANA SUPRIATNA</div>
+            <div class="comment-text">TerimaKasih.</div>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-3 mt-1 comment-meta">
+            <span class="text-muted">2 months ago</span>
+
+            <form action="http://localhost/comment/12499/like" method="POST" class="d-inline m-0">
+                <input type="hidden" name="_token" value="">                <button type="submit" class="btn btn-link p-0 comment-action ">
+                    <i class="ti ti-heart"></i>
+                    <span>0</span>
+                </button>
+            </form>
+
+            <button type="button"
+                    class="btn btn-link p-0 comment-action text-muted comment-reply-toggle"
+                    data-target="reply-form-12499">
+                Reply
+            </button>
+        </div>
+    </div>
+
+</div>
+
+    
+    <div id="reply-form-12499" class="reply-form d-none mt-2">
+        <form method=POST action="http://localhost/content/basic-facility-management-terminology/commentplaylist/store" class="comment-form w-100">
+    <input type="hidden" name="_token" value="">    
+    <input type="hidden" name="parent_id" value="12499">
+            <input type="hidden" name="playlistslug" value="basic-facility-management">
+
+            <div class="d-flex gap-2 align-items-end w-100">
+                <div class="comment-input-wrapper flex-grow-1 w-100">
+                    <textarea  class="form-control comment-textarea comment-reply-textarea" id="reply-textarea-12499" name="description" placeholder="Tulis balasan..." maxlength="1000" rows="1"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 flex-shrink-0">
+                    <i class="ti ti-send"></i>
+                </button>
+            </div>
+
+</form>
+
+    </div>
+
+    
+    
+</div>
+                            <div class="comment-thread border-bottom" id="comment-12208">
+
+    
+    <div class="d-flex gap-2 align-items-start comment-item comment-item-root">
+
+    <div class="flex-shrink-0">
+                    <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
+                A
+            </span>
+            </div>
+
+    <div class="flex-fill min-w-0 w-100">
+        <div class="comment-bubble">
+            <div class="fw-semibold comment-name">AHMAD SAEFUDIN</div>
+            <div class="comment-text">thanks</div>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-3 mt-1 comment-meta">
+            <span class="text-muted">2 months ago</span>
+
+            <form action="http://localhost/comment/12208/like" method="POST" class="d-inline m-0">
+                <input type="hidden" name="_token" value="">                <button type="submit" class="btn btn-link p-0 comment-action ">
+                    <i class="ti ti-heart"></i>
+                    <span>0</span>
+                </button>
+            </form>
+
+            <button type="button"
+                    class="btn btn-link p-0 comment-action text-muted comment-reply-toggle"
+                    data-target="reply-form-12208">
+                Reply
+            </button>
+        </div>
+    </div>
+
+</div>
+
+    
+    <div id="reply-form-12208" class="reply-form d-none mt-2">
+        <form method=POST action="http://localhost/content/basic-facility-management-terminology/commentplaylist/store" class="comment-form w-100">
+    <input type="hidden" name="_token" value="">    
+    <input type="hidden" name="parent_id" value="12208">
+            <input type="hidden" name="playlistslug" value="basic-facility-management">
+
+            <div class="d-flex gap-2 align-items-end w-100">
+                <div class="comment-input-wrapper flex-grow-1 w-100">
+                    <textarea  class="form-control comment-textarea comment-reply-textarea" id="reply-textarea-12208" name="description" placeholder="Tulis balasan..." maxlength="1000" rows="1"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 flex-shrink-0">
+                    <i class="ti ti-send"></i>
+                </button>
+            </div>
+
+</form>
+
+    </div>
+
+    
+    
+</div>
+                            <div class="comment-thread border-bottom" id="comment-11501">
+
+    
+    <div class="d-flex gap-2 align-items-start comment-item comment-item-root">
+
+    <div class="flex-shrink-0">
+                    <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
+                M
+            </span>
+            </div>
+
+    <div class="flex-fill min-w-0 w-100">
+        <div class="comment-bubble">
+            <div class="fw-semibold comment-name">MUJIBULLAH</div>
+            <div class="comment-text">terima kasih</div>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-3 mt-1 comment-meta">
+            <span class="text-muted">4 months ago</span>
+
+            <form action="http://localhost/comment/11501/like" method="POST" class="d-inline m-0">
+                <input type="hidden" name="_token" value="">                <button type="submit" class="btn btn-link p-0 comment-action ">
+                    <i class="ti ti-heart"></i>
+                    <span>0</span>
+                </button>
+            </form>
+
+            <button type="button"
+                    class="btn btn-link p-0 comment-action text-muted comment-reply-toggle"
+                    data-target="reply-form-11501">
+                Reply
+            </button>
+        </div>
+    </div>
+
+</div>
+
+    
+    <div id="reply-form-11501" class="reply-form d-none mt-2">
+        <form method=POST action="http://localhost/content/basic-facility-management-terminology/commentplaylist/store" class="comment-form w-100">
+    <input type="hidden" name="_token" value="">    
+    <input type="hidden" name="parent_id" value="11501">
+            <input type="hidden" name="playlistslug" value="basic-facility-management">
+
+            <div class="d-flex gap-2 align-items-end w-100">
+                <div class="comment-input-wrapper flex-grow-1 w-100">
+                    <textarea  class="form-control comment-textarea comment-reply-textarea" id="reply-textarea-11501" name="description" placeholder="Tulis balasan..." maxlength="1000" rows="1"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 flex-shrink-0">
+                    <i class="ti ti-send"></i>
+                </button>
+            </div>
+
+</form>
+
+    </div>
+
+    
+    
+</div>
+                            <div class="comment-thread border-bottom" id="comment-8408">
+
+    
+    <div class="d-flex gap-2 align-items-start comment-item comment-item-root">
+
+    <div class="flex-shrink-0">
+                    <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
+                A
+            </span>
+            </div>
+
+    <div class="flex-fill min-w-0 w-100">
+        <div class="comment-bubble">
+            <div class="fw-semibold comment-name">ADAM MAULANA HIDAYAT</div>
+            <div class="comment-text">Terimakasih</div>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-3 mt-1 comment-meta">
+            <span class="text-muted">9 months ago</span>
+
+            <form action="http://localhost/comment/8408/like" method="POST" class="d-inline m-0">
+                <input type="hidden" name="_token" value="">                <button type="submit" class="btn btn-link p-0 comment-action ">
+                    <i class="ti ti-heart"></i>
+                    <span>0</span>
+                </button>
+            </form>
+
+            <button type="button"
+                    class="btn btn-link p-0 comment-action text-muted comment-reply-toggle"
+                    data-target="reply-form-8408">
+                Reply
+            </button>
+        </div>
+    </div>
+
+</div>
+
+    
+    <div id="reply-form-8408" class="reply-form d-none mt-2">
+        <form method=POST action="http://localhost/content/basic-facility-management-terminology/commentplaylist/store" class="comment-form w-100">
+    <input type="hidden" name="_token" value="">    
+    <input type="hidden" name="parent_id" value="8408">
+            <input type="hidden" name="playlistslug" value="basic-facility-management">
+
+            <div class="d-flex gap-2 align-items-end w-100">
+                <div class="comment-input-wrapper flex-grow-1 w-100">
+                    <textarea  class="form-control comment-textarea comment-reply-textarea" id="reply-textarea-8408" name="description" placeholder="Tulis balasan..." maxlength="1000" rows="1"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 flex-shrink-0">
+                    <i class="ti ti-send"></i>
+                </button>
+            </div>
+
+</form>
+
+    </div>
+
+    
+    
+</div>
+                            <div class="comment-thread border-bottom" id="comment-8203">
+
+    
+    <div class="d-flex gap-2 align-items-start comment-item comment-item-root">
+
+    <div class="flex-shrink-0">
+                    <span class="avatar avatar-sm rounded-circle bg-primary-lt text-primary fw-bold">
+                A
+            </span>
+            </div>
+
+    <div class="flex-fill min-w-0 w-100">
+        <div class="comment-bubble">
+            <div class="fw-semibold comment-name">ALIM FURQON</div>
+            <div class="comment-text">terima kasih</div>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-3 mt-1 comment-meta">
+            <span class="text-muted">9 months ago</span>
+
+            <form action="http://localhost/comment/8203/like" method="POST" class="d-inline m-0">
+                <input type="hidden" name="_token" value="">                <button type="submit" class="btn btn-link p-0 comment-action ">
+                    <i class="ti ti-heart"></i>
+                    <span>0</span>
+                </button>
+            </form>
+
+            <button type="button"
+                    class="btn btn-link p-0 comment-action text-muted comment-reply-toggle"
+                    data-target="reply-form-8203">
+                Reply
+            </button>
+        </div>
+    </div>
+
+</div>
+
+    
+    <div id="reply-form-8203" class="reply-form d-none mt-2">
+        <form method=POST action="http://localhost/content/basic-facility-management-terminology/commentplaylist/store" class="comment-form w-100">
+    <input type="hidden" name="_token" value="">    
+    <input type="hidden" name="parent_id" value="8203">
+            <input type="hidden" name="playlistslug" value="basic-facility-management">
+
+            <div class="d-flex gap-2 align-items-end w-100">
+                <div class="comment-input-wrapper flex-grow-1 w-100">
+                    <textarea  class="form-control comment-textarea comment-reply-textarea" id="reply-textarea-8203" name="description" placeholder="Tulis balasan..." maxlength="1000" rows="1"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 flex-shrink-0">
+                    <i class="ti ti-send"></i>
+                </button>
+            </div>
+
+</form>
+
+    </div>
+
+    
+    
+</div>
+            
+                            <div class="comment-pagination p-3 border-top">
+                    <nav class="d-flex justify-items-center justify-content-between">
+        <div class="d-flex justify-content-between flex-fill d-sm-none">
+            <ul class="pagination">
+                
+                                    <li class="page-item disabled" aria-disabled="true">
+                        <span class="page-link">&laquo; Previous</span>
+                    </li>
+                
+                
+                                    <li class="page-item">
+                        <a class="page-link" href="http://localhost?page=2" rel="next">Next &raquo;</a>
+                    </li>
+                            </ul>
+        </div>
+
+        <div class="d-none flex-sm-fill d-sm-flex align-items-sm-center justify-content-sm-between">
+            <div>
+                <p class="small text-muted">
+                    Showing
+                    <span class="fw-semibold">1</span>
+                    to
+                    <span class="fw-semibold">5</span>
+                    of
+                    <span class="fw-semibold">39</span>
+                    results
+                </p>
+            </div>
+
+            <div>
+                <ul class="pagination">
+                    
+                                            <li class="page-item disabled" aria-disabled="true" aria-label="&laquo; Previous">
+                            <span class="page-link" aria-hidden="true">&lsaquo;</span>
+                        </li>
+                    
+                    
+                                            
+                        
+                        
+                                                                                                                        <li class="page-item active" aria-current="page"><span class="page-link">1</span></li>
+                                                                                                                                <li class="page-item"><a class="page-link" href="http://localhost?page=2">2</a></li>
+                                                                                                                                <li class="page-item"><a class="page-link" href="http://localhost?page=3">3</a></li>
+                                                                                                                                <li class="page-item"><a class="page-link" href="http://localhost?page=4">4</a></li>
+                                                                                                                                <li class="page-item"><a class="page-link" href="http://localhost?page=5">5</a></li>
+                                                                                                                                <li class="page-item"><a class="page-link" href="http://localhost?page=6">6</a></li>
+                                                                                                                                <li class="page-item"><a class="page-link" href="http://localhost?page=7">7</a></li>
+                                                                                                                                <li class="page-item"><a class="page-link" href="http://localhost?page=8">8</a></li>
+                                                                                                        
+                    
+                                            <li class="page-item">
+                            <a class="page-link" href="http://localhost?page=2" rel="next" aria-label="Next &raquo;">&rsaquo;</a>
+                        </li>
+                                    </ul>
+            </div>
+        </div>
+    </nav>
+
+                </div>
+                    </div>
+
+    </div>
+</div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+
+    <!-- Tabler -->
+<script src="http://localhost/js/jquery.min.js"></script>
+<script src=http://localhost/Tabler/dist/js/tabler.min.js></script>
+<script src=http://localhost/Tabler/dist/js/demo.min.js></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>    <script>
+    function aiInsertPrompt(btn) {
+        const text = btn.innerText.trim();
+        const input = document.getElementById('aiChatInput');
+        if (input) {
+            input.value = text;
+            input.focus();
+        }
+    }
+
+    function aiSendMessage() {
+        const input = document.getElementById('aiChatInput');
+        if (!input || !input.value.trim()) return;
+        // Placeholder — wire up to your AI endpoint here
+        input.value = '';
+        input.focus();
+    }
+
+    (function () {
+        const input = document.getElementById('aiChatInput');
+        if (input) {
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') aiSendMessage();
+            });
+        }
+    })();
+</script>
+<script>
+    // Character counter for the main composer.
+    function countWord(val) {
+        var remaining = document.getElementById('note_remaining');
+        if (!remaining) return;
+
+        var len = val.value.length;
+        remaining.textContent = len >= 1000 ? '' : (1000 - len) + ' characters remaining';
+    }
+
+    (function ($) {
+        if (!$ || window.owlCommentAjaxInitialized) return;
+        window.owlCommentAjaxInitialized = true;
+
+        function selectorEscape(value) {
+            if ($.escapeSelector) return $.escapeSelector(value);
+            return String(value).replace(/([ #;&,.+*~':"!^$[\]()=>|\/@])/g, '\\$1');
+        }
+
+        function getScrollable($root) {
+            var $modalBody = $root.closest('.modal').find('.modal-body').first();
+            return $modalBody.length ? $modalBody : $();
+        }
+
+        function getState($root) {
+            var $scrollable = getScrollable($root);
+
+            return {
+                pageScrollTop: $(window).scrollTop(),
+                modalScrollTop: $scrollable.length ? $scrollable.scrollTop() : 0,
+                activeElementId: document.activeElement ? document.activeElement.id : '',
+                openReplyForms: $root.find('.reply-form:not(.d-none)').map(function () {
+                    return this.id;
+                }).get(),
+                openReplyLists: $root.find('.reply-list:not(.d-none)').map(function () {
+                    return this.id;
+                }).get(),
+                openReplyToggles: $root.find('.comment-replies-toggle.open').map(function () {
+                    return $(this).data('target');
+                }).get()
+            };
+        }
+
+        function restoreState($root, state) {
+            var $scrollable = getScrollable($root);
+
+            state.openReplyForms.forEach(function (id) {
+                $root.find('#' + selectorEscape(id)).removeClass('d-none');
+            });
+
+            state.openReplyLists.forEach(function (id) {
+                $root.find('#' + selectorEscape(id)).removeClass('d-none');
+            });
+
+            state.openReplyToggles.forEach(function (target) {
+                $root.find('.comment-replies-toggle[data-target="' + target + '"]').addClass('open');
+            });
+
+            if ($scrollable.length) {
+                $scrollable.scrollTop(state.modalScrollTop);
+            }
+
+            $(window).scrollTop(state.pageScrollTop);
+        }
+
+        function findFreshRoot(response, $root) {
+            var parsedHtml = $.parseHTML(response, document, true);
+            var $html = $('<div>').append(parsedHtml);
+            var modalId = $root.closest('.modal').attr('id');
+            var $freshRoot = $();
+
+            if (modalId) {
+                $freshRoot = $html.find('#' + selectorEscape(modalId) + ' .comment-ajax-root').first();
+            }
+
+            if (!$freshRoot.length) {
+                $freshRoot = $html.find('.comment-ajax-root').first();
+            }
+
+            return $freshRoot;
+        }
+
+        function replaceRoot($root, response, state) {
+            var $freshRoot = findFreshRoot(response, $root);
+
+            if (!$freshRoot.length) return $root;
+
+            $root.html($freshRoot.html());
+            $root.attr('data-comment-refresh-url', $freshRoot.attr('data-comment-refresh-url') || $root.attr('data-comment-refresh-url'));
+            restoreState($root, state);
+
+            return $root;
+        }
+
+        function refreshComments($root, url, state, updateHistory) {
+            if (!$root.length || $root.hasClass('is-loading-comments')) return;
+
+            $root.addClass('is-loading-comments');
+
+            $.ajax({
+                url: url,
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function (response) {
+                replaceRoot($root, response, state);
+                $root.attr('data-comment-refresh-url', url);
+
+                if (updateHistory && window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, url);
+                }
+            }).always(function () {
+                $root.removeClass('is-loading-comments');
+                restoreState($root, state);
+            });
+        }
+
+        $(document).on('click', '.comment-reply-toggle', function (event) {
+            event.preventDefault();
+
+            var $button = $(this);
+            var $root = $button.closest('.comment-ajax-root');
+            var targetId = $button.data('target');
+            var $form = $root.find('#' + selectorEscape(targetId));
+
+            if (!$form.length) return;
+
+            $form.toggleClass('d-none');
+
+            if (!$form.hasClass('d-none')) {
+                var textarea = $form.find('textarea').first();
+                if (textarea.length) textarea.trigger('focus');
+            }
+
+            if ($root.length) {
+                $root.attr('data-comment-refresh-url', $root.attr('data-comment-refresh-url') || document.URL);
+            }
+        });
+
+        $(document).on('click', '.comment-replies-toggle', function (event) {
+            event.preventDefault();
+
+            var $button = $(this);
+            var $root = $button.closest('.comment-ajax-root');
+            var targetId = $button.data('target');
+            var $list = $root.find('#' + selectorEscape(targetId));
+
+            if (!$list.length) return;
+
+            $list.toggleClass('d-none');
+            $button.toggleClass('open', !$list.hasClass('d-none'));
+        });
+
+        $(document).on('click', '.comment-ajax-root .comment-pagination a, .comment-ajax-root .pagination a', function (event) {
+            event.preventDefault();
+
+            var $link = $(this);
+            var href = $link.attr('href');
+            var $root = $link.closest('.comment-ajax-root');
+
+            if (!href || !$root.length) return;
+
+            refreshComments($root, href, getState($root), true);
+        });
+
+        $(document).on('submit', '.comment-ajax-root form', function (event) {
+            event.preventDefault();
+
+            var $form = $(this);
+            var $root = $form.closest('.comment-ajax-root');
+            var action = $form.attr('action');
+            var method = ($form.attr('method') || 'POST').toUpperCase();
+            var state = getState($root);
+
+            if (!action || action === '#' || !$root.length || $root.hasClass('is-loading-comments')) return;
+
+            $root.addClass('is-loading-comments');
+
+            $.ajax({
+                url: action,
+                method: method,
+                data: $form.serialize(),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).done(function (response, textStatus, jqXHR) {
+                var currentUrl = $root.attr('data-comment-refresh-url') || document.URL;
+                var responseUrl = jqXHR && jqXHR.responseURL ? jqXHR.responseURL : currentUrl;
+                var freshRoot = findFreshRoot(response, $root);
+
+                if (freshRoot.length) {
+                    replaceRoot($root, response, state);
+                    $root.attr('data-comment-refresh-url', responseUrl);
+                    return;
+                }
+
+                refreshComments($root, currentUrl, state, false);
+            }).fail(function () {
+                restoreState($root, state);
+            }).always(function () {
+                $root.removeClass('is-loading-comments');
+                restoreState($root, state);
+            });
+        });
+    })(window.jQuery);
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function () {
+        var layout  = document.getElementById('playlistLearningLayout');
+        var LS_LEFT  = 'owl_playlist_left_collapsed';
+        var LS_RIGHT = 'owl_playlist_right_collapsed';
+        var mobileQuery = window.matchMedia('(max-width: 991px)');
+        var lastMobileState = null;
+        var leftButton = document.querySelector('.learning-view-page .restore-left');
+        var rightButton = document.querySelector('.learning-view-page .restore-right');
+        var leftPanel = document.getElementById('content-list');
+        var rightPanel = document.getElementById('ai-assistant');
+
+        function applyDesktopState() {
+            if (!layout) return;
+
+            layout.classList.toggle('left-collapsed', localStorage.getItem(LS_LEFT) === '1');
+            layout.classList.toggle('right-collapsed', localStorage.getItem(LS_RIGHT) === '1');
+        }
+
+        function isMobileView() {
+            return mobileQuery.matches;
+        }
+
+        function syncPanelAccessibility() {
+            var leftOpen = isMobileView()
+                ? layout.classList.contains('mobile-left-open')
+                : !layout.classList.contains('left-collapsed');
+            var rightOpen = isMobileView()
+                ? layout.classList.contains('mobile-right-open')
+                : !layout.classList.contains('right-collapsed');
+
+            if (leftButton) leftButton.setAttribute('aria-expanded', leftOpen ? 'true' : 'false');
+            if (rightButton) rightButton.setAttribute('aria-expanded', rightOpen ? 'true' : 'false');
+            if (leftPanel) leftPanel.setAttribute('aria-hidden', leftOpen ? 'false' : 'true');
+            if (rightPanel) rightPanel.setAttribute('aria-hidden', rightOpen ? 'false' : 'true');
+        }
+
+        function resetResponsiveState(force) {
+            if (!layout) return;
+
+            var mobile = isMobileView();
+            if (!force && mobile === lastMobileState) return;
+            lastMobileState = mobile;
+
+            layout.classList.remove('mobile-left-open', 'mobile-right-open');
+
+            if (mobile) {
+                layout.classList.remove('left-collapsed', 'right-collapsed');
+            } else {
+                applyDesktopState();
+            }
+
+            syncPanelAccessibility();
+        }
+
+        function toggleMobilePanel(side) {
+            var targetClass = side === 'left' ? 'mobile-left-open' : 'mobile-right-open';
+            var wasOpen = layout.classList.contains(targetClass);
+
+            layout.classList.remove('mobile-left-open', 'mobile-right-open');
+            if (!wasOpen) layout.classList.add(targetClass);
+
+            syncPanelAccessibility();
+        }
+
+        function toggleLearningPanel(side) {
+            if (!layout) return;
+
+            if (isMobileView()) {
+                toggleMobilePanel(side);
+                return;
+            }
+
+            if (side === 'left') {
+                layout.classList.toggle('left-collapsed');
+                localStorage.setItem(LS_LEFT, layout.classList.contains('left-collapsed') ? '1' : '0');
+            }
+            if (side === 'right') {
+                layout.classList.toggle('right-collapsed');
+                localStorage.setItem(LS_RIGHT, layout.classList.contains('right-collapsed') ? '1' : '0');
+            }
+
+            syncPanelAccessibility();
+        }
+
+        window.toggleLearningPanel = toggleLearningPanel;
+        resetResponsiveState(true);
+        window.addEventListener('resize', function () {
+            resetResponsiveState(false);
+        });
+
+        function syncPlayerFullscreenState() {
+            var player = document.getElementById('contentContainer');
+            var overlay = document.querySelector('.fullscreen-player-overlays');
+            if (!player) return;
+
+            var fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement || null;
+            var isFullscreen = fullscreenElement && (fullscreenElement === player || fullscreenElement.contains(player) || player.contains(fullscreenElement));
+            player.classList.toggle('is-fullscreen', !!isFullscreen);
+
+            if (!overlay) return;
+            if (isFullscreen && fullscreenElement && !fullscreenElement.contains(overlay)) {
+                fullscreenElement.appendChild(overlay);
+            } else if (!isFullscreen && overlay.parentElement !== player) {
+                player.insertBefore(overlay, player.firstChild);
+            }
+        }
+
+        document.addEventListener('fullscreenchange', syncPlayerFullscreenState);
+        document.addEventListener('webkitfullscreenchange', syncPlayerFullscreenState);
+
+        $(document).on('click', '.overview-toggle', function () {
+            var $button = $(this);
+            var $overview = $('#playlistOverviewText');
+            var expanded = !$overview.toggleClass('is-collapsed').hasClass('is-collapsed');
+            $button.text(expanded ? $button.data('read-less') : $button.data('read-more'));
+        });
+
+    })();
+</script>
+    <script src="http://localhost/js/learning-progress.js"></script>
+    <script src="http://localhost/Tabler/dist/libs/plyr/dist/plyr.min.js?1684106062"></script>
+
+            <script src="http://localhost/js/pdf.min.js"></script>
+        <script src="http://localhost/js/pdfjs-viewer.min.js"></script>
+    
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const progressTracker = new OwlLearningProgress({
+            url: "http://localhost/content/progress/update",
+            csrf: "",
+            contentId: 23,
+            type: 'document',
+            onUpdate: window.owlUpdateLearningUi
+        });
+
+        const playerElement = document.querySelector('#player');
+
+        if (playerElement && typeof Plyr !== 'undefined') {
+                    }
+
+                    if (typeof PDFjsViewer !== 'undefined' && document.querySelector('.playlist-pdfjs-viewer')) {
+                var pdfjsLib = window["pdfjs-dist/build/pdf"];
+                pdfjsLib.GlobalWorkerOptions.workerSrc = "http://localhost/js/pdf.worker.min.js";
+
+                let fileName = "Steel_Terminology_(Basic_Facility_Management_Terminology)_202402131553.pdf";
+                let fileNameFixed = fileName
+                    .replaceAll(' ', '%20')
+                    .replaceAll('&amp;', '&');
+                let pdfFile = "http://localhost/storage/files/content/23/" + fileNameFixed;
+
+                window.playlistPdfViewer = new PDFjsViewer($(".playlist-pdfjs-viewer"), {
+                    onDocumentReady: function() {
+                        var totalPages = playlistPdfViewer.getPageCount();
+
+                        // Resume: prefer the exact saved page, fall back to the
+                        // legacy progress-percentage estimate.
+                        var lastPage = 0;
+
+                        if (!lastPage) {
+                            var progression = 50;
+                            lastPage = parseInt((progression * totalPages) / 100);
+                        }
+
+                        if (lastPage > 1 && lastPage < totalPages) {
+                            playlistPdfViewer.scrollToPage(lastPage);
+                        }
+
+                        progressTracker.send({ total_pages: totalPages }, true);
+                    },
+
+                    onActivePageChanged: function(page, pageno) {
+                        $('#playlist-pdf-shell .pageno').text(pageno + "/" + this.getPageCount());
+
+                        progressTracker.sendDebounced({
+                            last_page: pageno,
+                            total_pages: this.getPageCount()
+                        });
+                    }
+                });
+
+                playlistPdfViewer.loadDocument(pdfFile).then(function() {
+                    playlistPdfViewer.setZoom('width');
+                });
+            }
+        
+        const playlistSearchInput = document.getElementById('playlistSearchInput');
+
+        if (playlistSearchInput) {
+            playlistSearchInput.addEventListener('keyup', function() {
+                const keyword = this.value.toLowerCase();
+                const lessons = document.querySelectorAll('.playlist-lesson-item');
+
+                lessons.forEach(function(item) {
+                    const title = item.getAttribute('data-title') || '';
+                    item.style.display = title.includes(keyword) ? 'flex' : 'none';
+                });
+            });
+        }
+    });
+
+    // Legacy manual progress endpoint — kept as the fallback flow for the
+    // "Mark as Complete" button.
+    function updateLearningProgress(currentTime, duration) {
+        $.ajax({
+            type: "PUT",
+            url: $('#player_paused').data('url'),
+            data: {
+                current_time: currentTime,
+                duration: duration,
+                _token: ''
+            },
+            success: function(data) {
+                console.log(data.success);
+            }
+        });
+    }
+
+    function markContentComplete() {
+        let duration = $('#player_duration').val() || 100;
+
+        updateLearningProgress(duration, duration);
+
+        setTimeout(function() {
+            window.location.reload();
+        }, 700);
+    }
+
+
+    async function shareContent() {
+        const shareData = {
+            title: document.title,
+            text: 'Lihat materi pembelajaran ini',
+            url: window.location.href
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+
+                if (window.Toastify) {
+                    Toastify({
+                        text: "Link berhasil disalin",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right"
+                    }).showToast();
+                } else {
+                    alert('Link berhasil disalin');
+                }
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+</script>
+</body>
+</html>

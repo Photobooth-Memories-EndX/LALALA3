@@ -15,12 +15,12 @@
 
             @include('user.playlist.components.view-hero')
 
-            <div id="playlistLearningLayout" class="playlist-learning-layout">
-
-                {{-- Restore buttons: hanya muncul saat panel di-collapse, posisi absolute di tepi layout --}}
+            <div class="playlist-learning-shell">
                 <button type="button"
                         class="restore-toggle-btn restore-left"
                         onclick="toggleLearningPanel('left', this)"
+                        aria-controls="content-list"
+                        aria-expanded="false"
                         title="Buka Playlist">
                     <i class="fas fa-bars"></i>
                     <span>Content List</span>
@@ -29,29 +29,34 @@
                 <button type="button"
                         class="restore-toggle-btn restore-right"
                         onclick="toggleLearningPanel('right', this)"
+                        aria-controls="ai-assistant"
+                        aria-expanded="false"
                         title="Buka AI Assistant">
                     <i class="fas fa-robot"></i>
                     <span>AI Assistant</span>
                 </button>
 
-                <div id="content-list" class="learning-left-panel">
-                    @include('user.playlist.components.view-playlist-sidebar')
-                </div>
+                <div id="playlistLearningLayout" class="playlist-learning-layout">
 
-                <div class="learning-main-panel">
-                    @include('user.playlist.components.view-player')
-                    @include('user.playlist.components.view-navigation', [
-                        'content' => $content,
-                        'content_all' => $content_all,
-                        'playlist' => $playlist,
-                    ])
-                    @include('user.playlist.components.view-content-info')
-                </div>
+                    <div id="content-list" class="learning-left-panel">
+                        @include('user.playlist.components.view-playlist-sidebar')
+                    </div>
 
-                <div id="ai-assistant" class="learning-right-panel">
-                    @include('user.playlist.components.view-ai-assistant')
-                </div>
+                    <div class="learning-main-panel">
+                        @include('user.playlist.components.view-player')
+                        @include('user.playlist.components.view-navigation', [
+                            'content' => $content,
+                            'content_all' => $content_all,
+                            'playlist' => $playlist,
+                        ])
+                        @include('user.playlist.components.view-content-info')
+                    </div>
 
+                    <div id="ai-assistant" class="learning-right-panel">
+                        @include('user.playlist.components.view-ai-assistant')
+                    </div>
+
+                </div>
             </div>
 
         </div>
@@ -470,79 +475,70 @@
         var LS_LEFT  = 'owl_playlist_left_collapsed';
         var LS_RIGHT = 'owl_playlist_right_collapsed';
         var mobileQuery = window.matchMedia('(max-width: 991px)');
-        var mobileScrollTimer = null;
-        var mobileScrollInProgress = false;
+        var lastMobileState = null;
+        var leftButton = document.querySelector('.learning-view-page .restore-left');
+        var rightButton = document.querySelector('.learning-view-page .restore-right');
+        var leftPanel = document.getElementById('content-list');
+        var rightPanel = document.getElementById('ai-assistant');
 
-        function applyState() {
+        function applyDesktopState() {
             if (!layout) return;
-            if (localStorage.getItem(LS_LEFT)  === '1') layout.classList.add('left-collapsed');
-            if (localStorage.getItem(LS_RIGHT) === '1') layout.classList.add('right-collapsed');
+
+            layout.classList.toggle('left-collapsed', localStorage.getItem(LS_LEFT) === '1');
+            layout.classList.toggle('right-collapsed', localStorage.getItem(LS_RIGHT) === '1');
         }
 
         function isMobileView() {
             return mobileQuery.matches;
         }
 
-        function setRestoreButtonVisibility(button, visible) {
-            if (!button) return;
-            button.style.display = visible ? 'flex' : '';
+        function syncPanelAccessibility() {
+            var leftOpen = isMobileView()
+                ? layout.classList.contains('mobile-left-open')
+                : !layout.classList.contains('left-collapsed');
+            var rightOpen = isMobileView()
+                ? layout.classList.contains('mobile-right-open')
+                : !layout.classList.contains('right-collapsed');
+
+            if (leftButton) leftButton.setAttribute('aria-expanded', leftOpen ? 'true' : 'false');
+            if (rightButton) rightButton.setAttribute('aria-expanded', rightOpen ? 'true' : 'false');
+            if (leftPanel) leftPanel.setAttribute('aria-hidden', leftOpen ? 'false' : 'true');
+            if (rightPanel) rightPanel.setAttribute('aria-hidden', rightOpen ? 'false' : 'true');
         }
 
-        function setMobileRestoreButtonsVisible(visible) {
-            setRestoreButtonVisibility(document.querySelector('.restore-left'), visible);
-            setRestoreButtonVisibility(document.querySelector('.restore-right'), visible);
-        }
-
-        function updateMobileRestoreButtons() {
-            if (!isMobileView()) {
-                setMobileRestoreButtonsVisible(false);
-                return;
-            }
-
-            if (mobileScrollInProgress) return;
-
-            var player = document.getElementById('contentContainer');
-            if (!player) return;
-
-            var rect = player.getBoundingClientRect();
-            var playerStillInView = rect.bottom > 80 && rect.top < window.innerHeight;
-            setMobileRestoreButtonsVisible(playerStillInView);
-        }
-
-        function scrollToLearningSection(side) {
-            var targetId = side === 'left' ? 'content-list' : 'ai-assistant';
-            var target = document.getElementById(targetId);
-            if (!target) return;
-
-            setMobileRestoreButtonsVisible(true);
-            mobileScrollInProgress = true;
-
-            if (side === 'left') {
-                layout.classList.remove('left-collapsed');
-                localStorage.setItem(LS_LEFT, '0');
-            }
-
-            if (side === 'right') {
-                layout.classList.remove('right-collapsed');
-                localStorage.setItem(LS_RIGHT, '0');
-            }
-
-            window.requestAnimationFrame(function () {
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-                clearTimeout(mobileScrollTimer);
-                mobileScrollTimer = setTimeout(function () {
-                    mobileScrollInProgress = false;
-                    updateMobileRestoreButtons();
-                }, 900);
-            });
-        }
-
-        function toggleLearningPanel(side, trigger) {
+        function resetResponsiveState(force) {
             if (!layout) return;
 
-            if (isMobileView() && trigger && trigger.classList.contains('restore-toggle-btn')) {
-                scrollToLearningSection(side);
+            var mobile = isMobileView();
+            if (!force && mobile === lastMobileState) return;
+            lastMobileState = mobile;
+
+            layout.classList.remove('mobile-left-open', 'mobile-right-open');
+
+            if (mobile) {
+                layout.classList.remove('left-collapsed', 'right-collapsed');
+            } else {
+                applyDesktopState();
+            }
+
+            syncPanelAccessibility();
+        }
+
+        function toggleMobilePanel(side) {
+            var targetClass = side === 'left' ? 'mobile-left-open' : 'mobile-right-open';
+            var wasOpen = layout.classList.contains(targetClass);
+
+            layout.classList.remove('mobile-left-open', 'mobile-right-open');
+            if (!wasOpen) layout.classList.add(targetClass);
+
+            syncPanelAccessibility();
+        }
+
+        function toggleLearningPanel(side) {
+            if (!layout) return;
+
+            if (isMobileView()) {
+                toggleMobilePanel(side);
                 return;
             }
 
@@ -555,15 +551,14 @@
                 localStorage.setItem(LS_RIGHT, layout.classList.contains('right-collapsed') ? '1' : '0');
             }
 
-            updateMobileRestoreButtons();
+            syncPanelAccessibility();
         }
 
         window.toggleLearningPanel = toggleLearningPanel;
-        applyState();
-        updateMobileRestoreButtons();
-
-        window.addEventListener('scroll', updateMobileRestoreButtons, { passive: true });
-        window.addEventListener('resize', updateMobileRestoreButtons);
+        resetResponsiveState(true);
+        window.addEventListener('resize', function () {
+            resetResponsiveState(false);
+        });
 
         function syncPlayerFullscreenState() {
             var player = document.getElementById('contentContainer');
