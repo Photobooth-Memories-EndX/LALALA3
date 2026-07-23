@@ -8,7 +8,7 @@
                         class="panel-header-toggle"
                         onclick="toggleLearningPanel('left')"
                         title="Tutup Content List">
-                    <i class="fas fa-list-ul"></i>
+                    <i class="ti ti-list" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -16,7 +16,7 @@
         <div class="mb-3">
             <div class="input-icon">
                 <span class="input-icon-addon">
-                    <i class="fas fa-search"></i>
+                    <i class="ti ti-search" aria-hidden="true"></i>
                 </span>
                 <input type="text"
                        class="form-control form-control-sm rounded-3"
@@ -32,14 +32,46 @@
                     $isActive = optional($lesson)->slug === $content->slug;
 
                     $learningProgress = $progressByContentId[$list->content_id] ?? 0;
+                    $lessonType = strtolower(trim((string) optional($lesson)->type));
 
-                    if (optional($lesson)->type == 'YouTube') {
-                        $thumb = 'http://img.youtube.com/vi/' . $lesson->link . '/mqdefault.jpg';
+                    [$lessonTypeIcon, $lessonTypeClass, $lessonTypeLabel] = match (true) {
+                        in_array($lessonType, ['video', 'youtube'], true) => [
+                            'ti ti-player-play-filled',
+                            'lesson-type-icon--video',
+                            'Video',
+                        ],
+                        in_array($lessonType, ['document', 'pdf', 'sop', 'regulation', 'sop/regulation'], true) => [
+                            'ti ti-file-type-pdf',
+                            'lesson-type-icon--document',
+                            'PDF / Document',
+                        ],
+                        $lessonType === 'playlist' => [
+                            'ti ti-playlist',
+                            'lesson-type-icon--playlist',
+                            'Playlist',
+                        ],
+                        default => [
+                            'ti ti-file',
+                            'lesson-type-icon--unknown',
+                            'File',
+                        ],
+                    };
+
+                    if ($learningProgress >= 100) {
+                        $lessonStatusIcon = 'ti ti-circle-check-filled';
+                        $lessonStatusClass = 'lesson-done-icon';
+                        $lessonStatusTone = 'lesson-status--completed';
+                        $lessonStatusLabel = 'Completed';
+                    } elseif ($learningProgress > 0) {
+                        $lessonStatusIcon = 'ti ti-progress';
+                        $lessonStatusClass = 'lesson-play-icon';
+                        $lessonStatusTone = 'lesson-status--in-progress';
+                        $lessonStatusLabel = 'In Progress';
                     } else {
-                        $src = 'storage/files/content/' . optional($lesson)->id . '/thumb.jpg';
-                        $thumb = \File::exists(public_path($src)) && !is_dir(public_path($src))
-                            ? asset($src)
-                            : asset('default-video.jpg');
+                        $lessonStatusIcon = 'ti ti-clock';
+                        $lessonStatusClass = 'lesson-play-icon';
+                        $lessonStatusTone = 'lesson-status--not-started';
+                        $lessonStatusLabel = 'Not Started';
                     }
                 @endphp
 
@@ -48,21 +80,24 @@
                        class="playlist-lesson-item {{ $isActive ? 'is-active' : '' }}"
                        data-title="{{ strtolower($lesson->title) }}">
 
-                        <div class="lesson-thumb" style="background-image: url('{{ $thumb }}')">
-                            @if ($learningProgress >= 100)
-                                <div class="lesson-done-icon">
-                                    <i class="fas fa-check"></i>
-                                </div>
-                            @else
-                                <div class="lesson-play-icon">
-                                    <i class="fas fa-play"></i>
-                                </div>
-                            @endif
+                        <div class="lesson-type-icon {{ $lessonTypeClass }}"
+                             role="img"
+                             aria-label="{{ $lessonTypeLabel }}"
+                             title="{{ $lessonTypeLabel }}">
+                            <i class="{{ $lessonTypeIcon }}" aria-hidden="true"></i>
                         </div>
 
                         <div class="lesson-info">
-                            <div class="lesson-title">
-                                Ch. {{ $index + 1 }}: {{ $lesson->title }}
+                            <div class="lesson-heading">
+                                <div class="lesson-title">
+                                    Ch. {{ $index + 1 }}: {{ $lesson->title }}
+                                </div>
+                                <span class="lesson-status-icon {{ $lessonStatusClass }} {{ $lessonStatusTone }}"
+                                      role="img"
+                                      aria-label="{{ $lessonStatusLabel }}"
+                                      title="{{ $lessonStatusLabel }}">
+                                    <i class="{{ $lessonStatusIcon }}" aria-hidden="true"></i>
+                                </span>
                             </div>
 
                             <div class="lesson-meta">
@@ -76,7 +111,7 @@
                             @if ($isActive && !empty($assessmentContent))
                                 <div class="mt-2">
                                     <span class="btn btn-xs btn-outline-primary disabled px-2 py-1">
-                                        <i class="fas fa-clipboard-check me-1"></i>
+                                        <i class="ti ti-clipboard-check me-1" aria-hidden="true"></i>
                                         Assessment
                                     </span>
                                 </div>

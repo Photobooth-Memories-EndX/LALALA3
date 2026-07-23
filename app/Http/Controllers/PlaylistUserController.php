@@ -10,6 +10,7 @@ use App\Models\AssesmentResult;
 use App\Models\ContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
+use App\Services\CertificateEligibilityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -130,7 +131,7 @@ class PlaylistUserController extends Controller
         ]);
     }
 
-    public function view($slug, $vidslug)
+    public function view($slug, $vidslug, CertificateEligibilityService $certificateEligibility)
     {
         $userId = Auth::id();
 
@@ -187,6 +188,7 @@ class PlaylistUserController extends Controller
 
         $assesment             = Assesment::where('type', 'trainingplan')
             ->where('trainingplan_id', $trainingplan->id)
+            ->where('status', 'OK')
             ->first();
         $hasPlaylistAssessment = $assesment !== null;
 
@@ -209,13 +211,14 @@ class PlaylistUserController extends Controller
                 ->exists();
         }
 
-        $needsPlaylistAssessment       = $playlistProgressComplete && $hasPlaylistAssessment && !$playlistAssessmentDone;
-        $canGeneratePlaylistCertificate = $playlistProgressComplete && (!$hasPlaylistAssessment || $playlistAssessmentDone);
-
         $playlistCertificateSetting = CertificateSetting::where('certificate_type', 'playlist')
             ->where('trainingplan_id', $trainingplan->id)
             ->where('is_active', 1)
             ->first();
+
+        $playlistCertificateEligibility = $playlistCertificateSetting
+            ? $certificateEligibility->check($playlistCertificateSetting, Auth::user())
+            : null;
 
         $assessmentContent = Assesment::where('type', 'content')
             ->where('content_id', $content->id)
@@ -278,9 +281,8 @@ class PlaylistUserController extends Controller
             'playlistProgressComplete'       => $playlistProgressComplete,
             'hasPlaylistAssessment'          => $hasPlaylistAssessment,
             'playlistAssessmentDone'         => $playlistAssessmentDone,
-            'needsPlaylistAssessment'        => $needsPlaylistAssessment,
-            'canGeneratePlaylistCertificate' => $canGeneratePlaylistCertificate,
             'playlistCertificateSetting'     => $playlistCertificateSetting,
+            'playlistCertificateEligibility' => $playlistCertificateEligibility,
         ]);
     }
 

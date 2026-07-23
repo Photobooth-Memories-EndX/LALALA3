@@ -318,59 +318,63 @@
 
     .playlist-lesson-item {
         display: flex;
-        gap: 10px;
+        align-items: flex-start;
+        gap: 12px;
         text-decoration: none;
         color: #0f172a;
-        padding: 8px;
+        padding: 10px;
         border-radius: 14px;
         margin-bottom: 8px;
         border: 1px solid transparent;
-        transition: .2s ease;
+        transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
     }
 
     .playlist-lesson-item:hover {
         background: #f1f5ff;
         color: #0f172a;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, .06);
     }
 
     .playlist-lesson-item.is-active {
         background: #eaf1ff;
         border-color: #3b82f6;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, .10);
     }
 
-    .lesson-thumb {
-        width: 62px;
-        height: 46px;
+    .lesson-type-icon {
+        width: 44px;
+        height: 44px;
         border-radius: 12px;
-        background-size: cover;
-        background-position: center;
         flex-shrink: 0;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .lesson-play-icon,
-    .lesson-done-icon {
-        position: absolute;
-        inset: 0;
-        margin: auto;
-        width: 24px;
-        height: 24px;
-        border-radius: 999px;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, .10);
     }
 
-    .lesson-play-icon {
-        background: rgba(37, 99, 235, .92);
-        color: #fff;
+    .lesson-type-icon i {
+        font-size: 22px;
+        line-height: 1;
     }
 
-    .lesson-done-icon {
-        background: rgba(22, 163, 74, .92);
-        color: #fff;
+    .lesson-type-icon--video {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .lesson-type-icon--document {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .lesson-type-icon--playlist {
+        background: #ede9fe;
+        color: #7c3aed;
+    }
+
+    .lesson-type-icon--unknown {
+        background: #f1f5f9;
+        color: #64748b;
     }
 
     .lesson-info {
@@ -378,7 +382,16 @@
         flex: 1;
     }
 
+    .lesson-heading {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        min-width: 0;
+    }
+
     .lesson-title {
+        min-width: 0;
+        flex: 1;
         font-size: 12px;
         font-weight: 700;
         line-height: 1.25;
@@ -387,6 +400,36 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+    }
+
+    .lesson-play-icon,
+    .lesson-done-icon {
+        flex: 0 0 auto;
+    }
+
+    .lesson-status-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: -2px;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .lesson-status--not-started {
+        color: #94a3b8;
+    }
+
+    .lesson-status--in-progress {
+        color: #2563eb;
+    }
+
+    .lesson-status--completed,
+    .lesson-done-icon {
+        color: #16a34a;
     }
 
     .lesson-meta {
@@ -399,6 +442,125 @@
         height: 4px;
         margin-top: 5px;
         background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .lesson-progress .progress-bar {
+        border-radius: inherit;
+        transition: width .25s ease;
+    }
+
+    body[data-bs-theme="dark"] .playlist-scroll-area::-webkit-scrollbar-thumb,
+    body.dark-mode .playlist-scroll-area::-webkit-scrollbar-thumb {
+        background: #475569;
+    }
+
+    body[data-bs-theme="dark"] .playlist-lesson-item,
+    body.dark-mode .playlist-lesson-item {
+        color: #e2e8f0;
+    }
+
+    body[data-bs-theme="dark"] .playlist-lesson-item:hover,
+    body.dark-mode .playlist-lesson-item:hover {
+        background: rgba(30, 64, 175, .16);
+        color: #f8fafc;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .20);
+    }
+
+    body[data-bs-theme="dark"] .playlist-lesson-item.is-active,
+    body.dark-mode .playlist-lesson-item.is-active {
+        background: rgba(37, 99, 235, .18);
+        border-color: #60a5fa;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .22);
+    }
+
+    body[data-bs-theme="dark"] .lesson-title,
+    body.dark-mode .lesson-title {
+        color: #e2e8f0;
+    }
+
+    body[data-bs-theme="dark"] .lesson-meta,
+    body.dark-mode .lesson-meta {
+        color: #94a3b8;
+    }
+
+    body[data-bs-theme="dark"] .lesson-progress,
+    body.dark-mode .lesson-progress {
+        background: #334155;
+    }
+
+    body[data-bs-theme="dark"] .lesson-type-icon--video,
+    body.dark-mode .lesson-type-icon--video {
+        background: rgba(37, 99, 235, .24);
+        color: #60a5fa;
+    }
+
+    body[data-bs-theme="dark"] .lesson-type-icon--document,
+    body.dark-mode .lesson-type-icon--document {
+        background: rgba(220, 38, 38, .22);
+        color: #f87171;
+    }
+
+    body[data-bs-theme="dark"] .lesson-type-icon--playlist,
+    body.dark-mode .lesson-type-icon--playlist {
+        background: rgba(124, 58, 237, .24);
+        color: #c4b5fd;
+    }
+
+    body[data-bs-theme="dark"] .lesson-type-icon--unknown,
+    body.dark-mode .lesson-type-icon--unknown {
+        background: #334155;
+        color: #cbd5e1;
+    }
+
+    body[data-bs-theme="dark"] .lesson-status--not-started,
+    body.dark-mode .lesson-status--not-started {
+        color: #94a3b8;
+    }
+
+    body[data-bs-theme="dark"] .lesson-status--in-progress,
+    body.dark-mode .lesson-status--in-progress {
+        color: #60a5fa;
+    }
+
+    body[data-bs-theme="dark"] .lesson-status--completed,
+    body[data-bs-theme="dark"] .lesson-done-icon,
+    body.dark-mode .lesson-status--completed,
+    body.dark-mode .lesson-done-icon {
+        color: #4ade80;
+    }
+
+    @media (max-width: 1199px) {
+        .playlist-lesson-item {
+            gap: 10px;
+        }
+
+        .lesson-type-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+        }
+
+        .lesson-type-icon i {
+            font-size: 21px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .playlist-scroll-area {
+            padding-right: 2px;
+        }
+
+        .playlist-lesson-item {
+            padding: 8px;
+        }
+
+        .lesson-status-icon {
+            width: 20px;
+            height: 20px;
+            font-size: 17px;
+        }
     }
 
     .btn-xs {

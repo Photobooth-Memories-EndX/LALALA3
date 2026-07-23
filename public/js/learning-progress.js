@@ -132,9 +132,15 @@
             if (progress >= 100) {
                 var playIcon = item.querySelector('.lesson-play-icon');
                 if (playIcon) {
-                    playIcon.classList.remove('lesson-play-icon');
+                    playIcon.classList.remove(
+                        'lesson-play-icon',
+                        'lesson-status--not-started',
+                        'lesson-status--in-progress'
+                    );
                     playIcon.classList.add('lesson-done-icon');
-                    playIcon.innerHTML = '<i class="fas fa-check"></i>';
+                    playIcon.setAttribute('aria-label', 'Completed');
+                    playIcon.setAttribute('title', 'Completed');
+                    playIcon.innerHTML = '<i class="ti ti-circle-check-filled" aria-hidden="true"></i>';
                 }
             }
         }
