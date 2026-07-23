@@ -100,6 +100,8 @@
                     .replaceAll(' ', '%20')
                     .replaceAll('&amp;', '&');
                 let pdfFile = "{{ asset('storage/files/content/' . $content->id) }}/" + fileNameFixed;
+                let playlistPdfRotation = 0;
+                let playlistPdfRestoringView = false;
 
                 window.playlistPdfViewer = new PDFjsViewer($(".playlist-pdfjs-viewer"), {
                     onDocumentReady: function() {
@@ -121,8 +123,15 @@
                         progressTracker.send({ total_pages: totalPages }, true);
                     },
 
+                    onZoomChange: function(zoom) {
+                        zoom = parseInt(zoom * 10000) / 100;
+                        $('#playlist-pdf-shell .zoomval').text(zoom + "%");
+                    },
+
                     onActivePageChanged: function(page, pageno) {
                         $('#playlist-pdf-shell .pageno').text(pageno + "/" + this.getPageCount());
+
+                        if (playlistPdfRestoringView) return;
 
                         progressTracker.sendDebounced({
                             last_page: pageno,
@@ -131,9 +140,244 @@
                     }
                 });
 
+                var playlistPdfDownloadButton = document.getElementById('playlist-pdf-download-btn');
+                if (playlistPdfDownloadButton) {
+                    playlistPdfDownloadButton.href = pdfFile;
+                }
+
                 playlistPdfViewer.loadDocument(pdfFile).then(function() {
                     playlistPdfViewer.setZoom('width');
                 });
+
+                function getPlaylistPdfViewState() {
+                    var activePage = playlistPdfViewer.getActivePage();
+                    var pageNumber = activePage && typeof activePage.data === 'function'
+                        ? activePage.data('page')
+                        : 1;
+
+                    return {
+                        page: pageNumber || 1,
+                        zoom: typeof playlistPdfViewer.getZoom === 'function'
+                            ? playlistPdfViewer.getZoom()
+                            : 1
+                    };
+                }
+
+                function applyPlaylistPdfRotation(degrees) {
+                    var viewState = getPlaylistPdfViewState();
+                    var rotationResult;
+
+                    playlistPdfRotation = (degrees + 360) % 360;
+                    playlistPdfRestoringView = true;
+
+                    if (typeof playlistPdfViewer.setRotation === 'function') {
+                        rotationResult = playlistPdfViewer.setRotation(playlistPdfRotation);
+                    } else if (typeof playlistPdfViewer.rotate === 'function') {
+                        rotationResult = playlistPdfViewer.rotate(playlistPdfRotation);
+                    } else {
+                        var viewerElement = document.querySelector('.playlist-pdfjs-viewer');
+                        if (viewerElement) {
+                            viewerElement.style.transform = 'rotate(' + playlistPdfRotation + 'deg)';
+                        }
+                    }
+
+                    return Promise.resolve(rotationResult).then(function() {
+                        if (typeof playlistPdfViewer.setZoom === 'function') {
+                            playlistPdfViewer.setZoom(viewState.zoom);
+                        }
+
+                        playlistPdfRestoringView = false;
+                        playlistPdfViewer.scrollToPage(
+                            Math.min(viewState.page, playlistPdfViewer.getPageCount())
+                        );
+                    }, function() {
+                        playlistPdfRestoringView = false;
+                    });
+                }
+
+                window.playlistPdfRotateLeft = function() {
+                    return applyPlaylistPdfRotation(playlistPdfRotation - 90);
+                };
+
+                window.playlistPdfRotateRight = function() {
+                    return applyPlaylistPdfRotation(playlistPdfRotation + 90);
+                };
+
+                window.playlistPdfDoPrint = function() {
+                    var frame = document.createElement('iframe');
+                    var handled = false;
+
+                    frame.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:0;height:0;border:none;';
+
+                    function removePrintFrame() {
+                        if (frame.parentNode) {
+                            frame.parentNode.removeChild(frame);
+                        }
+                    }
+
+                    function openPrintFallback() {
+                        if (handled) return;
+                        handled = true;
+                        removePrintFrame();
+                        window.open(pdfFile, '_blank', 'noopener');
+                    }
+
+                    frame.onload = function() {
+                        try {
+                            if (!frame.contentWindow || typeof frame.contentWindow.print !== 'function') {
+                                throw new Error('Browser print is unavailable.');
+                            }
+
+                            frame.contentWindow.focus();
+                            frame.contentWindow.print();
+                            handled = true;
+                            setTimeout(removePrintFrame, 3000);
+                        } catch (error) {
+                            openPrintFallback();
+                        }
+                    };
+                    frame.onerror = openPrintFallback;
+                    frame.src = pdfFile;
+                    document.body.appendChild(frame);
+                    setTimeout(openPrintFallback, 5000);
+                };
+
+                function syncPlaylistPdfFullscreenButton() {
+                    var shell = document.getElementById('playlist-pdf-shell');
+                    var icon = document.getElementById('playlist-pdf-fs-icon');
+                    var button = document.getElementById('playlist-pdf-fs-btn');
+                    var fullscreenElement = document.fullscreenElement
+                        || document.webkitFullscreenElement
+                        || null;
+                    var isFullscreen = fullscreenElement === shell;
+
+                    if (icon) {
+                        icon.className = isFullscreen ? 'ti ti-minimize' : 'ti ti-maximize';
+                    }
+                    if (button) {
+                        button.title = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+                        button.setAttribute('aria-pressed', isFullscreen ? 'true' : 'false');
+                    }
+                }
+
+                window.playlistPdfToggleFullscreen = function() {
+                    var shell = document.getElementById('playlist-pdf-shell');
+                    if (!shell) return;
+
+                    var fullscreenElement = document.fullscreenElement
+                        || document.webkitFullscreenElement
+                        || null;
+                    var fullscreenAction;
+
+                    if (!fullscreenElement) {
+                        fullscreenAction = shell.requestFullscreen
+                            || shell.webkitRequestFullscreen
+                            || shell.mozRequestFullScreen;
+
+                        if (fullscreenAction) {
+                            var requestResult = fullscreenAction.call(shell);
+                            if (requestResult && typeof requestResult.catch === 'function') {
+                                requestResult.catch(function() {});
+                            }
+                        }
+                    } else {
+                        fullscreenAction = document.exitFullscreen
+                            || document.webkitExitFullscreen
+                            || document.mozCancelFullScreen;
+
+                        if (fullscreenAction) {
+                            var exitResult = fullscreenAction.call(document);
+                            if (exitResult && typeof exitResult.catch === 'function') {
+                                exitResult.catch(function() {});
+                            }
+                        }
+                    }
+                };
+
+                var playlistPdfShell = document.getElementById('playlist-pdf-shell');
+
+                if (playlistPdfShell && playlistPdfShell.dataset.pdfToolbarBound !== 'true') {
+                    playlistPdfShell.dataset.pdfToolbarBound = 'true';
+
+                    document.addEventListener('fullscreenchange', syncPlaylistPdfFullscreenButton);
+                    document.addEventListener('webkitfullscreenchange', syncPlaylistPdfFullscreenButton);
+
+                    var playlistPdfViewerElement = document.querySelector('.playlist-pdfjs-viewer');
+
+                    if (playlistPdfViewerElement) {
+                        playlistPdfViewerElement.addEventListener('wheel', function(event) {
+                            if (!event.ctrlKey) return;
+
+                            event.preventDefault();
+                            playlistPdfViewer.setZoom(event.deltaY < 0 ? 'in' : 'out');
+                        }, { passive: false });
+
+                        playlistPdfViewerElement.addEventListener('dblclick', function() {
+                            playlistPdfViewer.setZoom('width');
+                        });
+                    }
+
+                    document.addEventListener('keydown', function(event) {
+                        var tag = (event.target.tagName || '').toLowerCase();
+
+                        if (tag === 'input' || tag === 'textarea' || event.target.isContentEditable) {
+                            return;
+                        }
+
+                        if (event.ctrlKey) {
+                            switch (event.key) {
+                                case '+':
+                                case '=':
+                                    event.preventDefault();
+                                    playlistPdfViewer.setZoom('in');
+                                    break;
+                                case '-':
+                                    event.preventDefault();
+                                    playlistPdfViewer.setZoom('out');
+                                    break;
+                                case '0':
+                                    event.preventDefault();
+                                    playlistPdfViewer.setZoom('fit');
+                                    break;
+                            }
+                            return;
+                        }
+
+                        switch (event.key) {
+                            case 'PageDown':
+                            case 'ArrowRight':
+                                event.preventDefault();
+                                playlistPdfViewer.next();
+                                break;
+                            case 'PageUp':
+                            case 'ArrowLeft':
+                                event.preventDefault();
+                                playlistPdfViewer.prev();
+                                break;
+                            case 'Home':
+                                event.preventDefault();
+                                playlistPdfViewer.first();
+                                break;
+                            case 'End':
+                                event.preventDefault();
+                                playlistPdfViewer.last();
+                                break;
+                            case ' ':
+                                event.preventDefault();
+                                if (event.shiftKey) {
+                                    playlistPdfViewer.prev();
+                                } else {
+                                    playlistPdfViewer.next();
+                                }
+                                break;
+                            case 'f':
+                            case 'F':
+                                event.preventDefault();
+                                playlistPdfViewer.setZoom('width');
+                                break;
+                        }
+                    });
+                }
             }
         @endif
 

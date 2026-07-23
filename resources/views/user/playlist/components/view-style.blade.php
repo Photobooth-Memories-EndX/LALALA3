@@ -130,6 +130,156 @@
         position: relative;
     }
 
+    .playlist-pdf-toolbar {
+        padding: 14px;
+        background: rgba(248, 250, 252, .92);
+        border-bottom: 1px solid #e5e7eb;
+        border-radius: 1rem 1rem 0 0;
+        backdrop-filter: blur(12px);
+        position: relative;
+        z-index: 3;
+    }
+
+    .playlist-pdf-toolbar .pdf-tb-inner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .playlist-pdf-toolbar .pdf-tb-group {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .playlist-pdf-toolbar .pdf-tb-sep {
+        width: 1px;
+        height: 22px;
+        background: rgba(148, 163, 184, .35);
+        flex-shrink: 0;
+    }
+
+    .playlist-pdf-toolbar .pdf-tb-btn {
+        padding: 4px 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        line-height: 1;
+        color: #374151 !important;
+        background: rgba(15, 23, 42, .06);
+        border-color: rgba(15, 23, 42, .14);
+    }
+
+    .playlist-pdf-toolbar .pdf-tb-btn i,
+    .playlist-pdf-toolbar .pdf-tb-label {
+        color: inherit !important;
+    }
+
+    .playlist-pdf-toolbar .pdf-tb-btn:hover,
+    .playlist-pdf-toolbar .pdf-tb-btn:focus-visible {
+        background: rgba(15, 23, 42, .12);
+        color: #111827 !important;
+    }
+
+    .playlist-pdf-toolbar .pdf-tb-btn:disabled,
+    .playlist-pdf-toolbar .pdf-tb-btn.disabled {
+        color: #94a3b8 !important;
+        opacity: 1;
+        cursor: not-allowed;
+        pointer-events: auto;
+    }
+
+    .playlist-pdf-toolbar .pdf-tb-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .03em;
+    }
+
+    .playlist-pdf-toolbar .pdf-tb-pageno,
+    .playlist-pdf-toolbar .pdf-tb-zoomval {
+        min-width: 56px;
+        text-align: center;
+        padding: 3px 6px;
+        background: rgba(148, 163, 184, .15);
+        border-radius: 6px;
+        color: #374151;
+        font-size: 12px;
+    }
+
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar,
+    body.dark-mode .playlist-pdf-toolbar {
+        background: rgba(15, 23, 42, .92);
+        border-color: rgba(255, 255, 255, .08);
+    }
+
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar .pdf-tb-btn,
+    body.dark-mode .playlist-pdf-toolbar .pdf-tb-btn {
+        color: #f1f5f9 !important;
+        background: rgba(255, 255, 255, .07);
+        border-color: rgba(255, 255, 255, .14);
+    }
+
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar .pdf-tb-btn:hover,
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar .pdf-tb-btn:focus-visible,
+    body.dark-mode .playlist-pdf-toolbar .pdf-tb-btn:hover,
+    body.dark-mode .playlist-pdf-toolbar .pdf-tb-btn:focus-visible {
+        background: rgba(255, 255, 255, .14);
+        color: #ffffff !important;
+    }
+
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar .pdf-tb-btn:disabled,
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar .pdf-tb-btn.disabled,
+    body.dark-mode .playlist-pdf-toolbar .pdf-tb-btn:disabled,
+    body.dark-mode .playlist-pdf-toolbar .pdf-tb-btn.disabled {
+        color: rgba(255, 255, 255, .35) !important;
+    }
+
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar .pdf-tb-sep,
+    body.dark-mode .playlist-pdf-toolbar .pdf-tb-sep {
+        background: rgba(255, 255, 255, .18);
+    }
+
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar .pdf-tb-pageno,
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar .pdf-tb-zoomval,
+    body.dark-mode .playlist-pdf-toolbar .pdf-tb-pageno,
+    body.dark-mode .playlist-pdf-toolbar .pdf-tb-zoomval {
+        background: rgba(255, 255, 255, .1);
+        color: #e5e7eb;
+    }
+
+    #playlist-pdf-shell:fullscreen,
+    #playlist-pdf-shell:-webkit-full-screen {
+        display: flex;
+        flex-direction: column;
+        background: #1e293b;
+    }
+
+    #playlist-pdf-shell:fullscreen .playlist-pdf-toolbar,
+    #playlist-pdf-shell:-webkit-full-screen .playlist-pdf-toolbar {
+        border-radius: 0;
+    }
+
+    #playlist-pdf-shell:fullscreen .playlist-pdfjs-viewer,
+    #playlist-pdf-shell:-webkit-full-screen .playlist-pdfjs-viewer {
+        flex: 1;
+        height: auto !important;
+        border-radius: 0;
+    }
+
+    @media (max-width: 480px) {
+        .playlist-pdf-toolbar .pdf-tb-hide-xs {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .playlist-pdf-toolbar .pdf-tb-sep-md {
+            display: none !important;
+        }
+    }
+
     .fullscreen-player-overlays {
         display: none;
         pointer-events: none;
