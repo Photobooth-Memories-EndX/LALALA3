@@ -9,9 +9,9 @@
 @include('components.shared.hero-section', [
     'user' => $user,
     'heroLabel' => 'Home',
-    'heroTitle' => 'Learning Dashboard',
+    'heroTitle' => 'Learning Hub',
     'heroName' => $user?->name ?? 'Learner',
-    'heroSubtitle' => 'Continue your learning journey',
+    'heroSubtitle' => 'Open Mind, Wide Growth, Lead Impact',
     'ongoingCourseVal' => $ongoingCourseVal,
     'completedCourseVal' => $completedCourseVal,
     'totalCourseVal' => $totalCourseVal,

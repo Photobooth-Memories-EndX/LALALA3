@@ -25,7 +25,7 @@
 
         <h1 class="navbar-brand navbar-brand-autodark">
             <a href="{{ url('/') }}">
-                <img src="{{ asset('owl.png') }}" width="110" height="32" alt="OWL LMS" class="navbar-brand-image">
+                <img src="{{ asset('owl.png') }}" width="109" height="64" alt="OWL Learning Hub" class="navbar-brand-image owl-sidebar-logo">
             </a>
         </h1>
 

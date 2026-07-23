@@ -2,10 +2,11 @@
     @push('styles')
         <style>
 .shared-learning-hero {
-    --owl-primary-rgb: 5, 80, 125;
-    --kp-hero-primary-rgb: 5, 80, 125;
-    --kp-hero-dark-rgb: 3, 59, 92;
-    --kp-hero-light-rgb: 105, 179, 231;
+    --owl-primary-rgb: 1, 69, 118;
+    --kp-hero-primary-rgb: 1, 69, 118;
+    --kp-hero-dark-rgb: 1, 69, 118;
+    --kp-hero-light-rgb: 108, 167, 211;
+    --kp-hero-completed-rgb: 31, 107, 79;
 
 /* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
     --hero-overlay-width: 58%;
@@ -270,7 +271,7 @@
             }
 
             .shared-hero-donut-hit-completed:hover {
-                background: rgba(var(--kp-hero-primary-rgb), .16);
+                background: rgba(var(--kp-hero-completed-rgb), .16);
             }
 
             .shared-hero-donut-hit-ongoing:hover {
@@ -382,13 +383,13 @@
             }
 
             .shared-hero-stat-dot.total {
-                background: #e2e8f0;
+                background: #ececec;
                 box-shadow: 0 0 6px rgba(255, 255, 255, .4);
             }
 
             .shared-hero-stat-dot.completed {
-                background: rgb(var(--kp-hero-primary-rgb));
-                box-shadow: 0 0 8px rgba(var(--kp-hero-primary-rgb), .5);
+                background: rgb(var(--kp-hero-completed-rgb));
+                box-shadow: 0 0 8px rgba(var(--kp-hero-completed-rgb), .5);
             }
 
             .shared-hero-stat-dot.ongoing {
@@ -409,7 +410,7 @@
 
             [data-bs-theme="dark"] .shared-hero-donut-inner,
             body.dark-mode .shared-hero-donut-inner {
-                background: rgba(2, 42, 67, .96);
+                background: rgba(var(--kp-hero-dark-rgb), .96);
             }
 
             @media (min-width: 992px) {

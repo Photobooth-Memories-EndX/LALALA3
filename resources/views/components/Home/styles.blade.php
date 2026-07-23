@@ -1,14 +1,19 @@
 <style>
 
 :root {
-    --kp-primary: #05507d;
-    --kp-primary-rgb: 5, 80, 125;
-    --kp-primary-dark: #033b5c;
-    --kp-primary-deep: #022a43;
-    --kp-light-blue: #69b3e7;
-    --kp-light-blue-rgb: 105, 179, 231;
+    --kp-primary: #014576;
+    --kp-primary-rgb: 1, 69, 118;
+    --kp-primary-dark: #01395f;
+    --kp-primary-deep: #014576;
+    --kp-light-blue: #6ca7d3;
+    --kp-light-blue-rgb: 108, 167, 211;
     --kp-light-blue-soft: #eaf5fc;
     --kp-light-blue-muted: #d3eaf7;
+    --kp-light-gray: #ececec;
+    --kp-gray: #bebfc1;
+    --kp-dark-green: #1f6b4f;
+    --kp-golden-orange: #d99000;
+    --kp-golden-orange-hover: #c88300;
     --kp-dark-page: #031f31;
     --kp-dark-surface: #072b42;
     --kp-dark-surface-raised: #0a354f;
@@ -21,7 +26,7 @@
 
 /* Page background */
 .page-body {
-    background: #f1f5f9;
+    background: var(--kp-light-gray);
     min-height: 100vh;
 }
 
@@ -814,11 +819,25 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-deadline-date {
     display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 5px;
     color: #64748b;
     font-size: 12px;
     font-weight: 400;
     line-height: 1.25;
+}
+
+.home-modern-deadline-separator {
+    color: var(--kp-gray);
+}
+
+.home-modern-deadline-relative {
+    color: var(--kp-primary);
+    font-weight: 600;
+}
+
+.home-modern-deadline-relative.is-overdue {
+    color: var(--kp-golden-orange);
 }
 
 .home-modern-deadline-date i {
@@ -1626,7 +1645,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--kp-primary);
+    background: var(--kp-golden-orange);
     color: #fff;
     border: none;
     padding: 10px 22px;
@@ -1634,19 +1653,20 @@ body.dark-mode #modal-assessment-access .alert-info {
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(var(--kp-primary-rgb),.3);
-    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 4px 14px rgba(217, 144, 0, .3);
+    transition: background-color .15s, transform .15s, box-shadow .15s;
 }
 
-.home-modern-assessment-btn:hover {
-    background: var(--kp-light-blue);
+.home-modern-assessment-btn:hover,
+.home-modern-assessment-btn:focus-visible {
+    background: var(--kp-golden-orange-hover);
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(var(--kp-primary-rgb),.4);
-    color: var(--kp-primary-deep);
+    box-shadow: 0 6px 20px rgba(217, 144, 0, .4);
+    color: #fff;
 }
 
 [data-bs-theme="dark"] .home-modern-assessment-btn {
-    box-shadow: 0 4px 14px rgba(var(--kp-primary-rgb),.2);
+    box-shadow: 0 4px 14px rgba(217, 144, 0, .24);
 }
 
 /* =====================================================

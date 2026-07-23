@@ -99,7 +99,7 @@
         <div class="col-lg-5 mt-3 mt-lg-0">
             <div class="shared-hero-summary">
                 <div class="shared-hero-donut"
-                     style="background: conic-gradient(#05507d 0%, #05507d {{ $donutBlendStart }}%, #69b3e7 {{ $donutBlendEnd }}%, #69b3e7 100%);">
+                     style="background: conic-gradient(rgb(var(--kp-hero-completed-rgb)) 0%, rgb(var(--kp-hero-completed-rgb)) {{ $donutBlendStart }}%, rgb(var(--kp-hero-light-rgb)) {{ $donutBlendEnd }}%, rgb(var(--kp-hero-light-rgb)) 100%);">
                     <div class="shared-hero-donut-hit shared-hero-donut-hit-completed"
                          style="clip-path: {{ $completedSlicePath }}"
                          data-bs-toggle="tooltip"

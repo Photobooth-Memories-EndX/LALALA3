@@ -64,9 +64,29 @@
         border-right: 1px solid #e6e7e9 !important;
     } */
 
-        .navbar-vertical {
+    .navbar-vertical {
         background-color: var(--owl-surface) !important;
         border-right: 1px solid var(--owl-border) !important;
+    }
+
+    .navbar-vertical .navbar-brand {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .navbar-vertical .navbar-brand > a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .navbar-vertical .owl-sidebar-logo {
+        display: block;
+        width: auto;
+        height: 64px;
+        max-width: 100%;
+        object-fit: contain;
     }
 
     .navbar-vertical .nav-link,
@@ -243,6 +263,10 @@
     }
 
     @media (max-width: 767.98px) {
+        .navbar-vertical .owl-sidebar-logo {
+            height: 48px;
+        }
+
         .topbar-search {
             display: none !important;
         }

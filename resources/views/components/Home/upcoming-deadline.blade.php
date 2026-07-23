@@ -20,6 +20,7 @@
                 $toDate = filled($deadline->todate)
                     ? \Carbon\Carbon::parse($deadline->todate)
                     : null;
+                $deadlineNow = \Carbon\Carbon::now();
 
                 $isPassed = $latestResult
                     && $deadline->passing_grade !== null
@@ -30,7 +31,7 @@
                     $deadlineStatus = 'PASSED';
                     $deadlineStatusClass = 'success';
                     $deadlineIconClass = 'primary';
-                } elseif ($toDate && \Carbon\Carbon::now()->gt($toDate)) {
+                } elseif ($toDate && $deadlineNow->gt($toDate)) {
                     $deadlineStatus = 'OVERDUE';
                     $deadlineStatusClass = 'overdue';
                     $deadlineIconClass = 'danger';
@@ -43,6 +44,28 @@
                 $deadlineLabel = $toDate
                     ? 'Deadline: ' . $toDate->format('d M Y, H:i')
                     : 'No Deadline';
+
+                $deadlineRelativeLabel = null;
+
+                if ($toDate) {
+                    if (!$isPassed && $deadlineNow->gt($toDate)) {
+                        $deadlineRelativeLabel = 'Overdue';
+                    } elseif ($deadlineNow->lte($toDate)) {
+                        $daysUntilDue = max(
+                            0,
+                            (int) $deadlineNow->copy()->startOfDay()
+                                ->diffInDays($toDate->copy()->startOfDay(), false)
+                        );
+
+                        if ($daysUntilDue === 0) {
+                            $deadlineRelativeLabel = 'Due today';
+                        } elseif ($daysUntilDue === 1) {
+                            $deadlineRelativeLabel = 'Due tomorrow';
+                        } else {
+                            $deadlineRelativeLabel = 'Due in ' . $daysUntilDue . ' days';
+                        }
+                    }
+                }
             @endphp
 
             <a href="{{ route('assesment.user.view', $deadline->slug) }}"
@@ -65,7 +88,13 @@
                             </span>
                             <span class="home-modern-deadline-date">
                                 <i class="ti ti-calendar-event" aria-hidden="true"></i>
-                                {{ $deadlineLabel }}
+                                <span>{{ $deadlineLabel }}</span>
+                                @if($deadlineRelativeLabel)
+                                    <span class="home-modern-deadline-separator" aria-hidden="true">&middot;</span>
+                                    <span class="home-modern-deadline-relative {{ $deadlineRelativeLabel === 'Overdue' ? 'is-overdue' : '' }}">
+                                        {{ $deadlineRelativeLabel }}
+                                    </span>
+                                @endif
                             </span>
                         </div>
                     </div>

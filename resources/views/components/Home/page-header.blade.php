@@ -1,6 +1,6 @@
 @php
-    $heroPageTitle = $heroPageTitle ?? 'Learning Dashboard';
-    $heroPageSubtitle = $heroPageSubtitle ?? 'Continue your learning journey';
+    $heroPageTitle = $heroPageTitle ?? 'Learning Hub';
+    $heroPageSubtitle = $heroPageSubtitle ?? 'Open Mind, Wide Growth, Lead Impact';
 @endphp
 
 <div class="home-modern-db-header">
