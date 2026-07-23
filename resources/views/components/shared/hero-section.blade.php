@@ -112,7 +112,7 @@
                          title="On Going {{ $ongoingCourseVal }} Learning"></div>
                     <div class="shared-hero-donut-inner">
                         <strong>{{ $learningHours }}</strong>
-                        <small>Learning Hours</small>
+                        <small>Total Learning Hours</small>
                     </div>
                 </div>
 

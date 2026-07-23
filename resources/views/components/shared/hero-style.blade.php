@@ -2,16 +2,16 @@
     @push('styles')
         <style>
 .shared-learning-hero {
-    /* 1. Lebar overlay */
-    --hero-overlay-width: 45%;
+/* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
+    --hero-overlay-width: 58%;
 
-    /* 2. Solid dari kiri (0%) sampai 88%, baru memudar tipis di ujung kanan (88% -> 100%) */
+    /* 2. Buat gradasi memudar lebih lembut (smooth gradient stops) */
     --hero-overlay: linear-gradient(
         90deg,
-        rgba(var(--owl-primary-rgb), .85) 0%,
-        rgba(var(--owl-primary-rgb), .85) 88%,  /* Tetap solid & pekat sampai area 88% */
-        rgba(var(--owl-primary-rgb), .50) 95%,  /* Mulai memudar tajam */
-        rgba(var(--owl-primary-rgb), 0) 100%    /* Hilang sepenuhnya tepat di ujung tepi */
+        rgba(var(--owl-primary-rgb), .90) 0%,
+        rgba(var(--owl-primary-rgb), .85) 50%,  /* Solid di area teks utama */
+        rgba(var(--owl-primary-rgb), .45) 80%,  /* Memudar sangat lembut di tengah */
+        rgba(var(--owl-primary-rgb), 0) 100%    /* Menyatu sempurna dengan gambar */
     );
 
     isolation: isolate;
