@@ -21,7 +21,7 @@
     box-sizing: border-box;
     min-height: 238px;
     overflow: hidden;
-    padding: 28px 34px;
+    padding: 20px 34px;
     border-radius: 22px;
     background-image: var(--hero-bg-image);
     background-position: center;
@@ -45,6 +45,8 @@
             }
 
             .shared-learning-hero > .row {
+                display: flex;
+                align-items: center;
                 min-height: 182px;
             }
 
@@ -223,6 +225,7 @@
                 max-width: 100%;
                 min-height: 0;
                 margin: 0 auto;
+                align-self: center;
                 padding: 10px 12px;
                 border: 1px solid rgba(255, 255, 255, .14);
                 border-radius: 18px;
@@ -399,6 +402,21 @@
             [data-bs-theme="dark"] .shared-hero-donut-inner,
             body.dark-mode .shared-hero-donut-inner {
                 background: rgba(5, 18, 39, .94);
+            }
+
+            @media (min-width: 992px) {
+                .shared-learning-hero {
+                    display: flex;
+                    align-items: center;
+                }
+
+                .shared-learning-hero > .row {
+                    --bs-gutter-y: 0;
+
+                    flex: 1 1 auto;
+                    margin-top: 0;
+                    margin-bottom: 0;
+                }
             }
 
             @media (max-width: 991.98px) {
