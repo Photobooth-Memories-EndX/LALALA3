@@ -2,19 +2,16 @@
     @push('styles')
         <style>
 .shared-learning-hero {
-    /* 1. Atur lebar overlay menjadi 70% untuk Desktop */
-    --hero-overlay-width: 70%;
+    /* 1. Lebar overlay */
+    --hero-overlay-width: 45%;
 
-    /* 2. Tingkatkan nilai alpha/opacity pada gradien (misal: 0.82 -> 0.0) agar lebih pekat */
+    /* 2. Solid dari kiri (0%) sampai 88%, baru memudar tipis di ujung kanan (88% -> 100%) */
     --hero-overlay: linear-gradient(
         90deg,
-        rgba(var(--owl-primary-rgb), .82) 0%,
-        rgba(var(--owl-primary-rgb), .75) 18%,
-        rgba(var(--owl-primary-rgb), .60) 35%,
-        rgba(var(--owl-primary-rgb), .40) 70%,
-        rgba(var(--owl-primary-rgb), .20) 80%,
-        rgba(var(--owl-primary-rgb), .08) 95%,
-        rgba(var(--owl-primary-rgb), 0) 100%
+        rgba(var(--owl-primary-rgb), .85) 0%,
+        rgba(var(--owl-primary-rgb), .85) 88%,  /* Tetap solid & pekat sampai area 88% */
+        rgba(var(--owl-primary-rgb), .50) 95%,  /* Mulai memudar tajam */
+        rgba(var(--owl-primary-rgb), 0) 100%    /* Hilang sepenuhnya tepat di ujung tepi */
     );
 
     isolation: isolate;
@@ -29,7 +26,6 @@
     background-repeat: no-repeat;
     box-shadow: 0 20px 45px rgba(15, 23, 42, .12);
 }
-
             .shared-learning-hero::before {
                 content: "";
                 position: absolute;
@@ -421,14 +417,24 @@
 
             @media (max-width: 767.98px) {
                 .shared-learning-hero {
-                    --hero-overlay-width: 92%;
+                    --hero-overlay-width: 100%;
+                    --hero-overlay: linear-gradient(
+                        180deg,
+                        rgb(var(--owl-primary-rgb)) 0%,
+                        rgba(var(--owl-primary-rgb), .92) 38%,
+                        rgba(var(--owl-primary-rgb), .68) 60%,
+                        rgba(var(--owl-primary-rgb), .34) 80%,
+                        rgba(var(--owl-primary-rgb), 0) 100%
+                    );
+
                     padding: 54px 18px 20px;
                     border-radius: 18px;
                 }
 
                 .shared-learning-hero::before {
-                    inset: 0 auto auto 0;
-                    height: min(48%, 260px);
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
                 }
 
                 .shared-hero-toolbar {
@@ -458,33 +464,41 @@
                     font-size: 13px;
                 }
 
-                .shared-hero-summary {
+                .shared-learning-hero .shared-hero-summary {
+                    box-sizing: border-box;
                     width: 100%;
-                    flex-direction: column;
+                    min-width: 0;
+                    flex-direction: row !important;
                     align-items: center;
-                    gap: 12px;
+                    justify-content: flex-start;
+                    gap: 14px;
                     padding: 12px;
                 }
 
-                .shared-hero-donut {
-                    width: 112px;
-                    height: 112px;
-                    flex-basis: 112px;
+                .shared-learning-hero .shared-hero-donut {
+                    width: 90px;
+                    height: 90px;
+                    flex: 0 0 90px;
                 }
 
-                .shared-hero-donut-inner {
-                    width: 82px;
-                    height: 82px;
+                .shared-learning-hero .shared-hero-donut-inner {
+                    width: 66px;
+                    height: 66px;
                 }
 
-                .shared-hero-summary-detail {
-                    width: 100%;
+                .shared-learning-hero .shared-hero-summary-detail {
+                    width: auto;
                     min-width: 0;
-                    max-width: 260px;
+                    max-width: none;
+                    flex: 1 1 0;
+                    align-self: center;
+                    text-align: left;
                 }
 
-                .shared-hero-summary-title {
+                .shared-learning-hero .shared-hero-summary-title {
+                    justify-content: flex-start;
                     min-height: auto;
+                    text-align: left;
                 }
             }
         </style>
