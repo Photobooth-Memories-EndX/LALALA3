@@ -38,7 +38,7 @@
 
             @elseif (in_array($content->type, ['Document', 'SOP/Regulation']))
                 @if ($getcontentfile)
-                    <div class="pdfviewer playlist-pdfviewer" id="playlist-pdf-shell">
+                    <div class="pdfviewer playlist-pdfviewer playlist-pdf-mode-portrait playlist-pdf-single-page" id="playlist-pdf-shell">
                         @include('components.shared.pdf-toolbar', [
                             'toolbarId' => 'playlist-pdf-toolbar-main',
                             'toolbarClass' => 'playlist-pdf-toolbar',
@@ -47,8 +47,14 @@
                             'downloadButtonId' => 'playlist-pdf-download-btn',
                             'fullscreenButtonId' => 'playlist-pdf-fs-btn',
                             'fullscreenIconId' => 'playlist-pdf-fs-icon',
+                            'showReadingMode' => true,
+                            'readingModeButtonId' => 'playlist-pdf-mode-btn',
+                            'readingModeIconId' => 'playlist-pdf-mode-icon',
+                            'readingModeLabelId' => 'playlist-pdf-mode-label',
                         ])
-                        <div class="pdfjs-viewer playlist-pdfjs-viewer" style="height:560px; overflow:hidden;"></div>
+                        <div class="playlist-pdf-reader-stage">
+                            <div class="pdfjs-viewer playlist-pdfjs-viewer"></div>
+                        </div>
                     </div>
                 @else
                     <div class="d-flex align-items-center justify-content-center p-5 text-muted">

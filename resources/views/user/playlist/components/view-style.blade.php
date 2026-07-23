@@ -208,6 +208,64 @@
         font-size: 12px;
     }
 
+    .playlist-pdf-toolbar .pdf-tb-mode-btn[aria-pressed="true"] {
+        color: #ffffff !important;
+        background: #2563eb;
+        border-color: #2563eb;
+    }
+
+    .playlist-pdfviewer {
+        --playlist-pdf-viewport-max: 836px;
+        --playlist-pdf-stage-padding: clamp(18px, 4vw, 56px);
+        overflow: hidden;
+        background: #f1f5f9;
+        border-radius: 0 0 1rem 1rem;
+    }
+
+    .playlist-pdf-mode-portrait {
+        --playlist-pdf-viewport-max: 836px;
+        --playlist-pdf-stage-padding: clamp(18px, 4vw, 56px);
+    }
+
+    .playlist-pdf-mode-landscape {
+        --playlist-pdf-viewport-max: 1180px;
+        --playlist-pdf-stage-padding: clamp(12px, 2.5vw, 36px);
+    }
+
+    .playlist-pdf-reader-stage {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        padding: 18px var(--playlist-pdf-stage-padding);
+        background: #f1f5f9;
+        transition: padding .32s ease, background-color .2s ease;
+    }
+
+    .playlist-pdfjs-viewer {
+        width: 100%;
+        max-width: var(--playlist-pdf-viewport-max);
+        height: 800px;
+        margin: 0 auto;
+        overflow: auto;
+        background: #e2e8f0;
+        border: 1px solid rgba(148, 163, 184, .45);
+        border-radius: 10px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, .10);
+        transition: max-width .32s ease, border-radius .2s ease, box-shadow .2s ease;
+    }
+
+    .playlist-pdfjs-viewer .pdfpage {
+        background: #ffffff;
+    }
+
+    .playlist-pdf-single-page .playlist-pdfjs-viewer .pdfpage {
+        display: none;
+    }
+
+    .playlist-pdf-single-page .playlist-pdfjs-viewer .pdfpage.playlist-pdf-page-active {
+        display: block;
+    }
+
     body[data-bs-theme="dark"] .playlist-pdf-toolbar,
     body.dark-mode .playlist-pdf-toolbar {
         background: rgba(15, 23, 42, .92);
@@ -249,6 +307,27 @@
         color: #e5e7eb;
     }
 
+    body[data-bs-theme="dark"] .playlist-pdf-toolbar .pdf-tb-mode-btn[aria-pressed="true"],
+    body.dark-mode .playlist-pdf-toolbar .pdf-tb-mode-btn[aria-pressed="true"] {
+        color: #ffffff !important;
+        background: #2563eb;
+        border-color: #3b82f6;
+    }
+
+    body[data-bs-theme="dark"] .playlist-pdfviewer,
+    body[data-bs-theme="dark"] .playlist-pdf-reader-stage,
+    body.dark-mode .playlist-pdfviewer,
+    body.dark-mode .playlist-pdf-reader-stage {
+        background: #0f172a;
+    }
+
+    body[data-bs-theme="dark"] .playlist-pdfjs-viewer,
+    body.dark-mode .playlist-pdfjs-viewer {
+        background: #111827;
+        border-color: rgba(148, 163, 184, .22);
+        box-shadow: 0 18px 48px rgba(0, 0, 0, .30);
+    }
+
     #playlist-pdf-shell:fullscreen,
     #playlist-pdf-shell:-webkit-full-screen {
         display: flex;
@@ -261,11 +340,18 @@
         border-radius: 0;
     }
 
+    #playlist-pdf-shell:fullscreen .playlist-pdf-reader-stage,
+    #playlist-pdf-shell:-webkit-full-screen .playlist-pdf-reader-stage {
+        flex: 1;
+        min-height: 0;
+    }
+
     #playlist-pdf-shell:fullscreen .playlist-pdfjs-viewer,
     #playlist-pdf-shell:-webkit-full-screen .playlist-pdfjs-viewer {
         flex: 1;
-        height: auto !important;
+        height: 100%;
         border-radius: 0;
+        box-shadow: none;
     }
 
     @media (max-width: 480px) {
@@ -277,6 +363,32 @@
     @media (max-width: 640px) {
         .playlist-pdf-toolbar .pdf-tb-sep-md {
             display: none !important;
+        }
+    }
+
+    @media (max-width: 991px) {
+        .playlist-pdfjs-viewer {
+            height: 700px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .playlist-pdf-toolbar .pdf-tb-mode-btn {
+            display: none !important;
+        }
+
+        .playlist-pdfviewer {
+            --playlist-pdf-viewport-max: 100%;
+            --playlist-pdf-stage-padding: 8px;
+        }
+
+        .playlist-pdf-reader-stage {
+            padding: 8px;
+        }
+
+        .playlist-pdfjs-viewer {
+            height: 600px;
+            border-radius: 6px;
         }
     }
 

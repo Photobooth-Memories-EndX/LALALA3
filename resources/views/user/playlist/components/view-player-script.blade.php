@@ -102,8 +102,57 @@
                 let pdfFile = "{{ asset('storage/files/content/' . $content->id) }}/" + fileNameFixed;
                 let playlistPdfRotation = 0;
                 let playlistPdfRestoringView = false;
+                let playlistPdfChangingLayout = false;
+                let playlistPdfModeTransitionTimer = null;
+
+                function syncPlaylistPdfSinglePage(pageno) {
+                    if (!pageno) return;
+
+                    var viewerElement = document.querySelector('.playlist-pdfjs-viewer');
+                    if (!viewerElement) return;
+
+                    viewerElement.querySelectorAll('.pdfpage').forEach(function(pageElement) {
+                        var isActive = Number(pageElement.dataset.page) === Number(pageno);
+
+                        pageElement.classList.toggle('playlist-pdf-page-active', isActive);
+                        pageElement.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                    });
+
+                    viewerElement.scrollTop = 0;
+                    viewerElement.scrollLeft = 0;
+
+                    var refreshPage = function() {
+                        var activePage = playlistPdfViewer.getActivePage();
+                        var activePageNumber = activePage && typeof activePage.data === 'function'
+                            ? activePage.data('page')
+                            : null;
+
+                        if (
+                            Number(activePageNumber) === Number(pageno)
+                            && typeof playlistPdfViewer.refreshAll === 'function'
+                        ) {
+                            playlistPdfViewer.refreshAll();
+                        }
+                    };
+
+                    if (typeof window.requestAnimationFrame === 'function') {
+                        window.requestAnimationFrame(refreshPage);
+                    } else {
+                        setTimeout(refreshPage, 0);
+                    }
+                }
 
                 window.playlistPdfViewer = new PDFjsViewer($(".playlist-pdfjs-viewer"), {
+                    extraPagesToLoad: 0,
+
+                    onNewPage: function(page, pageno) {
+                        var pageElement = page.get(0);
+                        var isActive = Number(pageno) === 1;
+
+                        pageElement.classList.toggle('playlist-pdf-page-active', isActive);
+                        pageElement.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                    },
+
                     onDocumentReady: function() {
                         var totalPages = playlistPdfViewer.getPageCount();
 
@@ -129,9 +178,12 @@
                     },
 
                     onActivePageChanged: function(page, pageno) {
+                        if (!pageno) return;
+
+                        syncPlaylistPdfSinglePage(pageno);
                         $('#playlist-pdf-shell .pageno').text(pageno + "/" + this.getPageCount());
 
-                        if (playlistPdfRestoringView) return;
+                        if (playlistPdfRestoringView || playlistPdfChangingLayout) return;
 
                         progressTracker.sendDebounced({
                             last_page: pageno,
@@ -139,6 +191,22 @@
                         });
                     }
                 });
+
+                if (typeof playlistPdfViewer._areaOfPageVisible === 'function') {
+                    var measurePlaylistPdfVisibleArea = playlistPdfViewer._areaOfPageVisible;
+
+                    playlistPdfViewer._areaOfPageVisible = function(page) {
+                        if (
+                            page
+                            && typeof page.hasClass === 'function'
+                            && !page.hasClass('playlist-pdf-page-active')
+                        ) {
+                            return 0;
+                        }
+
+                        return measurePlaylistPdfVisibleArea.call(this, page);
+                    };
+                }
 
                 var playlistPdfDownloadButton = document.getElementById('playlist-pdf-download-btn');
                 if (playlistPdfDownloadButton) {
@@ -201,6 +269,81 @@
 
                 window.playlistPdfRotateRight = function() {
                     return applyPlaylistPdfRotation(playlistPdfRotation + 90);
+                };
+
+                function applyPlaylistPdfReadingMode(mode) {
+                    var shell = document.getElementById('playlist-pdf-shell');
+                    if (!shell) return;
+
+                    var mobileQuery = typeof window.matchMedia === 'function'
+                        ? window.matchMedia('(max-width: 575.98px)')
+                        : null;
+
+                    if (mobileQuery && mobileQuery.matches) {
+                        mode = 'portrait';
+                    }
+
+                    var isLandscape = mode === 'landscape';
+                    var viewState = getPlaylistPdfViewState();
+                    var button = document.getElementById('playlist-pdf-mode-btn');
+                    var icon = document.getElementById('playlist-pdf-mode-icon');
+                    var label = document.getElementById('playlist-pdf-mode-label');
+
+                    playlistPdfChangingLayout = true;
+                    shell.classList.toggle('playlist-pdf-mode-portrait', !isLandscape);
+                    shell.classList.toggle('playlist-pdf-mode-landscape', isLandscape);
+                    shell.dataset.pdfReadingMode = isLandscape ? 'landscape' : 'portrait';
+
+                    if (button) {
+                        button.setAttribute('aria-pressed', isLandscape ? 'true' : 'false');
+                        button.title = isLandscape
+                            ? 'Switch to Portrait layout'
+                            : 'Switch to Landscape layout';
+                    }
+                    if (icon) {
+                        icon.className = isLandscape
+                            ? 'ti ti-rectangle'
+                            : 'ti ti-rectangle-vertical';
+                    }
+                    if (label) {
+                        label.textContent = isLandscape ? 'Landscape' : 'Portrait';
+                    }
+
+                    if (playlistPdfModeTransitionTimer) {
+                        clearTimeout(playlistPdfModeTransitionTimer);
+                    }
+
+                    playlistPdfModeTransitionTimer = setTimeout(function() {
+                        if (typeof playlistPdfViewer.refreshAll === 'function') {
+                            playlistPdfViewer.refreshAll();
+                        }
+
+                        if (
+                            typeof playlistPdfViewer.getZoom === 'function'
+                            && Math.abs(playlistPdfViewer.getZoom() - viewState.zoom) > 0.0001
+                        ) {
+                            playlistPdfViewer.setZoom(viewState.zoom);
+                        }
+
+                        var currentState = getPlaylistPdfViewState();
+                        if (currentState.page !== viewState.page) {
+                            playlistPdfViewer.scrollToPage(viewState.page);
+                        }
+
+                        playlistPdfChangingLayout = false;
+                        playlistPdfModeTransitionTimer = null;
+                    }, 340);
+                }
+
+                window.playlistPdfToggleReadingMode = function() {
+                    var shell = document.getElementById('playlist-pdf-shell');
+                    if (!shell) return;
+
+                    applyPlaylistPdfReadingMode(
+                        shell.classList.contains('playlist-pdf-mode-landscape')
+                            ? 'portrait'
+                            : 'landscape'
+                    );
                 };
 
                 window.playlistPdfDoPrint = function() {
@@ -301,6 +444,24 @@
 
                     document.addEventListener('fullscreenchange', syncPlaylistPdfFullscreenButton);
                     document.addEventListener('webkitfullscreenchange', syncPlaylistPdfFullscreenButton);
+
+                    if (typeof window.matchMedia === 'function') {
+                        var playlistPdfMobileQuery = window.matchMedia('(max-width: 575.98px)');
+                        var enforcePlaylistPdfMobileMode = function(event) {
+                            if (
+                                event.matches
+                                && playlistPdfShell.classList.contains('playlist-pdf-mode-landscape')
+                            ) {
+                                applyPlaylistPdfReadingMode('portrait');
+                            }
+                        };
+
+                        if (typeof playlistPdfMobileQuery.addEventListener === 'function') {
+                            playlistPdfMobileQuery.addEventListener('change', enforcePlaylistPdfMobileMode);
+                        } else if (typeof playlistPdfMobileQuery.addListener === 'function') {
+                            playlistPdfMobileQuery.addListener(enforcePlaylistPdfMobileMode);
+                        }
+                    }
 
                     var playlistPdfViewerElement = document.querySelector('.playlist-pdfjs-viewer');
 

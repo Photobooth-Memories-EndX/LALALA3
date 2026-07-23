@@ -6,6 +6,10 @@
     $pdfDownloadButtonId = $downloadButtonId ?? 'pdf-download-btn';
     $pdfFullscreenButtonId = $fullscreenButtonId ?? 'pdf-fs-btn';
     $pdfFullscreenIconId = $fullscreenIconId ?? 'pdf-fs-icon';
+    $pdfShowReadingMode = (bool) ($showReadingMode ?? false);
+    $pdfReadingModeButtonId = $readingModeButtonId ?? 'pdf-reading-mode-btn';
+    $pdfReadingModeIconId = $readingModeIconId ?? 'pdf-reading-mode-icon';
+    $pdfReadingModeLabelId = $readingModeLabelId ?? 'pdf-reading-mode-label';
 @endphp
 
 <div class="pdf-toolbar {{ $pdfToolbarClass }}" id="{{ $pdfToolbarId }}" role="toolbar" aria-label="PDF Controls">
@@ -75,6 +79,16 @@
                 title="Rotate Right">
                 <i class="ti ti-rotate-clockwise-2"></i>
             </button>
+            @if ($pdfShowReadingMode)
+                <button type="button" class="btn btn-sm btn-secondary pdf-tb-btn pdf-tb-mode-btn"
+                    onclick="{{ $pdfActionPrefix }}ToggleReadingMode(); return false;"
+                    id="{{ $pdfReadingModeButtonId }}"
+                    title="Switch to Landscape layout"
+                    aria-pressed="false">
+                    <i class="ti ti-rectangle-vertical" id="{{ $pdfReadingModeIconId }}"></i>
+                    <span class="pdf-tb-label pdf-tb-mode-label" id="{{ $pdfReadingModeLabelId }}">Portrait</span>
+                </button>
+            @endif
             <a id="{{ $pdfDownloadButtonId }}" href="#" download
                 class="btn btn-sm btn-secondary pdf-tb-btn"
                 title="Download PDF">
