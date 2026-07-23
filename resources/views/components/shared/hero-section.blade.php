@@ -39,7 +39,7 @@
 
 @include('components.shared.hero-style')
 
-<div class="shared-learning-hero mb-4"
+<div class="shared-learning-hero {{ !empty($compactSummary) ? 'shared-learning-hero--compact-summary' : '' }} mb-4"
      data-hero-background
      data-hero-width="1600"
      data-hero-height="600"

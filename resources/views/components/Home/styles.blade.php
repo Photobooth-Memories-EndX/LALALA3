@@ -650,14 +650,16 @@ a { text-decoration: none; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 13px 14px;
+    gap: 10px;
+    padding: 11px 14px;
     border-radius: 14px;
     border: 1px solid #f1f5f9;
     background: #f8fafc;
     margin-bottom: 10px;
     text-decoration: none;
     color: #0f172a;
-    transition: all .2s;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0);
+    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
 }
 
 .home-modern-deadline-row:last-child {
@@ -668,12 +670,13 @@ a { text-decoration: none; }
     border-color: #bfdbfe;
     background: #eff6ff;
     color: #0f172a;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, .08);
 }
 
 .home-modern-deadline-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     min-width: 0;
     flex: 1;
 }
@@ -693,22 +696,48 @@ a { text-decoration: none; }
 .home-modern-deadline-warning { background: #fffbeb; color: #d97706; }
 .home-modern-deadline-primary { background: #eff6ff; color: #2563eb; }
 
+.home-modern-deadline-content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
 .home-modern-deadline-title {
+    display: block;
+    width: 100%;
+    max-width: 100%;
     font-size: 14px;
     font-weight: 600;
+    line-height: 1.3;
     color: #0f172a;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 300px;
 }
 
 .home-modern-deadline-meta {
     font-size: 12px;
     color: #64748b;
-    margin-top: 3px;
+    margin-top: 4px;
     display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.home-modern-deadline-date {
+    display: inline-flex;
     align-items: center;
+    gap: 5px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.25;
+}
+
+.home-modern-deadline-date i {
+    flex: 0 0 auto;
+    font-size: 13px;
+    line-height: 1;
 }
 
 .home-modern-priority-badge {
@@ -717,6 +746,7 @@ a { text-decoration: none; }
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 999px;
+    line-height: 1.2;
     text-transform: uppercase;
     letter-spacing: .3px;
 }
@@ -1089,6 +1119,40 @@ a { text-decoration: none; }
     background: #dcfce7;
     color: #15803d;
     border-color: rgba(21, 128, 61, .18);
+}
+
+.deadline-status.pending {
+    background: #fef3c7;
+    color: #b45309;
+    border-color: rgba(180, 83, 9, .16);
+}
+
+.deadline-status.overdue {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, .16);
+}
+
+[data-bs-theme="dark"] .home-modern-deadline-date {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .deadline-status.success {
+    background: rgba(34, 197, 94, .16);
+    color: #86efac;
+    border-color: rgba(134, 239, 172, .16);
+}
+
+[data-bs-theme="dark"] .deadline-status.pending {
+    background: rgba(245, 158, 11, .16);
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, .16);
+}
+
+[data-bs-theme="dark"] .deadline-status.overdue {
+    background: rgba(239, 68, 68, .16);
+    color: #fca5a5;
+    border-color: rgba(252, 165, 165, .16);
 }
 
 [data-bs-theme="dark"] .home-modern-slide-nav {
@@ -1495,6 +1559,203 @@ a { text-decoration: none; }
 
 [data-bs-theme="dark"] .home-modern-assessment-btn {
     box-shadow: 0 4px 14px rgba(217,119,6,.2);
+}
+
+/* =====================================================
+   ASSESSMENT ACCESS — schedule information
+===================================================== */
+
+.home-modern-assessment-schedules {
+    display: grid;
+    gap: 10px;
+}
+
+.home-modern-assessment-schedule {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.home-modern-assessment-schedule-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 11px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 19px;
+}
+
+.home-modern-assessment-schedule-content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.home-modern-assessment-schedule-title {
+    margin-bottom: 7px;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.home-modern-assessment-schedule-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px 10px;
+}
+
+.home-modern-assessment-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.home-modern-assessment-status.available {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.home-modern-assessment-status.upcoming {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.home-modern-assessment-status.overdue {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.home-modern-assessment-status.no-deadline {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.home-modern-assessment-due {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.home-modern-assessment-due.overdue,
+.home-modern-assessment-date.overdue {
+    color: #dc2626;
+}
+
+.home-modern-assessment-date {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.home-modern-assessment-schedule-empty {
+    align-items: center;
+}
+
+.home-modern-assessment-schedule-empty .home-modern-assessment-schedule-title {
+    margin-bottom: 2px;
+}
+
+.home-modern-assessment-schedule-empty .home-modern-assessment-date {
+    margin-top: 0;
+}
+
+[data-bs-theme="dark"] #modal-assessment-access .modal-content,
+body.dark-mode #modal-assessment-access .modal-content {
+    border-color: rgba(148, 163, 184, .16);
+    background: #152235;
+    color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-schedule,
+body.dark-mode .home-modern-assessment-schedule {
+    border-color: rgba(148, 163, 184, .16);
+    background: #0f1b2d;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-schedule-icon,
+body.dark-mode .home-modern-assessment-schedule-icon {
+    background: rgba(37, 99, 235, .18);
+    color: #93c5fd;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-schedule-title,
+body.dark-mode .home-modern-assessment-schedule-title {
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-due,
+[data-bs-theme="dark"] .home-modern-assessment-date,
+body.dark-mode .home-modern-assessment-due,
+body.dark-mode .home-modern-assessment-date {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-due.overdue,
+[data-bs-theme="dark"] .home-modern-assessment-date.overdue,
+body.dark-mode .home-modern-assessment-due.overdue,
+body.dark-mode .home-modern-assessment-date.overdue {
+    color: #f87171;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-status.available,
+body.dark-mode .home-modern-assessment-status.available {
+    background: rgba(34, 197, 94, .16);
+    color: #86efac;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-status.upcoming,
+body.dark-mode .home-modern-assessment-status.upcoming {
+    background: rgba(59, 130, 246, .18);
+    color: #93c5fd;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-status.overdue,
+body.dark-mode .home-modern-assessment-status.overdue {
+    background: rgba(239, 68, 68, .16);
+    color: #fca5a5;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-status.no-deadline,
+body.dark-mode .home-modern-assessment-status.no-deadline {
+    background: rgba(148, 163, 184, .14);
+    color: #cbd5e1;
+}
+
+@media (max-width: 575.98px) {
+    .home-modern-assessment-schedule {
+        padding: 12px;
+    }
+
+    .home-modern-assessment-schedule-icon {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+        font-size: 17px;
+    }
+
+    .home-modern-assessment-schedule-meta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
 }
 
 </style>

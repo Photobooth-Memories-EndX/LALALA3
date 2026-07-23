@@ -16,4 +16,5 @@
     'completedCourseVal' => $completedCourseVal,
     'totalCourseVal' => $totalCourseVal,
     'learningHours' => $learningHours,
+    'compactSummary' => true,
 ])

@@ -17,29 +17,32 @@
                     ->orderByDesc('id')
                     ->first();
 
-                $deadlineStatus = 'NOT PASSED';
-                $deadlineStatusClass = 'danger';
-                $deadlineIconClass = 'danger';
+                $toDate = filled($deadline->todate)
+                    ? \Carbon\Carbon::parse($deadline->todate)
+                    : null;
 
-                if ($latestResult && $deadline->passing_grade !== null && $latestResult->score !== null && (float) $latestResult->score >= (float) $deadline->passing_grade) {
+                $isPassed = $latestResult
+                    && $deadline->passing_grade !== null
+                    && $latestResult->score !== null
+                    && (float) $latestResult->score >= (float) $deadline->passing_grade;
+
+                if ($isPassed) {
                     $deadlineStatus = 'PASSED';
                     $deadlineStatusClass = 'success';
                     $deadlineIconClass = 'primary';
-                }
-
-                $now = \Carbon\Carbon::now()->startOfDay();
-                $fromDate = $deadline->fromdate ? \Carbon\Carbon::parse($deadline->fromdate)->startOfDay() : null;
-                $toDate = $deadline->todate ? \Carbon\Carbon::parse($deadline->todate)->startOfDay() : null;
-
-                if ($fromDate && $now->lt($fromDate)) {
-                    $daysDiff = $now->diffInDays($fromDate, false);
-                    $deadlineLabel = 'Starts in ' . $daysDiff . ' days';
-                } elseif ($toDate) {
-                    $daysDiff = $now->diffInDays($toDate, false);
-                    $deadlineLabel = $now->gt($toDate) ? 'Expired' : 'Due in ' . ($daysDiff < 0 ? 0 : $daysDiff) . ' days';
+                } elseif ($toDate && \Carbon\Carbon::now()->gt($toDate)) {
+                    $deadlineStatus = 'OVERDUE';
+                    $deadlineStatusClass = 'overdue';
+                    $deadlineIconClass = 'danger';
                 } else {
-                    $deadlineLabel = 'Expired';
+                    $deadlineStatus = 'PENDING';
+                    $deadlineStatusClass = 'pending';
+                    $deadlineIconClass = 'warning';
                 }
+
+                $deadlineLabel = $toDate
+                    ? 'Deadline: ' . $toDate->format('d M Y, H:i')
+                    : 'No Deadline';
             @endphp
 
             <a href="{{ route('assesment.user.view', $deadline->slug) }}"
@@ -51,15 +54,19 @@
                         <i class="ti ti-alarm"></i>
                     </div>
 
-                    <div>
-                        <div class="home-modern-deadline-title">
-                            {{ Str::limit($deadline->title, 55) }}
+                    <div class="home-modern-deadline-content">
+                        <div class="home-modern-deadline-title"
+                             title="{{ $deadline->title }}">
+                            {{ $deadline->title }}
                         </div>
                         <div class="home-modern-deadline-meta">
                             <span class="home-modern-priority-badge deadline-status {{ $deadlineStatusClass }}">
                                 {{ $deadlineStatus }}
                             </span>
-                            <span class="ms-2">{{ $deadlineLabel }}</span>
+                            <span class="home-modern-deadline-date">
+                                <i class="ti ti-calendar-event" aria-hidden="true"></i>
+                                {{ $deadlineLabel }}
+                            </span>
                         </div>
                     </div>
 

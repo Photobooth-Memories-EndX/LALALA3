@@ -14,6 +14,8 @@
         rgba(var(--owl-primary-rgb), 0) 100%    /* Menyatu sempurna dengan gambar */
     );
 
+    display: flex;
+    align-items: center;
     isolation: isolate;
     position: relative;
     width: 100%;
@@ -46,8 +48,9 @@
 
             .shared-learning-hero > .row {
                 display: flex;
+                flex: 1 1 auto;
                 align-items: center;
-                min-height: 182px;
+                min-height: 0;
             }
 
             .shared-hero-toolbar {
@@ -405,17 +408,17 @@
             }
 
             @media (min-width: 992px) {
-                .shared-learning-hero {
-                    display: flex;
-                    align-items: center;
-                }
-
                 .shared-learning-hero > .row {
                     --bs-gutter-y: 0;
 
-                    flex: 1 1 auto;
                     margin-top: 0;
                     margin-bottom: 0;
+                }
+
+                .shared-learning-hero--compact-summary .shared-hero-summary {
+                    margin-right: 0;
+                    margin-left: auto;
+                    transform: translateX(-40px);
                 }
             }
 
@@ -434,6 +437,14 @@
 
                 .shared-hero-summary {
                     justify-content: flex-start;
+                }
+            }
+
+            @media (min-width: 768px) and (max-width: 1199.98px) {
+                .shared-learning-hero--compact-summary .shared-hero-summary {
+                    margin-right: 0;
+                    margin-left: auto;
+                    transform: translateX(-30px);
                 }
             }
 
