@@ -27,7 +27,7 @@
         {{-- ── Composer ── --}}
         <div class="card-header border-0 bg-white p-4">
 
-            <div class="comment-count mb-3">{{ $commentTotal }} Comments</div>
+            {{-- <div class="comment-count mb-3">{{ $commentTotal }} Comments</div> --}}
 
             <x-form action="{{ $url }}" method="post" class="comment-form w-100">
                 <input type="hidden" value="{{ $hiddenplaylistslug }}" name="playlistslug">
@@ -55,6 +55,7 @@
                             rows="3"></x-textarea>
 
                         <div class="comment-submit-row">
+                            <div class="text-muted">{{ $commentTotal }} Comments</div>
                             <span id="note_remaining" class="text-muted small">1000 characters remaining</span>
 
                             <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">
