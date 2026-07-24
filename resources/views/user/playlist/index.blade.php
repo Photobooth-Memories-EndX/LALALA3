@@ -189,13 +189,6 @@
     border-radius: 999px;
 }
 
-.playlist-path-card {
-    background:
-        radial-gradient(circle at top right, rgba(5,80,125,.16), transparent 35%),
-        linear-gradient(135deg, rgba(5,80,125,.08), var(--tblr-bg-surface));
-    border: 1px solid var(--tblr-border-color) !important;
-}
-
 .playlist-continue-title {
     max-width: 560px;
     line-height: 1.25;
