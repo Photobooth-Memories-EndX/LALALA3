@@ -7,6 +7,7 @@
     use App\Models\AssesmentQuestion;
     use App\Models\AssesmentQuestionBank;
     use App\Models\AssesmentResult;
+    use App\Services\AssessmentAccessService;
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Support\Facades\Auth;
 
@@ -31,10 +32,14 @@
             return view('user.assesment.index', compact('assesment', 'result'));
         }
 
-        public function view($slug)
+        public function view($slug, AssessmentAccessService $assessmentAccess)
         {
             $assesment = Assesment::findBySlug($slug);
             $today = date("Y-m-d H:i:s");
+
+            if ($assesment === null) {
+                abort(404);
+            }
 
             \Log::info('[ASSESSMENT DEBUG] view() called', [
                 'slug'            => $slug,
@@ -52,89 +57,18 @@
                 'is_admin'        => auth()->user()->isAdmin(),
             ]);
 
+            $denialReason = $assessmentAccess->denialReason($assesment, auth()->user());
+            if ($denialReason !== null) {
+                return $this->assessmentAccessDeniedResponse(
+                    $assesment,
+                    $denialReason,
+                    $assessmentAccess
+                );
+            }
+
             //jika bukan ADMIN
             if (!auth()->user()->isAdmin())
             {
-                // Check Assigned Users
-                $assignedCount = $assesment->assesments_assigned->count();
-
-                \Log::info('[ASSESSMENT DEBUG] assigned check', [
-                    'assessment_id'        => $assesment->id,
-                    'assigned_count'       => $assignedCount,
-                    'assigned_descriptions' => $assesment->assesments_assigned->pluck('assigned_description')->toArray(),
-                ]);
-
-                if ($assignedCount > 0) {
-                    $assignedAssesments = [];
-                    foreach ($assesment->assesments_assigned as $assign) {
-                        $assignedAssesments[] = $assign->assigned_description;
-                    }
-
-                    // Division ditambahkan agar user yang di-assign via division juga bisa akses
-                    $isAllowed = in_array(Auth::user()->name, $assignedAssesments)
-                        || in_array(Auth::user()->team, $assignedAssesments)
-                        || in_array(Auth::user()->department, $assignedAssesments)
-                        || in_array(Auth::user()->division, $assignedAssesments);
-
-                    \Log::info('[ASSESSMENT DEBUG] permission check', [
-                        'assigned_list'   => $assignedAssesments,
-                        'user_name'       => Auth::user()->name,
-                        'user_team'       => Auth::user()->team ?? null,
-                        'user_department' => Auth::user()->department ?? null,
-                        'user_division'   => Auth::user()->division ?? null,
-                        'is_allowed'      => $isAllowed,
-                    ]);
-
-                    if (!$isAllowed) {
-                        \Log::warning('[ASSESSMENT DEBUG] 403 — user not in assigned list', [
-                            'assessment_id' => $assesment->id,
-                            'user_id'       => auth()->user()->id,
-                        ]);
-                        // Tampilkan halaman informatif agar user tahu alasan akses ditolak
-                        return response()->view('errors.assessment-forbidden', [
-                            'assesment' => $assesment,
-                            'user'      => auth()->user(),
-                        ], 403);
-                    }
-                }
-
-                //jika status assesment tidak aktif, atau assesment link tidak valid
-                if ($assesment === null or $assesment->status == "NOT") {
-                    if ($assesment === null) {
-                        abort(404);
-                    }
-                    \Log::warning('[ASSESSMENT DEBUG] status NOT — tampilkan halaman unavailable', [
-                        'assessment_id' => $assesment->id,
-                        'status'        => $assesment->status,
-                    ]);
-                    // Tampilkan pesan informatif agar user tidak melihat 403 default
-                    return response()->view('errors.assessment-unavailable', [
-                        'assesment' => $assesment,
-                        'reason'    => 'inactive',
-                    ], 403);
-                }
-
-                //hanya tampilkan asesment sesuai jadwal yg diinput
-                if (($assesment->fromdate && $assesment->todate) != null) {
-                    if(!($today >= $assesment->fromdate and $today <= $assesment->todate)){
-                        $reason = ($today < $assesment->fromdate) ? 'before_start' : 'expired';
-                        \Log::warning('[ASSESSMENT DEBUG] date check failed — tampilkan halaman unavailable', [
-                            'assessment_id' => $assesment->id,
-                            'reason'        => $reason,
-                            'fromdate'      => $assesment->fromdate,
-                            'todate'        => $assesment->todate,
-                            'today'         => $today,
-                        ]);
-                        // Tampilkan pesan jadwal agar user tahu kapan assessment bisa diakses
-                        return response()->view('errors.assessment-unavailable', [
-                            'assesment' => $assesment,
-                            'reason'    => $reason,
-                            'fromdate'  => $assesment->fromdate,
-                            'todate'    => $assesment->todate,
-                        ], 403);
-                    }
-                }
-
                 //cek apakah user sebelumnya sudah mengikuti ujian di batch berjalan, juga apakah sudah pernah mengisi jawaban dan jawaban tsb sudah disubmit
                 // $assesment_result = AssesmentResult::where('user_id', auth()->user()->id)
                 //     ->where('assesment_id', $assesment->id)
@@ -180,13 +114,15 @@
             return view('user.assesment.view', compact('assesment', 'assesment_question', 'assesment_result_draft'));
         }
 
-        public function store(Request $request, $slug)
+        public function store(Request $request, $slug, AssessmentAccessService $assessmentAccess)
         {
             $assesment = Assesment::findBySlug($slug);
 
             if ($assesment === null) {
                 abort(404);
             }
+
+            $assessmentAccess->authorize($assesment, auth()->user());
 
             // counting total questions from total of questions amount of assessment qyuestion bank.
             $assessmentQuestionBank      = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
@@ -247,20 +183,28 @@
             return to_route('assesment.user.result', $slug)->with('assesmentResultId', $assesment_result->id);
         }
 
-        public function result($slug)
+        public function result($slug, AssessmentAccessService $assessmentAccess)
         {
             $assesment = Assesment::findBySlug($slug);
             if ($assesment === null) {
                 abort(404);
             }
+            $assessmentAccess->authorize($assesment, auth()->user());
+
             $assesment_result = AssesmentResult::findOrFail(session('assesmentResultId'));
 
             return view('user.assesment.result', compact('assesment', 'assesment_result'));
         }
 
-        public function autosave(Request $request, $slug)
+        public function autosave(Request $request, $slug, AssessmentAccessService $assessmentAccess)
         {
             $assesment = Assesment::findBySlug($slug);
+
+            if ($assesment === null) {
+                abort(404);
+            }
+
+            $assessmentAccess->authorize($assesment, auth()->user());
 
             // counting total questions from total of questions amount of assessment qyuestion bank.
             $assessmentQuestionBank      = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
@@ -315,5 +259,32 @@
                 'status'=> 200,
                 'message'=> 'Autosave berhasil',
             ]);
+        }
+
+        private function assessmentAccessDeniedResponse(
+            Assesment $assesment,
+            string $reason,
+            AssessmentAccessService $assessmentAccess
+        ) {
+            \Log::warning('[ASSESSMENT ACCESS] denied', [
+                'assessment_id' => $assesment->id,
+                'user_id'       => auth()->id(),
+                'reason'        => $reason,
+            ]);
+
+            if ($reason === AssessmentAccessService::REASON_ASSIGNED) {
+                return response()->view('errors.assessment-forbidden', [
+                    'assesment' => $assesment,
+                    'user'      => auth()->user(),
+                ], 403);
+            }
+
+            return response()->view('errors.assessment-unavailable', [
+                'assesment' => $assesment,
+                'reason'    => $reason,
+                'message'   => $assessmentAccess->message($reason),
+                'fromdate'  => $assesment->fromdate,
+                'todate'    => $assesment->todate,
+            ], 403);
         }
     }

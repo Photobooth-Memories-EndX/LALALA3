@@ -1,5 +1,6 @@
 @php
     $defaultLessonThumbnail = asset('default-video.jpg');
+    $requiredAssessmentProgress = \App\Models\ContentUser::ASSESSMENT_REQUIRED_PROGRESS;
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 sticky-top view-playlist-card" style="top: 1rem;">
@@ -34,6 +35,7 @@
                 @php
                     $lesson = $list->content;
                     $isActive = optional($lesson)->slug === $content->slug;
+                    $lessonAssessment = $assessmentsByContent->get($list->content_id);
 
                     $learningProgress = $progressByContentId[$list->content_id] ?? 0;
 
@@ -95,13 +97,15 @@
                             </div>
                         </a>
 
-                        @if ($isActive && !empty($assessmentContent))
+                        @if ($lessonAssessment)
                             <div class="lesson-assessment-action">
-                                <a href="{{ route('assesment.user.view', $assessmentContent->slug) }}"
-                                   class="btn btn-xs btn-outline-primary px-2 py-1 {{ $learningProgress >= 100 ? '' : 'disabled' }}"
+                                <a @if ($learningProgress >= $requiredAssessmentProgress) href="{{ route('assesment.user.view', $lessonAssessment->slug) }}" @endif
+                                   data-assessment-url="{{ route('assesment.user.view', $lessonAssessment->slug) }}"
+                                   data-required-progress="{{ $requiredAssessmentProgress }}"
+                                   class="btn btn-xs btn-outline-primary px-2 py-1 {{ $learningProgress >= $requiredAssessmentProgress ? '' : 'disabled' }}"
                                    data-assessment-action
-                                   aria-disabled="{{ $learningProgress >= 100 ? 'false' : 'true' }}"
-                                   @if ($learningProgress < 100) tabindex="-1" @endif>
+                                   aria-disabled="{{ $learningProgress >= $requiredAssessmentProgress ? 'false' : 'true' }}"
+                                   @if ($learningProgress < $requiredAssessmentProgress) tabindex="-1" @endif>
                                     <i class="ti ti-clipboard-check me-1" aria-hidden="true"></i>
                                     Assessment Content
                                 </a>

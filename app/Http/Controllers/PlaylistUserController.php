@@ -189,6 +189,7 @@ class PlaylistUserController extends Controller
             $content_all->pluck('content_id'),
             Auth::user()
         );
+        $assessmentsByContent = $contentAssessmentProgress['assessmentsByContent'];
 
         $assesment             = Assesment::where('type', 'trainingplan')
             ->where('trainingplan_id', $trainingplan->id)
@@ -224,9 +225,7 @@ class PlaylistUserController extends Controller
             ? $certificateEligibility->check($playlistCertificateSetting, Auth::user())
             : null;
 
-        $assessmentContent = Assesment::where('type', 'content')
-            ->where('content_id', $content->id)
-            ->first();
+        $assessmentContent = $assessmentsByContent->get($content->id);
 
         $queryAssessmentContentResult = AssesmentResult::select(['id', 'user_id', 'assesment_id', 'score', 'pass', 'final', 'created_at'])
             ->where('user_id', $userId)
@@ -282,6 +281,7 @@ class PlaylistUserController extends Controller
             'assessmentContent'              => $assessmentContent,
             'assessmentContentCount'         => $assessmentContentCount,
             'assessmentContentLatestScores'  => $assessmentContentLatestScores,
+            'assessmentsByContent'            => $assessmentsByContent,
             'contentAssessmentTotal'         => $contentAssessmentProgress['total'],
             'contentAssessmentCompleted'     => $contentAssessmentProgress['completed'],
             'contentAssessmentPercentage'    => $contentAssessmentProgress['percentage'],

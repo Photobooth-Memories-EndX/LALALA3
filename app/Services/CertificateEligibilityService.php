@@ -75,27 +75,50 @@ class CertificateEligibilityService
      * conventions: status NOT is excluded and a final result marks completion.
      *
      * @param  Collection<int, int|string>  $contentIds
-     * @return array{total: int, completed: int, percentage: int}
+     * @return array{
+     *     total: int,
+     *     completed: int,
+     *     percentage: int,
+     *     assessmentsByContent: Collection<int|string, Assesment>
+     * }
      */
     public function contentAssessmentProgress(Collection $contentIds, User $user): array
     {
         $contentIds = $contentIds->filter()->unique()->values();
 
         if ($contentIds->isEmpty()) {
-            return ['total' => 0, 'completed' => 0, 'percentage' => 0];
+            return [
+                'total' => 0,
+                'completed' => 0,
+                'percentage' => 0,
+                'assessmentsByContent' => collect(),
+            ];
         }
 
         $assessments = Assesment::query()
-            ->select(['id', 'content_id'])
+            ->select(['id', 'content_id', 'slug'])
             ->where('type', 'content')
             ->where('status', '!=', 'NOT')
             ->whereIn('content_id', $contentIds)
+            ->orderBy('id')
             ->get();
+
+        // Preserve the former first-assessment behaviour with an explicit,
+        // deterministic rule while retaining every active assessment above
+        // for the existing progress calculation.
+        $assessmentsByContent = $assessments
+            ->unique('content_id')
+            ->keyBy('content_id');
 
         $total = $assessments->pluck('content_id')->filter()->unique()->count();
 
         if ($total === 0) {
-            return ['total' => 0, 'completed' => 0, 'percentage' => 0];
+            return [
+                'total' => 0,
+                'completed' => 0,
+                'percentage' => 0,
+                'assessmentsByContent' => $assessmentsByContent,
+            ];
         }
 
         $completedAssessmentIds = AssesmentResult::query()
@@ -116,6 +139,7 @@ class CertificateEligibilityService
             'total' => $total,
             'completed' => $completed,
             'percentage' => (int) round(($completed / $total) * 100),
+            'assessmentsByContent' => $assessmentsByContent,
         ];
     }
 

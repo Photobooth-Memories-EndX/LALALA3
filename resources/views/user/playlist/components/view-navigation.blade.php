@@ -34,24 +34,28 @@
                 My Task
             </button>
 
-            @if ($playlistCertificateSetting && $certificateEligible)
+            @if ($playlistCertificateSetting)
                 <form method="POST"
                       action="{{ route('certificate.generate.setting', $playlistCertificateSetting) }}"
-                      class="flex-fill m-0">
+                      class="certificate-action-wrapper flex-fill m-0 {{ $certificateEligible ? '' : 'is-disabled' }}"
+                      @if (!$certificateEligible) title="{{ $certificateUnavailableReason }}" @endif>
                     @csrf
 
                     <button type="submit"
-                            class="btn btn-success w-100">
+                            class="btn btn-success certificate-action-button w-100"
+                            aria-disabled="{{ $certificateEligible ? 'false' : 'true' }}"
+                            @disabled(!$certificateEligible)>
                         <i class="ti ti-certificate me-2" aria-hidden="true"></i>
                         Generate Certificate
                     </button>
                 </form>
             @else
-                <span class="d-block flex-fill"
-                      tabindex="0"
-                      title="{{ $certificateUnavailableReason }}">
+                <span class="certificate-action-wrapper is-disabled d-block flex-fill"
+                       tabindex="0"
+                       title="{{ $certificateUnavailableReason }}">
                     <button type="button"
-                            class="btn btn-success w-100"
+                            class="btn btn-success certificate-action-button w-100"
+                            aria-disabled="true"
                             disabled>
                         <i class="ti ti-certificate me-2" aria-hidden="true"></i>
                         Generate Certificate

@@ -88,7 +88,7 @@
                     @if ($assesment)
                         <a href="{{ route('assesment.user.view', $assesment->slug) }}"
                         class="btn btn-primary rounded-pill px-4
-                        {{ $content_user->progress < 100 || ($assessmentCount >= 1 + $assesment->total_remedials && $assessmentLatestScores < $assesment->passing_grade) || $assessmentLatestScores >= $assesment->passing_grade ? 'disabled' : '' }}">
+                        {{ !$content_user->meetsAssessmentProgressRequirement() || ($assessmentCount >= 1 + $assesment->total_remedials && $assessmentLatestScores < $assesment->passing_grade) || $assessmentLatestScores >= $assesment->passing_grade ? 'disabled' : '' }}">
 
                             <i class="ti ti-clipboard-check me-1"></i>
                             Course Assessment

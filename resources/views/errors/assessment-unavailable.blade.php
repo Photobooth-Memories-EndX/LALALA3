@@ -12,22 +12,26 @@
                         'before_start' => 'ti-clock-hour-3',
                         'expired'      => 'ti-calendar-x',
                         'inactive'     => 'ti-circle-x',
+                        'progress'     => 'ti-progress-check',
                     ];
                     $colorMap = [
                         'before_start' => 'blue',
                         'expired'      => 'orange',
                         'inactive'     => 'red',
+                        'progress'     => 'orange',
                     ];
                     $titleMap = [
                         'before_start' => 'Assessment Not Yet Available',
                         'expired'      => 'Assessment Expired',
                         'inactive'     => 'Assessment Inactive',
+                        'progress'     => 'Complete the Content First',
                     ];
 
                     $msgMap = [
                         'before_start' => 'This assessment will be available according to the scheduled start time.',
                         'expired'      => 'The assessment period has ended.',
                         'inactive'     => 'This assessment is currently inactive. Please contact the LMS Administrator.',
+                        'progress'     => $message ?? 'Complete the related content before starting this assessment.',
                     ];
 
                     $icon    = $iconMap[$reason]  ?? 'ti-circle-x';

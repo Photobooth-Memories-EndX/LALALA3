@@ -171,7 +171,7 @@
                 </div>
 
                 <a href="{{ route('assesment.user.view', $assesment->slug) }}"
-                   class="btn btn-primary w-100 {{ $content_user->progress < 100 || ($assessmentCount >= 1 + $assesment->total_remedials && $assessmentLatestScores < $assesment->passing_grade) || $assessmentLatestScores >= $assesment->passing_grade ? 'disabled' : '' }}">
+                   class="btn btn-primary w-100 {{ !$content_user->meetsAssessmentProgressRequirement() || ($assessmentCount >= 1 + $assesment->total_remedials && $assessmentLatestScores < $assesment->passing_grade) || $assessmentLatestScores >= $assesment->passing_grade ? 'disabled' : '' }}">
                     Start Assessment
                 </a>
 

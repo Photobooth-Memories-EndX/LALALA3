@@ -9,6 +9,8 @@ class ContentUser extends Model
 {
     use HasFactory;
 
+    public const ASSESSMENT_REQUIRED_PROGRESS = 100;
+
     protected $fillable = [
         'user_id',
         'content_id',
@@ -48,5 +50,8 @@ class ContentUser extends Model
         return $this->hasOne(TrainingPlanDetail::class, 'content_id', 'content_id');
     }
 
-    
+    public function meetsAssessmentProgressRequirement(): bool
+    {
+        return (int) $this->progress >= self::ASSESSMENT_REQUIRED_PROGRESS;
+    }
 }

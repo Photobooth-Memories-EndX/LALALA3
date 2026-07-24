@@ -468,6 +468,15 @@
         margin-left: 56px;
     }
 
+    .certificate-action-wrapper.is-disabled {
+        cursor: not-allowed;
+    }
+
+    .certificate-action-button:disabled {
+        opacity: .6;
+        pointer-events: none;
+    }
+
     body[data-bs-theme="dark"] .playlist-scroll-area::-webkit-scrollbar-thumb,
     body.dark-mode .playlist-scroll-area::-webkit-scrollbar-thumb {
         background: #475569;

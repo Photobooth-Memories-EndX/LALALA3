@@ -131,13 +131,16 @@
 
             var assessmentAction = item.querySelector('[data-assessment-action]');
             if (assessmentAction) {
-                var assessmentEnabled = progress >= 100;
+                var requiredProgress = parseInt(assessmentAction.dataset.requiredProgress, 10);
+                var assessmentEnabled = Number.isFinite(requiredProgress) && progress >= requiredProgress;
                 assessmentAction.classList.toggle('disabled', !assessmentEnabled);
                 assessmentAction.setAttribute('aria-disabled', assessmentEnabled ? 'false' : 'true');
 
                 if (assessmentEnabled) {
+                    assessmentAction.setAttribute('href', assessmentAction.dataset.assessmentUrl);
                     assessmentAction.removeAttribute('tabindex');
                 } else {
+                    assessmentAction.removeAttribute('href');
                     assessmentAction.setAttribute('tabindex', '-1');
                 }
             }
