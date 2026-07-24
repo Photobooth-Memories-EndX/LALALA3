@@ -103,6 +103,7 @@
 
     <style>
         .playlist-comment-modal .modal-dialog {
+            display: flex;
             width: min(70vw, 920px);
             max-width: min(70vw, 920px);
             height: 88vh;
@@ -111,8 +112,11 @@
         }
 
         .playlist-comment-modal .modal-content {
-            height: 88vh;
-            max-height: 88vh;
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            max-height: 100%;
             overflow: hidden;
             box-shadow: 0 24px 70px rgba(15, 23, 42, .24);
         }
@@ -132,6 +136,8 @@
         }
 
         .playlist-comment-modal .modal-body {
+            display: flex;
+            flex: 1 1 auto;
             min-height: 0;
             padding: 0;
             background: #f8fafc;
@@ -139,16 +145,23 @@
         }
 
         .view-comment-wrapper {
-            height: 100%;
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
             min-height: 0;
             padding: 12px 14px 14px;
+            box-sizing: border-box;
             background: #f8fafc;
+            overflow: hidden;
         }
 
         .view-comment-wrapper .comment-ajax-root {
-            height: 100%;
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
             min-height: 0;
             margin: 0 !important;
+            overflow: hidden;
         }
 
         .view-comment-wrapper.is-loading-comments,
@@ -160,8 +173,8 @@
 
         .view-comment-wrapper #comment {
             display: flex;
+            flex: 1 1 auto;
             flex-direction: column;
-            height: 100%;
             min-height: 0;
             padding: 0 !important;
             background: transparent !important;
@@ -401,18 +414,15 @@
 
         @media (max-width: 768px) {
             .playlist-comment-modal .modal-dialog {
-                display: flex;
                 align-items: center;
                 width: 90vw;
                 max-width: 90vw;
                 height: 90vh;
-                min-height: 90vh;
                 margin: 0 auto;
             }
 
             .playlist-comment-modal .modal-content {
-                height: 90vh;
-                max-height: 90vh;
+                max-height: 100%;
                 width: 100%;
             }
 

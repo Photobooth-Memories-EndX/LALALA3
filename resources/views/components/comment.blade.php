@@ -580,19 +580,34 @@
             var action = $form.attr('action');
             var method = ($form.attr('method') || 'POST').toUpperCase();
             var state = getState($root);
+            var requestSucceeded = false;
 
-            if (!action || action === '#' || !$root.length || $root.hasClass('is-loading-comments')) return;
+            if (
+                !action ||
+                action === '#' ||
+                !$root.length ||
+                $root.hasClass('is-loading-comments') ||
+                $form.data('requestPending')
+            ) return;
 
+            $form.data('requestPending', true);
+            $form.find(':submit').prop('disabled', true).attr('aria-busy', 'true');
             $root.addClass('is-loading-comments');
+            clearCommentError($root);
 
             $.ajax({
                 url: action,
                 method: method,
                 data: $form.serialize(),
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
                 }
             }).done(function (response, textStatus, jqXHR) {
+                requestSucceeded = true;
+                $root.removeClass('is-loading-comments');
+
                 var currentUrl = $root.attr('data-comment-refresh-url') || document.URL;
                 var responseUrl = jqXHR && jqXHR.responseURL ? jqXHR.responseURL : currentUrl;
                 var freshRoot = typeof response === 'string'
@@ -602,16 +617,21 @@
                 if (freshRoot.length) {
                     replaceRoot($root, response, state);
                     $root.attr('data-comment-refresh-url', responseUrl);
-                    return;
+                } else {
+                    refreshComments($root, currentUrl, state, false);
                 }
 
-                refreshComments($root, currentUrl, state, false);
+                $form.get(0).reset();
             }).fail(function (xhr) {
                 showCommentError($root, xhr, 'Komentar tidak dapat dikirim.');
                 restoreState($root, state);
             }).always(function () {
-                $root.removeClass('is-loading-comments');
-                restoreState($root, state);
+                if (!requestSucceeded) {
+                    $root.removeClass('is-loading-comments');
+                }
+
+                $form.removeData('requestPending');
+                $form.find(':submit').prop('disabled', false).removeAttr('aria-busy');
             });
         });
     })(window.jQuery);
