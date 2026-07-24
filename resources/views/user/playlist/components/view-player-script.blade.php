@@ -174,7 +174,7 @@
 
                 lessons.forEach(function(item) {
                     const title = item.getAttribute('data-title') || '';
-                    item.style.display = title.includes(keyword) ? 'flex' : 'none';
+                    item.style.display = title.includes(keyword) ? '' : 'none';
                 });
             });
         }

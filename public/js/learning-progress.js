@@ -129,6 +129,19 @@
                 lessonMeta.textContent = progress + '%';
             }
 
+            var assessmentAction = item.querySelector('[data-assessment-action]');
+            if (assessmentAction) {
+                var assessmentEnabled = progress >= 100;
+                assessmentAction.classList.toggle('disabled', !assessmentEnabled);
+                assessmentAction.setAttribute('aria-disabled', assessmentEnabled ? 'false' : 'true');
+
+                if (assessmentEnabled) {
+                    assessmentAction.removeAttribute('tabindex');
+                } else {
+                    assessmentAction.setAttribute('tabindex', '-1');
+                }
+            }
+
             if (progress >= 100) {
                 var playIcon = item.querySelector('.lesson-play-icon');
                 if (playIcon) {

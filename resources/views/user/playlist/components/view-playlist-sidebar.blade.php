@@ -1,3 +1,7 @@
+@php
+    $defaultLessonThumbnail = asset('default-video.jpg');
+@endphp
+
 <div class="card border-0 shadow-sm rounded-4 sticky-top view-playlist-card" style="top: 1rem;">
     <div class="card-body p-3">
 
@@ -32,30 +36,6 @@
                     $isActive = optional($lesson)->slug === $content->slug;
 
                     $learningProgress = $progressByContentId[$list->content_id] ?? 0;
-                    $lessonType = strtolower(trim((string) optional($lesson)->type));
-
-                    [$lessonTypeIcon, $lessonTypeClass, $lessonTypeLabel] = match (true) {
-                        in_array($lessonType, ['video', 'youtube'], true) => [
-                            'ti ti-player-play-filled',
-                            'lesson-type-icon--video',
-                            'Video',
-                        ],
-                        in_array($lessonType, ['document', 'pdf', 'sop', 'regulation', 'sop/regulation'], true) => [
-                            'ti ti-file-type-pdf',
-                            'lesson-type-icon--document',
-                            'PDF / Document',
-                        ],
-                        $lessonType === 'playlist' => [
-                            'ti ti-playlist',
-                            'lesson-type-icon--playlist',
-                            'Playlist',
-                        ],
-                        default => [
-                            'ti ti-file',
-                            'lesson-type-icon--unknown',
-                            'File',
-                        ],
-                    };
 
                     if ($learningProgress >= 100) {
                         $lessonStatusIcon = 'ti ti-circle-check-filled';
@@ -76,49 +56,58 @@
                 @endphp
 
                 @if (optional($lesson)->slug)
-                    <a href="{{ route('playlist.user.view', [$playlist->slug, $lesson->slug]) }}"
-                       class="playlist-lesson-item {{ $isActive ? 'is-active' : '' }}"
-                       data-title="{{ strtolower($lesson->title) }}">
-
-                        <div class="lesson-type-icon {{ $lessonTypeClass }}"
-                             role="img"
-                             aria-label="{{ $lessonTypeLabel }}"
-                             title="{{ $lessonTypeLabel }}">
-                            <i class="{{ $lessonTypeIcon }}" aria-hidden="true"></i>
-                        </div>
-
-                        <div class="lesson-info">
-                            <div class="lesson-heading">
-                                <div class="lesson-title">
-                                    Ch. {{ $index + 1 }}: {{ $lesson->title }}
-                                </div>
-                                <span class="lesson-status-icon {{ $lessonStatusClass }} {{ $lessonStatusTone }}"
-                                      role="img"
-                                      aria-label="{{ $lessonStatusLabel }}"
-                                      title="{{ $lessonStatusLabel }}">
-                                    <i class="{{ $lessonStatusIcon }}" aria-hidden="true"></i>
+                    <div class="playlist-lesson-item {{ $isActive ? 'is-active' : '' }}"
+                         data-title="{{ strtolower($lesson->title) }}">
+                        <a href="{{ route('playlist.user.view', [$playlist->slug, $lesson->slug]) }}"
+                           class="playlist-lesson-main">
+                            <div class="lesson-type-icon lesson-thumbnail"
+                                 role="img"
+                                 aria-label="Content thumbnail">
+                                <img src="{{ $defaultLessonThumbnail }}"
+                                     alt=""
+                                     class="lesson-thumbnail-image"
+                                     onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                                <span class="lesson-thumbnail-fallback d-none" aria-hidden="true">
+                                    <i class="ti ti-video" aria-hidden="true"></i>
                                 </span>
                             </div>
 
-                            <div class="lesson-meta">
-                                {{ $learningProgress }}%
-                            </div>
-
-                            <div class="progress lesson-progress">
-                                <div class="progress-bar" style="width: {{ $learningProgress }}%"></div>
-                            </div>
-
-                            @if ($isActive && !empty($assessmentContent))
-                                <div class="mt-2">
-                                    <span class="btn btn-xs btn-outline-primary disabled px-2 py-1">
-                                        <i class="ti ti-clipboard-check me-1" aria-hidden="true"></i>
-                                        Assessment
+                            <div class="lesson-info">
+                                <div class="lesson-heading">
+                                    <div class="lesson-title">
+                                        Ch. {{ $index + 1 }}: {{ $lesson->title }}
+                                    </div>
+                                    <span class="lesson-status-icon {{ $lessonStatusClass }} {{ $lessonStatusTone }}"
+                                          role="img"
+                                          aria-label="{{ $lessonStatusLabel }}"
+                                          title="{{ $lessonStatusLabel }}">
+                                        <i class="{{ $lessonStatusIcon }}" aria-hidden="true"></i>
                                     </span>
                                 </div>
-                            @endif
-                        </div>
 
-                    </a>
+                                <div class="lesson-meta">
+                                    {{ $learningProgress }}%
+                                </div>
+
+                                <div class="progress lesson-progress">
+                                    <div class="progress-bar" style="width: {{ $learningProgress }}%"></div>
+                                </div>
+                            </div>
+                        </a>
+
+                        @if ($isActive && !empty($assessmentContent))
+                            <div class="lesson-assessment-action">
+                                <a href="{{ route('assesment.user.view', $assessmentContent->slug) }}"
+                                   class="btn btn-xs btn-outline-primary px-2 py-1 {{ $learningProgress >= 100 ? '' : 'disabled' }}"
+                                   data-assessment-action
+                                   aria-disabled="{{ $learningProgress >= 100 ? 'false' : 'true' }}"
+                                   @if ($learningProgress < 100) tabindex="-1" @endif>
+                                    <i class="ti ti-clipboard-check me-1" aria-hidden="true"></i>
+                                    Assessment Content
+                                </a>
+                            </div>
+                        @endif
+                    </div>
                 @endif
             @endforeach
         </div>
