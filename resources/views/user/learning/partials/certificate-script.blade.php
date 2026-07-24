@@ -18,8 +18,63 @@
                 });
         }
 
+        var certificateDefaults = {
+            certificate_filter_type: 'all',
+            certificate_filter_year: 'all',
+            certificate_filter_month: 'all',
+            certificate_filter_status: 'all',
+            certificate_number: '',
+            certificate_credential: '',
+            certificate_participant: '',
+            certificate_issuer: '',
+            certificate_target: '',
+            certificate_date_from: '',
+            certificate_date_to: '',
+            certificate_sort: 'issued_desc',
+            certificate_search: ''
+        };
+        var certificateAdvancedNames = [
+            'certificate_number',
+            'certificate_credential',
+            'certificate_participant',
+            'certificate_issuer',
+            'certificate_target',
+            'certificate_date_from',
+            'certificate_date_to'
+        ];
+
+        // Keep one stable object across AJAX partial reloads. The URL remains the
+        // durable source of truth, while this object preserves committed modal state.
+        window._certificateFilterState = window._certificateFilterState || {};
+        var certificateFilterState = window._certificateFilterState;
+
         function certificateParams() {
             return new URLSearchParams(window.location.search);
+        }
+
+        function replaceCertificateState(nextState) {
+            Object.keys(certificateFilterState).forEach(function (key) {
+                delete certificateFilterState[key];
+            });
+            Object.keys(certificateDefaults).forEach(function (key) {
+                certificateFilterState[key] = Object.prototype.hasOwnProperty.call(nextState, key)
+                    ? String(nextState[key])
+                    : certificateDefaults[key];
+            });
+            return certificateFilterState;
+        }
+
+        function readCertificateStateFromUrl() {
+            var params = certificateParams();
+            var nextState = {};
+
+            Object.keys(certificateDefaults).forEach(function (key) {
+                nextState[key] = params.has(key)
+                    ? String(params.get(key) || certificateDefaults[key])
+                    : certificateDefaults[key];
+            });
+
+            return replaceCertificateState(nextState);
         }
 
         function cleanCertificateParams(params) {
@@ -36,80 +91,111 @@
                 params.delete('certificate_page');
             }
             params.delete('certificate_export');
+            params.set('learning_tab', 'certificate');
             var query = params.toString();
-            history.pushState({}, '', window.location.pathname + (query ? '?' + query : ''));
-            _activeTab = null;
-            loadLearningTab('certificate');
+            $('#certificateMoreFiltersModal').modal('hide');
+            window.location.assign(window.location.pathname + (query ? '?' + query : ''));
         }
 
         function setQuickValue($dropdown, value, label) {
             $dropdown.attr('data-selected-value', value);
             $dropdown.find('.certificate-quick-value').val(value);
             $dropdown.find('.certificate-quick-item').removeClass('active')
-                .filter('[data-value="' + value + '"]').addClass('active');
+                .filter(function () {
+                    return String($(this).data('value')) === String(value);
+                }).addClass('active');
             $dropdown.find('.dropdown-toggle')
                 .toggleClass('active', value !== 'all')
                 .find('.certificate-filter-value').text(label);
         }
 
-        function hydrateQuickFilters() {
+        function quickFilterLabel($dropdown, value) {
+            var $item = $dropdown.find('.certificate-quick-item').filter(function () {
+                return String($(this).data('value')) === String(value);
+            }).first();
+
+            return $item.length ? $.trim($item.text()) : 'All';
+        }
+
+        function restoreCertificateInputs() {
+            $('#certificateSearch').val(certificateFilterState.certificate_search);
+
             $('#certificateFilterBar [data-certificate-filter]').each(function () {
                 var $dropdown = $(this);
-                var value = String($dropdown.find('.certificate-quick-value').val()
-                    || $dropdown.attr('data-selected-value')
-                    || 'all');
-                var $activeItem = $dropdown.find('.certificate-quick-item').filter(function () {
-                    return String($(this).data('value')) === value;
-                }).first();
-                var label = $activeItem.length ? $.trim($activeItem.text()) : 'All';
-
-                setQuickValue($dropdown, value, label);
+                var name = String($dropdown.find('.certificate-quick-value').attr('name'));
+                var value = certificateFilterState[name] || 'all';
+                setQuickValue($dropdown, value, quickFilterLabel($dropdown, value));
             });
 
-            var type = String($('#certificateFilterBar [data-certificate-filter="type"] .certificate-quick-value').val() || 'all');
-            $('#certificateAdvancedType').val(type);
+            certificateAdvancedNames.forEach(function (name) {
+                $('[name="' + name + '"]').val(certificateFilterState[name] || '');
+            });
+
+            $('#certificateAdvancedType').val(certificateFilterState.certificate_filter_type || 'all');
+            $('#certificateSort').val(certificateFilterState.certificate_sort || 'issued_desc');
+        }
+
+        function pendingAdvancedCount() {
+            var count = certificateAdvancedNames.reduce(function (total, name) {
+                return total + ($.trim($('[name="' + name + '"]').val()) !== '' ? 1 : 0);
+            }, 0);
+
+            // Type is also a Fast Filter, so it is intentionally not counted.
+            // Sorting is modal-only and follows Learning On Going's non-default count.
+            if (String($('#certificateSort').val() || 'issued_desc') !== 'issued_desc') {
+                count++;
+            }
+
+            return count;
         }
 
         function updateAdvancedCount() {
-            var count = $('.certificate-advanced-input').filter(function () {
-                return $.trim($(this).val()) !== '';
-            }).length;
+            var count = pendingAdvancedCount();
 
             $('#certificateMoreFiltersCount')
                 .toggleClass('d-none', count === 0)
                 .text(count || '');
         }
 
-        function collectCertificateFilters() {
-            var params = cleanCertificateParams(certificateParams());
-            var search = $.trim($('#certificateSearch').val());
+        function collectCertificateState() {
+            var nextState = {};
 
             $('#certificateFilterBar .certificate-quick-value').each(function () {
                 var name = String(this.name);
-                var value = String($(this).val() || 'all');
-                if (value !== 'all') {
-                    params.set(name, value);
+                nextState[name] = String($(this).val() || 'all');
+            });
+
+            certificateAdvancedNames.forEach(function (name) {
+                nextState[name] = $.trim($('[name="' + name + '"]').val());
+            });
+
+            nextState.certificate_filter_type = String($('#certificateAdvancedType').val() || nextState.certificate_filter_type || 'all');
+            nextState.certificate_sort = String($('#certificateSort').val() || 'issued_desc');
+            nextState.certificate_search = $.trim($('#certificateSearch').val());
+
+            return replaceCertificateState(nextState);
+        }
+
+        function buildCertificateParams(state) {
+            var params = cleanCertificateParams(certificateParams());
+            Object.keys(certificateDefaults).forEach(function (key) {
+                var value = String(state[key] || '');
+                if (value !== '' && value !== certificateDefaults[key]) {
+                    params.set(key, value);
                 }
             });
-
-            $('.certificate-advanced-input').each(function () {
-                var value = $.trim($(this).val());
-                if (value) params.set(String(this.name), value);
-            });
-
-            var advancedType = String($('#certificateAdvancedType').val() || 'all');
-            if (advancedType !== 'all') params.set('certificate_filter_type', advancedType);
-
-            var sort = String($('#certificateSort').val() || 'issued_desc');
-            if (sort !== 'issued_desc') params.set('certificate_sort', sort);
-            if (search) params.set('certificate_search', search);
-
             return params;
+        }
+
+        function collectCertificateFilters() {
+            return buildCertificateParams(collectCertificateState());
         }
 
         function applyCertificateFilters() {
             clearTimeout(window.learningCertificateSearchTimer);
-            reloadCertificate(collectCertificateFilters());
+            collectCertificateState();
+            updateAdvancedCount();
+            reloadCertificate(buildCertificateParams(certificateFilterState));
         }
 
         $('#certificateSearch').off('.learningCertificate').on('input.learningCertificate', function () {
@@ -142,17 +228,19 @@
         });
 
         $('.certificate-advanced-input').off('.learningCertificate').on('input.learningCertificate change.learningCertificate', updateAdvancedCount);
+        $('#certificateSort').off('.learningCertificate').on('change.learningCertificate', updateAdvancedCount);
         $('#certificateApplyFilter, .certificate-apply-filter').off('.learningCertificate').on('click.learningCertificate', applyCertificateFilters);
 
-        $('#certificateModalReset').off('.learningCertificate').on('click.learningCertificate', function () {
-            $('.certificate-advanced-input').val('');
-            $('#certificateAdvancedType').val('all').trigger('change.learningCertificate');
-            $('#certificateSort').val('issued_desc');
+        $('#certificateMoreFiltersModal').off('show.bs.modal.learningCertificate').on('show.bs.modal.learningCertificate', function () {
+            restoreCertificateInputs();
             updateAdvancedCount();
         });
 
-        $('#certificateResetFilter').off('.learningCertificate').on('click.learningCertificate', function () {
+        $('#certificateModalReset, #certificateResetFilter').off('.learningCertificate').on('click.learningCertificate', function () {
             clearTimeout(window.learningCertificateSearchTimer);
+            replaceCertificateState({});
+            restoreCertificateInputs();
+            updateAdvancedCount();
             reloadCertificate(cleanCertificateParams(certificateParams()));
         });
 
@@ -207,7 +295,8 @@
             sanitize: false
         });
 
-        hydrateQuickFilters();
+        readCertificateStateFromUrl();
+        restoreCertificateInputs();
         updateAdvancedCount();
     }
 </script>

@@ -9,6 +9,12 @@
 
 <script>
     var _activeTab = null;
+    var _learningTabs = ['ongoing', 'record', 'assessment', 'certificate'];
+
+    function learningTabFromUrl() {
+        var tab = String(new URLSearchParams(window.location.search).get('learning_tab') || 'ongoing');
+        return _learningTabs.indexOf(tab) !== -1 ? tab : 'ongoing';
+    }
 
     function skeletonHtml() {
         return '<div class="card border-0 shadow-sm rounded-4 p-4 mb-3">' +
@@ -142,25 +148,28 @@
         loadLearningTab('ongoing');
     });
 
-    // Back/forward browser: muat ulang partial ongoing sesuai query string URL.
+    // Back/forward browser: restore the tab encoded in the GET query.
     window.addEventListener('popstate', function () {
-        if (_activeTab === 'ongoing') {
-            _activeTab = null;
-            loadLearningTab('ongoing');
-        } else if (_activeTab === 'certificate') {
-            _activeTab = null;
-            loadLearningTab('certificate');
-        }
+        _activeTab = null;
+        loadLearningTab(learningTabFromUrl());
     });
 
     $(function () {
-        // Load ongoing tab automatically on page load
-        loadLearningTab('ongoing');
+        // Restore the tab that initiated a full-page GET filter request.
+        loadLearningTab(learningTabFromUrl());
 
         // Tab button click handler
         $('.learning-tab-btn').on('click', function () {
             var target = $(this).data('target');          // e.g. "#tab-ongoing"
             var tab    = target.replace('#tab-', '');     // → "ongoing"
+            var params = new URLSearchParams(window.location.search);
+            if (tab === 'ongoing') {
+                params.delete('learning_tab');
+            } else {
+                params.set('learning_tab', tab);
+            }
+            var query = params.toString();
+            history.pushState({}, '', window.location.pathname + (query ? '?' + query : ''));
             loadLearningTab(tab);
         });
     });

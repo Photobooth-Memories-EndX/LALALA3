@@ -56,7 +56,7 @@ class LearningRecordController extends Controller
         // sebagai antrean prioritas: baris yang siap Generate Certificate
         // selalu paling atas, di dalam tiap kelompok Finish Date terbaru dulu.
         // Murni pengurutan Collection — query dan business logic tidak berubah.
-        $rows = $this->mergeLearningRecord(
+        $allRows = $this->mergeLearningRecord(
             $this->buildContentRows($completedContents, $cert),
             $this->buildPlaylistRows(
                 $completedPlaylists,
@@ -70,13 +70,195 @@ class LearningRecordController extends Controller
             ['cert_priority', 'asc'],
             ['finish_date', 'desc'],
         ])->values();
+        $rows = $this->applyRecordFilters($allRows);
 
         return view('user.learning.dashboard-partials.record', [
             'rows'             => $rows,
             // Section prioritas paling atas: certificate yang sudah memenuhi syarat.
             'certificateReady' => $this->certificateReady($cert, $completedPlaylists),
-            'filterOptions'    => $this->recordFilterOptions($userId, $completedPlaylists, $rows),
+            'filterOptions'    => $this->recordFilterOptions($userId, $completedPlaylists, $allRows),
         ]);
+    }
+
+    /**
+     * Apply the GET-backed Learning Record filters before Blade renders rows.
+     */
+    private function applyRecordFilters(Collection $rows): Collection
+    {
+        $search = mb_strtolower(trim((string) request('record_search', '')));
+        $type = (string) request('record_filter_type', 'all');
+        $classification = (string) request('record_filter_classification', 'all');
+        $playlist = (string) request('record_filter_playlist', 'all');
+        $year = (string) request('record_filter_year', 'all');
+        $month = (string) request('record_filter_month', 'all');
+        $program = (string) request('record_filter_program', 'all');
+        $learningHour = (string) request('record_filter_learning_hour', 'all');
+        $duration = (string) request('record_filter_duration', 'all');
+        $modalYear = (string) request('record_filter_modal_year', 'all');
+        $score = (string) request('record_filter_score', 'all');
+        $certificate = (string) request('record_filter_certificate', 'all');
+        $completion = (string) request('record_filter_completion', 'all');
+        $modalTypes = array_values(array_filter((array) request('record_filter_modal_type', []), fn ($value) => $value !== 'all'));
+        $learningStatuses = array_values(array_filter((array) request('record_filter_learning_status', [])));
+        $progressRanges = array_values(array_filter((array) request('record_filter_progress', [])));
+        $modalMonths = array_map('strval', array_values(array_filter((array) request('record_filter_modal_month', []))));
+
+        $filtered = $rows->filter(function (array $row) use (
+            $search,
+            $type,
+            $classification,
+            $playlist,
+            $year,
+            $month,
+            $program,
+            $learningHour,
+            $duration,
+            $modalYear,
+            $score,
+            $certificate,
+            $completion,
+            $modalTypes,
+            $learningStatuses,
+            $progressRanges,
+            $modalMonths
+        ) {
+            $rowType = (string) ($row['type'] ?? '');
+            $rowKind = (string) ($row['row_kind'] ?? '');
+            $finish = ! empty($row['finish_date']) ? Carbon::parse($row['finish_date']) : null;
+            $progress = (int) ($row['progress'] ?? 0);
+            $rowStatus = $progress >= 100 ? 'completed' : ($progress <= 0 ? 'not_started' : 'ongoing');
+            $subtitle = mb_strtolower((string) ($row['subtitle'] ?? ''));
+            $rowProgram = str_contains($subtitle, 'mandatory')
+                ? 'mandatory'
+                : (str_contains($subtitle, 'optional') ? 'optional' : '');
+
+            if ($search !== '' && ! str_contains(mb_strtolower(($row['title'] ?? '') . ' ' . ($row['classification'] ?? '')), $search)) {
+                return false;
+            }
+            if (! $this->recordTypeMatches($rowType, $rowKind, $type)) {
+                return false;
+            }
+            if ($modalTypes !== [] && ! collect($modalTypes)->contains(fn ($value) => $this->recordTypeMatches($rowType, $rowKind, (string) $value))) {
+                return false;
+            }
+            if ($classification !== 'all' && (string) ($row['classification'] ?? '') !== $classification) {
+                return false;
+            }
+            if ($playlist !== 'all' && ! in_array($playlist, array_map('strval', $row['playlist_ids'] ?? []), true)) {
+                return false;
+            }
+            if ($year !== 'all' && (! $finish || (string) $finish->year !== $year)) {
+                return false;
+            }
+            if ($modalYear !== 'all' && (! $finish || (string) $finish->year !== $modalYear)) {
+                return false;
+            }
+            if ($month !== 'all' && (! $finish || (string) $finish->month !== $month)) {
+                return false;
+            }
+            if ($modalMonths !== [] && (! $finish || ! in_array((string) $finish->month, $modalMonths, true))) {
+                return false;
+            }
+            if ($program !== 'all' && $rowProgram !== $program) {
+                return false;
+            }
+            if ($learningStatuses !== [] && ! in_array($rowStatus, $learningStatuses, true)) {
+                return false;
+            }
+            if ($learningHour !== 'all' && ! $this->recordRangeMatches((float) ($row['learning_hour_value'] ?? -1), $learningHour)) {
+                return false;
+            }
+            if ($duration !== 'all' && ! $this->recordRangeMatches((float) ($row['duration_sort'] ?? -1), $duration)) {
+                return false;
+            }
+            if ($progressRanges !== [] && ! collect($progressRanges)->contains(fn ($range) => $this->recordRangeMatches($progress, (string) $range))) {
+                return false;
+            }
+            if (! $this->recordCompletionMatches($progress, $completion)) {
+                return false;
+            }
+            if (! $this->recordScoreMatches($row['score'] ?? null, $score)) {
+                return false;
+            }
+
+            return $certificate === 'all' || (string) ($row['cert_state'] ?? 'none') === $certificate;
+        });
+
+        $sort = (string) request('record_sort', '');
+        $direction = (string) request('record_sort_direction', 'asc');
+        $sortKeys = [
+            'title' => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
+            'type' => fn (array $row) => mb_strtolower((string) ($row['type'] ?? '')),
+            'classification' => fn (array $row) => mb_strtolower((string) ($row['classification'] ?? '')),
+            'duration' => fn (array $row) => (float) ($row['duration_sort'] ?? -1),
+            'learning-hour' => fn (array $row) => (float) ($row['learning_hour_bucket'] ?? -1),
+            'progress' => fn (array $row) => (float) ($row['progress'] ?? -1),
+            'finish' => fn (array $row) => (string) ($row['finish_date'] ?? ''),
+            'score' => fn (array $row) => (float) ($row['score'] ?? -1),
+        ];
+
+        if (isset($sortKeys[$sort]) && in_array($direction, ['asc', 'desc'], true)) {
+            $filtered = $direction === 'desc'
+                ? $filtered->sortByDesc($sortKeys[$sort])
+                : $filtered->sortBy($sortKeys[$sort]);
+        }
+
+        return $filtered->values();
+    }
+
+    private function recordTypeMatches(string $rowType, string $rowKind, string $filter): bool
+    {
+        return match ($filter) {
+            'all' => true,
+            'Playlist' => $rowKind === 'playlist',
+            'Video' => in_array($rowType, ['Video', 'YouTube'], true),
+            default => $rowType === $filter,
+        };
+    }
+
+    private function recordRangeMatches(float $value, string $range): bool
+    {
+        if ($range === 'all') {
+            return true;
+        }
+        if (str_starts_with($range, 'gt')) {
+            return $value > (float) substr($range, 2);
+        }
+        if (! str_contains($range, '-')) {
+            return $value === (float) $range;
+        }
+
+        [$minimum, $maximum] = array_map('floatval', explode('-', $range, 2));
+        return $value >= $minimum && $value <= $maximum;
+    }
+
+    private function recordCompletionMatches(int $progress, string $completion): bool
+    {
+        return match ($completion) {
+            'not_started' => $progress === 0,
+            'in_progress' => $progress > 0 && $progress <= 75,
+            'almost_done' => $progress >= 76 && $progress < 100,
+            'completed' => $progress === 100,
+            default => true,
+        };
+    }
+
+    private function recordScoreMatches(mixed $score, string $filter): bool
+    {
+        if ($filter === 'all') {
+            return true;
+        }
+
+        $hasScore = $score !== null && $score !== '';
+        $value = $hasScore ? (float) $score : -1;
+
+        return match ($filter) {
+            'none' => ! $hasScore,
+            'lt60' => $hasScore && $value < 60,
+            '60-79' => $value >= 60 && $value <= 79,
+            '80-100' => $value >= 80 && $value <= 100,
+            default => true,
+        };
     }
 
     /**

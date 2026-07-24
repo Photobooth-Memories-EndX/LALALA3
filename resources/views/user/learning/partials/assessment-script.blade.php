@@ -63,10 +63,11 @@
         }
 
         function reloadAssessment(params) {
+            params.delete('assessment_page');
+            params.set('learning_tab', 'assessment');
             var query = params.toString();
-            history.pushState({}, '', window.location.pathname + (query ? '?' + query : ''));
-            _activeTab = null;
-            loadLearningTab('assessment');
+            $('#assessmentMoreFiltersModal').modal('hide');
+            window.location.assign(window.location.pathname + (query ? '?' + query : ''));
         }
 
         function collectAssessmentFilterState() {
@@ -151,15 +152,11 @@
             updateAdvancedFilterBadge();
         }
 
-        $('#assessmentModalReset').off('.learningAssessment').on('click.learningAssessment', function () {
-            resetAdvancedFilters();
-        });
-
         $('#assessmentMoreFiltersModal input[type="radio"]')
             .off('.learningAssessment')
             .on('change.learningAssessment', updateAdvancedFilterBadge);
 
-        $('#assessmentResetFilter').off('.learningAssessment').on('click.learningAssessment', function () {
+        $('#assessmentModalReset, #assessmentResetFilter').off('.learningAssessment').on('click.learningAssessment', function () {
             clearTimeout(window.learningAssessmentSearchTimer);
             $('#assessmentSearch').val('');
             $('#assessmentFilterBar [data-assessment-filter]').each(function () {

@@ -3,8 +3,9 @@
  * tanpa DataTables/Yajra).
  *
  * Data <100 baris dirender penuh oleh Blade (x-learning.record-section);
- * file ini hanya mengatur presentation layer: search, filter, sorting,
- * dan pagination. initLearningRecord() dipanggil dari loadLearningTab()
+ * file ini mengatur state URL/presentation: search, filter, sorting,
+ * dan pagination. Filter GET utama juga diterapkan oleh Laravel.
+ * initLearningRecord() dipanggil dari loadLearningTab()
  * (dashboard-script) setiap kali partial tab selesai dimuat.
  *
  * Content dan Playlist adalah dua entity dengan business logic berbeda
@@ -75,6 +76,123 @@ function initLearningRecord() {
             month:          filterInputValue('#recordFilterMonth, #hidden_record_filter_month', 'all'),
             certificate:    checkedValue('recordModalCertificate', 'all')
         };
+    }
+
+    var recordScalarParams = {
+        type: 'record_filter_type',
+        classification: 'record_filter_classification',
+        playlist: 'record_filter_playlist',
+        program: 'record_filter_program',
+        learningHour: 'record_filter_learning_hour',
+        duration: 'record_filter_duration',
+        activitySort: 'record_filter_activity_sort',
+        completion: 'record_filter_completion',
+        modalYear: 'record_filter_modal_year',
+        scoreTest: 'record_filter_score',
+        year: 'record_filter_year',
+        month: 'record_filter_month',
+        certificate: 'record_filter_certificate'
+    };
+    var recordArrayParams = {
+        modalTypes: 'record_filter_modal_type',
+        learningStatus: 'record_filter_learning_status',
+        progressRanges: 'record_filter_progress',
+        modalMonths: 'record_filter_modal_month'
+    };
+
+    function queryArray(params, name) {
+        return params.getAll(name + '[]').concat(params.getAll(name)).filter(function (value) {
+            return value !== '' && value !== 'all';
+        });
+    }
+
+    function setCheckedValues(name, values, defaultValue) {
+        var $inputs = $('input[name="' + name + '"]');
+        $inputs.prop('checked', false);
+        values.forEach(function (value) {
+            $inputs.filter(function () {
+                return String($(this).val()) === String(value);
+            }).prop('checked', true);
+        });
+        if (!$inputs.filter(':checked').length && defaultValue !== undefined) {
+            $inputs.filter(function () {
+                return String($(this).val()) === String(defaultValue);
+            }).prop('checked', true);
+        }
+    }
+
+    function restoreRecordFiltersFromUrl() {
+        var params = new URLSearchParams(window.location.search);
+        $('#recordSearch').val(params.get('record_search') || '');
+        var requestedSort = String(params.get('record_sort') || '');
+        var requestedDirection = String(params.get('record_sort_direction') || '');
+        if ($table.find('th[data-sort-key="' + requestedSort + '"]').length
+            && (requestedDirection === 'asc' || requestedDirection === 'desc')) {
+            sortKey = requestedSort;
+            sortDir = requestedDirection;
+        }
+
+        setCheckedValues('recordModalType[]', queryArray(params, recordArrayParams.modalTypes), 'all');
+        setCheckedValues('recordModalLearningStatus[]', queryArray(params, recordArrayParams.learningStatus));
+        setCheckedValues('recordModalProgress[]', queryArray(params, recordArrayParams.progressRanges));
+        setCheckedValues('recordModalMonth[]', queryArray(params, recordArrayParams.modalMonths));
+
+        [
+            ['recordModalProgram', recordScalarParams.program, 'all'],
+            ['recordModalLearningHour', recordScalarParams.learningHour, 'all'],
+            ['recordModalDuration', recordScalarParams.duration, 'all'],
+            ['recordModalActivitySort', recordScalarParams.activitySort, 'all'],
+            ['recordModalCompletion', recordScalarParams.completion, 'all'],
+            ['recordModalYear', recordScalarParams.modalYear, 'all'],
+            ['recordModalScoreTest', recordScalarParams.scoreTest, 'all'],
+            ['recordModalCertificate', recordScalarParams.certificate, 'all']
+        ].forEach(function (config) {
+            setCheckedValues(config[0], params.has(config[1]) ? [params.get(config[1])] : [], config[2]);
+        });
+    }
+
+    function buildRecordFilterParams() {
+        var params = new URLSearchParams(window.location.search);
+        Array.from(params.keys()).forEach(function (key) {
+            if (key.indexOf('record_') === 0) {
+                params.delete(key);
+            }
+        });
+
+        var state = filterState();
+        var search = $.trim($('#recordSearch').val());
+        if (search) {
+            params.set('record_search', search);
+        }
+
+        Object.keys(recordScalarParams).forEach(function (key) {
+            var value = String(state[key] || '');
+            if (value !== '' && value !== 'all') {
+                params.set(recordScalarParams[key], value);
+            }
+        });
+
+        Object.keys(recordArrayParams).forEach(function (key) {
+            (state[key] || []).forEach(function (value) {
+                if (value !== '' && value !== 'all') {
+                    params.append(recordArrayParams[key] + '[]', value);
+                }
+            });
+        });
+
+        params.delete('record_page');
+        if (sortKey && (sortDir === 'asc' || sortDir === 'desc')) {
+            params.set('record_sort', sortKey);
+            params.set('record_sort_direction', sortDir);
+        }
+        params.set('learning_tab', 'record');
+        return params;
+    }
+
+    function navigateRecordFilters(params) {
+        var query = params.toString();
+        $('#recordMoreFiltersModal').modal('hide');
+        window.location.assign(window.location.pathname + (query ? '?' + query : ''));
     }
 
     function updateExportUrl() {
@@ -560,11 +678,9 @@ function initLearningRecord() {
         $('#recordFilterType').trigger('focus');
     });
 
-    // Apply: filter sudah live saat berubah — tombol ini hanya menutup panel.
+    // Commit every visible filter through a full-page GET navigation.
     $('#recordApplyFilter, .record-apply-filter').on('click', function () {
-        currentPage = 1;
-        render();
-        closeMoreFilters();
+        navigateRecordFilters(buildRecordFilterParams());
     });
 
     // Multi filter: setiap perubahan kontrol langsung dirender ulang.
@@ -586,10 +702,14 @@ function initLearningRecord() {
     // dipertahankan — Quick Filter adalah mode tampilan, bukan filter.
     $('#recordClearFilter, .record-clear-filter').on('click', function () {
         resetRecordFilters();
-        currentPage = 1;
-        updateFilterBadge();
-        updateExportUrl();
-        render();
+        var params = new URLSearchParams(window.location.search);
+        Array.from(params.keys()).forEach(function (key) {
+            if (key.indexOf('record_') === 0) {
+                params.delete(key);
+            }
+        });
+        params.set('learning_tab', 'record');
+        navigateRecordFilters(params);
     });
 
     // Card "Certificates Ready" (header): terapkan filter Certificate Ready
@@ -622,7 +742,13 @@ function initLearningRecord() {
         render();
     });
 
+    restoreRecordFiltersFromUrl();
     applyModeVisibility(false);
+    updateFilterBadge();
+    if (sortKey && sortDir) {
+        applySort();
+        updateSortIcons();
+    }
     updateExportUrl();
     render();
 }
