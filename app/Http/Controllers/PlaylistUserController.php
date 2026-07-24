@@ -185,9 +185,15 @@ class PlaylistUserController extends Controller
             : 0;
 
         $playlistProgressComplete = $percentageProgressPlaylist >= 100;
+        $playlistCertificateSetting = CertificateSetting::where('certificate_type', 'playlist')
+            ->where('trainingplan_id', $trainingplan->id)
+            ->where('is_active', 1)
+            ->first();
+
         $contentAssessmentProgress = $certificateEligibility->contentAssessmentProgress(
             $content_all->pluck('content_id'),
-            Auth::user()
+            Auth::user(),
+            $playlistCertificateSetting
         );
         $assessmentsByContent = $contentAssessmentProgress['assessmentsByContent'];
 
@@ -215,11 +221,6 @@ class PlaylistUserController extends Controller
                 ->where('final', 1)
                 ->exists();
         }
-
-        $playlistCertificateSetting = CertificateSetting::where('certificate_type', 'playlist')
-            ->where('trainingplan_id', $trainingplan->id)
-            ->where('is_active', 1)
-            ->first();
 
         $playlistCertificateEligibility = $playlistCertificateSetting
             ? $certificateEligibility->check($playlistCertificateSetting, Auth::user())

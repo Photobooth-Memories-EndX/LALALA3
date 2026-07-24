@@ -71,8 +71,9 @@ class CertificateEligibilityService
     /**
      * Build the read-only content assessment progress displayed by a playlist.
      *
-     * "Active" and "completed" deliberately follow the existing assessment
-     * conventions: status NOT is excluded and a final result marks completion.
+     * "Active" and "completed" follow the same assessment gate used by
+     * certificate eligibility: status NOT is excluded and at least one final
+     * result in each content assessment group must meet the effective score.
      *
      * @param  Collection<int, int|string>  $contentIds
      * @return array{
@@ -82,7 +83,11 @@ class CertificateEligibilityService
      *     assessmentsByContent: Collection<int|string, Assesment>
      * }
      */
-    public function contentAssessmentProgress(Collection $contentIds, User $user): array
+    public function contentAssessmentProgress(
+        Collection $contentIds,
+        User $user,
+        ?CertificateSetting $setting = null
+    ): array
     {
         $contentIds = $contentIds->filter()->unique()->values();
 
@@ -96,7 +101,7 @@ class CertificateEligibilityService
         }
 
         $assessments = Assesment::query()
-            ->select(['id', 'content_id', 'slug'])
+            ->select(['id', 'content_id', 'slug', 'passing_grade'])
             ->where('type', 'content')
             ->where('status', '!=', 'NOT')
             ->whereIn('content_id', $contentIds)
@@ -121,18 +126,23 @@ class CertificateEligibilityService
             ];
         }
 
-        $completedAssessmentIds = AssesmentResult::query()
+        $results = AssesmentResult::query()
             ->where('user_id', $user->id)
             ->where('final', 1)
             ->whereIn('assesment_id', $assessments->pluck('id'))
-            ->pluck('assesment_id')
-            ->unique();
+            ->orderByDesc('score')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('assesment_id')
+            ->keyBy('assesment_id');
 
         $completed = $assessments
-            ->whereIn('id', $completedAssessmentIds)
-            ->pluck('content_id')
-            ->filter()
-            ->unique()
+            ->groupBy('content_id')
+            ->filter(fn (Collection $contentAssessments) => $this->passAssessmentGate(
+                $setting,
+                $contentAssessments,
+                ['results' => $results]
+            )->eligible)
             ->count();
 
         return [
@@ -162,6 +172,7 @@ class CertificateEligibilityService
             ->unique()->values();
 
         $learningContentIds = $contentIds->merge($playlistContentIds)->unique()->values();
+        $assessmentContentIds = $learningContentIds;
 
         $learnings = $learningContentIds->isEmpty()
             ? collect()
@@ -173,11 +184,11 @@ class CertificateEligibilityService
         // Deteksi otomatis: assessment aktif milik content/playlist via FK-nya.
         // Status "NOT" = nonaktif (konvensi AssesmentUserController) — tidak
         // dihitung karena user memang tidak bisa mengerjakannya.
-        $assessments = ($contentIds->isEmpty() && $playlistIds->isEmpty())
+        $assessments = ($assessmentContentIds->isEmpty() && $playlistIds->isEmpty())
             ? collect()
             : Assesment::where('status', '!=', 'NOT')
-                ->where(function ($q) use ($contentIds, $playlistIds) {
-                    $q->whereIn('content_id', $contentIds)
+                ->where(function ($q) use ($assessmentContentIds, $playlistIds) {
+                    $q->whereIn('content_id', $assessmentContentIds)
                         ->orWhereIn('trainingplan_id', $playlistIds);
                 })
                 ->get();
@@ -272,6 +283,24 @@ class CertificateEligibilityService
             );
         }
 
+        foreach ($contentIds as $contentId) {
+            $contentAssessments = $context['assessmentsByContent']->get($contentId, collect());
+
+            if ($contentAssessments->isEmpty()) {
+                continue;
+            }
+
+            $contentAssessmentEligibility = $this->passAssessmentGate(
+                $setting,
+                $contentAssessments,
+                $context
+            );
+
+            if (!$contentAssessmentEligibility->eligible) {
+                return $contentAssessmentEligibility;
+            }
+        }
+
         return $this->passAssessmentGate(
             $setting,
             $context['assessmentsByPlaylist']->get($setting->trainingplan_id, collect()),
@@ -314,7 +343,7 @@ class CertificateEligibilityService
      * yang dievaluasi — bukan perhitungan kedua.
      */
     private function passAssessmentGate(
-        CertificateSetting $setting,
+        ?CertificateSetting $setting,
         Collection $assessments,
         array $context,
         $learning = null
@@ -365,8 +394,8 @@ class CertificateEligibilityService
      * bila kosong pakai passing_grade assessment; terakhir default sistem 80
      * (nilai default kolom minimum_score di schema).
      */
-    private function minimumScore(CertificateSetting $setting, ?Assesment $assessment = null): float
+    private function minimumScore(?CertificateSetting $setting, ?Assesment $assessment = null): float
     {
-        return (float) ($setting->minimum_score ?? $assessment?->passing_grade ?? 80);
+        return (float) ($setting?->minimum_score ?? $assessment?->passing_grade ?? 80);
     }
 }
