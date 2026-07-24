@@ -17,6 +17,7 @@ class ManageAccessPermissionController extends Controller
         'assessment_management'      => 'Assessment Management',
         'question_bank'              => 'Question Bank',
         'playlist_learning_path'     => 'Playlist & Learning Path',
+        'playlist_debug_tools'       => 'Playlist Debug Tools',
         'news_announcement'          => 'News & Announcement',
         'page_management'            => 'Page Management',
         'event_documentation'        => 'Event Documentation',

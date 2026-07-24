@@ -91,6 +91,12 @@
                     </div>
                 </div>
 
+                @php
+                    $debuggerModuleKeys = ['playlist_debug_tools'];
+                    $standardModules = collect($modules)->except($debuggerModuleKeys);
+                    $debuggerModules = collect($modules)->only($debuggerModuleKeys);
+                @endphp
+
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white">
                         <div>
@@ -103,7 +109,48 @@
 
                     <div class="card-body">
                         <div class="row g-3">
-                            @foreach ($modules as $moduleKey => $moduleLabel)
+                            @foreach ($standardModules as $moduleKey => $moduleLabel)
+                                @php
+                                    $checked = isset($permissions[$moduleKey])
+                                        ? (bool) $permissions[$moduleKey]
+                                        : $role === \App\Models\User::ROLE_ADMIN;
+                                @endphp
+
+                                <div class="col-sm-6 col-xl-4">
+                                    <label class="permission-card d-flex align-items-start gap-3 p-3 h-100">
+                                        <input class="form-check-input mt-1"
+                                               type="checkbox"
+                                               name="permissions[]"
+                                               value="{{ $moduleKey }}"
+                                               {{ $checked ? 'checked' : '' }}>
+
+                                        <div class="flex-fill">
+                                            <div class="fw-bold mb-1">
+                                                {{ $moduleLabel }}
+                                            </div>
+
+                                            <div class="permission-key">
+                                                {{ $moduleKey }}
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="card-header bg-white border-top">
+                        <div>
+                            <h3 class="card-title mb-1">Debugger Tools</h3>
+                            <div class="text-muted small">
+                                Configure developer and QA tools available for this role.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3">
+                            @foreach ($debuggerModules as $moduleKey => $moduleLabel)
                                 @php
                                     $checked = isset($permissions[$moduleKey])
                                         ? (bool) $permissions[$moduleKey]

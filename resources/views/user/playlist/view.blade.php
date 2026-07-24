@@ -50,6 +50,10 @@
                             'playlist' => $playlist,
                         ])
                         @include('user.playlist.components.view-content-info')
+
+                        @if (auth()->user()?->canAccessManageModule('playlist_debug_tools'))
+                            @include('user.playlist.components.view-debug-panel')
+                        @endif
                     </div>
 
                     <div id="ai-assistant" class="learning-right-panel">
