@@ -38,6 +38,7 @@
                     $lessonAssessment = $assessmentsByContent->get($list->content_id);
 
                     $learningProgress = $progressByContentId[$list->content_id] ?? 0;
+                    $isAssessmentUnlocked = $learningProgress >= $requiredAssessmentProgress;
 
                     if ($learningProgress >= 100) {
                         $lessonStatusIcon = 'ti ti-circle-check-filled';
@@ -99,13 +100,19 @@
 
                         @if ($lessonAssessment)
                             <div class="lesson-assessment-action">
-                                <a @if ($learningProgress >= $requiredAssessmentProgress) href="{{ route('assesment.user.view', $lessonAssessment->slug) }}" @endif
+                                <a @if ($isAssessmentUnlocked) href="{{ route('assesment.user.view', $lessonAssessment->slug) }}" @endif
                                    data-assessment-url="{{ route('assesment.user.view', $lessonAssessment->slug) }}"
                                    data-required-progress="{{ $requiredAssessmentProgress }}"
-                                   class="btn btn-xs btn-outline-primary px-2 py-1 {{ $learningProgress >= $requiredAssessmentProgress ? '' : 'disabled' }}"
+                                   data-assessment-locked-title="Complete this content to unlock the assessment."
+                                   class="btn btn-outline-primary lesson-assessment-button {{ $isAssessmentUnlocked ? '' : 'disabled' }}"
                                    data-assessment-action
-                                   aria-disabled="{{ $learningProgress >= $requiredAssessmentProgress ? 'false' : 'true' }}"
-                                   @if ($learningProgress < $requiredAssessmentProgress) tabindex="-1" @endif>
+                                   aria-disabled="{{ $isAssessmentUnlocked ? 'false' : 'true' }}"
+                                   @unless ($isAssessmentUnlocked)
+                                       tabindex="-1"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-placement="top"
+                                       title="Complete this content to unlock the assessment."
+                                   @endunless>
                                     <i class="ti ti-clipboard-check me-1" aria-hidden="true"></i>
                                     Assessment Content
                                 </a>

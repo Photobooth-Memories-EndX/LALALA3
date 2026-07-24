@@ -466,6 +466,32 @@
     .lesson-assessment-action {
         margin-top: 8px;
         margin-left: 56px;
+        line-height: 1;
+    }
+
+    .lesson-assessment-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        min-height: 26px;
+        max-width: 100%;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.1;
+        white-space: nowrap;
+    }
+
+    .lesson-assessment-button.disabled,
+    .lesson-assessment-button[aria-disabled="true"] {
+        border-color: #cbd5e1;
+        background: #f1f5f9;
+        color: #64748b;
+        cursor: not-allowed;
+        opacity: .6;
+        pointer-events: auto;
     }
 
     .certificate-action-wrapper.is-disabled {
@@ -514,6 +540,15 @@
     body[data-bs-theme="dark"] .lesson-progress,
     body.dark-mode .lesson-progress {
         background: #334155;
+    }
+
+    body[data-bs-theme="dark"] .lesson-assessment-button.disabled,
+    body[data-bs-theme="dark"] .lesson-assessment-button[aria-disabled="true"],
+    body.dark-mode .lesson-assessment-button.disabled,
+    body.dark-mode .lesson-assessment-button[aria-disabled="true"] {
+        border-color: #475569;
+        background: #1e293b;
+        color: #94a3b8;
     }
 
     body[data-bs-theme="dark"] .lesson-thumbnail-fallback,
@@ -573,12 +608,6 @@
             height: 20px;
             font-size: 17px;
         }
-    }
-
-    .btn-xs {
-        font-size: 11px;
-        line-height: 1.2;
-        border-radius: 8px;
     }
 
     /* AI card */

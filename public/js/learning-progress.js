@@ -137,11 +137,19 @@
                 assessmentAction.setAttribute('aria-disabled', assessmentEnabled ? 'false' : 'true');
 
                 if (assessmentEnabled) {
+                    owlSyncAssessmentTooltip(assessmentAction, false);
                     assessmentAction.setAttribute('href', assessmentAction.dataset.assessmentUrl);
                     assessmentAction.removeAttribute('tabindex');
+                    assessmentAction.removeAttribute('data-bs-toggle');
+                    assessmentAction.removeAttribute('data-bs-placement');
+                    assessmentAction.removeAttribute('title');
                 } else {
                     assessmentAction.removeAttribute('href');
                     assessmentAction.setAttribute('tabindex', '-1');
+                    assessmentAction.setAttribute('data-bs-toggle', 'tooltip');
+                    assessmentAction.setAttribute('data-bs-placement', 'top');
+                    assessmentAction.setAttribute('title', assessmentAction.dataset.assessmentLockedTitle);
+                    owlSyncAssessmentTooltip(assessmentAction, true);
                 }
             }
 
@@ -161,6 +169,42 @@
             }
         }
     }
+
+    function owlSyncAssessmentTooltip(element, shouldEnable) {
+        if (!window.bootstrap || !window.bootstrap.Tooltip) {
+            return;
+        }
+
+        var tooltip = window.bootstrap.Tooltip.getInstance(element);
+
+        if (tooltip) {
+            tooltip.dispose();
+        }
+
+        if (shouldEnable) {
+            new window.bootstrap.Tooltip(element);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var assessmentActions = document.querySelectorAll(
+            '[data-assessment-action][aria-disabled="true"]'
+        );
+
+        assessmentActions.forEach(function (assessmentAction) {
+            owlSyncAssessmentTooltip(assessmentAction, true);
+        });
+    });
+
+    document.addEventListener('click', function (event) {
+        var assessmentAction = event.target.closest(
+            '[data-assessment-action][aria-disabled="true"]'
+        );
+
+        if (assessmentAction) {
+            event.preventDefault();
+        }
+    });
 
     window.OwlLearningProgress = OwlLearningProgress;
     window.owlUpdateLearningUi = owlUpdateLearningUi;
