@@ -2,8 +2,7 @@
     $certificateEligible = (bool) ($playlistCertificateEligibility?->eligible ?? false);
     $playlistAssessmentAvailable = $hasPlaylistAssessment
         && ($assessmentAccess || $playlistAssessmentDone);
-    $contentAssessmentAvailable = $contentAssessmentTotal > 0
-        && $contentAssessmentCompleted === $contentAssessmentTotal;
+    $contentAssessmentAvailable = $contentAssessmentTotal > 0;
 @endphp
 
 <section class="border-top pt-3 mt-4" aria-labelledby="playlistCompletionRequirementsTitle">
