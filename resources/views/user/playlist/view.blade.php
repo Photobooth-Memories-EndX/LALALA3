@@ -407,13 +407,13 @@
         body[data-bs-theme="dark"] .view-comment-wrapper .comment-thread-reply,
         body.dark-mode .view-comment-wrapper .comment-thread-reply {
             background: #111827 !important;
-            border-left-color: #2563eb !important;
+            border-left-color: #05507D !important;
         }
 
         body[data-bs-theme="dark"] .view-comment-wrapper .comment-replies .comment-thread-reply,
         body.dark-mode .view-comment-wrapper .comment-replies .comment-thread-reply {
             background: #1f2937 !important;
-            border-left-color: #3b82f6 !important;
+            border-left-color: #6AAED6 !important;
         }
 
         body[data-bs-theme="dark"] .view-comment-wrapper .comment-thread,

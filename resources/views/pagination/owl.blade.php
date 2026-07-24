@@ -75,21 +75,21 @@
             border-radius: 20px;
             border: 1px solid #e2e8f0;
             padding: 0.5rem 0.75rem;
-            color: #2563eb;
+            color: #05507D;
             transition: all 0.3s ease;
             font-weight: 500;
             font-size: 0.9rem;
         }
 
         .owl-pagination .page-link:hover {
-            border-color: #2563eb;
+            border-color: #05507D;
             background: rgba(37, 99, 235, 0.05);
             transform: translateY(-2px);
         }
 
         .owl-pagination .page-item.active .page-link {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            border-color: #2563eb;
+            background: linear-gradient(135deg, #05507D, #6AAED6);
+            border-color: #05507D;
             color: #fff;
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }

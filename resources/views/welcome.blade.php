@@ -329,8 +329,8 @@ background:#f5f7fb;
 .modern-hero{
 background:linear-gradient(
 135deg,
-#2563eb,
-#1d4ed8
+#05507D,
+#6AAED6
 );
 padding:50px;
 border-radius:24px;
@@ -340,7 +340,7 @@ color:white;
 .hero-badge{
 display:inline-block;
 background:white;
-color:#2563eb;
+color:#05507D;
 padding:8px 16px;
 border-radius:999px;
 margin-bottom:20px;
@@ -387,7 +387,7 @@ box-shadow:0 10px 25px rgba(0,0,0,.06);
 
 .stat-card i{
 font-size:32px;
-color:#2563eb;
+color:#05507D;
 }
 
 .modern-card{

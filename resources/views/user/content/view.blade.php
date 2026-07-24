@@ -152,7 +152,7 @@
 
         .content-stat-chip {
             background: rgba(32, 107, 196, .08);
-            color: #1d4ed8;
+            color: #05507D;
         }
 
         .content-action-btn,
@@ -164,14 +164,14 @@
         .content-action-btn.btn-light:hover,
         .comment-action-btn.btn-light:hover {
             background: #eff6ff;
-            color: #1d4ed8;
+            color: #05507D;
             border-color: #bfdbfe;
         }
 
         .comment-action-btn.btn-outline-secondary:hover {
-            background: #206bc4;
+            background: #05507D;
             color: #fff;
-            border-color: #206bc4;
+            border-color: #05507D;
         }
 
         .content-action-btn:hover,
@@ -221,7 +221,7 @@
         }
 
         .modern-comment-input:focus {
-            border-color: #206bc4;
+            border-color: #05507D;
             box-shadow: 0 0 0 .25rem rgba(32, 107, 196, .12);
         }
 
@@ -289,7 +289,7 @@
         }
 
         .tips-card {
-            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
         }
 
         /* ── Sidebar toggle button ─────────────────────────────────── */
@@ -322,8 +322,8 @@
 
         .content-sidebar-toggle:hover {
             background: #eff6ff;
-            border-color: #206bc4;
-            color: #1d4ed8;
+            border-color: #05507D;
+            color: #05507D;
             transform: translateY(-1px);
             box-shadow: 0 .75rem 1.5rem rgba(15, 23, 42, .1);
         }
@@ -348,7 +348,7 @@
         body[data-bs-theme="dark"] .content-sidebar-toggle:hover,
         body.dark-mode .content-sidebar-toggle:hover {
             background: rgba(32, 107, 196, .18);
-            border-color: #206bc4;
+            border-color: #05507D;
             color: #93c5fd;
         }
 
@@ -401,7 +401,7 @@
 
         .ai-chat-bubble-user {
             align-self: flex-end;
-            background: #206bc4;
+            background: #05507D;
             color: #fff;
             border-bottom-right-radius: .25rem;
         }
@@ -411,14 +411,14 @@
             font-weight: 500;
             border-radius: .75rem;
             border-color: rgba(32, 107, 196, .25);
-            color: #1d4ed8;
+            color: #05507D;
             background: rgba(32, 107, 196, .04);
             transition: background-color .18s ease, color .18s ease, border-color .18s ease;
         }
 
         .ai-suggestion-btn:hover {
-            background: #206bc4;
-            border-color: #206bc4;
+            background: #05507D;
+            border-color: #05507D;
             color: #fff;
         }
 
@@ -441,8 +441,8 @@
 
         body[data-bs-theme="dark"] .ai-suggestion-btn:hover,
         body.dark-mode .ai-suggestion-btn:hover {
-            background: #206bc4;
-            border-color: #206bc4;
+            background: #05507D;
+            border-color: #05507D;
             color: #fff;
         }
 

@@ -45,7 +45,7 @@
         /* Animasi halus pada input focus */
         .form-control:focus {
             box-shadow: 0 0 0 0.25rem rgba(32, 107, 196, 0.15) !important;
-            border-color: #206bc4 !important;
+            border-color: #05507D !important;
         }
 
         /* Hover effect pada tombol */

@@ -41,7 +41,7 @@
                 overflow: hidden;
                 border: 1px solid rgba(148, 163, 184, .24);
                 border-radius: 22px;
-                background: #0f172a;
+                background: #53565A;
             }
 
             .hero-crop-preview::after {
@@ -69,15 +69,15 @@
 
             .hero-crop-modal .btn-primary:hover,
             .hero-crop-modal .btn-primary:focus {
-                border-color: #69b3e7;
-                background: #69b3e7;
-                color: #022a43;
+                border-color: #6AAED6;
+                background: #6AAED6;
+                color: #05507D;
             }
 
             [data-bs-theme="dark"] .hero-crop-modal .modal-content,
             body.dark-mode .hero-crop-modal .modal-content {
-                background: #072b42;
-                color: #f8fafc;
+                background: #53565A;
+                color: #D9D9D6;
             }
 
             @media (max-width: 991.98px) {

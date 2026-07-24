@@ -211,7 +211,7 @@
 
     .playlist-list .active-lesson {
         background: #eaf1ff;
-        border: 1px solid #3b82f6 !important;
+        border: 1px solid #6AAED6 !important;
     }
 
     .chapter-description-box {
@@ -241,7 +241,7 @@
     }
 
     .overview-meta-button:hover {
-        color: #2563eb;
+        color: #05507D;
     }
 
     .overview-meta-separator {
@@ -347,7 +347,7 @@
 
     .playlist-lesson-item.is-active {
         background: #eaf1ff;
-        border-color: #3b82f6;
+        border-color: #6AAED6;
         box-shadow: 0 6px 18px rgba(37, 99, 235, .10);
     }
 
@@ -377,7 +377,7 @@
         align-items: center;
         justify-content: center;
         background: #dbeafe;
-        color: #2563eb;
+        color: #05507D;
     }
 
     .lesson-thumbnail-fallback:not(.d-none) {
@@ -436,7 +436,7 @@
     }
 
     .lesson-status--in-progress {
-        color: #2563eb;
+        color: #05507D;
     }
 
     .lesson-status--completed,
@@ -714,8 +714,8 @@
     }
 
     .panel-header-toggle:hover {
-        background: #2563eb;
-        border-color: #2563eb;
+        background: #05507D;
+        border-color: #05507D;
         color: #ffffff;
     }
 
@@ -728,8 +728,8 @@
 
     body[data-bs-theme="dark"] .panel-header-toggle:hover,
     body.dark-mode .panel-header-toggle:hover {
-        background: #2563eb;
-        border-color: #2563eb;
+        background: #05507D;
+        border-color: #05507D;
         color: #ffffff;
     }
 
@@ -765,8 +765,8 @@
     }
 
     .restore-toggle-btn:hover {
-        background: #2563eb;
-        border-color: #2563eb;
+        background: #05507D;
+        border-color: #05507D;
         color: #ffffff;
         box-shadow: 0 4px 14px rgba(37, 99, 235, .30);
     }
@@ -788,8 +788,8 @@
 
     body[data-bs-theme="dark"] .restore-toggle-btn:hover,
     body.dark-mode .restore-toggle-btn:hover {
-        background: #2563eb;
-        border-color: #2563eb;
+        background: #05507D;
+        border-color: #05507D;
         color: #ffffff;
     }
 
@@ -920,8 +920,8 @@
         }
 
         .restore-toggle-btn[aria-expanded="true"] {
-            background: #2563eb;
-            border-color: #2563eb;
+            background: #05507D;
+            border-color: #05507D;
             color: #ffffff;
         }
     }

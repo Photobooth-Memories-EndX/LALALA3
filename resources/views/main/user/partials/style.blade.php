@@ -21,7 +21,7 @@
         min-width: 38px;
         border-radius: 12px;
         background: #edf2ff;
-        color: #206bc4;
+        color: #05507D;
         display: flex;
         align-items: center;
         justify-content: center;

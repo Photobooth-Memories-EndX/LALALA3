@@ -115,7 +115,7 @@
 }
 
 .learning-record-table tbody tr.record-row:hover {
-    background: var(--tblr-bg-surface-secondary, #f8fafc);
+    background: var(--tblr-bg-surface-secondary, #D9D9D6);
 }
 
 .learning-record-title {
@@ -139,7 +139,7 @@
 
 .learning-record-link,
 .learning-record-link:visited {
-    color: var(--tblr-primary, #206bc4);
+    color: var(--tblr-primary, #05507D);
     text-decoration: none;
     font-weight: 600;
     cursor: pointer;
@@ -148,7 +148,7 @@
 
 .learning-record-link:hover,
 .learning-record-link:focus {
-    color: var(--tblr-primary, #206bc4);
+    color: var(--tblr-primary, #05507D);
     text-decoration: underline;
 }
 
@@ -158,7 +158,7 @@
 
 .learning-record-progress .percent {
     font-weight: 600;
-    color: #1f2937;
+    color: #53565A;
 }
 
 .learning-record-badge {
@@ -274,7 +274,7 @@
     vertical-align: middle;
     font-size: 7px;
     line-height: 0.9;
-    color: #cbd5e1;
+    color: #D9D9D6;
 }
 
 .record-sort-icons span {
@@ -282,15 +282,15 @@
 }
 
 .learning-record-table th.record-sortable:hover .record-sort-icons {
-    color: #64748b;
+    color: #8A8D8F;
 }
 
 .learning-record-table th.record-sortable.is-sorted {
-    color: #2563eb !important;
+    color: #05507D !important;
 }
 
 .record-sort-icons span.active {
-    color: #2563eb;
+    color: #05507D;
 }
 
 /* Animasi kecil setiap kali urutan baris berubah. */
@@ -315,9 +315,9 @@ tbody.record-sort-animate tr.record-row {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    border: 1px solid rgba(37, 99, 235, 0.25);
-    background: #eff6ff;
-    color: #1e40af;
+    border: 1px solid rgba(5, 80, 125, 0.25);
+    background: #D9D9D6;
+    color: #05507D;
     border-radius: 999px;
     padding: 6px 14px;
     font-size: 12px;
@@ -327,8 +327,8 @@ tbody.record-sort-animate tr.record-row {
 }
 
 .record-cert-ready-card:hover {
-    background: #dbeafe;
-    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+    background: #D9D9D6;
+    box-shadow: 0 4px 10px rgba(5, 80, 125, 0.15);
 }
 
 .record-cert-ready-count {
@@ -339,7 +339,7 @@ tbody.record-sort-animate tr.record-row {
     height: 20px;
     padding: 0 6px;
     border-radius: 999px;
-    background: #2563eb;
+    background: #05507D;
     color: #fff;
     font-size: 11px;
 }
@@ -361,14 +361,14 @@ tbody.record-sort-animate tr.record-row {
 }
 
 .learning-quick-dropdowns .dropdown-toggle.active {
-    color: #206bc4;
-    border-color: #206bc4;
-    background: rgba(32, 107, 196, 0.08);
+    color: #05507D;
+    border-color: #05507D;
+    background: rgba(5, 80, 125, 0.08);
 }
 
 .learning-quick-dropdowns .dropdown-item.active {
     color: #fff;
-    background-color: #206bc4;
+    background-color: #05507D;
 }
 
 .learning-quick-dropdown-scroll {
@@ -466,13 +466,13 @@ tbody.record-sort-animate tr.record-row {
 }
 
 .record-chip:hover {
-    border-color: var(--tblr-primary, #206bc4);
-    color: var(--tblr-primary, #206bc4);
+    border-color: var(--tblr-primary, #05507D);
+    color: var(--tblr-primary, #05507D);
 }
 
 .record-chip.active {
-    background: var(--tblr-primary, #206bc4);
-    border-color: var(--tblr-primary, #206bc4);
+    background: var(--tblr-primary, #05507D);
+    border-color: var(--tblr-primary, #05507D);
     color: #fff;
 }
 

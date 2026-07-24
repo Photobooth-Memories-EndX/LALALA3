@@ -56,8 +56,8 @@
 
     .playlist-hero {
         background:
-            radial-gradient(circle at top right, rgba(32, 107, 196, .16), transparent 35%),
-            linear-gradient(135deg, rgba(32, 107, 196, .08), var(--tblr-bg-surface));
+            radial-gradient(circle at top right, rgba(5, 80, 125, .16), transparent 35%),
+            linear-gradient(135deg, rgba(5, 80, 125, .08), var(--tblr-bg-surface));
         border: 1px solid var(--tblr-border-color);
     }
 
@@ -86,7 +86,7 @@
     .playlist-card-placeholder {
         width: 100%;
         height: 180px;
-        background: #f3f6fb;
+        background: #D9D9D6;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -98,8 +98,8 @@
         width: 64px;
         height: 64px;
         border-radius: 8px;
-        background: #e8eef7;
-        border: 1px solid #cbd8ea;
+        background: #D9D9D6;
+        border: 1px solid #BBBCBC;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -107,24 +107,24 @@
 
     .playlist-card-placeholder-icon i {
         font-size: 30px;
-        color: #2563eb;
+        color: #05507D;
     }
 
     .playlist-card-placeholder-text {
         font-size: 13px;
-        color: #64748b;
+        color: #8A8D8F;
     }
 
     [data-bs-theme="dark"] .playlist-card-placeholder,
     body.theme-dark .playlist-card-placeholder,
     body.dark .playlist-card-placeholder {
-        background: #111827;
+        background: #53565A;
     }
 
     [data-bs-theme="dark"] .playlist-card-placeholder-icon,
     body.theme-dark .playlist-card-placeholder-icon,
     body.dark .playlist-card-placeholder-icon {
-        background: #1f2937;
+        background: #53565A;
         border-color: rgba(255, 255, 255, .12);
     }
 
@@ -146,8 +146,8 @@
     body.theme-dark .playlist-hero,
     body.dark .playlist-hero {
         background:
-            radial-gradient(circle at top right, rgba(32, 107, 196, .25), transparent 35%),
-            linear-gradient(135deg, rgba(32, 107, 196, .12), var(--tblr-bg-surface));
+            radial-gradient(circle at top right, rgba(5, 80, 125, .25), transparent 35%),
+            linear-gradient(135deg, rgba(5, 80, 125, .12), var(--tblr-bg-surface));
     }
 
     .playlist-learning-path-wrap {
@@ -158,7 +158,7 @@
 .playlist-continue-card {
     background:
         radial-gradient(circle at top right, rgba(255,255,255,.18), transparent 30%),
-        linear-gradient(135deg, #0d5be1 0%, #2563eb 50%, #3b82f6 100%);
+        linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
     color: #fff;
 }
 
@@ -191,8 +191,8 @@
 
 .playlist-path-card {
     background:
-        radial-gradient(circle at top right, rgba(32,107,196,.16), transparent 35%),
-        linear-gradient(135deg, rgba(32,107,196,.08), var(--tblr-bg-surface));
+        radial-gradient(circle at top right, rgba(5,80,125,.16), transparent 35%),
+        linear-gradient(135deg, rgba(5,80,125,.08), var(--tblr-bg-surface));
     border: 1px solid var(--tblr-border-color) !important;
 }
 

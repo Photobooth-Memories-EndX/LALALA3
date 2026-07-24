@@ -43,9 +43,9 @@
 
 [data-bs-theme="dark"] .gallery-card,
 [data-bs-theme="dark"] .photo-card{
-    background:#1f2937;
+    background:#53565A;
 }
 
 [data-bs-theme="dark"] .dropzone{
-    background:#111827;
+    background:#53565A;
 }

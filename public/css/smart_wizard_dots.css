@@ -11,25 +11,25 @@
 /* Variables */
 /* Root */
 :root {
-    --sw-border-color: #eeeeee;
+    --sw-border-color: #D9D9D6;
     --sw-toolbar-btn-color: #ffffff;
-    --sw-toolbar-btn-background-color: #009EF7;
-    --sw-anchor-default-primary-color: #f8f9fa;
-    --sw-anchor-default-secondary-color: #b0b0b1;
-    --sw-anchor-active-primary-color: #009EF7;
+    --sw-toolbar-btn-background-color: #05507D;
+    --sw-anchor-default-primary-color: #D9D9D6;
+    --sw-anchor-default-secondary-color: #BBBCBC;
+    --sw-anchor-active-primary-color: #05507D;
     --sw-anchor-active-secondary-color: #ffffff;
-    --sw-anchor-done-primary-color: #90d4fa;
-    --sw-anchor-done-secondary-color: #fefefe;
-    --sw-anchor-disabled-primary-color: #f8f9fa;
-    --sw-anchor-disabled-secondary-color: #dbe0e5;
-    --sw-anchor-error-primary-color: #dc3545;
+    --sw-anchor-done-primary-color: #6AAED6;
+    --sw-anchor-done-secondary-color: #ffffff;
+    --sw-anchor-disabled-primary-color: #D9D9D6;
+    --sw-anchor-disabled-secondary-color: #BBBCBC;
+    --sw-anchor-error-primary-color: #EF3340;
     --sw-anchor-error-secondary-color: #ffffff;
-    --sw-anchor-warning-primary-color: #ffc107;
+    --sw-anchor-warning-primary-color: #FFB81C;
     --sw-anchor-warning-secondary-color: #ffffff;
-    --sw-progress-color: #009EF7;
-    --sw-progress-background-color: #f8f9fa;
-    --sw-loader-color: #009EF7;
-    --sw-loader-background-color: #f8f9fa;
+    --sw-progress-color: #05507D;
+    --sw-progress-background-color: #D9D9D6;
+    --sw-loader-color: #05507D;
+    --sw-loader-background-color: #D9D9D6;
     --sw-loader-background-wrapper-color: rgba(255, 255, 255, 0.7);
 }
 

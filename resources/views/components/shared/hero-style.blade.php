@@ -2,11 +2,11 @@
     @push('styles')
         <style>
 .shared-learning-hero {
-    --owl-primary-rgb: 1, 69, 118;
-    --kp-hero-primary-rgb: 1, 69, 118;
-    --kp-hero-dark-rgb: 1, 69, 118;
-    --kp-hero-light-rgb: 108, 167, 211;
-    --kp-hero-completed-rgb: 31, 107, 79;
+    --owl-primary-rgb: 5, 80, 125;
+    --kp-hero-primary-rgb: 5, 80, 125;
+    --kp-hero-dark-rgb: 5, 80, 125;
+    --kp-hero-light-rgb: 106, 174, 214;
+    --kp-hero-completed-rgb: 106, 174, 214;
 
 /* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
     --hero-overlay-width: 58%;

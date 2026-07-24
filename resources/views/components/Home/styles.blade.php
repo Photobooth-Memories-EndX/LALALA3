@@ -1,22 +1,22 @@
 <style>
 
 :root {
-    --kp-primary: #014576;
-    --kp-primary-rgb: 1, 69, 118;
-    --kp-primary-dark: #01395f;
-    --kp-primary-deep: #014576;
-    --kp-light-blue: #6ca7d3;
-    --kp-light-blue-rgb: 108, 167, 211;
-    --kp-light-blue-soft: #eaf5fc;
-    --kp-light-blue-muted: #d3eaf7;
-    --kp-light-gray: #ececec;
-    --kp-gray: #bebfc1;
-    --kp-dark-green: #1f6b4f;
-    --kp-golden-orange: #d99000;
-    --kp-golden-orange-hover: #c88300;
-    --kp-dark-page: #031f31;
-    --kp-dark-surface: #072b42;
-    --kp-dark-surface-raised: #0a354f;
+    --kp-primary: #05507D;
+    --kp-primary-rgb: 5, 80, 125;
+    --kp-primary-dark: #05507D;
+    --kp-primary-deep: #05507D;
+    --kp-light-blue: #6AAED6;
+    --kp-light-blue-rgb: 106, 174, 214;
+    --kp-light-blue-soft: #D9D9D6;
+    --kp-light-blue-muted: #D9D9D6;
+    --kp-light-gray: #D9D9D6;
+    --kp-gray: #BBBCBC;
+    --kp-dark-green: #05507D;
+    --kp-golden-orange: #FFB81C;
+    --kp-golden-orange-hover: #85754E;
+    --kp-dark-page: #53565A;
+    --kp-dark-surface: #53565A;
+    --kp-dark-surface-raised: #53565A;
 }
 
 /* =====================================================
@@ -226,14 +226,14 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-stat-number {
     font-size: 30px;
     font-weight: 700;
-    color: #0f172a;
+    color: #53565A;
     line-height: 1;
     margin-bottom: 4px;
 }
 
 .home-modern-stat-label {
     font-size: 13px;
-    color: #64748b;
+    color: #8A8D8F;
     font-weight: 500;
 }
 
@@ -252,7 +252,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     border-radius: 16px;
     padding: 16px 10px;
     text-decoration: none;
-    color: #0f172a;
+    color: #53565A;
     font-size: 12px;
     font-weight: 600;
     text-align: center;
@@ -302,7 +302,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-section-title {
     font-size: 17px;
     font-weight: 700;
-    color: #0f172a;
+    color: #53565A;
     margin: 0;
 }
 
@@ -391,7 +391,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-continue-title {
     font-size: 16px;
     font-weight: 700;
-    color: #0f172a;
+    color: #53565A;
     margin-bottom: 6px;
     line-height: 1.4;
     overflow-wrap: break-word;
@@ -410,7 +410,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 
 .home-modern-progress-wrap small {
     font-size: 12px;
-    color: #64748b;
+    color: #8A8D8F;
 }
 
 .home-modern-progress {
@@ -560,14 +560,14 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-video-title {
     font-size: 14px;
     font-weight: 600;
-    color: #0f172a;
+    color: #53565A;
     line-height: 1.45;
     margin-bottom: 8px;
 }
 
 .home-modern-video-meta {
     font-size: 12px;
-    color: #64748b;
+    color: #8A8D8F;
     display: flex;
     align-items: center;
 }
@@ -600,7 +600,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     padding: 13px 0;
     border-bottom: 1px solid #f1f5f9;
     text-decoration: none;
-    color: #0f172a;
+    color: #53565A;
     transition: color .15s;
 }
 
@@ -749,7 +749,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     background: #f8fafc;
     margin-bottom: 10px;
     text-decoration: none;
-    color: #0f172a;
+    color: #53565A;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0);
     transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
 }
@@ -761,7 +761,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-deadline-row:hover {
     border-color: #b8daf0;
     background: var(--kp-light-blue-soft);
-    color: #0f172a;
+    color: #53565A;
     box-shadow: 0 6px 16px rgba(var(--kp-primary-rgb), .08);
 }
 
@@ -800,7 +800,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     font-size: 14px;
     font-weight: 600;
     line-height: 1.3;
-    color: #0f172a;
+    color: #53565A;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -808,7 +808,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 
 .home-modern-deadline-meta {
     font-size: 12px;
-    color: #64748b;
+    color: #8A8D8F;
     margin-top: 4px;
     display: flex;
     align-items: flex-start;
@@ -821,7 +821,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     align-items: center;
     flex-wrap: wrap;
     gap: 5px;
-    color: #64748b;
+    color: #8A8D8F;
     font-size: 12px;
     font-weight: 400;
     line-height: 1.25;
@@ -911,7 +911,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-gallery-title {
     font-size: 14px;
     font-weight: 600;
-    color: #0f172a;
+    color: #53565A;
     line-height: 1.45;
     margin-bottom: 10px;
     min-height: 42px;
@@ -923,7 +923,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     align-items: center;
     justify-content: space-between;
     font-size: 12px;
-    color: #64748b;
+    color: #8A8D8F;
 }
 
 .home-modern-readmore {
@@ -1062,7 +1062,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     color: #e2e8f0;
 }
 [data-bs-theme="dark"] .home-modern-deadline-title { color: #f1f5f9; }
-[data-bs-theme="dark"] .home-modern-deadline-meta  { color: #64748b; }
+[data-bs-theme="dark"] .home-modern-deadline-meta  { color: #8A8D8F; }
 
 [data-bs-theme="dark"] .home-modern-deadline-danger  { background: rgba(var(--kp-primary-rgb),.2);  color: var(--kp-light-blue); }
 [data-bs-theme="dark"] .home-modern-deadline-warning { background: rgba(var(--kp-primary-rgb),.2);  color: var(--kp-light-blue); }
@@ -1284,7 +1284,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     border: none;
     border-bottom: 2px solid transparent;
     border-radius: 0;
-    color: #64748b;
+    color: #8A8D8F;
     font-size: 13px;
     font-weight: 600;
     padding: 10px 16px;
@@ -1325,7 +1325,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     padding: 10px 0;
     border-bottom: 1px solid #f1f5f9;
     text-decoration: none;
-    color: #0f172a;
+    color: #53565A;
     transition: color .15s;
 }
 
@@ -1411,7 +1411,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-gallery-slide {
     display: block;
     text-decoration: none;
-    color: #0f172a;
+    color: #53565A;
 }
 
 .home-modern-gallery-slide-thumb {
@@ -1488,7 +1488,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-news-slide {
     display: block;
     text-decoration: none;
-    color: #0f172a;
+    color: #53565A;
 }
 
 .home-modern-news-slide-thumb {
@@ -1623,14 +1623,14 @@ body.dark-mode #modal-assessment-access .alert-info {
 .home-modern-db-title {
     font-size: 22px;
     font-weight: 700;
-    color: #0f172a;
+    color: #53565A;
     margin: 0 0 4px;
     line-height: 1.2;
 }
 
 .home-modern-db-subtitle {
     font-size: 14px;
-    color: #64748b;
+    color: #8A8D8F;
     margin: 0;
 }
 
@@ -1708,7 +1708,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 
 .home-modern-assessment-schedule-title {
     margin-bottom: 7px;
-    color: #0f172a;
+    color: #53565A;
     font-size: 14px;
     font-weight: 700;
     line-height: 1.35;
@@ -1768,7 +1768,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 
 .home-modern-assessment-date {
     margin-top: 5px;
-    color: #64748b;
+    color: #8A8D8F;
     font-size: 11px;
     line-height: 1.35;
 }

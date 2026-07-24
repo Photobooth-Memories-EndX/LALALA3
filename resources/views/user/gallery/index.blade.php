@@ -259,7 +259,7 @@
    HERO
    ============================================================ */
 .gallery-hero {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
     border-radius: 20px;
     padding: 48px;
     color: #fff;
@@ -385,7 +385,7 @@
     position: absolute;
     top: 12px;
     left: 12px;
-    background: #2563eb;
+    background: #05507D;
     color: #fff;
     font-size: 10px;
     font-weight: 700;
@@ -459,16 +459,16 @@
 }
 
 [data-bs-theme="dark"] .gallery-thumb {
-    background: #111827;
+    background: #53565A;
 }
 
 [data-bs-theme="dark"] .gallery-empty-icon {
-    background: #111827;
+    background: #53565A;
 }
 
 [data-bs-theme="dark"] .form-control,
 [data-bs-theme="dark"] .form-select {
-    background-color: #111827;
+    background-color: #53565A;
     border-color: rgba(255,255,255,.1);
     color: #e5e7eb;
 }
@@ -478,7 +478,7 @@
 }
 
 [data-bs-theme="dark"] .input-group-text {
-    background-color: #111827;
+    background-color: #53565A;
     border-color: rgba(255,255,255,.1);
     color: #9ca3af;
 }

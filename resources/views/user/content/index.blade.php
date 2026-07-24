@@ -5,12 +5,12 @@
         :root {
             --owl-ui-radius: 20px;
             --owl-hero-radius: 24px;
-            --owl-ui-shadow: 0 2px 12px rgba(15, 23, 42, .05);
-            --owl-ui-shadow-hover: 0 10px 28px rgba(15, 23, 42, .10);
-            --owl-ui-border: #e2e8f0;
+            --owl-ui-shadow: 0 2px 12px rgba(83, 86, 90, .05);
+            --owl-ui-shadow-hover: 0 10px 28px rgba(83, 86, 90, .10);
+            --owl-ui-border: #D9D9D6;
             --owl-ui-surface: #fff;
-            --owl-ui-text: #0f172a;
-            --owl-ui-muted: #64748b;
+            --owl-ui-text: #53565A;
+            --owl-ui-muted: #8A8D8F;
         }
 
         .content-filter-card {
@@ -31,7 +31,7 @@
             align-items: center;
             background:
                 radial-gradient(circle at 85% 20%, rgba(255, 255, 255, .24), transparent 28%),
-                linear-gradient(135deg, #0041b9 0%, #1248a7 45%, #2a72ca 100%);
+                linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
         }
 
         .content-hero-surface > .row {
@@ -81,26 +81,26 @@
         .content-reset-btn {
             border: 1px solid transparent;
             background: transparent;
-            color: #2563eb;
+            color: #05507D;
             font-weight: 600;
         }
 
         .content-reset-btn:hover {
             background: #eff6ff;
             border-color: #bfdbfe;
-            color: #1d4ed8;
+            color: #05507D;
         }
 
         .content-reset-btn.is-active {
-            background: #2563eb;
-            border-color: #2563eb;
+            background: #05507D;
+            border-color: #05507D;
             color: #fff;
             box-shadow: 0 6px 16px rgba(37, 99, 235, .22);
         }
 
         .content-reset-btn.is-active:hover {
-            background: #1d4ed8;
-            border-color: #1d4ed8;
+            background: #05507D;
+            border-color: #05507D;
             color: #fff;
         }
 
@@ -260,8 +260,8 @@
 
         [data-bs-theme="dark"] .content-reset-btn.is-active,
         body.dark-mode .content-reset-btn.is-active {
-            background: #3b82f6;
-            border-color: #3b82f6;
+            background: #6AAED6;
+            border-color: #6AAED6;
             color: #fff;
             box-shadow: 0 8px 20px rgba(59, 130, 246, .18);
         }
@@ -333,8 +333,8 @@
 
         [data-bs-theme="dark"] .content-pagination-wrap .page-item.active .page-link,
         body.dark-mode .content-pagination-wrap .page-item.active .page-link {
-            background: #3b82f6;
-            border-color: #3b82f6;
+            background: #6AAED6;
+            border-color: #6AAED6;
             color: #fff;
         }
 

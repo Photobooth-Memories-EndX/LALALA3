@@ -1,24 +1,24 @@
 :root {
-    --owl-primary-rgb: 37, 99, 235;
+    --owl-primary-rgb: 5, 80, 125;
     --owl-primary: var(--tblr-primary, rgb(var(--owl-primary-rgb)));
-    --owl-secondary: var(--tblr-secondary, #1d4ed8);
-    --owl-primary-light: #3b82f6;
-    --owl-accent: #f8fbff;
+    --owl-secondary: var(--tblr-secondary, #6AAED6);
+    --owl-primary-light: #6AAED6;
+    --owl-accent: #D9D9D6;
     --owl-surface: var(--tblr-bg-surface, #ffffff);
-    --owl-surface-alt: #f8fafc;
-    --owl-text: var(--tblr-body-color, #0f172a);
-    --owl-text-secondary: #475569;
-    --owl-text-tertiary: #94a3b8;
-    --owl-border: var(--tblr-border-color, #e2e8f0);
-    --owl-border-soft: rgba(226, 232, 240, 0.75);
-    --owl-shadow: 0 15px 40px rgba(15, 23, 42, 0.08);
-    --owl-shadow-md: 0 12px 30px rgba(15, 23, 42, 0.08);
-    --owl-shadow-lg: 0 18px 70px rgba(15, 23, 42, 0.12);
+    --owl-surface-alt: #D9D9D6;
+    --owl-text: var(--tblr-body-color, #53565A);
+    --owl-text-secondary: #53565A;
+    --owl-text-tertiary: #8A8D8F;
+    --owl-border: var(--tblr-border-color, #D9D9D6);
+    --owl-border-soft: rgba(217, 217, 214, 0.75);
+    --owl-shadow: 0 15px 40px rgba(83, 86, 90, 0.08);
+    --owl-shadow-md: 0 12px 30px rgba(83, 86, 90, 0.08);
+    --owl-shadow-lg: 0 18px 70px rgba(83, 86, 90, 0.12);
     --owl-radius: 24px;
     --owl-radius-lg: 32px;
     --owl-radius-xl: 40px;
     --owl-transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    --owl-body-bg: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+    --owl-body-bg: linear-gradient(180deg, #D9D9D6 0%, #BBBCBC 100%);
     --owl-body-color: var(--owl-text);
 }
 
@@ -80,7 +80,7 @@ button, input, select, textarea {
     position: relative;
     overflow: hidden;
     border-radius: var(--owl-radius-lg);
-    background: linear-gradient(135deg, #1f4cdf 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
     box-shadow: var(--owl-shadow-lg);
     min-height: 340px;
 }
@@ -499,7 +499,7 @@ button, input, select, textarea {
     border-radius: var(--owl-radius-lg);
     overflow: hidden;
     position: relative;
-    background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(180deg, #05507D 0%, #6AAED6 100%);
     color: #fff;
 }
 

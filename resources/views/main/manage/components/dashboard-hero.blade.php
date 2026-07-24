@@ -1,6 +1,6 @@
 <div class="card border-0 shadow-sm mb-4 overflow-hidden"
      style="border-radius:20px;
-            background:linear-gradient(135deg,#206bc4 0%,#4f46e5 100%);">
+            background:linear-gradient(135deg,#05507D 0%,#6AAED6 100%);">
 
     <div class="card-body p-4 p-lg-5 text-white">
 
