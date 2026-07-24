@@ -68,6 +68,57 @@ class CertificateEligibilityService
             ->first();
     }
 
+    /**
+     * Build the read-only content assessment progress displayed by a playlist.
+     *
+     * "Active" and "completed" deliberately follow the existing assessment
+     * conventions: status NOT is excluded and a final result marks completion.
+     *
+     * @param  Collection<int, int|string>  $contentIds
+     * @return array{total: int, completed: int, percentage: int}
+     */
+    public function contentAssessmentProgress(Collection $contentIds, User $user): array
+    {
+        $contentIds = $contentIds->filter()->unique()->values();
+
+        if ($contentIds->isEmpty()) {
+            return ['total' => 0, 'completed' => 0, 'percentage' => 0];
+        }
+
+        $assessments = Assesment::query()
+            ->select(['id', 'content_id'])
+            ->where('type', 'content')
+            ->where('status', '!=', 'NOT')
+            ->whereIn('content_id', $contentIds)
+            ->get();
+
+        $total = $assessments->pluck('content_id')->filter()->unique()->count();
+
+        if ($total === 0) {
+            return ['total' => 0, 'completed' => 0, 'percentage' => 0];
+        }
+
+        $completedAssessmentIds = AssesmentResult::query()
+            ->where('user_id', $user->id)
+            ->where('final', 1)
+            ->whereIn('assesment_id', $assessments->pluck('id'))
+            ->pluck('assesment_id')
+            ->unique();
+
+        $completed = $assessments
+            ->whereIn('id', $completedAssessmentIds)
+            ->pluck('content_id')
+            ->filter()
+            ->unique()
+            ->count();
+
+        return [
+            'total' => $total,
+            'completed' => $completed,
+            'percentage' => (int) round(($completed / $total) * 100),
+        ];
+    }
+
     // ─── Context loading (query massal — sekali untuk seluruh setting) ──────
 
     /**

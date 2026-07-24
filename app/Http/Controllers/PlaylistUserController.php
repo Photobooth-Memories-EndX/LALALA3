@@ -185,6 +185,10 @@ class PlaylistUserController extends Controller
             : 0;
 
         $playlistProgressComplete = $percentageProgressPlaylist >= 100;
+        $contentAssessmentProgress = $certificateEligibility->contentAssessmentProgress(
+            $content_all->pluck('content_id'),
+            Auth::user()
+        );
 
         $assesment             = Assesment::where('type', 'trainingplan')
             ->where('trainingplan_id', $trainingplan->id)
@@ -278,6 +282,9 @@ class PlaylistUserController extends Controller
             'assessmentContent'              => $assessmentContent,
             'assessmentContentCount'         => $assessmentContentCount,
             'assessmentContentLatestScores'  => $assessmentContentLatestScores,
+            'contentAssessmentTotal'         => $contentAssessmentProgress['total'],
+            'contentAssessmentCompleted'     => $contentAssessmentProgress['completed'],
+            'contentAssessmentPercentage'    => $contentAssessmentProgress['percentage'],
             'playlistProgressComplete'       => $playlistProgressComplete,
             'hasPlaylistAssessment'          => $hasPlaylistAssessment,
             'playlistAssessmentDone'         => $playlistAssessmentDone,
