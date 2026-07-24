@@ -214,8 +214,13 @@ body.dark-mode #modal-assessment-access .alert-info {
 }
 
 .home-modern-stat-green .home-modern-stat-icon {
-    background: var(--kp-light-blue-soft);
-    color: var(--kp-primary);
+    background: rgba(25, 135, 84, .12);
+    color: #198754;
+}
+
+.home-modern-stat-green .home-modern-stat-number,
+.home-modern-stat-green .home-modern-stat-label {
+    color: #198754;
 }
 
 .home-modern-stat-red .home-modern-stat-icon {
@@ -1001,7 +1006,11 @@ body.dark-mode #modal-assessment-access .alert-info {
     background: rgba(var(--kp-primary-rgb),.2); color: var(--kp-light-blue);
 }
 [data-bs-theme="dark"] .home-modern-stat-green .home-modern-stat-icon {
-    background: rgba(var(--kp-primary-rgb),.2); color: var(--kp-light-blue);
+    background: rgba(25, 135, 84, .22); color: #75D69A;
+}
+[data-bs-theme="dark"] .home-modern-stat-green .home-modern-stat-number,
+[data-bs-theme="dark"] .home-modern-stat-green .home-modern-stat-label {
+    color: #75D69A;
 }
 [data-bs-theme="dark"] .home-modern-stat-red .home-modern-stat-icon {
     background: rgba(var(--kp-primary-rgb),.2); color: var(--kp-light-blue);
@@ -1645,7 +1654,7 @@ body.dark-mode #modal-assessment-access .alert-info {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--kp-golden-orange);
+    background: #85754E;
     color: #fff;
     border: none;
     padding: 10px 22px;
@@ -1659,7 +1668,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 
 .home-modern-assessment-btn:hover,
 .home-modern-assessment-btn:focus-visible {
-    background: var(--kp-golden-orange-hover);
+    background: #6B5F3E;
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(217, 144, 0, .4);
     color: #fff;

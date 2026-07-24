@@ -27,7 +27,7 @@
 body {
     margin: 0;
     min-height: 100%;
-    background: linear-gradient(180deg, #D9D9D6 0%, #BBBCBC 100%);
+    background: #ffffff;
     color: var(--owl-text);
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -50,7 +50,9 @@ button, input, select, textarea {
 }
 
 .owl-news-page {
-    padding-top: 3.5rem;
+    min-height: 100vh;
+    padding: 1.5rem 0 3rem;
+    background: var(--owl-surface);
 }
 
 .owl-article-page {
@@ -199,8 +201,8 @@ button, input, select, textarea {
 
 .owl-toolbar-wrapper {
     z-index: 50;
-    margin: -4rem -1rem 2.5rem;
-    padding: 0 1rem 1rem;
+    margin: 0 0 2rem;
+    padding: 0;
 }
 
 .owl-toolbar-card {
@@ -661,7 +663,7 @@ textarea:focus-visible {
 
 @media (max-width: 991px) {
     .owl-toolbar-wrapper {
-        margin: 0 -1rem 2rem;
+        margin: 0 0 2rem;
     }
 
     .owl-hero-card {

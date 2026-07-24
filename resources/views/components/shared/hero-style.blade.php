@@ -6,7 +6,7 @@
     --kp-hero-primary-rgb: 5, 80, 125;
     --kp-hero-dark-rgb: 5, 80, 125;
     --kp-hero-light-rgb: 106, 174, 214;
-    --kp-hero-completed-rgb: 106, 174, 214;
+    --kp-hero-completed-rgb: 22, 163, 74;
 
 /* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
     --hero-overlay-width: 58%;
@@ -395,6 +395,24 @@
             .shared-hero-stat-dot.ongoing {
                 background: rgb(var(--kp-hero-light-rgb));
                 box-shadow: 0 0 8px rgba(var(--kp-hero-light-rgb), .5);
+            }
+
+            .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.completed) .shared-hero-summary-label,
+            .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.completed) .shared-hero-summary-value {
+                color: rgb(var(--kp-hero-completed-rgb));
+            }
+
+            #btn-assessment-access.home-modern-assessment-btn {
+                background: #C79A2B;
+                border-color: #C79A2B;
+                color: #FFFFFF;
+            }
+
+            #btn-assessment-access.home-modern-assessment-btn:hover,
+            #btn-assessment-access.home-modern-assessment-btn:focus-visible {
+                background: #B8891F;
+                border-color: #C79A2B;
+                color: #FFFFFF;
             }
 
             [data-bs-theme="dark"] .shared-learning-hero,

@@ -18,7 +18,7 @@
     --owl-radius-lg: 32px;
     --owl-radius-xl: 40px;
     --owl-transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    --owl-body-bg: linear-gradient(180deg, #D9D9D6 0%, #BBBCBC 100%);
+    --owl-body-bg: #ffffff;
     --owl-body-color: var(--owl-text);
 }
 
@@ -69,7 +69,9 @@ button, input, select, textarea {
 }
 
 .owl-news-page {
-    padding-top: 3.5rem;
+    min-height: 100vh;
+    padding: 1.5rem 0 3rem;
+    background: var(--owl-surface);
 }
 
 .owl-article-page .container-xl{
@@ -226,8 +228,8 @@ button, input, select, textarea {
 
 .owl-toolbar-wrapper {
     z-index: 50;
-    margin: -4rem -1rem 2.5rem;
-    padding: 0 1rem 1rem;
+    margin: 0 0 2rem;
+    padding: 0;
 }
 
 .owl-toolbar-card {
@@ -717,7 +719,7 @@ textarea:focus-visible {
 
 @media (max-width: 991px) {
     .owl-toolbar-wrapper {
-    margin: 0 0 2.5rem;
+    margin: 0 0 2rem;
 }
 
     .owl-hero-card {
@@ -745,8 +747,8 @@ textarea:focus-visible {
     .page-body,
     .owl-news-page,
     .owl-article-page{
-    max-width: 1400px;
-    margin: auto;
+    max-width: none;
+    margin: 0;
 }
 
     .owl-hero-card {
