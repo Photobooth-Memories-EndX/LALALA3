@@ -39,6 +39,11 @@
 
                     $learningProgress = $progressByContentId[$list->content_id] ?? 0;
                     $isAssessmentUnlocked = $learningProgress >= $requiredAssessmentProgress;
+                    $isDocumentLesson = in_array(
+                        $lesson->type,
+                        ['Document', 'PDF', 'SOP/Regulation'],
+                        true
+                    );
 
                     if ($learningProgress >= 100) {
                         $lessonStatusIcon = 'ti ti-circle-check-filled';
@@ -65,14 +70,20 @@
                            class="playlist-lesson-main">
                             <div class="lesson-type-icon lesson-thumbnail"
                                  role="img"
-                                 aria-label="Content thumbnail">
-                                <img src="{{ $defaultLessonThumbnail }}"
-                                     alt=""
-                                     class="lesson-thumbnail-image"
-                                     onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
-                                <span class="lesson-thumbnail-fallback d-none" aria-hidden="true">
-                                    <i class="ti ti-video" aria-hidden="true"></i>
-                                </span>
+                                 aria-label="{{ $isDocumentLesson ? 'Document content' : 'Video content' }}">
+                                @if ($isDocumentLesson)
+                                    <span class="lesson-thumbnail-fallback" aria-hidden="true">
+                                        <i class="ti ti-file-description" aria-hidden="true"></i>
+                                    </span>
+                                @else
+                                    <img src="{{ $defaultLessonThumbnail }}"
+                                         alt=""
+                                         class="lesson-thumbnail-image"
+                                         onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                                    <span class="lesson-thumbnail-fallback d-none" aria-hidden="true">
+                                        <i class="ti ti-video" aria-hidden="true"></i>
+                                    </span>
+                                @endif
                             </div>
 
                             <div class="lesson-info">

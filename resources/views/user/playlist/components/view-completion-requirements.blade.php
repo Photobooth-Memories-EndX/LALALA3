@@ -2,6 +2,8 @@
     $certificateEligible = (bool) ($playlistCertificateEligibility?->eligible ?? false);
     $playlistAssessmentAvailable = $hasPlaylistAssessment
         && ($assessmentAccess || $playlistAssessmentDone);
+    $contentAssessmentAvailable = $contentAssessmentTotal > 0
+        && $contentAssessmentCompleted === $contentAssessmentTotal;
 @endphp
 
 <section class="border-top pt-3 mt-4" aria-labelledby="playlistCompletionRequirementsTitle">
@@ -36,10 +38,10 @@
                     Assessment Content
                 </span>
 
-                @if ($contentAssessmentTotal > 0)
-                    <span class="badge bg-blue-lt text-blue">
-                        <i class="ti ti-progress-check me-1" aria-hidden="true"></i>
-                        {{ $contentAssessmentPercentage }}%
+                @if ($contentAssessmentAvailable)
+                    <span class="badge bg-success-lt text-success">
+                        <i class="ti ti-circle-check me-1" aria-hidden="true"></i>
+                        Available
                     </span>
                 @else
                     <span class="badge bg-danger-lt text-danger">
