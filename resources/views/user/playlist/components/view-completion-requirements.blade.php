@@ -1,8 +1,13 @@
 @php
-    $certificateEligible = (bool) ($playlistCertificateEligibility?->eligible ?? false);
-    $playlistAssessmentAvailable = $hasPlaylistAssessment
-        && ($assessmentAccess || $playlistAssessmentDone);
-    $contentAssessmentAvailable = $contentAssessmentTotal > 0;
+    $displayLearningProgress = $playlistUiState['learning_progress']
+        ?? $percentageProgressPlaylist;
+    $certificateEligible = (bool) ($playlistUiState['certificate_available']
+        ?? $playlistCertificateEligibility?->eligible
+        ?? false);
+    $playlistAssessmentAvailable = (bool) ($playlistUiState['playlist_assessment_available']
+        ?? ($hasPlaylistAssessment && ($assessmentAccess || $playlistAssessmentDone)));
+    $contentAssessmentAvailable = (bool) ($playlistUiState['content_assessment_available']
+        ?? ($contentAssessmentTotal > 0));
 @endphp
 
 <section class="border-top pt-3 mt-4" aria-labelledby="playlistCompletionRequirementsTitle">
@@ -25,7 +30,7 @@
 
                 <span class="badge bg-blue-lt text-blue">
                     <i class="ti ti-chart-bar me-1" aria-hidden="true"></i>
-                    {{ number_format($percentageProgressPlaylist, 0) }}%
+                    {{ number_format($displayLearningProgress, 0) }}%
                 </span>
             </div>
         </div>

@@ -1,6 +1,38 @@
 @php
     $url_ytplayer_js = asset('Tabler/dist/libs/plyr/dist/plyr.min.js?1684106062');
     $url_ytplayer_css = asset('Tabler/dist/libs/plyr/dist/plyr.css?1684106062');
+
+    $canUsePlaylistDebug = (bool) auth()->user()?->canAccessManageModule('playlist_debug_tools');
+    $playlistDebugState = $canUsePlaylistDebug
+        ? session('playlist_debug.' . $playlist->getKey(), [])
+        : [];
+    $playlistDebugActive = !empty($playlistDebugState);
+
+    $playlistUiState = [
+        'learning_progress' => (float) $percentageProgressPlaylist,
+        'content_assessment_available' => $contentAssessmentTotal > 0,
+        'playlist_assessment_available' => $hasPlaylistAssessment
+            && ($assessmentAccess || $playlistAssessmentDone),
+        'certificate_available' => (bool) ($playlistCertificateEligibility?->eligible ?? false),
+    ];
+
+    if (($playlistDebugState['learning_progress'] ?? null) === 'pass') {
+        $playlistUiState['learning_progress'] = 100;
+    } elseif (($playlistDebugState['learning_progress'] ?? null) === 'fail') {
+        $playlistUiState['learning_progress'] = 0;
+    }
+
+    foreach ([
+        'content_assessment' => 'content_assessment_available',
+        'playlist_assessment' => 'playlist_assessment_available',
+        'certificate' => 'certificate_available',
+    ] as $debugKey => $uiKey) {
+        if (($playlistDebugState[$debugKey] ?? null) === 'available') {
+            $playlistUiState[$uiKey] = true;
+        } elseif (($playlistDebugState[$debugKey] ?? null) === 'not_available') {
+            $playlistUiState[$uiKey] = false;
+        }
+    }
 @endphp
 
 @extends('layouts.sidebar-master')
@@ -51,7 +83,7 @@
                         ])
                         @include('user.playlist.components.view-content-info')
 
-                        @if (auth()->user()?->canAccessManageModule('playlist_debug_tools'))
+                        @if ($canUsePlaylistDebug)
                             @include('user.playlist.components.view-debug-panel')
                         @endif
                     </div>

@@ -45,6 +45,7 @@ use App\Http\Controllers\UserCertificateController;
 use App\Http\Controllers\ManageRoleController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\ManageAccessPermissionController;
+use App\Http\Controllers\PlaylistDebugController;
 
 /*
 |--------------------------------------------------------------------------
@@ -180,6 +181,10 @@ Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
 */
 Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
     Route::get('/', [PlaylistUserController::class, 'index'])->name('playlist.user.index');
+    Route::post('/{trainingplan}/debug-state', [PlaylistDebugController::class, 'update'])
+        ->name('playlist.debug.update');
+    Route::delete('/{trainingplan}/debug-state', [PlaylistDebugController::class, 'reset'])
+        ->name('playlist.debug.reset');
     Route::get('/{slug}/{vidslug}', [PlaylistUserController::class, 'view'])->name('playlist.user.view');
 });
 

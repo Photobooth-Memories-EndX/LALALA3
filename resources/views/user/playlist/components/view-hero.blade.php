@@ -9,7 +9,9 @@
             : asset('default-video.jpg');
     }
 
-    $playlistProgress = $percentageProgressPlaylist ?? 0;
+    $playlistProgress = $playlistUiState['learning_progress']
+        ?? $percentageProgressPlaylist
+        ?? 0;
     $chapterTotal = ($content_all ?? collect())->count();
     $playlistViews = $playlist->views ?? $playlist->view ?? $playlist->total_views ?? 0;
     $periodStart = $playlist->from_date ? $playlist->from_date->format('d M Y') : null;

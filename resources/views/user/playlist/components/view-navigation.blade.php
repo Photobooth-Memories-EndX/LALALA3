@@ -1,5 +1,11 @@
 @php
-    $certificateEligible = (bool) ($playlistCertificateEligibility?->eligible ?? false);
+    $certificateEligible = (bool) ($playlistUiState['certificate_available']
+        ?? $playlistCertificateEligibility?->eligible
+        ?? false);
+    $playlistAssessmentAvailable = (bool) ($playlistUiState['playlist_assessment_available']
+        ?? $hasPlaylistAssessment);
+    $certificateDebugOverride = $playlistDebugState['certificate'] ?? null;
+    $playlistAssessmentDebugOverride = $playlistDebugState['playlist_assessment'] ?? null;
     $certificateUnavailableReason = $playlistCertificateEligibility?->reason
         ?? 'Certificate is not configured for this playlist.';
 @endphp
@@ -8,7 +14,16 @@
     <div class="card-body">
         <div class="d-flex flex-wrap align-items-center gap-2">
 
-            @if ($hasPlaylistAssessment)
+            @if ($playlistAssessmentDebugOverride !== null)
+                <button type="button"
+                        class="btn btn-primary flex-fill"
+                        aria-disabled="{{ $playlistAssessmentAvailable ? 'false' : 'true' }}"
+                        title="Session debug preview only; assessment access is unchanged."
+                        @disabled(!$playlistAssessmentAvailable)>
+                    <i class="ti ti-clipboard-check me-2" aria-hidden="true"></i>
+                    Assessment Playlist
+                </button>
+            @elseif ($hasPlaylistAssessment)
                 <a href="{{ route('assesment.user.view', $assesment->slug) }}"
                    class="btn btn-primary flex-fill">
                     <i class="ti ti-clipboard-check me-2" aria-hidden="true"></i>
@@ -34,7 +49,16 @@
                 My Task
             </button>
 
-            @if ($playlistCertificateSetting)
+            @if ($certificateDebugOverride !== null)
+                <button type="button"
+                        class="btn btn-success certificate-action-button flex-fill"
+                        aria-disabled="{{ $certificateEligible ? 'false' : 'true' }}"
+                        title="Session debug preview only; certificate generation is unchanged."
+                        @disabled(!$certificateEligible)>
+                    <i class="ti ti-certificate me-2" aria-hidden="true"></i>
+                    Generate Certificate
+                </button>
+            @elseif ($playlistCertificateSetting)
                 <form method="POST"
                       action="{{ route('certificate.generate.setting', $playlistCertificateSetting) }}"
                       class="certificate-action-wrapper flex-fill m-0 {{ $certificateEligible ? '' : 'is-disabled' }}"
