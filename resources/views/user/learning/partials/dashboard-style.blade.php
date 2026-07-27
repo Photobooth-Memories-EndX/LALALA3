@@ -55,55 +55,126 @@
         color: #fff;
     }
 
-    .learning-module-hero-summary {
-        background: linear-gradient(
-            135deg,
-            rgba(5, 80, 125, .38),
-            rgba(106, 174, 214, .18)
-        );
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+    .learning-hero-stats-panel {
+        width: 100%;
+        max-width: 360px;
+        margin-left: auto;
+        padding: .5rem;
+        border: 1px solid rgba(255, 255, 255, .18);
+        border-radius: 1rem;
+        background: rgba(5, 80, 125, .2);
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, .08),
             0 8px 20px rgba(5, 80, 125, .12);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
-    .learning-module-hero-summary-icon {
-        width: 28px;
-        height: 28px;
-        background: rgba(255, 255, 255, .14);
+    .learning-hero-stats-split {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        gap: .25rem;
+        align-items: stretch;
     }
 
-    .learning-module-hero-summary-title {
-        color: #fff;
-        font-size: .75rem;
-        font-weight: 600;
-        line-height: 1.25;
+    .learning-hero-stat-stack {
+        display: grid;
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+        gap: .25rem;
     }
 
-    .learning-module-hero-summary-subtitle {
-        color: rgba(255, 255, 255, .72);
-        font-size: .625rem;
-        line-height: 1.25;
+    .learning-hero-stats-paired {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .5rem;
+        align-items: stretch;
     }
 
-    .learning-module-hero-stat-tile {
-        padding: .3125rem .5rem;
+    .learning-stat-card {
+        min-width: 0;
+        overflow: hidden;
         border: 1px solid rgba(255, 255, 255, .12);
-        background: rgba(255, 255, 255, .08);
-    }
-
-    .learning-module-hero-stat-label {
-        color: rgba(255, 255, 255, .78);
-        font-size: .625rem;
-        line-height: 1.2;
-    }
-
-    .learning-module-hero-stat-value {
         color: #fff;
+        text-align: left;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .08),
+            0 5px 12px rgba(5, 80, 125, .1);
+    }
+
+    .learning-stat-large {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        padding: .5rem;
+        border-radius: 1rem;
+    }
+
+    .learning-stat-small {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: .25rem .5rem;
+        border-radius: .75rem;
+    }
+
+    .learning-stat-large-label {
+        font-size: .6875rem;
+        font-weight: 600;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: .035em;
+    }
+
+    .learning-stat-large-value {
+        margin: .125rem 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .learning-stat-large-description {
+        color: rgba(255, 255, 255, .72);
+        font-size: .5625rem;
+        line-height: 1.25;
+    }
+
+    .learning-stat-small-label {
+        overflow: hidden;
+        color: rgba(255, 255, 255, .8);
+        font-size: .5625rem;
+        line-height: 1.15;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .learning-stat-small-value {
+        overflow: hidden;
         font-size: 1rem;
         font-weight: 600;
-        line-height: 1.25;
+        line-height: 1.15;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .learning-stat--blue {
+        background: linear-gradient(135deg, rgba(5, 80, 125, .78), rgba(106, 174, 214, .34));
+    }
+
+    .learning-stat--dark-blue {
+        background: linear-gradient(135deg, rgba(3, 44, 70, .86), rgba(5, 80, 125, .58));
+    }
+
+    .learning-stat--green {
+        background: linear-gradient(135deg, rgba(22, 163, 74, .68), rgba(74, 222, 128, .24));
+    }
+
+    .learning-stat--cyan {
+        background: linear-gradient(135deg, rgba(8, 145, 178, .68), rgba(103, 232, 249, .22));
+    }
+
+    .learning-stat--orange {
+        background: linear-gradient(135deg, rgba(217, 119, 6, .72), rgba(251, 191, 36, .28));
     }
 
     @media (max-width: 575.98px) {

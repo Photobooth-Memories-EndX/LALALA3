@@ -24,10 +24,20 @@
             </div>
 
             <div class="col-lg-4 d-none d-lg-block text-end">
-                <x-shared.learning-hero-summary
-                    title="Certificate Summary"
-                    :hero-stats="$stats"
-                />
+                <div class="learning-hero-stats-panel">
+                    <div class="learning-hero-stats-paired">
+                        <x-shared.learning-stat-small
+                            label="Certificates"
+                            :value="data_get($stats, '0.value', '—')"
+                            tone="green"
+                        />
+                        <x-shared.learning-stat-small
+                            label="Passed Assessment"
+                            :value="data_get($stats, '1.value', '—')"
+                            tone="orange"
+                        />
+                    </div>
+                </div>
             </div>
         </div>
     </div>

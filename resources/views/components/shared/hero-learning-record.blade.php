@@ -24,10 +24,34 @@
             </div>
 
             <div class="col-lg-4 d-none d-lg-block text-end">
-                <x-shared.learning-hero-summary
-                    title="Record Summary"
-                    :hero-stats="$stats"
-                />
+                <div class="learning-hero-stats-panel">
+                    <div class="learning-hero-stats-split">
+                        <x-shared.learning-stat-large
+                            label="Learning Hours"
+                            :value="data_get($stats, '2.value', '—')"
+                            description="Total recorded learning time"
+                            tone="dark-blue"
+                        />
+
+                        <div class="learning-hero-stat-stack">
+                            <x-shared.learning-stat-small
+                                label="Total Learning"
+                                :value="data_get($stats, '0.value', '—')"
+                                tone="blue"
+                            />
+                            <x-shared.learning-stat-small
+                                label="Completed"
+                                :value="data_get($stats, '1.value', '—')"
+                                tone="green"
+                            />
+                            <x-shared.learning-stat-small
+                                label="Certificate"
+                                :value="data_get($stats, '3.value', '—')"
+                                tone="green"
+                            />
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
