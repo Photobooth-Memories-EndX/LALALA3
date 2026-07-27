@@ -25,8 +25,8 @@
         }
 
         .content-hero-surface {
-            min-height: 238px;
-            padding: 28px 34px !important;
+            min-height: 170px;
+            padding: 15px 34px !important;
             display: flex;
             align-items: center;
             background:
@@ -36,7 +36,7 @@
 
         .content-hero-surface > .row {
             width: 100%;
-            min-height: 182px;
+            min-height: 140px;
         }
 
         .content-hero-count {
@@ -51,15 +51,15 @@
         }
 
         .content-hero-count strong {
-            font-size: clamp(48px, 7vw, 82px);
+            font-size: clamp(38px, 5.3vw, 60px);
             font-weight: 800;
             letter-spacing: 0;
             text-shadow: 0 12px 34px rgba(15, 23, 42, .22);
         }
 
         .content-hero-count span {
-            margin-bottom: 8px;
-            font-size: 15px;
+            margin-bottom: 4px;
+            font-size: 13px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: .08em;
@@ -67,7 +67,7 @@
         }
 
         .content-hero-copy h1 {
-            font-size: clamp(30px, 3.4vw, 44px);
+            font-size: clamp(24px, 2.5vw, 32px);
             line-height: 1.04;
             letter-spacing: 0;
         }
@@ -75,7 +75,13 @@
         .content-hero-copy p {
             max-width: 580px;
             font-size: 15px;
-            line-height: 1.65;
+            line-height: 1.4;
+        }
+
+        .content-hero-badge {
+            padding: .25rem .5rem !important;
+            font-size: 12px;
+            line-height: 1.2;
         }
 
         .content-reset-btn {
@@ -349,7 +355,7 @@
             }
 
             .content-hero-count strong {
-                font-size: 44px;
+                font-size: 36px;
             }
         }
     </style>
@@ -369,12 +375,12 @@
             <div class="card-body content-hero-surface text-white">
                 <div class="row align-items-center g-4">
                     <div class="col-lg-8 content-hero-copy">
-                        <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-3 px-3 py-2 rounded-pill">
+                        <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-2 rounded-pill content-hero-badge">
                             <i class="ti ti-sparkles"></i>
                             Learning Content
                         </div>
 
-                        <h1 class="mb-2 fw-bold">
+                        <h1 class="mb-1 fw-bold">
                             All Content
                         </h1>
 

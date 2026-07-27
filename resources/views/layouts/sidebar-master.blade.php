@@ -6,6 +6,45 @@
     @yield('style')
     @stack('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <style>
+        .owl-sidebar-brand,
+        .owl-sidebar-brand > a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .owl-sidebar-brand > a {
+            width: 100%;
+        }
+
+        .owl-sidebar-logo {
+            width: 136px;
+            height: auto;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        @media (min-width: 992px) {
+            .owl-sidebar-brand {
+                min-height: 88px;
+                padding-top: 4px;
+                padding-bottom: 4px;
+            }
+        }
+
+        @media (min-width: 576px) and (max-width: 991.98px) {
+            .owl-sidebar-logo {
+                width: 124px;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .owl-sidebar-logo {
+                width: 109px;
+            }
+        }
+    </style>
 </head>
 @php
     $themeMode = request('theme') === 'dark' ? 'dark' : 'light';
