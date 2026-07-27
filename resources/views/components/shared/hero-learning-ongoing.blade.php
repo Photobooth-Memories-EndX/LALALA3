@@ -1,6 +1,6 @@
 @props([
     'badge' => 'My Learning',
-    'title' => 'Learning Dashboard',
+    'title' => 'Learning On Going',
     'subtitle' => null,
     'description' => 'Continue active learning and keep your development goals moving forward.',
     'stats' => [],

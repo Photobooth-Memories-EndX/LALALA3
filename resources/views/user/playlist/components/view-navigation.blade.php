@@ -50,14 +50,29 @@
             </button>
 
             @if ($certificateDebugOverride !== null)
-                <button type="button"
-                        class="btn btn-success certificate-action-button flex-fill"
-                        aria-disabled="{{ $certificateEligible ? 'false' : 'true' }}"
-                        title="Session debug preview only; certificate generation is unchanged."
-                        @disabled(!$certificateEligible)>
-                    <i class="ti ti-certificate me-2" aria-hidden="true"></i>
-                    Generate Certificate
-                </button>
+                @if ($certificateDebugOverride === 'available' && $playlistCertificateSetting)
+                    <a href="{{ route('playlist.debug.certificate.preview', [
+                            'trainingplan' => $playlist,
+                            'content' => $content->slug,
+                        ]) }}"
+                       class="btn btn-warning certificate-action-button flex-fill"
+                       title="Open the session-only debug certificate preview.">
+                        <i class="ti ti-eye me-2" aria-hidden="true"></i>
+                        Preview Certificate
+                        <span class="badge bg-orange-lt text-orange ms-2">DEBUG</span>
+                    </a>
+                @else
+                    <button type="button"
+                            class="btn btn-success certificate-action-button flex-fill"
+                            aria-disabled="true"
+                            title="{{ $playlistCertificateSetting
+                                ? 'Certificate debug preview is not available.'
+                                : 'An active playlist certificate setting is required.' }}"
+                            disabled>
+                        <i class="ti ti-certificate me-2" aria-hidden="true"></i>
+                        Generate Certificate
+                    </button>
+                @endif
             @elseif ($playlistCertificateSetting)
                 <form method="POST"
                       action="{{ route('certificate.generate.setting', $playlistCertificateSetting) }}"

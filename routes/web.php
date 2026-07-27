@@ -46,6 +46,7 @@ use App\Http\Controllers\ManageRoleController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\ManageAccessPermissionController;
 use App\Http\Controllers\PlaylistDebugController;
+use App\Http\Controllers\PlaylistCertificateDebugController;
 
 /*
 |--------------------------------------------------------------------------
@@ -185,6 +186,10 @@ Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
         ->name('playlist.debug.update');
     Route::delete('/{trainingplan}/debug-state', [PlaylistDebugController::class, 'reset'])
         ->name('playlist.debug.reset');
+    Route::get('/{trainingplan}/debug-certificate-preview', [PlaylistCertificateDebugController::class, 'show'])
+        ->name('playlist.debug.certificate.preview');
+    Route::delete('/{trainingplan}/debug-certificate-preview', [PlaylistCertificateDebugController::class, 'destroy'])
+        ->name('playlist.debug.certificate.preview.exit');
     Route::get('/{slug}/{vidslug}', [PlaylistUserController::class, 'view'])->name('playlist.user.view');
 });
 

@@ -1,5 +1,5 @@
 @props([
-    'badge' => 'Assessment',
+    'badge' => 'My Learning',
     'title' => 'Assessment',
     'subtitle' => null,
     'description' => 'Track assessment activity and review the results you have achieved.',

@@ -1,5 +1,5 @@
 @props([
-    'badge' => 'Learning Record',
+    'badge' => 'My Learning',
     'title' => 'Learning Record',
     'subtitle' => null,
     'description' => 'Review your learning history, completion progress, and learning hours.',

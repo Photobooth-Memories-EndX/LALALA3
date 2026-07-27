@@ -1,5 +1,5 @@
 @props([
-    'badge' => 'Certificate',
+    'badge' => 'My Learning',
     'title' => 'Certificate',
     'subtitle' => null,
     'description' => 'View your achievements and access certificates when they become available.',
