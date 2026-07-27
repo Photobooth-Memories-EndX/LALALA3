@@ -24,26 +24,27 @@
             </div>
 
             <div class="col-lg-4 d-none d-lg-block text-end">
-                <div class="learning-hero-stats-panel">
-                    <div class="learning-hero-stats-split">
-                        <x-shared.learning-stat-large
-                            label="Total Certificate"
-                            :value="data_get($stats, '0.value', '—')"
-                            tone="dark-blue"
-                        />
+                <div class="learning-stat-widget" role="group" aria-label="Certificate statistics">
+                    <div class="learning-stat-widget-card learning-stat-widget-feature learning-stat-widget-card--dark-blue">
+                        <span class="learning-stat-widget-label">Total Certificate</span>
+                        <strong class="learning-stat-widget-value learning-stat-widget-value--large">
+                            {{ data_get($stats, '0.value', '—') }}
+                        </strong>
+                    </div>
 
-                        <div class="learning-hero-stat-stack align-content-center"
-                             style="grid-template-rows: repeat(2, auto);">
-                            <x-shared.learning-stat-small
-                                label="Playlist Certificate"
-                                :value="data_get($stats, '1.value', '—')"
-                                tone="blue"
-                            />
-                            <x-shared.learning-stat-small
-                                label="Content Certificate"
-                                :value="data_get($stats, '2.value', '—')"
-                                tone="green"
-                            />
+                    <div class="learning-stat-widget-stack">
+                        <div class="learning-stat-widget-card learning-stat-widget-card--blue">
+                            <span class="learning-stat-widget-label">Playlist Certificate</span>
+                            <strong class="learning-stat-widget-value">
+                                {{ data_get($stats, '1.value', '—') }}
+                            </strong>
+                        </div>
+
+                        <div class="learning-stat-widget-card learning-stat-widget-card--green">
+                            <span class="learning-stat-widget-label">Content Certificate</span>
+                            <strong class="learning-stat-widget-value">
+                                {{ data_get($stats, '2.value', '—') }}
+                            </strong>
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,329 @@
+<style>
+    /* 1. Hero Design Tokens */
+    :root {
+        --learning-hero-radius: 20px;
+        --learning-stat-space-1: .25rem;
+        --learning-stat-space-2: .5rem;
+        --learning-stat-space-3: .75rem;
+        --learning-stat-panel-width: 22.5rem;
+        --learning-stat-panel-height: 8rem;
+        --learning-stat-panel-radius: 1rem;
+        --learning-stat-card-radius: .75rem;
+    }
+
+    /* 2. Base Hero and Default Theme */
+    .learning-module-hero {
+        --hero-background: linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
+        --hero-panel-background: rgba(5, 80, 125, .2);
+        --hero-panel-border: rgba(255, 255, 255, .18);
+        --hero-panel-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .08),
+            0 8px 20px rgba(5, 80, 125, .14);
+        --hero-panel-transform: none;
+        --hero-card-border: rgba(255, 255, 255, .12);
+        --hero-card-radius: var(--learning-stat-card-radius);
+        --hero-card-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .08),
+            0 5px 12px rgba(5, 80, 125, .1);
+        --hero-card-hover-shadow: var(--hero-card-shadow);
+        --hero-card-hover-transform: none;
+        --hero-card-transition: none;
+        --hero-label-color: rgba(255, 255, 255, .86);
+        --hero-label-letter-spacing: .04em;
+        --hero-large-label-size: .75rem;
+        --hero-small-label-size: .6875rem;
+        --hero-large-value-size: 2rem;
+        --hero-small-value-size: 1.25rem;
+        --hero-blue: linear-gradient(135deg, rgba(5, 80, 125, .78), rgba(106, 174, 214, .34));
+        --hero-dark-blue: linear-gradient(135deg, rgba(3, 44, 70, .86), rgba(5, 80, 125, .58));
+        --hero-green: linear-gradient(135deg, rgba(22, 163, 74, .68), rgba(74, 222, 128, .24));
+        --hero-cyan: linear-gradient(135deg, rgba(8, 145, 178, .68), rgba(103, 232, 249, .22));
+        --hero-orange: linear-gradient(135deg, rgba(217, 119, 6, .72), rgba(251, 191, 36, .28));
+        --hero-red: linear-gradient(135deg, rgba(220, 38, 38, .7), rgba(248, 113, 113, .24));
+        border-radius: var(--learning-hero-radius) !important;
+        background: var(--hero-background);
+        color: #fff;
+    }
+
+    /* 3. Theme Variants: variables only */
+    .learning-module-hero--ongoing {
+        --hero-panel-transform: translateX(calc(-1 * var(--learning-stat-space-2)));
+        --hero-blue: linear-gradient(135deg, rgba(5, 80, 125, .82), rgba(30, 64, 175, .55));
+    }
+
+    .learning-module-hero--assessment {
+        --hero-blue: #2563EB;
+        --hero-green: #16A34A;
+        --hero-cyan: #0D9488;
+        --hero-red: #DC2626;
+    }
+
+    /* 4. Hero Content */
+    .learning-hero-record-content {
+        padding-top: .0625rem;
+        padding-bottom: .0625rem;
+    }
+
+    .learning-hero-record-content h2 {
+        margin-bottom: .625rem !important;
+        font-size: 1.5rem;
+        line-height: 1.15;
+    }
+
+    .learning-hero-record-content > p:last-child {
+        font-size: .9375rem;
+        line-height: 1.45;
+    }
+
+    /* 5. Hero Stats Panel */
+    .learning-hero-stats-panel {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: var(--learning-stat-panel-width);
+        height: var(--learning-stat-panel-height);
+        margin-left: auto;
+        padding: var(--learning-stat-space-2);
+        border: 1px solid var(--hero-panel-border);
+        border-radius: var(--learning-stat-panel-radius);
+        background: var(--hero-panel-background);
+        box-shadow: var(--hero-panel-shadow);
+        transform: var(--hero-panel-transform);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    /* 6. Layout Variants */
+    .learning-hero-stats-assessment {
+        display: grid;
+        height: 100%;
+        gap: var(--learning-stat-space-1);
+        align-items: stretch;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+    }
+
+    .learning-hero-stats-panel--ongoing {
+        display: flex;
+        align-items: stretch;
+    }
+
+    .learning-hero-stat-feature {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* 7. Record and Certificate Stat Widget */
+    .learning-stat-widget {
+        --widget-gap: var(--learning-stat-space-2);
+        --widget-card-radius: 14px;
+        --widget-card-border: rgba(255, 255, 255, .14);
+        --widget-card-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+        display: grid;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: var(--learning-stat-panel-width);
+        height: var(--learning-stat-panel-height);
+        margin-left: auto;
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        gap: var(--widget-gap);
+        padding: var(--learning-stat-space-2);
+        border: 1px solid rgba(255, 255, 255, .14);
+        border-radius: var(--learning-stat-panel-radius);
+        background: rgba(5, 80, 125, .2);
+        box-shadow: var(--widget-card-shadow);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    .learning-stat-widget-stack {
+        display: grid;
+        min-width: 0;
+        min-height: 0;
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+        gap: var(--widget-gap);
+    }
+
+    .learning-stat-widget-card {
+        display: flex;
+        box-sizing: border-box;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--learning-stat-space-1);
+        padding: var(--learning-stat-space-2) var(--learning-stat-space-3);
+        border: 1px solid var(--widget-card-border);
+        border-radius: var(--widget-card-radius);
+        color: #fff;
+        box-shadow: var(--widget-card-shadow);
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .learning-stat-widget-card:hover {
+        box-shadow: 0 12px 28px rgba(0, 0, 0, .2);
+        transform: translateY(-1px);
+    }
+
+    .learning-stat-widget-feature {
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .learning-stat-widget-label {
+        min-width: 0;
+        color: rgba(255, 255, 255, .92);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        overflow-wrap: anywhere;
+    }
+
+    .learning-stat-widget-feature .learning-stat-widget-label {
+        text-align: center;
+    }
+
+    .learning-stat-widget-value {
+        flex: 0 0 auto;
+        color: #fff;
+        font-size: 30px;
+        font-weight: 800;
+        line-height: 1;
+        text-align: center;
+    }
+
+    .learning-stat-widget-value--large {
+        font-size: 42px;
+    }
+
+    .learning-stat-widget-description {
+        color: rgba(255, 255, 255, .72);
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.2;
+        text-align: center;
+    }
+
+    .learning-stat-widget-card--dark-blue {
+        background: linear-gradient(135deg, #184C73, #205D8F);
+    }
+
+    .learning-stat-widget-card--blue {
+        background: linear-gradient(135deg, #2E6EA3, #4B90C5);
+    }
+
+    .learning-stat-widget-card--green {
+        background: linear-gradient(135deg, #2EAD72, #46C98A);
+    }
+
+    /* 8. Shared Legacy Hero Cards */
+    .learning-stat-card {
+        display: flex;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        overflow: visible;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--learning-stat-space-1);
+        padding: var(--learning-stat-space-2) var(--learning-stat-space-3);
+        border: 1px solid var(--hero-card-border);
+        border-radius: var(--hero-card-radius);
+        color: #fff;
+        text-align: center;
+        box-shadow: var(--hero-card-shadow);
+        transition: var(--hero-card-transition);
+    }
+
+    .learning-stat-card:hover {
+        box-shadow: var(--hero-card-hover-shadow);
+        transform: var(--hero-card-hover-transform);
+    }
+
+    /* 9. Shared Legacy Hero Typography */
+    .learning-stat-label,
+    .learning-stat-large-label,
+    .learning-stat-small-label {
+        max-width: 100%;
+        overflow: visible;
+        color: var(--hero-label-color);
+        font-size: var(--hero-small-label-size);
+        font-weight: 700;
+        line-height: 1.2;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: var(--hero-label-letter-spacing);
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+
+    .learning-stat-large-label {
+        font-size: var(--hero-large-label-size);
+    }
+
+    .learning-stat-value,
+    .learning-stat-large-value,
+    .learning-stat-small-value {
+        max-width: 100%;
+        overflow: visible;
+        margin: 0;
+        color: #fff;
+        font-weight: 800;
+        line-height: 1;
+        text-align: center;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+
+    .learning-stat-large-value {
+        font-size: var(--hero-large-value-size);
+    }
+
+    .learning-stat-small-value {
+        font-size: var(--hero-small-value-size);
+    }
+
+    .learning-stat-large-description {
+        max-width: 100%;
+        color: rgba(255, 255, 255, .72);
+        font-size: .625rem;
+        font-weight: 600;
+        line-height: 1.2;
+        text-align: center;
+        overflow-wrap: anywhere;
+    }
+
+    /* 10. Shared Legacy Hero Color Variants */
+    .learning-stat--blue {
+        background: var(--hero-blue);
+    }
+
+    .learning-stat--dark-blue {
+        background: var(--hero-dark-blue);
+    }
+
+    .learning-stat--green {
+        background: var(--hero-green);
+    }
+
+    .learning-stat--cyan {
+        background: var(--hero-cyan);
+    }
+
+    .learning-stat--orange {
+        background: var(--hero-orange);
+    }
+
+    .learning-stat--red {
+        background: var(--hero-red);
+    }
+
+    /* 11. Responsive */
+    /* Hero statistic visibility follows the existing Bootstrap responsive classes. */
+</style>
