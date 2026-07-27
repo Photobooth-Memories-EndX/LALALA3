@@ -24,7 +24,7 @@
             </div>
 
             <div class="col-lg-4 d-none d-lg-block text-end">
-                <div class="learning-hero-stats-panel">
+                <div class="learning-hero-stats-panel learning-hero-stats-panel--paired">
                     <div class="learning-hero-stats-paired">
                         <x-shared.learning-stat-small
                             label="Certificates"

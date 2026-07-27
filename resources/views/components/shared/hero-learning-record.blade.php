@@ -33,7 +33,8 @@
                             tone="dark-blue"
                         />
 
-                        <div class="learning-hero-stat-stack">
+                        <div class="learning-hero-stat-stack align-content-center"
+                             style="grid-template-rows: repeat(2, auto);">
                             <x-shared.learning-stat-small
                                 label="Total Learning"
                                 :value="data_get($stats, '0.value', '—')"
@@ -42,11 +43,6 @@
                             <x-shared.learning-stat-small
                                 label="Completed"
                                 :value="data_get($stats, '1.value', '—')"
-                                tone="green"
-                            />
-                            <x-shared.learning-stat-small
-                                label="Certificate"
-                                :value="data_get($stats, '3.value', '—')"
                                 tone="green"
                             />
                         </div>

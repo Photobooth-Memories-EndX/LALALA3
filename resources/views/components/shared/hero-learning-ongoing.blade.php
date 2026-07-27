@@ -27,18 +27,14 @@
                 <div class="learning-hero-stats-panel">
                     <div class="learning-hero-stats-split">
                         <x-shared.learning-stat-large
-                            label="Learning Summary"
+                            label="Total Learning"
                             :value="data_get($stats, '0.value', '—')"
                             description="Your learning at a glance"
                             tone="blue"
                         />
 
-                        <div class="learning-hero-stat-stack">
-                            <x-shared.learning-stat-small
-                                label="Total Learning"
-                                :value="data_get($stats, '0.value', '—')"
-                                tone="blue"
-                            />
+                        <div class="learning-hero-stat-stack align-content-center"
+                             style="grid-template-rows: repeat(2, auto);">
                             <x-shared.learning-stat-small
                                 label="Completed"
                                 :value="data_get($stats, '1.value', '—')"

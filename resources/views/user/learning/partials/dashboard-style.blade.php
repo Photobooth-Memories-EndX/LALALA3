@@ -90,6 +90,34 @@
         align-items: stretch;
     }
 
+    .learning-hero-stats-panel--paired {
+        max-width: 15rem;
+    }
+
+    .learning-hero-stats-panel--paired .learning-stat-small {
+        min-height: 4.5rem;
+        align-items: center;
+        padding: .75rem;
+        text-align: center;
+    }
+
+    .learning-hero-stats-panel--paired .learning-stat-small-label {
+        overflow: visible;
+        font-size: .6875rem;
+        line-height: 1.2;
+        text-align: center;
+        text-overflow: clip;
+        white-space: normal;
+    }
+
+    .learning-hero-stats-panel--paired .learning-stat-small-value {
+        margin-top: .375rem;
+        font-size: 1.375rem;
+        font-weight: 700;
+        line-height: 1.1;
+        text-align: center;
+    }
+
     .learning-stat-card {
         min-width: 0;
         overflow: hidden;
