@@ -63,6 +63,45 @@
         color: #fff;
     }
 
+    .learning-module-hero--record .learning-hero-record-content {
+        padding-top: .0625rem;
+        padding-bottom: .0625rem;
+    }
+
+    .learning-module-hero--record .learning-hero-record-content h2 {
+        margin-bottom: .625rem !important;
+        font-size: 1.5rem;
+        line-height: 1.15;
+    }
+
+    .learning-module-hero--record .learning-hero-record-content > p:last-child {
+        font-size: .9375rem;
+        line-height: 1.45;
+    }
+
+    .learning-module-hero--record .learning-stat-large-label,
+    .learning-module-hero--certificate .learning-stat-large-label {
+        font-size: .75rem;
+    }
+
+    .learning-module-hero--record .learning-stat-large-value,
+    .learning-module-hero--certificate .learning-stat-large-value {
+        margin: .25rem 0;
+        font-size: 2rem;
+    }
+
+    .learning-module-hero--record .learning-stat-small-label,
+    .learning-module-hero--certificate .learning-stat-small-label {
+        font-size: .625rem;
+    }
+
+    .learning-module-hero--record .learning-stat-small-value,
+    .learning-module-hero--certificate .learning-stat-small-value {
+        margin-top: .125rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
     .learning-hero-stats-panel {
         width: 100%;
         max-width: 360px;
@@ -124,6 +163,108 @@
         font-weight: 700;
         line-height: 1.1;
         text-align: center;
+    }
+
+    .learning-hero-stats-panel--assessment {
+        width: 9.25rem;
+        max-width: 100%;
+        height: 6.5rem;
+        padding: 0;
+    }
+
+    .learning-hero-stats-assessment {
+        display: grid;
+        height: 100%;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+        gap: .125rem;
+    }
+
+    .learning-hero-stats-panel--assessment .learning-stat-small {
+        min-width: 0;
+        min-height: 0;
+        overflow: visible;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+        padding: 0 .125rem;
+        text-align: center;
+    }
+
+    .learning-hero-stats-panel--assessment .learning-stat-small-label {
+        overflow: visible;
+        display: flex;
+        min-height: 2em;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, .9);
+        font-size: .6875rem;
+        font-weight: 600;
+        letter-spacing: .04em;
+        line-height: 1;
+        text-align: center;
+        text-overflow: clip;
+        text-transform: none;
+        white-space: normal;
+    }
+
+    .learning-hero-stats-panel--assessment .learning-stat-small-value {
+        overflow: visible;
+        margin-top: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+    }
+
+    .learning-hero-stats-panel--assessment .learning-stat--blue {
+        background: #1F4E79;
+    }
+
+    .learning-hero-stats-panel--assessment .learning-stat--cyan {
+        background: #167D9A;
+    }
+
+    .learning-hero-stats-panel--assessment .learning-stat--green {
+        background: #2E8B57;
+    }
+
+    .learning-hero-stats-panel--assessment .learning-stat--red {
+        background: #C0392B;
+    }
+
+    .learning-module-hero--ongoing .learning-hero-stats-panel--ongoing {
+        display: flex;
+        align-items: center;
+        max-width: 360px;
+    }
+
+    .learning-module-hero--ongoing .learning-hero-stat-feature {
+        width: 100%;
+        min-height: 5.25rem;
+        align-items: center;
+        padding: .625rem 1rem;
+        text-align: center;
+    }
+
+    .learning-module-hero--ongoing .learning-hero-stat-feature .learning-stat-large-label {
+        font-size: .6875rem;
+        font-weight: 600;
+        letter-spacing: .05em;
+    }
+
+    .learning-module-hero--ongoing .learning-hero-stat-feature .learning-stat-large-value {
+        margin: .25rem 0;
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .learning-module-hero--ongoing .learning-hero-stat-feature .learning-stat-large-description {
+        color: rgba(255, 255, 255, .68);
+        font-size: .625rem;
     }
 
     .learning-stat-card {
@@ -211,6 +352,10 @@
 
     .learning-stat--orange {
         background: linear-gradient(135deg, rgba(217, 119, 6, .72), rgba(251, 191, 36, .28));
+    }
+
+    .learning-stat--red {
+        background: linear-gradient(135deg, rgba(220, 38, 38, .7), rgba(248, 113, 113, .24));
     }
 
     @media (max-width: 575.98px) {

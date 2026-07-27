@@ -40,6 +40,18 @@
             .attr('aria-hidden', 'false');
     }
 
+    function syncLearningAssessmentHero() {
+        var template = document.querySelector(
+            '#learning-tab-content template[data-learning-assessment-hero]'
+        );
+        var heroRegion = document.querySelector('[data-learning-hero="assessment"]');
+
+        if (!template || !heroRegion) return;
+
+        heroRegion.replaceChildren(template.content.cloneNode(true));
+        template.remove();
+    }
+
     function loadLearningTab(tab) {
         if (_activeTab === tab) return;
 
@@ -92,6 +104,7 @@
         })
         .then(function (html) {
             $('#learning-tab-content').html(html);
+            syncLearningAssessmentHero();
             initLearningAssessment();
             initLearningCertificate();
             initLearningRecord();

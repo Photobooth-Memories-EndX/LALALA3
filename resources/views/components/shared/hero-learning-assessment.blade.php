@@ -6,6 +6,16 @@
     'stats' => [],
 ])
 
+@php
+    $assessmentStats = collect($stats)->mapWithKeys(function ($stat) {
+        $label = strtolower(trim((string) data_get($stat, 'label', '')));
+
+        return $label === ''
+            ? []
+            : [$label => data_get($stat, 'value', '—')];
+    });
+@endphp
+
 <section {{ $attributes->class(['card border-0 shadow-sm mb-4 overflow-hidden learning-module-hero learning-module-hero--assessment']) }}>
     <div class="card-body p-4 p-lg-5 text-white">
         <div class="row align-items-center">
@@ -24,17 +34,27 @@
             </div>
 
             <div class="col-lg-4 d-none d-lg-block text-end">
-                <div class="learning-hero-stats-panel learning-hero-stats-panel--paired">
-                    <div class="learning-hero-stats-paired">
+                <div class="learning-hero-stats-panel learning-hero-stats-panel--assessment">
+                    <div class="learning-hero-stats-assessment">
                         <x-shared.learning-stat-small
-                            label="Assessment Passed"
-                            :value="data_get($stats, '0.value', '—')"
-                            tone="orange"
+                            label="Total Assessment"
+                            :value="$assessmentStats->get('total assessment', '—')"
+                            tone="blue"
                         />
                         <x-shared.learning-stat-small
-                            label="Average Progress"
-                            :value="data_get($stats, '1.value', '—')"
-                            tone="orange"
+                            label="Started"
+                            :value="$assessmentStats->get('started', '—')"
+                            tone="cyan"
+                        />
+                        <x-shared.learning-stat-small
+                            label="Passed"
+                            :value="$assessmentStats->get('passed', $assessmentStats->get('assessment passed', '—'))"
+                            tone="green"
+                        />
+                        <x-shared.learning-stat-small
+                            label="Failed"
+                            :value="$assessmentStats->get('failed', '—')"
+                            tone="red"
                         />
                     </div>
                 </div>

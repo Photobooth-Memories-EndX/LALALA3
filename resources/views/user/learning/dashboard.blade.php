@@ -53,12 +53,7 @@
             <div data-learning-hero="assessment"
                  class="{{ $initialLearningTab === 'assessment' ? '' : 'd-none' }}"
                  aria-hidden="{{ $initialLearningTab === 'assessment' ? 'false' : 'true' }}">
-                <x-shared.hero-learning-assessment
-                    :stats="[
-                        ['label' => 'Passed', 'value' => number_format($passedAssessment)],
-                        ['label' => 'Average Progress', 'value' => number_format($averageProgress) . '%'],
-                    ]"
-                />
+                <x-shared.hero-learning-assessment />
             </div>
 
             <div data-learning-hero="certificate"
@@ -66,8 +61,9 @@
                  aria-hidden="{{ $initialLearningTab === 'certificate' ? 'false' : 'true' }}">
                 <x-shared.hero-learning-certificate
                     :stats="[
-                        ['label' => 'Completed Learning', 'value' => number_format($completedLearning)],
-                        ['label' => 'Passed Assessments', 'value' => number_format($passedAssessment)],
+                        ['label' => 'Total Certificate', 'value' => number_format(data_get($certificateStats, 'total', 0))],
+                        ['label' => 'Playlist Certificate', 'value' => number_format(data_get($certificateStats, 'playlist', 0))],
+                        ['label' => 'Content Certificate', 'value' => number_format(data_get($certificateStats, 'content', 0))],
                     ]"
                 />
             </div>

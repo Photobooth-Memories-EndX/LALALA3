@@ -34,9 +34,11 @@ class LearningAssessmentController extends Controller
             ->pluck('id');
 
         $assessmentQuery = $this->getUserAssessmentQuery($user, $userId, $completedPlaylistIds);
+        $assessments = $assessmentQuery->get();
 
         return view('user.learning.dashboard-partials.assessment', [
-            'assessments' => $this->applyFilters(clone $assessmentQuery, $request, $userId)->get(),
+            'assessments' => $assessments,
+            'assessmentStats' => $this->summarizeAssessments($assessments, (int) $userId),
             'filterOptions' => $this->getFilterOptions($assessmentQuery),
             'result'      => $this->getUserAssessmentResults($userId),
         ]);
@@ -168,5 +170,39 @@ class LearningAssessmentController extends Controller
             ->whereFinal(1)
             ->latest()
             ->get();
+    }
+
+    private function summarizeAssessments($assessments, int $userId): array
+    {
+        $started = 0;
+        $passed = 0;
+        $failed = 0;
+
+        foreach ($assessments as $assessment) {
+            $finalResult = $assessment->getRelation('scores')
+                ->where('user_id', $userId)
+                ->where('final', 1)
+                ->sortByDesc('score')
+                ->first();
+
+            if ($finalResult !== null) {
+                if ($finalResult->pass) {
+                    $passed++;
+                } else {
+                    $failed++;
+                }
+
+                continue;
+            }
+
+            $started++;
+        }
+
+        return [
+            ['label' => 'Total Assessment', 'value' => $assessments->count()],
+            ['label' => 'Started', 'value' => $started],
+            ['label' => 'Passed', 'value' => $passed],
+            ['label' => 'Failed', 'value' => $failed],
+        ];
     }
 }

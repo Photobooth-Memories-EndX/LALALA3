@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AssesmentResult;
+use App\Models\Certificate;
 use App\Models\ContentUser;
 use App\Services\CertificateEligibilityService;
 use App\Services\LearningAnalyticsService;
@@ -44,10 +44,14 @@ class LearningController extends Controller
             ->where('finish', '0')
             ->count();
 
-        $passedAssessment = AssesmentResult::where('user_id', $userId)
-            ->where('final', 1)
-            ->where('pass', 1)
-            ->count();
+        $certificates = Certificate::where('user_id', $userId)
+            ->get(['certificate_type']);
+
+        $certificateStats = [
+            'total' => $certificates->count(),
+            'playlist' => $certificates->where('certificate_type', 'playlist')->count(),
+            'content' => $certificates->where('certificate_type', 'content')->count(),
+        ];
 
         $averageProgress = (int) round(ContentUser::where('user_id', $userId)->avg('progress') ?? 0);
 
@@ -57,7 +61,7 @@ class LearningController extends Controller
             'totalLearning',
             'completedLearning',
             'ongoingLearning',
-            'passedAssessment',
+            'certificateStats',
             'averageProgress'
         ));
     }

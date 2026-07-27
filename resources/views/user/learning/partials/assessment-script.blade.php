@@ -7,11 +7,100 @@
             return;
         }
 
+        var assessmentFilterParams = new URLSearchParams(window.location.search);
+
+        function filterValue(name) {
+            return String(assessmentFilterParams.get('assessment_filter_' + name) || 'all');
+        }
+
+        function rowAttribute(row, name) {
+            return String(row.getAttribute('data-assessment-' + name) || '');
+        }
+
+        function assessmentRowMatches(row) {
+            var exactFilters = ['type', 'status', 'year', 'month', 'batch', 'grade', 'availability'];
+
+            for (var index = 0; index < exactFilters.length; index++) {
+                var filterName = exactFilters[index];
+                var selectedValue = filterValue(filterName);
+
+                if (selectedValue !== 'all' && rowAttribute(row, filterName) !== selectedValue) {
+                    return false;
+                }
+            }
+
+            var result = filterValue('result');
+            if (result !== 'all' && rowAttribute(row, 'status') !== result) {
+                return false;
+            }
+
+            var scoreFilter = filterValue('score');
+            var scoreValue = rowAttribute(row, 'score');
+            var numericScore = scoreValue === '' ? null : Number(scoreValue);
+
+            if (scoreFilter === 'none' && numericScore !== null) return false;
+            if (scoreFilter === '0_59' && (numericScore === null || numericScore < 0 || numericScore >= 60)) return false;
+            if (scoreFilter === '60_79' && (numericScore === null || numericScore < 60 || numericScore >= 80)) return false;
+            if (scoreFilter === '80_100' && (numericScore === null || numericScore < 80 || numericScore > 100)) return false;
+
+            var dateFilter = filterValue('date');
+            if (['this_month', 'last_month', 'this_year'].indexOf(dateFilter) !== -1) {
+                var timestamp = Number(rowAttribute(row, 'date'));
+                if (!timestamp) return false;
+
+                var rowDate = new Date(timestamp * 1000);
+                var today = new Date();
+
+                if (dateFilter === 'this_month' &&
+                    (rowDate.getFullYear() !== today.getFullYear() || rowDate.getMonth() !== today.getMonth())) {
+                    return false;
+                }
+
+                if (dateFilter === 'last_month') {
+                    var lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    if (rowDate.getFullYear() !== lastMonth.getFullYear() || rowDate.getMonth() !== lastMonth.getMonth()) {
+                        return false;
+                    }
+                }
+
+                if (dateFilter === 'this_year' && rowDate.getFullYear() !== today.getFullYear()) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        var dataTableFilters = $.fn.dataTable.ext.search;
+        if (window.learningAssessmentDataTableFilter) {
+            var existingFilterIndex = dataTableFilters.indexOf(window.learningAssessmentDataTableFilter);
+            if (existingFilterIndex !== -1) {
+                dataTableFilters.splice(existingFilterIndex, 1);
+            }
+        }
+
+        window.learningAssessmentDataTableFilter = function (settings, data, dataIndex) {
+            if (!settings.nTable || settings.nTable.id !== 'assessmentTable') {
+                return true;
+            }
+
+            return assessmentRowMatches(settings.aoData[dataIndex].nTr);
+        };
+        dataTableFilters.push(window.learningAssessmentDataTableFilter);
+
+        var initialDateFilter = filterValue('date');
+        var initialOrder = initialDateFilter === 'newest'
+            ? [[2, 'desc']]
+            : (initialDateFilter === 'oldest' ? [[2, 'asc']] : []);
+
         var assessmentTable = $table.DataTable({
                 ordering: true,
-                order: [],
+                order: initialOrder,
                 pageLength: 10,
                 autoWidth: false,
+                search: {
+                    search: $.trim($('#assessmentSearch').val())
+                },
                 dom: 't<"assessment-datatable-footer"ip>',
                 language: {
                     emptyTable: 'No assessments available.',
@@ -67,7 +156,19 @@
             params.set('learning_tab', 'assessment');
             var query = params.toString();
             $('#assessmentMoreFiltersModal').modal('hide');
-            window.location.assign(window.location.pathname + (query ? '?' + query : ''));
+            history.pushState({}, '', window.location.pathname + (query ? '?' + query : ''));
+
+            assessmentFilterParams = new URLSearchParams(window.location.search);
+            assessmentTable.search($.trim($('#assessmentSearch').val()));
+
+            var dateFilter = filterValue('date');
+            if (dateFilter === 'newest') {
+                assessmentTable.order([2, 'desc']);
+            } else if (dateFilter === 'oldest') {
+                assessmentTable.order([2, 'asc']);
+            }
+
+            assessmentTable.page('first').draw(false);
         }
 
         function collectAssessmentFilterState() {

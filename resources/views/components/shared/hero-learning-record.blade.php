@@ -9,7 +9,7 @@
 <section {{ $attributes->class(['card border-0 shadow-sm mb-4 overflow-hidden learning-module-hero learning-module-hero--record']) }}>
     <div class="card-body p-4 p-lg-5 text-white">
         <div class="row align-items-center">
-            <div class="col-lg-8">
+            <div class="col-lg-8 learning-hero-record-content">
                 <span class="badge bg-white text-primary mb-3">
                     {{ $badge }}
                 </span>
@@ -29,19 +29,18 @@
                         <x-shared.learning-stat-large
                             label="Learning Hours"
                             :value="data_get($stats, '2.value', '—')"
-                            description="Total recorded learning time"
                             tone="dark-blue"
                         />
 
                         <div class="learning-hero-stat-stack align-content-center"
                              style="grid-template-rows: repeat(2, auto);">
                             <x-shared.learning-stat-small
-                                label="Total Learning"
+                                label="Course Completed"
                                 :value="data_get($stats, '0.value', '—')"
                                 tone="blue"
                             />
                             <x-shared.learning-stat-small
-                                label="Completed"
+                                label="Playlist Completed"
                                 :value="data_get($stats, '1.value', '—')"
                                 tone="green"
                             />

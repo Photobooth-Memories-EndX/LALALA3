@@ -24,18 +24,27 @@
             </div>
 
             <div class="col-lg-4 d-none d-lg-block text-end">
-                <div class="learning-hero-stats-panel learning-hero-stats-panel--paired">
-                    <div class="learning-hero-stats-paired">
-                        <x-shared.learning-stat-small
-                            label="Certificates"
+                <div class="learning-hero-stats-panel">
+                    <div class="learning-hero-stats-split">
+                        <x-shared.learning-stat-large
+                            label="Total Certificate"
                             :value="data_get($stats, '0.value', '—')"
-                            tone="green"
+                            tone="dark-blue"
                         />
-                        <x-shared.learning-stat-small
-                            label="Passed Assessment"
-                            :value="data_get($stats, '1.value', '—')"
-                            tone="orange"
-                        />
+
+                        <div class="learning-hero-stat-stack align-content-center"
+                             style="grid-template-rows: repeat(2, auto);">
+                            <x-shared.learning-stat-small
+                                label="Playlist Certificate"
+                                :value="data_get($stats, '1.value', '—')"
+                                tone="blue"
+                            />
+                            <x-shared.learning-stat-small
+                                label="Content Certificate"
+                                :value="data_get($stats, '2.value', '—')"
+                                tone="green"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
