@@ -52,12 +52,12 @@
 
             <div class="learning-record-filter-row mt-3 mb-0">
                 <div class="learning-record-fast-filter">
-                    <label class="form-label small text-muted mb-2">Fast Filter</label>
+                    <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
 
-                    <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns assessment-quick-dropdowns">
+                    <div class="d-flex flex-wrap learning-quick-dropdowns assessment-quick-dropdowns learning-fast-filter">
                         @foreach ($quickFilters as $filter => $options)
                             <div class="dropdown" data-assessment-filter="{{ $filter }}" data-selected-value="{{ $activeFilters[$filter] }}">
-                                <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $activeFilters[$filter] !== 'all' ? 'active' : '' }}"
+                                <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $activeFilters[$filter] !== 'all' ? 'active' : '' }}"
                                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     {{ ucfirst($filter) }}: <span class="fw-semibold">{{ $options[$activeFilters[$filter]] ?? 'All' }}</span>
                                 </button>
@@ -71,7 +71,7 @@
                         @endforeach
 
                         <div class="dropdown" data-assessment-filter="year" data-selected-value="{{ $activeFilters['year'] }}">
-                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $activeFilters['year'] !== 'all' ? 'active' : '' }}"
+                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $activeFilters['year'] !== 'all' ? 'active' : '' }}"
                                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Year: <span class="fw-semibold">{{ $activeFilters['year'] === 'all' ? 'All' : $activeFilters['year'] }}</span>
                             </button>
@@ -84,7 +84,7 @@
                         </div>
 
                         <div class="dropdown" data-assessment-filter="month" data-selected-value="{{ $activeFilters['month'] }}">
-                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $activeFilters['month'] !== 'all' ? 'active' : '' }}"
+                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $activeFilters['month'] !== 'all' ? 'active' : '' }}"
                                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Month: <span class="fw-semibold">{{ $activeFilters['month'] === 'all' ? 'All' : ($months[(int) $activeFilters['month']] ?? 'All') }}</span>
                             </button>
@@ -99,19 +99,19 @@
                 </div>
 
                 <div class="record-filter-actions assessment-filter-actions">
-                    <button type="button" class="btn btn-outline-success record-filter-action-btn" id="assessmentDownloadExcel">
-                        <i class="ti ti-file-spreadsheet"></i><span>Download Excel</span>
+                    <button type="button" class="btn btn-outline-success btn-learning-success record-filter-action-btn" id="assessmentDownloadExcel">
+                        <i class="ti ti-download"></i><span>Download Excel</span>
                     </button>
-                    <button type="button" class="btn btn-outline-primary record-filter-action-btn"
+                    <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn"
                             data-toggle="modal" data-target="#assessmentMoreFiltersModal">
                         <i class="ti ti-adjustments-horizontal"></i><span>More Filters</span>
                         <span class="badge bg-primary text-white {{ $activeAdvancedCount ? '' : 'd-none' }}" id="assessmentMoreFiltersCount">{{ $activeAdvancedCount ?: '' }}</span>
                     </button>
-                    <button type="button" class="btn btn-primary record-filter-action-btn" id="assessmentApplyFilter">
+                    <button type="button" class="btn btn-primary btn-learning-primary record-filter-action-btn" id="assessmentApplyFilter">
                         <i class="ti ti-check"></i><span>Apply Filter</span>
                     </button>
-                    <button type="button" class="btn btn-outline-primary record-filter-action-btn" id="assessmentResetFilter">
-                        Reset
+                    <button type="button" class="btn btn-outline-primary btn-learning-outline record-filter-action-btn" id="assessmentResetFilter">
+                        <i class="ti ti-refresh"></i><span>Reset</span>
                     </button>
                 </div>
             </div>
@@ -191,8 +191,12 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-primary" id="assessmentModalReset">Reset</button>
-                    <button type="button" class="btn btn-primary assessment-apply-filter">Apply Filter</button>
+                    <button type="button" class="btn btn-outline-primary btn-learning-outline" id="assessmentModalReset">
+                        <i class="ti ti-refresh"></i><span>Reset</span>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-learning-primary assessment-apply-filter">
+                        <i class="ti ti-check"></i><span>Apply Filter</span>
+                    </button>
                 </div>
             </div>
         </div>

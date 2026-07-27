@@ -421,18 +421,6 @@ tbody.record-sort-animate tr.record-row {
     flex-wrap: nowrap;
 }
 
-.record-filter-action-btn {
-    min-height: 42px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    border-radius: 6px;
-    padding: 8px 14px;
-    white-space: nowrap;
-    font-weight: 600;
-}
-
 .record-filter-reset-link {
     min-height: 42px;
     display: inline-flex;

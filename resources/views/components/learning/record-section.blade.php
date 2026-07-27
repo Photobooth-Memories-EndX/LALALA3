@@ -78,13 +78,13 @@
 
             <div class="learning-record-filter-row mt-3">
                 <div class="learning-record-fast-filter">
-                    <label class="form-label small text-muted mb-2">Fast Filter</label>
+                    <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
 
-                    <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns">
+                    <div class="d-flex flex-wrap learning-quick-dropdowns learning-fast-filter">
                     {{-- Dropdown Type --}}
                     <div class="dropdown">
                         <button type="button"
-                                class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $filterType !== 'all' ? 'active' : '' }}"
+                                class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterType !== 'all' ? 'active' : '' }}"
                                 data-bs-toggle="dropdown"
                                 aria-expanded="false">
                             Type: <span class="fw-semibold">{{ $typeOptions[$filterType] ?? 'All' }}</span>
@@ -105,7 +105,7 @@
                     {{-- Dropdown Classification --}}
                     <div class="dropdown">
                         <button type="button"
-                                class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $filterClassification !== 'all' ? 'active' : '' }}"
+                                class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterClassification !== 'all' ? 'active' : '' }}"
                                 data-bs-toggle="dropdown"
                                 aria-expanded="false">
                             Classification:
@@ -136,7 +136,7 @@
                     {{-- Dropdown Year --}}
                     <div class="dropdown">
                         <button type="button"
-                                class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $filterYear !== 'all' ? 'active' : '' }}"
+                                class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterYear !== 'all' ? 'active' : '' }}"
                                 data-bs-toggle="dropdown"
                                 aria-expanded="false">
                             Year:
@@ -167,7 +167,7 @@
                     {{-- Dropdown Month --}}
                     <div class="dropdown">
                         <button type="button"
-                                class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $filterMonth !== 'all' ? 'active' : '' }}"
+                                class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterMonth !== 'all' ? 'active' : '' }}"
                                 data-bs-toggle="dropdown"
                                 aria-expanded="false">
                             Month:
@@ -201,24 +201,24 @@
                     {{-- TOMBOL DOWNLOAD EXCEL --}}
                     <a href="{{ route('user.learning.record.export') }}"
                        data-export-url="{{ route('user.learning.record.export') }}"
-                       class="btn btn-outline-success record-filter-action-btn"
+                       class="btn btn-outline-success btn-learning-success record-filter-action-btn"
                        id="recordDownloadExcel">
-                        <i class="ti ti-file-spreadsheet"></i>
+                        <i class="ti ti-download"></i>
                         <span>Download Excel</span>
                     </a>
                     {{-- TOMBOL MORE FILTERS --}}
-                    <button type="button" class="btn btn-outline-primary record-filter-action-btn" id="recordMoreFiltersToggle"
+                    <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn" id="recordMoreFiltersToggle"
                             data-toggle="modal" data-target="#recordMoreFiltersModal"
                             aria-controls="recordMoreFiltersModal">
                         <i class="ti ti-adjustments-horizontal"></i>
                         <span>More Filters</span>
                         <span class="badge bg-primary text-white d-none" id="recordMoreFiltersCount"></span>
                     </button>
-                    <button type="button" class="btn btn-primary record-apply-filter record-filter-action-btn">
+                    <button type="button" class="btn btn-primary btn-learning-primary record-apply-filter record-filter-action-btn">
                         <i class="ti ti-check"></i><span>Apply Filter</span>
                     </button>
-                    <button type="button" class="btn btn-outline-primary record-clear-filter record-filter-action-btn">
-                        Reset
+                    <button type="button" class="btn btn-outline-primary btn-learning-outline record-clear-filter record-filter-action-btn">
+                        <i class="ti ti-refresh"></i><span>Reset</span>
                     </button>
                 </div>
             </div>
@@ -374,11 +374,11 @@
 
                         </div>
                         <div class="modal-footer record-filter-modal-footer">
-                    <button type="button" class="btn btn-link text-muted" id="recordClearFilter">
-                        Reset
+                    <button type="button" class="btn btn-outline-secondary btn-learning-outline" id="recordClearFilter">
+                        <i class="ti ti-refresh"></i><span>Reset</span>
                     </button>
-                    <button type="button" class="btn btn-primary" id="recordApplyFilter">
-                        <i class="ti ti-check mr-1"></i>Apply Filter
+                    <button type="button" class="btn btn-primary btn-learning-primary" id="recordApplyFilter">
+                        <i class="ti ti-check"></i><span>Apply Filter</span>
                     </button>
                         </div>
                     </div>

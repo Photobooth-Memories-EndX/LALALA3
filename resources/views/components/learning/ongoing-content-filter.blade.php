@@ -184,24 +184,24 @@
                 <div class="learning-filter-mode-actions">
                     <div class="d-flex gap-2 learning-filter-actions justify-content-lg-end">
                         <button type="button"
-                                class="btn btn-outline-primary rounded-3 flex-fill flex-lg-grow-0 position-relative"
+                                class="btn btn-outline-primary btn-learning-secondary flex-fill flex-lg-grow-0 position-relative"
                                 data-bs-toggle="modal"
                                 data-bs-target="#ongoingMoreFiltersModal">
-                            <i class="ti ti-adjustments-horizontal me-1"></i>
+                            <i class="ti ti-adjustments-horizontal"></i>
                             More Filters
                             @if ($advancedCount > 0)
                                 <span class="badge bg-primary text-white ms-1">{{ $advancedCount }}</span>
                             @endif
                         </button>
 
-                        <button type="submit" class="btn btn-primary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-filter me-1"></i>
-                            Filter
+                        <button type="submit" class="btn btn-primary btn-learning-primary flex-fill flex-lg-grow-0">
+                            <i class="ti ti-check"></i>
+                            Apply Filter
                         </button>
 
                         <a href="{{ route('user.learning.dashboard') }}"
-                           class="btn btn-outline-secondary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-refresh me-1"></i>
+                           class="btn btn-outline-secondary btn-learning-outline flex-fill flex-lg-grow-0">
+                            <i class="ti ti-refresh"></i>
                             Reset
                         </a>
                     </div>
@@ -226,11 +226,12 @@
                         : count($activeQuickMonths) . ' Months');
             @endphp
 
-            <div class="d-flex flex-wrap flex-lg-nowrap gap-2 learning-quick-dropdowns learning-filter-dropdown-row">
+            <div class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</div>
+            <div class="d-flex flex-wrap flex-lg-nowrap learning-quick-dropdowns learning-filter-dropdown-row learning-fast-filter">
                 {{-- Dropdown Type (hanya type content: Video, Document, dll) --}}
                 <div class="dropdown">
                     <button type="button"
-                            class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ !empty($selTypeClean) ? 'active' : '' }}"
+                            class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ !empty($selTypeClean) ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
                         Type{!! $quickTypeLabel ? ': <span class="fw-semibold">' . e($quickTypeLabel) . '</span>' : '' !!}
@@ -250,7 +251,7 @@
                 {{-- Dropdown Status --}}
                 <div class="dropdown">
                     <button type="button"
-                            class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
+                            class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
                         Status: <span class="fw-semibold">{{ $quickStatusOptions[$curQuickStatus] }}</span>
@@ -269,7 +270,7 @@
                 {{-- Dropdown Year (otomatis dari data) --}}
                 <div class="dropdown">
                     <button type="button"
-                            class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
+                            class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
                         Year: <span class="fw-semibold">{{ $curYear === 'all' ? 'All' : $curYear }}</span>
@@ -290,7 +291,7 @@
                 {{-- Dropdown Month --}}
                 <div class="dropdown">
                     <button type="button"
-                            class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
+                            class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
                         Month: <span class="fw-semibold">{{ $quickMonthLabel }}</span>
@@ -540,12 +541,12 @@
 
                         <div class="modal-footer border-0 pt-0">
                             <a href="{{ route('user.learning.dashboard') }}"
-                               class="btn btn-outline-secondary rounded-3">
-                                <i class="ti ti-refresh me-1"></i>
+                               class="btn btn-outline-secondary btn-learning-outline">
+                                <i class="ti ti-refresh"></i>
                                 Reset
                             </a>
-                            <button type="submit" class="btn btn-primary rounded-3">
-                                <i class="ti ti-check me-1"></i>
+                            <button type="submit" class="btn btn-primary btn-learning-primary">
+                                <i class="ti ti-check"></i>
                                 Apply Filter
                             </button>
                         </div>

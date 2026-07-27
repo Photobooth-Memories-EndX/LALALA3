@@ -80,14 +80,14 @@
 
                 <div class="learning-filter-mode-actions">
                     <div class="d-flex gap-2 learning-filter-actions justify-content-lg-end">
-                        <button type="submit" class="btn btn-primary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-filter me-1"></i>
-                            Filter
+                        <button type="submit" class="btn btn-primary btn-learning-primary flex-fill flex-lg-grow-0">
+                            <i class="ti ti-check"></i>
+                            Apply Filter
                         </button>
 
                         <a href="{{ $resetUrl }}"
-                           class="btn btn-outline-secondary rounded-3 flex-fill flex-lg-grow-0">
-                            <i class="ti ti-refresh me-1"></i>
+                           class="btn btn-outline-secondary btn-learning-outline flex-fill flex-lg-grow-0">
+                            <i class="ti ti-refresh"></i>
                             Reset
                         </a>
                     </div>
@@ -97,11 +97,12 @@
             <div>
                 {{-- Quick dropdown filters (Status / Year / Month) — diterapkan via AJAX. --}}
                 <div class="w-100">
-                    <div class="d-flex flex-wrap flex-lg-nowrap gap-2 learning-quick-dropdowns learning-filter-dropdown-row">
+                    <div class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</div>
+                    <div class="d-flex flex-wrap flex-lg-nowrap learning-quick-dropdowns learning-filter-dropdown-row learning-fast-filter">
                         {{-- Dropdown Status --}}
                         <div class="dropdown">
                             <button type="button"
-                                    class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
+                                    class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                 Status: <span class="fw-semibold">{{ $quickStatusOptions[$curQuickStatus] }}</span>
@@ -120,7 +121,7 @@
                         {{-- Dropdown Year (otomatis dari data) --}}
                         <div class="dropdown">
                             <button type="button"
-                                    class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
+                                    class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                 Year: <span class="fw-semibold">{{ $curYear === 'all' ? 'All' : $curYear }}</span>
@@ -141,7 +142,7 @@
                         {{-- Dropdown Month --}}
                         <div class="dropdown">
                             <button type="button"
-                                    class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
+                                    class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                 Month: <span class="fw-semibold">{{ $quickMonthLabel }}</span>

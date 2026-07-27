@@ -198,13 +198,13 @@
         @if ($cardUrl)
             {{-- Card Playlist: seluruh card dapat diklik (stretched-link) menuju
                  halaman playlist /playlist/{playlistSlug}/{contentSlug}. --}}
-            <a href="{{ $cardUrl }}" class="btn btn-primary w-100 mt-auto {{ $isPlaylist ? 'stretched-link' : '' }}">
-                <i class="ti ti-player-play me-1"></i>
+            <a href="{{ $cardUrl }}" class="btn btn-primary btn-learning-primary btn-learning-lg w-100 mt-auto {{ $isPlaylist ? 'stretched-link' : '' }}">
+                <i class="ti ti-player-play"></i>
                 Continue Learning
             </a>
         @else
-            <button type="button" class="btn btn-primary w-100 mt-auto" disabled>
-                <i class="ti ti-player-play me-1"></i>
+            <button type="button" class="btn btn-primary btn-learning-primary btn-learning-lg w-100 mt-auto" disabled>
+                <i class="ti ti-player-play"></i>
                 Continue Learning
             </button>
         @endif

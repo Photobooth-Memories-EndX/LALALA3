@@ -48,11 +48,11 @@
 
             <div class="learning-record-filter-row mt-3 mb-0">
                 <div class="learning-record-fast-filter">
-                    <label class="form-label small text-muted mb-2">Fast Filter</label>
-                    <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns certificate-quick-dropdowns">
+                    <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
+                    <div class="d-flex flex-wrap learning-quick-dropdowns certificate-quick-dropdowns learning-fast-filter">
                         <div class="dropdown" data-certificate-filter="type" data-selected-value="{{ $active['type'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_type" value="{{ $active['type'] }}">
-                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $active['type'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
+                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $active['type'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
                                 Type: <span class="fw-semibold certificate-filter-value">{{ $types[$active['type']] ?? 'All' }}</span>
                             </button>
                             <div class="dropdown-menu">
@@ -64,7 +64,7 @@
 
                         <div class="dropdown" data-certificate-filter="year" data-selected-value="{{ $active['year'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_year" value="{{ $active['year'] }}">
-                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $active['year'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
+                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $active['year'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
                                 Year: <span class="fw-semibold certificate-filter-value">{{ $active['year'] === 'all' ? 'All' : $active['year'] }}</span>
                             </button>
                             <div class="dropdown-menu certificate-dropdown-scroll">
@@ -77,7 +77,7 @@
 
                         <div class="dropdown" data-certificate-filter="month" data-selected-value="{{ $active['month'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_month" value="{{ $active['month'] }}">
-                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $active['month'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
+                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $active['month'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
                                 Month: <span class="fw-semibold certificate-filter-value">{{ $active['month'] === 'all' ? 'All' : ($months[(int) $active['month']] ?? 'All') }}</span>
                             </button>
                             <div class="dropdown-menu certificate-dropdown-scroll">
@@ -90,7 +90,7 @@
 
                         <div class="dropdown" data-certificate-filter="status" data-selected-value="{{ $active['status'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_status" value="{{ $active['status'] }}">
-                            <button type="button" class="btn btn-outline-secondary rounded-3 dropdown-toggle {{ $active['status'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
+                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $active['status'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
                                 Status: <span class="fw-semibold certificate-filter-value">{{ $active['status'] === 'generated' ? 'Generated' : 'All' }}</span>
                             </button>
                             <div class="dropdown-menu">
@@ -103,18 +103,20 @@
 
                 <div class="record-filter-actions certificate-filter-actions">
                     @if ($showCertificateExportButton)
-                        <button type="button" class="btn btn-outline-success record-filter-action-btn" id="certificateDownloadExcel">
-                            <i class="ti ti-file-spreadsheet"></i><span>Download Excel</span>
+                        <button type="button" class="btn btn-outline-success btn-learning-success record-filter-action-btn" id="certificateDownloadExcel">
+                            <i class="ti ti-download"></i><span>Download Excel</span>
                         </button>
                     @endif
-                    <button type="button" class="btn btn-outline-primary record-filter-action-btn" data-toggle="modal" data-target="#certificateMoreFiltersModal">
+                    <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn" data-toggle="modal" data-target="#certificateMoreFiltersModal">
                         <i class="ti ti-adjustments-horizontal"></i><span>More Filters</span>
                         <span class="badge bg-primary text-white {{ $advancedCount ? '' : 'd-none' }}" id="certificateMoreFiltersCount">{{ $advancedCount ?: '' }}</span>
                     </button>
-                    <button type="button" class="btn btn-primary record-filter-action-btn" id="certificateApplyFilter">
+                    <button type="button" class="btn btn-primary btn-learning-primary record-filter-action-btn" id="certificateApplyFilter">
                         <i class="ti ti-check"></i><span>Apply Filter</span>
                     </button>
-                    <button type="button" class="btn btn-outline-primary record-filter-action-btn" id="certificateResetFilter">Reset</button>
+                    <button type="button" class="btn btn-outline-primary btn-learning-outline record-filter-action-btn" id="certificateResetFilter">
+                        <i class="ti ti-refresh"></i><span>Reset</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -233,8 +235,10 @@
                     @foreach (collect($filterOptions['issuers'] ?? []) as $issuer)<option value="{{ $issuer }}">@endforeach
                 </datalist>
                 <div class="modal-footer certificate-filter-modal-footer justify-content-end">
-                    <button type="button" class="btn btn-outline-primary" id="certificateModalReset">Reset</button>
-                    <button type="button" class="btn btn-primary certificate-apply-filter"><i class="ti ti-check"></i><span>Apply Filter</span></button>
+                    <button type="button" class="btn btn-outline-primary btn-learning-outline" id="certificateModalReset">
+                        <i class="ti ti-refresh"></i><span>Reset</span>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-learning-primary certificate-apply-filter"><i class="ti ti-check"></i><span>Apply Filter</span></button>
                 </div>
             </div>
         </div>

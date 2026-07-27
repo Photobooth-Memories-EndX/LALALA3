@@ -52,14 +52,14 @@
     <td class="certificate-col-status text-center"><span class="badge bg-green-lt text-green certificate-status-badge"><i class="ti ti-circle-check me-1"></i>Generated</span></td>
     <td class="certificate-col-action text-center">
         <div class="dropdown certificate-action-dropdown">
-            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle certificate-action-trigger" data-toggle="dropdown" data-boundary="viewport" aria-haspopup="true" aria-expanded="false">
+            <button type="button" class="btn btn-sm btn-outline-primary btn-action btn-learning-sm dropdown-toggle certificate-action-trigger" data-toggle="dropdown" data-boundary="viewport" aria-haspopup="true" aria-expanded="false">
                 <i class="ti ti-dots-vertical"></i><span>Actions</span>
             </button>
             <div class="dropdown-menu dropdown-menu-right certificate-action-menu">
                 <a class="dropdown-item" href="{{ route('certificate.show', $certificate->credential_id) }}">
                     <i class="ti ti-eye"></i><span>View Detail</span>
                 </a>
-                <a class="dropdown-item" href="{{ route('certificate.download.pdf', $certificate->credential_id) }}">
+                <a class="dropdown-item learning-action-success" href="{{ route('certificate.download.pdf', $certificate->credential_id) }}">
                     <i class="ti ti-download"></i><span>Download Certificate</span>
                 </a>
                 <a class="dropdown-item" href="{{ route('certificate.verify', $certificate->credential_id) }}" target="_blank" rel="noopener">
