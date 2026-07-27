@@ -6,10 +6,6 @@
     'stats' => [],
 ])
 
-@php
-    $heroStats = collect(is_iterable($stats) ? $stats : [])->values();
-@endphp
-
 <section {{ $attributes->class(['card border-0 shadow-sm mb-4 overflow-hidden learning-module-hero learning-module-hero--record']) }}>
     <div class="card-body p-4 p-lg-5 text-white">
         <div class="row align-items-center">
@@ -28,24 +24,10 @@
             </div>
 
             <div class="col-lg-4 d-none d-lg-block text-end">
-                <div class="learning-module-hero-summary d-inline-block w-75 mw-100 p-2 text-start border border-white border-opacity-25 rounded-3">
-                    <div class="fw-semibold mb-2">
-                        Record Summary
-                    </div>
-
-                    <div class="row g-2">
-                        @forelse ($heroStats as $stat)
-                            <div class="{{ $heroStats->count() % 2 === 1 && $loop->last ? 'col-12' : 'col-6' }}">
-                                <div class="small opacity-75">{{ $stat['label'] ?? 'Statistic' }}</div>
-                                <div class="h2 text-white mb-0">{{ $stat['value'] ?? 0 }}</div>
-                            </div>
-                        @empty
-                            <div class="col-12">
-                                <div class="small opacity-75">No record data available.</div>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
+                <x-shared.learning-hero-summary
+                    title="Record Summary"
+                    :hero-stats="$stats"
+                />
             </div>
         </div>
     </div>

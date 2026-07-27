@@ -56,9 +56,54 @@
     }
 
     .learning-module-hero-summary {
-        background: rgba(5, 80, 125, .28);
+        background: linear-gradient(
+            135deg,
+            rgba(5, 80, 125, .38),
+            rgba(106, 174, 214, .18)
+        );
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .08),
+            0 8px 20px rgba(5, 80, 125, .12);
+    }
+
+    .learning-module-hero-summary-icon {
+        width: 28px;
+        height: 28px;
+        background: rgba(255, 255, 255, .14);
+    }
+
+    .learning-module-hero-summary-title {
+        color: #fff;
+        font-size: .75rem;
+        font-weight: 600;
+        line-height: 1.25;
+    }
+
+    .learning-module-hero-summary-subtitle {
+        color: rgba(255, 255, 255, .72);
+        font-size: .625rem;
+        line-height: 1.25;
+    }
+
+    .learning-module-hero-stat-tile {
+        padding: .3125rem .5rem;
+        border: 1px solid rgba(255, 255, 255, .12);
+        background: rgba(255, 255, 255, .08);
+    }
+
+    .learning-module-hero-stat-label {
+        color: rgba(255, 255, 255, .78);
+        font-size: .625rem;
+        line-height: 1.2;
+    }
+
+    .learning-module-hero-stat-value {
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.25;
     }
 
     @media (max-width: 575.98px) {
