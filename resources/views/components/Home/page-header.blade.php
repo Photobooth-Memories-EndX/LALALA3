@@ -1,5 +1,5 @@
 @php
-    $heroPageTitle = $heroPageTitle ?? 'Learning Hub';
+    $heroPageTitle = $heroPageTitle ?? 'OWL Learning Hub';
     $heroPageSubtitle = $heroPageSubtitle ?? 'Open Mind, Wide Growth, Lead Impact';
 @endphp
 

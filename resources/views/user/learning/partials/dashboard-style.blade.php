@@ -8,7 +8,7 @@
 <style>
     :root {
         --learning-ui-radius: 20px;
-        --learning-hero-radius: 24px;
+        --learning-hero-radius: 20px;
         --learning-ui-surface: #ffffff;
         --learning-ui-border: #D9D9D6;
         --learning-ui-text: #53565A;
@@ -49,78 +49,23 @@
         color: var(--learning-ui-text);
     }
 
-    .learning-hero {
+    .learning-module-hero {
         background: linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
-        border-radius: var(--learning-hero-radius);
+        border-radius: var(--learning-hero-radius) !important;
         color: #fff;
     }
 
-    .learning-mini-stat {
-        background: rgba(255, 255, 255, 0.12);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 1rem;
-        padding: 1rem 1.1rem;
-        color: #fff;
-        backdrop-filter: blur(10px);
-    }
-
-    .learning-mini-stat-label {
-        font-size: .75rem;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-        opacity: .8;
-        margin-bottom: .35rem;
-    }
-
-    .learning-mini-stat-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        line-height: 1;
-    }
-
-    /* 4 card statistik hero: grid 2x2, glass effect, tinggi seragam, tanpa overflow */
-    .learning-hero-stats {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1rem;
-        align-items: stretch;
-    }
-
-    .learning-hero-stats .learning-mini-stat {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        gap: .5rem;
-        text-align: center;
-        padding: 1.25rem 1rem;
-    }
-
-    .learning-hero-stats .learning-mini-stat-label {
-        font-size: .75rem;
-        opacity: .7;
-    }
-
-    .learning-hero-stats .learning-mini-stat-value {
-        font-size: 2rem;
-        font-weight: 700;
+    .learning-module-hero-summary {
+        background: rgba(5, 80, 125, .28);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
     @media (max-width: 575.98px) {
-        .learning-hero-cta {
-            width: 100%;
-        }
-
         /* Keep right-column menus inside the viewport on the two-column row. */
         .learning-filter-dropdown-row .dropdown:nth-child(even) .dropdown-menu.show {
             right: 0 !important;
             left: auto !important;
-        }
-    }
-
-    @media (max-width: 419.98px) {
-        .learning-hero-stats {
-            grid-template-columns: minmax(0, 1fr);
         }
     }
 

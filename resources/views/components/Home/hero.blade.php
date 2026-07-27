@@ -9,7 +9,7 @@
 @include('components.shared.hero-section', [
     'user' => $user,
     'heroLabel' => 'Home',
-    'heroTitle' => 'Learning Hub',
+    'heroTitle' => 'OWl Learning Hub',
     'heroName' => $user?->name ?? 'Learner',
     'heroSubtitle' => 'Open Mind, Wide Growth, Lead Impact',
     'ongoingCourseVal' => $ongoingCourseVal,

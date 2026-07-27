@@ -78,7 +78,7 @@
 
             <div class="learning-record-filter-row mt-3">
                 <div class="learning-record-fast-filter">
-                    <label class="form-label small text-muted mb-2">Filter Cepat</label>
+                    <label class="form-label small text-muted mb-2">Fast Filter</label>
 
                     <div class="d-flex flex-wrap gap-2 learning-quick-dropdowns">
                     {{-- Dropdown Type --}}

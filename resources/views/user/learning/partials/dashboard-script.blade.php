@@ -1,5 +1,4 @@
 @section('script')
-@include('components.shared.hero-upload-script')
 <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
 {{-- ApexCharts: dimuat di awal agar tersedia saat tab Monitoring (AJAX) dirender. --}}
@@ -31,6 +30,16 @@
         '</div>';
     }
 
+    function showLearningHero(tab) {
+        $('[data-learning-hero]')
+            .addClass('d-none')
+            .attr('aria-hidden', 'true');
+
+        $('[data-learning-hero="' + tab + '"]')
+            .removeClass('d-none')
+            .attr('aria-hidden', 'false');
+    }
+
     function loadLearningTab(tab) {
         if (_activeTab === tab) return;
 
@@ -47,8 +56,15 @@
         _activeTab = tab;
 
         // Update active button state
-        $('.learning-tab-btn').removeClass('btn-primary').addClass('btn-white');
-        $('.learning-tab-btn[data-target="#tab-' + tab + '"]').removeClass('btn-white').addClass('btn-primary');
+        $('.learning-tab-btn')
+            .removeClass('btn-primary')
+            .addClass('btn-white')
+            .attr('aria-selected', 'false');
+        $('.learning-tab-btn[data-target="#tab-' + tab + '"]')
+            .removeClass('btn-white')
+            .addClass('btn-primary')
+            .attr('aria-selected', 'true');
+        showLearningHero(tab);
 
         if ($.fn.DataTable && $.fn.DataTable.isDataTable('#assessmentTable')) {
             $('#assessmentTable').DataTable().destroy();

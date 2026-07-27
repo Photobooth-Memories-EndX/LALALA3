@@ -11,14 +11,12 @@
     $user = $user ?? auth()->user();
 @endphp
 
-@include('components.shared.hero-section', [
-    'user' => $user,
-    'heroLabel' => 'My Learning',
-    'heroTitle' => 'Learning Dashboard',
-    'heroName' => $user?->name ?? 'Learner',
-    'heroSubtitle' => 'Track your ongoing learning, review records, assessments, and certificates in one place.',
-    'ongoingCourseVal' => (int) $ongoingLearning,
-    'completedCourseVal' => (int) $completedLearning,
-    'totalCourseVal' => (int) $totalLearning,
-    'learningHours' => $learningHours,
-])
+<x-shared.hero-learning-ongoing
+    :stats="[
+        ['label' => 'Total Learning', 'value' => number_format($totalLearning)],
+        ['label' => 'Completed', 'value' => number_format($completedLearning)],
+        ['label' => 'On Going', 'value' => number_format($ongoingLearning)],
+        ['label' => 'Learning Hours', 'value' => number_format($learningHours, 1)],
+    ]"
+    {{ $attributes }}
+/>
