@@ -108,7 +108,7 @@
 
                         {{-- ARTICLE BODY --}}
                         <article class="owl-article-content mb-5">
-                            <div class="article-body text-secondary">
+                            <div class="article-body text-dark">
                                 {!! nl2br(e($news->description ?? '')) !!}
                             </div>
                         </article>

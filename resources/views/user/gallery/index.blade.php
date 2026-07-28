@@ -13,65 +13,56 @@
     @endphp
 
     {{-- ============================================================
-         HERO
+         HERO GALLERY
          ============================================================ --}}
-    <div class="gallery-hero kp-enterprise-hero mb-4">
-        <div class="row align-items-center g-4">
+    <div class="card content-hero-card mb-4 overflow-hidden border-0 shadow-sm">
+        <div class="card-body content-hero-surface text-white">
+            <div class="row align-items-center g-4">
 
-            <div class="col-lg-7">
-                <span class="gallery-hero-badge kp-hero-badge">INTERNAL MEMORIES</span>
-                <h1 class="gallery-hero-title mt-3">
-                    Learning Event<br>Gallery Hub
-                </h1>
-                <p class="gallery-hero-sub mt-3">
-                    Capturing the journey of growth and innovation across workshops,
-                    technical training and professional development.
-                </p>
-                <a href="#gallery-list" class="btn btn-light btn-lg mt-3 rounded-pill px-4">
-                    <i class="ti ti-arrow-down me-1"></i> Explore Gallery
-                </a>
-            </div>
+                {{-- Sisi Kiri: Teks & Badge --}}
+                <div class="col-lg-8 content-hero-copy">
+                    <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-2 rounded-pill content-hero-badge">
+                        <i class="ti ti-photo"></i>
+                        GALLERY
+                    </div>
 
-            <div class="col-lg-5">
-                <div class="kp-hero-media gallery-hero-media">
-                    @if($latestImage)
-                        <img
-                            src="{{ $latestImage }}"
-                            alt="{{ $latestGallery->title }}"
-                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-                        >
-                        <div class="kp-hero-media-placeholder" style="display:none">
-                            <i class="ti ti-photo"></i>
-                        </div>
-                    @else
-                        <div class="kp-hero-media-placeholder">
-                            <i class="ti ti-photo"></i>
-                        </div>
-                    @endif
+                    <h1 class="mb-1 fw-bold">
+                        Learning Event Gallery Hub
+                    </h1>
+
+                    <p class="mb-0 text-white-75">
+                        Capturing the journey of growth and innovation across workshops, technical training, and professional development.
+                    </p>
+
+                    <div class="mt-3">
+                        <a href="#gallery-list" class="btn btn-sm btn-white text-primary fw-bold rounded-pill px-3 py-2 shadow-sm">
+                            <i class="ti ti-arrow-down me-1"></i> Explore Gallery
+                        </a>
+                    </div>
                 </div>
 
-                <div class="row g-3 mt-3">
-                    <div class="col-6">
-                        <div class="gallery-stat-box kp-hero-stat">
-                            <div class="gallery-stat-icon">
-                                <i class="ti ti-calendar-event"></i>
-                            </div>
-                            <div class="gallery-stat-num">{{ number_format($totalEvents) }}</div>
-                            <div class="gallery-stat-label">Total Events</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="gallery-stat-box kp-hero-stat">
-                            <div class="gallery-stat-icon">
+                {{-- Sisi Kanan: Preview Media / Counter --}}
+                <div class="col-lg-4 d-flex justify-content-lg-end justify-content-center">
+                    <div class="gallery-hero-media">
+                        @if($latestImage)
+                            <img
+                                src="{{ $latestImage }}"
+                                alt="{{ $latestGallery->title }}"
+                                class="gallery-hero-img"
+                                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                            >
+                            <div class="kp-hero-media-placeholder" style="display:none">
                                 <i class="ti ti-photo"></i>
                             </div>
-                            <div class="gallery-stat-num">{{ number_format($totalPhotos) }}</div>
-                            <div class="gallery-stat-label">Total Photos</div>
-                        </div>
+                        @else
+                            <div class="kp-hero-media-placeholder">
+                                <i class="ti ti-photo"></i>
+                            </div>
+                        @endif
                     </div>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
 
@@ -141,7 +132,7 @@
                 </div>
 
                 <div class="col-lg-auto col-md-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" style="background-color: #008a43; border-color: #008a43;">
                         <i class="ti ti-filter me-1"></i> Filter
                     </button>
                     @if(request('q') || request('uploader') || request('category') || (request('sort') && request('sort') !== 'latest'))
@@ -280,86 +271,127 @@
 
 @section('style')
 <style>
-
 /* ============================================================
-   HERO
+   HERO STYLES (SAMAKAN PRESISI DENGAN HERO NEWS)
    ============================================================ */
-.gallery-hero {
-    border-radius: 20px;
-    padding: 32px;
-    color: #fff;
+.content-hero-card {
+    border-radius: 22px !important;
 }
 
-.gallery-hero-badge {
-    display: inline-block;
-    background: rgba(255,255,255,.18);
-    border: 1px solid rgba(255,255,255,.25);
-    border-radius: 999px;
-    padding: 6px 16px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .08em;
+.content-hero-surface {
+    min-height: 170px;
+    padding: 28px 34px !important;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    
+    /* Gradasi Biru */
+    background: linear-gradient(
+        135deg,
+        #001b44 0%,
+        #002b66 20%,
+        #004b99 45%,
+        #2a7bd1 70%,
+        #82b8f5 88%,
+        #dbeeff 100%
+    ) !important;
 }
 
-.gallery-hero-title {
-    font-size: clamp(30px, 5vw, 52px);
-    font-weight: 800;
-    line-height: 1.1;
-    color: #fff;
-    margin: 0;
+/* Layer Radial Glow Efek Cahaya */
+.content-hero-surface::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    background: radial-gradient(
+        circle at 85% 20%,
+        rgba(255, 255, 255, 0.22) 0%,
+        transparent 28%
+    ) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
 }
 
-.gallery-hero-sub {
-    font-size: 16px;
-    color: rgba(255,255,255,.8);
-    max-width: 540px;
-    margin: 0;
+.content-hero-surface > .row {
+    width: 100%;
+    position: relative;
+    z-index: 2;
 }
 
-.gallery-stat-box {
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 16px;
-    padding: 16px 14px;
-    text-align: center;
-    color: #fff;
-    backdrop-filter: blur(4px);
+/* Hero Media & Image Preview Styling */
+.gallery-hero-media {
+    width: 220px;
+    height: 130px;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(6px);
 }
 
-.gallery-stat-icon {
-    font-size: 22px;
-    opacity: .8;
-    margin-bottom: 4px;
+.gallery-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
-.gallery-stat-num {
-    font-size: 30px;
-    font-weight: 800;
-    line-height: 1;
+.kp-hero-media-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.1);
 }
 
-.gallery-stat-label {
-    font-size: 11px;
-    opacity: .75;
-    margin-top: 4px;
-    text-transform: uppercase;
-    letter-spacing: .04em;
+/* Penyesuaian Tombol "Explore Gallery" */
+.content-hero-copy .btn-white {
+    background: #ffffff !important;
+    color: #002b66 !important;
+    border: none !important;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.content-hero-copy .btn-white:hover {
+    background: #f8fafc !important;
+    color: #001b44 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark Mode Support */
+[data-bs-theme="dark"] .content-hero-surface,
+body.dark-mode .content-hero-surface {
+    background: linear-gradient(
+        135deg,
+        #00112c 0%,
+        #001b44 20%,
+        #003366 45%,
+        #1d5996 70%,
+        #4e82be 88%,
+        #82b8f5 100%
+    ) !important;
 }
 
 /* ============================================================
-   FILTER BAR
+   FILTER & CARD STYLES
    ============================================================ */
 .gallery-filter-card {
     background: var(--tblr-bg-surface, #fff);
-    border: 1px solid var(--tblr-border-color, rgba(98,105,118,.16));
+    border: 1px solid var(--tblr-border-color, rgba(98,105,118,.12));
     border-radius: 16px;
     padding: 20px 24px;
 }
 
-/* ============================================================
-   GALLERY CARD
-   ============================================================ */
 .gallery-card {
-    border: 1px solid var(--tblr-border-color, rgba(98,105,118,.16));
+    border: 1px solid var(--tblr-border-color, rgba(98,105,118,.12));
     border-radius: 18px;
     overflow: hidden;
     transition: transform .25s ease, box-shadow .25s ease;
@@ -367,16 +399,13 @@
 }
 
 .gallery-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 16px 40px rgba(37,99,235,.14);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(83, 86, 90, .10);
 }
 
-/* ============================================================
-   THUMBNAIL
-   ============================================================ */
 .gallery-thumb {
     position: relative;
-    height: 220px;
+    height: 200px;
     background: var(--tblr-bg-surface-secondary, #f6f8fb);
     overflow: hidden;
     flex-shrink: 0;
@@ -398,127 +427,68 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform .3s ease;
-}
-
-.gallery-card:hover .gallery-thumb-img {
-    transform: scale(1.05);
 }
 
 .gallery-badge {
     position: absolute;
     top: 12px;
     left: 12px;
-    background: #05507D;
+    background: #008a43;
     color: #fff;
     font-size: 10px;
     font-weight: 700;
     padding: 4px 12px;
     border-radius: 999px;
     text-transform: uppercase;
-    letter-spacing: .05em;
-    z-index: 1;
 }
 
 .gallery-photo-count {
     position: absolute;
     bottom: 12px;
     right: 12px;
-    background: rgba(0,0,0,.55);
+    background: rgba(0,0,0,.65);
     color: #fff;
     font-size: 11px;
     padding: 4px 10px;
     border-radius: 999px;
-    backdrop-filter: blur(4px);
-    z-index: 1;
 }
 
-/* ============================================================
-   CARD TITLE
-   ============================================================ */
 .gallery-card-title {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    min-height: 48px;
+    min-height: 45px;
     color: var(--tblr-body-color);
     margin-bottom: 16px;
 }
 
-/* ============================================================
-   EMPTY STATE
-   ============================================================ */
 .gallery-empty-state {
     text-align: center;
-    padding: 80px 20px;
+    padding: 48px 20px;
+    background: var(--tblr-bg-surface, #fff);
+    border-radius: 16px;
+    border: 1px solid var(--tblr-border-color, rgba(98,105,118,.12));
 }
 
 .gallery-empty-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: var(--tblr-bg-surface-secondary, #f6f8fb);
-    font-size: 36px;
+    font-size: 56px;
     color: var(--tblr-muted, #9ba9b4);
 }
 
-/* ============================================================
-   DARK MODE
-   ============================================================ */
-[data-bs-theme="dark"] .gallery-filter-card {
-    background: var(--tblr-bg-surface, #1f2937);
-    border-color: rgba(255,255,255,.08);
-}
-
-[data-bs-theme="dark"] .gallery-card {
-    background: var(--tblr-bg-surface, #1f2937);
-    border-color: rgba(255,255,255,.08);
-}
-
-[data-bs-theme="dark"] .gallery-thumb {
-    background: #53565A;
-}
-
-[data-bs-theme="dark"] .gallery-empty-icon {
-    background: #53565A;
-}
-
-[data-bs-theme="dark"] .form-control,
-[data-bs-theme="dark"] .form-select {
-    background-color: #53565A;
-    border-color: rgba(255,255,255,.1);
-    color: #e5e7eb;
-}
-
-[data-bs-theme="dark"] .form-control::placeholder {
-    color: #6b7280;
-}
-
-[data-bs-theme="dark"] .input-group-text {
-    background-color: #53565A;
-    border-color: rgba(255,255,255,.1);
-    color: #9ca3af;
-}
-
-[data-bs-theme="dark"] .gallery-card-title {
-    color: #f1f5f9;
-}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-@media (max-width: 576px) {
-    .gallery-hero {
-        padding: 28px 20px;
+@media (max-width: 991.98px) {
+    .content-hero-surface {
+        padding: 20px !important;
+    }
+    .gallery-hero-media {
+        width: 100%;
+        max-width: 280px;
+        height: 150px;
+        margin-top: 8px;
     }
 }
-
 </style>
 @endsection

@@ -1,3 +1,42 @@
+<style>
+/* ============================================================
+   NEWS CARD BADGES (SOFT LIGHT BLUE STYLE)
+   ============================================================ */
+
+/* Badge '1 min read' (Biru Muda Soft) */
+.owl-news-pill-readtime {
+    display: inline-flex;
+    align-items: center;
+    background-color: #e8f4ff !important; /* Soft Light Blue Background */
+    color: #0284c7 !important;            /* Accent Blue Text */
+    border: 1px solid #bae6fd !important; /* Soft Blue Border */
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    transition: all 0.2s ease;
+}
+
+.owl-news-pill-readtime i {
+    color: #0284c7 !important;            /* Warna Ikon Jam */
+}
+
+/* Badge Tanggal (Tetap Neutral / Light Muted) */
+.owl-news-pill-muted {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+</style>
+
 <div class="col">
     <div class="card owl-news-card h-100 border-0 shadow-sm" data-news-id="{{ $item->id }}">
 
@@ -41,11 +80,14 @@
         <div class="card-body d-flex flex-column flex-grow-1">
 
             <div class="d-flex flex-wrap gap-2 align-items-center mb-3 owl-news-meta">
-                <span class="owl-news-pill">
+                {{-- BADGE READ TIME (REVISED TO SOFT LIGHT BLUE) --}}
+                <span class="owl-news-pill-readtime">
                     <i class="ti ti-clock-hour-4 me-1"></i>
                     {{ ceil(str_word_count(strip_tags($item->description ?? '')) / 200) ?: 1 }} min read
                 </span>
-                <span class="owl-news-pill owl-news-pill-muted">
+                
+                {{-- BADGE DATE --}}
+                <span class="owl-news-pill-muted">
                     {{ $item->created_at ? $item->created_at->format('M d, Y') : '-' }}
                 </span>
             </div>
