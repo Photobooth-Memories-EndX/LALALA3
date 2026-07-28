@@ -26,8 +26,14 @@
 
 /* Page background */
 .page-body {
-    background: var(--kp-light-gray);
+    background: #fff;
     min-height: 100vh;
+}
+
+[data-bs-theme="dark"] .page-body,
+body.dark-mode .page-body,
+body.theme-dark .page-body {
+    background: var(--tblr-body-bg, #111827);
 }
 
 .container-fluid {

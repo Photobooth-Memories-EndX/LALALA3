@@ -1,16 +1,25 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
+@include('components.shared.hero-style')
 <div class="container-xl py-4">
+    @php
+        $latestGallery = $eventphoto->first();
+        $latestPhotos = $latestGallery ? (json_decode($latestGallery->photos, true) ?? []) : [];
+        $latestCover = $latestGallery?->thumbnail ?: ($latestPhotos[0] ?? null);
+        $latestImage = ($latestGallery && $latestCover)
+            ? asset('storage/gallery/photo/' . $latestGallery->id . '/' . $latestCover)
+            : null;
+    @endphp
 
     {{-- ============================================================
          HERO
          ============================================================ --}}
-    <div class="gallery-hero mb-4">
+    <div class="gallery-hero kp-enterprise-hero mb-4">
         <div class="row align-items-center g-4">
 
-            <div class="col-lg-8">
-                <span class="gallery-hero-badge">INTERNAL MEMORIES</span>
+            <div class="col-lg-7">
+                <span class="gallery-hero-badge kp-hero-badge">INTERNAL MEMORIES</span>
                 <h1 class="gallery-hero-title mt-3">
                     Learning Event<br>Gallery Hub
                 </h1>
@@ -23,10 +32,27 @@
                 </a>
             </div>
 
-            <div class="col-lg-4">
-                <div class="row g-3">
+            <div class="col-lg-5">
+                <div class="kp-hero-media gallery-hero-media">
+                    @if($latestImage)
+                        <img
+                            src="{{ $latestImage }}"
+                            alt="{{ $latestGallery->title }}"
+                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                        >
+                        <div class="kp-hero-media-placeholder" style="display:none">
+                            <i class="ti ti-photo"></i>
+                        </div>
+                    @else
+                        <div class="kp-hero-media-placeholder">
+                            <i class="ti ti-photo"></i>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="row g-3 mt-3">
                     <div class="col-6">
-                        <div class="gallery-stat-box">
+                        <div class="gallery-stat-box kp-hero-stat">
                             <div class="gallery-stat-icon">
                                 <i class="ti ti-calendar-event"></i>
                             </div>
@@ -35,7 +61,7 @@
                         </div>
                     </div>
                     <div class="col-6">
-                        <div class="gallery-stat-box">
+                        <div class="gallery-stat-box kp-hero-stat">
                             <div class="gallery-stat-icon">
                                 <i class="ti ti-photo"></i>
                             </div>
@@ -259,9 +285,8 @@
    HERO
    ============================================================ */
 .gallery-hero {
-    background: linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
     border-radius: 20px;
-    padding: 48px;
+    padding: 32px;
     color: #fff;
 }
 
@@ -292,10 +317,9 @@
 }
 
 .gallery-stat-box {
-    background: rgba(255,255,255,.15);
     border: 1px solid rgba(255,255,255,.2);
     border-radius: 16px;
-    padding: 20px 16px;
+    padding: 16px 14px;
     text-align: center;
     color: #fff;
     backdrop-filter: blur(4px);

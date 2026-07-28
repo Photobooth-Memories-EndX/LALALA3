@@ -1,14 +1,18 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
+@include('components.shared.hero-style')
 <div class="page-body">
     <div class="container-xl">
-        <div class="card border-0 shadow-sm overflow-hidden mb-4">
+        <div class="card kp-enterprise-hero learning-manage-hero mb-4 overflow-hidden">
             <div class="card-body p-4 p-md-5 position-relative">
                 <div class="row align-items-center g-4">
                     <div class="col-lg-8">
-                        <div class="text-uppercase text-muted small fw-semibold mb-2">Manage Learning</div>
-                        <h1 class="display-6 mb-3">Learning dashboard with fast summary and server-side detail table.</h1>
+                        <div class="kp-hero-badge badge rounded-pill mb-3">
+                            <i class="ti ti-school"></i>
+                            Manage Learning
+                        </div>
+                        <h1 class="display-6 text-white mb-3">Learning dashboard with fast summary and server-side detail table.</h1>
                         {{-- <p class="text-muted mb-4">
                             Ringkasan di halaman ini diambil dari query aggregate, sementara detail learning dibuka melalui halaman tabel server-side agar tetap responsif saat data membesar.
                         </p> --}}
@@ -17,7 +21,7 @@
                                 <i class="ti ti-table me-1"></i>
                                 Open Learning Table
                             </a>
-                            <a href="{{ route('manage.dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                            <a href="{{ route('manage.dashboard') }}" class="btn btn-outline-light btn-lg">
                                 <i class="ti ti-layout-dashboard me-1"></i>
                                 Back to Dashboard
                             </a>
@@ -25,7 +29,7 @@
                     </div>
 
                     <div class="col-lg-4">
-                        <div class="summary-panel p-4 rounded-4 text-white">
+                        <div class="summary-panel kp-hero-stat p-4 text-white">
                             <div class="small text-white-50 text-uppercase fw-semibold mb-1">Completion rate</div>
                             <div class="display-4 fw-bold mb-2">{{ number_format($completionRate, 1) }}%</div>
                             <div class="small text-white-75">{{ number_format($totalLearning) }} total records with {{ number_format($finish) }} finished and {{ number_format($ongoing) }} ongoing.</div>
@@ -143,9 +147,18 @@
 
 @section('style')
 <style>
+    .page-body {
+        background: #fff;
+    }
+
+    [data-bs-theme="dark"] .page-body,
+    body.dark-mode .page-body,
+    body.theme-dark .page-body {
+        background: var(--tblr-body-bg, #111827);
+    }
+
     .summary-panel {
-        background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #2563eb 100%);
-        box-shadow: 0 20px 45px rgba(15, 23, 42, .18);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, .16);
     }
 
     .stat-card {

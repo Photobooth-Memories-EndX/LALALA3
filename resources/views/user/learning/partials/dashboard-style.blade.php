@@ -10,7 +10,7 @@
     :root {
         --learning-ui-radius: 20px;
         --learning-ui-surface: #ffffff;
-        --learning-ui-border: #D9D9D6;
+        --learning-ui-border: rgba(0, 0, 0, .08);
         --learning-ui-text: #53565A;
         --learning-ui-muted: #8A8D8F;
         --learning-ui-shadow: 0 2px 12px rgba(83, 86, 90, .05);
@@ -39,7 +39,7 @@
     }
 
     .page-body {
-        background: #D9D9D6;
+        background: #fff;
         min-height: 100vh;
     }
 
@@ -629,7 +629,7 @@
 
     [data-bs-theme="dark"] .page-body,
     body.dark-mode .page-body {
-        background: #0b1629;
+        background: var(--tblr-body-bg, #111827);
     }
 
     [data-bs-theme="dark"] .learning-dashboard-container .card,

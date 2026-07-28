@@ -196,6 +196,43 @@ button, input, select, textarea {
     margin-bottom: 2rem;
 }
 
+.owl-hero-card--compact {
+    min-height: 0;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 76% 16%, rgba(255, 255, 255, .28) 0, rgba(255, 255, 255, 0) 30%),
+        linear-gradient(135deg, #05507D 0%, rgba(5, 80, 125, .93) 46%, #69B3E7 100%);
+}
+
+.owl-hero-card--compact::before {
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, .08), rgba(0, 0, 0, .24)),
+        radial-gradient(circle at 8% 12%, rgba(255, 255, 255, .17), transparent 26%);
+}
+
+.owl-hero-card--compact .row {
+    min-height: 0;
+    align-items: center;
+}
+
+.owl-hero-card--compact .card-body {
+    min-height: 0;
+    padding: 1.5rem 2rem;
+}
+
+.owl-hero-card--compact .owl-hero-title {
+    max-width: 780px;
+    font-size: clamp(1.55rem, 2.4vw, 2.1rem);
+    letter-spacing: 0;
+    margin-bottom: .75rem;
+}
+
+.owl-hero-card--compact .owl-hero-description {
+    max-width: 760px;
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, .9);
+}
+
 .owl-hero-image{
     width:100%;
     height:340px;
@@ -346,8 +383,8 @@ button, input, select, textarea {
     gap: 0.5rem;
     padding: 0.75rem 1rem;
     border-radius: 999px;
-    background: rgba(var(--owl-primary-rgb), 0.12);
-    color: var(--owl-primary);
+    background: rgba(22, 163, 74, 0.14);
+    color: #15803D;
     font-weight: 700;
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
     font-size: 0.9rem;
@@ -359,9 +396,9 @@ button, input, select, textarea {
     gap: 0.4rem;
     padding: 0.55rem 0.95rem;
     border-radius: 999px;
-    border: 1px solid rgba(var(--owl-primary-rgb), 0.16);
-    background: rgba(var(--owl-primary-rgb), 0.10);
-    color: var(--owl-primary);
+    border: 1px solid rgba(22, 163, 74, 0.18);
+    background: rgba(22, 163, 74, 0.12);
+    color: #15803D;
     font-size: 0.95rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -715,6 +752,11 @@ textarea:focus-visible {
     align-items: stretch;
 }
 
+.owl-hero-card--compact,
+.owl-hero-card--compact .row {
+    min-height: 0;
+}
+
 }
 
 @media (max-width: 991px) {
@@ -759,10 +801,18 @@ textarea:focus-visible {
         padding: 2rem;
     }
 
-.owl-hero-title {
+    .owl-hero-title {
     font-size: 2rem;
     line-height: 1.2;
 }
+
+    .owl-hero-card--compact {
+        min-height: 0;
+    }
+
+    .owl-hero-card--compact .row {
+        min-height: 0;
+    }
 
 
     .owl-toolbar-card .card-body {

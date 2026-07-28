@@ -423,6 +423,14 @@
 
 @section('style')
 <style>
+.page-body {
+    background: #fff;
+}
+[data-bs-theme="dark"] .page-body,
+body.dark-mode .page-body,
+body.theme-dark .page-body {
+    background: var(--tblr-body-bg, #111827);
+}
 .admin-gallery-stat {
     border-radius: 16px;
     transition: transform .2s, box-shadow .2s;

@@ -40,7 +40,7 @@
                 </div>
             @endif
 
-            <span class="badge bg-primary position-absolute top-0 end-0 m-3">
+            <span class="badge bg-green position-absolute top-0 end-0 m-3">
                 Playlist
             </span>
 

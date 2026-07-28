@@ -10,15 +10,15 @@
         @include('user.news.partials.hero')
 
         {{-- PAGE HEADER --}}
-        <div class="mb-5 pb-3 border-bottom" style="border-color: var(--owl-border-color);">
-            <h1 class="display-5 fw-bold mb-2">OWL Learning Hub</h1>
-            <p class="text-secondary">Explore enterprise insights, industry trends, and AI-powered learning strategies curated for modern organizations.</p>
+        <div class="mb-3 pb-2 border-bottom" style="border-color: var(--owl-border-color);">
+            <h1 class="fw-bold mb-1">OWL Learning Hub</h1>
+            <p class="text-secondary mb-0" style="font-size:1rem;">Explore enterprise insights, industry trends, and AI-powered learning strategies curated for modern organizations.</p>
         </div>
 
         {{-- SEARCH & FILTER TOOLBAR --}}
-        <div class="owl-toolbar-wrapper mb-5 sticky-top">
+        <div class="owl-toolbar-wrapper mb-2 sticky-top">
             <div class="card border-0 owl-toolbar-card">
-                <div class="card-body p-4 p-lg-4">
+                <div class="card-body py-3 px-4">
                     <form method="GET" class="row g-3 align-items-end">
 
                         {{-- SEARCH BAR --}}
