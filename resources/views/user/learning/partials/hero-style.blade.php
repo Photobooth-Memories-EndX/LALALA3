@@ -17,8 +17,15 @@
         --learning-stat-space-3: .75rem;
         --learning-stat-panel-width: 22.5rem;
         --learning-stat-panel-height: 8rem;
-        --learning-stat-panel-radius: 1rem;
-        --learning-stat-card-radius: .75rem;
+        --learning-stat-panel-radius: 14px;
+        --learning-stat-card-radius: 8px;
+        --learning-stat-panel-padding: 8px;
+        --learning-stat-panel-gap: 8px;
+        --learning-stat-panel-bg: rgba(0, 27, 68, .42);
+        --learning-stat-panel-border: rgba(255, 255, 255, .18);
+        --learning-stat-panel-shadow:
+            0 6px 14px rgba(0, 27, 68, .18),
+            0 2px 4px rgba(0, 27, 68, .10);
     }
 
     /* 2. Base Hero and Default Theme */
@@ -422,13 +429,13 @@
         max-width: 360px;
         height: 140px;
         margin-left: auto;
-        gap: 8px;
-        padding: 8px;
+        gap: var(--learning-stat-panel-gap);
+        padding: var(--learning-stat-panel-padding);
         overflow: hidden;
-        border: var(--learning-hero-border);
-        border-radius: var(--learning-hero-radius);
-        background: transparent;
-        box-shadow: none;
+        border: 1px solid var(--learning-stat-panel-border);
+        border-radius: var(--learning-stat-panel-radius);
+        background: var(--learning-stat-panel-bg);
+        box-shadow: var(--learning-stat-panel-shadow);
         filter: none;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
@@ -469,7 +476,7 @@
         justify-content: center;
         gap: 2px;
         border: var(--learning-hero-border);
-        border-radius: var(--learning-hero-radius);
+        border-radius: var(--learning-stat-card-radius);
         color: #fff;
         text-align: center;
         box-shadow: none;

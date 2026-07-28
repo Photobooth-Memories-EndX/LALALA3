@@ -368,6 +368,10 @@ class LearningRecordController extends Controller
 
         return match ($sort) {
             'issued_asc' => $query->orderBy('issued_at')->orderBy('id'),
+            'id_asc' => $query->orderBy('id'),
+            'id_desc' => $query->orderByDesc('id'),
+            'type_asc' => $query->orderBy('certificate_type')->orderBy('id'),
+            'type_desc' => $query->orderByDesc('certificate_type')->orderByDesc('id'),
             'number_asc' => $query->orderBy('certificate_number')->orderBy('id'),
             'number_desc' => $query->orderByDesc('certificate_number')->orderByDesc('id'),
             'participant_asc' => $query->orderBy('participant_name')->orderBy('id'),

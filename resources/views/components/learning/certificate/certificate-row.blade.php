@@ -64,25 +64,19 @@
         @endif
     </td>
     <td class="certificate-col-action text-center">
-        <div class="dropdown certificate-action-dropdown">
-            <button type="button" class="btn btn-sm btn-outline-primary btn-action btn-learning-sm dropdown-toggle certificate-action-trigger" data-toggle="dropdown" data-boundary="viewport" aria-haspopup="true" aria-expanded="false">
-                <i class="ti ti-dots-vertical" aria-hidden="true"></i><span>Actions</span>
+        <div class="certificate-actions">
+            <a class="btn certificate-action-button text-blue" href="{{ route('certificate.show', $certificate->credential_id) }}" title="View Detail" aria-label="View Detail">
+                <i class="ti ti-eye" aria-hidden="true"></i>
+            </a>
+            <a class="btn certificate-action-button text-green" href="{{ route('certificate.download.pdf', $certificate->credential_id) }}" title="Download Certificate" aria-label="Download Certificate">
+                <i class="ti ti-download" aria-hidden="true"></i>
+            </a>
+            <a class="btn certificate-action-button text-cyan" href="{{ route('certificate.verify', $certificate->credential_id) }}" target="_blank" rel="noopener" title="Open Verification" aria-label="Open Verification">
+                <i class="ti ti-shield-check" aria-hidden="true"></i>
+            </a>
+            <button type="button" class="btn certificate-action-button text-azure certificate-copy-btn" data-copy="{{ $certificate->credential_id }}" title="Copy Credential ID" aria-label="Copy Credential ID">
+                <i class="ti ti-copy" aria-hidden="true"></i>
             </button>
-            <div class="dropdown-menu dropdown-menu-right certificate-action-menu">
-                <a class="dropdown-item" href="{{ route('certificate.show', $certificate->credential_id) }}">
-                    <i class="ti ti-eye" aria-hidden="true"></i><span>View Detail</span>
-                </a>
-                <a class="dropdown-item learning-action-success" href="{{ route('certificate.download.pdf', $certificate->credential_id) }}">
-                    <i class="ti ti-download" aria-hidden="true"></i><span>Download Certificate</span>
-                </a>
-                <a class="dropdown-item" href="{{ route('certificate.verify', $certificate->credential_id) }}" target="_blank" rel="noopener">
-                    <i class="ti ti-shield-check" aria-hidden="true"></i><span>Open Verification</span>
-                </a>
-                <div class="dropdown-divider"></div>
-                <button type="button" class="dropdown-item certificate-copy-btn" data-copy="{{ $certificate->credential_id }}">
-                    <i class="ti ti-copy" aria-hidden="true"></i><span>Copy Credential ID</span>
-                </button>
-            </div>
         </div>
     </td>
 </tr>

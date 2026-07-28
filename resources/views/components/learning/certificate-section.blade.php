@@ -14,7 +14,6 @@
         'type' => request('certificate_filter_type', 'all'),
         'year' => request('certificate_filter_year', 'all'),
         'month' => request('certificate_filter_month', 'all'),
-        'status' => request('certificate_filter_status', 'all'),
         'sort' => request('certificate_sort', 'issued_desc'),
     ];
     $advancedKeys = [
@@ -88,16 +87,6 @@
                             </div>
                         </div>
 
-                        <div class="dropdown" data-certificate-filter="status" data-selected-value="{{ $active['status'] }}">
-                            <input type="hidden" class="certificate-quick-value" name="certificate_filter_status" value="{{ $active['status'] }}">
-                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $active['status'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
-                                Status: <span class="fw-semibold certificate-filter-value">{{ $active['status'] === 'generated' ? 'Generated' : 'All' }}</span>
-                            </button>
-                            <div class="dropdown-menu">
-                                <a href="#" class="dropdown-item certificate-quick-item {{ $active['status'] === 'all' ? 'active' : '' }}" data-value="all">All</a>
-                                <a href="#" class="dropdown-item certificate-quick-item {{ $active['status'] === 'generated' ? 'active' : '' }}" data-value="generated">Generated</a>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -223,7 +212,7 @@
                             <div class="col-12 col-md-6 col-lg-6 certificate-filter-field">
                                 <label class="form-label" for="certificateSort">Sorting</label>
                                 <select class="form-select" id="certificateSort">
-                                    @foreach (['issued_desc' => 'Newest', 'issued_asc' => 'Oldest', 'number_asc' => 'Certificate Number A-Z', 'number_desc' => 'Certificate Number Z-A', 'participant_asc' => 'Participant A-Z', 'participant_desc' => 'Participant Z-A', 'target_asc' => 'Target Name A-Z', 'target_desc' => 'Target Name Z-A'] as $value => $label)
+                                    @foreach (['issued_desc' => 'Newest', 'issued_asc' => 'Oldest', 'id_asc' => 'No Ascending', 'id_desc' => 'No Descending', 'target_asc' => 'Certificate A-Z', 'target_desc' => 'Certificate Z-A', 'type_asc' => 'Type A-Z', 'type_desc' => 'Type Z-A', 'number_asc' => 'Certificate Number A-Z', 'number_desc' => 'Certificate Number Z-A', 'participant_asc' => 'Participant A-Z', 'participant_desc' => 'Participant Z-A'] as $value => $label)
                                         <option value="{{ $value }}" {{ $active['sort'] === $value ? 'selected' : '' }}>{{ $label }}</option>
                                     @endforeach
                                 </select>
