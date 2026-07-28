@@ -17,7 +17,7 @@
 
     $quickFilters = [
         'type' => ['all' => 'All', 'content' => 'Content', 'playlist' => 'Playlist', 'global' => 'Global'],
-        'status' => ['all' => 'All', 'not_started' => 'Not Started', 'passed' => 'Passed', 'failed' => 'Failed'],
+        'status' => ['all' => 'All', 'not_started' => 'Pending', 'passed' => 'Passed', 'failed' => 'Failed'],
     ];
     $activeFilters = [
         'type' => request('assessment_filter_type', 'all'),

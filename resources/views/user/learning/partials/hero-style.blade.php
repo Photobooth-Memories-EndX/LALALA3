@@ -52,10 +52,10 @@
     }
 
     .learning-module-hero--assessment {
-        --hero-blue: #2563EB;
-        --hero-green: #16A34A;
-        --hero-cyan: #0D9488;
-        --hero-red: #DC2626;
+        --hero-blue: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+        --hero-green: linear-gradient(135deg, #22C55E 0%, #4ADE80 100%);
+        --hero-cyan: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        --hero-red: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
     }
 
     /* 4. Hero Content */

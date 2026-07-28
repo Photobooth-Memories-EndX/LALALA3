@@ -195,12 +195,12 @@ class LearningAnalyticsService
             ->selectRaw("
                 SUM(CASE WHEN finish = '1' OR progress >= 100 THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN finish = '0' AND progress BETWEEN 1 AND 99 THEN 1 ELSE 0 END) as ongoing,
-                SUM(CASE WHEN finish = '0' AND progress = 0 THEN 1 ELSE 0 END) as not_started
+                SUM(CASE WHEN finish = '0' AND progress = 0 THEN 1 ELSE 0 END) as pending
             ")
             ->first();
 
         return [
-            'labels' => ['Completed', 'Ongoing', 'Not Started'],
+            'labels' => ['Completed', 'Ongoing', 'Pending'],
             'series' => [
                 (int) ($row->completed ?? 0),
                 (int) ($row->ongoing ?? 0),

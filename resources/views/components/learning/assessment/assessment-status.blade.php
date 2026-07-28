@@ -17,5 +17,5 @@
         </div>
     @endif
 @else
-    <span class="badge bg-orange-lt text-orange learning-record-badge assessment-status-badge">Not Started</span>
+    <span class="badge bg-orange-lt text-orange learning-record-badge assessment-status-badge">Pending</span>
 @endif

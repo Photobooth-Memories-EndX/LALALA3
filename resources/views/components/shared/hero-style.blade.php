@@ -5,22 +5,21 @@
     --owl-primary-rgb: 5, 80, 125;
     --kp-hero-primary-rgb: 5, 80, 125;
     --kp-hero-dark-rgb: 5, 80, 125;
-    --kp-hero-light-rgb: 105, 179, 231;
-    --kp-hero-red-rgb: 227, 6, 19;
-    --kp-hero-green-rgb: 22, 163, 74;
-    --kp-hero-completed-rgb: var(--kp-hero-green-rgb);
+    --kp-hero-light-rgb: 106, 174, 214;
+    --kp-hero-completed-rgb: 22, 163, 74;
 
-    --hero-overlay-width: 100%;
+/* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
+    --hero-overlay-width: 58%;
 
---hero-overlay: linear-gradient(
-    90deg,
-    rgba(var(--kp-hero-primary-rgb), .96) 0%,
-    rgba(var(--kp-hero-primary-rgb), .88) 20%,
-    rgba(var(--kp-hero-primary-rgb), .65) 45%,
-    rgba(var(--kp-hero-light-rgb), .35) 70%,
-    rgba(255,255,255,.15) 90%,
-    rgba(255,255,255,0) 100%
-);
+    /* 2. Buat gradasi memudar lebih lembut (smooth gradient stops) */
+    --hero-overlay: linear-gradient(
+        90deg,
+        rgba(var(--kp-hero-dark-rgb), .96) 0%,
+        rgba(var(--kp-hero-primary-rgb), .88) 50%,
+        
+        rgba(var(--kp-hero-light-rgb), .46) 80%,
+        rgba(var(--kp-hero-light-rgb), 0) 100%
+    );
 
     display: flex;
     align-items: center;
@@ -37,40 +36,7 @@
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
-    box-shadow: 0 24px 55px rgba(5, 80, 125, .18);
-}
-
-            .shared-learning-hero,
-            .kp-enterprise-hero {
-                --kp-hero-primary: #05507D;
-                --kp-hero-primary-rgb: 5, 80, 125;
-                --kp-hero-light: #69B3E7;
-                --kp-hero-light-rgb: 105, 179, 231;
-                --kp-hero-red: #E30613;
-                --kp-hero-red-rgb: 227, 6, 19;
-                --kp-hero-green: #16A34A;
-                --kp-hero-green-rgb: 22, 163, 74;
-                --kp-hero-gray-dark: #53565A;
-                --kp-hero-gray-light: #D9D9D6;
-            }
-
-.shared-learning-hero {
-    background-color: var(--kp-hero-primary);
-
-    background-image:
-        radial-gradient(
-            circle at 88% 18%,
-            rgba(255,255,255,.22) 0,
-            rgba(255,255,255,0) 28%
-        ),
-        linear-gradient(
-            90deg,
-            rgba(var(--kp-hero-primary-rgb), .82) 0%,
-            rgba(var(--kp-hero-primary-rgb), .55) 35%,
-            rgba(var(--kp-hero-light-rgb), .22) 65%,
-            rgba(255,255,255,.05) 100%
-        ),
-        var(--hero-bg-image);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, .12);
 }
             .shared-learning-hero::before {
                 content: "";
@@ -84,15 +50,7 @@
             }
 
             .shared-learning-hero::after {
-                content: "";
-                position: absolute;
-                inset: 0;
-                z-index: 1;
-                border-radius: inherit;
-                background:
-                    linear-gradient(180deg, rgba(0, 0, 0, .04), rgba(0, 0, 0, .16)),
-                    radial-gradient(circle at 14% 16%, rgba(255, 255, 255, .22), transparent 30%);
-                pointer-events: none;
+                content: none;
             }
 
             .shared-learning-hero > .row {
@@ -189,101 +147,7 @@
 
             .shared-hero-content {
                 position: relative;
-                z-index: 3;
-            }
-
-            .kp-enterprise-hero {
-                position: relative;
-                isolation: isolate;
-                overflow: hidden;
-                border: 0;
-                border-radius: 20px;
-                background:
-                    radial-gradient(circle at 76% 16%, rgba(255, 255, 255, .28) 0, rgba(255, 255, 255, 0) 30%),
-                    linear-gradient(135deg, rgba(var(--kp-hero-primary-rgb), 1) 0%, rgba(var(--kp-hero-primary-rgb), .93) 46%, rgba(var(--kp-hero-light-rgb), .9) 100%);
-                box-shadow: 0 24px 55px rgba(5, 80, 125, .18);
-            }
-
-            .kp-enterprise-hero::before {
-                content: "";
-                position: absolute;
-                inset: 0;
-                z-index: 0;
-                background:
-                    linear-gradient(180deg, rgba(0, 0, 0, .08), rgba(0, 0, 0, .24)),
-                    radial-gradient(circle at 8% 12%, rgba(255, 255, 255, .17), transparent 26%);
-                pointer-events: none;
-            }
-
-            .kp-enterprise-hero::after {
-                content: "";
-                position: absolute;
-                inset: auto 0 0;
-                z-index: 0;
-                height: 4px;
-                background: linear-gradient(90deg, var(--kp-hero-red), rgba(var(--kp-hero-light-rgb), .88));
-                opacity: .9;
-                pointer-events: none;
-            }
-
-            .kp-enterprise-hero .card-body {
-                position: relative;
-                z-index: 1;
-            }
-
-            .kp-enterprise-hero > .row {
-                position: relative;
-                z-index: 1;
-            }
-
-            .kp-enterprise-hero .kp-hero-badge {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                width: fit-content;
-                border: 1px solid rgba(255, 255, 255, .22);
-                background: rgba(255, 255, 255, .15);
-                color: #fff;
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-            }
-
-            .kp-enterprise-hero .kp-hero-meta {
-                color: rgba(255, 255, 255, .82);
-            }
-
-            .kp-enterprise-hero .kp-hero-stat {
-                border: 1px solid rgba(255, 255, 255, .2);
-                border-radius: 14px;
-                background: rgba(5, 80, 125, .36);
-                color: #fff;
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-            }
-
-            .kp-enterprise-hero .kp-hero-media {
-                overflow: hidden;
-                border: 1px solid rgba(255, 255, 255, .22);
-                border-radius: 16px;
-                background: rgba(255, 255, 255, .14);
-                box-shadow: 0 20px 45px rgba(0, 0, 0, .18);
-            }
-
-            .kp-enterprise-hero .kp-hero-media img {
-                display: block;
-                width: 100%;
-                height: 190px;
-                object-fit: cover;
-            }
-
-            .kp-enterprise-hero .kp-hero-media-placeholder {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 100%;
-                height: 190px;
-                color: rgba(255, 255, 255, .8);
-                font-size: 48px;
+                z-index: 2;
             }
 
             .shared-hero-profile {
@@ -553,10 +417,7 @@
             }
 
             [data-bs-theme="dark"] .shared-learning-hero,
-            body.dark-mode .shared-learning-hero,
-            [data-bs-theme="dark"] .kp-enterprise-hero,
-            body.dark-mode .kp-enterprise-hero,
-            body.theme-dark .kp-enterprise-hero {
+            body.dark-mode .shared-learning-hero {
                 box-shadow: 0 18px 42px rgba(0, 0, 0, .34);
             }
 
@@ -613,6 +474,20 @@
             }
 
             @media (max-width: 767.98px) {
+                .shared-learning-hero {
+                    --hero-overlay-width: 100%;
+                    --hero-overlay: linear-gradient(
+                        180deg,
+                        rgba(var(--kp-hero-dark-rgb), .98) 0%,
+                        rgba(var(--kp-hero-primary-rgb), .92) 38%,
+                        rgba(var(--kp-hero-light-rgb), .68) 68%,
+                        rgba(var(--kp-hero-light-rgb), .34) 84%,
+                        rgba(var(--kp-hero-light-rgb), 0) 100%
+                    );
+
+                    padding: 54px 18px 20px;
+                    border-radius: 18px;
+                }
 
                 .shared-learning-hero::before {
                     inset: 0;
@@ -687,3 +562,4 @@
         </style>
     @endpush
 @endonce
+

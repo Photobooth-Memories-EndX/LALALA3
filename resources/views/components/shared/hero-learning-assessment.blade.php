@@ -42,7 +42,7 @@
                             tone="blue"
                         />
                         <x-shared.learning-stat-small
-                            label="Started"
+                            label="Pending"
                             :value="$assessmentStats->get('started', '—')"
                             tone="cyan"
                         />

@@ -139,7 +139,7 @@
                                         Score: {{ $bestScore ?? '-' }}
                                     </div>
                                 @else
-                                    <span class="badge bg-orange-lt text-orange">Not Started</span>
+                                    <span class="badge bg-orange-lt text-orange">Pending</span>
                                 @endif
                             </td>
 
