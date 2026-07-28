@@ -52,10 +52,29 @@
     }
 
     .learning-module-hero--assessment {
-        --hero-blue: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
-        --hero-green: linear-gradient(135deg, #22C55E 0%, #4ADE80 100%);
-        --hero-cyan: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
-        --hero-red: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+        --hero-card-border: rgba(255, 255, 255, .16);
+        --hero-card-radius: 14px;
+        --hero-card-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .2),
+            0 10px 24px rgba(18, 38, 63, .18);
+        --hero-card-hover-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .22),
+            0 12px 28px rgba(18, 38, 63, .2);
+        --hero-card-hover-transform: translateY(-2px);
+        --hero-card-transition: all .25s ease;
+        --hero-label-color: rgba(255, 255, 255, .92);
+        --hero-blue:
+            linear-gradient(135deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, 0) 38%),
+            linear-gradient(135deg, #1557D6 0%, #1E66E5 45%, #3E88FF 100%);
+        --hero-green:
+            linear-gradient(135deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, 0) 42%),
+            linear-gradient(135deg, #7DB7F2 0%, #A4CCF7 55%, #D3E7FC 100%);
+        --hero-cyan:
+            linear-gradient(135deg, rgba(255, 255, 255, .2) 0%, rgba(255, 255, 255, 0) 40%),
+            linear-gradient(135deg, #F2B321 0%, #FFC83D 45%, #FFD96A 100%);
+        --hero-red:
+            linear-gradient(135deg, rgba(255, 255, 255, .18) 0%, rgba(255, 255, 255, 0) 40%),
+            linear-gradient(135deg, #F24D5B 0%, #FF6672 45%, #FF8A95 100%);
     }
 
     /* 4. Hero Content */
