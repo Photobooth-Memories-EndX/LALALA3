@@ -17,9 +17,11 @@
         $passed = $row['score'] >= $row['min_score'];
     @endphp
 
-    <span class="badge {{ $passed ? 'bg-green-lt text-green' : 'bg-red-lt text-red' }} learning-record-badge">{{ $row['score'] }}</span>
-
-    <div class="small {{ $passed ? 'text-muted' : 'text-danger' }} mt-1">
-        {{ $passed ? 'Min ' . $row['min_score'] : 'Butuh min ' . $row['min_score'] }}
-    </div>
+    @if ($passed)
+        <span class="badge bg-green-lt text-green learning-record-badge">{{ $row['score'] }}</span>
+    @else
+        <span class="badge bg-red-lt text-red learning-record-badge">FAILED</span>
+        <div class="small text-danger mt-1">Score : {{ $row['score'] }}</div>
+        <div class="small text-danger">Passing Grade : {{ $row['min_score'] }}</div>
+    @endif
 @endif

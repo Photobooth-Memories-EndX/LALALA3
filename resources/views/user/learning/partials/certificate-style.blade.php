@@ -171,7 +171,11 @@
     }
 
     .certificate-status-badge {
-        min-width: 98px;
+        min-width: auto;
+        min-height: 22px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 600;
     }
 
     .certificate-playlist-badge {
