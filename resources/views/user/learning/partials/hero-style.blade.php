@@ -1,6 +1,16 @@
 <style>
     /* 1. Hero Design Tokens */
     :root {
+        --learning-hero-background:
+            linear-gradient(
+                135deg,
+                #001b44 0%,
+                #002b66 20%,
+                #004b99 45%,
+                #2a7bd1 70%,
+                #82b8f5 88%,
+                #dbeeff 100%
+            );
         --learning-hero-radius: 20px;
         --learning-stat-space-1: .25rem;
         --learning-stat-space-2: .5rem;
@@ -13,7 +23,7 @@
 
     /* 2. Base Hero and Default Theme */
     .learning-module-hero {
-        --hero-background: linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
+        --hero-background: var(--learning-hero-background);
         --hero-panel-background: rgba(5, 80, 125, .2);
         --hero-panel-border: rgba(255, 255, 255, .18);
         --hero-panel-shadow:
@@ -345,7 +355,7 @@
 
     /* 11. My Learning Hero Design System */
     .learning-hero-ds {
-        --hero-surface: #05507D;
+        --hero-surface: var(--hero-background);
         --hero-primary: #2563EB;
         --hero-success: #22C55E;
         --hero-warning: #FDBA3B;
