@@ -14,7 +14,7 @@
     /* 2. Buat gradasi memudar lebih lembut (smooth gradient stops) */
     --hero-overlay: linear-gradient(
         90deg,
-        rgba(var(--kp-hero-dark-rgb), .96) 0%,
+        rgba(0, 27, 68, .96) 0%,
         rgba(var(--kp-hero-primary-rgb), .88) 50%,
         
         rgba(var(--kp-hero-light-rgb), .46) 80%,
@@ -478,7 +478,7 @@
                     --hero-overlay-width: 100%;
                     --hero-overlay: linear-gradient(
                         180deg,
-                        rgba(var(--kp-hero-dark-rgb), .98) 0%,
+                        rgba(0, 27, 68, .98) 0%,
                         rgba(var(--kp-hero-primary-rgb), .92) 38%,
                         rgba(var(--kp-hero-light-rgb), .68) 68%,
                         rgba(var(--kp-hero-light-rgb), .34) 84%,
