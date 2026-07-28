@@ -28,6 +28,7 @@
                 <div class="learning-hero-stats-panel learning-hero-stats-panel--ongoing">
                     <x-shared.learning-stat-large
                         class="learning-hero-stat-feature"
+                        style="background: #6EA7D3; box-shadow: none; border: none;"
                         label="Total On Going"
                         :value="data_get($stats, '2.value', '—')"
                         description="Active learning in progress"
