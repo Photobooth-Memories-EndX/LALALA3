@@ -52,29 +52,25 @@
     }
 
     .learning-module-hero--assessment {
-        --hero-card-border: rgba(255, 255, 255, .16);
+        --hero-card-border: transparent;
         --hero-card-radius: 14px;
-        --hero-card-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, .2),
-            0 10px 24px rgba(18, 38, 63, .18);
-        --hero-card-hover-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, .22),
-            0 12px 28px rgba(18, 38, 63, .2);
-        --hero-card-hover-transform: translateY(-2px);
-        --hero-card-transition: all .25s ease;
-        --hero-label-color: rgba(255, 255, 255, .92);
-        --hero-blue:
-            linear-gradient(135deg, rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, 0) 38%),
-            linear-gradient(135deg, #1557D6 0%, #1E66E5 45%, #3E88FF 100%);
-        --hero-green:
-            linear-gradient(135deg, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, 0) 42%),
-            linear-gradient(135deg, #7DB7F2 0%, #A4CCF7 55%, #D3E7FC 100%);
-        --hero-cyan:
-            linear-gradient(135deg, rgba(255, 255, 255, .2) 0%, rgba(255, 255, 255, 0) 40%),
-            linear-gradient(135deg, #F2B321 0%, #FFC83D 45%, #FFD96A 100%);
-        --hero-red:
-            linear-gradient(135deg, rgba(255, 255, 255, .18) 0%, rgba(255, 255, 255, 0) 40%),
-            linear-gradient(135deg, #F24D5B 0%, #FF6672 45%, #FF8A95 100%);
+        --hero-card-shadow: none;
+        --hero-card-hover-shadow: none;
+        --hero-card-hover-transform: none;
+        --hero-card-transition: none;
+        --hero-label-color: rgba(255, 255, 255, .9);
+        --hero-label-letter-spacing: .03em;
+        --hero-blue: #1D4ED8;
+        --hero-green: #16A34A;
+        --hero-cyan: #FBBF24;
+        --hero-red: #EF4444;
+    }
+
+    .learning-module-hero--assessment .learning-stat-card {
+        border: none;
+        filter: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 
     /* 4. Hero Content */

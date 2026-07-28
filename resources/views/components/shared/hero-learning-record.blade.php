@@ -6,7 +6,8 @@
     'stats' => [],
 ])
 
-<section {{ $attributes->class(['card border-0 shadow-sm mb-4 overflow-hidden learning-module-hero learning-module-hero--record']) }}>
+<section {{ $attributes->class(['card border-0 shadow-sm mb-4 overflow-hidden learning-module-hero learning-module-hero--record']) }}
+    style="--hero-background: linear-gradient(90deg, #05507D 0%, #0A5D91 55%, #3F97CF 100%);">
     <div class="card-body p-4 p-lg-5 text-white">
         <div class="row align-items-center">
             <div class="col-lg-8 learning-hero-record-content">
