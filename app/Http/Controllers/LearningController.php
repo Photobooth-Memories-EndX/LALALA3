@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Certificate;
 use App\Models\ContentUser;
 use App\Services\CertificateEligibilityService;
+use App\Services\Learning\CompletedPlaylistService;
 use App\Services\LearningAnalyticsService;
 use Illuminate\Support\Facades\Auth;
 
@@ -25,7 +26,10 @@ class LearningController extends Controller
      * Lightweight dashboard – only loads summary counts and profile data.
      * Tab content is fetched on-demand via dashboardPartial().
      */
-    public function dashboard(LearningAnalyticsService $analyticsService)
+    public function dashboard(
+        LearningAnalyticsService $analyticsService,
+        CompletedPlaylistService $completedPlaylistService
+    )
     {
         $userId = Auth::id();
         $user   = Auth::user();
@@ -44,6 +48,16 @@ class LearningController extends Controller
             ->where('finish', '0')
             ->count();
 
+        $completedContentLearning = ContentUser::query()
+            ->join('content', 'content.id', '=', 'content_users.content_id')
+            ->where('content_users.user_id', $userId)
+            ->where('content_users.finish', '1')
+            ->whereNull('content.deleted_at')
+            ->whereIn('content.type', ['Video', 'Document'])
+            ->count();
+
+        $completedPlaylistLearning = $completedPlaylistService->forUser((int) $userId)->count();
+
         $certificates = Certificate::where('user_id', $userId)
             ->get(['certificate_type']);
 
@@ -61,6 +75,8 @@ class LearningController extends Controller
             'totalLearning',
             'completedLearning',
             'ongoingLearning',
+            'completedContentLearning',
+            'completedPlaylistLearning',
             'certificateStats',
             'averageProgress'
         ));

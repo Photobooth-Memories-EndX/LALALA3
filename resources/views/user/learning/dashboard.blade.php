@@ -43,8 +43,8 @@
                  aria-hidden="{{ $initialLearningTab === 'record' ? 'false' : 'true' }}">
                 <x-shared.hero-learning-record
                     :stats="[
-                        ['label' => 'Total Learning', 'value' => number_format($totalLearning)],
-                        ['label' => 'Completed', 'value' => number_format($completedLearning)],
+                        ['label' => 'Course Completed', 'value' => number_format($completedContentLearning ?? 0)],
+                        ['label' => 'Playlist Completed', 'value' => number_format($completedPlaylistLearning ?? 0)],
                         ['label' => 'Learning Hours', 'value' => number_format($learningHours ?? 0, 1)],
                     ]"
                 />

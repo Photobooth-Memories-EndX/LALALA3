@@ -528,11 +528,18 @@ class LearningAnalyticsService
      */
     public function heroSummary(int $userId): array
     {
-        $contentUser = ContentUser::where('user_id', $userId)->get();
+        $contentUser = ContentUser::with('content:id,type')
+            ->where('user_id', $userId)
+            ->get();
+
+        $completedCourse = $contentUser
+            ->filter(fn (ContentUser $cu) => (int) $cu->finish === 1
+                && in_array($cu->content?->type, ['Video', 'Document'], true))
+            ->count();
 
         return [
             'content_user' => $contentUser,
-            'completedCourse' => $contentUser->where('finish', 1)->count(),
+            'completedCourse' => $completedCourse,
             'ongoingCourse' => $contentUser->where('finish', 0)->count(),
             'learningHours' => $this->userLearningHours($userId),
         ];
