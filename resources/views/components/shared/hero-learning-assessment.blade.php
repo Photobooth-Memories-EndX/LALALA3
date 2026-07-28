@@ -19,7 +19,7 @@
 <style>
     .learning-hero-ds {
         --learning-hero-border: 1px solid rgba(255, 255, 255, .18);
-        --learning-hero-radius: 14px;
+        --learning-hero-radius: 22px;
         background: #05507D !important;
         border: var(--learning-hero-border) !important;
         border-radius: var(--learning-hero-radius) !important;
@@ -57,12 +57,25 @@
         opacity: .9;
     }
 
+    .learning-hero-ds > .card-body {
+        display: flex;
+        box-sizing: border-box;
+        min-height: 170px;
+        padding: 15px 34px !important;
+        align-items: center;
+    }
+
+    .learning-hero-ds > .card-body > .row {
+        width: 100%;
+        min-height: 140px;
+    }
+
     .learning-hero-ds-panel {
         display: grid;
         box-sizing: border-box;
         width: 100%;
         max-width: 360px;
-        height: 160px;
+        height: 140px;
         margin-left: auto;
         gap: 8px;
         padding: 8px;
@@ -104,12 +117,12 @@
         width: 100%;
         min-width: 0;
         min-height: 0;
-        padding: 6px 8px;
+        padding: 4px 8px;
         overflow: hidden;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 4px;
+        gap: 2px;
         border: var(--learning-hero-border);
         border-radius: var(--learning-hero-radius);
         color: #fff;
@@ -186,11 +199,22 @@
         font-size: 42px;
         font-size: clamp(32px, 22cqw, 42px);
     }
+
+    @media (max-width: 767.98px) {
+        .learning-hero-ds > .card-body,
+        .learning-hero-ds > .card-body > .row {
+            min-height: auto;
+        }
+
+        .learning-hero-ds-panel {
+            margin-left: 0;
+        }
+    }
 </style>
 
 <section {{ $attributes->class(['card mb-4 overflow-hidden learning-module-hero learning-module-hero--assessment learning-hero-ds']) }}>
     <div class="card-body p-4 p-lg-5 text-white">
-        <div class="row align-items-center">
+        <div class="row align-items-center g-4">
             <div class="col-lg-8">
                 <span class="badge bg-white text-primary mb-3 learning-hero-ds-badge">
                     {{ $badge }}
@@ -205,7 +229,7 @@
                 <p class="mb-0 learning-hero-ds-description">{{ $description }}</p>
             </div>
 
-            <div class="col-lg-4 d-none d-lg-block text-end">
+            <div class="col-lg-4 d-flex justify-content-lg-end">
                 <div class="learning-hero-ds-panel learning-hero-ds-panel--grid" role="group"
                     aria-label="Assessment statistics">
                     <div class="learning-hero-ds-card learning-hero-ds-card--primary">
