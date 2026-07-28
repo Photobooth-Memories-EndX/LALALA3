@@ -37,14 +37,16 @@
                         <div class="learning-stat-widget-card learning-stat-widget-card--blue">
                             <span class="learning-stat-widget-label">Course Completed</span>
                             <strong class="learning-stat-widget-value">
-                                {{ data_get($stats, '0.value', '—') }}
+                                {{-- {{ data_get($stats, '0.value', '—') }} --}}
+                                1002
                             </strong>
                         </div>
 
                         <div class="learning-stat-widget-card learning-stat-widget-card--green">
                             <span class="learning-stat-widget-label">Playlist Completed</span>
                             <strong class="learning-stat-widget-value">
-                                {{ data_get($stats, '1.value', '—') }}
+                                {{-- {{ data_get($stats, '1.value', '—') }} --}}
+                                1945
                             </strong>
                         </div>
                     </div>

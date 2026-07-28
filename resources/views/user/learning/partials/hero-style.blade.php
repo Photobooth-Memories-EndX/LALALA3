@@ -132,7 +132,7 @@
         --widget-gap: var(--learning-stat-space-2);
         --widget-card-radius: 14px;
         --widget-card-border: rgba(255, 255, 255, .14);
-        --widget-card-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+        --widget-card-shadow: none;
         display: grid;
         box-sizing: border-box;
         width: 100%;
@@ -145,9 +145,10 @@
         border: 1px solid rgba(255, 255, 255, .14);
         border-radius: var(--learning-stat-panel-radius);
         background: rgba(5, 80, 125, .2);
-        box-shadow: var(--widget-card-shadow);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        box-shadow: none;
+        filter: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 
     .learning-stat-widget-stack {
@@ -160,24 +161,29 @@
 
     .learning-stat-widget-card {
         display: flex;
+        container-type: inline-size;
         box-sizing: border-box;
         min-width: 0;
         min-height: 0;
-        overflow: hidden;
+        overflow: visible;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: var(--learning-stat-space-1);
         padding: var(--learning-stat-space-2) var(--learning-stat-space-3);
         border: 1px solid var(--widget-card-border);
         border-radius: var(--widget-card-radius);
         color: #fff;
-        box-shadow: var(--widget-card-shadow);
-        transition: transform .2s ease, box-shadow .2s ease;
+        box-shadow: none;
+        filter: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        transition: none;
     }
 
     .learning-stat-widget-card:hover {
-        box-shadow: 0 12px 28px rgba(0, 0, 0, .2);
-        transform: translateY(-1px);
+        box-shadow: none;
+        transform: none;
     }
 
     .learning-stat-widget-feature {
@@ -186,32 +192,41 @@
     }
 
     .learning-stat-widget-label {
+        display: flex;
+        width: 100%;
         min-width: 0;
+        max-width: 100%;
+        align-items: center;
+        justify-content: center;
         color: rgba(255, 255, 255, .92);
-        font-size: 11px;
+        font-size: clamp(9px, 0.7vw, 11px);
         font-weight: 700;
-        line-height: 1;
-        text-align: left;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-        overflow-wrap: anywhere;
-    }
-
-    .learning-stat-widget-feature .learning-stat-widget-label {
+        line-height: 1.1;
         text-align: center;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
     .learning-stat-widget-value {
-        flex: 0 0 auto;
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        flex: 0 1 auto;
+        overflow: visible;
         color: #fff;
-        font-size: 30px;
+        font-size: clamp(22px, 18cqw, 42px);
         font-weight: 800;
         line-height: 1;
         text-align: center;
+        white-space: nowrap;
+        word-break: normal;
     }
 
     .learning-stat-widget-value--large {
-        font-size: 42px;
+        font-size: clamp(24px, 14cqw, 42px);
     }
 
     .learning-stat-widget-description {
@@ -223,15 +238,15 @@
     }
 
     .learning-stat-widget-card--dark-blue {
-        background: linear-gradient(135deg, #184C73, #205D8F);
+        background: #184C73;
     }
 
     .learning-stat-widget-card--blue {
-        background: linear-gradient(135deg, #2E6EA3, #4B90C5);
+        background: #4B90C5;
     }
 
     .learning-stat-widget-card--green {
-        background: linear-gradient(135deg, #2EAD72, #46C98A);
+        background: #46C98A;
     }
 
     /* 8. Shared Legacy Hero Cards */
