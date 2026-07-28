@@ -354,6 +354,205 @@
         background: var(--hero-red);
     }
 
-    /* 11. Responsive */
+    /* 11. My Learning Hero Design System */
+    .learning-hero-ds {
+        --hero-surface: #05507D;
+        --hero-primary: #2563EB;
+        --hero-success: #22C55E;
+        --hero-warning: #FDBA3B;
+        --hero-danger: #EF4444;
+        --learning-hero-border: 1px solid rgba(255, 255, 255, .18);
+        --learning-hero-radius: 22px;
+        background: var(--hero-surface) !important;
+        border: var(--learning-hero-border) !important;
+        border-radius: var(--learning-hero-radius) !important;
+        box-shadow: none !important;
+        filter: none !important;
+    }
+
+    .learning-hero-ds::before,
+    .learning-hero-ds::after {
+        display: none !important;
+    }
+
+    .learning-hero-ds-badge {
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: .04em;
+    }
+
+    .learning-hero-ds-title {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .learning-hero-ds-subtitle,
+    .learning-hero-ds-description {
+        font-size: 15px;
+        font-weight: 400;
+        line-height: 1.45;
+    }
+
+    .learning-hero-ds-description {
+        opacity: .9;
+    }
+
+    .learning-hero-ds > .card-body {
+        display: flex;
+        box-sizing: border-box;
+        min-height: 170px;
+        padding: 15px 34px !important;
+        align-items: center;
+    }
+
+    .learning-hero-ds > .card-body > .row {
+        width: 100%;
+        min-height: 140px;
+    }
+
+    .learning-hero-ds-panel {
+        display: grid;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 360px;
+        height: 140px;
+        margin-left: auto;
+        gap: 8px;
+        padding: 8px;
+        overflow: hidden;
+        border: var(--learning-hero-border);
+        border-radius: var(--learning-hero-radius);
+        background: transparent;
+        box-shadow: none;
+        filter: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .learning-hero-ds-panel--split {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .learning-hero-ds-panel--grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+    }
+
+    .learning-hero-ds-panel--single {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .learning-hero-ds-stack {
+        display: grid;
+        min-width: 0;
+        min-height: 0;
+        gap: 8px;
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+    }
+
+    .learning-hero-ds-card {
+        display: flex;
+        container-type: inline-size;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        padding: 4px 8px;
+        overflow: hidden;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        border: var(--learning-hero-border);
+        border-radius: var(--learning-hero-radius);
+        color: #fff;
+        text-align: center;
+        box-shadow: none;
+        filter: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        transition: none;
+    }
+
+    .learning-hero-ds-card:hover {
+        box-shadow: none;
+        transform: none;
+    }
+
+    .learning-hero-ds-card--primary,
+    .learning-hero-ds-card--blue {
+        background: var(--hero-primary);
+    }
+
+    .learning-hero-ds-card--secondary,
+    .learning-hero-ds-card--success,
+    .learning-hero-ds-card--green {
+        background: var(--hero-success);
+    }
+
+    .learning-hero-ds-card--warning {
+        background: var(--hero-warning);
+        color: #fff;
+    }
+
+    .learning-hero-ds-card--danger {
+        background: var(--hero-danger);
+    }
+
+    .learning-hero-ds-label {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: inherit;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        white-space: normal;
+    }
+
+    .learning-hero-ds-value {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        color: inherit;
+        font-size: 32px;
+        font-size: clamp(24px, 18cqw, 32px);
+        font-weight: 800;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .learning-hero-ds-value--large {
+        font-size: 42px;
+        font-size: clamp(32px, 22cqw, 42px);
+    }
+
+    /* 12. Responsive */
+    @media (max-width: 767.98px) {
+        .learning-hero-ds > .card-body,
+        .learning-hero-ds > .card-body > .row {
+            min-height: auto;
+        }
+
+        .learning-hero-ds-panel {
+            margin-left: 0;
+        }
+    }
+
     /* Hero statistic visibility follows the existing Bootstrap responsive classes. */
 </style>

@@ -267,9 +267,10 @@
         $('.certificate-copy-btn').off('.learningCertificate').on('click.learningCertificate', function () {
             var $button = $(this);
             var value = String($button.data('copy'));
+            var copyTitle = $button.attr('title') || 'Copy Credential ID';
             var copied = function () {
                 $button.addClass('text-success').attr('title', 'Copied');
-                setTimeout(function () { $button.removeClass('text-success').attr('title', 'Copy Credential ID'); }, 1400);
+                setTimeout(function () { $button.removeClass('text-success').attr('title', copyTitle); }, 1400);
             };
 
             if (navigator.clipboard && window.isSecureContext) {
