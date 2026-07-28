@@ -99,13 +99,14 @@
     </td>
 
     <td>{{ $finalResult->batch ?? '-' }}</td>
-    <td>{{ $assessment->passing_grade ?? '-' }}</td>
+    <td>{{ $finalResult && $finalResult->score !== null ? $finalResult->score : '-' }}</td>
 
     <td>
         <x-learning.assessment.assessment-status
             :final-result="$finalResult"
             :is-completed="$isCompleted"
             :is-passed="$isPassed"
+            :passing-grade="$assessment->passing_grade"
         />
     </td>
 

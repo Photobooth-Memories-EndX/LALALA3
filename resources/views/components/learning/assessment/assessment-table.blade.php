@@ -6,7 +6,7 @@
     <table class="table table-vcenter table-hover card-table mb-0 assessment-table" id="assessmentTable">
         <thead>
             <tr>
-                @foreach (['No', 'Assessment', 'Date Time', 'Type', 'Batch', 'Passing Grade', 'Status'] as $heading)
+                @foreach (['No', 'Assessment', 'Date Time', 'Type', 'Batch', 'Assessment Score', 'Status'] as $heading)
                     <th class="assessment-sort-heading" data-assessment-column="{{ $loop->index }}">
                         <span class="record-sort-header">
                             <span class="record-sort-label">{{ $heading }}</span>

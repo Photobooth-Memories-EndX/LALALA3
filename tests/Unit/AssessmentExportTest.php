@@ -45,18 +45,18 @@ class AssessmentExportTest extends TestCase
         unlink($path);
 
         $this->assertSame(
-            ['No', 'Assessment', 'Type', 'Batch', 'Passing Grade', 'Status', 'Assessment Score', 'Date Time'],
-            $sheet->rangeToArray('A1:H1')[0]
+            ['No', 'Assessment', 'Date Time', 'Type', 'Batch', 'Assessment Score', 'Status'],
+            $sheet->rangeToArray('A1:G1')[0]
         );
         $this->assertSame("Leadership Final\nLeadership Playlist", $sheet->getCell('B2')->getValue());
-        $this->assertSame('Playlist', $sheet->getCell('C2')->getValue());
-        $this->assertSame('Passed', $sheet->getCell('F2')->getValue());
-        $this->assertSame(85, $sheet->getCell('G2')->getValue());
-        $this->assertSame("Start : 13/07/2026 12:00\nFinish : 15/07/2026 12:00", $sheet->getCell('H2')->getValue());
+        $this->assertSame("Start : 13/07/2026 12:00\nFinish : 15/07/2026 12:00", $sheet->getCell('C2')->getValue());
+        $this->assertSame('Playlist', $sheet->getCell('D2')->getValue());
+        $this->assertSame(85, $sheet->getCell('F2')->getValue());
+        $this->assertSame('Passed', $sheet->getCell('G2')->getValue());
         $this->assertSame('A2', $sheet->getFreezePane());
-        $this->assertSame('A1:H1', $sheet->getAutoFilter()->getRange());
+        $this->assertSame('A1:G1', $sheet->getAutoFilter()->getRange());
         $this->assertTrue($sheet->getStyle('B2')->getAlignment()->getWrapText());
-        $this->assertSame('C6EFCE', $sheet->getStyle('F2')->getFill()->getStartColor()->getRGB());
+        $this->assertSame('C6EFCE', $sheet->getStyle('G2')->getFill()->getStartColor()->getRGB());
     }
 
     public function test_my_learning_rows_use_custom_type_order_then_assessment_title(): void

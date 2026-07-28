@@ -79,17 +79,6 @@
         padding-bottom: .0625rem;
     }
 
-    .learning-hero-record-content h2 {
-        margin-bottom: .625rem !important;
-        font-size: 1.5rem;
-        line-height: 1.15;
-    }
-
-    .learning-hero-record-content > p:last-child {
-        font-size: .9375rem;
-        line-height: 1.45;
-    }
-
     /* 5. Hero Stats Panel */
     .learning-hero-stats-panel {
         box-sizing: border-box;
@@ -368,6 +357,7 @@
         border-radius: var(--learning-hero-radius) !important;
         box-shadow: none !important;
         filter: none !important;
+        font-family: var(--tblr-font-sans-serif, Inter, sans-serif);
     }
 
     .learning-hero-ds::before,
@@ -377,23 +367,25 @@
 
     .learning-hero-ds-badge {
         padding: 6px 10px;
-        font-size: 11px;
-        font-weight: 700;
+        font-size: 10px;
+        font-weight: 600;
         line-height: 1.2;
-        letter-spacing: .04em;
+        letter-spacing: 0;
     }
 
     .learning-hero-ds-title {
-        font-size: 24px;
-        font-weight: 700;
+        font-size: 20px;
+        font-weight: 600;
         line-height: 1.2;
+        letter-spacing: -.01em;
     }
 
     .learning-hero-ds-subtitle,
     .learning-hero-ds-description {
-        font-size: 15px;
+        font-size: 13px;
         font-weight: 400;
-        line-height: 1.45;
+        line-height: 1.4;
+        letter-spacing: 0;
     }
 
     .learning-hero-ds-description {
@@ -511,14 +503,15 @@
         justify-content: center;
         overflow: hidden;
         color: inherit;
-        font-size: 11px;
-        font-weight: 700;
-        line-height: 1.2;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.15;
         text-align: center;
         text-transform: uppercase;
-        letter-spacing: .04em;
-        overflow-wrap: anywhere;
-        word-break: break-word;
+        letter-spacing: .02em;
+        overflow-wrap: normal;
+        word-break: normal;
+        text-wrap: balance;
         white-space: normal;
     }
 
@@ -529,17 +522,19 @@
         max-width: 100%;
         overflow: hidden;
         color: inherit;
-        font-size: 32px;
-        font-size: clamp(24px, 18cqw, 32px);
-        font-weight: 800;
+        font-size: 24px;
+        font-size: clamp(20px, 18cqw, 24px);
+        font-weight: 700;
         line-height: 1;
         text-align: center;
+        letter-spacing: -.01em;
+        font-variant-numeric: tabular-nums;
         white-space: nowrap;
     }
 
     .learning-hero-ds-value--large {
-        font-size: 42px;
-        font-size: clamp(32px, 22cqw, 42px);
+        font-size: 32px;
+        font-size: clamp(28px, 22cqw, 32px);
     }
 
     /* 12. Responsive */

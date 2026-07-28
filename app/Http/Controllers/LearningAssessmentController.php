@@ -159,7 +159,11 @@ class LearningAssessmentController extends Controller
         return [
             'years' => (clone $query)->whereNotNull('fromdate')->selectRaw('YEAR(fromdate) as year')->distinct()->orderByDesc('year')->pluck('year'),
             'batches' => collect([1, 2, 4]),
-            'passingGrades' => collect([80]),
+            'passingGrades' => (clone $query)->whereNotNull('passing_grade')
+                ->select('passing_grade')
+                ->distinct()
+                ->orderBy('passing_grade')
+                ->pluck('passing_grade'),
         ];
     }
 

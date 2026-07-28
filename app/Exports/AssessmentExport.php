@@ -76,7 +76,7 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $lastColumn = $this->mode === self::MODE_MY_LEARNING ? 'H' : 'J';
+                $lastColumn = $this->mode === self::MODE_MY_LEARNING ? 'G' : 'J';
                 $lastRow = max(1, $sheet->getHighestRow());
                 $range = "A1:{$lastColumn}{$lastRow}";
 
@@ -97,10 +97,11 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
                 if ($lastRow >= 2) {
                     $sheet->getDefaultRowDimension()->setRowHeight(-1);
                     $sheet->getStyle("A2:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("C2:H{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("C2:G{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("B2:B{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
                     $sheet->getStyle("B2:B{$lastRow}")->getAlignment()->setWrapText(true);
-                    $sheet->getStyle("H2:H{$lastRow}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("C2:C{$lastRow}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("G2:G{$lastRow}")->getAlignment()->setWrapText(true);
                 }
 
                 foreach ($this->statusRows as $row => $status) {
@@ -109,7 +110,7 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
                         'Failed' => 'FFC7CE',
                         default => 'FCE4D6',
                     };
-                    $sheet->getStyle("F{$row}")->getFill()
+                    $sheet->getStyle("G{$row}")->getFill()
                         ->setFillType(Fill::FILL_SOLID)
                         ->getStartColor()->setRGB($color);
                 }
@@ -122,12 +123,11 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
         $rows = [[
             'No',
             'Assessment',
+            'Date Time',
             'Type',
             'Batch',
-            'Passing Grade',
-            'Status',
             'Assessment Score',
-            'Date Time',
+            'Status',
         ]];
 
         foreach ($this->assessments ?? collect() as $index => $assessment) {
@@ -139,26 +139,28 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
             $type = $assessment->type === 'trainingplan'
                 ? 'Playlist'
                 : ucfirst((string) ($assessment->type ?? '-'));
-            $status = !$finalResult
+            $resultStatus = !$finalResult
                 ? 'Not Started'
                 : ($finalResult->pass ? 'Passed' : 'Failed');
+            $status = $resultStatus === 'Failed' && $assessment->passing_grade !== null
+                ? $resultStatus . "\nPassing Grade: " . $assessment->passing_grade
+                : $resultStatus;
             $subtitle = $assessment->trainingplan->title ?? 'Assessment';
             $dateTime = ($assessment->timer ?? 'n') === 'y'
                 ? 'Start : ' . ($assessment->fromdate ? date('d/m/Y H:i', strtotime($assessment->fromdate)) : '-')
                     . "\nFinish : " . ($assessment->todate ? date('d/m/Y H:i', strtotime($assessment->todate)) : '-')
                 : '-';
             $excelRow = $index + 2;
-            $this->statusRows[$excelRow] = $status;
+            $this->statusRows[$excelRow] = $resultStatus;
 
             $rows[] = [
                 $index + 1,
                 ($assessment->title ?? '-') . "\n" . $subtitle,
+                $dateTime,
                 $type,
                 $finalResult->batch ?? '-',
-                $assessment->passing_grade ?? '-',
-                $status,
                 $finalResult && $finalResult->score !== null ? $finalResult->score : '-',
-                $dateTime,
+                $status,
             ];
         }
 
