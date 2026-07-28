@@ -117,15 +117,15 @@
     }
 
     .learning-hero-ds-card--primary {
-        background: #05507D;
+        background: #2563EB;
     }
 
     .learning-hero-ds-card--secondary {
-        background: #6EA7D3;
+        background: #22C55E;
     }
 
     .learning-hero-ds-card--success {
-        background: #2EAD72;
+        background: #22C55E;
     }
 
     .learning-hero-ds-card--warning {
@@ -134,7 +134,7 @@
     }
 
     .learning-hero-ds-card--danger {
-        background: #E11923;
+        background: #EF4444;
     }
 
     .learning-hero-ds-label {
