@@ -45,7 +45,7 @@
 
                     <div class="text-white-75 mb-3">
                         <i class="ti ti-circle-check me-1"></i>
-                        {{ $completedContent }} of {{ $totalContent }} materials completed
+                        {{ $completedContent }} / {{ $totalContent }} materials completed
                     </div>
 
                     <div class="progress playlist-white-progress mb-3">

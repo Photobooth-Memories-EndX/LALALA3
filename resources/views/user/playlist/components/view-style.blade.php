@@ -12,13 +12,29 @@
         min-height: 230px;
     }
 
+    /* ============================================================
+       VIEW HERO BACKGROUND (MATCHED WITH NEWS HERO GRADIENT)
+       ============================================================ */
     .view-hero-bg {
         min-height: 230px;
-        background:
-            radial-gradient(circle at 82% 18%, rgba(255, 255, 255, .16), transparent 30%),
-            linear-gradient(90deg, rgba(7, 23, 57, .96) 0%, rgba(18, 72, 167, .9) 50%, rgba(42, 114, 202, .76) 100%);
+        position: relative;
+        overflow: hidden;
+        border-radius: 18px;
+
+        /* Combination Radial Light + Multi-stop Blue Linear Gradient */
+        background: 
+            radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.22) 0%, transparent 28%),
+            linear-gradient(135deg, #001b44 0%, #002b66 20%, #004b99 45%, #2a7bd1 70%, #82b8f5 88%, #dbeeff 100%) !important;
         background-size: cover;
         background-position: center;
+    }
+
+    /* Support Dark Mode */
+    [data-bs-theme="dark"] .view-hero-bg,
+    body.dark-mode .view-hero-bg {
+        background: 
+            radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 28%),
+            linear-gradient(135deg, #00112c 0%, #001b44 20%, #003366 45%, #1d5996 70%, #4e82be 88%, #82b8f5 100%) !important;
     }
 
     .view-hero-overlay {
@@ -47,6 +63,7 @@
         font-weight: 800;
         margin: 0 0 14px;
         overflow-wrap: anywhere;
+        color: #ffffff;
     }
 
     .view-hero-meta,
@@ -61,6 +78,7 @@
         font-size: 13px;
         opacity: .94;
         margin-bottom: 14px;
+        color: #ffffff;
     }
 
     .view-hero-badge {
@@ -70,8 +88,8 @@
         padding: 7px 12px;
         border-radius: 999px;
         color: #ffffff;
-        background: rgba(255, 255, 255, .15);
-        border: 1px solid rgba(255, 255, 255, .18);
+        background: rgba(255, 255, 255, .18);
+        border: 1px solid rgba(255, 255, 255, .25);
         font-size: 12px;
         font-weight: 700;
         backdrop-filter: blur(8px);
@@ -88,15 +106,18 @@
         border-radius: 14px;
         color: #fff;
         text-decoration: none;
-        background: rgba(15, 23, 42, .28);
-        border: 1px solid rgba(255, 255, 255, .18);
+        background: rgba(255, 255, 255, .15);
+        border: 1px solid rgba(255, 255, 255, .25);
         backdrop-filter: blur(10px);
         text-align: center;
+        transition: all 0.25s ease-in-out;
     }
 
     .view-hero-continue:hover {
         color: #fff;
-        background: rgba(37, 99, 235, .85);
+        background: rgba(255, 255, 255, .28);
+        border-color: rgba(255, 255, 255, .45);
+        transform: translateY(-2px);
     }
 
     .view-hero-continue-thumb {
