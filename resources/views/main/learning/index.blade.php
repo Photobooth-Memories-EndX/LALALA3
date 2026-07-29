@@ -1,43 +1,9 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
-@include('components.shared.hero-style')
-<div class="page-body">
+<div class="page-body manage-learning-page">
     <div class="container-xl">
-        <div class="card kp-enterprise-hero learning-manage-hero mb-4 overflow-hidden">
-            <div class="card-body p-4 p-md-5 position-relative">
-                <div class="row align-items-center g-4">
-                    <div class="col-lg-8">
-                        <div class="kp-hero-badge badge rounded-pill mb-3">
-                            <i class="ti ti-school"></i>
-                            Manage Learning
-                        </div>
-                        <h1 class="display-6 text-white mb-3">Learning dashboard with fast summary and server-side detail table.</h1>
-                        {{-- <p class="text-muted mb-4">
-                            Ringkasan di halaman ini diambil dari query aggregate, sementara detail learning dibuka melalui halaman tabel server-side agar tetap responsif saat data membesar.
-                        </p> --}}
-                        <div class="d-flex flex-wrap gap-2">
-                            <a href="{{ route('learning.manage.all') }}" class="btn btn-primary btn-lg">
-                                <i class="ti ti-table me-1"></i>
-                                Open Learning Table
-                            </a>
-                            <a href="{{ route('manage.dashboard') }}" class="btn btn-outline-light btn-lg">
-                                <i class="ti ti-layout-dashboard me-1"></i>
-                                Back to Dashboard
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4">
-                        <div class="summary-panel kp-hero-stat p-4 text-white">
-                            <div class="small text-white-50 text-uppercase fw-semibold mb-1">Completion rate</div>
-                            <div class="display-4 fw-bold mb-2">{{ number_format($completionRate, 1) }}%</div>
-                            <div class="small text-white-75">{{ number_format($totalLearning) }} total records with {{ number_format($finish) }} finished and {{ number_format($ongoing) }} ongoing.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @include('main.learning.components.learning-header', ['variant' => 'dashboard'])
 
         <div class="row row-deck g-3 mb-4">
             <div class="col-md-6 col-xl-3">
@@ -147,41 +113,37 @@
 
 @section('style')
 <style>
-    .page-body {
+    .manage-learning-page {
         background: #fff;
     }
 
-    [data-bs-theme="dark"] .page-body,
-    body.dark-mode .page-body,
-    body.theme-dark .page-body {
+    [data-bs-theme="dark"] .manage-learning-page,
+    body.dark-mode .manage-learning-page,
+    body.theme-dark .manage-learning-page {
         background: var(--tblr-body-bg, #111827);
     }
 
-    .summary-panel {
-        box-shadow: 0 20px 45px rgba(0, 0, 0, .16);
-    }
-
-    .stat-card {
+    .manage-learning-page .stat-card {
         border-radius: 18px;
     }
 
-    .stat-card .display-6 {
+    .manage-learning-page .stat-card .display-6 {
         line-height: 1;
     }
 
-    .stat-card-total {
+    .manage-learning-page .stat-card-total {
         background: linear-gradient(180deg, #eef4ff 0%, #ffffff 100%);
     }
 
-    .stat-card-ongoing {
+    .manage-learning-page .stat-card-ongoing {
         background: linear-gradient(180deg, #fff7e6 0%, #ffffff 100%);
     }
 
-    .stat-card-finished {
+    .manage-learning-page .stat-card-finished {
         background: linear-gradient(180deg, #edfdf2 0%, #ffffff 100%);
     }
 
-    .stat-card-rate {
+    .manage-learning-page .stat-card-rate {
         background: linear-gradient(180deg, #fff0f0 0%, #ffffff 100%);
     }
 </style>

@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-body">
     <div class="container-xl">
-        @include('main.learning.components.learning-header')
+        @include('main.learning.components.learning-header', ['variant' => 'table'])
         @include('main.learning.components.learning-filter')
         @include('main.learning.components.learning-table')
     </div>
