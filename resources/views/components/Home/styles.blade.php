@@ -82,35 +82,9 @@ a { text-decoration: none; }
     background-color: var(--kp-primary);
 }
 
-#modal-assessment-access .alert-info {
-    border-color: var(--kp-light-blue-muted);
-    background: var(--kp-light-blue-soft);
-    color: var(--kp-primary-dark);
-}
-
-#modal-assessment-access .btn-primary {
-    border-color: var(--kp-primary);
-    background: var(--kp-primary);
-    color: #fff;
-}
-
-#modal-assessment-access .btn-primary:hover,
-#modal-assessment-access .btn-primary:focus {
-    border-color: var(--kp-light-blue);
-    background: var(--kp-light-blue);
-    color: var(--kp-primary-deep);
-}
-
 [data-bs-theme="dark"] .home-modern-text-primary,
 body.dark-mode .home-modern-text-primary {
     color: var(--kp-light-blue) !important;
-}
-
-[data-bs-theme="dark"] #modal-assessment-access .alert-info,
-body.dark-mode #modal-assessment-access .alert-info {
-    border-color: rgba(var(--kp-light-blue-rgb), .22);
-    background: rgba(var(--kp-primary-rgb), .22);
-    color: #d9edf9;
 }
 
 /* =====================================================
@@ -1445,12 +1419,14 @@ body.dark-mode #modal-assessment-access .alert-info {
     display: block;
 }
 
-.home-modern-gallery-placeholder {
+.home-modern-gallery-placeholder,
+.home-modern-news-placeholder {
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: #53565A;
 }
 
 .home-modern-gallery-placeholder i {
@@ -1483,9 +1459,6 @@ body.dark-mode #modal-assessment-access .alert-info {
 
 [data-bs-theme="dark"] .home-modern-gallery-slide {
     color: #e2e8f0;
-}
-[data-bs-theme="dark"] .home-modern-gallery-placeholder {
-    background: #05283c;
 }
 [data-bs-theme="dark"] .home-modern-gallery-slide-date {
     color: #7894a5;
@@ -1520,15 +1493,6 @@ body.dark-mode #modal-assessment-access .alert-info {
     height: 100%;
     object-fit: cover;
     display: block;
-}
-
-.home-modern-news-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--kp-light-blue-soft);
 }
 
 .home-modern-news-placeholder i {
@@ -1614,9 +1578,6 @@ body.dark-mode #modal-assessment-access .alert-info {
 
 [data-bs-theme="dark"] .home-modern-news-slide { color: #e2e8f0; }
 [data-bs-theme="dark"] .home-modern-news-slide-thumb { background: #05283c; }
-[data-bs-theme="dark"] .home-modern-news-placeholder {
-    background: var(--kp-dark-surface-raised);
-}
 [data-bs-theme="dark"] .home-modern-news-placeholder i { color: var(--kp-light-blue); }
 [data-bs-theme="dark"] .home-modern-news-slide-date { color: #7894a5; }
 [data-bs-theme="dark"] .home-modern-news-dots [data-bs-target] { background: #376f90; }
@@ -1660,28 +1621,58 @@ body.dark-mode #modal-assessment-access .alert-info {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: #85754E;
-    color: #fff;
+    position: relative;
+    overflow: hidden;
+    background: #D4A51F;
+    color: #FFFFFF;
     border: none;
     padding: 10px 22px;
-    border-radius: 12px;
+    border-radius: 14px;
     font-size: 14px;
     font-weight: 600;
+    line-height: 1.4;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(217, 144, 0, .3);
-    transition: background-color .15s, transform .15s, box-shadow .15s;
+    box-shadow: none;
+    transition: background-color .2s ease, border-color .2s ease,
+        box-shadow .2s ease, transform .2s ease;
+}
+
+.home-modern-assessment-btn i {
+    color: #FFFFFF;
+    font-size: 18px;
 }
 
 .home-modern-assessment-btn:hover,
 .home-modern-assessment-btn:focus-visible {
-    background: #6B5F3E;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(217, 144, 0, .4);
-    color: #fff;
+    background: #D4A51F;
+    box-shadow: none;
+    color: #FFFFFF;
 }
 
-[data-bs-theme="dark"] .home-modern-assessment-btn {
-    box-shadow: 0 4px 14px rgba(217, 144, 0, .24);
+[data-bs-theme="dark"] .home-modern-assessment-btn,
+body.dark .home-modern-assessment-btn,
+body.dark-mode .home-modern-assessment-btn {
+    background: #D4A51F;
+    border: none;
+    color: #FFFFFF;
+    box-shadow: none;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-btn i,
+body.dark .home-modern-assessment-btn i,
+body.dark-mode .home-modern-assessment-btn i {
+    color: #FFFFFF;
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-btn:hover,
+[data-bs-theme="dark"] .home-modern-assessment-btn:focus-visible,
+body.dark .home-modern-assessment-btn:hover,
+body.dark .home-modern-assessment-btn:focus-visible,
+body.dark-mode .home-modern-assessment-btn:hover,
+body.dark-mode .home-modern-assessment-btn:focus-visible {
+    background: #D4A51F;
+    color: #FFFFFF;
+    box-shadow: none;
 }
 
 /* =====================================================
@@ -1698,9 +1689,20 @@ body.dark-mode #modal-assessment-access .alert-info {
     align-items: flex-start;
     gap: 12px;
     padding: 14px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(0, 0, 0, .06);
     border-radius: 14px;
-    background: #f8fafc;
+    background: rgba(255, 255, 255, .82);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: background-color .2s ease, border-color .2s ease,
+        box-shadow .2s ease, transform .2s ease;
+}
+
+.home-modern-assessment-schedule:hover {
+    transform: translateY(-1px);
+    border-color: rgba(0, 0, 0, .08);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .10);
 }
 
 .home-modern-assessment-schedule-icon {
@@ -1711,8 +1713,9 @@ body.dark-mode #modal-assessment-access .alert-info {
     height: 38px;
     flex: 0 0 38px;
     border-radius: 11px;
-    background: var(--kp-light-blue-soft);
-    color: var(--kp-primary);
+    border: 1px solid rgba(199, 154, 43, .16);
+    background: rgba(199, 154, 43, .10);
+    color: #9A7117;
     font-size: 19px;
 }
 
@@ -1723,7 +1726,7 @@ body.dark-mode #modal-assessment-access .alert-info {
 
 .home-modern-assessment-schedule-title {
     margin-bottom: 7px;
-    color: #53565A;
+    color: #334155;
     font-size: 14px;
     font-weight: 700;
     line-height: 1.35;
@@ -1745,45 +1748,36 @@ body.dark-mode #modal-assessment-access .alert-info {
     font-size: 11px;
     font-weight: 700;
     line-height: 1;
+    border: 1px solid rgba(199, 154, 43, .14);
+    background: rgba(199, 154, 43, .10);
+    color: #806018;
 }
 
-.home-modern-assessment-status.available {
-    background: var(--kp-light-blue-muted);
-    color: var(--kp-primary);
-}
-
-.home-modern-assessment-status.upcoming {
-    background: var(--kp-light-blue-muted);
-    color: var(--kp-primary-dark);
-}
-
-.home-modern-assessment-status.overdue {
-    background: var(--kp-light-blue-muted);
-    color: var(--kp-primary-dark);
-}
-
+.home-modern-assessment-status.available,
+.home-modern-assessment-status.upcoming,
+.home-modern-assessment-status.overdue,
 .home-modern-assessment-status.no-deadline {
-    background: #e2e8f0;
-    color: #475569;
+    background: rgba(199, 154, 43, .10);
+    color: #806018;
 }
 
 .home-modern-assessment-due {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: #475569;
+    color: #64748b;
     font-size: 12px;
     font-weight: 600;
 }
 
 .home-modern-assessment-due.overdue,
 .home-modern-assessment-date.overdue {
-    color: var(--kp-primary-dark);
+    color: #806018;
 }
 
 .home-modern-assessment-date {
     margin-top: 5px;
-    color: #8A8D8F;
+    color: #64748b;
     font-size: 11px;
     line-height: 1.35;
 }
@@ -1800,66 +1794,162 @@ body.dark-mode #modal-assessment-access .alert-info {
     margin-top: 0;
 }
 
+#modal-assessment-access .modal-content {
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, .06);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+    color: #334155;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+#modal-assessment-access .modal-header,
+#modal-assessment-access .modal-footer {
+    border-color: rgba(0, 0, 0, .06);
+    background: transparent;
+}
+
+#modal-assessment-access .modal-title {
+    color: #334155;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+#modal-assessment-access .modal-title i,
+#modal-assessment-access .alert-info i {
+    color: #9A7117;
+}
+
+#modal-assessment-access .alert-info {
+    border-color: rgba(199, 154, 43, .14);
+    background: rgba(199, 154, 43, .08);
+    color: #475569;
+}
+
+#modal-assessment-access .btn-primary {
+    border-color: #B88920;
+    background: #C79A2B;
+    color: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .10);
+    transition: background-color .2s ease, border-color .2s ease,
+        box-shadow .2s ease, transform .2s ease;
+}
+
+#modal-assessment-access .btn-primary:hover,
+#modal-assessment-access .btn-primary:focus {
+    border-color: #A67B1B;
+    background: #B88920;
+    color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .14);
+    transform: translateY(-1px);
+}
+
 [data-bs-theme="dark"] #modal-assessment-access .modal-content,
 body.dark-mode #modal-assessment-access .modal-content {
-    border-color: rgba(148, 163, 184, .16);
-    background: var(--kp-dark-surface);
-    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, .08);
+    background: rgba(24, 36, 50, .96);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+    color: #F1F5F9;
+}
+
+[data-bs-theme="dark"] #modal-assessment-access .modal-header,
+[data-bs-theme="dark"] #modal-assessment-access .modal-footer,
+body.dark-mode #modal-assessment-access .modal-header,
+body.dark-mode #modal-assessment-access .modal-footer {
+    border-color: rgba(255, 255, 255, .08);
+    background: transparent;
+}
+
+[data-bs-theme="dark"] #modal-assessment-access .modal-title,
+body.dark-mode #modal-assessment-access .modal-title {
+    color: #F1F5F9;
+}
+
+[data-bs-theme="dark"] #modal-assessment-access .modal-title i,
+[data-bs-theme="dark"] #modal-assessment-access .alert-info i,
+body.dark-mode #modal-assessment-access .modal-title i,
+body.dark-mode #modal-assessment-access .alert-info i {
+    color: #D4AA3A;
+}
+
+[data-bs-theme="dark"] #modal-assessment-access .alert-info,
+body.dark-mode #modal-assessment-access .alert-info {
+    border-color: rgba(255, 255, 255, .08);
+    background: rgba(205, 164, 52, .10);
+    color: #CBD5E1;
 }
 
 [data-bs-theme="dark"] .home-modern-assessment-schedule,
 body.dark-mode .home-modern-assessment-schedule {
-    border-color: rgba(148, 163, 184, .16);
-    background: #05283c;
+    border-color: rgba(255, 255, 255, .08);
+    background: rgba(30, 44, 60, .90);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+}
+
+[data-bs-theme="dark"] .home-modern-assessment-schedule:hover,
+body.dark-mode .home-modern-assessment-schedule:hover {
+    border-color: rgba(255, 255, 255, .12);
+    background: rgba(34, 49, 66, .94);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .30);
 }
 
 [data-bs-theme="dark"] .home-modern-assessment-schedule-icon,
 body.dark-mode .home-modern-assessment-schedule-icon {
-    background: rgba(var(--kp-primary-rgb), .18);
-    color: var(--kp-light-blue);
+    border-color: rgba(205, 164, 52, .18);
+    background: rgba(205, 164, 52, .12);
+    color: #D4AA3A;
 }
 
 [data-bs-theme="dark"] .home-modern-assessment-schedule-title,
 body.dark-mode .home-modern-assessment-schedule-title {
-    color: #f1f5f9;
+    color: #F1F5F9;
 }
 
 [data-bs-theme="dark"] .home-modern-assessment-due,
 [data-bs-theme="dark"] .home-modern-assessment-date,
 body.dark-mode .home-modern-assessment-due,
 body.dark-mode .home-modern-assessment-date {
-    color: #94a3b8;
+    color: #CBD5E1;
 }
 
 [data-bs-theme="dark"] .home-modern-assessment-due.overdue,
 [data-bs-theme="dark"] .home-modern-assessment-date.overdue,
 body.dark-mode .home-modern-assessment-due.overdue,
 body.dark-mode .home-modern-assessment-date.overdue {
-    color: var(--kp-light-blue);
+    color: #D4AA3A;
 }
 
 [data-bs-theme="dark"] .home-modern-assessment-status.available,
-body.dark-mode .home-modern-assessment-status.available {
-    background: rgba(var(--kp-primary-rgb), .16);
-    color: var(--kp-light-blue);
-}
-
 [data-bs-theme="dark"] .home-modern-assessment-status.upcoming,
-body.dark-mode .home-modern-assessment-status.upcoming {
-    background: rgba(var(--kp-light-blue-rgb), .18);
-    color: var(--kp-light-blue);
-}
-
 [data-bs-theme="dark"] .home-modern-assessment-status.overdue,
-body.dark-mode .home-modern-assessment-status.overdue {
-    background: rgba(var(--kp-primary-rgb), .16);
-    color: var(--kp-light-blue);
+[data-bs-theme="dark"] .home-modern-assessment-status.no-deadline,
+body.dark-mode .home-modern-assessment-status.available,
+body.dark-mode .home-modern-assessment-status.upcoming,
+body.dark-mode .home-modern-assessment-status.overdue,
+body.dark-mode .home-modern-assessment-status.no-deadline {
+    border-color: rgba(205, 164, 52, .18);
+    background: rgba(205, 164, 52, .12);
+    color: #E5C76B;
 }
 
-[data-bs-theme="dark"] .home-modern-assessment-status.no-deadline,
-body.dark-mode .home-modern-assessment-status.no-deadline {
-    background: rgba(148, 163, 184, .14);
-    color: #cbd5e1;
+[data-bs-theme="dark"] #modal-assessment-access .btn-primary,
+body.dark-mode #modal-assessment-access .btn-primary {
+    border-color: rgba(255, 255, 255, .12);
+    background: linear-gradient(135deg, #CDA434, #B98B22);
+    color: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+}
+
+[data-bs-theme="dark"] #modal-assessment-access .btn-primary:hover,
+[data-bs-theme="dark"] #modal-assessment-access .btn-primary:focus,
+body.dark-mode #modal-assessment-access .btn-primary:hover,
+body.dark-mode #modal-assessment-access .btn-primary:focus {
+    border-color: rgba(255, 255, 255, .14);
+    background: #B88920;
+    color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .30);
 }
 
 @media (max-width: 575.98px) {

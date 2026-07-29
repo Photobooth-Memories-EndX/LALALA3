@@ -403,19 +403,6 @@
                 color: rgb(var(--kp-hero-completed-rgb));
             }
 
-            #btn-assessment-access.home-modern-assessment-btn {
-                background: #C79A2B;
-                border-color: #C79A2B;
-                color: #FFFFFF;
-            }
-
-            #btn-assessment-access.home-modern-assessment-btn:hover,
-            #btn-assessment-access.home-modern-assessment-btn:focus-visible {
-                background: #B8891F;
-                border-color: #C79A2B;
-                color: #FFFFFF;
-            }
-
             [data-bs-theme="dark"] .shared-learning-hero,
             body.dark-mode .shared-learning-hero {
                 box-shadow: 0 18px 42px rgba(0, 0, 0, .34);
