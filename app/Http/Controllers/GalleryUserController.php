@@ -10,10 +10,21 @@ class GalleryUserController extends Controller
 {
     public function index(Request $request)
     {
-        $q        = $request->input('q');
-        $uploader = $request->input('uploader');
-        $sort     = $request->input('sort', 'latest');
-        $category = $request->input('category');
+        $validated = $request->validate([
+            'q'         => ['nullable', 'string', 'max:100'],
+            'uploader'  => ['nullable', 'string', 'max:255'],
+            'category'  => ['nullable', 'string', 'max:255'],
+            'eventdate' => ['nullable', 'date_format:Y-m-d'],
+            'views'     => ['nullable', 'in:most_viewed,least_viewed'],
+            'sort'      => ['nullable', 'in:latest,oldest,az,za'],
+        ]);
+
+        $q         = trim($validated['q'] ?? '');
+        $uploader  = $validated['uploader'] ?? null;
+        $category  = $validated['category'] ?? null;
+        $eventdate = $validated['eventdate'] ?? null;
+        $views     = $validated['views'] ?? null;
+        $sort      = $validated['sort'] ?? 'latest';
 
         $query = EventPhoto::withCount('comments')
             ->where('active', 'Active');
@@ -28,6 +39,16 @@ class GalleryUserController extends Controller
 
         if ($category) {
             $query->where('category', $category);
+        }
+
+        if ($eventdate) {
+            $query->whereDate('eventdate', $eventdate);
+        }
+
+        if ($views === 'most_viewed') {
+            $query->orderByRaw('CAST(COALESCE(views, 0) AS UNSIGNED) DESC');
+        } elseif ($views === 'least_viewed') {
+            $query->orderByRaw('CAST(COALESCE(views, 0) AS UNSIGNED) ASC');
         }
 
         switch ($sort) {
