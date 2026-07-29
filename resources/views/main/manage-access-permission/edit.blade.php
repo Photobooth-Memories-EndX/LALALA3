@@ -40,6 +40,68 @@
         border-top: 1px solid #e6eaf0;
         border-radius: 0 0 14px 14px;
     }
+
+    .permission-page .permission-muted {
+        color: rgba(var(--tblr-muted-rgb, 102, 115, 130), 1);
+    }
+
+    .permission-page .permission-section-header {
+        background: #fff;
+    }
+
+    body[data-bs-theme="dark"] .permission-page .role-summary,
+    body.dark-mode .permission-page .role-summary {
+        background: var(--tblr-bg-surface, #182433);
+        border-color: var(--tblr-border-color, #25384d);
+        color: var(--tblr-body-color, #fcfdfe);
+    }
+
+    body[data-bs-theme="dark"] .permission-page .permission-module-section,
+    body.dark-mode .permission-page .permission-module-section {
+        background: var(--tblr-bg-surface, #182433);
+        border-color: var(--tblr-border-color, #25384d);
+        color: var(--tblr-body-color, #fcfdfe);
+    }
+
+    body[data-bs-theme="dark"] .permission-page .permission-section-header,
+    body.dark-mode .permission-page .permission-section-header {
+        background: var(--tblr-bg-surface, #182433);
+        border-color: var(--tblr-border-color, #25384d);
+        color: var(--tblr-body-color, #fcfdfe);
+    }
+
+    body[data-bs-theme="dark"] .permission-page .permission-card,
+    body.dark-mode .permission-page .permission-card {
+        background: var(--tblr-bg-surface-secondary, #1b293a);
+        border-color: var(--tblr-border-color, #33465f);
+        color: var(--tblr-body-color, #fcfdfe);
+    }
+
+    body[data-bs-theme="dark"] .permission-page .permission-card:hover,
+    body.dark-mode .permission-page .permission-card:hover {
+        border-color: var(--tblr-primary, #206bc4);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, .2);
+    }
+
+    body[data-bs-theme="dark"] .permission-page .permission-muted,
+    body.dark-mode .permission-page .permission-muted,
+    body[data-bs-theme="dark"] .permission-page .permission-key,
+    body.dark-mode .permission-page .permission-key {
+        color: var(--owl-text-tertiary, #bbbcbc);
+    }
+
+    body[data-bs-theme="dark"] .permission-page .permission-card .form-check-input:not(:checked),
+    body.dark-mode .permission-page .permission-card .form-check-input:not(:checked) {
+        background-color: var(--tblr-bg-surface, #182433);
+        border-color: var(--owl-border, #8a8d8f);
+    }
+
+    body[data-bs-theme="dark"] .permission-page .sticky-footer-action,
+    body.dark-mode .permission-page .sticky-footer-action {
+        background: var(--tblr-bg-surface, #182433);
+        border-color: var(--tblr-border-color, #25384d);
+        color: var(--tblr-body-color, #fcfdfe);
+    }
 </style>
 
 <div class="permission-page">
@@ -49,7 +111,7 @@
             <div class="row g-2 align-items-center">
                 <div class="col">
                     <h2 class="page-title mb-1">Edit Access Permission</h2>
-                    <div class="text-muted">
+                    <div class="permission-muted">
                         Configure Manage LMS modules for the <strong>{{ $roleName }}</strong> role.
                     </div>
                 </div>
@@ -73,17 +135,17 @@
                 <div class="role-summary p-3 mb-3">
                     <div class="row g-3 align-items-center">
                         <div class="col-md-4">
-                            <div class="text-muted small">Role ID</div>
+                            <div class="permission-muted small">Role ID</div>
                             <div class="fw-bold">Role {{ $role }}</div>
                         </div>
 
                         <div class="col-md-4">
-                            <div class="text-muted small">Role Name</div>
+                            <div class="permission-muted small">Role Name</div>
                             <div class="fw-bold">{{ $roleName }}</div>
                         </div>
 
                         <div class="col-md-4">
-                            <div class="text-muted small">Effect</div>
+                            <div class="permission-muted small">Effect</div>
                             <div class="fw-bold">
                                 Applies to all user roles. {{ $roleName }}.
                             </div>
@@ -97,11 +159,11 @@
                     $debuggerModules = collect($modules)->only($debuggerModuleKeys);
                 @endphp
 
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white">
+                <div class="card permission-module-section border-0 shadow-sm">
+                    <div class="card-header permission-section-header">
                         <div>
                             <h3 class="card-title mb-1">Module Permission</h3>
-                            <div class="text-muted small">
+                            <div class="permission-muted small">
                                Select the modules this role can access.
                             </div>
                         </div>
@@ -139,10 +201,10 @@
                         </div>
                     </div>
 
-                    <div class="card-header bg-white border-top">
+                    <div class="card-header permission-section-header border-top">
                         <div>
                             <h3 class="card-title mb-1">Debugger Tools</h3>
-                            <div class="text-muted small">
+                            <div class="permission-muted small">
                                 Configure developer and QA tools available for this role.
                             </div>
                         </div>
@@ -182,7 +244,7 @@
 
                     <div class="sticky-footer-action p-3">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                            <div class="text-muted small">
+                            <div class="permission-muted small">
                                 Changes will automatically apply to all users with the role <strong>{{ $roleName }}</strong>.
                             </div>
 
