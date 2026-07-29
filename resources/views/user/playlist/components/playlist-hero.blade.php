@@ -24,7 +24,7 @@
                 <div class="row g-2">
 
                     <div class="col-6">
-                        <div class="card border-0 bg-primary-lt">
+                        <div class="card border-0 bg-primary-lt playlist-stat-card">
                             <div class="card-body text-center">
 
                                 <div class="h1 mb-1 text-primary">
@@ -40,7 +40,7 @@
                     </div>
 
                     <div class="col-6">
-                        <div class="card border-0 bg-success-lt">
+                        <div class="card border-0 bg-success-lt playlist-stat-card">
                             <div class="card-body text-center">
 
                                 <div class="h1 mb-1 text-success">

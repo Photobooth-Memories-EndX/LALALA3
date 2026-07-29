@@ -94,34 +94,34 @@
     }
 
     /* KOTAK STATISTIK HIJAU (21 Playlists & 217 Contents) */
-    .playlist-hero .card,
-    .playlist-hero .bg-surface,
-    .playlist-hero .col-auto .card,
-    .playlist-hero div[class*="rounded"] {
+    .playlist-hero .playlist-stat-card,
+    .playlist-hero .playlist-stat-card > .card-body {
         background: #22c55e !important; /* Warna Hijau Emerald */
+        border-radius: 16px !important;
+    }
+
+    .playlist-hero .playlist-stat-card {
         border: none !important;
         box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25) !important;
-        border-radius: 12px !important;
+        overflow: hidden;
     }
 
     /* Angka & Label di dalam Kotak Hijau Tetap Putih */
-    .playlist-hero .card *,
-    .playlist-hero .col-auto .card *,
-    .playlist-hero div[class*="rounded"] * {
+    .playlist-hero .playlist-stat-card * {
         color: #ffffff !important;
     }
 
-    .playlist-hero .card .h1, 
-    .playlist-hero .card .h2, 
-    .playlist-hero .card .display-6,
-    .playlist-hero .card .fw-bold {
+    .playlist-hero .playlist-stat-card .h1,
+    .playlist-hero .playlist-stat-card .h2,
+    .playlist-hero .playlist-stat-card .display-6,
+    .playlist-hero .playlist-stat-card .fw-bold {
         font-size: 1.75rem;
         font-weight: 800 !important;
     }
 
-    .playlist-hero .card .small,
-    .playlist-hero .card span,
-    .playlist-hero .card .text-muted {
+    .playlist-hero .playlist-stat-card .small,
+    .playlist-hero .playlist-stat-card span,
+    .playlist-hero .playlist-stat-card .text-muted {
         font-weight: 700 !important;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -238,7 +238,7 @@
     .playlist-card-placeholder {
         width: 100%;
         height: 180px;
-        background: #D9D9D6;
+        background: #C7C9C8;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -264,7 +264,7 @@
 
     .playlist-card-placeholder-text {
         font-size: 13px;
-        color: #8A8D8F;
+        color: #4A4E50;
     }
 
     .playlist-title {
@@ -304,17 +304,50 @@
         color: #cbd5e1 !important;
     }
 
+    [data-bs-theme="dark"] .playlist-hero .playlist-stat-card,
+    [data-bs-theme="dark"] .playlist-hero .playlist-stat-card > .card-body,
+    [data-theme="dark"] .playlist-hero .playlist-stat-card,
+    [data-theme="dark"] .playlist-hero .playlist-stat-card > .card-body,
+    body.theme-dark .playlist-hero .playlist-stat-card,
+    body.theme-dark .playlist-hero .playlist-stat-card > .card-body,
+    body.dark-mode .playlist-hero .playlist-stat-card,
+    body.dark-mode .playlist-hero .playlist-stat-card > .card-body,
+    body.dark .playlist-hero .playlist-stat-card,
+    body.dark .playlist-hero .playlist-stat-card > .card-body {
+        background: #22c55e !important;
+    }
+
     [data-bs-theme="dark"] .playlist-card-placeholder,
+    [data-theme="dark"] .playlist-card-placeholder,
     body.theme-dark .playlist-card-placeholder,
+    body.dark-mode .playlist-card-placeholder,
     body.dark .playlist-card-placeholder {
         background: #53565A;
     }
 
     [data-bs-theme="dark"] .playlist-card-placeholder-icon,
+    [data-theme="dark"] .playlist-card-placeholder-icon,
     body.theme-dark .playlist-card-placeholder-icon,
+    body.dark-mode .playlist-card-placeholder-icon,
     body.dark .playlist-card-placeholder-icon {
         background: #53565A;
         border-color: rgba(255, 255, 255, .12);
+    }
+
+    [data-bs-theme="dark"] .playlist-card-placeholder-icon i,
+    [data-theme="dark"] .playlist-card-placeholder-icon i,
+    body.theme-dark .playlist-card-placeholder-icon i,
+    body.dark-mode .playlist-card-placeholder-icon i,
+    body.dark .playlist-card-placeholder-icon i {
+        color: #8ECDF4;
+    }
+
+    [data-bs-theme="dark"] .playlist-card-placeholder-text,
+    [data-theme="dark"] .playlist-card-placeholder-text,
+    body.theme-dark .playlist-card-placeholder-text,
+    body.dark-mode .playlist-card-placeholder-text,
+    body.dark .playlist-card-placeholder-text {
+        color: #E2E8F0;
     }
 
     @media (max-width: 991.98px) {
