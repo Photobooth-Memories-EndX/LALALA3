@@ -14,7 +14,7 @@
     --kp-dark-green: #05507D;
     --kp-golden-orange: #FFB81C;
     --kp-golden-orange-hover: #85754E;
-    --kp-dark-page: #53565A;
+    --kp-dark-page: var(--tblr-body-bg, #111827);
     --kp-dark-surface: #53565A;
     --kp-dark-surface-raised: #53565A;
 }
@@ -25,18 +25,18 @@
 ===================================================== */
 
 /* Page background */
-.page-body {
+.page-body.home-modern-page {
     background: #fff;
     min-height: 100vh;
 }
 
-[data-bs-theme="dark"] .page-body,
-body.dark-mode .page-body,
-body.theme-dark .page-body {
+[data-bs-theme="dark"] .page-body.home-modern-page,
+body.dark-mode .page-body.home-modern-page,
+body.theme-dark .page-body.home-modern-page {
     background: var(--tblr-body-bg, #111827);
 }
 
-.container-fluid {
+.home-modern-page .container-fluid {
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
@@ -968,7 +968,7 @@ body.dark-mode .home-modern-text-primary {
    DARK MODE
 ===================================================== */
 
-[data-bs-theme="dark"] .page-body {
+[data-bs-theme="dark"] .page-body.home-modern-page {
     background: var(--kp-dark-page);
 }
 

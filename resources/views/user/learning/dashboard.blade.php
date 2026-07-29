@@ -10,7 +10,7 @@
 
 @endphp
 
-<div class="page-body">
+<div class="page-body owl-unified-theme-page learning-dashboard-page">
     <div class="container-xl">
 
         <div class="page-header d-print-none mb-3">

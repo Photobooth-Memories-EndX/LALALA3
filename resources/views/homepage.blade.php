@@ -12,7 +12,7 @@
         $content_pdf   = $content->filter(fn($c) => $c->type === 'Document')->take(6);
     @endphp
 
-    <div class="page-body">
+    <div class="page-body owl-unified-theme-page home-modern-page">
         <div class="container-xl py-4">
 
             {{-- ── Dashboard Header ── --}}

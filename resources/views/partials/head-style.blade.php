@@ -65,6 +65,23 @@
         --owl-shadow-lg: 0 18px 70px rgba(83, 86, 90, 0.32);
     }
 
+    /*
+     * Home and My Learning paint their content with Tabler's dark page
+     * background. Keep the transparent page/page-wrapper margin area and the
+     * responsive navigation on that same theme source instead of the global
+     * gray shell used by other pages.
+     */
+    body[data-bs-theme="dark"]:has(.owl-unified-theme-page),
+    body.dark-mode:has(.owl-unified-theme-page) {
+        --owl-body-bg: var(--tblr-body-bg);
+    }
+
+    body[data-bs-theme="dark"]:has(.owl-unified-theme-page) .navbar-vertical,
+    body.dark-mode:has(.owl-unified-theme-page) .navbar-vertical {
+        background-color: var(--tblr-body-bg) !important;
+        border-color: var(--tblr-border-color) !important;
+    }
+
     body {
         font-feature-settings: "cv03", "cv04", "cv11";
         color: var(--owl-body-color);
