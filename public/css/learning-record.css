@@ -393,6 +393,29 @@ tbody.record-sort-animate tr.record-row {
 
 .fast-filter-toolbar .learning-quick-dropdowns .dropdown-menu {
     z-index: 1050;
+    min-width: 100%;
+    box-sizing: border-box;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(1) .dropdown-menu {
+    width: 125px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-menu {
+    width: 220px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(3) .dropdown-menu {
+    width: 110px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(4) .dropdown-menu {
+    width: 140px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown-item {
+    min-width: 0;
+    white-space: nowrap;
 }
 
 .record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control {
@@ -481,6 +504,7 @@ tbody.record-sort-animate tr.record-row {
 
 .learning-quick-dropdown-scroll {
     max-height: 260px;
+    overflow-x: hidden;
     overflow-y: auto;
 }
 
