@@ -5,11 +5,17 @@
 ])
 
 @php
+    $normalizedType = strtolower((string) $type);
+
     $class = match (true) {
-        $type === 'Playlist'                                        => 'bg-purple-lt text-purple',
-        in_array($type, ['Video', 'YouTube'], true)                 => 'bg-blue-lt text-blue',
-        in_array($type, ['Quiz', 'Assessment', 'Assesment'], true)  => 'bg-indigo-lt text-indigo',
-        default                                                     => 'bg-orange-lt text-orange', // Document, dll.
+        $normalizedType === 'playlist'                              => 'bg-green',
+        in_array($normalizedType, ['video', 'youtube'], true)       => 'bg-yellow text-white',
+        in_array($normalizedType, ['document', 'pdf', 'sop/regulation'], true)
+                                                                    => 'bg-cyan',
+        $normalizedType === 'content'                               => 'bg-red',
+        in_array($normalizedType, ['quiz', 'assessment', 'assesment'], true)
+                                                                    => 'bg-indigo-lt text-indigo',
+        default                                                     => 'bg-orange-lt text-orange',
     };
 @endphp
 

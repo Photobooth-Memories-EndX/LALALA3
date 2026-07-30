@@ -20,6 +20,14 @@
         ? $periodStart . ' - ' . $periodEnd
         : ($periodStart ?: ($periodEnd ?: '-'));
     $playlistDuration = \App\Support\DurationFormatter::fromSeconds((int) ($playlist->total_duration_seconds ?? 0));
+    $contentType = strtolower((string) ($content->type ?? 'Content'));
+    $contentTypeBadgeClass = match (true) {
+        in_array($contentType, ['video', 'youtube'], true)                 => 'bg-yellow text-white',
+        in_array($contentType, ['document', 'pdf', 'sop/regulation'], true) => 'bg-cyan',
+        $contentType === 'playlist'                                       => 'bg-green',
+        $contentType === 'content'                                        => 'bg-red',
+        default                                                           => 'bg-secondary',
+    };
 @endphp
 
 <div class="card border-0 shadow-sm overflow-hidden mb-3 view-hero-card">
@@ -28,7 +36,7 @@
             <div class="view-hero-content text-white w-100">
 
                 <div class="view-hero-copy">
-                    <span class="view-hero-badge mb-2">
+                    <span class="view-hero-badge bg-green mb-2">
                         <i class="fas fa-layer-group me-1"></i>
                         Playlist
                     </span>
@@ -64,7 +72,7 @@
                         <span class="badge bg-white text-primary">
                             {{ $content->classification->classification_name ?? 'Learning' }}
                         </span>
-                        <span class="badge bg-success">{{ $content->type ?? 'Content' }}</span>
+                        <span class="badge {{ $contentTypeBadgeClass }}">{{ $content->type ?? 'Content' }}</span>
                         <span class="badge bg-dark bg-opacity-75">{{ number_format($playlistProgress) }}% Progress</span>
                     </div>
                 </div>

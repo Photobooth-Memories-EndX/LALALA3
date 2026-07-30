@@ -9,6 +9,8 @@
     'program' => 'optional',
     'month' => null,
     'year' => 'unknown',
+    'publishedAt' => null,
+    'deadlineAt' => null,
     'active' => '-',
     'statusLabel' => 'ongoing',
     'thumbnail' => null,
@@ -31,7 +33,7 @@
         // Card Playlist memakai desain yang sama seperti Video/Document, hanya berbeda konten.
         $typeLabel       = 'Playlist';
         $placeholderIcon = 'ti ti-playlist';
-        $typeBadgeClass  = 'bg-teal text-white';
+        $typeBadgeClass  = 'bg-green';
         $moduleCount     = (int) ($moduleCount ?? 0);
         $completedCount  = (int) ($completedCount ?? 0);
         $continueUrl     = !blank($continueUrl) ? $continueUrl : null;
@@ -46,6 +48,12 @@
         $program = strtolower($program ?? 'optional');
         $month = $month ?? null;
         $year = $year ?? 'unknown';
+        $publishedDate = filled($publishedAt)
+            ? \Carbon\Carbon::parse($publishedAt)
+            : null;
+        $deadlineDate = filled($deadlineAt)
+            ? \Carbon\Carbon::parse($deadlineAt)->startOfDay()
+            : null;
         $active = $active ?? '-';
         $statusLabel = $statusLabel ?? 'ongoing';
         $thumbnail = $thumbnail ?? null;
@@ -55,10 +63,18 @@
 
         if (str_contains($typeLower, 'video') || str_contains($typeLower, 'youtube')) {
             $placeholderIcon = 'ti ti-video';
-            $typeBadgeClass = 'bg-red text-white';
-        } elseif (str_contains($typeLower, 'pdf') || str_contains($typeLower, 'doc')) {
-            $placeholderIcon = 'ti ti-file-description';
             $typeBadgeClass = 'bg-yellow text-white';
+        } elseif (
+            str_contains($typeLower, 'pdf')
+            || str_contains($typeLower, 'doc')
+            || str_contains($typeLower, 'sop')
+            || str_contains($typeLower, 'regulation')
+        ) {
+            $placeholderIcon = 'ti ti-file-description';
+            $typeBadgeClass = 'bg-cyan';
+        } elseif ($typeLower === 'content') {
+            $placeholderIcon = 'ti ti-book';
+            $typeBadgeClass = 'bg-red';
         } else {
             $placeholderIcon = 'ti ti-book';
             $typeBadgeClass = 'bg-blue text-white';
@@ -133,39 +149,32 @@
                 </span>
             </div>
         @else
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                <span class="badge bg-blue-lt text-blue">
-                    {{ ucfirst($program) }}
-                </span>
-
-                @if ($month)
-                    <span class="badge bg-purple-lt text-purple">
-                        {{ $month }}
-                    </span>
-                @endif
-
-                <span class="badge bg-gray-lt text-gray">
-                    {{ $year }}
-                </span>
-
-                <span class="badge bg-green-lt text-green">
-                    {{ $statusLabel }}
-                </span>
+            <div class="d-grid gap-1 small text-muted mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-calendar-plus flex-shrink-0"></i>
+                    <span>Published: {{ $publishedDate ? $publishedDate->format('d M Y') : '-' }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-calendar-due flex-shrink-0"></i>
+                    <span>Deadline: {{ $deadlineDate ? $deadlineDate->format('d M Y') : 'No deadline' }}</span>
+                </div>
+            </div>
 
                 {{-- Badge Playlist asal — hanya tampil bila content berasal dari Playlist.
                      Bila lebih dari satu, tampilkan satu nama + "+N" agar card tetap ringkas. --}}
                 @if ($playlistNames->isNotEmpty())
-                    <span class="badge bg-teal-lt text-teal" title="Playlist: {{ $playlistNames->implode(', ') }}">
-                        <i class="ti ti-playlist me-1"></i>{{ $playlistNames->first() }}
-                    </span>
-
-                    @if ($playlistNames->count() > 1)
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                         <span class="badge bg-teal-lt text-teal" title="Playlist: {{ $playlistNames->implode(', ') }}">
-                            +{{ $playlistNames->count() - 1 }}
+                            <i class="ti ti-playlist me-1"></i>{{ $playlistNames->first() }}
                         </span>
-                    @endif
+
+                        @if ($playlistNames->count() > 1)
+                            <span class="badge bg-teal-lt text-teal" title="Playlist: {{ $playlistNames->implode(', ') }}">
+                                +{{ $playlistNames->count() - 1 }}
+                            </span>
+                        @endif
+                    </div>
                 @endif
-            </div>
         @endif
 
         <div class="mb-2">

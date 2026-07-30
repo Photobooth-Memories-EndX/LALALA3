@@ -40,7 +40,7 @@
 
     <div class="card-body">
         <div class="d-flex align-items-center mb-2">
-            <span class="badge bg-blue-lt">{{ $item->type }}</span>
+            <span class="badge bg-yellow text-white">{{ $item->type }}</span>
             <span class="ms-auto text-muted small">
                 <i class="ti ti-clock"></i>
                 {{ \App\Support\DurationFormatter::format($item->duration) }}

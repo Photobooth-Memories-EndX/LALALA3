@@ -6,8 +6,12 @@
 @php
     $type = strtolower((string) ($certificate->certificate_type ?? 'content'));
     $typeStyles = [
-        'content' => 'bg-blue-lt text-blue',
-        'playlist' => 'bg-purple-lt text-purple',
+        'playlist' => 'bg-green',
+        'video' => 'bg-yellow text-white',
+        'youtube' => 'bg-yellow text-white',
+        'document' => 'bg-cyan',
+        'pdf' => 'bg-cyan',
+        'content' => 'bg-red',
         'global' => 'bg-orange-lt text-orange',
     ];
     $setting = $certificate->certificateSetting;

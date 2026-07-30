@@ -5,8 +5,10 @@
 
 @php
     $class = match (strtolower((string) $type)) {
-        'trainingplan', 'playlist' => 'bg-blue-lt text-blue',
-        'content'                  => 'bg-green-lt text-green',
+        'trainingplan', 'playlist' => 'bg-green',
+        'video', 'youtube'         => 'bg-yellow text-white',
+        'document', 'pdf'          => 'bg-cyan',
+        'content'                  => 'bg-red',
         'global'                   => 'bg-purple-lt text-purple',
         'remedial'                 => 'bg-orange-lt text-orange',
         default                    => 'bg-secondary-lt text-secondary',

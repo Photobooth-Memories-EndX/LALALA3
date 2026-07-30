@@ -442,8 +442,20 @@ tbody.record-sort-animate tr.record-row {
 }
 
 .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-toggle {
-    max-width: 190px;
+    width: max-content;
+    min-width: 165px;
+    max-width: 260px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown-toggle {
+    white-space: nowrap;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown-toggle .fw-semibold {
+    display: block;
+    min-width: 0;
     overflow: hidden;
+    white-space: nowrap;
     text-overflow: ellipsis;
 }
 
@@ -459,8 +471,9 @@ tbody.record-sort-animate tr.record-row {
     }
 
     .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-toggle {
-        width: 165px;
-        max-width: 165px;
+        width: max-content;
+        min-width: 165px;
+        max-width: 260px;
     }
 
     .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(3) .dropdown-toggle {
@@ -762,19 +775,14 @@ tbody.record-sort-animate tr.record-row {
         padding-left: 6px;
     }
 
-    .fast-filter-toolbar .learning-quick-dropdowns .dropdown-toggle {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
     .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(1) .dropdown-toggle {
         width: 84px;
     }
 
     .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-toggle {
-        width: 138px;
-        max-width: 138px;
+        width: max-content;
+        min-width: 138px;
+        max-width: 190px;
     }
 
     .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(3) .dropdown-toggle {

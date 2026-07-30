@@ -60,6 +60,8 @@
                                 :program="$program"
                                 :month="$month"
                                 :year="$year"
+                                :published-at="$content->created_at"
+                                :deadline-at="$content->date"
                                 :active="$list->active ?? '-'"
                                 :status-label="$statusLabel"
                                 :thumbnail="$thumbnail"

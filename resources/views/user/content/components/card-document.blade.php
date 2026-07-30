@@ -1,4 +1,12 @@
 @php
+    $contentType = strtolower((string) ($item->type ?? 'Document'));
+    $typeBadgeClass = match (true) {
+        in_array($contentType, ['document', 'pdf', 'sop/regulation'], true) => 'bg-cyan',
+        $contentType === 'playlist'                                        => 'bg-green',
+        $contentType === 'content'                                         => 'bg-red',
+        default                                                            => 'bg-cyan',
+    };
+
     $thumbnailPath = public_path('storage/files/content/' . $item->id . '/thumb.jpg');
     $thumbnail = file_exists($thumbnailPath)
         ? '/storage/files/content/' . $item->id . '/thumb.jpg'
@@ -35,7 +43,7 @@
 
     <div class="card-body">
         <div class="d-flex align-items-center mb-2">
-            <span class="badge bg-green-lt">{{ $item->type ?? 'Document' }}</span>
+            <span class="badge {{ $typeBadgeClass }}">{{ $item->type ?? 'Document' }}</span>
             <span class="ms-auto text-muted small">
                 <i class="ti ti-file-text"></i>
                 Document
