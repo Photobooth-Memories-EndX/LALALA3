@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
 {{-- Learning Record: style tabel client-side (dipisah — clean code). --}}
 <link rel="stylesheet" href="{{ asset('css/learning-record.css') }}">
-@include('user.learning.partials.assessment-style')
+<link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}">
 @include('user.learning.partials.certificate-style')
 @include('user.learning.partials.hero-style')
 
@@ -517,86 +517,6 @@
         margin: 0 !important;
         flex: 0 0 auto;
         font-size: 1.05rem;
-    }
-
-    /* Compact semantic actions used by the Assessment table. */
-    .assessment-action-btn {
-        display: inline-flex;
-        width: 108px;
-        min-width: 108px;
-        min-height: 34px;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 0 12px;
-        border-radius: 10px !important;
-        font-size: 13px;
-        font-weight: 600;
-        line-height: 1;
-        white-space: nowrap;
-        transition:
-            transform .18s ease,
-            box-shadow .18s ease,
-            color .18s ease,
-            background-color .18s ease,
-            border-color .18s ease;
-    }
-
-    .assessment-action-btn > i {
-        margin: 0;
-        flex: 0 0 auto;
-        font-size: 1rem;
-    }
-
-    .btn-assessment-start {
-        border-color: #16A34A !important;
-        background: linear-gradient(135deg, #22C55E, #16A34A) !important;
-        color: #fff !important;
-        box-shadow: 0 5px 12px rgba(22, 163, 74, .20);
-    }
-
-    .btn-assessment-start:hover,
-    .btn-assessment-start:focus {
-        border-color: #15803D !important;
-        background: linear-gradient(135deg, #20B957, #15803D) !important;
-        color: #fff !important;
-        box-shadow: 0 8px 16px rgba(22, 163, 74, .26);
-        transform: translateY(-1px);
-    }
-
-    .btn-assessment-remedial {
-        border-color: #EA580C !important;
-        background: linear-gradient(135deg, #F59E0B, #EA580C) !important;
-        color: #fff !important;
-        box-shadow: 0 5px 12px rgba(234, 88, 12, .20);
-    }
-
-    .btn-assessment-remedial:hover,
-    .btn-assessment-remedial:focus {
-        border-color: #C2410C !important;
-        background: linear-gradient(135deg, #E78C08, #C2410C) !important;
-        color: #fff !important;
-        box-shadow: 0 8px 16px rgba(234, 88, 12, .26);
-        transform: translateY(-1px);
-    }
-
-    .btn-assessment-completed {
-        border-color: #CBD5E1 !important;
-        background: #fff !important;
-        color: #64748B !important;
-    }
-
-    .btn-assessment-unavailable {
-        border-color: #E2E8F0 !important;
-        background: #F1F5F9 !important;
-        color: #94A3B8 !important;
-    }
-
-    .btn-assessment-completed:disabled,
-    .btn-assessment-unavailable:disabled {
-        opacity: 1;
-        box-shadow: none;
-        transform: none;
     }
 
     .text-white-75 {

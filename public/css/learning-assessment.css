@@ -1,0 +1,661 @@
+/**
+ * My Learning — Assessment
+ * Assessment-specific filter, table, modal, action, responsive, and dark-mode UI.
+ */
+
+.assessment-card {
+    overflow: visible !important;
+}
+
+.assessment-filter-shell,
+.assessment-fast-filter-section {
+    width: 100%;
+}
+
+.assessment-fast-filter-section {
+    overflow: visible;
+    container-name: assessment-fast-filter;
+    container-type: inline-size;
+}
+
+.assessment-fast-filter-toolbar {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow: visible;
+}
+
+.assessment-quick-dropdowns {
+    display: flex;
+    width: auto;
+    min-width: 0;
+    align-items: center;
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    gap: 8px;
+}
+
+.assessment-filter-dropdown {
+    position: relative;
+    flex: 0 1 auto;
+    overflow: visible;
+}
+
+.assessment-quick-dropdowns .dropdown-menu {
+    z-index: 1050;
+    min-width: 100%;
+    box-sizing: border-box;
+}
+
+.assessment-filter-dropdown-type .dropdown-menu {
+    width: 140px;
+}
+
+.assessment-filter-dropdown-status .dropdown-menu {
+    width: 155px;
+}
+
+.assessment-filter-dropdown-year .dropdown-menu {
+    width: 110px;
+}
+
+.assessment-filter-dropdown-month .dropdown-menu {
+    width: 140px;
+}
+
+.assessment-quick-dropdowns .dropdown-item {
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.assessment-quick-dropdown-scroll {
+    max-height: 260px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.assessment-filter-shell .assessment-fast-filter-control {
+    display: inline-flex;
+    min-height: 40px;
+    height: 40px;
+    align-items: center;
+    padding: 0 10px;
+    border: 1px solid var(--tblr-border-color, #dbe0e6) !important;
+    border-radius: 8px !important;
+    background: var(--tblr-bg-surface, #fff) !important;
+    color: var(--tblr-body-color, #475569) !important;
+    box-shadow: none !important;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transform: none !important;
+}
+
+.assessment-filter-shell .assessment-fast-filter-control:hover {
+    border-color: rgba(5, 80, 125, 0.45) !important;
+    background: var(--tblr-bg-surface-secondary, #f4f7fa) !important;
+    color: var(--tblr-primary, #05507d) !important;
+}
+
+.assessment-filter-shell .assessment-fast-filter-control:focus,
+.assessment-filter-shell .assessment-fast-filter-control:focus-visible,
+.assessment-filter-shell .assessment-fast-filter-control.active {
+    border-color: var(--tblr-primary, #05507d) !important;
+    background: rgba(5, 80, 125, 0.08) !important;
+    color: var(--tblr-primary, #05507d) !important;
+}
+
+.assessment-filter-shell .assessment-fast-filter-control .fw-semibold {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.assessment-filter-dropdown-type .assessment-fast-filter-control {
+    width: max-content;
+    min-width: 105px;
+    max-width: 165px;
+}
+
+.assessment-filter-dropdown-status .assessment-fast-filter-control {
+    width: max-content;
+    min-width: 110px;
+    max-width: 175px;
+}
+
+.assessment-filter-dropdown-year .assessment-fast-filter-control {
+    width: max-content;
+    min-width: 100px;
+    max-width: 120px;
+}
+
+.assessment-filter-dropdown-month .assessment-fast-filter-control {
+    width: max-content;
+    min-width: 110px;
+    max-width: 150px;
+}
+
+.assessment-toolbar-search {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 180px;
+}
+
+.assessment-toolbar-search .input-icon,
+.assessment-toolbar-search .form-control {
+    width: 100%;
+    min-width: 0;
+}
+
+.assessment-toolbar-search .form-control {
+    min-height: 40px;
+    height: 40px;
+    border-radius: 8px;
+}
+
+.assessment-filter-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.assessment-filter-actions .assessment-filter-action-btn {
+    position: relative;
+    display: inline-flex;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 40px;
+    padding: 0;
+    border-radius: 8px !important;
+    line-height: 1;
+}
+
+.assessment-filter-actions .assessment-filter-action-btn > i {
+    margin: 0 !important;
+    font-size: 18px;
+    line-height: 1;
+}
+
+#assessmentMoreFiltersCount {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border: 2px solid var(--tblr-bg-surface, #fff);
+    border-radius: 999px;
+    font-size: 10px;
+    line-height: 14px;
+}
+
+@container assessment-fast-filter (min-width: 680px) and (max-width: 899.98px) {
+    .assessment-fast-filter-toolbar,
+    .assessment-quick-dropdowns {
+        gap: 6px;
+    }
+
+    .assessment-filter-shell .assessment-fast-filter-control {
+        padding-right: 6px;
+        padding-left: 6px;
+    }
+
+    .assessment-filter-dropdown-type .assessment-fast-filter-control {
+        min-width: 84px;
+        max-width: 115px;
+    }
+
+    .assessment-filter-dropdown-status .assessment-fast-filter-control {
+        min-width: 96px;
+        max-width: 130px;
+    }
+
+    .assessment-filter-dropdown-year .assessment-fast-filter-control {
+        min-width: 78px;
+        max-width: 85px;
+    }
+
+    .assessment-filter-dropdown-month .assessment-fast-filter-control {
+        min-width: 90px;
+        max-width: 110px;
+    }
+
+    .assessment-filter-actions {
+        gap: 6px;
+    }
+}
+
+@container assessment-fast-filter (max-width: 679.98px) {
+    .assessment-fast-filter-toolbar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .assessment-quick-dropdowns {
+        width: 100%;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+    }
+
+    .assessment-filter-dropdown {
+        min-width: 0;
+        flex: 1 1 calc(50% - 4px);
+    }
+
+    .assessment-filter-dropdown .assessment-fast-filter-control {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        justify-content: space-between;
+    }
+
+    .assessment-toolbar-search {
+        width: 100%;
+        min-width: 100%;
+        flex: 1 1 100%;
+    }
+
+    .assessment-filter-actions {
+        justify-content: flex-start;
+    }
+}
+
+/* More Filters modal */
+.assessment-filter-modal {
+    border: 0;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.assessment-more-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    max-height: calc(100vh - 220px);
+    padding: 0 1.5rem;
+    overflow-y: auto;
+}
+
+.assessment-filter-section {
+    min-width: 0;
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid var(--tblr-border-color, #e6e7e9);
+}
+
+.assessment-filter-section:nth-child(odd) {
+    padding-left: 0;
+    border-right: 1px solid var(--tblr-border-color, #e6e7e9);
+}
+
+.assessment-filter-section:nth-child(even) {
+    padding-right: 0;
+}
+
+.assessment-filter-title {
+    margin-bottom: 0.75rem;
+    color: var(--tblr-body-color, #1f2937);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.assessment-filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
+
+.assessment-filter-options .form-check {
+    min-width: 5.5rem;
+    margin: 0;
+}
+
+/* Assessment DataTable */
+.assessment-table {
+    min-width: 900px;
+}
+
+.assessment-table th,
+.assessment-table td {
+    vertical-align: middle;
+}
+
+.assessment-table tbody tr.assessment-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.assessment-table tbody tr.assessment-row > td {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.assessment-table tbody tr.assessment-row:hover {
+    --tblr-table-accent-bg: var(--tblr-bg-surface-secondary, #f8fafc);
+}
+
+.assessment-table tbody tr.assessment-row:hover > td {
+    background-color: var(--tblr-bg-surface-secondary, #f8fafc);
+}
+
+.assessment-title {
+    color: var(--tblr-body-color, #1f2937);
+    line-height: 1.25;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+
+.assessment-title-link,
+.assessment-title-link:visited {
+    display: inline-block;
+    color: var(--tblr-body-color, #1f2937);
+    cursor: pointer;
+}
+
+.assessment-row:hover .assessment-title-link,
+.assessment-title-link:hover,
+.assessment-title-link:focus {
+    color: var(--tblr-primary, #206bc4);
+    text-decoration-color: currentColor;
+}
+
+.assessment-subtitle {
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+.assessment-type-badge,
+.assessment-status-badge {
+    display: inline-flex;
+    min-height: 24px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.assessment-type-badge {
+    min-width: 68px;
+}
+
+.assessment-status-badge {
+    min-width: 82px;
+}
+
+.assessment-sort-heading {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.assessment-table .record-sort-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    vertical-align: middle;
+}
+
+.assessment-table .record-sort-icons {
+    display: inline-flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    color: #d9d9d6;
+    font-size: 7px;
+    line-height: 0.9;
+    opacity: 0.8;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.assessment-table.dataTable thead th.assessment-sort-heading::before,
+.assessment-table.dataTable thead th.assessment-sort-heading::after {
+    display: none !important;
+}
+
+.assessment-sort-heading:hover .record-sort-icons {
+    color: #64748b;
+    opacity: 1;
+}
+
+.assessment-sort-heading.is-sorted {
+    color: var(--tblr-primary, #206bc4);
+}
+
+.assessment-sort-heading.is-sorted .record-sort-icons span:not(.active) {
+    display: none;
+}
+
+.assessment-sort-heading .record-sort-icons span.active {
+    color: var(--tblr-primary, #206bc4);
+}
+
+.assessment-datatable-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--tblr-border-color, #e6e7e9);
+    background: var(--tblr-bg-surface, #fff);
+}
+
+.assessment-datatable-footer .dataTables_info,
+.assessment-datatable-footer .dataTables_paginate {
+    padding-top: 0;
+}
+
+.assessment-datatable-footer .pagination {
+    margin: 0;
+}
+
+/* Semantic actions used by the Assessment table. */
+.assessment-action-btn {
+    display: inline-flex;
+    width: 108px;
+    min-width: 108px;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 10px !important;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        color 0.18s ease,
+        background-color 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.assessment-action-btn > i {
+    margin: 0;
+    flex: 0 0 auto;
+    font-size: 1rem;
+}
+
+.btn-assessment-start {
+    border-color: #16a34a !important;
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    color: #fff !important;
+    box-shadow: 0 5px 12px rgba(22, 163, 74, 0.2);
+}
+
+.btn-assessment-start:hover,
+.btn-assessment-start:focus {
+    border-color: #15803d !important;
+    background: linear-gradient(135deg, #20b957, #15803d) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 16px rgba(22, 163, 74, 0.26);
+    transform: translateY(-1px);
+}
+
+.btn-assessment-remedial {
+    border-color: #ea580c !important;
+    background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
+    color: #fff !important;
+    box-shadow: 0 5px 12px rgba(234, 88, 12, 0.2);
+}
+
+.btn-assessment-remedial:hover,
+.btn-assessment-remedial:focus {
+    border-color: #c2410c !important;
+    background: linear-gradient(135deg, #e78c08, #c2410c) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 16px rgba(234, 88, 12, 0.26);
+    transform: translateY(-1px);
+}
+
+.btn-assessment-completed {
+    border-color: #cbd5e1 !important;
+    background: #fff !important;
+    color: #64748b !important;
+}
+
+.btn-assessment-unavailable {
+    border-color: #e2e8f0 !important;
+    background: #f1f5f9 !important;
+    color: #94a3b8 !important;
+}
+
+.btn-assessment-completed:disabled,
+.btn-assessment-unavailable:disabled {
+    opacity: 1;
+    box-shadow: none;
+    transform: none;
+}
+
+@media (max-width: 767.98px) {
+    .assessment-table {
+        min-width: 860px;
+    }
+
+    .assessment-datatable-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .assessment-more-filters {
+        display: block;
+        padding: 0 1rem;
+    }
+
+    .assessment-filter-section,
+    .assessment-filter-section:nth-child(odd),
+    .assessment-filter-section:nth-child(even) {
+        padding: 1rem 0;
+        border-right: 0;
+    }
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-fast-filter-control,
+body.dark-mode #assessmentFilterBar .assessment-fast-filter-control,
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-toolbar-search .form-control,
+body.dark-mode #assessmentFilterBar .assessment-toolbar-search .form-control {
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    background: #192d45 !important;
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-fast-filter-control:hover,
+body.dark-mode #assessmentFilterBar .assessment-fast-filter-control:hover {
+    border-color: rgba(147, 197, 253, 0.55) !important;
+    background: #203a57 !important;
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-fast-filter-control:focus,
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-fast-filter-control:focus-visible,
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-fast-filter-control.active,
+body.dark-mode #assessmentFilterBar .assessment-fast-filter-control:focus,
+body.dark-mode #assessmentFilterBar .assessment-fast-filter-control:focus-visible,
+body.dark-mode #assessmentFilterBar .assessment-fast-filter-control.active {
+    border-color: #6aaed6 !important;
+    background: rgba(106, 174, 214, 0.16) !important;
+    color: #bfdbfe !important;
+}
+
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-toolbar-search .form-control::placeholder,
+body.dark-mode #assessmentFilterBar .assessment-toolbar-search .form-control::placeholder,
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-toolbar-search .input-icon-addon,
+body.dark-mode #assessmentFilterBar .assessment-toolbar-search .input-icon-addon {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-quick-dropdowns .dropdown-menu,
+body.dark-mode #assessmentFilterBar .assessment-quick-dropdowns .dropdown-menu,
+[data-bs-theme="dark"] .assessment-filter-modal,
+body.dark-mode .assessment-filter-modal {
+    border-color: rgba(148, 163, 184, 0.18);
+    background: #152235;
+    color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-quick-dropdowns .dropdown-item,
+body.dark-mode #assessmentFilterBar .assessment-quick-dropdowns .dropdown-item {
+    color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-quick-dropdowns .dropdown-item:hover,
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-quick-dropdowns .dropdown-item:focus,
+body.dark-mode #assessmentFilterBar .assessment-quick-dropdowns .dropdown-item:hover,
+body.dark-mode #assessmentFilterBar .assessment-quick-dropdowns .dropdown-item:focus {
+    background: rgba(106, 174, 214, 0.14);
+    color: #93c5fd;
+}
+
+[data-bs-theme="dark"] #assessmentFilterBar .assessment-quick-dropdowns .dropdown-item.active,
+body.dark-mode #assessmentFilterBar .assessment-quick-dropdowns .dropdown-item.active {
+    background: #6aaed6;
+    color: #0f172a;
+}
+
+[data-bs-theme="dark"] #assessmentMoreFiltersCount,
+body.dark-mode #assessmentMoreFiltersCount {
+    border-color: #152235;
+}
+
+[data-bs-theme="dark"] .assessment-filter-section,
+body.dark-mode .assessment-filter-section,
+[data-bs-theme="dark"] .assessment-datatable-footer,
+body.dark-mode .assessment-datatable-footer {
+    border-color: rgba(148, 163, 184, 0.18);
+    background: #152235;
+}
+
+[data-bs-theme="dark"] .assessment-filter-title,
+body.dark-mode .assessment-filter-title {
+    color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .assessment-table tbody tr.assessment-row:hover,
+[data-bs-theme="dark"] .assessment-table tbody tr.assessment-row:hover > td,
+body.dark-mode .assessment-table tbody tr.assessment-row:hover,
+body.dark-mode .assessment-table tbody tr.assessment-row:hover > td {
+    background-color: #192d45;
+}
