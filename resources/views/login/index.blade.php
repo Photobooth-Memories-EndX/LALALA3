@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Sign in - Online Knowledge Learning</title>
+    <title>Sign in - Corporate Learning Hub</title>
 
     <!-- CSS files -->
     <link href="Tabler/dist/css/tabler.min.css?1684106062" rel="stylesheet" />
@@ -66,6 +66,22 @@
         .brand-logo:hover {
             transform: scale(1.03);
         }
+
+        /* Styling Tagline Open Mind */
+        .tagline-container {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .tagline-blue {
+            color: #206bc4;
+        }
+        .tagline-orange {
+            color: #f76707;
+        }
+        .tagline-dot {
+            color: #f76707;
+            margin: 0 6px;
+        }
     </style>
 
     <script src="{{ asset('js/jquery.min.js') }}"></script>
@@ -86,7 +102,17 @@
                     <x-alert type='success' />
                     <x-alert type='warning' />
 
-                    <h2 class="h2 text-center mb-4 fw-bold text-dark" style="letter-spacing: -0.5px;">Online Knowledge Learning</h2>
+                    <h2 class="h2 text-center mb-2 fw-bold text-dark" style="letter-spacing: -0.5px;">Corporate Learning Hub</h2>
+                    
+                    <!-- Tagline tambahan -->
+                    <div class="text-center mb-4 tagline-container">
+                        <span class="tagline-blue">Open Mind</span>
+                        <span class="tagline-dot">•</span>
+                        <span class="tagline-blue">Wide Growth</span>
+                        <span class="tagline-dot">•</span>
+                        <span class="tagline-orange">Lead Impact</span>
+                    </div>
+
                     <form action="{{ route('authuser') }}" id="form-authentication" method="post" autocomplete="off" novalidate>
                         @csrf
                         <input type="hidden" name="submit_type" id="submit-type">

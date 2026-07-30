@@ -350,8 +350,116 @@ tbody.record-sort-animate tr.record-row {
     width: 100%;
 }
 
-.record-search-row {
-    margin-bottom: 14px;
+.learning-record-card {
+    /*
+     * The dashboard's generic card rule clips regular cards. This card owns
+     * floating quick-filter menus, so its overflow must remain open.
+     */
+    overflow: visible !important;
+}
+
+.record-fast-filter-section {
+    width: 100%;
+    overflow: visible;
+    container-name: record-fast-filter;
+    container-type: inline-size;
+}
+
+.fast-filter-toolbar {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow: visible;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns {
+    display: flex;
+    width: auto;
+    min-width: 0;
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    gap: 8px !important;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns > .dropdown {
+    position: relative;
+    overflow: visible;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown-menu {
+    z-index: 1050;
+}
+
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control {
+    min-height: 40px;
+    height: 40px;
+    padding: 0 10px;
+    border: 1px solid var(--tblr-border-color, #dbe0e6) !important;
+    border-radius: 8px !important;
+    background: var(--tblr-bg-surface, #fff) !important;
+}
+
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:hover {
+    border-color: rgba(5, 80, 125, 0.45) !important;
+    background: var(--tblr-bg-surface-secondary, #f4f7fa) !important;
+    color: var(--tblr-primary, #05507D) !important;
+}
+
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus,
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus-visible,
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control.active {
+    border-color: var(--tblr-primary, #05507D) !important;
+    background: rgba(5, 80, 125, 0.08) !important;
+    color: var(--tblr-primary, #05507D) !important;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-toggle {
+    max-width: 190px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.record-toolbar-search {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 180px;
+}
+
+@container record-fast-filter (min-width: 900px) {
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(1) .dropdown-toggle {
+        min-width: 105px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-toggle {
+        width: 165px;
+        max-width: 165px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(3) .dropdown-toggle {
+        min-width: 100px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(4) .dropdown-toggle {
+        min-width: 110px;
+    }
+
+}
+
+.record-toolbar-search .input-icon,
+.record-toolbar-search .form-control {
+    width: 100%;
+    min-width: 0;
+}
+
+.record-filter-shell .record-toolbar-search .form-control {
+    min-height: 40px;
+    height: 40px;
+    border-radius: 8px;
 }
 
 .record-filter-shell .form-control,
@@ -419,6 +527,47 @@ tbody.record-sort-animate tr.record-row {
     margin-top: 0;
     flex: 0 0 auto;
     flex-wrap: nowrap;
+}
+
+.fast-filter-toolbar .record-filter-actions {
+    gap: 8px;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.fast-filter-toolbar .record-filter-action-btn {
+    position: relative;
+    display: inline-flex;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    flex: 0 0 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 8px !important;
+    line-height: 1;
+}
+
+.fast-filter-toolbar .record-filter-action-btn > i {
+    margin: 0 !important;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.fast-filter-toolbar #recordMoreFiltersCount {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border: 2px solid var(--tblr-bg-surface, #fff);
+    border-radius: 999px;
+    font-size: 10px;
+    line-height: 14px;
 }
 
 .record-filter-reset-link {
@@ -545,21 +694,21 @@ tbody.record-sort-animate tr.record-row {
 
 @media (max-width: 1199.98px) {
     .learning-record-fast-filter,
-    .record-filter-actions {
+    .learning-record-filter-row > .record-filter-actions {
         flex-basis: 100%;
     }
 
-    .record-filter-actions {
+    .learning-record-filter-row > .record-filter-actions {
         flex-wrap: wrap;
     }
 }
 
 @media (max-width: 575.98px) {
-    .record-filter-actions {
+    .learning-record-filter-row > .record-filter-actions {
         justify-content: flex-start;
     }
 
-    .record-filter-action-btn,
+    .learning-record-filter-row > .record-filter-actions .record-filter-action-btn,
     .record-filter-reset-link {
         width: 100%;
     }
@@ -568,6 +717,126 @@ tbody.record-sort-animate tr.record-row {
         padding-left: 1rem;
         padding-right: 1rem;
     }
+}
+
+@container record-fast-filter (min-width: 680px) and (max-width: 899.98px) {
+    .fast-filter-toolbar {
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns {
+        width: auto;
+        min-width: 0;
+        flex: 0 1 auto;
+        flex-wrap: nowrap;
+        gap: 6px !important;
+    }
+
+    .record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control {
+        padding-right: 6px;
+        padding-left: 6px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown-toggle {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(1) .dropdown-toggle {
+        width: 84px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-toggle {
+        width: 138px;
+        max-width: 138px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(3) .dropdown-toggle {
+        width: 78px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(4) .dropdown-toggle {
+        width: 90px;
+    }
+
+    .fast-filter-toolbar .record-filter-actions {
+        gap: 6px;
+    }
+}
+
+@container record-fast-filter (max-width: 679.98px) {
+    .fast-filter-toolbar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns {
+        width: 100%;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+    }
+
+    .record-toolbar-search {
+        width: 100%;
+        min-width: 100%;
+        max-width: none;
+        flex: 1 1 100%;
+    }
+
+    .fast-filter-toolbar .record-filter-actions {
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+    }
+}
+
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control {
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    background: #192d45 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:hover,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:hover {
+    border-color: rgba(147, 197, 253, 0.55) !important;
+    background: #203a57 !important;
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus,
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus-visible,
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control.active,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus-visible,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control.active {
+    border-color: #6aaed6 !important;
+    background: rgba(106, 174, 214, 0.16) !important;
+    color: #bfdbfe !important;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .record-toolbar-search .form-control,
+body.dark-mode #recordFilterBar .record-toolbar-search .form-control {
+    border-color: rgba(148, 163, 184, 0.3);
+    background: #192d45;
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .record-toolbar-search .form-control::placeholder,
+body.dark-mode #recordFilterBar .record-toolbar-search .form-control::placeholder {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .record-toolbar-search .input-icon-addon,
+body.dark-mode #recordFilterBar .record-toolbar-search .input-icon-addon {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar #recordMoreFiltersCount,
+body.dark-mode #recordFilterBar .fast-filter-toolbar #recordMoreFiltersCount {
+    border-color: #152235;
 }
 
 /* Caret pada tombol More Filters berputar saat panel terbuka. */

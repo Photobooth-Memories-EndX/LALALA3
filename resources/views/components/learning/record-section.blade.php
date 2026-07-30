@@ -49,38 +49,23 @@
     ];
 @endphp
 
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card border-0 shadow-sm rounded-4 learning-record-card">
             <div class="card-body p-4 border-bottom">
         <div class="record-filter-shell" id="recordFilterBar">
-            <div class="row g-3 align-items-start">
-            <div class="col-12 col-lg-6">
+            {{-- <div>
                 <h3 class="card-title mb-1">Learning Record</h3>
                 <div class="text-muted small">
                     Completed playlists, contents, and certificate status.
                 </div>
 
-        </div>
+        </div> --}}
 
         {{-- ── Toolbar filter (client-side — tanpa AJAX, tanpa reload halaman) ── --}}
-        <div class="col-12 col-lg-6">
-            <div class="record-search-row">
-                <div class="w-100">
-                    <label class="form-label small text-muted mb-1" for="recordSearch">Search</label>
-                    <div class="input-icon">
-                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                        <input type="text" class="form-control" id="recordSearch"
-                               placeholder="Search class, playlist or classification..." autocomplete="off">
-                    </div>
-                </div>
-            </div>
-        </div>
-        </div>
+            <div class="record-fast-filter-section mt-3">
+                <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
 
-            <div class="learning-record-filter-row mt-3">
-                <div class="learning-record-fast-filter">
-                    <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
-
-                    <div class="d-flex flex-wrap learning-quick-dropdowns learning-fast-filter">
+                <div class="fast-filter-toolbar">
+                    <div class="learning-quick-dropdowns learning-fast-filter">
                     {{-- Dropdown Type --}}
                     <div class="dropdown">
                         <button type="button"
@@ -195,31 +180,46 @@
                         </div>
                     </div>
                     </div>
-                </div>
 
-                <div class="record-filter-actions">
+                    <div class="record-toolbar-search">
+                        <label class="visually-hidden" for="recordSearch">Search learning records</label>
+                        <div class="input-icon">
+                            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                            <input type="text" class="form-control" id="recordSearch"
+                                   placeholder="Search class, playlist or classification..." autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="record-filter-actions">
                     {{-- TOMBOL DOWNLOAD EXCEL --}}
                     <a href="{{ route('user.learning.record.export') }}"
                        data-export-url="{{ route('user.learning.record.export') }}"
                        class="btn btn-outline-success btn-learning-success record-filter-action-btn"
-                       id="recordDownloadExcel">
+                       id="recordDownloadExcel"
+                       title="Download Excel"
+                       aria-label="Download Excel">
                         <i class="ti ti-download"></i>
-                        <span>Download Excel</span>
                     </a>
                     {{-- TOMBOL MORE FILTERS --}}
                     <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn" id="recordMoreFiltersToggle"
                             data-toggle="modal" data-target="#recordMoreFiltersModal"
-                            aria-controls="recordMoreFiltersModal">
+                            aria-controls="recordMoreFiltersModal"
+                            title="More Filters"
+                            aria-label="More Filters">
                         <i class="ti ti-adjustments-horizontal"></i>
-                        <span>More Filters</span>
                         <span class="badge bg-primary text-white d-none" id="recordMoreFiltersCount"></span>
                     </button>
-                    <button type="button" class="btn btn-primary btn-learning-primary record-apply-filter record-filter-action-btn">
-                        <i class="ti ti-check"></i><span>Apply Filter</span>
+                    <button type="button" class="btn btn-primary btn-learning-primary record-apply-filter record-filter-action-btn"
+                            title="Apply Filter"
+                            aria-label="Apply Filter">
+                        <i class="ti ti-check"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-primary btn-learning-outline record-clear-filter record-filter-action-btn">
-                        <i class="ti ti-refresh"></i><span>Reset</span>
+                    <button type="button" class="btn btn-outline-primary btn-learning-outline record-clear-filter record-filter-action-btn"
+                            title="Reset Filter"
+                            aria-label="Reset Filter">
+                        <i class="ti ti-refresh"></i>
                     </button>
+                    </div>
                 </div>
             </div>
 
