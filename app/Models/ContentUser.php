@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -36,6 +37,12 @@ class ContentUser extends Model
     {
         return $this->belongsTo(Content::class);
     }
+
+    public function scopeWithAvailableContent(Builder $query): Builder
+    {
+        return $query->whereHas('content', fn (Builder $query) => $query->notExpired());
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

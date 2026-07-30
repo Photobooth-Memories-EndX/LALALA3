@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -96,6 +97,20 @@ class Content extends Model
             return false;
         }
         return true;
+    }
+
+    /**
+     * Keep content unless it has a non-null deadline before the given date.
+     */
+    public function scopeNotExpired(Builder $query, ?string $date = null): Builder
+    {
+        $date ??= today()->toDateString();
+
+        return $query->where(function (Builder $query) use ($date) {
+            $query->where('has_deadline', false)
+                ->orWhereNull('to_date')
+                ->orWhereDate('to_date', '>=', $date);
+        });
     }
 
     public function getSlugOptions(): SlugOptions

@@ -44,9 +44,7 @@ class LearningController extends Controller
             })
             ->count();
 
-        $ongoingLearning = ContentUser::where('user_id', $userId)
-            ->where('finish', '0')
-            ->count();
+        $ongoingLearning = $analyticsService->ongoingLearningCount((int) $userId);
 
         $completedContentLearning = ContentUser::query()
             ->join('content', 'content.id', '=', 'content_users.content_id')

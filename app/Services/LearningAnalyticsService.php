@@ -524,6 +524,18 @@ class LearningAnalyticsService
     }
 
     /**
+     * Total ContentUser ongoing yang masih tersedia pada listing Learning On Going.
+     */
+    public function ongoingLearningCount(int $userId): int
+    {
+        return ContentUser::query()
+            ->where('user_id', $userId)
+            ->where('finish', '0')
+            ->withAvailableContent()
+            ->count();
+    }
+
+    /**
      * Dataset tunggal untuk Hero Home dan halaman lain yang memakai Hero Home.
      */
     public function heroSummary(int $userId): array
@@ -540,7 +552,7 @@ class LearningAnalyticsService
         return [
             'content_user' => $contentUser,
             'completedCourse' => $completedCourse,
-            'ongoingCourse' => $contentUser->where('finish', 0)->count(),
+            'ongoingCourse' => $this->ongoingLearningCount($userId),
             'learningHours' => $this->userLearningHours($userId),
         ];
     }

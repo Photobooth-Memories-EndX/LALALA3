@@ -30,7 +30,8 @@ class OngoingContentService
                     'scores' => fn ($q) => $q->where('user_id', $userId),
                 ]),
             ])
-            ->where('user_id', $userId);
+            ->where('user_id', $userId)
+            ->withAvailableContent();
 
         $this->applyStatusScope($query, $filters);
         $this->applyFilters($query, $filters);

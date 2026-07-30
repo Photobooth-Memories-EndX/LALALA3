@@ -62,7 +62,8 @@ class ContentUserController extends Controller
 
         $queryContent = Content::with('classification')
             ->where('playlistonly', 'N')
-            ->where('active', 'Active');
+            ->where('active', 'Active')
+            ->notExpired($todayDate);
 
         if ($filterSearch) {
             $queryContent->where(function ($query) use ($filterSearch) {
@@ -85,14 +86,14 @@ class ContentUserController extends Controller
         }
 
         if (filled($filterDeadlineFromDate) && filled($filterDeadlineToDate)) {
-            $queryContent->whereBetween('content.date', [
+            $queryContent->whereBetween('content.to_date', [
                 $filterDeadlineFromDate,
                 $filterDeadlineToDate,
             ]);
         } elseif (filled($filterDeadlineFromDate)) {
-            $queryContent->whereDate('content.date', '>=', $filterDeadlineFromDate);
+            $queryContent->whereDate('content.to_date', '>=', $filterDeadlineFromDate);
         } elseif (filled($filterDeadlineToDate)) {
-            $queryContent->whereDate('content.date', '<=', $filterDeadlineToDate);
+            $queryContent->whereDate('content.to_date', '<=', $filterDeadlineToDate);
         }
 
         if (filled($filterCreatedFromDate)) {
@@ -120,21 +121,21 @@ class ContentUserController extends Controller
 
         switch ($filterDeadlineStatus) {
             case 'expired':
-                $queryContent->whereDate('content.date', '<', $todayDate);
+                $queryContent->whereDate('content.to_date', '<', $todayDate);
                 break;
             case 'today':
-                $queryContent->whereDate('content.date', $todayDate);
+                $queryContent->whereDate('content.to_date', $todayDate);
                 break;
             case 'less_than_7_days':
-                $queryContent->whereDate('content.date', '>', $todayDate)
-                    ->whereDate('content.date', '<=', $sevenDaysFromToday);
+                $queryContent->whereDate('content.to_date', '>', $todayDate)
+                    ->whereDate('content.to_date', '<=', $sevenDaysFromToday);
                 break;
             case 'less_than_30_days':
-                $queryContent->whereDate('content.date', '>', $todayDate)
-                    ->whereDate('content.date', '<=', $thirtyDaysFromToday);
+                $queryContent->whereDate('content.to_date', '>', $todayDate)
+                    ->whereDate('content.to_date', '<=', $thirtyDaysFromToday);
                 break;
             case 'more_than_30_days':
-                $queryContent->whereDate('content.date', '>', $thirtyDaysFromToday);
+                $queryContent->whereDate('content.to_date', '>', $thirtyDaysFromToday);
                 break;
         }
 
