@@ -1,4 +1,183 @@
-<style>
+/**
+ * My Learning — Certificate
+ * Certificate-specific filter, table, modal, action, responsive, and dark-mode UI.
+ */
+
+    .certificate-fast-filter-section {
+        width: 100%;
+        overflow: visible;
+        container-name: certificate-fast-filter;
+        container-type: inline-size;
+    }
+
+    .certificate-fast-filter-toolbar {
+        position: relative;
+        z-index: 20;
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 10px;
+        overflow: visible;
+    }
+
+    .certificate-quick-dropdowns {
+        display: flex;
+        width: auto;
+        min-width: 0;
+        align-items: center;
+        flex: 0 1 auto;
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+
+    .certificate-filter-dropdown {
+        position: relative;
+        flex: 0 1 auto;
+        overflow: visible;
+    }
+
+    .certificate-quick-dropdowns .dropdown-menu {
+        min-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .certificate-filter-dropdown-type .dropdown-menu {
+        width: 140px;
+    }
+
+    .certificate-filter-dropdown-year .dropdown-menu {
+        width: 110px;
+    }
+
+    .certificate-filter-dropdown-month .dropdown-menu {
+        width: 140px;
+    }
+
+    .certificate-quick-dropdowns .dropdown-item {
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    .certificate-filter-shell .certificate-fast-filter-control {
+        display: inline-flex;
+        min-height: 40px;
+        height: 40px;
+        align-items: center;
+        padding: 0 10px;
+        border: 1px solid var(--tblr-border-color, #dbe0e6) !important;
+        border-radius: 8px !important;
+        background: var(--tblr-bg-surface, #fff) !important;
+        color: var(--tblr-body-color, #475569) !important;
+        box-shadow: none !important;
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        transform: none !important;
+    }
+
+    .certificate-filter-shell .certificate-fast-filter-control:hover {
+        border-color: rgba(5, 80, 125, .45) !important;
+        background: var(--tblr-bg-surface-secondary, #f4f7fa) !important;
+        color: var(--tblr-primary, #05507d) !important;
+    }
+
+    .certificate-filter-shell .certificate-fast-filter-control:focus,
+    .certificate-filter-shell .certificate-fast-filter-control:focus-visible,
+    .certificate-filter-shell .certificate-fast-filter-control.active {
+        border-color: var(--tblr-primary, #05507d) !important;
+        background: rgba(5, 80, 125, .08) !important;
+        color: var(--tblr-primary, #05507d) !important;
+    }
+
+    .certificate-filter-shell .certificate-fast-filter-control .certificate-filter-value {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .certificate-filter-dropdown-type .certificate-fast-filter-control {
+        width: max-content;
+        min-width: 105px;
+        max-width: 165px;
+    }
+
+    .certificate-filter-dropdown-year .certificate-fast-filter-control {
+        width: max-content;
+        min-width: 100px;
+        max-width: 120px;
+    }
+
+    .certificate-filter-dropdown-month .certificate-fast-filter-control {
+        width: max-content;
+        min-width: 110px;
+        max-width: 150px;
+    }
+
+    .certificate-toolbar-search {
+        width: auto;
+        min-width: 0;
+        flex: 1 1 180px;
+    }
+
+    .certificate-toolbar-search .input-icon,
+    .certificate-toolbar-search .form-control {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .certificate-toolbar-search .form-control {
+        min-height: 40px;
+        height: 40px;
+        border-radius: 8px;
+    }
+
+    .certificate-filter-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .certificate-filter-actions .certificate-filter-action-btn {
+        position: relative;
+        display: inline-flex;
+        width: 40px;
+        min-width: 40px;
+        height: 40px;
+        min-height: 40px;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 40px;
+        padding: 0;
+        border-radius: 8px !important;
+        line-height: 1;
+    }
+
+    .certificate-filter-actions .certificate-filter-action-btn > i {
+        margin: 0 !important;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    #certificateMoreFiltersCount {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        border: 2px solid var(--tblr-bg-surface, #fff);
+        border-radius: 999px;
+        font-size: 10px;
+        line-height: 14px;
+    }
     .certificate-table {
         width: 100% !important;
         min-width: 1040px;
@@ -69,8 +248,8 @@
     .certificate-card-shell,
     .certificate-card-shell > .card-body:first-child,
     .certificate-filter-shell,
-    .certificate-filter-shell .learning-record-filter-row,
-    .certificate-filter-shell .learning-record-fast-filter,
+    .certificate-fast-filter-section,
+    .certificate-fast-filter-toolbar,
     .certificate-quick-dropdowns {
         overflow: visible !important;
     }
@@ -90,7 +269,6 @@
     }
 
     .certificate-filter-shell .dropdown-menu {
-        min-width: 10rem;
         z-index: 1085;
     }
 
@@ -103,8 +281,6 @@
     }
 
     .certificate-filter-value {
-        display: inline-block;
-        min-width: 1.5rem;
         color: inherit;
         opacity: 1;
         vertical-align: baseline;
@@ -357,10 +533,6 @@
         font-size: 42px;
     }
 
-    .certificate-filter-actions {
-        margin-left: auto;
-    }
-
     .certificate-filter-modal {
         display: flex;
         max-height: calc(100vh - 2rem);
@@ -553,24 +725,73 @@
         padding: .25rem 0;
     }
 
-    @media (max-width: 991.98px) {
-        .certificate-filter-actions {
-            width: 100%;
-            margin-left: 0;
+    @container certificate-fast-filter (min-width: 680px) and (max-width: 899.98px) {
+        .certificate-fast-filter-toolbar,
+        .certificate-quick-dropdowns {
+            gap: 6px;
         }
 
+        .certificate-filter-shell .certificate-fast-filter-control {
+            padding-right: 6px;
+            padding-left: 6px;
+        }
+
+        .certificate-filter-dropdown-type .certificate-fast-filter-control {
+            min-width: 84px;
+            max-width: 115px;
+        }
+
+        .certificate-filter-dropdown-year .certificate-fast-filter-control {
+            min-width: 78px;
+            max-width: 85px;
+        }
+
+        .certificate-filter-dropdown-month .certificate-fast-filter-control {
+            min-width: 90px;
+            max-width: 115px;
+        }
+
+        .certificate-filter-actions {
+            gap: 6px;
+        }
+    }
+
+    @container certificate-fast-filter (max-width: 679.98px) {
+        .certificate-fast-filter-toolbar {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .certificate-quick-dropdowns {
+            width: 100%;
+            flex: 1 1 100%;
+            flex-wrap: wrap;
+        }
+
+        .certificate-filter-dropdown {
+            min-width: 0;
+            flex: 1 1 calc(50% - 4px);
+        }
+
+        .certificate-filter-dropdown .certificate-fast-filter-control {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            justify-content: space-between;
+        }
+
+        .certificate-toolbar-search {
+            width: 100%;
+            min-width: 100%;
+            flex: 1 1 100%;
+        }
+
+        .certificate-filter-actions {
+            justify-content: flex-start;
+        }
     }
 
     @media (max-width: 767.98px) {
-        .certificate-quick-dropdowns .dropdown {
-            flex: 1 1 calc(50% - .5rem);
-        }
-
-        .certificate-quick-dropdowns .dropdown-toggle {
-            justify-content: space-between;
-            width: 100%;
-        }
-
         .certificate-pagination {
             align-items: flex-start;
             flex-direction: column;
@@ -693,6 +914,22 @@
         background: rgba(59, 130, 246, .16);
     }
 
+    [data-bs-theme="dark"] #certificateFilterBar .certificate-fast-filter-control,
+    body.dark-mode #certificateFilterBar .certificate-fast-filter-control,
+    [data-bs-theme="dark"] #certificateFilterBar .certificate-toolbar-search .form-control,
+    body.dark-mode #certificateFilterBar .certificate-toolbar-search .form-control {
+        border-color: rgba(148, 163, 184, .3) !important;
+        background: #192d45 !important;
+        color: #f1f5f9 !important;
+    }
+
+    [data-bs-theme="dark"] #certificateFilterBar .certificate-toolbar-search .form-control::placeholder,
+    [data-bs-theme="dark"] #certificateFilterBar .certificate-toolbar-search .input-icon-addon,
+    body.dark-mode #certificateFilterBar .certificate-toolbar-search .form-control::placeholder,
+    body.dark-mode #certificateFilterBar .certificate-toolbar-search .input-icon-addon {
+        color: #94a3b8;
+    }
+
     [data-bs-theme="dark"] .certificate-filter-shell .dropdown-item,
     [data-bs-theme="dark"] .certificate-action-menu .dropdown-item,
     body.dark-mode .certificate-filter-shell .dropdown-item,
@@ -711,4 +948,3 @@
         background: #213a57;
         color: #93c5fd;
     }
-</style>

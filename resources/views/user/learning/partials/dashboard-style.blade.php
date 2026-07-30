@@ -3,7 +3,7 @@
 {{-- Learning Record: style tabel client-side (dipisah — clean code). --}}
 <link rel="stylesheet" href="{{ asset('css/learning-record.css') }}">
 <link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}">
-@include('user.learning.partials.certificate-style')
+<link rel="stylesheet" href="{{ asset('css/learning-certificate.css') }}">
 @include('user.learning.partials.hero-style')
 
 <style>

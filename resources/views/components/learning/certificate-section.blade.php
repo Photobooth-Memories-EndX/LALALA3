@@ -22,36 +22,24 @@
         'certificate_target',
     ];
     $advancedCount = collect($advancedKeys)->filter(fn ($key) => request()->filled($key))->count();
-    // UI-only feature flag. Export handler and backend remain available.
-    $showCertificateExportButton = false;
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 mb-3 certificate-card-shell">
     <div class="card-body p-4 border-bottom">
         <div class="record-filter-shell certificate-filter-shell" id="certificateFilterBar">
-            <div class="row g-3 align-items-start">
-                <div class="col-12 col-lg-6">
-                    <h3 class="card-title mb-1">My Certificates</h3>
-                    <div class="text-muted small">View all certificates that have been successfully generated.</div>
-                </div>
-                <div class="col-12 col-lg-6">
-                    <label class="form-label small text-muted mb-1" for="certificateSearch">Search</label>
-                    <div class="input-icon">
-                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                        <input type="search" class="form-control" id="certificateSearch"
-                               placeholder="Certificate number, credential, participant, target or type..."
-                               value="{{ request('certificate_search') }}" autocomplete="off">
-                    </div>
-                </div>
-            </div>
+            <h3 class="card-title mb-1">My Certificates</h3>
+            <div class="text-muted small">View all certificates that have been successfully generated.</div>
 
-            <div class="learning-record-filter-row mt-3 mb-0">
-                <div class="learning-record-fast-filter">
-                    <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
-                    <div class="d-flex flex-wrap learning-quick-dropdowns certificate-quick-dropdowns learning-fast-filter">
-                        <div class="dropdown" data-certificate-filter="type" data-selected-value="{{ $active['type'] }}">
+            <div class="certificate-fast-filter-section mt-3">
+                <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
+
+                <div class="certificate-fast-filter-toolbar">
+                    <div class="certificate-quick-dropdowns">
+                        <div class="dropdown certificate-filter-dropdown certificate-filter-dropdown-type"
+                             data-certificate-filter="type" data-selected-value="{{ $active['type'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_type" value="{{ $active['type'] }}">
-                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $active['type'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
+                            <button type="button" class="btn btn-filter-chip certificate-fast-filter-control dropdown-toggle {{ $active['type'] !== 'all' ? 'active' : '' }}"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Type: <span class="fw-semibold certificate-filter-value">{{ $types[$active['type']] ?? 'All' }}</span>
                             </button>
                             <div class="dropdown-menu">
@@ -61,9 +49,11 @@
                             </div>
                         </div>
 
-                        <div class="dropdown" data-certificate-filter="year" data-selected-value="{{ $active['year'] }}">
+                        <div class="dropdown certificate-filter-dropdown certificate-filter-dropdown-year"
+                             data-certificate-filter="year" data-selected-value="{{ $active['year'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_year" value="{{ $active['year'] }}">
-                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $active['year'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
+                            <button type="button" class="btn btn-filter-chip certificate-fast-filter-control dropdown-toggle {{ $active['year'] !== 'all' ? 'active' : '' }}"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Year: <span class="fw-semibold certificate-filter-value">{{ $active['year'] === 'all' ? 'All' : $active['year'] }}</span>
                             </button>
                             <div class="dropdown-menu certificate-dropdown-scroll">
@@ -74,9 +64,11 @@
                             </div>
                         </div>
 
-                        <div class="dropdown" data-certificate-filter="month" data-selected-value="{{ $active['month'] }}">
+                        <div class="dropdown certificate-filter-dropdown certificate-filter-dropdown-month"
+                             data-certificate-filter="month" data-selected-value="{{ $active['month'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_month" value="{{ $active['month'] }}">
-                            <button type="button" class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $active['month'] !== 'all' ? 'active' : '' }}" data-toggle="dropdown">
+                            <button type="button" class="btn btn-filter-chip certificate-fast-filter-control dropdown-toggle {{ $active['month'] !== 'all' ? 'active' : '' }}"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Month: <span class="fw-semibold certificate-filter-value">{{ $active['month'] === 'all' ? 'All' : ($months[(int) $active['month']] ?? 'All') }}</span>
                             </button>
                             <div class="dropdown-menu certificate-dropdown-scroll">
@@ -86,26 +78,34 @@
                                 @endforeach
                             </div>
                         </div>
-
                     </div>
-                </div>
 
-                <div class="record-filter-actions certificate-filter-actions">
-                    @if ($showCertificateExportButton)
-                        <button type="button" class="btn btn-outline-success btn-learning-success record-filter-action-btn" id="certificateDownloadExcel">
-                            <i class="ti ti-download"></i><span>Download Excel</span>
+                    <div class="certificate-toolbar-search">
+                        <label class="visually-hidden" for="certificateSearch">Search certificates</label>
+                        <div class="input-icon">
+                            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                            <input type="search" class="form-control" id="certificateSearch"
+                                   placeholder="Certificate number, credential, participant, target or type..."
+                                   value="{{ request('certificate_search') }}" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="record-filter-actions certificate-filter-actions">
+                        <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn certificate-filter-action-btn"
+                                data-toggle="modal" data-target="#certificateMoreFiltersModal"
+                                title="More Filters" aria-label="More Filters">
+                            <i class="ti ti-adjustments-horizontal"></i>
+                            <span class="badge bg-primary text-white {{ $advancedCount ? '' : 'd-none' }}" id="certificateMoreFiltersCount">{{ $advancedCount ?: '' }}</span>
                         </button>
-                    @endif
-                    <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn" data-toggle="modal" data-target="#certificateMoreFiltersModal">
-                        <i class="ti ti-adjustments-horizontal"></i><span>More Filters</span>
-                        <span class="badge bg-primary text-white {{ $advancedCount ? '' : 'd-none' }}" id="certificateMoreFiltersCount">{{ $advancedCount ?: '' }}</span>
-                    </button>
-                    <button type="button" class="btn btn-primary btn-learning-primary record-filter-action-btn" id="certificateApplyFilter">
-                        <i class="ti ti-check"></i><span>Apply Filter</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-primary btn-learning-outline record-filter-action-btn" id="certificateResetFilter">
-                        <i class="ti ti-refresh"></i><span>Reset</span>
-                    </button>
+                        <button type="button" class="btn btn-primary btn-learning-primary record-filter-action-btn certificate-filter-action-btn"
+                                id="certificateApplyFilter" title="Apply Filter" aria-label="Apply Filter">
+                            <i class="ti ti-check"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-learning-outline record-filter-action-btn certificate-filter-action-btn"
+                                id="certificateResetFilter" title="Reset Filter" aria-label="Reset Filter">
+                            <i class="ti ti-refresh"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
