@@ -11,7 +11,7 @@
         'youtube' => 'bg-yellow text-white',
         'document' => 'bg-cyan',
         'pdf' => 'bg-cyan',
-        'content' => 'bg-red',
+        'content' => 'bg-purple-lt text-purple',
         'global' => 'bg-orange-lt text-orange',
     ];
     $setting = $certificate->certificateSetting;

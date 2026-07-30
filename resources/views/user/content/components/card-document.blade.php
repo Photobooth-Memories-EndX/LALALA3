@@ -15,31 +15,39 @@
     $today = \Carbon\Carbon::today();
     $publishedDate = $item->created_at ? \Carbon\Carbon::parse($item->created_at) : null;
     $updatedDate = $item->updated_at ? \Carbon\Carbon::parse($item->updated_at) : null;
-    $deadlineDate = $item->date ? \Carbon\Carbon::parse($item->date)->startOfDay() : null;
+    $hasDeadline = (bool) $item->has_deadline;
+    $deadlineDate = $hasDeadline && filled($item->to_date)
+        ? \Carbon\Carbon::parse($item->to_date)->startOfDay()
+        : null;
     $showUpdatedDate = $updatedDate && (!$publishedDate || !$updatedDate->equalTo($publishedDate));
     $deadlineStateClass = '';
     $deadlineRemaining = null;
+    $isExpired = false;
 
     if ($deadlineDate) {
         if ($deadlineDate->isSameDay($today)) {
             $deadlineStateClass = 'is-today';
-            $deadlineRemaining = 'Today';
+            $deadlineRemaining = 'Due Today';
         } elseif ($deadlineDate->lt($today)) {
-            $days = $deadlineDate->diffInDays($today);
             $deadlineStateClass = 'is-expired';
-            $deadlineRemaining = 'Expired ' . $days . ' ' . ($days === 1 ? 'Day' : 'Days') . ' Ago';
+            $deadlineRemaining = 'Expired';
+            $isExpired = true;
         } else {
             $days = $today->diffInDays($deadlineDate);
             $deadlineStateClass = 'is-upcoming';
-            $deadlineRemaining = $days . ' ' . ($days === 1 ? 'Day' : 'Days') . ' Left';
+            $deadlineRemaining = $days . ' ' . ($days === 1 ? 'Day' : 'Days') . ' Due';
         }
     }
 @endphp
 
 <div class="card content-card">
-    <a href="{{ route('content.user.view', $item->slug) }}">
+    @if ($isExpired)
         <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
-    </a>
+    @else
+        <a href="{{ route('content.user.view', $item->slug) }}">
+            <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
+        </a>
+    @endif
 
     <div class="card-body">
         <div class="d-flex align-items-center mb-2">
@@ -51,11 +59,15 @@
         </div>
 
         <h3 class="card-title content-card-title mb-2">
-            <a href="{{ route('content.user.view', $item->slug) }}"
-               class="text-decoration-none"
-               title="{{ $item->title }}">
-                {{ $item->title }}
-            </a>
+            @if ($isExpired)
+                <span title="{{ $item->title }}">{{ $item->title }}</span>
+            @else
+                <a href="{{ route('content.user.view', $item->slug) }}"
+                   class="text-decoration-none"
+                   title="{{ $item->title }}">
+                    {{ $item->title }}
+                </a>
+            @endif
         </h3>
 
         <div class="content-card-details">
@@ -88,19 +100,28 @@
                     <i class="ti ti-calendar-due"></i>
                     <span>Deadline: {{ $deadlineDate ? $deadlineDate->format('d M Y') : 'No deadline' }}</span>
                 </div>
-                {{-- <div class="content-card-date-row">
-                    <i class="ti ti-hourglass"></i>
-                    <span class="content-card-deadline-state {{ $deadlineStateClass }}">
-                        {{ $deadlineRemaining ?? 'No deadline' }}
-                    </span>
-                </div> --}}
+                @if ($deadlineRemaining)
+                    <div class="content-card-date-row">
+                        <i class="ti ti-hourglass"></i>
+                        <span class="content-card-deadline-state {{ $deadlineStateClass }}">
+                            {{ $deadlineRemaining }}
+                        </span>
+                    </div>
+                @endif
             </div>
         </div>
 
-        <a href="{{ route('content.user.view', $item->slug) }}"
-           class="btn btn-primary w-100 content-card-action">
-            <i class="ti ti-player-play me-1"></i>
-            Read Document
-        </a>
+        @if ($isExpired)
+            <button type="button" class="btn btn-primary w-100 content-card-action is-expired" disabled>
+                <i class="ti ti-lock me-1"></i>
+                Expired
+            </button>
+        @else
+            <a href="{{ route('content.user.view', $item->slug) }}"
+               class="btn btn-primary w-100 content-card-action">
+                <i class="ti ti-player-play me-1"></i>
+                Read Document
+            </a>
+        @endif
     </div>
 </div>

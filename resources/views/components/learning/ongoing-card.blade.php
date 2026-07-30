@@ -10,6 +10,7 @@
     'month' => null,
     'year' => 'unknown',
     'publishedAt' => null,
+    'hasDeadline' => false,
     'deadlineAt' => null,
     'active' => '-',
     'statusLabel' => 'ongoing',
@@ -51,9 +52,27 @@
         $publishedDate = filled($publishedAt)
             ? \Carbon\Carbon::parse($publishedAt)
             : null;
-        $deadlineDate = filled($deadlineAt)
+        $deadlineDate = (bool) $hasDeadline && filled($deadlineAt)
             ? \Carbon\Carbon::parse($deadlineAt)->startOfDay()
             : null;
+        $today = \Carbon\Carbon::today();
+        $deadlineStateClass = 'text-muted';
+        $deadlineRemaining = null;
+        $isExpired = false;
+
+        if ($deadlineDate) {
+            if ($deadlineDate->isSameDay($today)) {
+                $deadlineStateClass = 'text-warning';
+                $deadlineRemaining = 'Due Today';
+            } elseif ($deadlineDate->lt($today)) {
+                $deadlineStateClass = 'text-danger';
+                $deadlineRemaining = 'Expired';
+                $isExpired = true;
+            } else {
+                $days = $today->diffInDays($deadlineDate);
+                $deadlineRemaining = $days . ' ' . ($days === 1 ? 'Day' : 'Days') . ' Due';
+            }
+        }
         $active = $active ?? '-';
         $statusLabel = $statusLabel ?? 'ongoing';
         $thumbnail = $thumbnail ?? null;
@@ -74,7 +93,7 @@
             $typeBadgeClass = 'bg-cyan';
         } elseif ($typeLower === 'content') {
             $placeholderIcon = 'ti ti-book';
-            $typeBadgeClass = 'bg-red';
+            $typeBadgeClass = 'bg-purple-lt text-purple';
         } else {
             $placeholderIcon = 'ti ti-book';
             $typeBadgeClass = 'bg-blue text-white';
@@ -158,6 +177,12 @@
                     <i class="ti ti-calendar-due flex-shrink-0"></i>
                     <span>Deadline: {{ $deadlineDate ? $deadlineDate->format('d M Y') : 'No deadline' }}</span>
                 </div>
+                @if ($deadlineRemaining)
+                    <div class="d-flex align-items-center gap-2 {{ $deadlineStateClass }}">
+                        <i class="ti ti-hourglass flex-shrink-0"></i>
+                        <span>{{ $deadlineRemaining }}</span>
+                    </div>
+                @endif
             </div>
 
                 {{-- Badge Playlist asal — hanya tampil bila content berasal dari Playlist.
@@ -204,7 +229,12 @@
             $cardUrl = $isPlaylist ? $continueUrl : ($slugUrl ?? null);
         @endphp
 
-        @if ($cardUrl)
+        @if (! $isPlaylist && $isExpired)
+            <button type="button" class="btn btn-primary btn-learning-primary btn-learning-lg learning-expired-btn w-100 mt-auto" disabled>
+                <i class="ti ti-lock"></i>
+                Expired
+            </button>
+        @elseif ($cardUrl)
             {{-- Card Playlist: seluruh card dapat diklik (stretched-link) menuju
                  halaman playlist /playlist/{playlistSlug}/{contentSlug}. --}}
             <a href="{{ $cardUrl }}" class="btn btn-primary btn-learning-primary btn-learning-lg w-100 mt-auto {{ $isPlaylist ? 'stretched-link' : '' }}">

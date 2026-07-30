@@ -369,6 +369,11 @@
         transform: none !important;
     }
 
+    .btn-learning-primary.learning-expired-btn:disabled {
+        cursor: not-allowed;
+        opacity: 1;
+    }
+
     .learning-fast-filter-label {
         color: #64748B !important;
         font-weight: 600;

@@ -8,8 +8,8 @@
         'trainingplan', 'playlist' => 'bg-green',
         'video', 'youtube'         => 'bg-yellow text-white',
         'document', 'pdf'          => 'bg-cyan',
-        'content'                  => 'bg-red',
-        'global'                   => 'bg-purple-lt text-purple',
+        'content'                  => 'bg-purple-lt text-purple',
+        'global'                   => 'bg-red',
         'remedial'                 => 'bg-orange-lt text-orange',
         default                    => 'bg-secondary-lt text-secondary',
     };

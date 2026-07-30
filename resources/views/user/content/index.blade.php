@@ -202,6 +202,11 @@
             margin-top: auto;
         }
 
+        .content-card-action.is-expired:disabled {
+            cursor: not-allowed;
+            opacity: 1;
+        }
+
         .learning-path-card {
             border-radius: var(--owl-ui-radius) !important;
         }

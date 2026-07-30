@@ -12,7 +12,7 @@
         in_array($normalizedType, ['video', 'youtube'], true)       => 'bg-yellow text-white',
         in_array($normalizedType, ['document', 'pdf', 'sop/regulation'], true)
                                                                     => 'bg-cyan',
-        $normalizedType === 'content'                               => 'bg-red',
+        $normalizedType === 'content'                               => 'bg-purple-lt text-purple',
         in_array($normalizedType, ['quiz', 'assessment', 'assesment'], true)
                                                                     => 'bg-indigo-lt text-indigo',
         default                                                     => 'bg-orange-lt text-orange',
