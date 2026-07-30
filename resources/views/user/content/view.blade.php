@@ -4,8 +4,8 @@
     $url_ytplayer_js = asset('Tabler/dist/libs/plyr/dist/plyr.min.js?1684106062');
     $url_ytplayer_css = asset('Tabler/dist/libs/plyr/dist/plyr.css?1684106062');
 
-    $contentfile = json_decode($content->file);
-    $getcontentfile = $contentfile[0] ?? '';
+    $contentfile = is_string($content->file) ? json_decode($content->file, true) : [];
+    $getcontentfile = is_array($contentfile) ? ($contentfile[0] ?? '') : ($content->file ?? '');
 @endphp
 
 @section('content')
@@ -31,17 +31,7 @@
         <div class="row g-4 content-learning-layout" id="contentLearningLayout">
             <div class="col-lg-8 col-xl-9 content-learning-main" id="contentLearningMain">
                 @include('user.content.components.content-player')
-                @include('user.content.components.content-detail-header', [
-                    'discussionCount' => $discussionCount,
-                    'bookmarkCount' => $bookmarkCount,
-                    'isBookmarked' => $isBookmarked,
-                ])
                 @include('user.content.components.content-description')
-
-                {{-- Comment modern --}}
-                {{-- @include('user.content.components.content-comment') --}}
-
-                <x-comment :content="$content" :comment="$comment" :discussion-count="$discussionCount" type="content" />
             </div>
 
             <div class="col-lg-4 col-xl-3 content-learning-sidebar" id="contentLearningSidebar">
@@ -55,6 +45,11 @@
 
     </div>
 </div>
+
+@include('user.content.components.content-comment', [
+    'content' => $content,
+    'comment' => $comment,
+])
 
 <script>
     (function () {
@@ -202,6 +197,158 @@
             border-radius: 1.5rem !important;
         }
 
+        /* Cleaning Modal Duplicate Definitions */
+        .content-comment-modal .modal-dialog {
+            display: flex;
+            width: min(70vw, 920px);
+            max-width: min(70vw, 920px);
+            height: 88vh;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .content-comment-modal .modal-content {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            max-height: 100%;
+            overflow: hidden;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, .24);
+        }
+
+        .content-comment-modal .modal-body {
+            display: flex;
+            flex: 1 1 auto;
+            min-height: 0;
+            padding: 0;
+            background: #f8fafc;
+            overflow-y: auto;
+        }
+
+        .content-comment-modal .view-comment-wrapper {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            padding: 12px 14px 14px;
+            overflow: hidden;
+        }
+
+        /* PDF-only controls: keep the toolbar centered and the next action
+           anchored to the lower-right edge of the document stage. */
+        .content-detail-page .owl-pdf-toolbar {
+            display: flex;
+            justify-content: center;
+        }
+
+        .content-detail-page .owl-pdf-toolbar .pdf-tb-inner {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .content-detail-page .owl-pdf-reader-stage {
+            position: relative;
+        }
+
+        .content-detail-page .pdf-page-nav {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .content-detail-page .pdf-page-nav button {
+            position: absolute;
+            bottom: 32px;
+            pointer-events: auto;
+            border-radius: 999px;
+            box-shadow: 0 .75rem 1.5rem rgba(15, 23, 42, .2);
+            transition: transform .18s ease, box-shadow .18s ease,
+                background-color .18s ease, border-color .18s ease;
+        }
+
+        .content-detail-page .pdf-page-nav .pdf-previous-page {
+            left: 20px;
+        }
+
+        .content-detail-page .pdf-page-nav .pdf-next-page {
+            right: 20px;
+        }
+
+        .content-detail-page .pdf-page-nav button:hover:not(:disabled) {
+            background: #043f63;
+            border-color: #043f63;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 1rem 1.75rem rgba(15, 23, 42, .28);
+        }
+
+        .content-detail-page .pdf-page-nav button:disabled {
+            opacity: .45;
+            pointer-events: none;
+        }
+
+        @media (max-width: 575.98px) {
+            .content-detail-page .pdf-page-nav button {
+                bottom: 24px;
+                padding: .55rem .7rem;
+            }
+
+            .content-detail-page .pdf-page-nav .pdf-previous-page {
+                left: 15px;
+            }
+
+            .content-detail-page .pdf-page-nav .pdf-next-page {
+                right: 15px;
+            }
+
+            .content-detail-page .pdf-page-nav-label {
+                display: none;
+            }
+        }
+
+        .content-comment-modal .view-comment-wrapper .comment-ajax-root {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .content-comment-modal .view-comment-wrapper .comment-ajax-root > #comment {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            margin: 0 !important;
+            overflow: hidden;
+        }
+
+        .content-comment-modal .view-comment-wrapper .comment-ajax-root > #comment > .card-body:last-child {
+            flex: 1 1 auto;
+            overflow-y: auto;
+        }
+
+        .overview-text.is-collapsed {
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+        }
+
+        .overview-meta-button {
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .overview-meta-button:hover {
+            color: #05507D;
+        }
+
         .comment-composer {
             max-width: 100%;
         }
@@ -292,7 +439,6 @@
             background: linear-gradient(135deg, #05507D 0%, #6AAED6 100%);
         }
 
-        /* ── Sidebar toggle button ─────────────────────────────────── */
         .content-sidebar-toggle {
             display: inline-flex;
             align-items: center;
@@ -352,7 +498,6 @@
             color: #93c5fd;
         }
 
-        /* ── Collapsible sidebar layout ────────────────────────────── */
         .content-learning-main {
             min-width: 0;
         }
@@ -363,7 +508,6 @@
             width: 100%;
         }
 
-        /* ── AI Assistant card ─────────────────────────────────────── */
         .ai-assistant-card .ai-online-dot {
             display: inline-block;
             width: 8px;
@@ -563,12 +707,39 @@
             .comment-empty-icon {
                 font-size: 42px;
             }
+
+            .content-comment-modal .modal-dialog {
+                width: calc(100% - 1rem);
+                max-width: none;
+                height: calc(100% - 1rem);
+                margin: .5rem;
+            }
+
+            .content-comment-modal .view-comment-wrapper {
+                padding: 8px;
+            }
         }
     </style>
 @endsection
 
 @section('script')
     <script src="{{ asset('js/learning-progress.js') }}"></script>
+
+    <script>
+        document.addEventListener('click', function (event) {
+            var button = event.target.closest('.overview-toggle');
+            if (!button) return;
+
+            var overview = document.querySelector(button.dataset.overviewTarget || '#contentOverviewText');
+            if (!overview) return;
+
+            overview.classList.toggle('is-collapsed');
+            var expanded = !overview.classList.contains('is-collapsed');
+            button.textContent = expanded
+                ? button.dataset.readLess
+                : button.dataset.readMore;
+        });
+    </script>
 
     @if ($content->type == 'Document' || $content->type == 'SOP/Regulation')
         <script src="{{ asset('js/pdf.min.js') }}"></script>
@@ -609,14 +780,45 @@
                 viewerSelector: '.content-pdfjs-viewer'
             });
 
+            let maxPagesRead = Math.max(1, {{ (int) ($content_user->last_page ?? 0) }});
+            var pdfPreviousPageButton = document.getElementById('pdf-previous-page');
+            var pdfNextPageButton = document.getElementById('pdf-next-page');
+
+            function updatePdfPageButtons(activePage, totalPages) {
+                if (!pdfPreviousPageButton && !pdfNextPageButton) return;
+
+                var currentPage = Math.max(1, parseInt(activePage, 10) || 1);
+                var pageCount = Math.max(0, parseInt(totalPages, 10) || 0);
+                var isFirstPage = currentPage <= 1;
+                var isLastPage = pageCount > 0 && currentPage >= pageCount;
+
+                if (pdfPreviousPageButton) {
+                    $('#pdf-previous-page').prop('disabled', isFirstPage);
+                    pdfPreviousPageButton.setAttribute('aria-hidden', isFirstPage ? 'true' : 'false');
+                }
+
+                if (pdfNextPageButton) {
+                    $('#pdf-next-page').prop('disabled', !pageCount || isLastPage);
+                    pdfNextPageButton.setAttribute('aria-hidden', isLastPage ? 'true' : 'false');
+                }
+            }
+
+            function updateDocumentProgressUi(readPage, totalPages) {
+                var progress = totalPages > 0
+                    ? Math.min(100, Math.round((readPage / totalPages) * 100))
+                    : 0;
+
+                $('.pages-read-text').text(readPage + '/' + totalPages + ' pages read');
+                $('#contentProgressValue').text(progress + '%');
+                $('#contentProgressBar').css('width', progress + '%');
+            }
+
             var pdfViewer = window.pdfViewer = new PDFjsViewer(
                 $(".content-pdfjs-viewer"),
                 contentPdfReader.getViewerOptions({
                     onDocumentReady: function () {
                         var totalPages = pdfViewer.getPageCount();
 
-                        // Resume: prefer the exact saved page, fall back to the
-                        // legacy progress-percentage estimate.
                         var lastPage = {{ (int) ($content_user->last_page ?? 0) }};
 
                         if (!lastPage) {
@@ -624,24 +826,59 @@
                             lastPage = parseInt((progression * totalPages) / 100);
                         }
 
+                        maxPagesRead = Math.max(maxPagesRead, lastPage || 1);
+
+                        var initialActivePage = 1;
+
                         if (lastPage > 1 && lastPage < totalPages) {
+                            initialActivePage = lastPage;
                             pdfViewer.scrollToPage(lastPage);
                         }
 
                         progressTracker.send({ total_pages: totalPages }, true);
 
+                        updatePdfPageButtons(initialActivePage, totalPages);
+
                         hideContentPlayerSkeleton();
                     },
 
                     onActivePageChanged: function (page, pageno) {
+                        var totalPages = this.getPageCount();
+                        var activePage = parseInt(pageno, 10) || 1;
+
+                        // The top label represents the page currently visible.
+                        contentPdfReader.updatePageLabel(activePage, totalPages);
+                        updatePdfPageButtons(activePage, totalPages);
+
+                        // Sidebar progress is monotonic: going backward must
+                        // never reduce the highest page already reached.
+                        if (activePage <= maxPagesRead) return;
+
+                        maxPagesRead = activePage;
+                        updateDocumentProgressUi(maxPagesRead, totalPages);
+
                         progressTracker.sendDebounced({
-                            last_page: pageno,
-                            total_pages: this.getPageCount()
+                            last_page: maxPagesRead,
+                            total_pages: totalPages
                         });
                     }
                 }));
 
             contentPdfReader.attach(pdfViewer, pdfFile);
+
+            if (pdfPreviousPageButton) {
+                pdfPreviousPageButton.addEventListener('click', function () {
+                    if (this.disabled || !pdfViewer || typeof pdfViewer.prev !== 'function') return;
+                    pdfViewer.prev();
+                });
+            }
+
+            if (pdfNextPageButton) {
+                pdfNextPageButton.addEventListener('click', function () {
+                    if (this.disabled || !pdfViewer || typeof pdfViewer.next !== 'function') return;
+                    pdfViewer.next();
+                });
+            }
 
             window.pdfRotateLeft = function () {
                 return contentPdfReader.rotate(-90);
@@ -665,7 +902,6 @@
                     hideContentPlayerSkeleton();
                 });
             }
-
         </script>
     @endif
 
@@ -705,8 +941,6 @@
                 });
 
                 function onDataLoaded() {
-                    // Resume: prefer the exact saved position, fall back to the
-                    // legacy progress-percentage estimate.
                     var resumeSeconds = {{ (int) ($content_user->current_time ?? 0) }};
 
                     if (!resumeSeconds) {
@@ -737,13 +971,19 @@
                     }, true);
                 });
 
+                // Throttled timeupdate untuk mencegah spam ke server
+                let lastProgressSync = 0;
                 player.on('timeupdate', function() {
                     if (!player.duration) return;
 
-                    progressTracker.send({
-                        current_time: player.currentTime,
-                        duration_seconds: player.duration
-                    });
+                    // Mengirim update setiap 5 detik sekali saja saat diputar
+                    if (Math.abs(player.currentTime - lastProgressSync) >= 5) {
+                        lastProgressSync = player.currentTime;
+                        progressTracker.sendDebounced({
+                            current_time: player.currentTime,
+                            duration_seconds: player.duration
+                        });
+                    }
                 });
 
                 player.on('pause', function() {
@@ -797,7 +1037,17 @@
             document.querySelectorAll('[data-copy-content-url]').forEach(function (button) {
                 button.addEventListener('click', async function () {
                     try {
-                        await navigator.clipboard.writeText(window.location.href);
+                        if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(window.location.href);
+                        } else {
+                            // Fallback jika dikunjungi lewat non-HTTPS / HTTP IP lokal
+                            const textArea = document.createElement('textarea');
+                            textArea.value = window.location.href;
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                        }
                         showContentToast('Link copied!');
                     } catch (error) {
                         showContentToast('Copy failed');

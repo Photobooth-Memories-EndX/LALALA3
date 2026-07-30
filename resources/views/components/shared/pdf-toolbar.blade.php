@@ -89,11 +89,11 @@
                     <span class="pdf-tb-label pdf-tb-mode-label" id="{{ $pdfReadingModeLabelId }}">Portrait</span>
                 </button>
             @endif
-            <a id="{{ $pdfDownloadButtonId }}" href="#" download
+            <!-- <a id="{{ $pdfDownloadButtonId }}" href="#" download
                 class="btn btn-sm btn-secondary pdf-tb-btn"
                 title="Download PDF">
                 <i class="ti ti-download"></i>
-            </a>
+            </a> -->
             <button type="button" class="btn btn-sm btn-secondary pdf-tb-btn pdf-tb-hide-xs"
                 onclick="{{ $pdfActionPrefix }}DoPrint(); return false;"
                 title="Print PDF">

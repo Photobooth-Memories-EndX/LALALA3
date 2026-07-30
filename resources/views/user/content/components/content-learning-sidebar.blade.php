@@ -1,5 +1,7 @@
 @php
     $progress = (int) ($content_user->progress ?? 0);
+    $readPages = (int) ($content_user->last_page ?? 0);
+    $totalPages = (int) ($content_user->total_pages ?? 0);
     $bookmarkCount = $bookmarkCount ?? 0;
     $discussionCount = $discussionCount ?? 0;
     $isBookmarked = $isBookmarked ?? false;
@@ -15,55 +17,68 @@
 
 <div class="d-flex flex-column gap-3 content-sidebar-stack">
 
- <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card">
-    <div class="card-body p-4">
+    <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card">
+        <div class="card-body p-4">
 
-        <div class="d-flex justify-content-between align-items-start mb-4">
+            {{-- Bagian Header Progress & Badge Status --}}
+            <div class="d-flex justify-content-between align-items-start mb-4 gap-2">
 
-            <div>
-                <div class="text-muted small fw-semibold mb-1">
-                    Your Progress
+                <div>
+                    <div class="text-muted small fw-semibold mb-1">
+                        Your Progress
+                    </div>
+
+                    <h1 id="contentProgressValue" class="fw-bold text-primary mb-2" style="font-size:2.4rem; line-height:1;">
+                        {{ $progress }}%
+                    </h1>
+
+                    @if (in_array($content->type, ['Document', 'SOP/Regulation']))
+                        <div class="text-muted small mb-1">
+                            <i class="ti ti-book-2 me-1"></i>
+                            <span class="pages-read-text">
+                                {{ $readPages }}/{{ $totalPages }} pages read
+                            </span>
+                        </div>
+                    @endif
+
+                    <small class="text-muted d-block" style="max-width:170px;">
+                        Keep going! You're making great progress.
+                    </small>
                 </div>
 
-                <h1 id="contentProgressValue" class="fw-bold text-primary mb-2" style="font-size:2.4rem; line-height:1;">
-                    {{ $progress }}%
-                </h1>
+                {{-- Badge Status --}}
+                <div class="ms-2">
+                    <span class="badge rounded-pill bg-primary-lt text-primary px-3 py-2 border-0 d-inline-flex align-items-center">
+                        <i class="ti ti-check me-1"></i>
+                        <span id="contentProgressStatus">{{ $learningStatusLabel }}</span>
+                    </span>
+                </div>
 
-                <small class="text-muted d-block" style="max-width:170px;">
-                    Keep going! You're making great progress.
-                </small>
             </div>
 
-            <span class="badge rounded-pill bg-primary-lt text-primary px-3 py-2 mt-1">
-                <i class="ti ti-check me-1"></i>
-                <span id="contentProgressStatus">{{ $learningStatusLabel }}</span>
-            </span>
-
-        </div>
-
-        <div class="progress mb-4" style="height:8px;">
-            <div
-                id="contentProgressBar"
-                class="progress-bar bg-primary rounded-pill"
-                style="width: {{ $progress }}%">
+            <div class="progress mb-4" style="height:8px;">
+                <div
+                    id="contentProgressBar"
+                    class="progress-bar bg-primary rounded-pill"
+                    style="width: {{ $progress }}%">
+                </div>
             </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <span class="text-muted small">
+                    Learning Duration
+                </span>
+
+                <span class="fw-semibold text-dark">
+                    <i class="ti ti-clock me-1 text-muted"></i>
+                    {{ \App\Support\DurationFormatter::format($content->duration, 'Self-paced') }}
+                </span>
+
+            </div>
+
         </div>
-
-        <div class="d-flex justify-content-between align-items-center">
-
-            <span class="text-muted small">
-                Learning Duration
-            </span>
-
-            <span class="fw-semibold text-dark">
-                <i class="ti ti-clock me-1 text-muted"></i>
-                {{ \App\Support\DurationFormatter::format($content->duration, 'Self-paced') }}
-            </span>
-
-        </div>
-
     </div>
-</div>
 
     <div class="card border-0 shadow-sm rounded-4 text-center glass-surface content-sidebar-card">
         <div class="card-body p-4">
@@ -73,7 +88,7 @@
             </div>
 
             <div class="d-flex justify-content-center mb-2">
-                <span class="badge rounded-pill bg-success-lt text-success">Instructor</span>
+                <span class="badge rounded-pill bg-success-lt text-success">Created by:</span>
             </div>
 
             <h3 class="mb-1">
@@ -122,10 +137,11 @@
                 </div>
 
                 <div class="col-6">
-                    <div class="sidebar-stat-card">
+                    <button type="button" class="sidebar-stat-card w-100 text-start border-0"
+                            data-bs-toggle="modal" data-bs-target="#contentCommentModal">
                         <div class="text-muted small">Comments</div>
                         <div class="fw-bold fs-3">{{ number_format($discussionCount) }}</div>
-                    </div>
+                    </button>
                 </div>
 
                 <div class="col-6">
@@ -242,18 +258,6 @@
         </div>
     </div>
 
-    {{-- <div class="card border-0 shadow-sm rounded-4 text-white tips-card">
-        <div class="card-body p-4">
-            <h3 class="text-white mb-2">
-                <i class="ti ti-bulb me-1"></i>
-                Learning Tips
-            </h3>
-            <p class="mb-0">
-                Complete the learning material before accessing the assessment.
-            </p>
-        </div>
-    </div> --}}
-
 </div>
 
 <script>
@@ -264,8 +268,6 @@
 
         if (!form || !input || !messages) return;
 
-        // Endpoint AI belum tersedia. Saat backend siap, isi URL di bawah
-        // (contoh: '/api/ai/content-chat') dan sendToAI otomatis memakainya.
         var AI_ENDPOINT = null;
 
         function appendBubble(text, role) {

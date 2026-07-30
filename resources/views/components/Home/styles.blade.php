@@ -1623,7 +1623,7 @@ body.dark-mode .home-modern-text-primary {
     gap: 8px;
     position: relative;
     overflow: hidden;
-    background: #D4A51F;
+    background: #FBBF24;
     color: #FFFFFF;
     border: none;
     padding: 10px 22px;

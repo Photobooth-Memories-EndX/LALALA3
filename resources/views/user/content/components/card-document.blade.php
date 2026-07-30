@@ -98,8 +98,8 @@
         </div>
 
         <a href="{{ route('content.user.view', $item->slug) }}"
-           class="btn btn-success w-100 content-card-action">
-            <i class="ti ti-file-text me-1"></i>
+           class="btn btn-primary w-100 content-card-action">
+            <i class="ti ti-player-play me-1"></i>
             Read Document
         </a>
     </div>

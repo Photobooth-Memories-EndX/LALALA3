@@ -5,10 +5,12 @@
     --owl-primary-rgb: 5, 80, 125;
     --kp-hero-primary-rgb: 5, 80, 125;
     --kp-hero-dark-rgb: 5, 80, 125;
-    --kp-hero-light-rgb: 106, 174, 214;
-    --kp-hero-completed-rgb: 22, 163, 74;
+    
+    /* REVISI WARNA: Biru Krakatau Posco (#05507d) dan Hijau Tua (#0f5132) */
+    --kp-hero-light-rgb: 5, 80, 125;        /* Biru Krakatau Posco (On Going) */
+    --kp-hero-completed-rgb: 15, 81, 50;     /* Hijau Tua (Completed) */
 
-/* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
+    /* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
     --hero-overlay-width: 58%;
 
     /* 2. Buat gradasi memudar lebih lembut (smooth gradient stops) */
@@ -16,7 +18,6 @@
         90deg,
         rgba(0, 27, 68, .96) 0%,
         rgba(var(--kp-hero-primary-rgb), .88) 50%,
-        
         rgba(var(--kp-hero-light-rgb), .46) 80%,
         rgba(var(--kp-hero-light-rgb), 0) 100%
     );
@@ -549,4 +550,3 @@
         </style>
     @endpush
 @endonce
-
