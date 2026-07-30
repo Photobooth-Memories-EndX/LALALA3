@@ -284,6 +284,13 @@
             box-shadow: 0 1rem 1.75rem rgba(15, 23, 42, .28);
         }
 
+        .content-detail-page .badge-completed,
+        .content-detail-page .badge-completed i,
+        .content-detail-page .badge-completed svg {
+            color: #0f5132 !important;
+            fill: #0f5132 !important;
+        }
+
         .content-detail-page .pdf-page-nav button:disabled {
             opacity: .45;
             pointer-events: none;

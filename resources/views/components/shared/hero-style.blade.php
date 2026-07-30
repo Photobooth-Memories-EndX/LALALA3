@@ -7,8 +7,8 @@
     --kp-hero-dark-rgb: 5, 80, 125;
     
     /* REVISI WARNA: Biru Krakatau Posco (#05507d) dan Hijau Tua (#0f5132) */
-    --kp-hero-light-rgb: 5, 80, 125;        /* Biru Krakatau Posco (On Going) */
-    --kp-hero-completed-rgb: 15, 81, 50;     /* Hijau Tua (Completed) */
+    --kp-hero-light-rgb: 0, 82, 204;         /* Biru utama (On Going) */
+    --kp-hero-completed-rgb: 16, 185, 129;   /* Hijau (Completed) */
 
     /* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
     --hero-overlay-width: 58%;
@@ -366,6 +366,13 @@
                 font-weight: 500;
                 line-height: 1.2;
                 text-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+                text-decoration: none;
+            }
+
+            .shared-hero-summary-label:hover,
+            .shared-hero-summary-label:focus-visible {
+                color: #fff;
+                text-decoration: underline;
             }
 
             .shared-hero-summary-value {
@@ -401,7 +408,7 @@
 
             .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.completed) .shared-hero-summary-label,
             .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.completed) .shared-hero-summary-value {
-                color: rgb(var(--kp-hero-completed-rgb));
+                color: #ffffff;
             }
 
             [data-bs-theme="dark"] .shared-learning-hero,

@@ -1,7 +1,8 @@
 <div class="home-modern-card">
 
     <div class="home-modern-trainingplan-card-body">
-        <a href="{{ route('trainingplan.user.index') }}" class="home-modern-btn-training-plan">
+        <a href="{{ route('trainingplan.user.index') }}"
+           class="home-modern-btn-training-plan home-modern-assessment-btn">
             <i class="ti ti-clipboard-list"></i>
             <span>Training Plan</span>
         </a>

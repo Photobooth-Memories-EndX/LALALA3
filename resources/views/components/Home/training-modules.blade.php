@@ -38,6 +38,13 @@
             {{-- ── VIDEO TAB ── --}}
             <div class="tab-pane fade show active" id="pane-video" role="tabpanel">
 
+                <div class="d-flex justify-content-end mb-2">
+                    <a href="{{ url('/content') }}?s=&classification=&type=Video&month=&year=&author=&deadline_from_date=&deadline_to_date=&created_from_date=&created_to_date=&deadline_status=all&sort=newest_course&view_order=&duration=all"
+                       class="home-modern-view-all">
+                        View All <i class="ti ti-arrow-right ms-1"></i>
+                    </a>
+                </div>
+
                 @if($content_video && $content_video->count())
                 <div class="home-modern-slide-carousel py-2" data-autoplay="4500">
                     <div class="home-modern-slide-viewport">
@@ -97,6 +104,13 @@
             {{-- ── DOCUMENT TAB ── --}}
             <div class="tab-pane fade" id="pane-document" role="tabpanel">
 
+                <div class="d-flex justify-content-end mb-2">
+                    <a href="{{ url('/content') }}?s=&classification=&type=Document&month=&year=&author=&deadline_from_date=&deadline_to_date=&created_from_date=&created_to_date=&deadline_status=all&sort=newest_course&view_order=&duration=all"
+                       class="home-modern-view-all">
+                        View All <i class="ti ti-arrow-right ms-1"></i>
+                    </a>
+                </div>
+
                 @if($content_pdf && $content_pdf->count())
                 <div class="home-modern-slide-carousel py-2" data-autoplay="4500">
                     <div class="home-modern-slide-viewport">
@@ -145,6 +159,13 @@
 
             {{-- ── PLAYLIST TAB ── --}}
             <div class="tab-pane fade" id="pane-playlist" role="tabpanel">
+
+                <div class="d-flex justify-content-end mb-2">
+                    <a href="{{ route('playlist.user.index') }}"
+                       class="home-modern-view-all">
+                        View All <i class="ti ti-arrow-right ms-1"></i>
+                    </a>
+                </div>
 
                 @php
                     $playlistCards = $playlist

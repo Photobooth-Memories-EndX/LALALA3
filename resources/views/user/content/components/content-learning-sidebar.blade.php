@@ -2,6 +2,9 @@
     $progress = (int) ($content_user->progress ?? 0);
     $readPages = (int) ($content_user->last_page ?? 0);
     $totalPages = (int) ($content_user->total_pages ?? 0);
+    $fromDate = $content->from_date ? \Carbon\Carbon::parse($content->from_date)->format('d M Y') : null;
+    $toDate = $content->to_date ? \Carbon\Carbon::parse($content->to_date)->format('d M Y') : null;
+    $deadlineRange = $fromDate || $toDate ? ($fromDate ?? '-') . ' - ' . ($toDate ?? '-') : '-';
     $bookmarkCount = $bookmarkCount ?? 0;
     $discussionCount = $discussionCount ?? 0;
     $isBookmarked = $isBookmarked ?? false;
@@ -20,10 +23,9 @@
     <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card">
         <div class="card-body p-4">
 
-            {{-- Bagian Header Progress & Badge Status --}}
-            <div class="d-flex justify-content-between align-items-start mb-4 gap-2">
-
-                <div>
+            {{-- Header Progress & Badge Status --}}
+            <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+                <div class="flex-grow-1 min-w-0">
                     <div class="text-muted small fw-semibold mb-1">
                         Your Progress
                     </div>
@@ -40,20 +42,21 @@
                             </span>
                         </div>
                     @endif
-
-                    <small class="text-muted d-block" style="max-width:170px;">
-                        Keep going! You're making great progress.
-                    </small>
                 </div>
 
-                {{-- Badge Status --}}
-                <div class="ms-2">
-                    <span class="badge rounded-pill bg-primary-lt text-primary px-3 py-2 border-0 d-inline-flex align-items-center">
-                        <i class="ti ti-check me-1"></i>
+                {{-- Badge Status dengan Hijau Tua saat Completed --}}
+                <div class="ms-2 flex-shrink-0">
+                    <span class="badge rounded-pill {{ $learningStatusLabel === 'Completed' ? 'bg-success-lt text-success-dark fw-bold' : 'bg-primary-lt text-primary' }} px-3 py-2 border-0 d-inline-flex align-items-center"
+                          style="{{ $learningStatusLabel === 'Completed' ? 'color: #0f5132 !important; background-color: #d1e7dd !important;' : '' }}">
+                        <i class="ti ti-check me-1" style="{{ $learningStatusLabel === 'Completed' ? 'color: #0f5132 !important;' : '' }}"></i>
                         <span id="contentProgressStatus">{{ $learningStatusLabel }}</span>
                     </span>
                 </div>
+            </div>
 
+            {{-- Teks Dikeluarkan dari Flex Kolom agar Bisa Membentang Penuh Rata Kanan Kiri --}}
+            <div class="text-muted small w-100 mb-3 text-justify" style="text-align: justify; text-justify: inter-word;">
+                Keep going! You're making great progress.
             </div>
 
             <div class="progress mb-4" style="height:8px;">
@@ -64,51 +67,47 @@
                 </div>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center">
-
-                <span class="text-muted small">
+            <div class="text-start mb-2">
+                <span class="text-muted small d-block">
                     Learning Duration
                 </span>
 
-                <span class="fw-semibold text-dark">
+                <span class="fw-semibold text-dark d-block">
                     <i class="ti ti-clock me-1 text-muted"></i>
                     {{ \App\Support\DurationFormatter::format($content->duration, 'Self-paced') }}
                 </span>
+            </div>
 
+            <div class="text-start">
+                <span class="text-muted small d-block">
+                    Deadline
+                </span>
+
+                <span class="fw-semibold text-dark d-block">
+                    <i class="ti ti-calendar-due me-1 text-muted"></i>
+                    {{ $deadlineRange }}
+                </span>
             </div>
 
         </div>
     </div>
 
     <div class="card border-0 shadow-sm rounded-4 text-center glass-surface content-sidebar-card">
-        <div class="card-body p-4">
+        <div class="card-body p-3">
 
-            <div class="avatar avatar-xl mx-auto mb-3 rounded-circle bg-primary-lt text-primary shadow-sm">
-                <i class="ti ti-user-circle fs-1"></i>
-            </div>
-
-            <div class="d-flex justify-content-center mb-2">
-                <span class="badge rounded-pill bg-success-lt text-success">Created by:</span>
+            <div class="mb-2">
+                <span class="badge rounded-pill bg-primary-lt text-primary px-3 py-2">
+                    Created by
+                </span>
             </div>
 
             <h3 class="mb-1">
                 {{ $content->author ?? 'Training Team' }}
             </h3>
 
-            <div class="text-muted small mb-3">
-                Content Author / Instructor
-            </div>
-
-            <div class="d-flex flex-wrap justify-content-center gap-2">
-                <span class="badge rounded-pill bg-primary-lt text-primary px-3 py-2">
-                    <i class="ti ti-badge me-1"></i>
-                    Instructor
-                </span>
-
-                <span class="badge rounded-pill bg-secondary-lt text-secondary px-3 py-2">
-                    <i class="ti ti-clock me-1"></i>
-                    {{ \App\Support\DurationFormatter::format($content->duration, 'Flexible') }}
-                </span>
+            <div class="text-muted small mt-2">
+                <i class="ti ti-clock me-1"></i>
+                {{ \App\Support\DurationFormatter::format($content->duration, 'Flexible') }}
             </div>
 
         </div>

@@ -101,11 +101,19 @@
                 <div class="shared-hero-donut"
                      style="background: conic-gradient(rgb(var(--kp-hero-completed-rgb)) 0%, rgb(var(--kp-hero-completed-rgb)) {{ $donutBlendStart }}%, rgb(var(--kp-hero-light-rgb)) {{ $donutBlendEnd }}%, rgb(var(--kp-hero-light-rgb)) 100%);">
                     <div class="shared-hero-donut-hit shared-hero-donut-hit-completed"
+                         role="link"
+                         tabindex="0"
+                         onclick="window.location.href='{{ route('user.learning.dashboard', ['learning_tab' => 'record']) }}'"
+                         onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }"
                          style="clip-path: {{ $completedSlicePath }}"
                          data-bs-toggle="tooltip"
                          data-bs-placement="top"
                          title="Completed {{ $completedCourseVal }} Learning"></div>
                     <div class="shared-hero-donut-hit shared-hero-donut-hit-ongoing"
+                         role="link"
+                         tabindex="0"
+                         onclick="window.location.href='{{ route('user.learning.dashboard') }}'"
+                         onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }"
                          style="clip-path: {{ $ongoingSlicePath }}"
                          data-bs-toggle="tooltip"
                          data-bs-placement="top"
@@ -129,14 +137,16 @@
                         <div class="shared-hero-summary-row">
                             <div class="shared-hero-summary-meta">
                                 <span class="shared-hero-stat-dot completed"></span>
-                                <span class="shared-hero-summary-label">Completed</span>
+                                <a href="{{ route('user.learning.dashboard', ['learning_tab' => 'record']) }}"
+                                   class="shared-hero-summary-label">Completed</a>
                             </div>
                             <div class="shared-hero-summary-value">{{ $completedCourseVal }}</div>
                         </div>
                         <div class="shared-hero-summary-row">
                             <div class="shared-hero-summary-meta">
                                 <span class="shared-hero-stat-dot ongoing"></span>
-                                <span class="shared-hero-summary-label">On Going</span>
+                                <a href="{{ route('user.learning.dashboard') }}"
+                                   class="shared-hero-summary-label">On Going</a>
                             </div>
                             <div class="shared-hero-summary-value">{{ $ongoingCourseVal }}</div>
                         </div>

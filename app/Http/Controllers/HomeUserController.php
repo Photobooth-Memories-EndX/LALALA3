@@ -9,6 +9,7 @@ use App\Models\ContentUser;
 use App\Models\EventPhoto;
 use App\Models\TrainingPlan;
 use App\Services\LearningAnalyticsService;
+use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -128,8 +129,39 @@ class HomeUserController extends Controller
             ->first();
 
         $continuePeriod = null;
+        $continueProgressDetail = null;
 
         if ($continueCourse && $continueCourse->content) {
+            $continueProgress = min(100, max(0, (int) ($continueCourse->progress ?? 0)));
+            $continueContentType = $continueCourse->content->type;
+
+            if (in_array($continueContentType, ['Document', 'SOP/Regulation'], true)) {
+                $totalPages = (int) ($continueCourse->total_pages ?? 0);
+                $savedPages = (int) ($continueCourse->last_page ?? 0);
+                $estimatedPages = $totalPages > 0
+                    ? (int) round(($continueProgress / 100) * $totalPages)
+                    : 0;
+
+                $continueProgressDetail = [
+                    'type' => 'pages',
+                    'read' => min($totalPages, max($savedPages, $estimatedPages)),
+                    'total' => $totalPages,
+                ];
+            } elseif (in_array($continueContentType, ['Video', 'YouTube', 'Audio'], true)) {
+                $totalSeconds = DurationFormatter::toSeconds($continueCourse->content->duration)
+                    ?? (int) ($continueCourse->duration_seconds ?? 0);
+                $savedSeconds = (int) ($continueCourse->current_time ?? 0);
+                $estimatedSeconds = $totalSeconds > 0
+                    ? (int) round(($continueProgress / 100) * $totalSeconds)
+                    : 0;
+
+                $continueProgressDetail = [
+                    'type' => 'duration',
+                    'watched' => min($totalSeconds, max($savedSeconds, $estimatedSeconds)),
+                    'total' => $totalSeconds,
+                ];
+            }
+
             $periodAssessment = Assesment::where('content_id', $continueCourse->content->id)
                 ->whereNotNull('fromdate')
                 ->whereNotNull('todate')
@@ -177,6 +209,7 @@ class HomeUserController extends Controller
                 'upcomingDeadlines',
                 'continueCourse',
                 'continuePeriod',
+                'continueProgressDetail',
                 'learningHours',
             )
         );

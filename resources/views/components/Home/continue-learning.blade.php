@@ -22,6 +22,8 @@
                     $clThumb = asset($clSrc);
                 }
             }
+
+            $progressDetail = $continueProgressDetail ?? null;
         @endphp
 
         <div class="home-modern-continue-wrap">
@@ -37,7 +39,16 @@
 
             <div class="home-modern-continue-info">
 
-                <span class="badge bg-primary-lt mb-2">In Progress</span>
+                @php
+                    $continueProgress = (int) ($continueCourse->progress ?? 0);
+                    $continueLearningStatus = strtolower((string) ($continueCourse->learning_status ?? ''));
+                    $continueIsCompleted = $continueProgress >= 100 || $continueLearningStatus === 'completed';
+                    $continueIsInProgress = $continueProgress > 0 && $continueProgress < 100;
+                @endphp
+
+                <span class="badge {{ $continueIsCompleted ? 'bg-success-lt text-success' : ($continueIsInProgress ? 'bg-primary-lt text-primary' : 'bg-secondary-lt text-secondary') }} mb-2">
+                    {{ $continueIsCompleted ? 'Completed' : ($continueIsInProgress ? 'In Progress' : 'Not Started') }}
+                </span>
 
                 <h3 class="home-modern-continue-title">
                     {{ Str::limit($cl->title, 70) }}
@@ -56,6 +67,17 @@
                         <div class="home-modern-progress-bar"
                              style="width: {{ $continueCourse->progress ?? 0 }}%"></div>
                     </div>
+
+                    @if ($progressDetail && $progressDetail['type'] === 'pages')
+                        <small class="text-muted d-block mt-1">
+                            {{ $progressDetail['read'] }}/{{ $progressDetail['total'] }} pages
+                        </small>
+                    @elseif ($progressDetail && $progressDetail['type'] === 'duration')
+                        <small class="text-muted d-block mt-1">
+                            {{ \App\Support\DurationFormatter::fromSeconds($progressDetail['watched']) }} /
+                            {{ \App\Support\DurationFormatter::fromSeconds($progressDetail['total']) }} video
+                        </small>
+                    @endif
                 </div>
 
                 <div class="mt-2">
