@@ -27,8 +27,8 @@
 <div class="card border-0 shadow-sm rounded-4 mb-3 certificate-card-shell">
     <div class="card-body p-4 border-bottom">
         <div class="record-filter-shell certificate-filter-shell" id="certificateFilterBar">
-            <h3 class="card-title mb-1">My Certificates</h3>
-            <div class="text-muted small">View all certificates that have been successfully generated.</div>
+            {{-- <h3 class="card-title mb-1">My Certificates</h3>
+            <div class="text-muted small">View all certificates that have been successfully generated.</div> --}}
 
             <div class="certificate-fast-filter-section mt-3">
                 <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>

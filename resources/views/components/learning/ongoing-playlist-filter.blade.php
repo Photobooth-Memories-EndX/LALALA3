@@ -1,7 +1,7 @@
 @php
     $userId = auth()->id();
 
-    // Status playlist diturunkan dari progress module — tidak ada "Paused" di playlist.
+    // Status playlist diturunkan dari progress module; tidak ada "Paused" di playlist.
     $quickStatusOptions = [
         'all'         => 'All',
         'not_started' => 'Not Started',
@@ -13,7 +13,6 @@
         $curQuickStatus = 'all';
     }
 
-    // Opsi Year otomatis dari data aktivitas learning user — tidak hardcode.
     $quickYearOptions = \App\Models\ContentUser::where('user_id', $userId)
         ->selectRaw('DISTINCT YEAR(created_at) as learning_year')
         ->orderByDesc('learning_year')
@@ -28,7 +27,6 @@
     ];
 
     $curYear = request('ongoing_year', 'all');
-
     $activeQuickMonths = array_values(array_filter((array) request('ongoing_month', [])));
     $quickMonthLabel = empty($activeQuickMonths)
         ? 'All'
@@ -40,69 +38,27 @@
     $resetUrl = route('user.learning.dashboard') . '?' . http_build_query(['ongoing_mode' => 'playlist']);
 @endphp
 
-<div class="card border-0 shadow-sm rounded-4 mb-4 learning-filter-card">
+<div class="card border-0 shadow-sm rounded-4 mb-4 learning-filter-card ongoing-filter-card">
     <div class="card-body p-4">
-        <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingPlaylistFilterForm">
-
-            {{-- Mode & quick status ikut terkirim saat submit form (state konsisten). --}}
+        <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingPlaylistFilterForm" class="ongoing-filter-shell">
             <input type="hidden" name="ongoing_mode" value="playlist">
             @if ($curQuickStatus !== 'all')
                 <input type="hidden" name="ongoing_quick_status" value="{{ $curQuickStatus }}">
             @endif
 
-            <div class="row g-3 align-items-start mb-3 learning-filter-header">
-                <div class="col-12 col-lg-6">
-                    <h3 class="card-title mb-1">Learning On Going</h3>
-                    <div class="text-muted small">
-                        Your Enrolled Playlists
-                    </div>
-                </div>
-
-                <div class="col-12 col-lg-6">
-                    <label class="form-label small text-muted mb-1" for="ongoing_search">Search</label>
-                    <div class="input-icon">
-                        <span class="input-icon-addon">
-                            <i class="ti ti-search"></i>
-                        </span>
-                        <input type="text"
-                               name="ongoing_search"
-                               id="ongoing_search"
-                               value="{{ request('ongoing_search') }}"
-                               class="form-control rounded-3"
-                               placeholder="Search playlists">
-                    </div>
-                </div>
+            <div class="ongoing-filter-heading mb-3">
+                <h3 class="card-title mb-1">Learning On Going</h3>
+                <div class="text-muted small">Your Enrolled Playlists</div>
             </div>
 
-            <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-lg-between gap-3 mb-3 learning-filter-mode-row">
-                {{-- Mode switch: Content | Playlist (aktif) --}}
-                <x-learning.ongoing-mode-switch mode="playlist" />
-
-                <div class="learning-filter-mode-actions">
-                    <div class="d-flex gap-2 learning-filter-actions justify-content-lg-end">
-                        <button type="submit" class="btn btn-primary btn-learning-primary flex-fill flex-lg-grow-0">
-                            <i class="ti ti-check"></i>
-                            Apply Filter
-                        </button>
-
-                        <a href="{{ $resetUrl }}"
-                           class="btn btn-outline-secondary btn-learning-outline flex-fill flex-lg-grow-0">
-                            <i class="ti ti-refresh"></i>
-                            Reset
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                {{-- Quick dropdown filters (Status / Year / Month) — diterapkan via AJAX. --}}
-                <div class="w-100">
-                    <div class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</div>
-                    <div class="d-flex flex-wrap flex-lg-nowrap learning-quick-dropdowns learning-filter-dropdown-row learning-fast-filter">
-                        {{-- Dropdown Status --}}
-                        <div class="dropdown">
+            {{-- Playlist tidak memiliki filter Type/More Filters; pertahankan field existing. --}}
+            <div class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</div>
+            <div class="ongoing-fast-filter-section">
+                <div class="ongoing-fast-filter-toolbar">
+                    <div class="learning-quick-dropdowns learning-filter-dropdown-row learning-fast-filter ongoing-quick-dropdowns">
+                        <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-status">
                             <button type="button"
-                                    class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
+                                    class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                 Status: <span class="fw-semibold">{{ $quickStatusOptions[$curQuickStatus] }}</span>
@@ -118,10 +74,9 @@
                             </div>
                         </div>
 
-                        {{-- Dropdown Year (otomatis dari data) --}}
-                        <div class="dropdown">
+                        <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-year">
                             <button type="button"
-                                    class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
+                                    class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                 Year: <span class="fw-semibold">{{ $curYear === 'all' ? 'All' : $curYear }}</span>
@@ -139,10 +94,9 @@
                             </div>
                         </div>
 
-                        {{-- Dropdown Month --}}
-                        <div class="dropdown">
+                        <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-month">
                             <button type="button"
-                                    class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
+                                    class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                 Month: <span class="fw-semibold">{{ $quickMonthLabel }}</span>
@@ -160,12 +114,41 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="ongoing-toolbar-search">
+                        <div class="input-icon">
+                            <span class="input-icon-addon">
+                                <i class="ti ti-search" aria-hidden="true"></i>
+                            </span>
+                            <input type="text"
+                                   name="ongoing_search"
+                                   id="ongoing_search"
+                                   value="{{ request('ongoing_search') }}"
+                                   class="form-control"
+                                   aria-label="Search playlists"
+                                   placeholder="Search playlists...">
+                        </div>
+                    </div>
+
+                    <div class="ongoing-filter-actions" role="group" aria-label="Filter actions">
+                        <button type="submit"
+                                class="btn btn-primary btn-learning-primary ongoing-filter-action-btn"
+                                title="Apply Filter"
+                                aria-label="Apply Filter">
+                            <i class="ti ti-check" aria-hidden="true"></i>
+                        </button>
+
+                        <a href="{{ $resetUrl }}"
+                           class="btn btn-outline-secondary btn-learning-outline ongoing-filter-action-btn"
+                           title="Reset Filter"
+                           aria-label="Reset Filter">
+                            <i class="ti ti-refresh" aria-hidden="true"></i>
+                        </a>
+                    </div>
+
+                    <x-learning.ongoing-mode-switch mode="playlist" />
                 </div>
-
             </div>
-
         </form>
     </div>
 </div>
-
-<x-learning.ongoing-filter-style />

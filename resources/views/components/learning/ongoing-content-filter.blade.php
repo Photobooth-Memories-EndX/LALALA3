@@ -31,7 +31,7 @@
     $quickStatusOptions = [
         'all'         => 'All',
         'not_started' => 'Not Started',
-        'ongoing'     => 'Ongoing',
+        'ongoing'     => 'Sedang Berlangsung',
         'completed'   => 'Completed',
         'paused'      => 'Paused',
     ];
@@ -144,76 +144,26 @@
     $monthSel = array_map('strval', $selMonth);
 @endphp
 
-<div class="card border-0 shadow-sm rounded-4 mb-4 learning-filter-card">
+<div class="card border-0 shadow-sm rounded-4 mb-4 learning-filter-card ongoing-filter-card">
     <div class="card-body p-4">
-        <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingFilterForm">
+        <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingFilterForm" class="ongoing-filter-shell">
 
             {{-- Quick Status ikut terkirim saat submit form/Apply Filter (state konsisten). --}}
             @if ($curQuickStatus !== 'all')
                 <input type="hidden" name="ongoing_quick_status" value="{{ $curQuickStatus }}">
             @endif
 
-            <div class="row g-3 align-items-start mb-3 learning-filter-header">
-                <div class="col-12 col-lg-6">
-                    <h3 class="card-title mb-1">Learning On Going</h3>
-                    <div class="text-muted small">
-                        Your Enrolled Classes
-                    </div>
-                </div>
-
-                <div class="col-12 col-lg-6">
-                    <label class="form-label small text-muted mb-1" for="ongoing_search">Search</label>
-                    <div class="input-icon">
-                        <span class="input-icon-addon">
-                            <i class="ti ti-search"></i>
-                        </span>
-                        <input type="text"
-                               name="ongoing_search"
-                               id="ongoing_search"
-                               value="{{ request('ongoing_search') }}"
-                               class="form-control rounded-3"
-                               placeholder="Search classes or categories">
-                    </div>
-                </div>
-            </div>
-
-            <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-lg-between gap-3 mb-3 learning-filter-mode-row">
-                {{-- Mode switch: Content (aktif) | Playlist --}}
-                <x-learning.ongoing-mode-switch mode="content" />
-
-                <div class="learning-filter-mode-actions">
-                    <div class="d-flex gap-2 learning-filter-actions justify-content-lg-end">
-                        <button type="button"
-                                class="btn btn-outline-primary btn-learning-secondary flex-fill flex-lg-grow-0 position-relative"
-                                data-bs-toggle="modal"
-                                data-bs-target="#ongoingMoreFiltersModal">
-                            <i class="ti ti-adjustments-horizontal"></i>
-                            More Filters
-                            @if ($advancedCount > 0)
-                                <span class="badge bg-primary text-white ms-1">{{ $advancedCount }}</span>
-                            @endif
-                        </button>
-
-                        <button type="submit" class="btn btn-primary btn-learning-primary flex-fill flex-lg-grow-0">
-                            <i class="ti ti-check"></i>
-                            Apply Filter
-                        </button>
-
-                        <a href="{{ route('user.learning.dashboard') }}"
-                           class="btn btn-outline-secondary btn-learning-outline flex-fill flex-lg-grow-0">
-                            <i class="ti ti-refresh"></i>
-                            Reset
-                        </a>
-                    </div>
-                </div>
-            </div>
+            {{-- <div class="ongoing-filter-heading mb-3">
+                <h3 class="card-title mb-1">Learning On Going</h3>
+                <div class="text-muted small">Your Enrolled Classes</div>
+            </div> --}}
 
             {{-- ── Quick dropdown filters (Type / Status / Year / Month) ──────────────
                  Pilihan langsung diterapkan via AJAX (dashboard-script.blade.php),
                  memakai param & endpoint yang sama dengan filter lain. --}}
             @php
                 $quickTypeLabel = empty($selTypeClean)
-                    ? null
+                    ? 'All'
                     : (count($selTypeClean) === 1
                         ? ucwords(str_replace('_', ' ', $selTypeClean[0]))
                         : count($selTypeClean) . ' Types');
@@ -227,17 +177,21 @@
             @endphp
 
             <div class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</div>
-            <div class="d-flex flex-wrap flex-lg-nowrap learning-quick-dropdowns learning-filter-dropdown-row learning-fast-filter">
+            <div class="ongoing-fast-filter-section">
+            <div class="ongoing-fast-filter-toolbar">
+            <div class="learning-quick-dropdowns learning-filter-dropdown-row learning-fast-filter ongoing-quick-dropdowns">
                 {{-- Dropdown Type (hanya type content: Video, Document, dll) --}}
-                <div class="dropdown">
+                <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-type">
                     <button type="button"
-                            class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ !empty($selTypeClean) ? 'active' : '' }}"
+                            class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ !empty($selTypeClean) ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
-                        Type{!! $quickTypeLabel ? ': <span class="fw-semibold">' . e($quickTypeLabel) . '</span>' : '' !!}
+                        Type: <span class="fw-semibold">{{ $quickTypeLabel }}</span>
                     </button>
                     <div class="dropdown-menu">
-                        {{-- Klik item aktif = batalkan pilihan (toggle) — tanpa opsi "All". --}}
+                        <a href="#"
+                           class="dropdown-item ongoing-quick-item {{ empty($selTypeClean) ? 'active' : '' }}"
+                           data-param="ongoing_type" data-array="1" data-value="">All</a>
                         @foreach ($typeOptions as $typeOption)
                             <a href="#"
                                class="dropdown-item ongoing-quick-item {{ $selTypeClean === [(string) $typeOption] ? 'active' : '' }}"
@@ -249,9 +203,9 @@
                 </div>
 
                 {{-- Dropdown Status --}}
-                <div class="dropdown">
+                <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-status">
                     <button type="button"
-                            class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
+                            class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ $curQuickStatus !== 'all' ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
                         Status: <span class="fw-semibold">{{ $quickStatusOptions[$curQuickStatus] }}</span>
@@ -268,9 +222,9 @@
                 </div>
 
                 {{-- Dropdown Year (otomatis dari data) --}}
-                <div class="dropdown">
+                <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-year">
                     <button type="button"
-                            class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
+                            class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ $curYear !== 'all' ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
                         Year: <span class="fw-semibold">{{ $curYear === 'all' ? 'All' : $curYear }}</span>
@@ -289,9 +243,9 @@
                 </div>
 
                 {{-- Dropdown Month --}}
-                <div class="dropdown">
+                <div class="dropdown ongoing-filter-dropdown ongoing-filter-dropdown-month">
                     <button type="button"
-                            class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
+                            class="btn btn-filter-chip learning-fast-filter-control ongoing-fast-filter-control dropdown-toggle {{ !empty($activeQuickMonths) ? 'active' : '' }}"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
                         Month: <span class="fw-semibold">{{ $quickMonthLabel }}</span>
@@ -308,6 +262,53 @@
                         @endforeach
                     </div>
                 </div>
+            </div>
+
+            <div class="ongoing-toolbar-search">
+                <div class="input-icon">
+                    <span class="input-icon-addon">
+                        <i class="ti ti-search" aria-hidden="true"></i>
+                    </span>
+                    <input type="text"
+                           name="ongoing_search"
+                           id="ongoing_search"
+                           value="{{ request('ongoing_search') }}"
+                           class="form-control"
+                           aria-label="Search classes or categories"
+                           placeholder="Search classes or categories...">
+                </div>
+            </div>
+
+            <div class="ongoing-filter-actions" role="group" aria-label="Filter actions">
+                <button type="button"
+                        class="btn btn-outline-primary btn-learning-secondary ongoing-filter-action-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#ongoingMoreFiltersModal"
+                        title="More Filters"
+                        aria-label="More Filters">
+                    <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+                    @if ($advancedCount > 0)
+                        <span class="badge bg-primary text-white ongoing-filter-count">{{ $advancedCount }}</span>
+                    @endif
+                </button>
+
+                <button type="submit"
+                        class="btn btn-primary btn-learning-primary ongoing-filter-action-btn"
+                        title="Apply Filter"
+                        aria-label="Apply Filter">
+                    <i class="ti ti-check" aria-hidden="true"></i>
+                </button>
+
+                <a href="{{ route('user.learning.dashboard') }}"
+                   class="btn btn-outline-secondary btn-learning-outline ongoing-filter-action-btn"
+                   title="Reset Filter"
+                   aria-label="Reset Filter">
+                    <i class="ti ti-refresh" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            <x-learning.ongoing-mode-switch mode="content" />
+            </div>
             </div>
 
             {{-- ── Modal "All Filters" (Tokopedia bottom-sheet di mobile) ───────────────── --}}
@@ -557,5 +558,3 @@
         </form>
     </div>
 </div>
-
-<x-learning.ongoing-filter-style />

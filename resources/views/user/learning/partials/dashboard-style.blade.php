@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{{ asset('css/learning-record.css') }}">
 <link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}">
 <link rel="stylesheet" href="{{ asset('css/learning-certificate.css') }}">
+<link rel="stylesheet" href="{{ asset('css/learning-ongoing.css') }}">
 @include('user.learning.partials.hero-style')
 
 <style>
@@ -196,8 +197,7 @@
     .btn-learning-outline,
     .btn-filter-chip,
     .btn-action,
-    .btn-learning-tab,
-    .ongoing-mode-btn {
+    .btn-learning-tab {
         display: inline-flex;
         min-height: var(--learning-btn-height-md);
         align-items: center;
@@ -359,7 +359,6 @@
     .btn-filter-chip:disabled,
     .btn-action:disabled,
     .btn-learning-tab:disabled,
-    .ongoing-mode-btn:disabled,
     .btn-learning-primary.disabled,
     .btn-learning-success.disabled,
     .btn-learning-secondary.disabled,
@@ -459,8 +458,7 @@
         color: #334155;
     }
 
-    .btn-learning-tab.btn-primary,
-    .ongoing-mode-btn.btn-primary {
+    .btn-learning-tab.btn-primary {
         border-color: var(--learning-btn-primary) !important;
         background: var(--learning-btn-primary) !important;
         color: #fff !important;
@@ -468,9 +466,7 @@
     }
 
     .btn-learning-tab.btn-white:hover,
-    .btn-learning-tab.btn-white:focus,
-    .ongoing-mode-btn.btn-outline-primary:hover,
-    .ongoing-mode-btn.btn-outline-primary:focus {
+    .btn-learning-tab.btn-white:focus {
         border-color: rgba(15, 94, 156, .48) !important;
         background: rgba(15, 94, 156, .08) !important;
         color: var(--learning-btn-primary) !important;
@@ -512,8 +508,7 @@
     .btn-learning-outline > i,
     .btn-filter-chip > i,
     .btn-action > i,
-    .btn-learning-tab > i,
-    .ongoing-mode-btn > i {
+    .btn-learning-tab > i {
         margin: 0 !important;
         flex: 0 0 auto;
         font-size: 1.05rem;

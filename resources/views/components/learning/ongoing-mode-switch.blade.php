@@ -4,17 +4,23 @@
 ])
 
 {{-- Dua mode independen — klik ditangani via AJAX (dashboard-script.blade.php). --}}
-<div class="btn-group learning-mode-switch flex-wrap gap-3 mb-3" role="group" aria-label="Learning On Going mode">
+<div class="ongoing-mode-switch" role="group" aria-label="Learning On Going mode">
     <button type="button"
-            class="btn rounded-start-3 ongoing-mode-btn {{ $mode === 'content' ? 'btn-primary' : 'btn-outline-primary' }}"
-            data-mode="content">
-        <i class="ti ti-file-description"></i>
-        Content
+            class="btn ongoing-mode-btn {{ $mode === 'content' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            data-mode="content"
+            title="Content"
+            aria-label="Content"
+            aria-pressed="{{ $mode === 'content' ? 'true' : 'false' }}">
+        <i class="ti ti-file-description" aria-hidden="true"></i>
+        <span class="visually-hidden">Content</span>
     </button>
     <button type="button"
-            class="btn rounded-end-3 ongoing-mode-btn {{ $mode === 'playlist' ? 'btn-primary' : 'btn-outline-primary' }}"
-            data-mode="playlist">
-        <i class="ti ti-playlist"></i>
-        Playlist
+            class="btn ongoing-mode-btn {{ $mode === 'playlist' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            data-mode="playlist"
+            title="Playlist"
+            aria-label="Playlist"
+            aria-pressed="{{ $mode === 'playlist' ? 'true' : 'false' }}">
+        <i class="ti ti-playlist" aria-hidden="true"></i>
+        <span class="visually-hidden">Playlist</span>
     </button>
 </div>
