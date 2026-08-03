@@ -29,7 +29,7 @@
                 </a>
 
                 <button class="btn btn-outline-primary rounded-pill px-4"
-                        onclick="document.querySelector('.owl-search-input').focus()">
+                        onclick="document.getElementById('owl-search-input')?.focus()">
                     <i class="ti ti-search me-2"></i>
                     Try Different Search
                 </button>

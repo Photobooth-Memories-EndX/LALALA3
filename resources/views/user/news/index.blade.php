@@ -1,5 +1,39 @@
 @extends('layouts.sidebar-master')
 
+@php
+    $newsMonths = [
+        1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+        5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+        9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+    ];
+    $newsViews = [
+        'all' => 'All Views',
+        '0_50' => '0 - 50',
+        '51_100' => '51 - 100',
+        '101_200' => '101 - 200',
+        'over_200' => '> 200',
+    ];
+    $newsYears = collect($news->items())
+        ->map(fn ($item) => (int) $item->created_at->format('Y'))
+        ->when(request('year', 'all') !== 'all', fn ($years) => $years->push((int) request('year')))
+        ->unique()
+        ->sortDesc()
+        ->values();
+    $currentNewsSort = request('sort', 'latest');
+    $newsSortDate = request('sort_date', $currentNewsSort === 'oldest' ? 'oldest' : 'all');
+    $newsSortTitle = request('sort_title', in_array($currentNewsSort, ['az', 'za'], true) ? $currentNewsSort : 'default');
+    $newsAdvancedFilterCount = collect([
+        $newsSortDate !== 'all',
+        $newsSortTitle !== 'default',
+        filled(request('author')),
+        request('published', 'all') !== 'all',
+    ])->filter()->count();
+    $newsHasActiveFilters = filled(request('search')) || filled(request('author')) ||
+        request('month', 'all') !== 'all' || request('year', 'all') !== 'all' ||
+        request('views', 'all') !== 'all' ||
+        $newsAdvancedFilterCount > 0;
+@endphp
+
 @section('content')
 
 <div class="page-body owl-news-page">
@@ -10,55 +44,166 @@
         @include('user.news.partials.hero')
 
         {{-- SEARCH & FILTER TOOLBAR --}}
-        <div class="owl-toolbar-wrapper mb-4 sticky-top">
+        <div class="owl-toolbar-wrapper mb-4">
             <div class="card border-0 owl-toolbar-card">
-                <div class="card-body py-3 px-4">
-                    <form method="GET" class="row g-3 align-items-end">
+                <div class="card-body p-3">
+                    <form method="GET" id="owlNewsFilterForm" class="record-filter-shell owl-news-filter-form">
+                        <div class="record-fast-filter-section">
+                            <label class="form-label small text-muted mb-2 learning-fast-filter-label" for="owl-search-input">
+                                Fast Filter
+                            </label>
 
-                        {{-- SEARCH BAR --}}
-                        <div class="col-lg-7">
-                            <div class="search-wrapper position-relative">
-                                <i class="ti ti-search search-icon" aria-hidden="true"></i>
-                                <input type="text"
-                                       id="owl-search-input"
-                                       name="search"
-                                       class="form-control owl-search-input"
-                                       placeholder="Search insights, articles, or trends..."
-                                       value="{{ request('search') }}"
-                                       aria-label="Search articles"
-                                       autocomplete="off">
+                            <div class="fast-filter-toolbar owl-news-filter-toolbar">
+                            <div class="record-toolbar-search owl-news-filter-search">
+                                <label class="visually-hidden" for="owl-search-input">Search news</label>
+                                <div class="input-icon">
+                                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                    <input type="search" id="owl-search-input" name="search"
+                                           class="form-control"
+                                           placeholder="Search news title, description or author..."
+                                           value="{{ request('search') }}"
+                                           aria-label="Search news"
+                                           autocomplete="off">
+                                </div>
+                            </div>
+
+                            <div class="learning-quick-dropdowns learning-fast-filter owl-news-quick-dropdowns">
+                                <div class="dropdown">
+                                    <button type="button"
+                                            class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ request('month', 'all') !== 'all' ? 'active' : '' }}"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                        Month: <span class="fw-semibold" data-news-filter-label="month">{{ request('month', 'all') === 'all' ? 'All' : ($newsMonths[(int) request('month')] ?? 'All') }}</span>
+                                    </button>
+                                    <div class="dropdown-menu learning-quick-dropdown-scroll">
+                                        <a href="#" class="dropdown-item news-quick-filter-item {{ request('month', 'all') === 'all' ? 'active' : '' }}" data-filter="month" data-value="all">All</a>
+                                        @foreach ($newsMonths as $monthNumber => $monthName)
+                                            <a href="#" class="dropdown-item news-quick-filter-item {{ (string) request('month', 'all') === (string) $monthNumber ? 'active' : '' }}" data-filter="month" data-value="{{ $monthNumber }}">{{ $monthName }}</a>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <div class="dropdown">
+                                    <button type="button"
+                                        class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ request('year', 'all') !== 'all' ? 'active' : '' }}"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        Year: <span class="fw-semibold" data-news-filter-label="year">{{ request('year', 'all') === 'all' ? 'All' : request('year') }}</span>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="#" class="dropdown-item news-quick-filter-item {{ request('year', 'all') === 'all' ? 'active' : '' }}" data-filter="year" data-value="all">All</a>
+                                        @foreach ($newsYears as $year)
+                                            <a href="#" class="dropdown-item news-quick-filter-item {{ (string) request('year', 'all') === (string) $year ? 'active' : '' }}" data-filter="year" data-value="{{ $year }}">{{ $year }}</a>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <div class="dropdown">
+                                    <button type="button"
+                                        class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ request('views', 'all') !== 'all' ? 'active' : '' }}"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        Views: <span class="fw-semibold" data-news-filter-label="views">{{ $newsViews[request('views', 'all')] ?? 'All Views' }}</span>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        @foreach($newsViews as $viewValue => $viewLabel)
+                                            <a href="#" class="dropdown-item news-quick-filter-item {{ request('views', 'all') === $viewValue ? 'active' : '' }}" data-filter="views" data-value="{{ $viewValue }}">{{ $viewLabel }}</a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            <input type="hidden" name="month" id="owlNewsMonth" value="{{ request('month', 'all') }}">
+                            <input type="hidden" name="year" id="owlNewsYear" value="{{ request('year', 'all') }}">
+                            <input type="hidden" name="views" id="owlNewsViews" value="{{ request('views', 'all') }}">
+                            <input type="hidden" name="sort" id="owlNewsSort" value="{{ $currentNewsSort }}">
+
+                            <div class="record-filter-actions owl-news-filter-actions">
+                                <button type="submit" class="btn btn-primary btn-learning-primary record-filter-action-btn owl-news-filter-action-btn"
+                                        title="Search" aria-label="Search">
+                                    <i class="ti ti-search"></i>
+                                </button>
+
+                                <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn owl-news-filter-action-btn position-relative"
+                                        data-toggle="modal" data-target="#owlNewsMoreFiltersModal"
+                                        title="More Filters" aria-label="More Filters">
+                                    <i class="ti ti-adjustments-horizontal"></i>
+                                    <span class="badge bg-primary text-white owl-news-filter-count {{ $newsAdvancedFilterCount > 0 ? '' : 'd-none' }}"
+                                          id="newsMoreFiltersCount">{{ $newsAdvancedFilterCount ?: '' }}</span>
+                                </button>
+
+                                <button type="submit" class="btn btn-primary btn-learning-primary record-filter-action-btn owl-news-filter-action-btn"
+                                        title="Apply Filter" aria-label="Apply Filter">
+                                    <i class="ti ti-check"></i>
+                                </button>
+
+                                <a href="{{ route('news.user.index') }}"
+                                   class="btn btn-outline-primary btn-learning-outline record-filter-action-btn owl-news-filter-action-btn {{ $newsHasActiveFilters ? 'is-active' : '' }}"
+                                   title="Reset Filter" aria-label="Reset Filter">
+                                    <i class="ti ti-refresh"></i>
+                                </a>
+                            </div>
                             </div>
                         </div>
-
-                        {{-- SORT DROPDOWN --}}
-                        <div class="col-md-4 col-lg-3">
-                            <select name="sort"
-                                    class="form-select owl-select"
-                                    onchange="this.form.submit()"
-                                    aria-label="Sort articles">
-                                <option value="latest" {{ request('sort') == 'latest' ? 'selected' : '' }}>Latest update</option>
-                                <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest update</option>
-                                <option value="most_viewed" {{ request('sort') == 'most_viewed' ? 'selected' : '' }}>Most viewed</option>
-                                <option value="least_viewed" {{ request('sort') == 'least_viewed' ? 'selected' : '' }}>Least viewed</option>
-                            </select>
-                        </div>
-
-                        {{-- AUTHOR FILTER --}}
-                        <div class="col-md-4 col-lg-2">
-                            <select name="author"
-                                    class="form-select owl-select"
-                                    onchange="this.form.submit()"
-                                    aria-label="Filter by author">
-                                <option value="">All authors</option>
-                                @foreach($authors as $a)
-                                    <option value="{{ $a->id }}" {{ request('author') == $a->id ? 'selected' : '' }}>
-                                        {{ $a->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
                     </form>
+                </div>
+            </div>
+
+            <div class="modal fade" id="owlNewsMoreFiltersModal" tabindex="-1" role="dialog"
+                 aria-labelledby="owlNewsMoreFiltersTitle" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content record-filter-modal owl-news-filter-modal">
+                        <div class="modal-header">
+                            <div>
+                                <h5 class="modal-title mb-0" id="owlNewsMoreFiltersTitle">More Filters</h5>
+                                <div class="text-muted small">Advanced news filters</div>
+                            </div>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body record-more-filters owl-news-more-filters">
+                            <div class="owl-news-more-filter-field">
+                                <label class="form-label" for="owlNewsSortDate">Sort</label>
+                                <select name="sort_date" id="owlNewsSortDate" class="form-select" form="owlNewsFilterForm">
+                                    <option value="all" {{ $newsSortDate === 'all' ? 'selected' : '' }}>All</option>
+                                    <option value="newest" {{ $newsSortDate === 'newest' ? 'selected' : '' }}>Newest</option>
+                                    <option value="oldest" {{ $newsSortDate === 'oldest' ? 'selected' : '' }}>Oldest</option>
+                                </select>
+                            </div>
+
+                            <div class="owl-news-more-filter-field">
+                                <label class="form-label" for="owlNewsSortTitle">Title</label>
+                                <select name="sort_title" id="owlNewsSortTitle" class="form-select" form="owlNewsFilterForm">
+                                    <option value="default" {{ $newsSortTitle === 'default' ? 'selected' : '' }}>Default</option>
+                                    <option value="az" {{ $newsSortTitle === 'az' ? 'selected' : '' }}>A - Z</option>
+                                    <option value="za" {{ $newsSortTitle === 'za' ? 'selected' : '' }}>Z - A</option>
+                                </select>
+                            </div>
+
+                            <div class="owl-news-more-filter-field">
+                                <label class="form-label" for="owlNewsAuthor">Author</label>
+                                <select name="author" id="owlNewsAuthor" class="form-select" form="owlNewsFilterForm">
+                                    <option value="">All Author</option>
+                                    @foreach($authors as $author)
+                                        <option value="{{ $author->id }}" {{ (string) request('author') === (string) $author->id ? 'selected' : '' }}>{{ $author->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="owl-news-more-filter-field">
+                                <label class="form-label" for="owlNewsPublished">Published</label>
+                                <select name="published" id="owlNewsPublished" class="form-select" form="owlNewsFilterForm">
+                                    <option value="all">All</option>
+                                    <option value="today" {{ request('published') === 'today' ? 'selected' : '' }}>Today</option>
+                                    <option value="week" {{ request('published') === 'week' ? 'selected' : '' }}>This Week</option>
+                                    <option value="month" {{ request('published') === 'month' ? 'selected' : '' }}>This Month</option>
+                                    <option value="year" {{ request('published') === 'year' ? 'selected' : '' }}>This Year</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" form="owlNewsFilterForm">Apply</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -77,20 +222,19 @@
                             {{ request('search') ? 'Search Results' : 'Hub Highlights' }}
                         </h2>
                     </div>
-                    @if(request('search') || request('sort') != 'latest' || request('author'))
-                        <a href="{{ route('news.user.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-4">
-                            Reset filters
-                        </a>
-                    @endif
                 </div>
 
                 @if($news->count() > 0)
 
                     {{-- 3 cols on xl, 2 cols on md–lg, 1 on mobile --}}
-                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 owl-news-grid" id="owlNewsGrid">
                         @foreach($news as $item)
                             @include('user.news.partials.card')
                         @endforeach
+                    </div>
+
+                    <div class="d-none mt-4" id="owlNewsClientEmpty">
+                        @include('user.news.partials.empty-state')
                     </div>
 
                     {{-- PAGINATION --}}
@@ -167,6 +311,60 @@
         };
     }
 
+    function applyClientNewsFilters() {
+        var grid = document.getElementById('owlNewsGrid');
+        if (!grid) return;
+
+        var month = document.getElementById('owlNewsMonth')?.value || 'all';
+        var year = document.getElementById('owlNewsYear')?.value || 'all';
+        var views = document.getElementById('owlNewsViews')?.value || 'all';
+        var published = document.getElementById('owlNewsPublished')?.value || 'all';
+        var sort = document.getElementById('owlNewsSort')?.value || 'latest';
+        var cards = Array.prototype.slice.call(grid.querySelectorAll('.owl-news-card'));
+        var now = new Date();
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var weekStart = new Date(today);
+        var dayFromMonday = (today.getDay() + 6) % 7;
+        weekStart.setDate(today.getDate() - dayFromMonday);
+        var visibleCount = 0;
+
+        cards.forEach(function(card) {
+            var date = new Date(card.dataset.newsCreated + 'T00:00:00');
+            var viewCount = Number(card.dataset.newsViews || 0);
+            var matchesMonth = month === 'all' || String(date.getMonth() + 1) === month;
+            var matchesYear = year === 'all' || String(date.getFullYear()) === year;
+            var matchesViews = views === 'all' ||
+                (views === '0_50' && viewCount <= 50) ||
+                (views === '51_100' && viewCount >= 51 && viewCount <= 100) ||
+                (views === '101_200' && viewCount >= 101 && viewCount <= 200) ||
+                (views === 'over_200' && viewCount > 200);
+            var matchesPublished = published === 'all' ||
+                (published === 'today' && date.getTime() === today.getTime()) ||
+                (published === 'week' && date >= weekStart && date <= now) ||
+                (published === 'month' && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) ||
+                (published === 'year' && date.getFullYear() === now.getFullYear());
+            var isVisible = matchesMonth && matchesYear && matchesViews && matchesPublished;
+            var column = card.closest('.col');
+
+            if (column) column.classList.toggle('d-none', !isVisible);
+            if (isVisible) visibleCount++;
+        });
+
+        if (sort === 'az' || sort === 'za') {
+            cards.sort(function(a, b) {
+                var titleA = a.querySelector('.owl-card-title')?.textContent.trim().toLowerCase() || '';
+                var titleB = b.querySelector('.owl-card-title')?.textContent.trim().toLowerCase() || '';
+                return sort === 'az' ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+            });
+            cards.forEach(function(card) {
+                var column = card.closest('.col');
+                if (column) grid.appendChild(column);
+            });
+        }
+
+        document.getElementById('owlNewsClientEmpty')?.classList.toggle('d-none', visibleCount > 0);
+    }
+
     document.addEventListener('DOMContentLoaded', function(){
         // Initialize dark mode
         initDarkMode();
@@ -185,6 +383,59 @@
                 }
             });
         }
+
+        document.querySelectorAll('.news-quick-filter-item').forEach(function(item) {
+            item.addEventListener('click', function(event) {
+                event.preventDefault();
+
+                var filter = item.dataset.filter;
+                var value = item.dataset.value ?? '';
+                var input = document.getElementById('owlNews' + filter.charAt(0).toUpperCase() + filter.slice(1));
+                var dropdown = item.closest('.dropdown');
+                var button = dropdown?.querySelector('.learning-fast-filter-control');
+                var label = button?.querySelector('[data-news-filter-label]');
+
+                if (input) input.value = value;
+                dropdown?.querySelectorAll('.news-quick-filter-item').forEach(function(option) {
+                    option.classList.toggle('active', option === item);
+                });
+                if (label) {
+                    label.textContent = value === '' || value === 'all'
+                        ? (filter === 'views' ? 'All Views' : 'All')
+                        : item.textContent.trim();
+                }
+                button?.classList.toggle('active', value !== '' && value !== 'all');
+            });
+        });
+
+        var sortDate = document.getElementById('owlNewsSortDate');
+        var sortTitle = document.getElementById('owlNewsSortTitle');
+        var sortInput = document.getElementById('owlNewsSort');
+
+        function syncNewsSort(changedFilter) {
+            if (!sortDate || !sortTitle || !sortInput) return;
+
+            if (changedFilter === 'date' && sortDate.value !== 'all') {
+                sortTitle.value = 'default';
+            } else if (changedFilter === 'title' && sortTitle.value !== 'default') {
+                sortDate.value = 'all';
+            }
+
+            if (sortDate.value === 'oldest') {
+                sortInput.value = 'oldest';
+            } else if (sortDate.value === 'newest') {
+                sortInput.value = 'latest';
+            } else if (sortTitle.value === 'az' || sortTitle.value === 'za') {
+                sortInput.value = sortTitle.value;
+            } else {
+                sortInput.value = 'latest';
+            }
+        }
+
+        sortDate?.addEventListener('change', function() { syncNewsSort('date'); });
+        sortTitle?.addEventListener('change', function() { syncNewsSort('title'); });
+
+        applyClientNewsFilters();
 
         // Tooltips
         if(window.bootstrap){

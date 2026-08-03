@@ -62,7 +62,7 @@
 
                 @else
                     <div class="text-center py-4">
-                        <i class="ti ti-news text-secondary opacity-50" style="font-size:2rem"></i>
+                        <i class="ti ti-news text-secondary opacity-50 owl-sidebar-empty-icon"></i>
                         <p class="text-secondary small mt-2 mb-0">No trending articles yet.</p>
                     </div>
                 @endif

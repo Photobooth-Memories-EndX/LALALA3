@@ -1,44 +1,8 @@
-<style>
-/* ============================================================
-   NEWS CARD BADGES (SOFT LIGHT BLUE STYLE)
-   ============================================================ */
-
-/* Badge '1 min read' (Biru Muda Soft) */
-.owl-news-pill-readtime {
-    display: inline-flex;
-    align-items: center;
-    background-color: #e8f4ff !important; /* Soft Light Blue Background */
-    color: #0284c7 !important;            /* Accent Blue Text */
-    border: 1px solid #bae6fd !important; /* Soft Blue Border */
-    border-radius: 999px;
-    padding: 3px 10px;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1.2;
-    transition: all 0.2s ease;
-}
-
-.owl-news-pill-readtime i {
-    color: #0284c7 !important;            /* Warna Ikon Jam */
-}
-
-/* Badge Tanggal (Tetap Neutral / Light Muted) */
-.owl-news-pill-muted {
-    display: inline-flex;
-    align-items: center;
-    background-color: #f1f5f9 !important;
-    color: #64748b !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 999px;
-    padding: 3px 10px;
-    font-size: 11px;
-    font-weight: 500;
-    line-height: 1.2;
-}
-</style>
-
 <div class="col">
-    <div class="card owl-news-card h-100 border-0 shadow-sm" data-news-id="{{ $item->id }}">
+    <div class="card owl-news-card h-100 border-0 shadow-sm"
+         data-news-id="{{ $item->id }}"
+         data-news-created="{{ $item->created_at->format('Y-m-d') }}"
+         data-news-views="{{ (int) ($item->views ?? 0) }}">
 
         {{-- THUMBNAIL --}}
         <div class="owl-news-image-wrapper">
@@ -117,7 +81,7 @@
                         <div class="fw-semibold small text-truncate owl-card-author-name">
                             {{ $item->user->name ?? 'Unknown' }}
                         </div>
-                        <div class="text-secondary" style="font-size:.75rem">
+                        <div class="text-secondary owl-card-views">
                             {{ number_format($item->views ?? 0) }} views
                         </div>
                     </div>

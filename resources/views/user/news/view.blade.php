@@ -11,12 +11,12 @@
         <div class="row mb-5">
             <div class="col-12">
 
-                <nav class="owl-breadcrumb mb-4" style="--bs-breadcrumb-divider:'/'">
+                <nav class="owl-breadcrumb mb-4">
                     <ol class="breadcrumb bg-transparent px-0 mb-0">
                         <li class="breadcrumb-item">
                             <a href="{{ route('news.user.index') }}" class="text-secondary">News Hub</a>
                         </li>
-                        <li class="breadcrumb-item active fw-semibold" style="color:var(--owl-text)">
+                        <li class="breadcrumb-item active fw-semibold owl-text-color">
                             {{ Str::limit($news->title ?? '', 45) }}
                         </li>
                     </ol>
@@ -44,15 +44,14 @@
                 </h1>
 
                 {{-- AUTHOR --}}
-                <div class="d-flex align-items-center gap-3 pb-4 mb-4 border-bottom" style="border-color:var(--owl-border)">
+                <div class="d-flex align-items-center gap-3 pb-4 mb-4 border-bottom owl-border-color">
                     <div
-                        class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                        style="width:56px;height:56px;font-size:22px"
+                        class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0 owl-article-author-avatar"
                     >
                         {{ strtoupper(substr($news->user->name ?? 'U', 0, 1)) }}
                     </div>
                     <div>
-                        <h5 class="mb-1 fw-semibold" style="color:var(--owl-text)">
+                        <h5 class="mb-1 fw-semibold owl-text-color">
                             {{ $news->user->name ?? 'Training Team' }}
                         </h5>
                         <div class="text-secondary small">
@@ -64,19 +63,19 @@
                 {{-- ARTICLE INSIGHTS --}}
                 <div class="card border-0 shadow-sm rounded-4 mb-4 owl-insights-card">
                     <div class="card-body p-4">
-                        <h5 class="fw-semibold mb-4" style="color:var(--owl-text)">Article Insights</h5>
+                        <h5 class="fw-semibold mb-4 owl-text-color">Article Insights</h5>
                         <div class="row text-center gy-3">
                             <div class="col-md-4">
                                 <div class="text-secondary small">Read Time</div>
-                                <div class="fw-bold fs-5" style="color:var(--owl-text)">{{ $readTime }} min</div>
+                                <div class="fw-bold fs-5 owl-text-color">{{ $readTime }} min</div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-secondary small">Views</div>
-                                <div class="fw-bold fs-5" style="color:var(--owl-text)">{{ number_format($news->views ?? 0) }}</div>
+                                <div class="fw-bold fs-5 owl-text-color">{{ number_format($news->views ?? 0) }}</div>
                             </div>
                             <div class="col-md-4">
                                 <div class="text-secondary small">Author</div>
-                                <div class="fw-bold" style="color:var(--owl-text)">{{ $news->user->name ?? 'Training Team' }}</div>
+                                <div class="fw-bold owl-text-color">{{ $news->user->name ?? 'Training Team' }}</div>
                             </div>
                         </div>
                     </div>
@@ -129,9 +128,9 @@
                      RELATED ARTICLES
                      ============================================================ --}}
                 @if($related->count() > 0)
-                    <div class="row mt-6 pt-5 border-top" style="border-color:var(--owl-border) !important">
+                    <div class="row mt-6 pt-5 border-top owl-border-color-important">
                         <div class="col-12 mb-4">
-                            <h2 class="fw-bold mb-4" style="color:var(--owl-text)">
+                            <h2 class="fw-bold mb-4 owl-text-color">
                                 <i class="ti ti-arrow-right me-2"></i>Continue exploring
                             </h2>
                             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
@@ -139,8 +138,7 @@
                                     <div class="col">
                                         <a
                                             href="{{ route('news.user.view', $article->slug) }}"
-                                            class="card border-0 h-100 owl-explore-card shadow-sm text-decoration-none overflow-hidden"
-                                            style="color:var(--owl-text)"
+                                            class="card border-0 h-100 owl-explore-card shadow-sm text-decoration-none overflow-hidden owl-text-color"
                                         >
                                             <div class="owl-explore-image-wrapper overflow-hidden">
                                                 <div class="news-img-placeholder news-explore-placeholder">
@@ -156,11 +154,11 @@
                                                     >
                                                 @endif
                                             </div>
-                                            <div class="card-body" style="background:var(--owl-surface)">
+                                            <div class="card-body owl-surface-bg">
                                                 <small class="text-secondary">
                                                     {{ $article->created_at ? $article->created_at->format('M d, Y') : '-' }}
                                                 </small>
-                                                <h5 class="fw-bold mt-2 mb-3" style="color:var(--owl-text)">
+                                                <h5 class="fw-bold mt-2 mb-3 owl-text-color">
                                                     {{ Str::limit($article->title ?? '', 65) }}
                                                 </h5>
                                                 <span class="btn btn-sm btn-outline-primary rounded-pill">
