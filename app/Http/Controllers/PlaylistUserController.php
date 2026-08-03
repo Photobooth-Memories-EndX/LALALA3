@@ -34,22 +34,26 @@ class PlaylistUserController extends Controller
             })->count();
         });
 
-        // trainingplan columns used: id, slug, title, url_link, active, created_at,
-        //                            thumbnail, has_deadline, from_date, to_date
-        // content columns:      id, title, slug, type, link
+        // trainingplan columns used: id, slug, title, total_duration_seconds,
+        //                            url_link, active, created_at, thumbnail,
+        //                            has_deadline, from_date, to_date
+        // content columns:      id, title, slug, type, link, classification_id
         // content_users columns: id, user_id, content_id, progress, finish
         $trainingplan = TrainingPlan::with([
                 'trainingplandetail' => fn ($q) => $q
                     ->orderBy('content_order')
                     ->select(['id', 'trainingplan_id', 'content_id', 'content_order']),
                 'trainingplandetail.content' => fn ($q) => $q
-                    ->select(['id', 'title', 'slug', 'type', 'link']),
+                    ->select(['id', 'title', 'slug', 'type', 'link', 'classification_id']),
+                'trainingplandetail.content.classification' => fn ($q) => $q
+                    ->select(['id', 'classification_name']),
                 'trainingplandetail.content.contentuser' => fn ($q) => $q
                     ->where('user_id', $userId)
                     ->select(['id', 'user_id', 'content_id', 'progress', 'finish']),
             ])
-            ->select(['id', 'title', 'slug', 'url_link', 'active', 'created_at',
-                      'thumbnail', 'has_deadline', 'from_date', 'to_date'])
+            ->select(['id', 'title', 'slug', 'total_duration_seconds', 'url_link',
+                      'active', 'created_at', 'thumbnail', 'has_deadline',
+                      'from_date', 'to_date'])
             ->where('active', 'Active')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
