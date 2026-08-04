@@ -71,7 +71,13 @@
     </td>
     <td class="certificate-col-action text-center">
         <div class="certificate-actions">
-            <a class="btn certificate-action-button text-blue" href="{{ route('certificate.show', $certificate->credential_id) }}" title="View Detail" aria-label="View Detail">
+            <a class="btn certificate-action-button text-blue certificate-preview-trigger"
+               href="{{ route('certificate.viewer', $certificate->credential_id) }}"
+               data-certificate-preview-url="{{ route('certificate.preview', $certificate->credential_id) }}"
+               data-certificate-preview-title="{{ $certificate->title }}"
+               aria-haspopup="dialog"
+               title="View Detail"
+               aria-label="View Detail">
                 <i class="ti ti-eye" aria-hidden="true"></i>
             </a>
             <a class="btn certificate-action-button text-green" href="{{ route('certificate.download.pdf', $certificate->credential_id) }}" title="Download Certificate" aria-label="Download Certificate">

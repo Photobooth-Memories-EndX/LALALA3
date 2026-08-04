@@ -37,6 +37,51 @@ class UserCertificateController extends Controller
         return view('certificate.show', compact('certificate'));
     }
 
+    public function preview(string $credentialId)
+    {
+        $certificate = Certificate::with([
+            'certificateSetting.assessment',
+            'certificateSetting.content',
+            'certificateSetting.trainingPlan.trainingplandetail.content',
+        ])->where('credential_id', $credentialId)->firstOrFail();
+
+        abort_unless($certificate->user_id === Auth::id(), 403);
+
+        return response()->view('certificate.templates.default', compact('certificate'))
+            ->header('Cache-Control', 'private, max-age=300');
+    }
+
+    public function viewer(string $credentialId)
+    {
+        $certificate = Certificate::with([
+            'certificateSetting.assessment',
+            'certificateSetting.content',
+            'certificateSetting.trainingPlan.trainingplandetail.content',
+        ])->where('credential_id', $credentialId)->firstOrFail();
+
+        abort_unless($certificate->user_id === Auth::id(), 403);
+
+        return view('certificate.viewer', compact('certificate'));
+    }
+
+    public function viewerDocument(string $credentialId)
+    {
+        $certificate = Certificate::with([
+            'certificateSetting.assessment',
+            'certificateSetting.content',
+            'certificateSetting.trainingPlan.trainingplandetail.content',
+        ])->where('credential_id', $credentialId)->firstOrFail();
+
+        abort_unless($certificate->user_id === Auth::id(), 403);
+
+        $pdf = Pdf::loadView('certificate.templates.pdf', compact('certificate'));
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->stream($certificate->certificate_number . '.pdf', [
+            'Attachment' => false,
+        ]);
+    }
+
     public function download(string $credentialId)
     {
         $certificate = Certificate::with([

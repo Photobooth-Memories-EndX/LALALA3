@@ -205,6 +205,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/certificate/generate-setting/{certificateSetting}', [UserCertificateController::class, 'generateSetting'])
         ->name('certificate.generate.setting');
 
+    Route::get('/certificate/{credentialId}/preview', [UserCertificateController::class, 'preview'])
+        ->name('certificate.preview');
+
+    Route::get('/certificate/{credentialId}/viewer-document', [UserCertificateController::class, 'viewerDocument'])
+        ->name('certificate.viewer.document');
+
+    Route::get('/certificate/{credentialId}/viewer', [UserCertificateController::class, 'viewer'])
+        ->name('certificate.viewer');
+
     Route::get('/certificate/{credentialId}', [UserCertificateController::class, 'show'])
         ->name('certificate.show');
 
