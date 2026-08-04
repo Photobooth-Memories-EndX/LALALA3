@@ -1,13 +1,13 @@
 @php
-    $latestGallery = $eventphoto->first();
     $latestPhotos = $latestGallery ? (json_decode($latestGallery->photos, true) ?? []) : [];
+    $latestPhotos = is_array($latestPhotos) ? $latestPhotos : [];
     $latestCover = $latestGallery?->thumbnail ?: ($latestPhotos[0] ?? null);
     $latestImage = ($latestGallery && $latestCover)
         ? asset('storage/gallery/photo/' . $latestGallery->id . '/' . $latestCover)
         : null;
 @endphp
 
-<div class="card content-hero-card mb-4 overflow-hidden border-0 shadow-sm">
+<section class="card content-hero-card gallery-hero mb-4 overflow-hidden border-0 shadow-sm" aria-labelledby="gallery-page-title">
     <div class="card-body content-hero-surface text-white">
         <div class="row align-items-center g-4">
             <div class="col-lg-8 content-hero-copy">
@@ -16,7 +16,7 @@
                     GALLERY
                 </div>
 
-                <h1 class="mb-1 fw-bold">Learning Event Gallery Hub</h1>
+                <h1 id="gallery-page-title" class="mb-1 fw-bold">Learning Event Gallery Hub</h1>
 
                 <p class="mb-0 text-white-75">
                     Capturing the journey of growth and innovation across workshops, technical training, and professional development.
@@ -34,11 +34,11 @@
                     @if($latestImage)
                         <img
                             src="{{ $latestImage }}"
-                            alt="{{ $latestGallery->title }}"
+                            alt="Latest gallery: {{ $latestGallery->title ?: 'Learning event' }}"
                             class="gallery-hero-img"
-                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                            data-gallery-image
                         >
-                        <div class="kp-hero-media-placeholder" style="display:none">
+                        <div class="kp-hero-media-placeholder gallery-image-placeholder" aria-hidden="true">
                             <i class="ti ti-photo"></i>
                         </div>
                     @else
@@ -50,4 +50,4 @@
             </div>
         </div>
     </div>
-</div>
+</section>

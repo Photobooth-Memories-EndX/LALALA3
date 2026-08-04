@@ -12,7 +12,7 @@
         : 'Date unavailable';
 @endphp
 
-<div class="col-xl-4 col-md-6">
+<article class="col-xl-4 col-md-6">
     <div class="card gallery-card h-100">
         <div class="gallery-thumb">
             <div class="gallery-thumb-placeholder">
@@ -22,9 +22,9 @@
             @if($imgSrc)
                 <img
                     src="{{ $imgSrc }}"
-                    alt="{{ $list->title }}"
+                    alt="{{ $list->title ?: 'Learning event gallery' }}"
                     class="gallery-thumb-img"
-                    onerror="this.style.display='none'"
+                    data-gallery-image
                     loading="lazy"
                 >
             @endif
@@ -39,11 +39,11 @@
         </div>
 
         <div class="card-body d-flex flex-column">
-            <h3 class="gallery-card-title">{{ $list->title }}</h3>
+            <h3 class="gallery-card-title" title="{{ $list->title }}">{{ $list->title ?: 'Untitled Gallery' }}</h3>
 
             <div class="mt-auto">
                 <div class="gallery-event-uploader fw-semibold text-truncate mb-2">
-                    {{ $list->uploader ?? '—' }}
+                    {{ $list->uploader ?: '—' }}
                 </div>
 
                 <div class="gallery-event-meta mb-3">
@@ -64,4 +64,4 @@
             </div>
         </div>
     </div>
-</div>
+</article>

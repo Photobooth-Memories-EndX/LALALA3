@@ -1,13 +1,13 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
-@include('components.shared.hero-style')
-
-<div class="container-xl py-4">
+<main class="container-xl py-4 gallery-page" data-gallery-page>
     @include('user.gallery.components.gallery-hero')
     @include('user.gallery.components.gallery-filters')
-    @include('user.gallery.components.gallery-grid')
-</div>
+    <div id="gallery-results" data-gallery-results aria-live="polite" aria-busy="false">
+        @include('user.gallery.components.gallery-results')
+    </div>
+</main>
 @endsection
 
 @section('style')
