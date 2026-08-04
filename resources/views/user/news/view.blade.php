@@ -8,7 +8,7 @@
         {{-- ============================================================
              BREADCRUMB + META
              ============================================================ --}}
-        <div class="row mb-5">
+        <div class="row owl-article-layout">
             <div class="col-12">
 
                 <nav class="owl-breadcrumb mb-4">
@@ -23,7 +23,7 @@
                 </nav>
 
                 {{-- META PILLS --}}
-                <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+                <div class="d-flex flex-wrap gap-2 align-items-center owl-article-meta">
                     <span class="owl-news-pill">
                         <i class="ti ti-calendar-event"></i>
                         {{ $news->created_at ? $news->created_at->format('F d, Y') : '-' }}
@@ -44,17 +44,17 @@
                 </h1>
 
                 {{-- AUTHOR --}}
-                <div class="d-flex align-items-center gap-3 pb-4 mb-4 border-bottom owl-border-color">
+                <div class="d-flex align-items-center gap-3 border-bottom owl-border-color owl-article-author">
                     <div
                         class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0 owl-article-author-avatar"
                     >
                         {{ strtoupper(substr($news->user->name ?? 'U', 0, 1)) }}
                     </div>
-                    <div>
-                        <h5 class="mb-1 fw-semibold owl-text-color">
+                    <div class="owl-article-author-copy">
+                        <h5 class="mb-1 fw-semibold owl-text-color owl-article-author-name">
                             {{ $news->user->name ?? 'Training Team' }}
                         </h5>
-                        <div class="text-secondary small">
+                        <div class="text-secondary small owl-article-author-email">
                             {{ $news->user->email ?? '' }}
                         </div>
                     </div>
@@ -64,16 +64,16 @@
                 <div class="card border-0 shadow-sm rounded-4 mb-4 owl-insights-card">
                     <div class="card-body p-4">
                         <h5 class="fw-semibold mb-4 owl-text-color">Article Insights</h5>
-                        <div class="row text-center gy-3">
-                            <div class="col-md-4">
+                        <div class="row text-center gy-3 owl-insights-grid">
+                            <div class="col-md-4 owl-insight-item">
                                 <div class="text-secondary small">Read Time</div>
                                 <div class="fw-bold fs-5 owl-text-color">{{ $readTime }} min</div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 owl-insight-item">
                                 <div class="text-secondary small">Views</div>
                                 <div class="fw-bold fs-5 owl-text-color">{{ number_format($news->views ?? 0) }}</div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 owl-insight-item">
                                 <div class="text-secondary small">Author</div>
                                 <div class="fw-bold owl-text-color">{{ $news->user->name ?? 'Training Team' }}</div>
                             </div>
@@ -115,7 +115,7 @@
                         {{-- ============================================================
                              COMMENTS
                              ============================================================ --}}
-                        <div class="mb-5">
+                        <div class="owl-comment-area">
 
                             <x-comment :content="$news" :comment="$comment" type="news" />
 
@@ -128,9 +128,9 @@
                      RELATED ARTICLES
                      ============================================================ --}}
                 @if($related->count() > 0)
-                    <div class="row mt-6 pt-5 border-top owl-border-color-important">
+                    <div class="row border-top owl-border-color-important owl-explore-section">
                         <div class="col-12 mb-4">
-                            <h2 class="fw-bold mb-4 owl-text-color">
+                            <h2 class="fw-bold owl-text-color owl-explore-heading">
                                 <i class="ti ti-arrow-right me-2"></i>Continue exploring
                             </h2>
                             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
@@ -154,11 +154,11 @@
                                                     >
                                                 @endif
                                             </div>
-                                            <div class="card-body owl-surface-bg">
+                                            <div class="card-body owl-surface-bg owl-explore-body">
                                                 <small class="text-secondary">
                                                     {{ $article->created_at ? $article->created_at->format('M d, Y') : '-' }}
                                                 </small>
-                                                <h5 class="fw-bold mt-2 mb-3 owl-text-color">
+                                                <h5 class="fw-bold owl-text-color owl-explore-title">
                                                     {{ Str::limit($article->title ?? '', 65) }}
                                                 </h5>
                                                 <span class="btn btn-sm btn-outline-primary rounded-pill">
@@ -224,48 +224,29 @@
         }
     }
 
-    function initShareButtons() {
-        var currentUrl = window.location.href;
-        var articleTitle = '{{ addslashes($news->title ?? '') }}';
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('[title*="LinkedIn"]')) {
-                window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(currentUrl), '_blank', 'width=600,height=400');
-            } else if (e.target.closest('[title*="Twitter"]')) {
-                window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(articleTitle) + '&url=' + encodeURIComponent(currentUrl), '_blank', 'width=600,height=400');
-            } else if (e.target.closest('[title*="Copy"]')) {
-                navigator.clipboard && navigator.clipboard.writeText(currentUrl).then(function(){ alert('Link copied!'); });
-            } else if (e.target.closest('[title*="Email"]')) {
-                window.location.href = 'mailto:?subject=' + encodeURIComponent(articleTitle) + '&body=' + encodeURIComponent(currentUrl);
-            }
-        });
-    }
+    function initArticleImages() {
+        var articlePage = document.querySelector('.owl-article-page');
+        if (!articlePage) return;
 
-    function initSaveButtons() {
-        var newsId = '{{ $news->id }}';
-        document.querySelectorAll('[title="Save article"], [title="Save for later"]').forEach(function(btn) {
-            if (localStorage.getItem('owl-saved-article-' + newsId)) {
-                btn.classList.add('active');
-                btn.setAttribute('aria-pressed', 'true');
-            }
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                btn.classList.toggle('active');
-                var isSaved = btn.classList.contains('active');
-                btn.setAttribute('aria-pressed', isSaved);
-                if (isSaved) {
-                    localStorage.setItem('owl-saved-article-' + newsId, 'true');
+        articlePage.classList.add('has-image-transitions');
+        articlePage.querySelectorAll('.news-cover-img, .owl-explore-image')
+            .forEach(function(image) {
+                function showImage() {
+                    image.classList.add('is-loaded');
+                }
+
+                if (image.complete && image.naturalWidth > 0) {
+                    showImage();
                 } else {
-                    localStorage.removeItem('owl-saved-article-' + newsId);
+                    image.addEventListener('load', showImage, { once: true });
                 }
             });
-        });
     }
 
     document.addEventListener('DOMContentLoaded', function(){
         initDarkMode();
         initTooltips();
-        initShareButtons();
-        initSaveButtons();
+        initArticleImages();
     });
 })();
 </script>

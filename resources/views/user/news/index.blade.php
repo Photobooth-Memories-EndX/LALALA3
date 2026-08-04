@@ -8,10 +8,8 @@
     ];
     $newsViews = [
         'all' => 'All Views',
-        '0_50' => '0 - 50',
-        '51_100' => '51 - 100',
-        '101_200' => '101 - 200',
-        'over_200' => '> 200',
+        'most_viewed' => 'Most Viewed',
+        'least_viewed' => 'Least Viewed',
     ];
     $newsYears = collect($news->items())
         ->map(fn ($item) => (int) $item->created_at->format('Y'))
@@ -20,6 +18,10 @@
         ->sortDesc()
         ->values();
     $currentNewsSort = request('sort', 'latest');
+    $currentNewsViews = request(
+        'views',
+        in_array($currentNewsSort, ['most_viewed', 'least_viewed'], true) ? $currentNewsSort : 'all'
+    );
     $newsSortDate = request('sort_date', $currentNewsSort === 'oldest' ? 'oldest' : 'all');
     $newsSortTitle = request('sort_title', in_array($currentNewsSort, ['az', 'za'], true) ? $currentNewsSort : 'default');
     $newsAdvancedFilterCount = collect([
@@ -30,7 +32,7 @@
     ])->filter()->count();
     $newsHasActiveFilters = filled(request('search')) || filled(request('author')) ||
         request('month', 'all') !== 'all' || request('year', 'all') !== 'all' ||
-        request('views', 'all') !== 'all' ||
+        $currentNewsViews !== 'all' ||
         $newsAdvancedFilterCount > 0;
 @endphp
 
@@ -98,13 +100,13 @@
 
                                 <div class="dropdown">
                                     <button type="button"
-                                        class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ request('views', 'all') !== 'all' ? 'active' : '' }}"
+                                        class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $currentNewsViews !== 'all' ? 'active' : '' }}"
                                         data-bs-toggle="dropdown" aria-expanded="false">
-                                        Views: <span class="fw-semibold" data-news-filter-label="views">{{ $newsViews[request('views', 'all')] ?? 'All Views' }}</span>
+                                        Views: <span class="fw-semibold" data-news-filter-label="views">{{ $newsViews[$currentNewsViews] ?? 'All Views' }}</span>
                                     </button>
                                     <div class="dropdown-menu">
                                         @foreach($newsViews as $viewValue => $viewLabel)
-                                            <a href="#" class="dropdown-item news-quick-filter-item {{ request('views', 'all') === $viewValue ? 'active' : '' }}" data-filter="views" data-value="{{ $viewValue }}">{{ $viewLabel }}</a>
+                                            <a href="#" class="dropdown-item news-quick-filter-item {{ $currentNewsViews === $viewValue ? 'active' : '' }}" data-filter="views" data-value="{{ $viewValue }}">{{ $viewLabel }}</a>
                                         @endforeach
                                     </div>
                                 </div>
@@ -112,7 +114,7 @@
 
                             <input type="hidden" name="month" id="owlNewsMonth" value="{{ request('month', 'all') }}">
                             <input type="hidden" name="year" id="owlNewsYear" value="{{ request('year', 'all') }}">
-                            <input type="hidden" name="views" id="owlNewsViews" value="{{ request('views', 'all') }}">
+                            <input type="hidden" name="views" id="owlNewsViews" value="{{ $currentNewsViews }}">
                             <input type="hidden" name="sort" id="owlNewsSort" value="{{ $currentNewsSort }}">
 
                             <div class="record-filter-actions owl-news-filter-actions">
@@ -196,6 +198,35 @@
                                     <option value="week" {{ request('published') === 'week' ? 'selected' : '' }}>This Week</option>
                                     <option value="month" {{ request('published') === 'month' ? 'selected' : '' }}>This Month</option>
                                     <option value="year" {{ request('published') === 'year' ? 'selected' : '' }}>This Year</option>
+                                </select>
+                            </div>
+
+                            <div class="owl-news-more-filter-field">
+                                <label class="form-label" for="owlNewsModalMonth">Month</label>
+                                <select id="owlNewsModalMonth" class="form-select" data-news-modal-filter="month">
+                                    <option value="all" {{ request('month', 'all') === 'all' ? 'selected' : '' }}>All</option>
+                                    @foreach ($newsMonths as $monthNumber => $monthName)
+                                        <option value="{{ $monthNumber }}" {{ (string) request('month', 'all') === (string) $monthNumber ? 'selected' : '' }}>{{ $monthName }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="owl-news-more-filter-field">
+                                <label class="form-label" for="owlNewsModalYear">Year</label>
+                                <select id="owlNewsModalYear" class="form-select" data-news-modal-filter="year">
+                                    <option value="all" {{ request('year', 'all') === 'all' ? 'selected' : '' }}>All</option>
+                                    @foreach ($newsYears as $year)
+                                        <option value="{{ $year }}" {{ (string) request('year', 'all') === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="owl-news-more-filter-field">
+                                <label class="form-label" for="owlNewsModalViews">Views</label>
+                                <select id="owlNewsModalViews" class="form-select" data-news-modal-filter="views">
+                                    @foreach ($newsViews as $viewValue => $viewLabel)
+                                        <option value="{{ $viewValue }}" {{ $currentNewsViews === $viewValue ? 'selected' : '' }}>{{ $viewLabel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -317,7 +348,6 @@
 
         var month = document.getElementById('owlNewsMonth')?.value || 'all';
         var year = document.getElementById('owlNewsYear')?.value || 'all';
-        var views = document.getElementById('owlNewsViews')?.value || 'all';
         var published = document.getElementById('owlNewsPublished')?.value || 'all';
         var sort = document.getElementById('owlNewsSort')?.value || 'latest';
         var cards = Array.prototype.slice.call(grid.querySelectorAll('.owl-news-card'));
@@ -330,20 +360,14 @@
 
         cards.forEach(function(card) {
             var date = new Date(card.dataset.newsCreated + 'T00:00:00');
-            var viewCount = Number(card.dataset.newsViews || 0);
             var matchesMonth = month === 'all' || String(date.getMonth() + 1) === month;
             var matchesYear = year === 'all' || String(date.getFullYear()) === year;
-            var matchesViews = views === 'all' ||
-                (views === '0_50' && viewCount <= 50) ||
-                (views === '51_100' && viewCount >= 51 && viewCount <= 100) ||
-                (views === '101_200' && viewCount >= 101 && viewCount <= 200) ||
-                (views === 'over_200' && viewCount > 200);
             var matchesPublished = published === 'all' ||
                 (published === 'today' && date.getTime() === today.getTime()) ||
                 (published === 'week' && date >= weekStart && date <= now) ||
                 (published === 'month' && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) ||
                 (published === 'year' && date.getFullYear() === now.getFullYear());
-            var isVisible = matchesMonth && matchesYear && matchesViews && matchesPublished;
+            var isVisible = matchesMonth && matchesYear && matchesPublished;
             var column = card.closest('.col');
 
             if (column) column.classList.toggle('d-none', !isVisible);
@@ -384,27 +408,52 @@
             });
         }
 
+        function syncNewsQuickFilter(filter, value) {
+            var capitalizedFilter = filter.charAt(0).toUpperCase() + filter.slice(1);
+            var input = document.getElementById('owlNews' + capitalizedFilter);
+            var modalFilter = document.getElementById('owlNewsModal' + capitalizedFilter);
+            var matchingItem = Array.prototype.find.call(
+                document.querySelectorAll('.news-quick-filter-item[data-filter="' + filter + '"]'),
+                function(option) {
+                    return option.dataset.value === value;
+                }
+            );
+            var dropdown = matchingItem?.closest('.dropdown');
+            var button = dropdown?.querySelector('.learning-fast-filter-control');
+            var label = button?.querySelector('[data-news-filter-label]');
+
+            if (input) input.value = value;
+            if (modalFilter && modalFilter.value !== value) modalFilter.value = value;
+            if (filter === 'views') {
+                if (value === 'most_viewed' || value === 'least_viewed') {
+                    if (sortInput) sortInput.value = value;
+                    if (sortDate) sortDate.value = 'all';
+                    if (sortTitle) sortTitle.value = 'default';
+                } else if (sortInput && (sortInput.value === 'most_viewed' || sortInput.value === 'least_viewed')) {
+                    sortInput.value = 'latest';
+                }
+            }
+            dropdown?.querySelectorAll('.news-quick-filter-item').forEach(function(option) {
+                option.classList.toggle('active', option.dataset.value === value);
+            });
+            if (label) {
+                label.textContent = value === '' || value === 'all'
+                    ? (filter === 'views' ? 'All Views' : 'All')
+                    : matchingItem.textContent.trim();
+            }
+            button?.classList.toggle('active', value !== '' && value !== 'all');
+        }
+
         document.querySelectorAll('.news-quick-filter-item').forEach(function(item) {
             item.addEventListener('click', function(event) {
                 event.preventDefault();
+                syncNewsQuickFilter(item.dataset.filter, item.dataset.value ?? '');
+            });
+        });
 
-                var filter = item.dataset.filter;
-                var value = item.dataset.value ?? '';
-                var input = document.getElementById('owlNews' + filter.charAt(0).toUpperCase() + filter.slice(1));
-                var dropdown = item.closest('.dropdown');
-                var button = dropdown?.querySelector('.learning-fast-filter-control');
-                var label = button?.querySelector('[data-news-filter-label]');
-
-                if (input) input.value = value;
-                dropdown?.querySelectorAll('.news-quick-filter-item').forEach(function(option) {
-                    option.classList.toggle('active', option === item);
-                });
-                if (label) {
-                    label.textContent = value === '' || value === 'all'
-                        ? (filter === 'views' ? 'All Views' : 'All')
-                        : item.textContent.trim();
-                }
-                button?.classList.toggle('active', value !== '' && value !== 'all');
+        document.querySelectorAll('[data-news-modal-filter]').forEach(function(select) {
+            select.addEventListener('change', function() {
+                syncNewsQuickFilter(select.dataset.newsModalFilter, select.value);
             });
         });
 
@@ -414,6 +463,8 @@
 
         function syncNewsSort(changedFilter) {
             if (!sortDate || !sortTitle || !sortInput) return;
+
+            syncNewsQuickFilter('views', 'all');
 
             if (changedFilter === 'date' && sortDate.value !== 'all') {
                 sortTitle.value = 'default';

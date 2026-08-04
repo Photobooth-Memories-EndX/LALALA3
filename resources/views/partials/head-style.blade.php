@@ -91,12 +91,12 @@
     .navbar-vertical .owl-sidebar-brand {
         flex: 1 1 auto;
         min-width: 0;
-        padding: 6px 12px;
+        padding: 2px 12px;
     }
 
     .navbar-vertical .owl-sidebar-logo {
         display: block;
-        width: 132px;
+        width: 164px;
         height: auto;
         max-width: 100%;
         object-fit: contain;
@@ -106,12 +106,22 @@
         .navbar-vertical .owl-sidebar-brand {
             flex: none;
             width: 100%;
-            min-height: 94px;
-            padding: 8px 16px;
+            min-height: 104px;
+            padding: 3px 16px;
         }
 
         .navbar-vertical .owl-sidebar-brand > a {
             width: 100%;
+        }
+
+        .navbar-vertical .owl-sidebar-nav {
+            padding-top: 4px;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .navbar-vertical .owl-sidebar-logo {
+            width: 132px;
         }
     }
 
@@ -290,10 +300,6 @@
     }
 
     @media (max-width: 767.98px) {
-        .navbar-vertical .owl-sidebar-logo {
-            width: 108px;
-        }
-
         .topbar-search {
             display: none !important;
         }

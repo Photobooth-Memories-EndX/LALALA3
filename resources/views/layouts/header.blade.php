@@ -25,12 +25,12 @@
 
         <h1 class="navbar-brand navbar-brand-autodark owl-sidebar-brand">
             <a href="{{ url('/') }}">
-                <img src="{{ asset('owl.png') }}" width="132" height="78" alt="OWL Learning Hub" class="navbar-brand-image owl-sidebar-logo">
+                <img src="{{ asset('owl.png') }}" width="164" height="97" alt="OWL Learning Hub" class="navbar-brand-image owl-sidebar-logo">
             </a>
         </h1>
 
         <div class="collapse navbar-collapse" id="sidebar-menu">
-            <ul class="navbar-nav pt-lg-3">
+            <ul class="navbar-nav owl-sidebar-nav">
                 <li class="nav-item {{ request()->is('/') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ url('/') }}">
                         <span class="nav-link-icon"><i class="ti ti-home"></i></span>
