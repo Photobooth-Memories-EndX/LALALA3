@@ -16,10 +16,10 @@
         @endif
     </button>
 
-    <button type="submit" class="btn btn-primary content-filter-action-btn"
+    {{-- <button type="submit" class="btn btn-primary content-filter-action-btn"
             title="Apply Filter" aria-label="Apply Filter">
         <i class="ti ti-check"></i>
-    </button>
+    </button> --}}
 
     <a href="{{ route('content.user.index') }}"
        class="btn btn-outline-primary content-filter-action-btn content-reset-btn {{ $activeFilterCount > 0 ? 'is-active' : '' }}"

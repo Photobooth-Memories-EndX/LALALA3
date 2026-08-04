@@ -81,10 +81,10 @@
                           id="playlistMoreFiltersCount"></span>
                 </button>
 
-                <button type="button" class="btn btn-primary playlist-filter-action-btn"
+                {{-- <button type="button" class="btn btn-primary playlist-filter-action-btn"
                         id="playlistApplyFilter" title="Apply Filter" aria-label="Apply Filter">
                     <i class="ti ti-check"></i>
-                </button>
+                </button> --}}
 
                 <button type="button" class="btn btn-outline-primary playlist-filter-action-btn"
                         id="playlistResetFilter" title="Reset Filter" aria-label="Reset Filter">

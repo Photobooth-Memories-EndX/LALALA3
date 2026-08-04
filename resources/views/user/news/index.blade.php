@@ -131,10 +131,10 @@
                                           id="newsMoreFiltersCount">{{ $newsAdvancedFilterCount ?: '' }}</span>
                                 </button>
 
-                                <button type="submit" class="btn btn-primary btn-learning-primary record-filter-action-btn owl-news-filter-action-btn"
+                                {{-- <button type="submit" class="btn btn-primary btn-learning-primary record-filter-action-btn owl-news-filter-action-btn"
                                         title="Apply Filter" aria-label="Apply Filter">
                                     <i class="ti ti-check"></i>
-                                </button>
+                                </button> --}}
 
                                 <a href="{{ route('news.user.index') }}"
                                    class="btn btn-outline-primary btn-learning-outline record-filter-action-btn owl-news-filter-action-btn {{ $newsHasActiveFilters ? 'is-active' : '' }}"

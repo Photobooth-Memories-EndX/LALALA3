@@ -93,9 +93,9 @@
                         <span class="gallery-filter-count" aria-label="{{ $advancedCount }} advanced filters active">{{ $advancedCount }}</span>
                     @endif
                 </a>
-                <button type="submit" class="btn gallery-action-btn gallery-action-apply" aria-label="Apply Filter" title="Apply Filter">
+                {{-- <button type="submit" class="btn gallery-action-btn gallery-action-apply" aria-label="Apply Filter" title="Apply Filter">
                     <i class="ti ti-check" aria-hidden="true"></i>
-                </button>
+                </button> --}}
                 <a href="{{ route('gallery.user.index') }}" class="btn gallery-action-btn gallery-action-reset"
                     data-gallery-reset aria-label="Reset Filter" title="Reset Filter">
                     <i class="ti ti-refresh" aria-hidden="true"></i>

@@ -296,7 +296,7 @@
                         class="btn btn-primary btn-learning-primary ongoing-filter-action-btn"
                         title="Apply Filter"
                         aria-label="Apply Filter">
-                    <i class="ti ti-check" aria-hidden="true"></i>
+                    <i class="ti ti-search" aria-hidden="true"></i>
                 </button>
 
                 <a href="{{ route('user.learning.dashboard') }}"
@@ -547,7 +547,7 @@
                                 Reset
                             </a>
                             <button type="submit" class="btn btn-primary btn-learning-primary">
-                                <i class="ti ti-check"></i>
+                                <i class="ti ti-search"></i>
                                 Apply Filter
                             </button>
                         </div>

@@ -212,7 +212,7 @@
                     <button type="button" class="btn btn-primary btn-learning-primary record-apply-filter record-filter-action-btn"
                             title="Apply Filter"
                             aria-label="Apply Filter">
-                        <i class="ti ti-check"></i>
+                        <i class="ti ti-search"></i>
                     </button>
                     <button type="button" class="btn btn-outline-primary btn-learning-outline record-clear-filter record-filter-action-btn"
                             title="Reset Filter"
@@ -378,7 +378,7 @@
                         <i class="ti ti-refresh"></i><span>Reset</span>
                     </button>
                     <button type="button" class="btn btn-primary btn-learning-primary" id="recordApplyFilter">
-                        <i class="ti ti-check"></i><span>Apply Filter</span>
+                        <i class="ti ti-search"></i><span>Apply Filter</span>
                     </button>
                         </div>
                     </div>

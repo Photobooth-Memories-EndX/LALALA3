@@ -99,7 +99,7 @@
                         </button>
                         <button type="button" class="btn btn-primary btn-learning-primary record-filter-action-btn certificate-filter-action-btn"
                                 id="certificateApplyFilter" title="Apply Filter" aria-label="Apply Filter">
-                            <i class="ti ti-check"></i>
+                            <i class="ti ti-search"></i>
                         </button>
                         <button type="button" class="btn btn-outline-primary btn-learning-outline record-filter-action-btn certificate-filter-action-btn"
                                 id="certificateResetFilter" title="Reset Filter" aria-label="Reset Filter">
@@ -227,7 +227,7 @@
                     <button type="button" class="btn btn-outline-primary btn-learning-outline" id="certificateModalReset">
                         <i class="ti ti-refresh"></i><span>Reset</span>
                     </button>
-                    <button type="button" class="btn btn-primary btn-learning-primary certificate-apply-filter"><i class="ti ti-check"></i><span>Apply Filter</span></button>
+                    <button type="button" class="btn btn-primary btn-learning-primary certificate-apply-filter"><i class="ti ti-search"></i><span>Apply Filter</span></button>
                 </div>
             </div>
         </div>
