@@ -8,7 +8,7 @@
     
     /* REVISI WARNA: Biru Krakatau Posco (#05507d) dan Hijau Tua (#0f5132) */
     --kp-hero-light-rgb: 0, 82, 204;         /* Biru utama (On Going) */
-    --kp-hero-completed-rgb: 16, 185, 129;   /* Hijau (Completed) */
+    --kp-hero-completed-rgb: 34, 197, 94;    /* Hijau (Completed) */
 
     /* 1. Perluas jangkauan overlay ke kanan (dari 45% menjadi 55% - 60%) */
     --hero-overlay-width: 58%;
@@ -240,7 +240,7 @@
                 padding: 10px 12px;
                 border: 1px solid rgba(255, 255, 255, .14);
                 border-radius: 18px;
-                background: rgba(var(--kp-hero-dark-rgb), .52);
+                background: #0a2540;
                 backdrop-filter: blur(12px);
                 -webkit-backdrop-filter: blur(12px);
             }
@@ -277,7 +277,7 @@
             }
 
             .shared-hero-donut-hit-ongoing:hover {
-                background: rgba(var(--kp-hero-light-rgb), .18);
+                background: rgba(0, 168, 255, .18);
             }
 
             .shared-hero-donut-inner {
@@ -290,12 +290,12 @@
                 height: 86px;
                 flex-direction: column;
                 border-radius: 50%;
-                background: rgba(var(--kp-hero-dark-rgb), .94);
+                background: #ffffff;
                 box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
             }
 
             .shared-hero-donut-inner strong {
-                color: #fff;
+                color: #0a2540;
                 font-size: 22px;
                 font-weight: 700;
                 line-height: 1;
@@ -304,7 +304,7 @@
             .shared-hero-donut-inner small {
                 width: 66px;
                 margin-top: 4px;
-                color: rgba(255, 255, 255, .65);
+                color: #0a2540;
                 font-size: 7px;
                 font-weight: 600;
                 line-height: 1.2;
@@ -328,7 +328,7 @@
                 justify-content: center;
                 min-height: 28px;
                 margin: 0 0 6px;
-                color: rgba(255, 255, 255, .85);
+                color: #ffffff;
                 font-size: 13px;
                 font-weight: 600;
                 line-height: 1.25;
@@ -361,7 +361,7 @@
             }
 
             .shared-hero-summary-label {
-                color: rgba(255, 255, 255, .85);
+                color: #ffffff;
                 font-size: 12px;
                 font-weight: 500;
                 line-height: 1.2;
@@ -402,8 +402,8 @@
             }
 
             .shared-hero-stat-dot.ongoing {
-                background: rgb(var(--kp-hero-light-rgb));
-                box-shadow: 0 0 8px rgba(var(--kp-hero-light-rgb), .5);
+                background: #00a8ff;
+                box-shadow: 0 0 8px rgba(0, 168, 255, .5);
             }
 
             .shared-learning-hero .shared-hero-summary-row:has(.shared-hero-stat-dot.completed) .shared-hero-summary-label,
@@ -419,12 +419,12 @@
             [data-bs-theme="dark"] .shared-hero-summary,
             body.dark-mode .shared-hero-summary {
                 border-color: rgba(255, 255, 255, .1);
-                background: rgba(var(--kp-hero-dark-rgb), .48);
+                background: #0a2540;
             }
 
             [data-bs-theme="dark"] .shared-hero-donut-inner,
             body.dark-mode .shared-hero-donut-inner {
-                background: rgba(var(--kp-hero-dark-rgb), .96);
+                background: #ffffff;
             }
 
             @media (min-width: 992px) {

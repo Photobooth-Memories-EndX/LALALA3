@@ -1,6 +1,17 @@
 @php
     $defaultLessonThumbnail = asset('default-video.jpg');
     $requiredAssessmentProgress = \App\Models\ContentUser::ASSESSMENT_REQUIRED_PROGRESS;
+
+    $totalVideos = ($content_all ?? collect())->count();
+    $completedVideos = 0;
+    if (isset($content_all) && isset($progressByContentId)) {
+        foreach ($content_all as $item) {
+            if (($progressByContentId[$item->content_id] ?? 0) >= 100) {
+                $completedVideos++;
+            }
+        }
+    }
+    $playlistProgress = number_format((float) ($playlistUiState['learning_progress'] ?? $percentageProgressPlaylist ?? 0));
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 sticky-top view-playlist-card" style="top: 1rem;">
@@ -11,6 +22,13 @@
             <div class="d-flex align-items-center gap-2">
                 <button type="button"
                         class="panel-header-toggle"
+                        id="playlistSearchToggleBtn"
+                        onclick="togglePlaylistSearch()"
+                        title="Search in playlist">
+                    <i class="ti ti-search" aria-hidden="true"></i>
+                </button>
+                <button type="button"
+                        class="panel-header-toggle"
                         onclick="toggleLearningPanel('left')"
                         title="Tutup Content List">
                     <i class="ti ti-list" aria-hidden="true"></i>
@@ -19,6 +37,16 @@
         </div>
 
         <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between text-muted small mb-1">
+                <span class="fw-semibold text-body">{{ $playlistProgress }}% Progress</span>
+                <span class="text-muted">({{ $completedVideos }}/{{ $totalVideos }} videos)</span>
+            </div>
+            <div class="progress" style="height: 4px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $playlistProgress }}%" aria-valuenow="{{ $playlistProgress }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+
+        <div class="mb-3 d-none" id="playlistSearchBox">
             <div class="input-icon">
                 <span class="input-icon-addon">
                     <i class="ti ti-search" aria-hidden="true"></i>
@@ -136,3 +164,45 @@
 
     </div>
 </div>
+
+<script>
+    function togglePlaylistSearch() {
+        const searchBox = document.getElementById('playlistSearchBox');
+        const searchInput = document.getElementById('playlistSearchInput');
+        const searchBtn = document.getElementById('playlistSearchToggleBtn');
+
+        if (!searchBox || !searchInput) return;
+
+        const isHidden = searchBox.classList.contains('d-none');
+        if (isHidden) {
+            searchBox.classList.remove('d-none');
+            if (searchBtn) searchBtn.classList.add('active');
+            searchInput.focus();
+        } else {
+            if (searchInput.value) {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('keyup'));
+            }
+            searchBox.classList.add('d-none');
+            if (searchBtn) searchBtn.classList.remove('active');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('playlistSearchInput');
+        const searchBox = document.getElementById('playlistSearchBox');
+        const btn = document.getElementById('playlistSearchToggleBtn');
+
+        if (input) {
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    this.value = '';
+                    this.dispatchEvent(new Event('keyup'));
+                    searchBox?.classList.add('d-none');
+                    btn?.classList.remove('active');
+                    this.blur();
+                }
+            });
+        }
+    });
+</script>

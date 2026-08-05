@@ -55,7 +55,7 @@
                             rows="3"></x-textarea>
 
                         <div class="comment-submit-row">
-                            <div class="text-muted">{{ $commentTotal }} Comments</div>
+                            <div class="text-muted"><span class="comment-count-num">{{ $commentTotal }}</span> Comments</div>
                             <span id="note_remaining" class="text-muted small">1000 characters remaining</span>
 
                             <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">
@@ -92,6 +92,29 @@
             @endif
         </div>
 
+    </div>
+
+    {{-- Custom Confirmation Modal --}}
+    <div id="commentDeleteConfirmModal" class="comment-delete-modal-overlay d-none">
+        <div class="comment-delete-modal-card">
+            <div class="comment-delete-icon">
+                <i class="ti ti-trash"></i>
+            </div>
+            <h5 class="comment-delete-title">Delete Comment</h5>
+            <p class="comment-delete-text">Are you sure you want to delete this comment?</p>
+            <div class="comment-delete-actions">
+                <button type="button" class="btn btn-light rounded-pill" id="cancelCommentDeleteBtn">Cancel</button>
+                <button type="button" class="btn btn-danger rounded-pill" id="confirmCommentDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    {{-- Success Toast Notification --}}
+    <div id="commentToastContainer" class="comment-toast-container d-none">
+        <div class="comment-toast">
+            <i class="ti ti-circle-check-filled"></i>
+            <span id="commentToastMessage">Comment deleted successfully.</span>
+        </div>
     </div>
 </div>
 
@@ -273,6 +296,132 @@
         }
         .comment-thread { padding: 12px; }
     }
+
+    /* ── Delete Confirmation Modal ── */
+    .comment-delete-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1060;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        animation: commentFadeIn .18s ease-out;
+    }
+
+    .comment-delete-modal-card {
+        background: #ffffff;
+        border-radius: 18px;
+        width: 100%;
+        max-width: 360px;
+        padding: 24px 20px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+        animation: commentScaleIn .18s ease-out;
+    }
+
+    .comment-delete-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #fee2e2;
+        color: #ef4444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin: 0 auto 14px;
+    }
+
+    .comment-delete-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 6px;
+    }
+
+    .comment-delete-text {
+        font-size: 13px;
+        color: #64748b;
+        margin-bottom: 20px;
+        line-height: 1.4;
+    }
+
+    .comment-delete-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .comment-delete-actions .btn {
+        flex: 1;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 8px 16px;
+    }
+
+    /* ── Top Toast Notification ── */
+    .comment-toast-container {
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1070;
+        pointer-events: none;
+    }
+
+    .comment-toast {
+        background: #0f172a;
+        color: #ffffff;
+        padding: 10px 20px;
+        border-radius: 999px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.3);
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: commentToastSlideDown .25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .comment-toast i {
+        color: #4ade80;
+        font-size: 16px;
+    }
+
+    @keyframes commentFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes commentScaleIn {
+        from { opacity: 0; transform: scale(0.92); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes commentToastSlideDown {
+        from { opacity: 0; transform: translateY(-12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .comment-delete-modal-card {
+        background: #1e293b;
+        color: #f8fafc;
+    }
+    [data-bs-theme="dark"] .comment-delete-title { color: #f8fafc; }
+    [data-bs-theme="dark"] .comment-delete-text { color: #94a3b8; }
+    [data-bs-theme="dark"] .comment-delete-icon {
+        background: rgba(239, 68, 68, 0.18);
+        color: #f87171;
+    }
 </style>
 @endpush
 
@@ -390,7 +539,7 @@
                     window.history.replaceState({}, document.title, url);
                 }
             }).fail(function (xhr) {
-                showCommentError($root, xhr, 'Daftar komentar tidak dapat dimuat ulang.');
+                showCommentError($root, xhr, 'Failed to reload comment list.');
             }).always(function () {
                 $root.removeClass('is-loading-comments');
                 restoreState($root, state);
@@ -411,10 +560,10 @@
             }
 
             if (response.message && xhr.status !== 500) return response.message;
-            if (xhr.status === 404) return 'Komentar atau endpoint tidak ditemukan.';
-            if (xhr.status === 419) return 'Sesi telah berakhir. Muat ulang halaman lalu coba lagi.';
-            if (xhr.status === 422) return 'Data komentar tidak valid.';
-            if (xhr.status >= 500) return 'Server gagal memproses komentar. Silakan coba lagi.';
+            if (xhr.status === 404) return 'Comment or endpoint not found.';
+            if (xhr.status === 419) return 'Session expired. Please refresh page and try again.';
+            if (xhr.status === 422) return 'Invalid comment data.';
+            if (xhr.status >= 500) return 'Server error while processing comment. Please try again.';
 
             return fallback;
         }
@@ -633,6 +782,127 @@
 
                 $form.removeData('requestPending');
                 $form.find(':submit').prop('disabled', false).removeAttr('aria-busy');
+            });
+        });
+
+        var pendingDeleteData = null;
+
+        function showDeleteToast(msg) {
+            var $toastContainer = $('#commentToastContainer');
+            if (!$toastContainer.length) return;
+
+            if (msg) $('#commentToastMessage').text(msg);
+            $toastContainer.removeClass('d-none');
+
+            setTimeout(function () {
+                $toastContainer.addClass('d-none');
+            }, 2500);
+        }
+
+        function removeCommentFromDom($root, commentId) {
+            if (!commentId) return;
+
+            var targetElem = document.getElementById('comment-' + commentId) || document.getElementById('comment-row-' + commentId);
+
+            if (targetElem) {
+                var $target = $(targetElem);
+                var $parentThread = $target.closest('.comment-thread');
+                var isRootThread = targetElem.id === ('comment-' + commentId) && $target.hasClass('comment-thread');
+
+                $target.remove();
+
+                if (!isRootThread && $parentThread.length) {
+                    var remainingReplies = $parentThread.find('.comment-item-reply').length;
+                    var $repliesBlock = $parentThread.find('.replies-block');
+                    if (remainingReplies === 0) {
+                        $repliesBlock.addClass('d-none');
+                    } else {
+                        var replyLabel = remainingReplies === 1 ? 'Reply' : 'Replies';
+                        $repliesBlock.find('.replies-label-show').text('View ' + remainingReplies + ' ' + replyLabel);
+                    }
+                }
+            }
+
+            $root.find('.comment-count-num').each(function () {
+                var count = parseInt($(this).text(), 10);
+                if (!isNaN(count) && count > 0) {
+                    $(this).text(count - 1);
+                }
+            });
+
+            var $cardBody = $root.find('.card-body');
+            if ($cardBody.find('.comment-thread').length === 0 && $cardBody.find('.comment-item').length === 0) {
+                if (!$cardBody.find('.empty-comments-placeholder').length) {
+                    $cardBody.prepend(
+                        '<div class="text-center p-4 empty-comments-placeholder">' +
+                            '<i class="ti ti-message-circle-off text-muted" style="font-size:40px;"></i>' +
+                            '<h6 class="mt-2 mb-1">No Comments Yet</h6>' +
+                            '<div class="text-muted small">Be the first to leave a comment.</div>' +
+                        '</div>'
+                    );
+                }
+            }
+        }
+
+        $(document).on('click', '.comment-delete-btn', function (e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var url = $btn.data('url');
+            var commentId = $btn.data('comment-id');
+            var $root = $btn.closest('.comment-ajax-root');
+
+            if (!url || !$root.length) return;
+
+            pendingDeleteData = {
+                url: url,
+                commentId: commentId,
+                $root: $root
+            };
+
+            $('#commentDeleteConfirmModal').removeClass('d-none');
+        });
+
+        $(document).on('click', '#cancelCommentDeleteBtn, .comment-delete-modal-overlay', function (e) {
+            if (e.target !== this && !$(this).is('#cancelCommentDeleteBtn')) return;
+            pendingDeleteData = null;
+            $('#commentDeleteConfirmModal').addClass('d-none');
+        });
+
+        $(document).on('click', '#confirmCommentDeleteBtn', function (e) {
+            e.preventDefault();
+            if (!pendingDeleteData) return;
+
+            var data = pendingDeleteData;
+            pendingDeleteData = null;
+            $('#commentDeleteConfirmModal').addClass('d-none');
+
+            var $root = data.$root;
+            var url = data.url;
+            var commentId = data.commentId;
+
+            if ($root.hasClass('is-loading-comments')) return;
+            $root.addClass('is-loading-comments');
+
+            $.ajax({
+                url: url,
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            }).done(function () {
+                removeCommentFromDom($root, commentId);
+                showDeleteToast('Comment deleted successfully.');
+            }).fail(function (xhr) {
+                if (xhr.status === 404) {
+                    removeCommentFromDom($root, commentId);
+                    showDeleteToast('Comment deleted successfully.');
+                } else {
+                    showCommentError($root, xhr, 'Failed to delete comment.');
+                }
+            }).always(function () {
+                $root.removeClass('is-loading-comments');
             });
         });
     })(window.jQuery);

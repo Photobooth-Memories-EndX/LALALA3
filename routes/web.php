@@ -110,6 +110,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::post('/comment/{id}/like', [CommentController::class, 'toggleLike'])->name('comment.like');
+    Route::delete('/comments/{id}', [CommentController::class, 'destroy'])->name('comments.destroy');
 });
 
 /*

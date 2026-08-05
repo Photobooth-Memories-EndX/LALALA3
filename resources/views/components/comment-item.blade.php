@@ -16,7 +16,7 @@
     $avatarSize = $isReply ? 'avatar-xs' : 'avatar-sm';
 @endphp
 
-<div class="d-flex gap-2 align-items-start comment-item {{ $isReply ? 'comment-item-reply' : 'comment-item-root' }}">
+<div class="d-flex gap-2 align-items-start comment-item {{ $isReply ? 'comment-item-reply' : 'comment-item-root' }}" id="comment-row-{{ $item->id }}">
 
     <div class="flex-shrink-0">
         @if(!empty($item->user->avatar))
@@ -54,6 +54,15 @@
                     data-target="reply-form-{{ $rootId }}">
                 Reply
             </button>
+
+            @if(auth()->check() && (auth()->id() === $item->user_id || (method_exists(auth()->user(), 'isAdmin') && auth()->user()->isAdmin()) || auth()->user()->role === 'admin' || (int) auth()->user()->role === \App\Models\User::ROLE_ADMIN))
+                <button type="button"
+                        class="btn btn-link p-0 comment-action text-danger text-decoration-none border-0 bg-transparent comment-delete-btn"
+                        data-comment-id="{{ $item->id }}"
+                        data-url="{{ route('comments.destroy', $item->id) }}">
+                    Delete
+                </button>
+            @endif
         </div>
     </div>
 

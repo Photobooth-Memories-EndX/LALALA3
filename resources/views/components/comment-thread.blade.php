@@ -57,7 +57,7 @@
                         class="comment-textarea comment-reply-textarea"
                         id="reply-textarea-{{ $comment->id }}"
                         name="description"
-                        placeholder="Tulis balasan..."
+                        placeholder="Write a reply..."
                         maxlength="1000"
                         rows="1"></x-textarea>
                 </div>

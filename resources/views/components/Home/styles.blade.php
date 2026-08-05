@@ -1613,6 +1613,87 @@ body.dark-mode .home-modern-text-primary {
 [data-bs-theme="dark"] .home-modern-db-title    { color: #f1f5f9; }
 [data-bs-theme="dark"] .home-modern-db-subtitle { color: #94a3b8; }
 
+.home-modern-mobile-header .home-modern-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.home-modern-mobile-user-name {
+    color: #1e293b;
+}
+
+.home-modern-mobile-user-division {
+    color: #64748b;
+}
+
+.home-modern-mobile-bell-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: #475569;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.home-modern-mobile-bell-link:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+[data-bs-theme="dark"] .home-modern-mobile-header .home-modern-card,
+body.dark-mode .home-modern-mobile-header .home-modern-card {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+[data-bs-theme="dark"] .home-modern-mobile-user-name,
+body.dark-mode .home-modern-mobile-user-name {
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .home-modern-mobile-user-division,
+body.dark-mode .home-modern-mobile-user-division {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .home-modern-mobile-bell-link,
+body.dark-mode .home-modern-mobile-bell-link {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .home-modern-mobile-bell-link:hover,
+body.dark-mode .home-modern-mobile-bell-link:hover {
+    background: #334155;
+    color: #f8fafc;
+}
+
+@media (max-width: 767.98px) {
+    /* Legacy mobile profile strip cleanup: hide legacy full-width info bar under navbar */
+    .legacy-mobile-profile-strip,
+    .app-topbar .legacy-user-strip,
+    .navbar-vertical .legacy-user-strip {
+        display: none !important;
+    }
+
+    /* Centered/Aligned OWL logo brand mark in mobile header spec */
+    .navbar-vertical .owl-sidebar-brand {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        margin: 0 auto !important;
+    }
+
+    .navbar-vertical .owl-sidebar-logo {
+        max-height: 40px !important;
+        width: auto !important;
+        object-fit: contain !important;
+    }
+}
+
 /* =====================================================
    ASSESSMENT BUTTON — top of main column
 ===================================================== */

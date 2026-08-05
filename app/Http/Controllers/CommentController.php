@@ -272,4 +272,73 @@ class CommentController extends Controller
             ->with('success', $result['liked'] ? 'Comment liked.' : 'Like removed.')
             ->withFragment('comment');
     }
+
+    public function destroy(Request $request, $id)
+    {
+        try {
+            $comment = Comment::find($id);
+
+            if (!$comment) {
+                if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Comment already deleted',
+                    ], 404);
+                }
+
+                return back()->with('error', 'Comment already deleted');
+            }
+
+            $user = auth()->user();
+            if (!$user) {
+                if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                    return response()->json(['message' => 'Unauthorized action.'], 403);
+                }
+                abort(403, 'Unauthorized action.');
+            }
+
+            $isOwner = (int) $user->id === (int) $comment->user_id;
+            $isAdmin = (method_exists($user, 'isAdmin') && $user->isAdmin())
+                || $user->role === 'admin'
+                || (int) $user->role === \App\Models\User::ROLE_ADMIN;
+
+            if (!$isOwner && !$isAdmin) {
+                if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                    return response()->json(['message' => 'Unauthorized action.'], 403);
+                }
+                abort(403, 'Unauthorized action.');
+            }
+
+            $comment->delete();
+
+            if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Comment deleted successfully.',
+                ]);
+            }
+
+            return back()->with('success', 'Comment deleted successfully.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Comment already deleted',
+                ], 404);
+            }
+
+            return back()->with('error', 'Comment already deleted');
+        } catch (\Exception $e) {
+            Log::error('Error deleting comment: ' . $e->getMessage());
+
+            if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An error occurred while deleting the comment.',
+                ], 500);
+            }
+
+            return back()->with('error', 'An error occurred while deleting the comment.');
+        }
+    }
 }

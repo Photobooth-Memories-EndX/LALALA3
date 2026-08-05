@@ -157,7 +157,7 @@
                             </button>
                         </div>
                     </div>
-                </div>
+                </div> 
 
                 <div class="modal-footer border-0">
                     <button type="button"

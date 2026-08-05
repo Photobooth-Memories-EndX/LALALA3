@@ -73,7 +73,6 @@
                             {{ $content->classification->classification_name ?? 'Learning' }}
                         </span>
                         <span class="badge {{ $contentTypeBadgeClass }}">{{ $content->type ?? 'Content' }}</span>
-                        <span class="badge bg-dark bg-opacity-75">{{ number_format($playlistProgress) }}% Progress</span>
                     </div>
                 </div>
 
