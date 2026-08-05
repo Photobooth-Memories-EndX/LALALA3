@@ -16,6 +16,56 @@
     position: relative;
 }
 
+.ongoing-filter-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0;
+}
+
+.ongoing-filter-heading-copy {
+    width: 100%;
+}
+
+.learning-modern-card .learning-card-progress {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.learning-modern-card .learning-progress-bar {
+    height: 10px;
+    border-radius: 999px;
+}
+
+.learning-modern-card .learning-progress-bar .progress-bar {
+    border-radius: inherit;
+}
+
+.learning-modern-card .learning-continue-btn {
+    min-height: 46px;
+    padding: .7rem 1.25rem;
+    border-radius: 12px !important;
+    font-size: .9375rem;
+    font-weight: 600;
+}
+
+.fast-filter-header {
+    margin-bottom: 20px;
+}
+
+.fast-filter-title {
+    margin-bottom: 4px;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.fast-filter-subtitle {
+    margin: 0;
+    color: var(--tblr-secondary, #6c757d);
+    font-size: .875rem;
+}
+
 .ongoing-fast-filter-section {
     width: 100%;
     container-name: ongoing-fast-filter;
@@ -192,22 +242,36 @@
 }
 
 .ongoing-mode-switch {
-    margin-left: 4px;
+    width: 100%;
+    margin: 16px 0 0;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.ongoing-filter-actions .ongoing-filter-action-btn {
+    width: 40px;
+    min-width: 40px;
+    flex: 0 0 40px;
+    gap: 0;
+    padding: 0;
+}
+
+.ongoing-mode-switch .ongoing-mode-btn {
+    width: 104px;
+    min-width: 104px;
+    flex: 0 1 104px;
+    gap: 7px;
+    padding: 0 14px;
 }
 
 .ongoing-filter-actions .ongoing-filter-action-btn,
 .ongoing-mode-switch .ongoing-mode-btn {
     position: relative;
     display: inline-flex;
-    width: 40px;
-    min-width: 40px;
     height: 40px;
     min-height: 40px;
     align-items: center;
     justify-content: center;
-    flex: 0 0 40px;
-    gap: 0;
-    padding: 0;
     border-radius: 8px !important;
     line-height: 1;
 }
@@ -253,6 +317,7 @@
     background: rgba(15, 94, 156, .08) !important;
     color: var(--learning-btn-primary-hover, #0b4f84) !important;
 }
+
 
 .ongoing-filter-shell .learning-filter-group {
     margin-bottom: 0;
@@ -335,11 +400,21 @@
     }
 
     .ongoing-mode-switch {
-        margin-left: 4px;
+        margin-left: 0;
     }
 }
 
 @media (max-width: 575.98px) {
+    .ongoing-filter-heading {
+        align-items: flex-start;
+    }
+
+    .ongoing-filter-heading .ongoing-mode-switch {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+    }
+
     .ongoing-filter-card > .card-body {
         padding: 1rem !important;
     }

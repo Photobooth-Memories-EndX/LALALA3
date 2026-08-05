@@ -153,10 +153,13 @@
                 <input type="hidden" name="ongoing_quick_status" value="{{ $curQuickStatus }}">
             @endif
 
-            {{-- <div class="ongoing-filter-heading mb-3">
-                <h3 class="card-title mb-1">Learning On Going</h3>
-                <div class="text-muted small">Your Enrolled Classes</div>
-            </div> --}}
+            <div class="ongoing-filter-heading fast-filter-header">
+                <div class="fast-filter-header-copy">
+                    <h3 class="card-title fast-filter-title">Fast Filter</h3>
+                    {{-- <p class="fast-filter-subtitle">Quickly filter your learning content.</p> --}}
+                </div>
+                <x-learning.ongoing-mode-switch mode="content" />
+            </div>
 
             {{-- ── Quick dropdown filters (Type / Status / Year / Month) ──────────────
                  Pilihan langsung diterapkan via AJAX (dashboard-script.blade.php),
@@ -176,7 +179,6 @@
                         : count($activeQuickMonths) . ' Months');
             @endphp
 
-            <div class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</div>
             <div class="ongoing-fast-filter-section">
             <div class="ongoing-fast-filter-toolbar">
             <div class="learning-quick-dropdowns learning-filter-dropdown-row learning-fast-filter ongoing-quick-dropdowns">
@@ -280,6 +282,13 @@
             </div>
 
             <div class="ongoing-filter-actions" role="group" aria-label="Filter actions">
+                <button type="submit"
+                        class="btn btn-primary btn-learning-primary ongoing-filter-action-btn"
+                        title="Apply Filter"
+                        aria-label="Apply Filter">
+                    <i class="ti ti-search" aria-hidden="true"></i>
+                </button>
+
                 <button type="button"
                         class="btn btn-outline-primary btn-learning-secondary ongoing-filter-action-btn"
                         data-bs-toggle="modal"
@@ -292,13 +301,6 @@
                     @endif
                 </button>
 
-                <button type="submit"
-                        class="btn btn-primary btn-learning-primary ongoing-filter-action-btn"
-                        title="Apply Filter"
-                        aria-label="Apply Filter">
-                    <i class="ti ti-search" aria-hidden="true"></i>
-                </button>
-
                 <a href="{{ route('user.learning.dashboard') }}"
                    class="btn btn-outline-secondary btn-learning-outline ongoing-filter-action-btn"
                    title="Reset Filter"
@@ -307,7 +309,6 @@
                 </a>
             </div>
 
-            <x-learning.ongoing-mode-switch mode="content" />
             </div>
             </div>
 

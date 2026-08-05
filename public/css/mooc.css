@@ -1,0 +1,110 @@
+/* My Learning — MOOC coming-soon page. */
+.mooc-coming-soon-card {
+    overflow: hidden;
+    border: 1px solid rgba(15, 94, 156, .12) !important;
+    background:
+        radial-gradient(circle at 50% 0, rgba(96, 165, 250, .15), transparent 42%),
+        var(--tblr-bg-surface, #fff);
+}
+
+.mooc-coming-soon-card .card-body {
+    padding: 4rem 2rem;
+}
+
+.mooc-illustration {
+    position: relative;
+    display: grid;
+    width: 9rem;
+    height: 9rem;
+    margin: 0 auto 1.75rem;
+    place-items: center;
+}
+
+.mooc-illustration-icon {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 5rem;
+    height: 5rem;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0f5e9c, #3b82f6);
+    box-shadow: 0 12px 28px rgba(15, 94, 156, .28);
+    color: #fff;
+    font-size: 2.5rem;
+}
+
+.mooc-illustration-orbit {
+    position: absolute;
+    inset: .45rem;
+    border: 1px dashed rgba(15, 94, 156, .34);
+    border-radius: 50%;
+}
+
+.mooc-illustration-orbit-two {
+    inset: 1.25rem;
+    border-style: solid;
+    border-color: rgba(59, 130, 246, .18);
+}
+
+.mooc-status-badge {
+    margin-bottom: 1.25rem;
+    padding: .55rem .85rem;
+    border: 1px solid rgba(15, 94, 156, .18);
+    border-radius: 999px;
+    background: rgba(15, 94, 156, .1);
+    color: #0f5e9c;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.mooc-coming-soon-title {
+    margin-bottom: .75rem;
+    color: var(--tblr-body-color, #1e293b);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 700;
+}
+
+.mooc-coming-soon-lead {
+    max-width: 36rem;
+    margin: 0 auto 1rem;
+    color: var(--tblr-secondary, #64748b);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+@media (max-width: 575.98px) {
+    .mooc-coming-soon-card .card-body {
+        padding: 2.75rem 1.25rem;
+    }
+
+    .mooc-illustration {
+        transform: scale(.9);
+        margin-bottom: 1.25rem;
+    }
+}
+
+[data-bs-theme="dark"] .mooc-coming-soon-card,
+body.dark-mode .mooc-coming-soon-card {
+    border-color: rgba(148, 163, 184, .18) !important;
+    background:
+        radial-gradient(circle at 50% 0, rgba(59, 130, 246, .16), transparent 42%),
+        #152235;
+}
+
+[data-bs-theme="dark"] .mooc-coming-soon-title,
+body.dark-mode .mooc-coming-soon-title {
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .mooc-coming-soon-lead,
+body.dark-mode .mooc-coming-soon-lead {
+    color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .mooc-status-badge,
+body.dark-mode .mooc-status-badge {
+    border-color: rgba(147, 197, 253, .24);
+    background: rgba(96, 165, 250, .14);
+    color: #bfdbfe;
+}

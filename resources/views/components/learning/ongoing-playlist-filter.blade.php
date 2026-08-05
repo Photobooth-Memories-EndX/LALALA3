@@ -58,13 +58,15 @@
         <form action="{{ route('user.learning.dashboard') }}" method="GET" id="ongoingPlaylistFilterForm" class="ongoing-filter-shell">
             <input type="hidden" name="ongoing_mode" value="playlist">
 
-            <div class="ongoing-filter-heading mb-3">
-                <h3 class="card-title mb-1">Learning On Going</h3>
-                <div class="text-muted small">Your Enrolled Playlists</div>
+            <div class="ongoing-filter-heading fast-filter-header">
+                <div class="fast-filter-header-copy">
+                    <h3 class="card-title fast-filter-title">Fast Filter</h3>
+                    {{-- <p class="fast-filter-subtitle">Quickly filter your learning playlists.</p> --}}
+                </div>
+                <x-learning.ongoing-mode-switch mode="playlist" />
             </div>
 
             {{-- Playlist tidak memiliki filter Type; filter lainnya tersedia di toolbar dan modal. --}}
-            <div class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</div>
             <div class="ongoing-fast-filter-section">
                 <div class="ongoing-fast-filter-toolbar">
                     <div class="learning-quick-dropdowns learning-filter-dropdown-row learning-fast-filter ongoing-quick-dropdowns">
@@ -143,6 +145,13 @@
                     </div>
 
                     <div class="ongoing-filter-actions" role="group" aria-label="Filter actions">
+                        <button type="submit"
+                                class="btn btn-primary btn-learning-primary ongoing-filter-action-btn"
+                                title="Apply Filter"
+                                aria-label="Apply Filter">
+                            <i class="ti ti-search" aria-hidden="true"></i>
+                        </button>
+
                         <button type="button"
                                 class="btn btn-outline-primary btn-learning-secondary ongoing-filter-action-btn"
                                 data-bs-toggle="modal"
@@ -155,13 +164,6 @@
                             @endif
                         </button>
 
-                        <button type="submit"
-                                class="btn btn-primary btn-learning-primary ongoing-filter-action-btn"
-                                title="Apply Filter"
-                                aria-label="Apply Filter">
-                            <i class="ti ti-search" aria-hidden="true"></i>
-                        </button>
-
                         <a href="{{ $resetUrl }}"
                            class="btn btn-outline-secondary btn-learning-outline ongoing-filter-action-btn"
                            title="Reset Filter"
@@ -170,7 +172,6 @@
                         </a>
                     </div>
 
-                    <x-learning.ongoing-mode-switch mode="playlist" />
                 </div>
             </div>
 
@@ -180,14 +181,14 @@
                         <div class="modal-header border-0 pb-0">
                             <h3 class="modal-title fw-bold">
                                 <i class="ti ti-adjustments-horizontal me-1 text-primary"></i>
-                                Playlist Filters
+                                All Filters
                             </h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
 
                         <div class="modal-body pt-2">
                             <p class="text-muted small mb-4">
-                                Filter playlist dapat dikombinasikan dengan pencarian di toolbar.
+                                All filters can be combined with search and quick filters above.
                             </p>
 
                             <div class="learning-filter-group">
@@ -198,7 +199,7 @@
                                             <input class="form-check-input" type="radio"
                                                    name="ongoing_quick_status" value="{{ $value }}"
                                                    {{ $curQuickStatus === $value ? 'checked' : '' }}>
-                                            <span class="form-check-label">{{ $label }}</span>
+                                            <span class="form-check-label">{{ $value === 'all' ? 'All Playlist' : $label }}</span>
                                         </label>
                                     @endforeach
                                 </div>
@@ -266,8 +267,9 @@
                                 <i class="ti ti-refresh"></i>
                                 Reset
                             </a>
-                            <button type="button" class="btn btn-primary btn-learning-primary" data-bs-dismiss="modal">
-                                Close
+                            <button type="submit" class="btn btn-primary btn-learning-primary">
+                                <i class="ti ti-search"></i>
+                                Apply Filter
                             </button>
                         </div>
                     </div>

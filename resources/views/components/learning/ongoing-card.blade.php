@@ -175,7 +175,7 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <i class="ti ti-calendar-due flex-shrink-0"></i>
-                    <span>Deadline: {{ $deadlineDate ? $deadlineDate->format('d M Y') : 'No deadline' }}</span>
+                    <span>Period: {{ $deadlineDate ? $deadlineDate->format('d M Y') : ' -' }}</span>
                 </div>
                 @if ($deadlineRemaining)
                     <div class="d-flex align-items-center gap-2 {{ $deadlineStateClass }}">
@@ -202,7 +202,7 @@
                 @endif
         @endif
 
-        <div class="mb-2">
+        <div class="learning-card-progress">
             <div class="d-flex justify-content-between small mb-1">
                 @if ($isPlaylist)
                     <span class="text-muted">{{ $completedCount }} / {{ $moduleCount }} Completed</span>
@@ -217,32 +217,24 @@
             </div>
         </div>
 
-        @if (! $isPlaylist)
-            <div class="small text-muted mb-3">
-                Aktiv: {{ $active }}
-            </div>
-        @else
-            <div class="small text-muted mb-3">&nbsp;</div>
-        @endif
-
         @php
             $cardUrl = $isPlaylist ? $continueUrl : ($slugUrl ?? null);
         @endphp
 
         @if (! $isPlaylist && $isExpired)
-            <button type="button" class="btn btn-primary btn-learning-primary btn-learning-lg learning-expired-btn w-100 mt-auto" disabled>
+            <button type="button" class="btn btn-primary btn-learning-primary btn-learning-lg learning-continue-btn learning-expired-btn w-100 mt-auto" disabled>
                 <i class="ti ti-lock"></i>
                 Expired
             </button>
         @elseif ($cardUrl)
             {{-- Card Playlist: seluruh card dapat diklik (stretched-link) menuju
                  halaman playlist /playlist/{playlistSlug}/{contentSlug}. --}}
-            <a href="{{ $cardUrl }}" class="btn btn-primary btn-learning-primary btn-learning-lg w-100 mt-auto {{ $isPlaylist ? 'stretched-link' : '' }}">
+            <a href="{{ $cardUrl }}" class="btn btn-primary btn-learning-primary btn-learning-lg learning-continue-btn w-100 mt-auto {{ $isPlaylist ? 'stretched-link' : '' }}">
                 <i class="ti ti-player-play"></i>
                 Continue Learning
             </a>
         @else
-            <button type="button" class="btn btn-primary btn-learning-primary btn-learning-lg w-100 mt-auto" disabled>
+            <button type="button" class="btn btn-primary btn-learning-primary btn-learning-lg learning-continue-btn w-100 mt-auto" disabled>
                 <i class="ti ti-player-play"></i>
                 Continue Learning
             </button>

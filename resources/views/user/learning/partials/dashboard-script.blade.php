@@ -9,6 +9,7 @@
 <script>
     var _activeTab = null;
     var _learningTabs = ['ongoing', 'record', 'assessment', 'certificate'];
+    var _ongoingMode = null;
 
     function learningTabFromUrl() {
         var tab = String(new URLSearchParams(window.location.search).get('learning_tab') || 'ongoing');
@@ -90,6 +91,9 @@
 
         // Forward current URL query params so filters and pagination work
         var params = new URLSearchParams(window.location.search);
+        if (tab === 'ongoing' && _ongoingMode === 'mooc') {
+            params.set('ongoing_mode', 'mooc');
+        }
         var fetchUrl = '{{ route("user.learning.dashboard.partial", ["tab" => "__TAB__"]) }}'.replace('__TAB__', tab);
         if (params.toString()) {
             fetchUrl += '?' + params.toString();
@@ -166,6 +170,8 @@
             }
         });
 
+        _ongoingMode = mode === 'mooc' ? 'mooc' : null;
+
         if (mode === 'playlist') {
             params.set('ongoing_mode', 'playlist');
         }
@@ -179,6 +185,7 @@
 
     // Back/forward browser: restore the tab encoded in the GET query.
     window.addEventListener('popstate', function () {
+        _ongoingMode = null;
         _activeTab = null;
         loadLearningTab(learningTabFromUrl());
     });

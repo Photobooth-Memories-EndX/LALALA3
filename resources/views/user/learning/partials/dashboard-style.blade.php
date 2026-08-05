@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}">
 <link rel="stylesheet" href="{{ asset('css/learning-certificate.css') }}">
 <link rel="stylesheet" href="{{ asset('css/learning-ongoing.css') }}">
+<link rel="stylesheet" href="{{ asset('css/mooc.css') }}">
 @include('user.learning.partials.hero-style')
 
 <style>
