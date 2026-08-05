@@ -23,6 +23,7 @@
                         </div>
 
                         <x-form action="{{ route('assesment.user.store', $assesment->slug) }}" method="post" id="formAssesment">
+                            <input type="hidden" name="submission_token" value="{{ $assessmentSubmissionToken }}">
                             @unless(count($assesment_question) == 0)
 
                                 <div class="mb-3 col-12">
@@ -70,7 +71,7 @@
                                                     <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
                                                         @php
                                                             $options = collect($step->option);
-                                                            $jawaban_temp = $assesment_result_draft->user_answer[$step->id] ?? null;
+                                                            $jawaban_temp = optional($assesment_result_draft)->user_answer[$step->id] ?? null;
                                                         @endphp
                                                         @foreach ($options->shuffle()->all() as $option)
                                                             <label class="form-selectgroup-item flex-fill">
@@ -98,7 +99,7 @@
                                     <!-- SmartWizard html -->
                                 </div>
                                 <div class="text-end">
-                                    <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure want to finish the assesment and submit all the answer?')">Finish & Submit Answers</button>
+                                    <button type="submit" class="btn btn-success" id="submitAssesment">Finish & Submit Answers</button>
                                 </div>
                             @else
                                 <p>No questions data yet</p>
@@ -139,6 +140,23 @@
     <script src="{{ asset('js/jquery.smartWizard.min.js') }}" type="text/javascript"></script>
     <script>
         $(function () {
+            let assessmentSubmitting = false;
+
+            $('#formAssesment').on('submit', function (e) {
+                if (assessmentSubmitting) {
+                    e.preventDefault();
+                    return;
+                }
+
+                if (!window.assessmentAutoSubmit && !confirm('Are you sure want to finish the assesment and submit all the answer?')) {
+                    e.preventDefault();
+                    return;
+                }
+
+                assessmentSubmitting = true;
+                $('#submitAssesment').prop('disabled', true).text('Submitting...');
+            });
+
             $('#smartwizard').smartWizard({
                 selected: 0,
                 theme: 'dots',
@@ -217,7 +235,8 @@
                     document.getElementById("timer").innerHTML = "EXPIRED";
 
                     @if(!auth()->user()->isAdmin())
-                        document.getElementById("formAssesment").submit();
+                        window.assessmentAutoSubmit = true;
+                        document.getElementById("formAssesment").requestSubmit();
                     @endif
                 }
             }, 1000);
