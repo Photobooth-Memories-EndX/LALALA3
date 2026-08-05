@@ -52,7 +52,7 @@ class QuestionController extends Controller
     {
         $questionBank = QuestionBank::findBySlug($question_bank_slug);
         $question     = Question::findOrFail($question_id);
-        $questions    = Question::latest()->get();
+        $questions    = Question::where('question_bank_id', $questionBank->id)->latest()->get();
 
         return view('main.question_bank.questions.edit', compact('questionBank', 'question', 'questions'));
     }

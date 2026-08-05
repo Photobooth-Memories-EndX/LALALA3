@@ -77,6 +77,7 @@
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body">
                 <x-form action="{{ route('assesment.user.store', $assesment->slug) }}" method="post" id="formAssesment">
+                    <input type="hidden" name="submission_token" value="{{ $assessmentSubmissionToken }}">
                     @unless(count($assesment_question) == 0)
 
                         <div id="smartwizard" class="assessment-wizard">
@@ -109,7 +110,7 @@
                                     @php
                                         $i = $i + 1;
                                         $options = collect($step->option);
-                                        $jawaban_temp = $assesment_result_draft->user_answer[$step->id] ?? null;
+                                        $jawaban_temp = optional($assesment_result_draft)->user_answer[$step->id] ?? null;
                                     @endphp
 
                                     <div id="step-{{ $step->id }}"
@@ -188,7 +189,7 @@
 
                             <button type="submit"
                                     class="btn btn-success"
-                                    onclick="return confirm('Are you sure want to finish the assessment and submit all the answer?')">
+                                    id="submitAssesment">
                                 Finish & Submit Answers
                             </button>
                         </div>
@@ -272,6 +273,23 @@
 
     <script>
         $(function () {
+            let assessmentSubmitting = false;
+
+            $('#formAssesment').on('submit', function (e) {
+                if (assessmentSubmitting) {
+                    e.preventDefault();
+                    return;
+                }
+
+                if (!window.assessmentAutoSubmit && !confirm('Are you sure want to finish the assessment and submit all the answer?')) {
+                    e.preventDefault();
+                    return;
+                }
+
+                assessmentSubmitting = true;
+                $('#submitAssesment').prop('disabled', true).text('Submitting...');
+            });
+
             $('#smartwizard').smartWizard({
                 selected: 0,
                 theme: 'dots',
@@ -341,7 +359,8 @@
                     document.getElementById("timer").innerHTML = "EXPIRED";
 
                     @if(!auth()->user()->isAdmin())
-                        document.getElementById("formAssesment").submit();
+                        window.assessmentAutoSubmit = true;
+                        document.getElementById("formAssesment").requestSubmit();
                     @endif
                 }
             }, 1000);

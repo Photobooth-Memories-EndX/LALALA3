@@ -10,6 +10,8 @@
     use App\Services\AssessmentAccessService;
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Support\Facades\Auth;
+    use Illuminate\Support\Facades\Cache;
+    use Illuminate\Support\Str;
 
     class AssesmentUserController extends Controller
     {
@@ -22,7 +24,7 @@
                     },
                 ])
                 ->latest()
-                ->get();
+                ->paginate(15);
 
             $result = AssesmentResult::with('assesment')
                 ->where('user_id', Auth::id())
@@ -89,7 +91,21 @@
             }
 
             //cek jawaban draft (autosave) jika pengisian sebelumnya ada kendala (untuk di load ke option, jawaban sebelumnya ke ceklis)
-            $assesment_result_draft = AssesmentResult::select('user_answer')->where('user_id', auth()->user()->id)->where('assesment_id', $assesment->id)->where('batch', $assesment->batch)->whereFinal(0)->first();
+            $assesment_result_draft = AssesmentResult::select('user_answer')
+                ->where('user_id', auth()->user()->id)
+                ->where('assesment_id', $assesment->id)
+                ->where('batch', $assesment->batch)
+                ->whereFinal(0)
+                ->latest('id')
+                ->first();
+
+            $submissionSessionKey = "assessment_submission_token.{$assesment->id}.{$assesment->batch}";
+            $assessmentSubmissionToken = session($submissionSessionKey);
+
+            if (!$assessmentSubmissionToken) {
+                $assessmentSubmissionToken = (string) Str::uuid();
+                session([$submissionSessionKey => $assessmentSubmissionToken]);
+            }
 
             $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
 
@@ -111,11 +127,20 @@
                 $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
             }
 
-            return view('user.assesment.view', compact('assesment', 'assesment_question', 'assesment_result_draft'));
+            return view('user.assesment.view', compact(
+                'assesment',
+                'assesment_question',
+                'assesment_result_draft',
+                'assessmentSubmissionToken'
+            ));
         }
 
         public function store(Request $request, $slug, AssessmentAccessService $assessmentAccess)
         {
+            $request->validate([
+                'submission_token' => ['required', 'uuid'],
+            ]);
+
             $assesment = Assesment::findBySlug($slug);
 
             if ($assesment === null) {
@@ -134,18 +159,7 @@
             } else {
                 $assesment_question_count = count($assesment_question);
             }
-            $user_answers             = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
-
-            $assesment_result = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch, 'final' => 0]);
-            // if ($assesment->type == 'global') {
-            // } else {
-            //     $assesment_result = new AssesmentResult;
-            //     $assesment_result->user_id      =  auth()->user()->id;
-            //     $assesment_result->assesment_id = $assesment->id;
-            //     $assesment_result->batch        = $assesment->batch;
-            // }
-
-            $assesment_result->user_answer = $request->except(['_token', '_method']);
+            $user_answers = $request->collect()->except(['_token', '_method', 'submission_token'])->sortKeys()->toArray();
 
             // Old Process of Score Calculation
             // $wrong_answer       = array_diff_assoc($assesment_question, $user_answers);
@@ -173,12 +187,37 @@
              */
             $score = $amountOfRightAnswer * $formulaScorePerQuestion;
 
-            $assesment_result->score = $score >= 100 ? 100 : $score;
-            $assesment_result->batch = $assesment->batch;
-            $assesment_result->pass  = ($score < $assesment->passing_grade) ? 0 : 1;
+            $lockKey = 'assessment-submission-lock:' . auth()->id() . ':' . $request->submission_token;
+            $completedKey = 'assessment-submission-completed:' . auth()->id() . ':' . $request->submission_token;
 
-            $assesment_result->final = 1;
-            $assesment_result->save();
+            $assesment_result = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $score, $completedKey) {
+                $completedResultId = Cache::get($completedKey);
+                if ($completedResultId) {
+                    return AssesmentResult::findOrFail($completedResultId);
+                }
+
+                $result = AssesmentResult::firstOrNew([
+                    'user_id' => auth()->id(),
+                    'assesment_id' => $assesment->id,
+                    'batch' => $assesment->batch,
+                    'final' => 0,
+                ]);
+                $result->user_answer = $request->except(['_token', '_method', 'submission_token']);
+                $result->score = $score >= 100 ? 100 : $score;
+                $result->batch = $assesment->batch;
+                $result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
+                $result->final = 1;
+                $result->save();
+
+                Cache::put($completedKey, $result->id, now()->addDay());
+
+                return $result;
+            });
+
+            $submissionSessionKey = "assessment_submission_token.{$assesment->id}.{$assesment->batch}";
+            if (session($submissionSessionKey) === $request->submission_token) {
+                session()->forget($submissionSessionKey);
+            }
 
             return to_route('assesment.user.result', $slug)->with('assesmentResultId', $assesment_result->id);
         }
@@ -198,6 +237,10 @@
 
         public function autosave(Request $request, $slug, AssessmentAccessService $assessmentAccess)
         {
+            $request->validate([
+                'submission_token' => ['required', 'uuid'],
+            ]);
+
             $assesment = Assesment::findBySlug($slug);
 
             if ($assesment === null) {
@@ -216,10 +259,7 @@
             } else {
                 $assesment_question_count = count($assesment_question);
             }
-            $user_answers             = $request->collect()->except(['_token', '_method'])->sortKeys()->toArray();
-
-            $assesment_result              = AssesmentResult::firstOrNew(['user_id' =>  auth()->user()->id, 'assesment_id' =>  $assesment->id, 'batch' =>  $assesment->batch, 'final' => 0]);
-            $assesment_result->user_answer = $request->except(['_token', '_method']);
+            $user_answers = $request->collect()->except(['_token', '_method', 'submission_token'])->sortKeys()->toArray();
 
             // Old Process of Score Calculation
             // $wrong_answer       = array_diff_assoc($assesment_question, $user_answers);
@@ -247,17 +287,33 @@
              */
             $score = $amountOfRightAnswer * $formulaScorePerQuestion;
 
-            $assesment_result->score = $score >= 100 ? 100 : $score;
-            $assesment_result->batch = $assesment->batch;
-            $assesment_result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
+            $lockKey = 'assessment-submission-lock:' . auth()->id() . ':' . $request->submission_token;
+            $completedKey = 'assessment-submission-completed:' . auth()->id() . ':' . $request->submission_token;
 
-            //belum final answer, masih berupa draft
-            $assesment_result->final = 0;
-            $assesment_result->save();
+            $saved = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $score, $completedKey) {
+                if (Cache::has($completedKey)) {
+                    return false;
+                }
+
+                $result = AssesmentResult::firstOrNew([
+                    'user_id' => auth()->id(),
+                    'assesment_id' => $assesment->id,
+                    'batch' => $assesment->batch,
+                    'final' => 0,
+                ]);
+                $result->user_answer = $request->except(['_token', '_method', 'submission_token']);
+                $result->score = $score >= 100 ? 100 : $score;
+                $result->batch = $assesment->batch;
+                $result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
+                $result->final = 0;
+                $result->save();
+
+                return true;
+            });
 
             return response()->json([
                 'status'=> 200,
-                'message'=> 'Autosave berhasil',
+                'message' => $saved ? 'Autosave berhasil' : 'Assessment sudah disubmit',
             ]);
         }
 
