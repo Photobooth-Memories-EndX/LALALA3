@@ -61,4 +61,9 @@ class ContentUser extends Model
     {
         return (int) $this->progress >= self::ASSESSMENT_REQUIRED_PROGRESS;
     }
+
+    public function isFinished(): bool
+    {
+        return (int) $this->finish === 1 || (int) $this->progress >= 100;
+    }
 }

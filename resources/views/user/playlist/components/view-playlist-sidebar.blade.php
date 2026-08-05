@@ -2,9 +2,9 @@
     $defaultLessonThumbnail = asset('default-video.jpg');
     $requiredAssessmentProgress = \App\Models\ContentUser::ASSESSMENT_REQUIRED_PROGRESS;
 
-    $totalVideos = ($content_all ?? collect())->count();
-    $completedVideos = 0;
-    if (isset($content_all) && isset($progressByContentId)) {
+    $totalVideos = $totalContent ?? ($content_all ?? collect())->count();
+    $completedVideos = $completedContent ?? 0;
+    if (!isset($completedContent) && isset($content_all) && isset($progressByContentId)) {
         foreach ($content_all as $item) {
             if (($progressByContentId[$item->content_id] ?? 0) >= 100) {
                 $completedVideos++;
@@ -39,7 +39,7 @@
         <div class="mb-3">
             <div class="d-flex align-items-center justify-content-between text-muted small mb-1">
                 <span class="fw-semibold text-body">{{ $playlistProgress }}% Progress</span>
-                <span class="text-muted">({{ $completedVideos }}/{{ $totalVideos }} videos)</span>
+                <span class="text-muted">({{ $completedVideos }} of {{ $totalVideos }} finished)</span>
             </div>
             <div class="progress" style="height: 4px;">
                 <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $playlistProgress }}%" aria-valuenow="{{ $playlistProgress }}" aria-valuemin="0" aria-valuemax="100"></div>

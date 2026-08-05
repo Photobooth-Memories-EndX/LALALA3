@@ -68,7 +68,7 @@ class PlaylistUserController extends Controller
 
             foreach ($details as $detail) {
                 $cu = $detail->content->contentuser->first(); // already filtered to $userId
-                if ($cu && (int) ($cu->finish ?? 0) === 1) {
+                if ($cu && ($cu->isFinished() || (int) ($cu->finish ?? 0) === 1 || (int) ($cu->progress ?? 0) >= 100)) {
                     $completedContent++;
                 }
             }
@@ -78,14 +78,12 @@ class PlaylistUserController extends Controller
             $playlistStats[$tp->id] = [
                 'totalContent'     => $totalContent,
                 'completedContent' => $completedContent,
-                'progress'         => $totalContent > 0
-                    ? round(($completedContent / $totalContent) * 100)
-                    : 0,
-                'firstContent' => $firstContent,
-                'thumbnail'    => $this->getPlaylistThumbnail($tp, $firstContent),
-                'has_deadline' => $tp->has_deadline,
-                'from_date'    => $tp->from_date,
-                'to_date'      => $tp->to_date,
+                'progress'         => TrainingPlan::calculateProgressPercentage($completedContent, $totalContent),
+                'firstContent'     => $firstContent,
+                'thumbnail'        => $this->getPlaylistThumbnail($tp, $firstContent),
+                'has_deadline'     => $tp->has_deadline,
+                'from_date'        => $tp->from_date,
+                'to_date'          => $tp->to_date,
             ];
         }
 
@@ -98,19 +96,16 @@ class PlaylistUserController extends Controller
             $details      = $featuredPlaylist->trainingplandetail->filter(fn ($d) => !empty($d->content));
             $totalContent = $details->count();
             $completedContent = 0;
-            $totalProgress    = 0;
             $nextContent      = null;
 
             foreach ($details as $detail) {
                 $cu = $detail->content->contentuser->first();
-                $p  = (int) ($cu->progress ?? 0);
-                $totalProgress += $p;
 
-                if ($cu && (int) ($cu->finish ?? 0) === 1) {
+                if ($cu && ($cu->isFinished() || (int) ($cu->finish ?? 0) === 1 || (int) ($cu->progress ?? 0) >= 100)) {
                     $completedContent++;
                 }
 
-                if (!$nextContent && (!$cu || (int) ($cu->finish ?? 0) === 0)) {
+                if (!$nextContent && (!$cu || (!($cu->isFinished() || (int) ($cu->finish ?? 0) === 1 || (int) ($cu->progress ?? 0) >= 100)))) {
                     $nextContent = $detail->content;
                 }
             }
@@ -119,7 +114,7 @@ class PlaylistUserController extends Controller
                 'totalContent'     => $totalContent,
                 'completedContent' => $completedContent,
                 'remainingContent' => max($totalContent - $completedContent, 0),
-                'progress'         => $totalContent > 0 ? round($totalProgress / $totalContent) : 0,
+                'progress'         => TrainingPlan::calculateProgressPercentage($completedContent, $totalContent),
                 'firstContent'     => optional($details->first())->content,
                 'nextContent'      => $nextContent ?? optional($details->first())->content,
             ];
@@ -176,17 +171,23 @@ class PlaylistUserController extends Controller
             ->orderBy('content_order')
             ->get();
 
-        // Single query replaces the N+1 in view-playlist-sidebar.blade.php
-        $progressByContentId = ContentUser::where('user_id', $userId)
+        $contentUsers = ContentUser::where('user_id', $userId)
             ->whereIn('content_id', $content_all->pluck('content_id'))
-            ->pluck('progress', 'content_id');
+            ->get(['content_id', 'progress', 'finish']);
 
-        $progressContent = $progressByContentId->sum();
-        $totalContent    = $content_all->count();
+        $progressByContentId = $contentUsers->pluck('progress', 'content_id');
 
-        $percentageProgressPlaylist = $totalContent > 0
-            ? $progressContent / $totalContent
-            : 0;
+        $completedContent = 0;
+        foreach ($content_all as $item) {
+            $cu = $contentUsers->firstWhere('content_id', $item->content_id);
+            if ($cu && ($cu->isFinished() || (int) ($cu->finish ?? 0) === 1 || (int) ($cu->progress ?? 0) >= 100)) {
+                $completedContent++;
+            }
+        }
+
+        $totalContent = $content_all->count();
+
+        $percentageProgressPlaylist = TrainingPlan::calculateProgressPercentage($completedContent, $totalContent);
 
         $playlistProgressComplete = $percentageProgressPlaylist >= 100;
         $playlistCertificateSetting = CertificateSetting::where('certificate_type', 'playlist')
@@ -276,6 +277,8 @@ class PlaylistUserController extends Controller
             'content_all'                    => $content_all,
             'content_user'                   => $content_user,
             'progressByContentId'            => $progressByContentId,
+            'completedContent'               => $completedContent,
+            'totalContent'                   => $totalContent,
             'assesment'                      => $assesment,
             'comment'                        => $comment,
             'totalComment'                   => $totalComment,

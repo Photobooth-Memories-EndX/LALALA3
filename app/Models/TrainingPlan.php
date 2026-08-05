@@ -87,4 +87,17 @@ class TrainingPlan extends Model
     {
         return 'slug';
     }
+
+    /**
+     * Calculate playlist progress percentage based on strict finished items ratio.
+     * Formula: (completed_items / total_items) * 100 rounded to nearest integer.
+     */
+    public static function calculateProgressPercentage(int $completedItemsCount, int $totalItemsCount): int
+    {
+        if ($totalItemsCount <= 0) {
+            return 0;
+        }
+
+        return (int) round(($completedItemsCount / $totalItemsCount) * 100);
+    }
 }
