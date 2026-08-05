@@ -1,14 +1,48 @@
 @php
-    $playlistFilterData = collect($trainingplan->items())->map(function ($playlist) use ($playlistStats) {
+    $today = \Carbon\Carbon::now()->startOfDay();
+    $playlistFilterData = collect($trainingplan->items())->map(function ($playlist) use ($playlistStats, $today) {
         $progress = (int) ($playlistStats[$playlist->id]['progress'] ?? 0);
-        $classificationIds = $playlist->trainingplandetail
+        $details = $playlist->trainingplandetail->filter(fn ($d) => !empty($d->content));
+
+        $classificationIds = $details
             ->map(fn ($detail) => optional($detail->content)->classification_id)
             ->filter()
             ->map(fn ($classificationId) => (string) $classificationId)
             ->unique()
             ->values();
 
+        $authors = $details
+            ->map(fn ($detail) => optional($detail->content)->author)
+            ->filter(fn ($author) => !empty(trim($author ?? '')))
+            ->unique()
+            ->values();
+
+        $totalViews = $details->sum(fn ($detail) => (int) (optional($detail->content)->views ?? 0));
+
+        $toDate = $playlist->to_date ? \Carbon\Carbon::parse($playlist->to_date)->startOfDay() : null;
+        $fromDate = $playlist->from_date ? \Carbon\Carbon::parse($playlist->from_date)->startOfDay() : null;
+        $createdAt = $playlist->created_at ? $playlist->created_at->format('Y-m-d') : '';
+
+        $deadlineStatus = 'all';
+        if ($toDate) {
+            if ($today->gt($toDate)) {
+                $deadlineStatus = 'expired';
+            } elseif ($today->eq($toDate)) {
+                $deadlineStatus = 'today';
+            } else {
+                $daysDiff = (int) $today->diffInDays($toDate, false);
+                if ($daysDiff <= 7) {
+                    $deadlineStatus = 'less_than_7_days';
+                } elseif ($daysDiff <= 30) {
+                    $deadlineStatus = 'less_than_30_days';
+                } else {
+                    $deadlineStatus = 'more_than_30_days';
+                }
+            }
+        }
+
         return [
+            'id' => $playlist->id,
             'status' => $progress >= 100 ? 'completed' : ($progress > 0 ? 'in_progress' : 'not_started'),
             'month' => (int) $playlist->created_at->format('n'),
             'year' => (int) $playlist->created_at->format('Y'),
@@ -16,6 +50,12 @@
             'materials' => (int) ($playlistStats[$playlist->id]['totalContent'] ?? 0),
             'classifications' => $classificationIds,
             'duration' => (int) $playlist->total_duration_seconds,
+            'authors' => $authors,
+            'views' => $totalViews,
+            'createdAt' => $createdAt,
+            'fromDate' => $fromDate ? $fromDate->format('Y-m-d') : '',
+            'toDate' => $toDate ? $toDate->format('Y-m-d') : '',
+            'deadlineStatus' => $deadlineStatus,
         ];
     })->values();
 @endphp
@@ -30,23 +70,31 @@
         });
 
         function updateFilterState() {
-            const activeCount = [
-                $('#playlistClassificationFilter').val() !== 'all',
-                $('#playlistDurationFilter').val() !== 'all',
-                $('#playlistDeadlineFilter').val() !== 'all',
-                $('#playlistMaterialsFilter').val() !== 'all',
-                $('#playlistSort').val() !== 'az'
+            const activeModalCount = [
+                Boolean($('#playlistFilterAuthor').val()),
+                Boolean($('#playlistFilterDeadlineFromDate').val()),
+                Boolean($('#playlistFilterDeadlineToDate').val()),
+                Boolean($('#playlistFilterCreatedFromDate').val()),
+                Boolean($('#playlistFilterCreatedToDate').val()),
+                $('#playlistFilterDeadlineStatus').val() !== 'all',
+                $('#playlistFilterSort').val() !== 'newest_course',
+                Boolean($('input[name="playlist_view_order"]:checked').val()),
+                $('input[name="playlist_duration"]:checked').val() !== 'all',
+                $('input[name="playlist_total_pages[]"]:checked').length > 0,
+                $('#playlistClassificationFilter').val() !== 'all'
             ].filter(Boolean).length;
-            const hasActiveFilters = activeCount > 0 ||
+
+            const hasActiveFilters = activeModalCount > 0 ||
                 $('#playlistStatusFilter').val() !== 'all' ||
                 $('#playlistMonthFilter').val() !== 'all' ||
                 $('#playlistYearFilter').val() !== 'all' ||
                 Boolean(($('#playlistSearch').val() || '').trim());
 
             $('#playlistMoreFiltersCount')
-                .text(activeCount || '')
-                .toggleClass('d-none', activeCount === 0);
+                .text(activeModalCount || '')
+                .toggleClass('d-none', activeModalCount === 0);
             $('#playlistResetFilter').toggleClass('is-active', hasActiveFilters);
+            $('#playlistResetMoreFilters').toggleClass('is-active', activeModalCount > 0);
         }
 
         function filterPlaylist() {
@@ -54,11 +102,21 @@
             const status = $('#playlistStatusFilter').val();
             const month = $('#playlistMonthFilter').val();
             const year = $('#playlistYearFilter').val();
+
+            // Modal filters
+            const author = $('#playlistFilterAuthor').val();
+            const deadlineFromDate = $('#playlistFilterDeadlineFromDate').val();
+            const deadlineToDate = $('#playlistFilterDeadlineToDate').val();
+            const createdFromDate = $('#playlistFilterCreatedFromDate').val();
+            const createdToDate = $('#playlistFilterCreatedToDate').val();
+            const deadlineStatus = $('#playlistFilterDeadlineStatus').val();
+            const sort = $('#playlistFilterSort').val();
+            const viewOrder = $('input[name="playlist_view_order"]:checked').val();
+            const duration = $('input[name="playlist_duration"]:checked').val();
+            const selectedTotalPages = $('input[name="playlist_total_pages[]"]:checked').map(function () {
+                return $(this).val();
+            }).get();
             const classification = $('#playlistClassificationFilter').val();
-            const duration = $('#playlistDurationFilter').val();
-            const deadline = $('#playlistDeadlineFilter').val();
-            const materials = $('#playlistMaterialsFilter').val();
-            const sort = $('#playlistSort').val();
 
             let visibleItems = $items.toArray();
 
@@ -72,42 +130,78 @@
                 const matchesStatus = status === 'all' || itemFilters.status === status;
                 const matchesMonth = month === 'all' || String(itemFilters.month) === month;
                 const matchesYear = year === 'all' || String(itemFilters.year) === year;
-                const matchesClassification = classification === 'all' ||
-                    (itemFilters.classifications || []).includes(classification);
+
+                // Author
+                const matchesAuthor = !author || (itemFilters.authors || []).includes(author);
+
+                // Deadline date range
+                const matchesDeadlineFrom = !deadlineFromDate || (itemFilters.toDate && itemFilters.toDate >= deadlineFromDate);
+                const matchesDeadlineTo = !deadlineToDate || (itemFilters.toDate && itemFilters.toDate <= deadlineToDate);
+
+                // Created date range
+                const matchesCreatedFrom = !createdFromDate || (itemFilters.createdAt && itemFilters.createdAt >= createdFromDate);
+                const matchesCreatedTo = !createdToDate || (itemFilters.createdAt && itemFilters.createdAt <= createdToDate);
+
+                // Deadline status
+                const matchesDeadlineStatus = (deadlineStatus === 'all') || (itemFilters.deadlineStatus === deadlineStatus);
+
+                // Duration
                 const durationSeconds = Number(itemFilters.duration || 0);
                 const matchesDuration = duration === 'all' ||
-                    (duration === '0_30' && durationSeconds <= 1800) ||
-                    (duration === '30_60' && durationSeconds > 1800 && durationSeconds <= 3600) ||
-                    (duration === '60_120' && durationSeconds > 3600 && durationSeconds <= 7200) ||
-                    (duration === 'over_120' && durationSeconds > 7200);
-                const matchesDeadline = deadline === 'all' ||
-                    (deadline === 'has_deadline' && itemFilters.hasDeadline) ||
-                    (deadline === 'no_deadline' && !itemFilters.hasDeadline);
+                    (duration === 'lt10' && durationSeconds < 600) ||
+                    (duration === '10-30' && durationSeconds >= 600 && durationSeconds <= 1800) ||
+                    (duration === '30-60' && durationSeconds > 1800 && durationSeconds <= 3600) ||
+                    (duration === 'gt60' && durationSeconds > 3600);
+
+                // Total Pages / Materials
                 const materialCount = Number(itemFilters.materials || 0);
-                const matchesMaterials = materials === 'all' ||
-                    (materials === '1_5' && materialCount >= 1 && materialCount <= 5) ||
-                    (materials === '6_10' && materialCount >= 6 && materialCount <= 10) ||
-                    (materials === '11_20' && materialCount >= 11 && materialCount <= 20) ||
-                    (materials === 'over_20' && materialCount > 20);
+                let matchesTotalPages = true;
+                if (selectedTotalPages.length > 0) {
+                    matchesTotalPages = selectedTotalPages.some(function (val) {
+                        if (val === 'lt10') return materialCount < 10;
+                        if (val === '10-20') return materialCount >= 10 && materialCount <= 20;
+                        if (val === '21-50') return materialCount >= 21 && materialCount <= 50;
+                        if (val === 'gt50') return materialCount > 50;
+                        return false;
+                    });
+                }
+
+                // Classification
+                const matchesClassification = classification === 'all' ||
+                    (itemFilters.classifications || []).includes(classification);
 
                 $item.toggle(
                     matchesKeyword && matchesStatus && matchesMonth && matchesYear &&
-                    matchesClassification && matchesDuration && matchesDeadline && matchesMaterials
+                    matchesAuthor && matchesDeadlineFrom && matchesDeadlineTo &&
+                    matchesCreatedFrom && matchesCreatedTo && matchesDeadlineStatus &&
+                    matchesDuration && matchesTotalPages && matchesClassification
                 );
             });
 
             visibleItems = $items.filter(':visible').toArray();
 
+            // Sort items
             visibleItems.sort(function (a, b) {
-                const titleA = $(a).find('.playlist-title').text().trim().toLowerCase();
-                const titleB = $(b).find('.playlist-title').text().trim().toLowerCase();
+                const dataA = $(a).data('playlistFilters') || {};
+                const dataB = $(b).data('playlistFilters') || {};
 
-                if (sort === 'az') {
-                    return titleA.localeCompare(titleB);
+                // View Order takes precedence if set
+                if (viewOrder === 'most_viewed') {
+                    return Number(dataB.views || 0) - Number(dataA.views || 0);
+                }
+                if (viewOrder === 'least_viewed') {
+                    return Number(dataA.views || 0) - Number(dataB.views || 0);
                 }
 
-                if (sort === 'za') {
-                    return titleB.localeCompare(titleA);
+                // Quick filter sort
+                if (sort === 'oldest_course') {
+                    return (dataA.createdAt || '').localeCompare(dataB.createdAt || '');
+                }
+                if (sort === 'newest_course' || sort === 'recently_updated') {
+                    return (dataB.createdAt || '').localeCompare(dataA.createdAt || '');
+                }
+                if (sort === 'old_update') {
+                    return (dataA.createdAt || '').localeCompare(dataB.createdAt || '');
                 }
 
                 return 0;
@@ -117,6 +211,7 @@
             updateFilterState();
         }
 
+        // Event listeners
         $('#playlistSearch').on('input', function () {
             filterPlaylist();
         });
@@ -134,19 +229,31 @@
 
         $('#playlistStatusFilter, #playlistMonthFilter, #playlistYearFilter').on('change', function () {
             updateFilterState();
+            filterPlaylist();
         });
 
-        $('#playlistClassificationFilter, #playlistDurationFilter, #playlistDeadlineFilter, #playlistMaterialsFilter, #playlistSort').on('change', function () {
+        $('#playlistFilterAuthor, #playlistFilterDeadlineFromDate, #playlistFilterDeadlineToDate, #playlistFilterCreatedFromDate, #playlistFilterCreatedToDate, #playlistFilterDeadlineStatus, #playlistFilterSort, #playlistClassificationFilter').on('change', function () {
             updateFilterState();
         });
 
-        $('#playlistResetFilter').on('click', function () {
+        $('input[name="playlist_view_order"], input[name="playlist_duration"], input[name="playlist_total_pages[]"]').on('change', function () {
+            updateFilterState();
+        });
+
+        function resetAllFilters() {
             $('#playlistSearch').val('');
             $('#playlistStatusFilter, #playlistMonthFilter, #playlistYearFilter').val('all');
-            $('#playlistClassificationFilter, #playlistDurationFilter').val('all');
-            $('#playlistDeadlineFilter, #playlistMaterialsFilter').val('all');
-            $('#playlistSort').val('az');
+            $('#playlistFilterAuthor, #playlistFilterDeadlineFromDate, #playlistFilterDeadlineToDate, #playlistFilterCreatedFromDate, #playlistFilterCreatedToDate').val('');
+            $('#playlistFilterDeadlineStatus, #playlistClassificationFilter').val('all');
+            $('#playlistFilterSort').val('newest_course');
+            $('input[name="playlist_view_order"][value=""]').prop('checked', true);
+            $('input[name="playlist_duration"][value="all"]').prop('checked', true);
+            $('input[name="playlist_total_pages[]"]').prop('checked', false);
             filterPlaylist();
+        }
+
+        $('#playlistResetFilter, #playlistResetMoreFilters').on('click', function () {
+            resetAllFilters();
         });
 
         updateFilterState();

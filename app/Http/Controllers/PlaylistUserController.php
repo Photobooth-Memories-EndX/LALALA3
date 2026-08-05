@@ -44,7 +44,7 @@ class PlaylistUserController extends Controller
                     ->orderBy('content_order')
                     ->select(['id', 'trainingplan_id', 'content_id', 'content_order']),
                 'trainingplandetail.content' => fn ($q) => $q
-                    ->select(['id', 'title', 'slug', 'type', 'link', 'classification_id']),
+                    ->select(['id', 'title', 'slug', 'type', 'link', 'classification_id', 'author', 'views']),
                 'trainingplandetail.content.classification' => fn ($q) => $q
                     ->select(['id', 'classification_name']),
                 'trainingplandetail.content.contentuser' => fn ($q) => $q
