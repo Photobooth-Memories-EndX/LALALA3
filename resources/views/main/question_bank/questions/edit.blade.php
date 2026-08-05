@@ -142,9 +142,9 @@
                                             <td>{!! implode('<hr class="my-1">', $question->option) !!}</td>
                                             <td>{{ $question->answer }}</td>
                                             <td class="text-center">{{ $question->status == true ? 'Aktif' : 'Non Aktif' }}</td>
-                                            <td class="text-center">
-                                                <div class="d-inline">
-                                                    <a href="{{ route('question.bank.edit.question', ['question_bank_slug' => $questionBank->slug, 'question_id' => $question->id]) }}" class="btn btn-info btn-icon">
+                                            <td>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <a href="{{ route('question.bank.edit.question', ['question_bank_slug' => $questionBank->slug, 'question_id' => $question->id]) }}" class="btn btn-info btn-sm p-2">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                                             <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
@@ -152,20 +152,19 @@
                                                             <path d="M16 5l3 3"></path>
                                                         </svg>
                                                     </a>
+                                                    <form action="{{ route('question.bank.delete.question', ['question_bank_slug' => $questionBank->slug, 'question_id' => $question->id]) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm p-2" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                            <path d="M4 7l16 0"></path>
+                                                            <path d="M10 11l0 6"></path>
+                                                            <path d="M14 11l0 6"></path>
+                                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
+                                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
+                                                        </svg></button>
+                                                    </form>
                                                 </div>
-
-                                                <form action="{{ route('question.bank.delete.question', ['question_bank_slug' => $questionBank->slug, 'question_id' => $question->id]) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                        <path d="M4 7l16 0"></path>
-                                                        <path d="M10 11l0 6"></path>
-                                                        <path d="M14 11l0 6"></path>
-                                                        <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
-                                                        <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
-                                                    </svg></button>
-                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach
