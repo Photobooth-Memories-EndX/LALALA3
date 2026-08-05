@@ -256,18 +256,30 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="form-label">Duration (HH:MM:SS)</label>
-                                    <input type="text" class="form-control @error('duration') is-invalid @enderror" placeholder="00:06:26"
-                                        name="duration" id="duration"
-                                        value="{{ old('duration', \App\Support\DurationFormatter::format($content->duration, '')) }}"
-                                        pattern="^(\d+:[0-5]\d|\d{2}:[0-5]\d:[0-5]\d)$"
-                                        autocomplete="off">
-                                    @error('duration')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <label class="form-label" for="duration">Duration (HH:MM:SS)</label>
+                                    <div class="input-group @error('duration') has-validation @enderror">
+                                        <input type="text" class="form-control @error('duration') is-invalid @enderror" placeholder="00:06:26"
+                                            name="duration" id="duration"
+                                            value="{{ old('duration', \App\Support\DurationFormatter::format($content->duration, '')) }}"
+                                            pattern="^(\d+:[0-5]\d|\d{2}:[0-5]\d:[0-5]\d)$"
+                                            autocomplete="off">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary edit-duration-sync-button"
+                                                id="edit-duration-synchronize"
+                                                @if (old('type', $content->type) !== 'Document') hidden @endif
+                                                aria-label="Synchronize Duration"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                title="Synchronize Duration — copies Estimated Duration into Duration. Manual editing remains available afterwards.">
+                                            <i class="ti ti-refresh" aria-hidden="true"></i>
+                                        </button>
+                                        @error('duration')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
                                     <small class="form-hint">Format HH:MM:SS. Input mm:ss lama tetap diterima dan disimpan sebagai HH:MM:SS.</small>
                                 </div>
-                                @include('main.content.components.page-duration-field', ['content' => $content])
+                                @include('main.content.components.edit-document-duration-fields', ['content' => $content])
                             </div>
                         </div>
 
@@ -433,6 +445,25 @@
             z-index: 1000;
         }
 
+        .document-duration-estimate {
+            padding: .75rem;
+            background: var(--tblr-bg-surface-secondary, rgba(98, 105, 118, .06));
+            border: 1px solid var(--tblr-border-color, #dce1e7);
+            border-radius: var(--tblr-border-radius, .375rem);
+        }
+
+        .edit-duration-sync-button {
+            width: 42px;
+            flex: 0 0 42px;
+            padding-inline: 0;
+        }
+
+        [data-bs-theme="dark"] .document-duration-estimate,
+        body.dark-mode .document-duration-estimate {
+            background: rgba(255, 255, 255, .04);
+            border-color: rgba(255, 255, 255, .12);
+        }
+
         .content-sticky-actions {
             position: sticky;
             bottom: 0;
@@ -463,7 +494,7 @@
     <script src="{{ $url_ytplayer_js }}"></script>
     <script src="{{ $url_select }}"></script>
     <script src="{{ asset('js/pdf.min.js') }}"></script>
-    <script src="{{ asset('js/content-page-duration.js') }}"></script>
+    <script src="{{ asset('js/edit-content-document-duration.js') }}?v={{ filemtime(public_path('js/edit-content-document-duration.js')) }}"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             window.Plyr && (new Plyr('#player-youtube'));
@@ -542,8 +573,7 @@
             pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
         }
 
-        var documentDurationForm = new OwlDocumentDurationForm({
-            formId: 'contentEditForm',
+        var documentDurationForm = new EditContentDocumentDuration({
             existingPdfUrl: @json(
                 $content->type === 'Document' && !empty($getcontentfile)
                     ? asset('storage/files/content/' . $content->id . '/' . $getcontentfile)
@@ -555,7 +585,7 @@
             documentDurationForm.readFile(file);
         });
         myDropzone.on('removedfile', function() {
-            documentDurationForm.clearUploadedPdf();
+            documentDurationForm.restoreExistingPdf();
         });
 
         let uploadedThumbnailMap = {};
