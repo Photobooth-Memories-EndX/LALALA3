@@ -100,6 +100,8 @@
                     .replaceAll(' ', '%20')
                     .replaceAll('&amp;', '&');
                 let pdfFile = "{{ asset('storage/files/content/' . $content->id) }}/" + fileNameFixed;
+                var isTimedDocument = @json($content->type === 'Document');
+                var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 15)) }};
                 var playlistPdfReader = new OwlPdfReader({
                     shellId: 'playlist-pdf-shell',
                     viewerSelector: '.playlist-pdfjs-viewer',
@@ -108,7 +110,27 @@
                     fullscreenIconId: 'playlist-pdf-fs-icon',
                     readingModeButtonId: 'playlist-pdf-mode-btn',
                     readingModeIconId: 'playlist-pdf-mode-icon',
-                    readingModeLabelId: 'playlist-pdf-mode-label'
+                    readingModeLabelId: 'playlist-pdf-mode-label',
+                    pageTimingEnabled: isTimedDocument,
+                    pageDuration: documentPageDuration,
+                    completedPages: {{ (int) ($content_user->last_page ?? 0) }},
+                    contentCompleted: {{ (int) ($content_user->finish ?? 0) }} === 1,
+                    onPageStarted: function(page, totalPages) {
+                        return progressTracker.send({
+                            active_page: page,
+                            total_pages: totalPages,
+                            status: 'in_progress'
+                        }, true);
+                    },
+                    onPageCompleted: function(page, totalPages, elapsedSeconds) {
+                        return progressTracker.send({
+                            active_page: page,
+                            completed_page: page,
+                            page_elapsed_seconds: elapsedSeconds,
+                            total_pages: totalPages,
+                            status: 'in_progress'
+                        }, true);
+                    }
                 });
 
                 window.playlistPdfViewer = new PDFjsViewer(
@@ -126,14 +148,26 @@
                                 lastPage = parseInt((progression * totalPages) / 100);
                             }
 
-                            if (lastPage > 1 && lastPage < totalPages) {
-                                playlistPdfViewer.scrollToPage(lastPage);
+                            var initialPage = isTimedDocument
+                                ? ({{ (int) ($content_user->finish ?? 0) }} === 1
+                                    ? totalPages
+                                    : Math.min(totalPages, lastPage + 1))
+                                : lastPage;
+
+                            if (initialPage > 1 && initialPage <= totalPages) {
+                                playlistPdfViewer.scrollToPage(initialPage);
                             }
 
-                            progressTracker.send({ total_pages: totalPages }, true);
+                            if (!isTimedDocument
+                                || {{ (int) ($content_user->finish ?? 0) }} === 1
+                                || lastPage >= totalPages) {
+                                progressTracker.send({ total_pages: totalPages }, true);
+                            }
                         },
 
                         onActivePageChanged: function(page, pageno) {
+                            if (isTimedDocument) return;
+
                             progressTracker.sendDebounced({
                                 last_page: pageno,
                                 total_pages: this.getPageCount()

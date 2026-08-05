@@ -26,7 +26,7 @@
         var now = Date.now();
 
         if (!force && now - this._lastSentAt < this.throttleMs) {
-            return;
+            return Promise.resolve(null);
         }
 
         this._lastSentAt = now;
@@ -40,7 +40,7 @@
             }
         }
 
-        fetch(this.url, {
+        return fetch(this.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -57,9 +57,12 @@
                 if (result && result.success) {
                     self.onUpdate(result);
                 }
+
+                return result;
             })
             .catch(function () {
                 /* network errors are non-fatal for tracking */
+                return null;
             });
     };
 

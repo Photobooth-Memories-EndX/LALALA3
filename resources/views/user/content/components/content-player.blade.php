@@ -56,33 +56,13 @@
                     @include('components.shared.pdf-toolbar', [
                         'toolbarClass' => 'owl-pdf-toolbar',
                         'showReadingMode' => true,
+                        'showPageTiming' => $content->type === 'Document',
+                        'pageDuration' => (int) ($content->page_duration ?: 15),
                     ])
 
                     {{-- PDF VIEWER --}}
                     <div class="owl-pdf-reader-stage">
                         <div class="pdfjs-viewer owl-pdf-viewer content-pdfjs-viewer"></div>
-
-                        <div class="pdf-page-nav" aria-label="PDF page navigation">
-                            <button type="button"
-                                    id="pdf-previous-page"
-                                    class="btn btn-primary pdf-previous-page"
-                                    aria-label="Previous Page"
-                                    title="Previous Page"
-                                    disabled>
-                                <i class="ti ti-chevron-left me-1"></i>
-                                <span class="pdf-page-nav-label">Previous Page</span>
-                            </button>
-
-                            <button type="button"
-                                    id="pdf-next-page"
-                                    class="btn btn-primary pdf-next-page"
-                                    aria-label="Next Page"
-                                    title="Next Page"
-                                    disabled>
-                                <span class="pdf-page-nav-label">Next Page</span>
-                                <i class="ti ti-chevron-right ms-1"></i>
-                            </button>
-                        </div>
                     </div>
 
                 </div>

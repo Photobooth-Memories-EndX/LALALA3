@@ -9,6 +9,7 @@ use App\Models\Comment;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Services\LearningAnalyticsService;
+use App\Support\DurationFormatter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -355,11 +356,16 @@ class ContentUserController extends Controller
             'content_id'       => 'required|integer|exists:content,id',
             'type'             => 'required|in:document,video',
             'last_page'        => 'nullable|integer|min:1',
-            'total_pages'      => 'nullable|integer|min:1',
+            'total_pages'      => 'nullable|integer|min:1|max:100000',
             'current_time'     => 'nullable|numeric|min:0',
             'duration_seconds' => 'nullable|numeric|min:0',
+            'active_page'      => 'nullable|integer|min:1',
+            'completed_page'   => 'nullable|integer|min:1',
+            'page_elapsed_seconds' => 'nullable|numeric|min:0|max:300',
             'status'           => 'nullable|in:in_progress,paused,completed',
         ]);
+
+        $content = Content::findOrFail($validated['content_id']);
 
         $contentUser = ContentUser::firstOrCreate([
             'user_id'    => auth()->id(),
@@ -368,20 +374,100 @@ class ContentUserController extends Controller
 
         $previousProgress = (int) $contentUser->progress;
         $computed = null;
+        $pageCompleted = null;
+        $remainingSeconds = null;
+        $allowedPage = null;
 
         if ($validated['type'] === 'document') {
             $totalPages = (int) ($validated['total_pages'] ?? $contentUser->total_pages ?? 0);
-            $lastPage   = (int) ($validated['last_page'] ?? 0);
 
             if ($totalPages > 0) {
                 $contentUser->total_pages = $totalPages;
             }
 
-            if ($lastPage > 0) {
-                $contentUser->last_page = $totalPages > 0 ? min($lastPage, $totalPages) : $lastPage;
+            if ($content->type === 'Document' && $totalPages > 0) {
+                $pageDuration = max(1, min(300, (int) ($content->page_duration ?: 15)));
+                $officialDuration = $totalPages * $pageDuration;
+                $officialDurationValue = DurationFormatter::fromSeconds($officialDuration);
 
-                if ($totalPages > 0) {
-                    $computed = ($contentUser->last_page / $totalPages) * 100;
+                $contentUser->duration_seconds = $officialDuration;
+
+                if ($content->duration !== $officialDurationValue) {
+                    $content->duration = $officialDurationValue;
+                    $content->save();
+                }
+
+                $completedPages = min((int) ($contentUser->last_page ?? 0), $totalPages);
+                $allowedPage = min($totalPages, $completedPages + 1);
+                $timerKey = 'learning.document_page_timer.' . $content->id;
+
+                if ((int) $contentUser->finish === 1 || $previousProgress >= 100) {
+                    $completedPages = $totalPages;
+                    $contentUser->last_page = $totalPages;
+                    $contentUser->current_time = $officialDuration;
+                    $computed = 100;
+                    $pageCompleted = true;
+                    $allowedPage = $totalPages;
+                    $request->session()->forget($timerKey);
+                } else {
+                    $activePage = min((int) ($validated['active_page'] ?? 0), $totalPages);
+                    $completedPage = min((int) ($validated['completed_page'] ?? 0), $totalPages);
+
+                    if ($activePage === $allowedPage && $activePage > $completedPages) {
+                        $timer = $request->session()->get($timerKey);
+
+                        if (!is_array($timer) || (int) ($timer['page'] ?? 0) !== $activePage) {
+                            $request->session()->put($timerKey, [
+                                'page' => $activePage,
+                                'started_at' => microtime(true),
+                            ]);
+                        }
+                    }
+
+                    if ($completedPage > 0) {
+                        if ($completedPage <= $completedPages) {
+                            $pageCompleted = true;
+                        } elseif ($completedPage === $allowedPage) {
+                            $timer = $request->session()->get($timerKey, []);
+                            $serverElapsed = (int) ($timer['page'] ?? 0) === $completedPage
+                                ? max(0, microtime(true) - (float) ($timer['started_at'] ?? microtime(true)))
+                                : 0;
+                            $clientElapsed = (float) ($validated['page_elapsed_seconds'] ?? 0);
+
+                            if ($serverElapsed + .25 >= $pageDuration && $clientElapsed >= $pageDuration) {
+                                $completedPages = $completedPage;
+                                $contentUser->last_page = $completedPages;
+                                $contentUser->current_time = min($officialDuration, $completedPages * $pageDuration);
+                                $computed = ($completedPages / $totalPages) * 100;
+                                $pageCompleted = true;
+                                $allowedPage = min($totalPages, $completedPages + 1);
+                                $request->session()->forget($timerKey);
+                            } else {
+                                $pageCompleted = false;
+                                $remainingSeconds = max(1, (int) ceil(max(
+                                    $pageDuration - $serverElapsed,
+                                    $pageDuration - $clientElapsed
+                                )));
+                            }
+                        } else {
+                            $pageCompleted = false;
+                            $remainingSeconds = $pageDuration;
+                        }
+                    }
+
+                    if ($computed === null && $completedPages > 0) {
+                        $computed = ($completedPages / $totalPages) * 100;
+                    }
+                }
+            } else {
+                $lastPage = (int) ($validated['last_page'] ?? 0);
+
+                if ($lastPage > 0) {
+                    $contentUser->last_page = $totalPages > 0 ? min($lastPage, $totalPages) : $lastPage;
+
+                    if ($totalPages > 0) {
+                        $computed = ($contentUser->last_page / $totalPages) * 100;
+                    }
                 }
             }
         } else {
@@ -413,7 +499,10 @@ class ContentUserController extends Controller
 
         // "completed" from the client (video ended) is only honored when the
         // recomputed position actually backs it up.
-        if (($validated['status'] ?? null) === 'completed' && $computed !== null && $computed >= 90) {
+        if ($validated['type'] === 'video'
+            && ($validated['status'] ?? null) === 'completed'
+            && $computed !== null
+            && $computed >= 90) {
             $progress = 100;
         }
 
@@ -437,6 +526,10 @@ class ContentUserController extends Controller
             'finish'       => (int) $contentUser->finish,
             'current_time' => (int) $contentUser->current_time,
             'last_page'    => $contentUser->last_page,
+            'page_completed' => $pageCompleted,
+            'remaining_seconds' => $remainingSeconds,
+            'allowed_page' => $allowedPage,
+            'duration_seconds' => $contentUser->duration_seconds,
         ]);
     }
 

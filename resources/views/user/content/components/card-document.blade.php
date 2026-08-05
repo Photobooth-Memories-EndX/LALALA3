@@ -53,8 +53,13 @@
         <div class="d-flex align-items-center mb-2">
             <span class="badge {{ $typeBadgeClass }}">{{ $item->type ?? 'Document' }}</span>
             <span class="ms-auto text-muted small">
-                <i class="ti ti-file-text"></i>
-                Document
+                @if (($item->type ?? null) === 'Document')
+                    <i class="ti ti-clock"></i>
+                    {{ \App\Support\DurationFormatter::format($item->duration) }}
+                @else
+                    <i class="ti ti-file-text"></i>
+                    Document
+                @endif
             </span>
         </div>
 

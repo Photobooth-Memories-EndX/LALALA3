@@ -110,10 +110,10 @@
                                         <label class="form-label">Type</label>
                                         <select name="type" id="type" class="form-select" onchange="typevalue(this)">
                                             <option value="">-- Select Type --</option>
-                                            <option value="Video" @if ($content->type == 'Video') selected @endif>Video</option>
-                                            <option value="Document" @if ($content->type == 'Document') selected @endif>Document</option>
-                                            <option value="YouTube" @if ($content->type == 'YouTube') selected @endif>YouTube</option>
-                                            <option value="SOP/Regulation" @if ($content->type == 'SOP/Regulation') selected @endif>SOP/Regulation</option>
+                                            <option value="Video" @selected(old('type', $content->type) === 'Video')>Video</option>
+                                            <option value="Document" @selected(old('type', $content->type) === 'Document')>Document</option>
+                                            <option value="YouTube" @selected(old('type', $content->type) === 'YouTube')>YouTube</option>
+                                            <option value="SOP/Regulation" @selected(old('type', $content->type) === 'SOP/Regulation')>SOP/Regulation</option>
                                         </select>
                                     </div>
 
@@ -267,6 +267,7 @@
                                     @enderror
                                     <small class="form-hint">Format HH:MM:SS. Input mm:ss lama tetap diterima dan disimpan sebagai HH:MM:SS.</small>
                                 </div>
+                                @include('main.content.components.page-duration-field', ['content' => $content])
                             </div>
                         </div>
 
@@ -461,6 +462,8 @@
     <script src="{{ $url_litepicker }}"></script>
     <script src="{{ $url_ytplayer_js }}"></script>
     <script src="{{ $url_select }}"></script>
+    <script src="{{ asset('js/pdf.min.js') }}"></script>
+    <script src="{{ asset('js/content-page-duration.js') }}"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             window.Plyr && (new Plyr('#player-youtube'));
@@ -532,6 +535,27 @@
                 });
                 $('#contentEditForm').find('input[name="documents[]"][value="' + name + '"]').remove();
             }
+        });
+
+        var pdfjsLib = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
+        if (pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
+        }
+
+        var documentDurationForm = new OwlDocumentDurationForm({
+            formId: 'contentEditForm',
+            existingPdfUrl: @json(
+                $content->type === 'Document' && !empty($getcontentfile)
+                    ? asset('storage/files/content/' . $content->id . '/' . $getcontentfile)
+                    : null
+            )
+        });
+
+        myDropzone.on('addedfile', function(file) {
+            documentDurationForm.readFile(file);
+        });
+        myDropzone.on('removedfile', function() {
+            documentDurationForm.clearUploadedPdf();
         });
 
         let uploadedThumbnailMap = {};

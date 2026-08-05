@@ -253,6 +253,8 @@ class ContentController extends Controller
         Log::info('ContentController@store called', ['user_id' => auth()->id(), 'payload' => $request->all()]);
 
         $request->validate([
+            'page_duration' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:300'],
+            'document_total_pages' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'duration' => ['nullable', function ($attribute, $value, $fail) {
                 if (!DurationFormatter::isValid($value)) {
                     $fail('The duration format must be HH:MM:SS or mm:ss.');
@@ -268,7 +270,11 @@ class ContentController extends Controller
             $ytid = null;
         }
         $hasDeadline = $request->boolean('has_deadline');
-        $duration = DurationFormatter::normalize($request->duration);
+        $pageDuration = $request->type === 'Document' ? (int) $request->page_duration : 15;
+        $documentTotalPages = $request->type === 'Document' ? (int) $request->document_total_pages : 0;
+        $duration = $documentTotalPages > 0
+            ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
+            : DurationFormatter::normalize($request->duration);
         $newcontent = new Content([
             'title'            => $request->title,
             'type'             => $request->type,
@@ -276,6 +282,7 @@ class ContentController extends Controller
             'date'             => $request->date,
             'author'           => $request->author,
             'duration'         => $duration,
+            'page_duration'    => $pageDuration,
             'description'      => $request->description,
             'playlistonly'     => $request->playlistonly,
             'link'             => $ytid,
@@ -357,6 +364,8 @@ class ContentController extends Controller
     public function update(Request $request, Content $content)
     {
         $request->validate([
+            'page_duration' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:300'],
+            'document_total_pages' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'duration' => ['nullable', function ($attribute, $value, $fail) {
                 if (!DurationFormatter::isValid($value)) {
                     $fail('The duration format must be HH:MM:SS or mm:ss.');
@@ -453,7 +462,13 @@ class ContentController extends Controller
             $redirmessage = "-";
         }
         $hasDeadlineUpdate = $request->boolean('has_deadline');
-        $duration = DurationFormatter::normalize($request->duration);
+        $pageDuration = $request->type === 'Document'
+            ? (int) $request->page_duration
+            : (int) ($getcontent->page_duration ?: 15);
+        $documentTotalPages = $request->type === 'Document' ? (int) $request->document_total_pages : 0;
+        $duration = $documentTotalPages > 0
+            ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
+            : DurationFormatter::normalize($request->duration);
         Content::where('id', $request->contentid)
             ->update([
                 'title'            => $request->title,
@@ -462,6 +477,7 @@ class ContentController extends Controller
                 'date'             => $request->date,
                 'author'           => $request->author,
                 'duration'         => $duration,
+                'page_duration'    => $pageDuration,
                 'description'      => $request->description,
                 'playlistonly'     => $request->playlistonly,
                 'active'           => $active,

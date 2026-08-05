@@ -36,6 +36,7 @@ class Content extends Model
         'has_deadline' => 'boolean',
         'from_date'    => 'date',
         'to_date'      => 'date',
+        'page_duration' => 'integer',
     ];
 
     public function classification()

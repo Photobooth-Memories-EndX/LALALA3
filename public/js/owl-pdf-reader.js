@@ -20,6 +20,17 @@
         this.changingLayout = false;
         this.documentReady = false;
         this.modeTransitionTimer = null;
+        this.pageTimingEnabled = Boolean(this.config.pageTimingEnabled);
+        this.pageDuration = Math.max(1, parseInt(this.config.pageDuration, 10) || 15);
+        this.completedPages = Math.max(0, parseInt(this.config.completedPages, 10) || 0);
+        this.contentCompleted = Boolean(this.config.contentCompleted);
+        this.totalPages = 0;
+        this.timedPage = 0;
+        this.pageElapsed = 0;
+        this.pageTimer = null;
+        this.pageTimerLastTick = 0;
+        this.pageCompletionPending = false;
+        this.pageCompletionRetryAt = 0;
     }
 
     OwlPdfReader.prototype.getShell = function () {
@@ -52,6 +63,7 @@
                     }
                 } finally {
                     reader.documentReady = true;
+                    reader.initializePageTiming(this.getPageCount());
                 }
             },
 
@@ -66,8 +78,14 @@
             onActivePageChanged: function (page, pageno) {
                 if (!pageno) return;
 
+                if (!reader.canActivatePage(pageno)) {
+                    reader.restoreAllowedPage();
+                    return;
+                }
+
                 reader.syncSinglePage(pageno);
                 reader.updatePageLabel(pageno, this.getPageCount());
+                reader.activateTimedPage(pageno, this.getPageCount());
 
                 if (
                     reader.documentReady
@@ -115,8 +133,174 @@
         var label = shell ? shell.querySelector('.pageno') : null;
 
         if (label) {
-            label.textContent = page + '/' + totalPages;
+            label.textContent = page + ' / ' + totalPages;
         }
+    };
+
+    OwlPdfReader.prototype.initializePageTiming = function (totalPages) {
+        this.totalPages = Math.max(0, parseInt(totalPages, 10) || 0);
+
+        if (this.contentCompleted && this.totalPages > 0) {
+            this.completedPages = this.totalPages;
+        } else if (this.totalPages > 0) {
+            this.completedPages = Math.min(this.completedPages, this.totalPages);
+        }
+
+        var state = this.getViewState();
+        var activePage = Math.max(1, parseInt(state.page, 10) || 1);
+
+        this.updatePageLabel(activePage, this.totalPages);
+        this.activateTimedPage(activePage, this.totalPages);
+    };
+
+    OwlPdfReader.prototype.canActivatePage = function (page) {
+        if (!this.pageTimingEnabled || !this.documentReady) return true;
+
+        return Number(page) <= Math.min(this.totalPages, this.completedPages + 1);
+    };
+
+    OwlPdfReader.prototype.restoreAllowedPage = function () {
+        var reader = this;
+        var allowedPage = Math.max(1, Math.min(this.totalPages, this.completedPages + 1));
+
+        setTimeout(function () {
+            if (reader.viewer && typeof reader.viewer.scrollToPage === 'function') {
+                reader.viewer.scrollToPage(allowedPage);
+            }
+        }, 0);
+    };
+
+    OwlPdfReader.prototype.activateTimedPage = function (page, totalPages) {
+        page = Math.max(1, parseInt(page, 10) || 1);
+        this.totalPages = Math.max(0, parseInt(totalPages, 10) || this.totalPages);
+        this.updateNavigationButtons(page);
+
+        if (!this.pageTimingEnabled || !this.documentReady) return;
+
+        if (page <= this.completedPages || (this.totalPages > 0 && page > this.totalPages)) {
+            this.stopPageTimer();
+            this.timedPage = page;
+            this.pageElapsed = this.pageDuration;
+            this.updatePageTimingLabels(0, true);
+            return;
+        }
+
+        if (page !== this.completedPages + 1) {
+            this.restoreAllowedPage();
+            return;
+        }
+
+        if (this.timedPage === page && this.pageTimer) {
+            return;
+        }
+
+        this.stopPageTimer();
+        this.timedPage = page;
+        this.pageElapsed = 0;
+        this.pageCompletionPending = false;
+        this.pageCompletionRetryAt = 0;
+        this.updatePageTimingLabels(this.pageDuration, false);
+
+        if (typeof this.config.onPageStarted === 'function') {
+            this.config.onPageStarted(page, this.totalPages);
+        }
+
+        this.pageTimerLastTick = Date.now();
+        this.pageTimer = setInterval(this.tickPageTimer.bind(this), 250);
+    };
+
+    OwlPdfReader.prototype.tickPageTimer = function () {
+        var now = Date.now();
+        var delta = Math.max(0, (now - this.pageTimerLastTick) / 1000);
+        this.pageTimerLastTick = now;
+
+        if (document.visibilityState !== 'visible') {
+            return;
+        }
+
+        this.pageElapsed = Math.min(this.pageDuration, this.pageElapsed + delta);
+        var remaining = this.pageElapsed >= this.pageDuration && now < this.pageCompletionRetryAt
+            ? Math.max(1, Math.ceil((this.pageCompletionRetryAt - now) / 1000))
+            : Math.max(0, Math.ceil(this.pageDuration - this.pageElapsed));
+        this.updatePageTimingLabels(remaining, false);
+
+        if (this.pageElapsed >= this.pageDuration
+            && !this.pageCompletionPending
+            && now >= this.pageCompletionRetryAt) {
+            this.completeTimedPage();
+        }
+    };
+
+    OwlPdfReader.prototype.completeTimedPage = function () {
+        var reader = this;
+        var page = this.timedPage;
+        var completion = typeof this.config.onPageCompleted === 'function'
+            ? this.config.onPageCompleted(page, this.totalPages, this.pageElapsed)
+            : true;
+
+        this.pageCompletionPending = true;
+
+        Promise.resolve(completion).then(function (result) {
+            var completed = result === true || Boolean(result && result.page_completed);
+
+            if (completed) {
+                reader.completedPages = Math.max(
+                    reader.completedPages,
+                    parseInt(result && result.last_page, 10) || page
+                );
+                reader.pageCompletionPending = false;
+                reader.stopPageTimer();
+                reader.updatePageTimingLabels(0, true);
+                reader.updateNavigationButtons(page);
+                return;
+            }
+
+            var retrySeconds = Math.max(1, parseInt(result && result.remaining_seconds, 10) || 1);
+            reader.pageCompletionPending = false;
+            reader.pageCompletionRetryAt = Date.now() + (retrySeconds * 1000);
+            reader.updatePageTimingLabels(retrySeconds, false);
+        }).catch(function () {
+            reader.pageCompletionPending = false;
+            reader.pageCompletionRetryAt = Date.now() + 1000;
+            reader.updatePageTimingLabels(1, false);
+        });
+    };
+
+    OwlPdfReader.prototype.stopPageTimer = function () {
+        if (this.pageTimer) {
+            clearInterval(this.pageTimer);
+            this.pageTimer = null;
+        }
+    };
+
+    OwlPdfReader.prototype.updatePageTimingLabels = function (remaining, complete) {
+        var shell = this.getShell();
+        if (!shell) return;
+
+        shell.querySelectorAll('.pdf-tb-minimum-time-value').forEach(function (label) {
+            label.textContent = this.pageDuration;
+        }, this);
+        shell.querySelectorAll('.pdf-tb-remaining-time-value').forEach(function (label) {
+            label.textContent = Math.max(0, parseInt(remaining, 10) || 0);
+        });
+        shell.querySelectorAll('.pdf-tb-reading-timing').forEach(function (group) {
+            group.classList.toggle('is-complete', Boolean(complete));
+        });
+    };
+
+    OwlPdfReader.prototype.updateNavigationButtons = function (page) {
+        var shell = this.getShell();
+        if (!shell) return;
+
+        page = Math.max(1, parseInt(page, 10) || 1);
+        var nextLocked = this.pageTimingEnabled && page > this.completedPages;
+
+        shell.querySelectorAll('[data-pdf-nav="previous"]').forEach(function (button) {
+            button.disabled = page <= 1;
+        });
+        shell.querySelectorAll('[data-pdf-nav="next"]').forEach(function (button) {
+            button.disabled = !this.totalPages || page >= this.totalPages || nextLocked;
+        }, this);
     };
 
     OwlPdfReader.prototype.syncSinglePage = function (pageno) {

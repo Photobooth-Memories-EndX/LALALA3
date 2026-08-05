@@ -31,7 +31,7 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <form action="{{ route('content.store') }}" method="post" autocomplete="off">
+            <form id="contentCreateForm" action="{{ route('content.store') }}" method="post" autocomplete="off">
                 @csrf
                 @method('POST')
 
@@ -56,10 +56,10 @@
                                         <label class="form-label required">Type</label>
                                         <select name="type" id="type" class="form-select" onchange="typevalue(this)" required>
                                             <option value="">-- Select Type --</option>
-                                            <option value="Video">Video</option>
-                                            <option value="Document">Document</option>
-                                            <option value="YouTube">YouTube</option>
-                                            <option value="SOP/Regulation">SOP/Regulation</option>
+                                            <option value="Video" @selected(old('type') === 'Video')>Video</option>
+                                            <option value="Document" @selected(old('type') === 'Document')>Document</option>
+                                            <option value="YouTube" @selected(old('type') === 'YouTube')>YouTube</option>
+                                            <option value="SOP/Regulation" @selected(old('type') === 'SOP/Regulation')>SOP/Regulation</option>
                                         </select>
                                     </div>
 
@@ -141,6 +141,7 @@
                                     @enderror
                                     <small class="form-hint">Format: HH:MM:SS. Legacy mm:ss input is still accepted and will be saved as HH:MM:SS.</small>
                                 </div>
+                                @include('main.content.components.page-duration-field')
                             </div>
                         </div>
 
@@ -271,6 +272,8 @@
 @section('script')
     <script src="{{ $url_dropzone_js }}"></script>
     <script src="{{ $url_litepicker }}"></script>
+    <script src="{{ asset('js/pdf.min.js') }}"></script>
+    <script src="{{ asset('js/content-page-duration.js') }}"></script>
     <script>
         function typevalue(select) {
             var value = select.value;
@@ -316,6 +319,22 @@
                 });
                 $('form').find('input[name="documents[]"][value="' + name + '"]').remove();
             }
+        });
+
+        var pdfjsLib = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
+        if (pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
+        }
+
+        var documentDurationForm = new OwlDocumentDurationForm({
+            formId: 'contentCreateForm'
+        });
+
+        myDropzone.on('addedfile', function(file) {
+            documentDurationForm.readFile(file);
+        });
+        myDropzone.on('removedfile', function() {
+            documentDurationForm.clearUploadedPdf();
         });
 
         let uploadedThumbnailMap = {};

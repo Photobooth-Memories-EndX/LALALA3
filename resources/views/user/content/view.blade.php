@@ -235,8 +235,7 @@
             overflow: hidden;
         }
 
-        /* PDF-only controls: keep the toolbar centered and the next action
-           anchored to the lower-right edge of the document stage. */
+        /* Keep the shared PDF toolbar centered in the content detail shell. */
         .content-detail-page .owl-pdf-toolbar {
             display: flex;
             justify-content: center;
@@ -247,72 +246,11 @@
             justify-content: center;
         }
 
-        .content-detail-page .owl-pdf-reader-stage {
-            position: relative;
-        }
-
-        .content-detail-page .pdf-page-nav {
-            position: absolute;
-            inset: 0;
-            z-index: 4;
-            pointer-events: none;
-        }
-
-        .content-detail-page .pdf-page-nav button {
-            position: absolute;
-            bottom: 32px;
-            pointer-events: auto;
-            border-radius: 999px;
-            box-shadow: 0 .75rem 1.5rem rgba(15, 23, 42, .2);
-            transition: transform .18s ease, box-shadow .18s ease,
-                background-color .18s ease, border-color .18s ease;
-        }
-
-        .content-detail-page .pdf-page-nav .pdf-previous-page {
-            left: 20px;
-        }
-
-        .content-detail-page .pdf-page-nav .pdf-next-page {
-            right: 20px;
-        }
-
-        .content-detail-page .pdf-page-nav button:hover:not(:disabled) {
-            background: #043f63;
-            border-color: #043f63;
-            color: #fff;
-            transform: translateY(-2px);
-            box-shadow: 0 1rem 1.75rem rgba(15, 23, 42, .28);
-        }
-
         .content-detail-page .badge-completed,
         .content-detail-page .badge-completed i,
         .content-detail-page .badge-completed svg {
             color: #0f5132 !important;
             fill: #0f5132 !important;
-        }
-
-        .content-detail-page .pdf-page-nav button:disabled {
-            opacity: .45;
-            pointer-events: none;
-        }
-
-        @media (max-width: 575.98px) {
-            .content-detail-page .pdf-page-nav button {
-                bottom: 24px;
-                padding: .55rem .7rem;
-            }
-
-            .content-detail-page .pdf-page-nav .pdf-previous-page {
-                left: 15px;
-            }
-
-            .content-detail-page .pdf-page-nav .pdf-next-page {
-                right: 15px;
-            }
-
-            .content-detail-page .pdf-page-nav-label {
-                display: none;
-            }
         }
 
         .content-comment-modal .view-comment-wrapper .comment-ajax-root {
@@ -782,32 +720,48 @@
                 onUpdate: window.owlUpdateLearningUi
             });
 
+            var isTimedDocument = @json($content->type === 'Document');
+            var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 15)) }};
+
             var contentPdfReader = new OwlPdfReader({
                 shellId: 'pdfviewer-shell',
-                viewerSelector: '.content-pdfjs-viewer'
+                viewerSelector: '.content-pdfjs-viewer',
+                pageTimingEnabled: isTimedDocument,
+                pageDuration: documentPageDuration,
+                completedPages: {{ (int) ($content_user->last_page ?? 0) }},
+                contentCompleted: {{ (int) ($content_user->finish ?? 0) }} === 1,
+                onPageStarted: function(page, totalPages) {
+                    return progressTracker.send({
+                        active_page: page,
+                        total_pages: totalPages,
+                        status: 'in_progress'
+                    }, true);
+                },
+                onPageCompleted: function(page, totalPages, elapsedSeconds) {
+                    return progressTracker.send({
+                        active_page: page,
+                        completed_page: page,
+                        page_elapsed_seconds: elapsedSeconds,
+                        total_pages: totalPages,
+                        status: 'in_progress'
+                    }, true).then(function(result) {
+                        if (result && result.page_completed) {
+                            updateDocumentProgressUi(result.last_page || page, totalPages);
+                        }
+
+                        return result;
+                    });
+                }
             });
 
-            let maxPagesRead = Math.max(1, {{ (int) ($content_user->last_page ?? 0) }});
-            var pdfPreviousPageButton = document.getElementById('pdf-previous-page');
-            var pdfNextPageButton = document.getElementById('pdf-next-page');
+            let maxPagesRead = isTimedDocument
+                ? {{ (int) ($content_user->last_page ?? 0) }}
+                : Math.max(1, {{ (int) ($content_user->last_page ?? 0) }});
 
             function updatePdfPageButtons(activePage, totalPages) {
-                if (!pdfPreviousPageButton && !pdfNextPageButton) return;
-
                 var currentPage = Math.max(1, parseInt(activePage, 10) || 1);
-                var pageCount = Math.max(0, parseInt(totalPages, 10) || 0);
-                var isFirstPage = currentPage <= 1;
-                var isLastPage = pageCount > 0 && currentPage >= pageCount;
-
-                if (pdfPreviousPageButton) {
-                    $('#pdf-previous-page').prop('disabled', isFirstPage);
-                    pdfPreviousPageButton.setAttribute('aria-hidden', isFirstPage ? 'true' : 'false');
-                }
-
-                if (pdfNextPageButton) {
-                    $('#pdf-next-page').prop('disabled', !pageCount || isLastPage);
-                    pdfNextPageButton.setAttribute('aria-hidden', isLastPage ? 'true' : 'false');
-                }
+                contentPdfReader.totalPages = Math.max(0, parseInt(totalPages, 10) || 0);
+                contentPdfReader.updateNavigationButtons(currentPage);
             }
 
             function updateDocumentProgressUi(readPage, totalPages) {
@@ -833,16 +787,27 @@
                             lastPage = parseInt((progression * totalPages) / 100);
                         }
 
-                        maxPagesRead = Math.max(maxPagesRead, lastPage || 1);
-
                         var initialActivePage = 1;
 
-                        if (lastPage > 1 && lastPage < totalPages) {
-                            initialActivePage = lastPage;
-                            pdfViewer.scrollToPage(lastPage);
+                        if (isTimedDocument) {
+                            maxPagesRead = Math.min(lastPage, totalPages);
+                            initialActivePage = {{ (int) ($content_user->finish ?? 0) }} === 1
+                                ? totalPages
+                                : Math.min(totalPages, maxPagesRead + 1);
+                        } else {
+                            maxPagesRead = Math.max(maxPagesRead, lastPage || 1);
+                            initialActivePage = lastPage > 1 && lastPage < totalPages ? lastPage : 1;
                         }
 
-                        progressTracker.send({ total_pages: totalPages }, true);
+                        if (initialActivePage > 1) {
+                            pdfViewer.scrollToPage(initialActivePage);
+                        }
+
+                        if (!isTimedDocument
+                            || {{ (int) ($content_user->finish ?? 0) }} === 1
+                            || lastPage >= totalPages) {
+                            progressTracker.send({ total_pages: totalPages }, true);
+                        }
 
                         updatePdfPageButtons(initialActivePage, totalPages);
 
@@ -856,6 +821,8 @@
                         // The top label represents the page currently visible.
                         contentPdfReader.updatePageLabel(activePage, totalPages);
                         updatePdfPageButtons(activePage, totalPages);
+
+                        if (isTimedDocument) return;
 
                         // Sidebar progress is monotonic: going backward must
                         // never reduce the highest page already reached.
@@ -872,20 +839,6 @@
                 }));
 
             contentPdfReader.attach(pdfViewer, pdfFile);
-
-            if (pdfPreviousPageButton) {
-                pdfPreviousPageButton.addEventListener('click', function () {
-                    if (this.disabled || !pdfViewer || typeof pdfViewer.prev !== 'function') return;
-                    pdfViewer.prev();
-                });
-            }
-
-            if (pdfNextPageButton) {
-                pdfNextPageButton.addEventListener('click', function () {
-                    if (this.disabled || !pdfViewer || typeof pdfViewer.next !== 'function') return;
-                    pdfViewer.next();
-                });
-            }
 
             window.pdfRotateLeft = function () {
                 return contentPdfReader.rotate(-90);
