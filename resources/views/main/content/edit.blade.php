@@ -156,6 +156,7 @@
     <script src="{{ $url_select }}"></script>
     <script src="{{ asset('js/pdf.min.js') }}"></script>
     <script src="{{ asset('js/edit-content-document-duration.js') }}?v={{ filemtime(public_path('js/edit-content-document-duration.js')) }}"></script>
+    <script src="{{ asset('js/content-file-handler.js') }}?v={{ filemtime(public_path('js/content-file-handler.js')) }}"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             window.Plyr && (new Plyr('#player-youtube'));
@@ -192,42 +193,22 @@
             }
         }
 
-        let uploadedDocumentMap = {};
-        Dropzone.autoDiscover = false;
-        let myDropzone = new Dropzone("div#document-dropzone", {
-            url: '{{ route('content.uploadfileajax') }}',
-            autoProcessQueue: true,
-            uploadMultiple: true,
-            addRemoveLinks: true,
-            acceptedFiles: ".pdf,.mp4",
-            parallelUploads: 2,
-            headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-            maxFiles: 1,
-            maxFilesize: 1000,
-            init: function() {
-                this.on("error", function(file, message) {
-                    alert(message);
-                    this.removeFile(file);
-                });
-            },
-            successmultiple: function(data, response) {
-                $.each(response['name'], function(key, val) {
-                    $('#contentEditForm').append('<input type="hidden" name="documents[]" value="' + val + '">');
-                    uploadedDocumentMap[data[key].name] = val;
-                });
-                console.log(response.name);
-            },
-            removedfile: function(file) {
-                file.previewElement.remove();
-                let name = typeof file.file_name !== 'undefined' ? file.file_name : uploadedDocumentMap[file.name];
-                $.ajax({
-                    url: "{{ route('content.deletefileajax') }}",
-                    data: { name: name },
-                    success: function(data) { console.log('sukses : ' + data); }
-                });
-                $('#contentEditForm').find('input[name="documents[]"][value="' + name + '"]').remove();
-            }
+        window.contentFileHandler = new ContentFileHandler({
+            formId: 'contentEditForm',
+            typeSelectId: 'type',
+            documentDropzoneSelector: 'div#document-dropzone',
+            thumbnailDropzoneSelector: 'div#thumbnail-dropzone',
+            uploadFileUrl: '{{ route('content.uploadfileajax') }}',
+            deleteFileUrl: '{{ route('content.deletefileajax') }}',
+            uploadThumbUrl: '{{ route('content.uploadthumbnailajax') }}',
+            deleteThumbUrl: '{{ route('content.deletethumbnailajax') }}',
+            csrfToken: "{{ csrf_token() }}",
+            mode: 'edit'
         });
+        window.contentFileHandler.initialize();
+
+        let myDropzone = window.contentFileHandler.getDocDropzone();
+        let myThumbnailDropzone = window.contentFileHandler.getThumbDropzone();
 
         var pdfjsLib = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
         if (pdfjsLib) {
@@ -247,48 +228,15 @@
             )
         });
 
-        myDropzone.on('addedfile', function(file) {
-            documentDurationForm.readFile(file);
-        });
-        myDropzone.on('removedfile', function() {
-            documentDurationForm.restoreExistingPdf();
-        });
-
-        let uploadedThumbnailMap = {};
-        let myThumbnailDropzone = new Dropzone("div#thumbnail-dropzone", {
-            url: '{{ route('content.uploadthumbnailajax') }}',
-            autoProcessQueue: true,
-            uploadMultiple: true,
-            addRemoveLinks: true,
-            acceptedFiles: ".jpg",
-            parallelUploads: 2,
-            headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" },
-            maxFiles: 1,
-            maxFilesize: 1000,
-            init: function() {
-                this.on("error", function(file, message) {
-                    alert(message);
-                    this.removeFile(file);
-                });
-            },
-            successmultiple: function(data, response) {
-                $.each(response['name'], function(key, val) {
-                    $('#contentEditForm').append('<input type="hidden" name="thumbnail[]" value="' + val + '" required>');
-                    uploadedThumbnailMap[data[key].name] = val;
-                });
-                console.log(response.name);
-            },
-            removedfile: function(file) {
-                file.previewElement.remove();
-                let name = typeof file.file_name !== 'undefined' ? file.file_name : uploadedThumbnailMap[file.name];
-                $.ajax({
-                    url: "{{ route('content.deletethumbnailajax') }}",
-                    data: { name: name },
-                    success: function(data) { console.log('sukses : ' + data); }
-                });
-                $('#contentEditForm').find('input[name="thumbnail[]"][value="' + name + '"]').remove();
-            }
-        });
+        if (myDropzone) {
+            myDropzone.on('addedfile', function(file) {
+                if (file.rejected || file.status === 'error') return;
+                documentDurationForm.readFile(file);
+            });
+            myDropzone.on('removedfile', function() {
+                documentDurationForm.restoreExistingPdf();
+            });
+        }
 
         document.addEventListener("DOMContentLoaded", function() {
             window.Litepicker && (new Litepicker({

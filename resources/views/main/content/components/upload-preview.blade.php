@@ -250,6 +250,7 @@ body.theme-dark .content-preview-icon span { color: #9ca3af; }
     /* ── Dropzone binding ───────────────────────────────────────────── */
     function bindThumb(dz) {
         dz.on('addedfile', function (file) {
+            if (file.rejected || file.status === 'error') return;
             if (_thumbBlob) URL.revokeObjectURL(_thumbBlob);
             _thumbBlob = URL.createObjectURL(file);
             thumbSet(_thumbBlob);
@@ -259,6 +260,7 @@ body.theme-dark .content-preview-icon span { color: #9ca3af; }
 
     function bindFile(dz) {
         dz.on('addedfile', function (file) {
+            if (file.rejected || file.status === 'error') return;
             if (_fileBlob) URL.revokeObjectURL(_fileBlob);
             _fileBlob = URL.createObjectURL(file);
             var ext  = (file.name || '').split('.').pop().toLowerCase();

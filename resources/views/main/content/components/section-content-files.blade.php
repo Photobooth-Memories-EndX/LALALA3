@@ -262,7 +262,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                     </div>
                     <div class="fallback"></div>
                 </div>
-                <small class="text-muted d-block mt-1" style="font-size: 11px;">Format: PDF, MP4{{ $mode === 'create' ? ', AVI' : '' }} — maks. 1 file, 1 GB</small>
+                <small class="text-muted d-block mt-1" id="content-file-help-text" style="font-size: 11px;">Format: PDF — maks. 1 file, 10 MB</small>
             </div>
 
             {{-- Thumbnail File Column --}}
@@ -327,7 +327,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                     </div>
                     <div class="fallback"></div>
                 </div>
-                <small class="text-muted d-block mt-1" style="font-size: 11px;">Format: JPG only — maks. 1 file, 1 GB</small>
+                <small class="text-muted d-block mt-1" id="thumbnail-help-text" style="font-size: 11px;">Format: JPG, JPEG, PNG, WEBP — maks. 1 file, 1 MB</small>
             </div>
         </div>
     </div>
