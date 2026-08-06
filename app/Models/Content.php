@@ -37,6 +37,7 @@ class Content extends Model
         'from_date'    => 'date',
         'to_date'      => 'date',
         'page_duration' => 'integer',
+        'learning_hours' => 'float',
     ];
 
     public function classification()

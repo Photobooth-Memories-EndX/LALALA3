@@ -4,10 +4,10 @@
     function EditContentDocumentDuration(options) {
         this.options = options || {};
         this.typeInput = document.getElementById(this.options.typeInputId || 'type');
-        this.fields = document.getElementById('document-duration-fields');
-        this.totalPageInput = document.getElementById('total_page');
+        this.fields = document.getElementById('document-duration-fields') || document.getElementById('metadata-section-document');
+        this.totalPageInput = document.getElementById('total_page') || document.getElementById('document_total_pages');
         this.pageDurationInput = document.getElementById('page_duration');
-        this.durationInput = document.getElementById('duration');
+        this.durationInput = document.getElementById('doc_duration') || document.getElementById(this.options.durationInputId || 'duration');
         this.synchronizeButton = document.getElementById('edit-duration-synchronize');
         this.totalPageEstimate = document.getElementById('edit-total-page-estimate');
         this.pageDurationEstimate = document.getElementById('edit-page-duration-estimate');
@@ -38,7 +38,7 @@
     }
 
     EditContentDocumentDuration.prototype.isDocument = function () {
-        return this.typeInput.value === 'Document';
+        return this.typeInput && this.typeInput.value === 'Document';
     };
 
     EditContentDocumentDuration.prototype.bind = function () {
@@ -52,23 +52,43 @@
             }
         });
 
-        this.totalPageInput.addEventListener('input', function () {
-            self.recalculate();
-        });
+        if (this.totalPageInput) {
+            this.totalPageInput.addEventListener('input', function () {
+                self.recalculate();
+            });
+        }
 
-        this.pageDurationInput.addEventListener('input', function () {
-            self.recalculate();
-        });
+        if (this.pageDurationInput) {
+            this.pageDurationInput.addEventListener('input', function () {
+                self.recalculate();
+            });
+        }
 
-        this.durationInput.addEventListener('input', function () {
-            self.updateSynchronizationState();
-        });
+        if (this.durationInput) {
+            this.durationInput.addEventListener('input', function () {
+                self.updateSynchronizationState();
+            });
+        }
 
         if (this.synchronizeButton) {
             this.synchronizeButton.addEventListener('click', function () {
-                self.durationInput.value = self.getCalculatedDuration();
+                var calculated = self.getCalculatedDuration();
+                if (self.durationEstimate) {
+                    self.durationEstimate.textContent = calculated;
+                }
+                if (self.totalPageEstimate) {
+                    self.totalPageEstimate.textContent = self.getTotalPage();
+                }
+                if (self.pageDurationEstimate) {
+                    self.pageDurationEstimate.textContent = self.getPageDuration();
+                }
+                if (self.durationInput) {
+                    self.durationInput.value = calculated;
+                }
                 self.updateSynchronizationState();
-                self.durationInput.focus();
+                if (self.durationInput) {
+                    self.durationInput.focus();
+                }
             });
         }
 
@@ -86,10 +106,30 @@
     EditContentDocumentDuration.prototype.syncType = function () {
         var active = this.isDocument();
 
-        this.fields.style.display = active ? '' : 'none';
+        if (this.fields) this.fields.style.display = active ? '' : 'none';
         if (this.synchronizeButton) this.synchronizeButton.hidden = !active;
-        this.totalPageInput.required = active;
-        this.pageDurationInput.required = active;
+        if (this.totalPageInput) this.totalPageInput.required = active;
+        if (this.pageDurationInput) this.pageDurationInput.required = active;
+
+        if (this.durationInput) {
+            this.durationInput.readOnly = active;
+
+            if (active) {
+                this.durationInput.setAttribute('aria-readonly', 'true');
+                this.durationInput.style.backgroundColor = 'var(--tblr-gray-200, #e9ecef)';
+                this.durationInput.style.borderColor = 'var(--tblr-border-color, #ced4da)';
+                this.durationInput.style.color = 'var(--tblr-body-color, #495057)';
+                this.durationInput.style.cursor = 'not-allowed';
+                this.durationInput.style.opacity = '1';
+            } else {
+                this.durationInput.removeAttribute('aria-readonly');
+                this.durationInput.style.backgroundColor = '';
+                this.durationInput.style.borderColor = '';
+                this.durationInput.style.color = '';
+                this.durationInput.style.cursor = '';
+                this.durationInput.style.opacity = '';
+            }
+        }
 
         if (active) {
             this.recalculate();
@@ -99,11 +139,11 @@
     };
 
     EditContentDocumentDuration.prototype.getTotalPage = function () {
-        return Math.max(0, parseInt(this.totalPageInput.value, 10) || 0);
+        return Math.max(0, parseInt(this.totalPageInput ? this.totalPageInput.value : 0, 10) || 0);
     };
 
     EditContentDocumentDuration.prototype.getPageDuration = function () {
-        return Math.max(0, parseInt(this.pageDurationInput.value, 10) || 0);
+        return Math.max(0, parseInt(this.pageDurationInput ? this.pageDurationInput.value : 0, 10) || 0);
     };
 
     EditContentDocumentDuration.prototype.formatDuration = function (totalSeconds) {
@@ -148,8 +188,9 @@
     EditContentDocumentDuration.prototype.updateSynchronizationState = function () {
         if (!this.isDocument()) return;
 
-        var synchronized = this.normalizeDurationValue(this.durationInput.value)
-            === this.getCalculatedDuration();
+        var currentVal = this.durationInput ? this.durationInput.value : '';
+        var calculated = this.getCalculatedDuration();
+        var synchronized = this.normalizeDurationValue(currentVal) === calculated;
 
         if (this.synchronizeButton) this.synchronizeButton.disabled = synchronized;
         if (this.synchronizationStatus) {
@@ -158,8 +199,8 @@
         }
         if (this.synchronizationStatusIcon) {
             this.synchronizationStatusIcon.className = synchronized
-                ? 'ti ti-circle-check me-1'
-                : 'ti ti-alert-triangle me-1';
+                ? 'ti ti-circle-check me-1 fs-3'
+                : 'ti ti-alert-triangle me-1 fs-3';
         }
         if (this.synchronizationStatusText) {
             this.synchronizationStatusText.textContent = synchronized
@@ -178,6 +219,7 @@
         if (this.totalPageEstimate) this.totalPageEstimate.textContent = totalPage;
         if (this.pageDurationEstimate) this.pageDurationEstimate.textContent = pageDuration;
         if (this.durationEstimate) this.durationEstimate.textContent = formatted;
+
         this.updateSynchronizationState();
     };
 

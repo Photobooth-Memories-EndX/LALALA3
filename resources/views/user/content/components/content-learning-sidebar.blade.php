@@ -153,7 +153,7 @@
                 <div class="col-6">
                     <div class="sidebar-stat-card">
                         <div class="text-muted small">Type</div>
-                        <div class="fw-bold fs-3 text-truncate">{{ $content->type }}</div>
+                        <div class="fw-bold fs-3 text-truncate">{{ \App\Support\ContentTypeHelper::label($content->type) }}</div>
                     </div>
                 </div>
             </div>

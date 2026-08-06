@@ -187,9 +187,11 @@ class ContentController extends Controller
     public function create()
     {
         $classification = Classification::all();
+        $user = User::all();
         return view('main.content.create', [
             "title" =>  "Add Content",
-            "classification" => $classification
+            "classification" => $classification,
+            "user" => $user
         ]);
     }
     public function uploadfileajax(Request $request)
@@ -260,6 +262,10 @@ class ContentController extends Controller
                     $fail('The duration format must be HH:MM:SS or mm:ss.');
                 }
             }],
+            'learning_hours' => ['nullable', 'regex:/^(?:\d+|\d+\.5)$/', 'numeric', 'min:0', 'max:99.5'],
+        ], [
+            'learning_hours.regex' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
+            'learning_hours.numeric' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
         ]);
 
         if ($request->type == "YouTube") {
@@ -275,6 +281,7 @@ class ContentController extends Controller
         $duration = $documentTotalPages > 0
             ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
             : DurationFormatter::normalize($request->duration);
+        $learningHours = $request->filled('learning_hours') ? (float) $request->learning_hours : null;
         $newcontent = new Content([
             'title'            => $request->title,
             'type'             => $request->type,
@@ -282,6 +289,7 @@ class ContentController extends Controller
             'date'             => $request->date,
             'author'           => $request->author,
             'duration'         => $duration,
+            'learning_hours'   => $learningHours,
             'page_duration'    => $pageDuration,
             'description'      => $request->description,
             'playlistonly'     => $request->playlistonly,
@@ -371,6 +379,10 @@ class ContentController extends Controller
                     $fail('The duration format must be HH:MM:SS or mm:ss.');
                 }
             }],
+            'learning_hours' => ['nullable', 'regex:/^(?:\d+|\d+\.5)$/', 'numeric', 'min:0', 'max:99.5'],
+        ], [
+            'learning_hours.regex' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
+            'learning_hours.numeric' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
         ]);
 
         $path = public_path('storage/files/content/' . $request->id . '');
@@ -469,6 +481,7 @@ class ContentController extends Controller
             ? (int) $request->total_page
             : (int) ($getcontent->total_page ?: 0);
         $duration = DurationFormatter::normalize($request->duration);
+        $learningHours = $request->filled('learning_hours') ? (float) $request->learning_hours : null;
         Content::where('id', $request->contentid)
             ->update([
                 'title'            => $request->title,
@@ -477,6 +490,7 @@ class ContentController extends Controller
                 'date'             => $request->date,
                 'author'           => $request->author,
                 'duration'         => $duration,
+                'learning_hours'   => $learningHours,
                 'page_duration'    => $pageDuration,
                 'total_page'       => $totalPage,
                 'description'      => $request->description,

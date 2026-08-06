@@ -5,12 +5,18 @@
         this.options = options || {};
         this.form = document.getElementById(this.options.formId);
         this.typeInput = document.getElementById(this.options.typeInputId || 'type');
-        this.row = document.getElementById('document-page-duration-row');
+        this.row = document.getElementById('document-duration-fields') || document.getElementById('document-page-duration-row') || document.getElementById('metadata-section-document');
         this.pageDurationInput = document.getElementById('page_duration');
-        this.totalPagesInput = document.getElementById('document_total_pages');
-        this.durationInput = document.getElementById('duration');
-        this.durationLabel = document.getElementById('document-calculated-duration');
-        this.statusLabel = document.getElementById('document-page-count-status');
+        this.totalPagesInput = document.getElementById('document_total_pages') || document.getElementById('total_page');
+        this.durationInput = document.getElementById('doc_duration') || document.getElementById(this.options.durationInputId || 'duration');
+        this.durationLabel = document.getElementById('edit-duration-estimate') || document.getElementById('document-calculated-duration');
+        this.totalPageEstimate = document.getElementById('edit-total-page-estimate');
+        this.pageDurationEstimate = document.getElementById('edit-page-duration-estimate');
+        this.synchronizeButton = document.getElementById('edit-duration-synchronize');
+        this.synchronizationStatus = document.getElementById('edit-duration-sync-status');
+        this.synchronizationStatusIcon = document.getElementById('edit-duration-sync-status-icon');
+        this.synchronizationStatusText = document.getElementById('edit-duration-sync-status-text');
+        this.statusLabel = document.getElementById('edit-document-page-status') || document.getElementById('document-page-count-status');
         this.existingPdfUrl = this.options.existingPdfUrl || null;
         this.expectsPdf = Boolean(this.existingPdfUrl);
         this._countRequest = null;
@@ -44,9 +50,45 @@
             }
         });
 
-        this.pageDurationInput.addEventListener('input', function () {
-            self.recalculate();
-        });
+        if (this.totalPagesInput) {
+            this.totalPagesInput.addEventListener('input', function () {
+                self.recalculate();
+            });
+        }
+
+        if (this.pageDurationInput) {
+            this.pageDurationInput.addEventListener('input', function () {
+                self.recalculate();
+            });
+        }
+
+        if (this.durationInput) {
+            this.durationInput.addEventListener('input', function () {
+                self.updateSynchronizationState();
+            });
+        }
+
+        if (this.synchronizeButton) {
+            this.synchronizeButton.addEventListener('click', function () {
+                var calculated = self.getCalculatedDuration();
+                if (self.durationLabel) {
+                    self.durationLabel.textContent = calculated;
+                }
+                if (self.totalPageEstimate) {
+                    self.totalPageEstimate.textContent = self.getTotalPages();
+                }
+                if (self.pageDurationEstimate) {
+                    self.pageDurationEstimate.textContent = self.getPageDuration();
+                }
+                if (self.durationInput) {
+                    self.durationInput.value = calculated;
+                }
+                self.updateSynchronizationState();
+                if (self.durationInput) {
+                    self.durationInput.focus();
+                }
+            });
+        }
 
         this.form.addEventListener('submit', function (event) {
             if (!self.isDocument()) return;
@@ -67,21 +109,36 @@
     OwlDocumentDurationForm.prototype.syncType = function () {
         var documentSelected = this.isDocument();
 
-        this.row.style.display = documentSelected ? '' : 'none';
-        this.pageDurationInput.required = documentSelected;
+        if (this.row) this.row.style.display = documentSelected ? '' : 'none';
+        if (this.synchronizeButton) this.synchronizeButton.hidden = !documentSelected;
+        if (this.pageDurationInput) this.pageDurationInput.required = documentSelected;
 
         if (this.durationInput) {
             this.durationInput.readOnly = documentSelected;
 
             if (documentSelected) {
-                this.durationInput.setAttribute('aria-describedby', 'document-page-count-status');
+                this.durationInput.setAttribute('aria-readonly', 'true');
+                this.durationInput.setAttribute('aria-describedby', 'edit-document-page-status');
+                this.durationInput.style.backgroundColor = 'var(--tblr-gray-200, #e9ecef)';
+                this.durationInput.style.borderColor = 'var(--tblr-border-color, #ced4da)';
+                this.durationInput.style.color = 'var(--tblr-body-color, #495057)';
+                this.durationInput.style.cursor = 'not-allowed';
+                this.durationInput.style.opacity = '1';
             } else {
+                this.durationInput.removeAttribute('aria-readonly');
                 this.durationInput.removeAttribute('aria-describedby');
+                this.durationInput.style.backgroundColor = '';
+                this.durationInput.style.borderColor = '';
+                this.durationInput.style.color = '';
+                this.durationInput.style.cursor = '';
+                this.durationInput.style.opacity = '';
             }
         }
 
         if (documentSelected) {
             this.recalculate();
+        } else if (this.synchronizeButton) {
+            this.synchronizeButton.disabled = true;
         }
     };
 
@@ -89,25 +146,73 @@
         return Math.max(0, parseInt(this.totalPagesInput && this.totalPagesInput.value, 10) || 0);
     };
 
-    OwlDocumentDurationForm.prototype.recalculate = function () {
-        var pages = this.getTotalPages();
-        var secondsPerPage = Math.max(0, parseInt(this.pageDurationInput.value, 10) || 0);
+    OwlDocumentDurationForm.prototype.getPageDuration = function () {
+        return Math.max(0, parseInt(this.pageDurationInput && this.pageDurationInput.value, 10) || 0);
+    };
 
-        if (!pages || !secondsPerPage) {
-            if (this.durationLabel) this.durationLabel.textContent = '—';
-            return;
-        }
-
-        var totalSeconds = pages * secondsPerPage;
+    OwlDocumentDurationForm.prototype.formatDuration = function (totalSeconds) {
         var hours = Math.floor(totalSeconds / 3600);
         var minutes = Math.floor((totalSeconds % 3600) / 60);
         var seconds = totalSeconds % 60;
-        var value = [hours, minutes, seconds]
+
+        return [hours, minutes, seconds]
             .map(function (part) { return String(part).padStart(2, '0'); })
             .join(':');
+    };
 
-        if (this.durationInput) this.durationInput.value = value;
-        if (this.durationLabel) this.durationLabel.textContent = value + ' (' + pages + ' pages)';
+    OwlDocumentDurationForm.prototype.getCalculatedDuration = function () {
+        return this.formatDuration(this.getTotalPages() * this.getPageDuration());
+    };
+
+    OwlDocumentDurationForm.prototype.normalizeDurationValue = function (value) {
+        var parts = String(value || '').trim().split(':');
+
+        if (parts.length !== 2 && parts.length !== 3) return null;
+        if (!parts.every(function (part) { return /^\d+$/.test(part); })) return null;
+
+        var hours = parts.length === 3 ? parseInt(parts[0], 10) : 0;
+        var minutes = parseInt(parts[parts.length - 2], 10);
+        var seconds = parseInt(parts[parts.length - 1], 10);
+
+        if (seconds > 59 || (parts.length === 3 && minutes > 59)) return null;
+
+        return this.formatDuration((hours * 3600) + (minutes * 60) + seconds);
+    };
+
+    OwlDocumentDurationForm.prototype.updateSynchronizationState = function () {
+        if (!this.isDocument()) return;
+
+        var currentVal = this.durationInput ? this.durationInput.value : '';
+        var calculated = this.getCalculatedDuration();
+        var synchronized = this.normalizeDurationValue(currentVal) === calculated;
+
+        if (this.synchronizeButton) this.synchronizeButton.disabled = synchronized;
+        if (this.synchronizationStatus) {
+            this.synchronizationStatus.classList.toggle('text-success', synchronized);
+            this.synchronizationStatus.classList.toggle('text-warning', !synchronized);
+        }
+        if (this.synchronizationStatusIcon) {
+            this.synchronizationStatusIcon.className = synchronized
+                ? 'ti ti-circle-check me-1 fs-3'
+                : 'ti ti-alert-triangle me-1 fs-3';
+        }
+        if (this.synchronizationStatusText) {
+            this.synchronizationStatusText.textContent = synchronized
+                ? 'Duration synchronized'
+                : 'Duration not synchronized';
+        }
+    };
+
+    OwlDocumentDurationForm.prototype.recalculate = function () {
+        var pages = this.getTotalPages();
+        var secondsPerPage = this.getPageDuration();
+        var formatted = this.formatDuration(pages * secondsPerPage);
+
+        if (this.totalPageEstimate) this.totalPageEstimate.textContent = pages;
+        if (this.pageDurationEstimate) this.pageDurationEstimate.textContent = secondsPerPage;
+        if (this.durationLabel) this.durationLabel.textContent = formatted;
+
+        this.updateSynchronizationState();
     };
 
     OwlDocumentDurationForm.prototype.setStatus = function (message, isError) {

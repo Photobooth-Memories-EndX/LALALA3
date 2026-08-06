@@ -48,7 +48,7 @@
 
                     <div class="home-modern-video-body">
                         <span class="home-modern-category-badge">
-                            {{ $item->type === 'YouTube' ? 'YouTube' : 'Video' }}
+                            {{ \App\Support\ContentTypeHelper::label($item->type) }}
                         </span>
                         <h4 class="home-modern-video-title">{{ Str::limit($item->title, 55) }}</h4>
                     </div>

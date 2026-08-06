@@ -72,7 +72,7 @@
                         <span class="badge bg-white text-primary">
                             {{ $content->classification->classification_name ?? 'Learning' }}
                         </span>
-                        <span class="badge {{ $contentTypeBadgeClass }}">{{ $content->type ?? 'Content' }}</span>
+                        <span class="badge {{ $contentTypeBadgeClass }}">{{ \App\Support\ContentTypeHelper::label($content->type ?? 'Content') }}</span>
                     </div>
                 </div>
 

@@ -51,7 +51,7 @@
 
     <div class="card-body">
         <div class="d-flex align-items-center mb-2">
-            <span class="badge {{ $typeBadgeClass }}">{{ $item->type ?? 'Document' }}</span>
+            <span class="badge {{ $typeBadgeClass }}">{{ \App\Support\ContentTypeHelper::label($item->type ?? 'Document') }}</span>
             <span class="ms-auto text-muted small">
                 @if (($item->type ?? null) === 'Document')
                     <i class="ti ti-clock"></i>

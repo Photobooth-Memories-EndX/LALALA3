@@ -20,7 +20,7 @@
 @endphp
 
 @if ($type === 'Playlist' && $url)
-    <a href="{{ $url }}" class="badge {{ $class }} learning-record-badge record-playlist-link"><i class="ti ti-playlist me-1"></i>{{ $type }}</a>
+    <a href="{{ $url }}" class="badge {{ $class }} learning-record-badge record-playlist-link"><i class="ti ti-playlist me-1"></i>{{ \App\Support\ContentTypeHelper::label($type) }}</a>
 @else
-    <span class="badge {{ $class }} learning-record-badge">@if ($type === 'Playlist')<i class="ti ti-playlist me-1"></i>@endif{{ $type }}</span>
+    <span class="badge {{ $class }} learning-record-badge">@if ($type === 'Playlist')<i class="ti ti-playlist me-1"></i>@endif{{ \App\Support\ContentTypeHelper::label($type) }}</span>
 @endif

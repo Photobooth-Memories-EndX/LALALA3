@@ -64,7 +64,7 @@
             @if(auth()->user()->canAccessManageModule('content_repository'))
                 @include('main.manage.components.admin-menu-card', [
                     'title' => 'Content Repository',
-                    'description' => 'Manage learning materials, including videos, YouTube content, documents, SOPs, thumbnails, authors, and publication status.',
+                    'description' => 'Manage learning materials, including videos, MOOC content, documents, SOPs, thumbnails, authors, and publication status.',
                     'url' => url('manage/content'),
                     'button' => 'Manage Content',
                     'icon' => 'ti ti-book-2'

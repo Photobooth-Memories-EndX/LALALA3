@@ -5,6 +5,8 @@
         $url_dropzone_css = asset('Tabler/dist/libs/dropzone/dist/dropzone.css?1684106062');
         $url_dropzone_js = asset('Tabler/dist/libs/dropzone/dist/dropzone-min.js?1684106062');
         $url_litepicker = asset('Tabler/dist/libs/litepicker/dist/litepicker.js?1684106062');
+        $url_select = asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062');
+        $url_vendor = asset('Tabler/dist/css/tabler-vendors.min.css?1684106062');
     @endphp
 
     @include('main.monitoring.components.style')
@@ -12,18 +14,20 @@
     {{-- Page Header --}}
     <div class="page-header d-print-none mb-3">
         <div class="container-xl">
-            <div class="row align-items-center">
-                <div class="col">
-                    <div class="page-pretitle">Manage / Content</div>/
-                    <h2 class="owl-page-title mb-1">{{ $title }}</h2>
-                    <div class="owl-page-subtitle">Complete the form below to add new content.</div>
-                </div>
-                <div class="col-auto ms-auto">
-                    <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
-                        <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('content.index') }}">Content</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
-                    </ol>
+            <div style="max-width: 1100px; margin: 0 auto;">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Manage / Content</div>
+                        <h2 class="owl-page-title mb-1">{{ $title }}</h2>
+                        <div class="owl-page-subtitle">Complete the form below to add new content.</div>
+                    </div>
+                    <div class="col-auto ms-auto">
+                        <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item"><a href="#">Manage</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('content.index') }}">Content</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
         </div>
@@ -31,230 +35,55 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <form id="contentCreateForm" action="{{ route('content.store') }}" method="post" autocomplete="off">
-                @csrf
-                @method('POST')
+            <div style="max-width: 1100px; margin: 0 auto;">
+                <form id="contentCreateForm" action="{{ route('content.store') }}" method="post" autocomplete="off">
+                    @csrf
+                    @method('POST')
 
-                <div class="row g-3">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            {{-- ① Main Information --}}
+                            @include('main.content.components.section-main-information', [
+                                'mode' => 'create',
+                                'stepNumber' => 1,
+                                'classification' => $classification
+                            ])
 
-                    {{-- Kolom Kiri: Konten Utama --}}
-                    <div class="col-lg-8">
+                            {{-- ② Content Files --}}
+                            @include('main.content.components.section-content-files', [
+                                'mode' => 'create',
+                                'stepNumber' => 2
+                            ])
 
-                        {{-- Main Information --}}
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Main Information</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-8">
-                                        <label class="form-label required">Title</label>
-                                        <input type="text" class="form-control" placeholder="Enter title"
-                                            name="title" id="title" required>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label required">Type</label>
-                                        <select name="type" id="type" class="form-select" onchange="typevalue(this)" required>
-                                            <option value="">-- Select Type --</option>
-                                            <option value="Video" @selected(old('type') === 'Video')>Video</option>
-                                            <option value="Document" @selected(old('type') === 'Document')>Document</option>
-                                            <option value="YouTube" @selected(old('type') === 'YouTube')>YouTube</option>
-                                            <option value="SOP/Regulation" @selected(old('type') === 'SOP/Regulation')>SOP/Regulation</option>
-                                        </select>
-                                    </div>
+                            {{-- ③ Metadata Content --}}
+                            @include('main.content.components.section-metadata', [
+                                'mode' => 'create',
+                                'stepNumber' => 3
+                            ])
 
-                                    <div class="col-12" style="display: none;" id="linkrow">
-                                        <label class="form-label">YouTube Link</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-red" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                    <path d="M2 8a4 4 0 0 1 4 -4h12a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-8z"></path>
-                                                    <path d="M10 9l5 3l-5 3z"></path>
-                                                </svg>
-                                            </span>
-                                            <input type="text" class="form-control" placeholder="https://www.youtube.com/watch?v=..."
-                                                name="link" id="link">
-                                        </div>
-                                    </div>
+                            {{-- ④ Live Preview --}}
+                            @include('main.content.components.section-preview', [
+                                'mode' => 'create',
+                                'stepNumber' => 4
+                            ])
 
-                                    <div class="col-12">
-                                        <label class="form-label required">Content Description</label>
-                                        <textarea name="description" id="description" rows="6" class="form-control" required></textarea>
-                                    </div>
-                                </div>
-                            </div>
+                            {{-- ⑤ Assignment & Action --}}
+                            @include('main.content.components.section-action', [
+                                'mode' => 'create',
+                                'stepNumber' => 5,
+                                'user' => $user ?? []
+                            ])
                         </div>
-
-                        {{-- Media / File --}}
-                        <div class="card owl-main-card">
-                            <div class="card-header">
-                                <h3 class="card-title">Media / File</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Upload File</label>
-                                    <small class="text-muted d-block mb-2">Format: PDF, MP4, AVI — maks. 1 file, 1 GB</small>
-                                    <div class="dropzone" id="document-dropzone">
-                                        <div class="fallback"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="form-label">Upload Thumbnail</label>
-                                    <small class="text-muted d-block mb-2">Format: JPG only</small>
-                                    <div class="dropzone" id="thumbnail-dropzone">
-                                        <div class="fallback"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
-
-                    {{-- Kolom Kanan: Pengaturan & Aksi --}}
-                    <div class="col-lg-4">
-
-                        {{-- Klasifikasi --}}
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Klasifikasi</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label required">Classification</label>
-                                    <select name="classification" id="classification" class="form-select" required>
-                                        <option value="">-- Select Classification --</option>
-                                        @foreach ($classification as $list)
-                                            <option value="{{ $list->id }}">{{ $list->classification_name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="form-label">Duration (HH:MM:SS)</label>
-                                    <input type="text" class="form-control @error('duration') is-invalid @enderror" placeholder="00:06:26"
-                                        name="duration" id="duration"
-                                        value="{{ old('duration') }}"
-                                        pattern="^(\d+:[0-5]\d|\d{2}:[0-5]\d:[0-5]\d)$"
-                                        autocomplete="off">
-                                    @error('duration')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                    <small class="form-hint">Format: HH:MM:SS. Legacy mm:ss input is still accepted and will be saved as HH:MM:SS.</small>
-                                </div>
-                                @include('main.content.components.page-duration-field')
-                            </div>
-                        </div>
-
-                        {{-- Pengaturan Publikasi --}}
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Pengaturan Publikasi</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label required">Date</label>
-                                    <div class="input-icon">
-                                        <span class="input-icon-addon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
-                                                <path d="M16 3v4" />
-                                                <path d="M8 3v4" />
-                                                <path d="M4 11h16" />
-                                                <path d="M11 15h1" />
-                                                <path d="M12 15v3" />
-                                            </svg>
-                                        </span>
-                                        <input class="form-control" placeholder="Select a date"
-                                            id="datepicker-icon-prepend" name="date"
-                                            value="{{ date('Y-m-d') }}" required>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label required">Author</label>
-                                    <input type="text" class="form-control" placeholder="Enter author"
-                                        name="author" id="author" required>
-                                </div>
-                                <div>
-                                    <label class="form-check cursor-pointer">
-                                        <input type="hidden" name="playlistonly" value="N">
-                                        <input class="form-check-input" type="checkbox" name="playlistonly" value="Y">
-                                        <span class="form-check-label">Only show on Playlist</span>
-                                    </label>
-                                    <small class="form-hint d-block mt-1">This content is only available within playlists and will not appear in the general content list.</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Deadline Content --}}
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Deadline Content</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-check cursor-pointer">
-                                        <input type="hidden" name="has_deadline" value="0">
-                                        <input class="form-check-input" type="checkbox" id="has_deadline_content"
-                                            name="has_deadline" value="1"
-                                            @if(old('has_deadline')) checked @endif>
-                                        <span class="form-check-label fw-medium">Set Deadline?</span>
-                                    </label>
-                                    <small class="form-hint d-block mt-1">Optional. If enabled, specify the date range.</small>
-                                </div>
-                                <div id="content-deadline-fields" style="{{ old('has_deadline') ? '' : 'display:none;' }}">
-                                    <div class="mb-2">
-                                        <label class="form-label">From Date</label>
-                                        <input type="date" class="form-control" name="from_date" id="content_from_date"
-                                            value="{{ old('from_date') }}">
-                                    </div>
-                                    <div>
-                                        <label class="form-label">To Date</label>
-                                        <input type="date" class="form-control" name="to_date" id="content_to_date"
-                                            value="{{ old('to_date') }}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Live Preview --}}
-                        @include('main.content.components.upload-preview')
-
-                        {{-- Action Buttons --}}
-                        <div class="card owl-main-card">
-                            <div class="card-body">
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-success" name="action" value="save" formnovalidate>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"></path>
-                                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                            <path d="M14 4l0 4l-6 0l0 -4"></path>
-                                        </svg>
-                                        Save Content (Draft)
-                                    </button>
-                                    <button type="submit" class="btn btn-primary" name="action" value="publish">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M7 11v8a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1h3a4 4 0 0 0 4 -4v-1a2 2 0 0 1 4 0v5h3a2 2 0 0 1 2 2l-1 5a2 3 0 0 1 -2 2h-7a3 3 0 0 1 -3 -3"></path>
-                                        </svg>
-                                        Save & Publish
-                                    </button>
-                                    <a href="{{ route('content.index') }}" class="btn btn-light">Cancel</a>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-
 @endsection
 
 @section('style')
     <link rel="stylesheet" href="{{ $url_dropzone_css }}">
+    <link rel="stylesheet" href="{{ $url_vendor }}" />
     <style>
         #overlay {
             position: absolute;
@@ -266,12 +95,21 @@
             border-radius: 0.25rem;
             z-index: 1000;
         }
+
+        .dropzone {
+            min-height: 100px !important;
+            padding: 14px !important;
+            border: 2px dashed var(--tblr-border-color, #dce1e7) !important;
+            border-radius: var(--tblr-border-radius, .375rem) !important;
+            background: var(--tblr-bg-surface-secondary, rgba(98, 105, 118, .03)) !important;
+        }
     </style>
 @endsection
 
 @section('script')
     <script src="{{ $url_dropzone_js }}"></script>
     <script src="{{ $url_litepicker }}"></script>
+    <script src="{{ $url_select }}"></script>
     <script src="{{ asset('js/pdf.min.js') }}"></script>
     <script src="{{ asset('js/content-page-duration.js') }}"></script>
     <script>
@@ -380,6 +218,28 @@
                 buttonText: {
                     previousMonth: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6" /></svg>`,
                     nextMonth: `<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>`,
+                },
+            }));
+
+            var el;
+            window.TomSelect && (new TomSelect(el = document.getElementById('select-user'), {
+                copyClassesToDropdown: false,
+                dropdownParent: 'body',
+                controlInput: '<input>',
+                plugins: ['remove_button'],
+                render: {
+                    item: function(data, escape) {
+                        if (data.customProperties) {
+                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                        }
+                        return '<div>' + escape(data.text) + '</div>';
+                    },
+                    option: function(data, escape) {
+                        if (data.customProperties) {
+                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                        }
+                        return '<div>' + escape(data.text) + '</div>';
+                    },
                 },
             }));
         });

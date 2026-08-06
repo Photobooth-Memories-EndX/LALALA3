@@ -201,7 +201,7 @@
                                 <select name="type" class="form-select form-select-sm">
                                     <option value="">All Types</option>
                                     @foreach ($types as $t)
-                                        <option value="{{ $t }}" @selected(request('type') == $t)>{{ $t }}</option>
+                                        <option value="{{ $t }}" @selected(request('type') == $t)>{{ \App\Support\ContentTypeHelper::label($t) }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -332,7 +332,7 @@
                                                         'SOP/Regulation' => 'purple',
                                                     ][$list->type] ?? 'secondary';
                                                 @endphp
-                                                <span class="badge bg-{{ $typeColor }}-lt">{{ $list->type }}</span>
+                                                <span class="badge bg-{{ $typeColor }}-lt">{{ \App\Support\ContentTypeHelper::label($list->type) }}</span>
                                             </td>
                                             <td>{{ $list->classification->classification_name ?? '-' }}</td>
                                             <td>{{ \App\Support\DurationFormatter::format($list->duration) }}</td>

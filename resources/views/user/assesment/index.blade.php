@@ -42,9 +42,11 @@
                                 $isCompleted = $finalResult != null;
                                 $isPassed = $finalResult && $finalResult->pass;
 
-                                $typeLabel = $assessment->type == 'trainingplan'
-                                    ? 'Playlist'
-                                    : ucwords(str_replace('_', ' ', $assessment->type ?? '-'));
+                                $typeLabel = match (strtolower((string) ($assessment->type ?? ''))) {
+                                    'trainingplan', 'playlist' => 'Playlist',
+                                    'youtube'                  => 'MOOC',
+                                    default                    => ucwords(str_replace('_', ' ', $assessment->type ?? '-')),
+                                };
                             @endphp
 
                             <tr>

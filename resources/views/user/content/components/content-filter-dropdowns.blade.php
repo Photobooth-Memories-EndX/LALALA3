@@ -18,7 +18,7 @@
         <option value="">Type</option>
         <option value="Document" {{ $filterType == 'Document' ? 'selected' : '' }}>Document</option>
         <option value="Video" {{ $filterType == 'Video' ? 'selected' : '' }}>Video</option>
-        <option value="YouTube" {{ $filterType == 'YouTube' ? 'selected' : '' }}>YouTube</option>
+        <option value="YouTube" {{ $filterType == 'YouTube' ? 'selected' : '' }}>MOOC</option>
     </select>
 </div>
 
