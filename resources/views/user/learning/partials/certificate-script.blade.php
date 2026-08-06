@@ -238,25 +238,19 @@
             certificate_filter_type: 'all',
             certificate_filter_year: 'all',
             certificate_filter_month: 'all',
-            certificate_filter_status: 'all',
-            certificate_number: '',
-            certificate_credential: '',
-            certificate_participant: '',
             certificate_issuer: '',
-            certificate_target: '',
             certificate_date_from: '',
             certificate_date_to: '',
-            certificate_sort: 'issued_desc',
+            certificate_expiration_status: 'all',
+            certificate_sort: 'all',
             certificate_search: ''
         };
         var certificateAdvancedNames = [
-            'certificate_number',
-            'certificate_credential',
-            'certificate_participant',
             'certificate_issuer',
-            'certificate_target',
             'certificate_date_from',
-            'certificate_date_to'
+            'certificate_date_to',
+            'certificate_expiration_status',
+            'certificate_sort'
         ];
 
         // Keep one stable object across AJAX partial reloads. The URL remains the
@@ -334,7 +328,7 @@
         }
 
         function restoreCertificateInputs() {
-            $('#certificateSearch').val(certificateFilterState.certificate_search);
+            $('#certificateSearch').val(certificateFilterState.certificate_search || '');
 
             $('#certificateFilterBar [data-certificate-filter]').each(function () {
                 var $dropdown = $(this);
@@ -343,24 +337,31 @@
                 setQuickValue($dropdown, value, quickFilterLabel($dropdown, value));
             });
 
-            certificateAdvancedNames.forEach(function (name) {
-                $('[name="' + name + '"]').val(certificateFilterState[name] || '');
-            });
+            $('#certificate_issuer').val(certificateFilterState.certificate_issuer || '');
+            $('#certificate_date_from').val(certificateFilterState.certificate_date_from || '');
+            $('#certificate_date_to').val(certificateFilterState.certificate_date_to || '');
 
-            $('#certificateAdvancedType').val(certificateFilterState.certificate_filter_type || 'all');
-            $('#certificateSort').val(certificateFilterState.certificate_sort || 'issued_desc');
+            var expStatus = certificateFilterState.certificate_expiration_status || 'all';
+            $('input[name="certificate_expiration_status"]')
+                .prop('checked', false)
+                .filter('[value="' + expStatus + '"]')
+                .prop('checked', true);
+
+            var sortVal = certificateFilterState.certificate_sort || 'all';
+            $('#certificateSort').val(sortVal);
         }
 
         function pendingAdvancedCount() {
-            var count = certificateAdvancedNames.reduce(function (total, name) {
-                return total + ($.trim($('[name="' + name + '"]').val()) !== '' ? 1 : 0);
-            }, 0);
+            var count = 0;
+            if ($.trim($('#certificate_issuer').val()) !== '') count++;
+            if ($.trim($('#certificate_date_from').val()) !== '') count++;
+            if ($.trim($('#certificate_date_to').val()) !== '') count++;
 
-            // Type is also a Fast Filter, so it is intentionally not counted.
-            // Sorting is modal-only and follows Learning On Going's non-default count.
-            if (String($('#certificateSort').val() || 'issued_desc') !== 'issued_desc') {
-                count++;
-            }
+            var expStatus = $('input[name="certificate_expiration_status"]:checked').val() || 'all';
+            if (expStatus !== 'all') count++;
+
+            var sortVal = $('#certificateSort').val() || 'all';
+            if (sortVal !== 'all') count++;
 
             return count;
         }
@@ -381,12 +382,11 @@
                 nextState[name] = String($(this).val() || 'all');
             });
 
-            certificateAdvancedNames.forEach(function (name) {
-                nextState[name] = $.trim($('[name="' + name + '"]').val());
-            });
-
-            nextState.certificate_filter_type = String($('#certificateAdvancedType').val() || nextState.certificate_filter_type || 'all');
-            nextState.certificate_sort = String($('#certificateSort').val() || 'issued_desc');
+            nextState.certificate_issuer = $.trim($('#certificate_issuer').val() || $('[name="certificate_issuer"]').val() || '');
+            nextState.certificate_date_from = $.trim($('#certificate_date_from').val() || $('[name="certificate_date_from"]').val() || '');
+            nextState.certificate_date_to = $.trim($('#certificate_date_to').val() || $('[name="certificate_date_to"]').val() || '');
+            nextState.certificate_expiration_status = $('input[name="certificate_expiration_status"]:checked').val() || 'all';
+            nextState.certificate_sort = $('#certificateSort').val() || 'all';
             nextState.certificate_search = $.trim($('#certificateSearch').val());
 
             return replaceCertificateState(nextState);
@@ -430,20 +430,39 @@
             event.preventDefault();
             var $item = $(this);
             var $dropdown = $item.closest('[data-certificate-filter]');
-            setQuickValue($dropdown, String($item.data('value')), $.trim($item.text()));
+            var val = String($item.data('value'));
+            setQuickValue($dropdown, val, $.trim($item.text()));
 
-            if (String($dropdown.data('certificate-filter')) === 'type') {
-                $('#certificateAdvancedType').val(String($item.data('value')));
+            var filterType = String($dropdown.data('certificate-filter'));
+            if (filterType === 'type') {
+                $('input[name="certificate_filter_type"]').prop('checked', false).filter('[value="' + val + '"]').prop('checked', true);
+                $('#certificateAdvancedType').val(val);
+            } else if (filterType === 'year') {
+                $('input[name="certificate_filter_year"]').prop('checked', false).filter('[value="' + val + '"]').prop('checked', true);
+            } else if (filterType === 'month') {
+                $('input[name="certificate_filter_month"]').prop('checked', false).filter('[value="' + val + '"]').prop('checked', true);
             }
         });
 
-        $('#certificateAdvancedType').off('.learningCertificate').on('change.learningCertificate', function () {
-            var value = String($(this).val());
-            var label = $.trim($(this).find('option:selected').text());
-            setQuickValue($('#certificateFilterBar [data-certificate-filter="type"]'), value, label);
-        });
+        $(document).off('change.learningCertificateRadio')
+            .on('change.learningCertificateRadio', 'input[name="certificate_filter_type"], input[name="certificate_filter_year"], input[name="certificate_filter_month"], input[name="certificate_expiration_status"]', function () {
+                var name = this.name;
+                var val = String($(this).val());
+                if (name === 'certificate_filter_type') {
+                    var label = $(this).next('.form-check-label').text() || 'All';
+                    setQuickValue($('#certificateFilterBar [data-certificate-filter="type"]'), val, $.trim(label));
+                } else if (name === 'certificate_filter_year') {
+                    setQuickValue($('#certificateFilterBar [data-certificate-filter="year"]'), val, val === 'all' ? 'All' : val);
+                } else if (name === 'certificate_filter_month') {
+                    var label = $(this).next('.form-check-label').text() || 'All';
+                    setQuickValue($('#certificateFilterBar [data-certificate-filter="month"]'), val, $.trim(label));
+                }
+                updateAdvancedCount();
+            });
 
-        $('.certificate-advanced-input').off('.learningCertificate').on('input.learningCertificate change.learningCertificate', updateAdvancedCount);
+        $('.certificate-advanced-input, #certificateSort, #certificate_issuer, #certificate_date_from, #certificate_date_to')
+            .off('.learningCertificate')
+            .on('input.learningCertificate change.learningCertificate', updateAdvancedCount);
         $('#certificateSort').off('.learningCertificate').on('change.learningCertificate', updateAdvancedCount);
         $('#certificateApplyFilter, .certificate-apply-filter').off('.learningCertificate').on('click.learningCertificate', applyCertificateFilters);
 
@@ -504,6 +523,91 @@
             document.body.removeChild(input);
             copied();
         });
+
+        function showCertificateToast(message, type) {
+            type = type || 'success';
+            if (window.Toastify) {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    gravity: 'top',
+                    position: 'right'
+                }).showToast();
+                return;
+            }
+
+            var bgClass = type === 'success' ? 'bg-success text-white' : 'bg-danger text-white';
+            var icon = type === 'success' ? 'ti ti-check' : 'ti ti-alert-circle';
+
+            var toastHtml = '<div class="toast align-items-center ' + bgClass + ' border-0 show" role="alert" aria-live="assertive" aria-atomic="true">' +
+                '<div class="d-flex">' +
+                    '<div class="toast-body d-flex align-items-center gap-2">' +
+                        '<i class="' + icon + '" aria-hidden="true"></i>' +
+                        '<span>' + message + '</span>' +
+                    '</div>' +
+                    '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" data-dismiss="toast" aria-label="Close"></button>' +
+                '</div>' +
+            '</div>';
+
+            var $container = $('#owl-toast-wrapper');
+            if (!$container.length) {
+                $container = $('<div id="owl-toast-wrapper" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;"></div>').appendTo('body');
+            }
+
+            var $toast = $(toastHtml).appendTo($container);
+
+            setTimeout(function () {
+                $toast.fadeOut(300, function () {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+
+        async function shareCertificate(url, title, text) {
+            var shareUrl = url || window.location.href;
+            var shareTitle = title || 'My OWL Learning Certificate';
+            var shareText = text || 'I have completed this learning and earned an official certificate from OWL Learning Hub.';
+
+            var shareData = {
+                title: shareTitle,
+                text: shareText,
+                url: shareUrl
+            };
+
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(shareUrl);
+                    } else {
+                        var input = document.createElement('textarea');
+                        input.value = shareUrl;
+                        input.style.position = 'fixed';
+                        input.style.opacity = '0';
+                        document.body.appendChild(input);
+                        input.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(input);
+                    }
+                    showCertificateToast('Certificate link copied to clipboard.', 'success');
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Error sharing certificate:', err);
+                }
+            }
+        }
+
+        $(document).off('click.learningCertificateShare', '.btn-share-certificate')
+            .on('click.learningCertificateShare', '.btn-share-certificate', function (event) {
+                event.preventDefault();
+                var $button = $(this);
+                var url = String($button.data('url') || '');
+                var title = String($button.data('title') || '');
+                var text = String($button.data('text') || '');
+                shareCertificate(url, title, text);
+            });
 
         $('[data-toggle="popover"].certificate-playlist-badge').popover({
             container: 'body',

@@ -597,6 +597,14 @@
         line-height: 1;
     }
 
+    .certificate-action-button.btn-share-certificate i,
+    .btn-share-certificate i {
+        font-size: 13px;
+        line-height: 1;
+        transform: scale(0.85);
+        opacity: 0.9;
+    }
+
     .certificate-col-no .certificate-sort-heading {
         gap: 0;
     }

@@ -3,13 +3,13 @@
     :root {
         --learning-hero-background:
             linear-gradient(
-                135deg,
-                #001b44 0%,
-                #002b66 20%,
-                #004b99 45%,
-                #2a7bd1 70%,
-                #82b8f5 88%,
-                #dbeeff 100%
+                90deg,
+                #0b2f6b 0%,
+                #004b99 24%,
+                #2563eb 48%,
+                #60a5fa 70%,
+                rgba(191, 219, 254, 0.45) 86%,
+                rgba(255, 255, 255, 0) 100%
             );
         --learning-hero-radius: 20px;
         --learning-stat-space-1: .25rem;
@@ -17,25 +17,21 @@
         --learning-stat-space-3: .75rem;
         --learning-stat-panel-width: 22.5rem;
         --learning-stat-panel-height: 8rem;
-        --learning-stat-panel-radius: 14px;
+        --learning-stat-panel-radius: 18px;
         --learning-stat-card-radius: 8px;
-        --learning-stat-panel-padding: 8px;
+        --learning-stat-panel-padding: 10px;
         --learning-stat-panel-gap: 8px;
-        --learning-stat-panel-bg: rgba(0, 27, 68, .42);
-        --learning-stat-panel-border: rgba(255, 255, 255, .18);
-        --learning-stat-panel-shadow:
-            0 6px 14px rgba(0, 27, 68, .18),
-            0 2px 4px rgba(0, 27, 68, .10);
+        --learning-stat-panel-bg: #0a2540;
+        --learning-stat-panel-border: rgba(255, 255, 255, 0.14);
+        --learning-stat-panel-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
     }
 
     /* 2. Base Hero and Default Theme */
     .learning-module-hero {
         --hero-background: var(--learning-hero-background);
-        --hero-panel-background: rgba(5, 80, 125, .2);
-        --hero-panel-border: rgba(255, 255, 255, .18);
-        --hero-panel-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, .08),
-            0 8px 20px rgba(5, 80, 125, .14);
+        --hero-panel-background: #0a2540;
+        --hero-panel-border: rgba(255, 255, 255, 0.14);
+        --hero-panel-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
         --hero-panel-transform: none;
         --hero-card-border: rgba(255, 255, 255, .12);
         --hero-card-radius: var(--learning-stat-card-radius);
@@ -109,8 +105,8 @@
         background: var(--hero-panel-background);
         box-shadow: var(--hero-panel-shadow);
         transform: var(--hero-panel-transform);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 
     /* 6. Layout Variants */
@@ -148,10 +144,10 @@
         grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
         gap: var(--widget-gap);
         padding: var(--learning-stat-space-2);
-        border: 1px solid rgba(255, 255, 255, .14);
+        border: 1px solid var(--hero-panel-border);
         border-radius: var(--learning-stat-panel-radius);
-        background: rgba(5, 80, 125, .2);
-        box-shadow: none;
+        background: var(--hero-panel-background);
+        box-shadow: var(--hero-panel-shadow);
         filter: none;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;

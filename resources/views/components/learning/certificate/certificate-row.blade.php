@@ -23,6 +23,7 @@
             ? '<span class="text-muted">No content available.</span>'
             : '<ol>' . $playlistContents->map(fn ($title) => '<li>' . e($title) . '</li>')->implode('') . '</ol>')
         . '</div>';
+    $shareUrl = $certificate->credential_url ?: ($certificate->verify_url ?: '');
 @endphp
 
 <tr class="certificate-row" data-certificate-id="{{ $certificate->id }}">
@@ -76,16 +77,22 @@
                data-certificate-preview-url="{{ route('certificate.preview', $certificate->credential_id) }}"
                data-certificate-preview-title="{{ $certificate->title }}"
                aria-haspopup="dialog"
-               title="View Detail"
-               aria-label="View Detail">
+               title="Preview Certificate"
+               aria-label="Preview Certificate">
                 <i class="ti ti-eye" aria-hidden="true"></i>
             </a>
             <a class="btn certificate-action-button text-green" href="{{ route('certificate.download.pdf', $certificate->credential_id) }}" title="Download Certificate" aria-label="Download Certificate">
                 <i class="ti ti-download" aria-hidden="true"></i>
             </a>
-            <a class="btn certificate-action-button text-linkedin" href="{{ $certificate->linkedin_url }}" target="_blank" rel="noopener" title="Add to LinkedIn" aria-label="Add to LinkedIn">
-                <i class="ti ti-brand-linkedin" aria-hidden="true"></i>
-            </a>
+            <button type="button"
+                    class="btn certificate-action-button text-azure btn-share-certificate"
+                    data-url="{{ $shareUrl }}"
+                    data-title="My OWL Learning Certificate"
+                    data-text="I have completed this learning and earned an official certificate from OWL Learning Hub."
+                    title="Share Certificate"
+                    aria-label="Share Certificate">
+                <i class="fas fa-share-alt" aria-hidden="true"></i>
+            </button>
         </div>
     </td>
 </tr>

@@ -16,10 +16,12 @@
     /* 2. Buat gradasi memudar lebih lembut (smooth gradient stops) */
     --hero-overlay: linear-gradient(
         90deg,
-        rgba(0, 27, 68, .96) 0%,
-        rgba(var(--kp-hero-primary-rgb), .88) 50%,
-        rgba(var(--kp-hero-light-rgb), .46) 80%,
-        rgba(var(--kp-hero-light-rgb), 0) 100%
+        #0b2f6b 0%,
+        #004b99 24%,
+        #2563eb 48%,
+        #60a5fa 70%,
+        rgba(191, 219, 254, 0.45) 86%,
+        rgba(255, 255, 255, 0) 100%
     );
 
     display: flex;

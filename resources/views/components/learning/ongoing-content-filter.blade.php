@@ -326,12 +326,12 @@
 
                         <div class="modal-body pt-2">
                             <p class="text-muted small mb-4">
-                                Semua filter dapat dikombinasikan dengan pencarian &amp; chip type di atas.
+                                All filters can be combined with the search. &amp; the filter chip above.
                             </p>
 
                             {{-- Type (juga tersedia sebagai chip di atas) --}}
                             @if ($typeOptions->isNotEmpty())
-                                <div class="learning-filter-group">
+                                <div class="learning-filter-group d-none">
                                     <div class="fw-semibold mb-2">Type</div>
                                     <div class="d-flex flex-wrap gap-3">
                                         @foreach ($typeOptions as $typeOption)
@@ -344,10 +344,10 @@
                                         @endforeach
                                     </div>
                                 </div>
-                                <hr class="my-3">
+                                <hr class="my-3 d-none">
                             @endif
 
-                            {{-- Learning Program (single: ongoing_status) --}}
+                            {{-- 1. Learning Program (single: ongoing_status) --}}
                             <div class="learning-filter-group">
                                 <div class="fw-semibold mb-2">Learning Program</div>
                                 <div class="d-flex flex-wrap gap-3">
@@ -364,8 +364,107 @@
 
                             <hr class="my-3">
 
-                            {{-- Year (single: ongoing_year, otomatis dari database) --}}
+                            {{-- 2. Learning Progress (multi: ongoing_progress[]) --}}
                             <div class="learning-filter-group">
+                                <div class="fw-semibold mb-2">Learning Progress</div>
+                                <div class="d-flex flex-wrap gap-3">
+                                    @foreach ($progressOptions as $val => $label)
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="ongoing_progress[]" value="{{ $val }}"
+                                                   {{ in_array($val, $selProg) ? 'checked' : '' }}>
+                                            <span class="form-check-label">{{ $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            {{-- 3. Sort By (single: ongoing_activity_sort) --}}
+                            <div class="learning-filter-group">
+                                <label class="form-label fw-semibold mb-2" for="ongoing_activity_sort">Sort By</label>
+                                <select class="form-select" name="ongoing_activity_sort" id="ongoing_activity_sort">
+                                    <option value="newest_activity" {{ $curActivitySort === 'newest_activity' ? 'selected' : '' }}>All</option>
+                                    <option value="oldest_activity" {{ $curActivitySort === 'oldest_activity' ? 'selected' : '' }}>Oldest</option>
+                                    <option value="newest_activity" {{ $curActivitySort === 'newest_activity' ? 'selected' : '' }}>Newest</option>
+                                    <option value="duration_shortest" {{ $curActivitySort === 'duration_shortest' ? 'selected' : '' }}>Ascending</option>
+                                    <option value="duration_longest" {{ $curActivitySort === 'duration_longest' ? 'selected' : '' }}>Descending</option>
+                                </select>
+                            </div>
+
+                            <hr class="my-3">
+
+                            {{-- 4. Period (Date Range) --}}
+                            <div class="learning-filter-group">
+                                <div class="fw-semibold mb-2">Period</div>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="ongoing_date_from">From Date</label>
+                                        <div class="input-icon">
+                                            <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
+                                            <input class="form-control" id="ongoing_date_from" name="ongoing_date_from" type="date"
+                                                   value="{{ request('ongoing_date_from', request('ongoing_from_date')) }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="ongoing_date_to">To Date</label>
+                                        <div class="input-icon">
+                                            <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
+                                            <input class="form-control" id="ongoing_date_to" name="ongoing_date_to" type="date"
+                                                   value="{{ request('ongoing_date_to', request('ongoing_to_date')) }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            {{-- 5. Duration (multi: ongoing_duration[]) --}}
+                            <div class="learning-filter-group">
+                                <div class="fw-semibold mb-2">Duration</div>
+                                <div class="d-flex flex-wrap gap-3">
+                                    @foreach ($durationOptions as $val => $label)
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="ongoing_duration[]" value="{{ $val }}"
+                                                   {{ in_array($val, $selDur) ? 'checked' : '' }}>
+                                            <span class="form-check-label">{{ $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            {{-- 6. Learning Hour (single: ongoing_learning_hour) --}}
+                            @php
+                                $learningHourOptions = [
+                                    'all' => 'All',
+                                    'lt1' => '< 1 Hour',
+                                    '1-3' => '1 – 3 Hours',
+                                    'gt3' => '> 3 Hours',
+                                ];
+                                $curLearningHour = request('ongoing_learning_hour', 'all');
+                            @endphp
+                            <div class="learning-filter-group">
+                                <div class="fw-semibold mb-2">Learning Hour</div>
+                                <div class="d-flex flex-wrap gap-3">
+                                    @foreach ($learningHourOptions as $val => $label)
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="ongoing_learning_hour" value="{{ $val }}"
+                                                   {{ $curLearningHour === $val ? 'checked' : '' }}>
+                                            <span class="form-check-label">{{ $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            {{-- Hidden Legacy Filter Sections (Preserving HTML, Blade Variables, IDs, Inputs, JS Hooks) --}}
+
+                            {{-- Year --}}
+                            <div class="learning-filter-group d-none">
                                 <div class="fw-semibold mb-2">Year</div>
                                 <div class="d-flex flex-wrap gap-3">
                                     <label class="form-check">
@@ -384,28 +483,10 @@
                                     @endforeach
                                 </div>
                             </div>
+                            <hr class="my-3 d-none">
 
-                            <hr class="my-3">
-
-                            {{-- Activity Sort (single: ongoing_activity_sort) --}}
-                            <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Activity Sort</div>
-                                <div class="d-flex flex-wrap gap-3">
-                                    @foreach ($activitySortOptions as $val => $label)
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio"
-                                                   name="ongoing_activity_sort" value="{{ $val }}"
-                                                   {{ $curActivitySort === $val ? 'checked' : '' }}>
-                                            <span class="form-check-label">{{ $label }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <hr class="my-3">
-
-                            {{-- Completion Status / Progress (single: ongoing_progress_sort) --}}
-                            <div class="learning-filter-group">
+                            {{-- Completion Status / Progress --}}
+                            <div class="learning-filter-group d-none">
                                 <div class="fw-semibold mb-2">Completion Status / Progress</div>
                                 <div class="d-flex flex-wrap gap-3">
                                     @foreach ($progressSortOptions as $val => $label)
@@ -418,11 +499,10 @@
                                     @endforeach
                                 </div>
                             </div>
+                            <hr class="my-3 d-none">
 
-                            <hr class="my-3">
-
-                            {{-- Learning Status (multi: ongoing_learning_status[]) --}}
-                            <div class="learning-filter-group">
+                            {{-- Learning Status --}}
+                            <div class="learning-filter-group d-none">
                                 <div class="fw-semibold mb-2">Learning Status</div>
                                 <div class="d-flex flex-wrap gap-3">
                                     @foreach ($learningStatusOptions as $val => $label)
@@ -435,28 +515,10 @@
                                     @endforeach
                                 </div>
                             </div>
+                            <hr class="my-3 d-none">
 
-                            <hr class="my-3">
-
-                            {{-- Progress (multi: ongoing_progress[]) --}}
-                            <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Progress</div>
-                                <div class="d-flex flex-wrap gap-3">
-                                    @foreach ($progressOptions as $val => $label)
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="checkbox"
-                                                   name="ongoing_progress[]" value="{{ $val }}"
-                                                   {{ in_array($val, $selProg) ? 'checked' : '' }}>
-                                            <span class="form-check-label">{{ $label }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <hr class="my-3">
-
-                            {{-- Month (multi: ongoing_month[]) --}}
-                            <div class="learning-filter-group">
+                            {{-- Month --}}
+                            <div class="learning-filter-group d-none">
                                 <div class="fw-semibold mb-2">Month</div>
                                 <div class="row g-2">
                                     @foreach ($monthOptions as $num => $label)
@@ -471,28 +533,10 @@
                                     @endforeach
                                 </div>
                             </div>
+                            <hr class="my-3 d-none">
 
-                            <hr class="my-3">
-
-                            {{-- Duration (multi: ongoing_duration[]) --}}
-                            <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Duration</div>
-                                <div class="d-flex flex-wrap gap-3">
-                                    @foreach ($durationOptions as $val => $label)
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="checkbox"
-                                                   name="ongoing_duration[]" value="{{ $val }}"
-                                                   {{ in_array($val, $selDur) ? 'checked' : '' }}>
-                                            <span class="form-check-label">{{ $label }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <hr class="my-3">
-
-                            {{-- Current Learning Time (multi: ongoing_current_time[]) --}}
-                            <div class="learning-filter-group">
+                            {{-- Current Learning Time --}}
+                            <div class="learning-filter-group d-none">
                                 <div class="fw-semibold mb-2">Current Learning Time</div>
                                 <div class="d-flex flex-wrap gap-3">
                                     @foreach ($currentTimeOptions as $val => $label)
@@ -505,11 +549,10 @@
                                     @endforeach
                                 </div>
                             </div>
+                            <hr class="my-3 d-none">
 
-                            <hr class="my-3">
-
-                            {{-- Last Page (multi: ongoing_last_page[]) --}}
-                            <div class="learning-filter-group">
+                            {{-- Last Page --}}
+                            <div class="learning-filter-group d-none">
                                 <div class="fw-semibold mb-2">Last Page</div>
                                 <div class="d-flex flex-wrap gap-3">
                                     @foreach ($lastPageOptions as $val => $label)
@@ -522,11 +565,10 @@
                                     @endforeach
                                 </div>
                             </div>
+                            <hr class="my-3 d-none">
 
-                            <hr class="my-3">
-
-                            {{-- Total Pages (multi: ongoing_total_pages[]) --}}
-                            <div class="learning-filter-group">
+                            {{-- Total Pages --}}
+                            <div class="learning-filter-group d-none">
                                 <div class="fw-semibold mb-2">Total Pages</div>
                                 <div class="d-flex flex-wrap gap-3">
                                     @foreach ($totalPagesOptions as $val => $label)

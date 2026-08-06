@@ -185,21 +185,33 @@
                             </h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
+                            </h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
 
                         <div class="modal-body pt-2">
                             <p class="text-muted small mb-4">
                                 All filters can be combined with search and quick filters above.
                             </p>
 
+                            {{-- 1. Learning Program (single: ongoing_status) --}}
+                            @php
+                                $curProgram = request('ongoing_status', 'all');
+                                $programOptions = [
+                                    'all'       => 'All Learning',
+                                    'mandatory' => 'Mandatory Learning',
+                                    'optional'  => 'Optional Learning',
+                                ];
+                            @endphp
                             <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Playlist Status</div>
+                                <div class="fw-semibold mb-2">Learning Program</div>
                                 <div class="d-flex flex-wrap gap-3">
-                                    @foreach ($quickStatusOptions as $value => $label)
+                                    @foreach ($programOptions as $val => $label)
                                         <label class="form-check">
                                             <input class="form-check-input" type="radio"
-                                                   name="ongoing_quick_status" value="{{ $value }}"
-                                                   {{ $curQuickStatus === $value ? 'checked' : '' }}>
-                                            <span class="form-check-label">{{ $value === 'all' ? 'All Playlist' : $label }}</span>
+                                                   name="ongoing_status" value="{{ $val }}"
+                                                   {{ $curProgram === $val ? 'checked' : '' }}>
+                                            <span class="form-check-label">{{ $label }}</span>
                                         </label>
                                     @endforeach
                                 </div>
@@ -207,48 +219,9 @@
 
                             <hr class="my-3">
 
+                            {{-- 2. Learning Progress --}}
                             <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Year</div>
-                                <div class="d-flex flex-wrap gap-3">
-                                    <label class="form-check">
-                                        <input class="form-check-input" type="radio"
-                                               name="ongoing_year" value="all"
-                                               {{ $curYear === 'all' ? 'checked' : '' }}>
-                                        <span class="form-check-label">All Years</span>
-                                    </label>
-                                    @foreach ($quickYearOptions as $yearOption)
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio"
-                                                   name="ongoing_year" value="{{ $yearOption }}"
-                                                   {{ (string) $curYear === (string) $yearOption ? 'checked' : '' }}>
-                                            <span class="form-check-label">{{ $yearOption }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <hr class="my-3">
-
-                            <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Month</div>
-                                <div class="row g-2">
-                                    @foreach ($monthOptions as $number => $label)
-                                        <div class="col-6 col-md-4 col-lg-3">
-                                            <label class="form-check">
-                                                <input class="form-check-input" type="checkbox"
-                                                       name="ongoing_month[]" value="{{ $number }}"
-                                                       {{ in_array((string) $number, $activeQuickMonths, true) ? 'checked' : '' }}>
-                                                <span class="form-check-label">{{ $label }}</span>
-                                            </label>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <hr class="my-3">
-
-                            <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Progress</div>
+                                <div class="fw-semibold mb-2">Learning Progress</div>
                                 <div class="d-flex flex-wrap gap-3">
                                     @foreach ($progressOptions as $value => $label)
                                         <label class="form-check">
@@ -260,11 +233,112 @@
                                     @endforeach
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="modal-footer border-0 pt-0">
-                            <a href="{{ $resetUrl }}" class="btn btn-outline-secondary btn-learning-outline">
-                                <i class="ti ti-refresh"></i>
+                            <hr class="my-3">
+
+                            {{-- 3. Sort By --}}
+                            @php
+                                $curActivitySort = request('ongoing_activity_sort', 'newest_activity');
+                            @endphp
+                            <div class="learning-filter-group">
+                                <label class="form-label fw-semibold mb-2" for="ongoing_playlist_activity_sort">Sort By</label>
+                                <select class="form-select" name="ongoing_activity_sort" id="ongoing_playlist_activity_sort">
+                                    <option value="newest_activity" {{ $curActivitySort === 'newest_activity' ? 'selected' : '' }}>All</option>
+                                    <option value="oldest_activity" {{ $curActivitySort === 'oldest_activity' ? 'selected' : '' }}>Oldest</option>
+                                    <option value="newest_activity" {{ $curActivitySort === 'newest_activity' ? 'selected' : '' }}>Newest</option>
+                                    <option value="duration_shortest" {{ $curActivitySort === 'duration_shortest' ? 'selected' : '' }}>Ascending</option>
+                                    <option value="duration_longest" {{ $curActivitySort === 'duration_longest' ? 'selected' : '' }}>Descending</option>
+                                </select>
+                            </div>
+
+                            <hr class="my-3">
+
+                            {{-- 4. Period (Date Range) --}}
+                            <div class="learning-filter-group">
+                                <div class="fw-semibold mb-2">Period</div>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="ongoing_playlist_date_from">From Date</label>
+                                        <div class="input-icon">
+                                            <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
+                                            <input class="form-control" id="ongoing_playlist_date_from" name="ongoing_date_from" type="date"
+                                                   value="{{ request('ongoing_date_from', request('ongoing_from_date')) }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="ongoing_playlist_date_to">To Date</label>
+                                        <div class="input-icon">
+                                            <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
+                                            <input class="form-control" id="ongoing_playlist_date_to" name="ongoing_date_to" type="date"
+                                                   value="{{ request('ongoing_date_to', request('ongoing_to_date')) }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            {{-- 5. Duration --}}
+                            @php
+                                $selDur = (array) request('ongoing_duration', []);
+                                $durationOptionsPlaylist = [
+                                    'lt10'  => '< 10 Minutes',
+                                    '10-30' => '10 – 30 Minutes',
+                                    '30-60' => '30 – 60 Minutes',
+                                    'gt60'  => '> 1 Hour',
+                                ];
+                            @endphp
+                            <div class="learning-filter-group">
+                                <div class="fw-semibold mb-2">Duration</div>
+                                <div class="d-flex flex-wrap gap-3">
+                                    @foreach ($durationOptionsPlaylist as $val => $label)
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="ongoing_duration[]" value="{{ $val }}"
+                                                   {{ in_array($val, $selDur) ? 'checked' : '' }}>
+                                            <span class="form-check-label">{{ $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            {{-- 6. Learning Hour --}}
+                            @php
+                                $learningHourOptions = [
+                                    'all' => 'All',
+                                    'lt1' => '< 1 Hour',
+                                    '1-3' => '1 – 3 Hours',
+                                    'gt3' => '> 3 Hours',
+                                ];
+                                $curLearningHour = request('ongoing_learning_hour', 'all');
+                            @endphp
+                            <div class="learning-filter-group">
+                                <div class="fw-semibold mb-2">Learning Hour</div>
+                                <div class="d-flex flex-wrap gap-3">
+                                    @foreach ($learningHourOptions as $val => $label)
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="ongoing_learning_hour" value="{{ $val }}"
+                                                   {{ $curLearningHour === $val ? 'checked' : '' }}>
+                                            <span class="form-check-label">{{ $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            {{-- Hidden Legacy Filter Sections (Preserving HTML, Blade Variables, IDs, Inputs, JS Hooks) --}}
+
+                            <div class="learning-filter-group d-none">
+                                <div class="fw-semibold mb-2">Playlist Status</div>
+                                <div class="d-flex flex-wrap gap-3">
+                                    @foreach ($quickStatusOptions as $value => $label)
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="ongoing_quick_status" value="{{ $value }}"
+                                                   {{ $curQuickStatus === $value ? 'checked' : '' }}>
+                                            <span class="form-check-label">{{ $value === 'all' ? 'All Playlist' : $label }}</span>
                                 Reset
                             </a>
                             <button type="submit" class="btn btn-primary btn-learning-primary">
