@@ -4,7 +4,7 @@
             <div class="card-body p-4">
                 <div class="ongoing-filter-heading">
                     <div class="ongoing-filter-heading-copy">
-                        <h3 class="card-title mb-1">Learning On Going</h3>
+                        <h3 class="card-title mb-1">MOOC</h3>
                         <div class="text-muted small">Massive Open Online Course</div>
                     </div>
                     <x-learning.ongoing-mode-switch mode="mooc" />
@@ -25,7 +25,7 @@
                     On Going Development
                 </span>
 
-                <h2 class="mooc-coming-soon-title">MOOC is coming soon</h2>
+                <h2 class="mooc-coming-soon-title">MOOC (Massive Open Online Course) is coming soon</h2>
                 <p class="mooc-coming-soon-lead">
                     This feature is currently under development. We are preparing an integrated learning experience
                     with external learning platforms.

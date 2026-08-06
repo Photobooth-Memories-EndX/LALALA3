@@ -42,32 +42,38 @@
 
                     <div class="row g-3">
                         <div class="col-12">
-                            {{-- ① Main Information --}}
+                            {{-- ① Publish Status --}}
+                            {{-- @include('main.content.components.section-publish-status', [
+                                'mode' => 'create',
+                                'stepNumber' => 1
+                            ]) --}}
+
+                            {{-- ② Main Information --}}
                             @include('main.content.components.section-main-information', [
                                 'mode' => 'create',
                                 'stepNumber' => 1,
                                 'classification' => $classification
                             ])
 
-                            {{-- ② Content Files --}}
+                            {{-- ③ Content Files --}}
                             @include('main.content.components.section-content-files', [
                                 'mode' => 'create',
                                 'stepNumber' => 2
                             ])
 
-                            {{-- ③ Metadata Content --}}
+                            {{-- ④ Metadata Content --}}
                             @include('main.content.components.section-metadata', [
                                 'mode' => 'create',
                                 'stepNumber' => 3
                             ])
 
-                            {{-- ④ Live Preview --}}
+                            {{-- ⑤ Live Preview --}}
                             @include('main.content.components.section-preview', [
                                 'mode' => 'create',
                                 'stepNumber' => 4
                             ])
 
-                            {{-- ⑤ Assignment & Action --}}
+                            {{-- ⑥ Assignment & Action --}}
                             @include('main.content.components.section-action', [
                                 'mode' => 'create',
                                 'stepNumber' => 5,

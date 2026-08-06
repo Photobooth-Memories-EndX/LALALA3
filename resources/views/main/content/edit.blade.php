@@ -55,32 +55,39 @@
                     <div class="row g-3">
                         <div class="col-12">
 
-                            {{-- ① Main Information --}}
-                            @include('main.content.components.section-main-information', [
+                            {{-- ① Publish Status --}}
+                            @include('main.content.components.section-publish-status', [
                                 'mode' => 'edit',
                                 'stepNumber' => 1,
+                                'content' => $content
+                            ])
+
+                            {{-- ② Main Information --}}
+                            @include('main.content.components.section-main-information', [
+                                'mode' => 'edit',
+                                'stepNumber' => 2,
                                 'content' => $content,
                                 'classification' => $classification
                             ])
 
-                            {{-- ② Content Files --}}
+                            {{-- ③ Content Files --}}
                             @include('main.content.components.section-content-files', [
-                                'mode' => 'edit',
-                                'stepNumber' => 2,
-                                'content' => $content
-                            ])
-
-                            {{-- ③ Metadata Content --}}
-                            @include('main.content.components.section-metadata', [
                                 'mode' => 'edit',
                                 'stepNumber' => 3,
                                 'content' => $content
                             ])
 
-                            {{-- ④ Live Preview --}}
-                            @include('main.content.components.section-preview', [
+                            {{-- ④ Metadata Content --}}
+                            @include('main.content.components.section-metadata', [
                                 'mode' => 'edit',
                                 'stepNumber' => 4,
+                                'content' => $content
+                            ])
+
+                            {{-- ⑤ Live Preview --}}
+                            @include('main.content.components.section-preview', [
+                                'mode' => 'edit',
+                                'stepNumber' => 5,
                                 'content' => $content
                             ])
 
@@ -88,10 +95,10 @@
                     </div>
                 </form>
 
-                {{-- ⑤ Assignment & Action --}}
+                {{-- ⑥ Assignment & Action --}}
                 @include('main.content.components.section-action', [
                     'mode' => 'edit',
-                    'stepNumber' => 5,
+                    'stepNumber' => 6,
                     'content' => $content,
                     'user' => $user
                 ])
@@ -164,7 +171,7 @@
                     success: function(data) {
                         console.log(data);
                         if (data.status == 200) {
-                            $("#contentContainer").load(" #contentContainer > *");
+                            window.location.reload();
                         }
                     }
                 });

@@ -2,7 +2,7 @@
     $content = $content ?? null;
     $mode = $mode ?? ($content ? 'edit' : 'create');
     $user = $user ?? [];
-    $stepNumber = $stepNumber ?? 5;
+    $stepNumber = $stepNumber ?? ($mode === 'edit' ? 6 : 5);
     $hasUserList = count($user) > 0;
     $cardTitle = ($mode === 'edit' || $hasUserList) ? 'Assignment & Action' : 'Action';
 @endphp
@@ -78,28 +78,19 @@
 
                 <button type="submit" form="contentEditForm" class="btn btn-primary" name="action" value="update">
                     <i class="ti ti-device-floppy me-1"></i>
-                    Simpan Perubahan Content
+                    Save Content
                 </button>
 
-                @if ($content->active == 'Active')
-                    <button type="submit" form="contentEditForm" class="btn btn-warning" name="action" value="unpublish">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                            <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"></path>
-                            <path d="M9 12h6"></path>
-                        </svg>
-                        Unpublish This Content
-                    </button>
-                @else
-                    <button type="submit" form="contentEditForm" class="btn btn-success" name="action" value="save" formnovalidate>
+                @if ($content->active != 'Active')
+                    {{-- <button type="submit" form="contentEditForm" class="btn btn-success" name="action" value="save" formnovalidate>
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                             <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"></path>
                             <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
                             <path d="M14 4l0 4l-6 0l0 -4"></path>
                         </svg>
-                        Save Content (Draft)
-                    </button>
+                        Unpublish Content
+                    </button> --}}
                     <button type="submit" form="contentEditForm" class="btn btn-primary" name="action" value="publish">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>

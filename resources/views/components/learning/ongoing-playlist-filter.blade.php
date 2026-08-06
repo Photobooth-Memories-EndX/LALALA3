@@ -185,9 +185,6 @@
                             </h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                            </h3>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
 
                         <div class="modal-body pt-2">
                             <p class="text-muted small mb-4">
@@ -339,6 +336,55 @@
                                                    name="ongoing_quick_status" value="{{ $value }}"
                                                    {{ $curQuickStatus === $value ? 'checked' : '' }}>
                                             <span class="form-check-label">{{ $value === 'all' ? 'All Playlist' : $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <hr class="my-3 d-none">
+
+                            <div class="learning-filter-group d-none">
+                                <div class="fw-semibold mb-2">Year</div>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="radio"
+                                               name="ongoing_year" value="all"
+                                               {{ $curYear === 'all' ? 'checked' : '' }}>
+                                        <span class="form-check-label">All Years</span>
+                                    </label>
+                                    @foreach ($quickYearOptions as $yearOption)
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="ongoing_year" value="{{ $yearOption }}"
+                                                   {{ (string) $curYear === (string) $yearOption ? 'checked' : '' }}>
+                                            <span class="form-check-label">{{ $yearOption }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <hr class="my-3 d-none">
+
+                            <div class="learning-filter-group d-none">
+                                <div class="fw-semibold mb-2">Month</div>
+                                <div class="row g-2">
+                                    @foreach ($monthOptions as $number => $label)
+                                        <div class="col-6 col-md-4 col-lg-3">
+                                            <label class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="ongoing_month[]" value="{{ $number }}"
+                                                       {{ in_array((string) $number, $activeQuickMonths, true) ? 'checked' : '' }}>
+                                                <span class="form-check-label">{{ $label }}</span>
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer border-0 pt-0">
+                            <a href="{{ $resetUrl }}" class="btn btn-outline-secondary btn-learning-outline">
+                                <i class="ti ti-refresh"></i>
                                 Reset
                             </a>
                             <button type="submit" class="btn btn-primary btn-learning-primary">

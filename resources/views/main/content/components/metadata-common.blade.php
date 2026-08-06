@@ -9,6 +9,9 @@
         $lh = (float) $content->learning_hours;
         $learningHoursVal = ($lh == (int) $lh) ? (string) (int) $lh : (string) $lh;
     }
+    if (empty($learningHoursVal) || (float) $learningHoursVal <= 0) {
+        $learningHoursVal = '0.5';
+    }
 @endphp
 
 @once
@@ -26,7 +29,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return true;
         }
 
-        var isValid = /^(?:\d+|\d+\.5)$/.test(val);
+        var num = parseFloat(val);
+        var isValid = !isNaN(num) && num >= 0.5 && /^(?:\d+|\d+\.5)$/.test(val);
 
         if (isValid) {
             lhInput.classList.remove('is-invalid');
@@ -41,24 +45,51 @@ document.addEventListener("DOMContentLoaded", function () {
         return isValid;
     }
 
-    function normalizeLH() {
+    function normalizeLH(forceFallback) {
         var val = lhInput.value.trim();
-        if (val === '') return;
+
+        if (forceFallback || val === '' || val === '0' || val === '0.0' || parseFloat(val) <= 0 || isNaN(parseFloat(val))) {
+            if (val === '' || val === '0' || val === '0.0' || parseFloat(val) <= 0 || isNaN(parseFloat(val))) {
+                lhInput.value = '0.5';
+                val = '0.5';
+            }
+        }
 
         if (/^\d+\.0+$/.test(val)) {
-            lhInput.value = parseInt(val, 10).toString();
-            validateLH();
+            var intVal = parseInt(val, 10);
+            lhInput.value = intVal <= 0 ? '0.5' : intVal.toString();
         } else if (/^\d+\.50+$/.test(val)) {
             lhInput.value = parseFloat(val).toString();
-            validateLH();
         }
+
+        validateLH();
     }
 
-    lhInput.addEventListener('input', validateLH);
-    lhInput.addEventListener('blur', function () {
-        normalizeLH();
+    lhInput.addEventListener('input', function () {
+        var val = lhInput.value.trim();
+        if (val === '0' || val === '0.0') {
+            lhInput.value = '0.5';
+        }
         validateLH();
     });
+
+    lhInput.addEventListener('blur', function () {
+        normalizeLH(true);
+    });
+
+    lhInput.addEventListener('change', function () {
+        normalizeLH(true);
+    });
+
+    var form = lhInput.closest('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            normalizeLH(true);
+        });
+    }
+
+    // Initial validation check
+    validateLH();
 });
 </script>
 @endonce
@@ -77,9 +108,9 @@ document.addEventListener("DOMContentLoaded", function () {
         @error('learning_hours')
             <div class="invalid-feedback">{{ $message }}</div>
         @else
-            <div class="invalid-feedback" id="learning_hours_feedback">Learning Hours must use one decimal place only. Examples: 0.5, 1, 1.5, 2, 2.5</div>
+            <div class="invalid-feedback" id="learning_hours_feedback">Minimum value: 0.5 hours.</div>
         @enderror
-        <small class="form-hint">Learning credit awarded after completing this content. Examples: 0.5, 1, 1.5, 2, 2.5</small>
+        <small class="form-hint">Learning credit awarded after completing this content. The value must be a multiple of 0.5 (e.g., 0.5, 1, 1.5, 2, 2.5).</small>
     </div>
 
     {{-- Publish Date --}}

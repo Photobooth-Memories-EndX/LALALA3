@@ -1,7 +1,77 @@
 @php
     $content = $content ?? null;
     $mode = $mode ?? ($content ? 'edit' : 'create');
-    $stepNumber = $stepNumber ?? 2;
+    $stepNumber = $stepNumber ?? 3;
+
+    // Existing Content File Data (Edit Mode)
+    $existingFileName = null;
+    $existingFileType = null;
+    $existingFileSizeFormatted = null;
+    $existingFileUrl = null;
+    $hasExistingFile = false;
+    $isPdfFile = false;
+
+    if ($mode === 'edit' && $content && !empty($content->file)) {
+        $_cf = json_decode($content->file ?? '[]', true) ?: [];
+        $_fn = is_array($_cf) ? ($_cf[0] ?? null) : null;
+        if ($_fn) {
+            $existingFileName = $_fn;
+            $existingPath = public_path('storage/files/content/' . $content->id . '/' . $_fn);
+            $existingFileUrl = asset('storage/files/content/' . $content->id . '/' . $_fn);
+            
+            $ext = strtolower(pathinfo($_fn, PATHINFO_EXTENSION));
+            $isPdfFile = ($ext === 'pdf');
+            if ($isPdfFile) {
+                $existingFileType = 'PDF Document';
+            } elseif (in_array($ext, ['mp4', 'avi', 'mov', 'webm'])) {
+                $existingFileType = 'Video File (' . strtoupper($ext) . ')';
+            } else {
+                $existingFileType = strtoupper($ext) . ' File';
+            }
+
+            if (file_exists($existingPath)) {
+                $hasExistingFile = true;
+                $bytes = filesize($existingPath);
+                if ($bytes >= 1073741824) {
+                    $existingFileSizeFormatted = number_format($bytes / 1073741824, 1) . ' GB';
+                } elseif ($bytes >= 1048576) {
+                    $existingFileSizeFormatted = number_format($bytes / 1048576, 1) . ' MB';
+                } elseif ($bytes >= 1024) {
+                    $existingFileSizeFormatted = number_format($bytes / 1024, 1) . ' KB';
+                } else {
+                    $existingFileSizeFormatted = $bytes . ' B';
+                }
+            }
+        }
+    }
+
+    // Existing Thumbnail Data (Edit Mode)
+    $existingThumbName = null;
+    $existingThumbUrl = null;
+    $existingThumbSizeFormatted = null;
+    $hasExistingThumb = false;
+
+    if ($mode === 'edit' && $content) {
+        $thumbLocalPath = public_path('storage/files/content/' . $content->id . '/thumb.jpg');
+        if (file_exists($thumbLocalPath)) {
+            $hasExistingThumb = true;
+            $existingThumbName = 'thumb.jpg';
+            $existingThumbUrl = asset('storage/files/content/' . $content->id . '/thumb.jpg');
+            $bytes = filesize($thumbLocalPath);
+            if ($bytes >= 1048576) {
+                $existingThumbSizeFormatted = number_format($bytes / 1048576, 1) . ' MB';
+            } elseif ($bytes >= 1024) {
+                $existingThumbSizeFormatted = number_format($bytes / 1024, 1) . ' KB';
+            } else {
+                $existingThumbSizeFormatted = $bytes . ' B';
+            }
+        } elseif ($content->type === 'YouTube' && !empty($content->link)) {
+            $hasExistingThumb = true;
+            $existingThumbName = 'YouTube Thumbnail';
+            $existingThumbUrl = 'https://img.youtube.com/vi/' . $content->link . '/mqdefault.jpg';
+            $existingThumbSizeFormatted = 'YouTube Image';
+        }
+    }
 @endphp
 
 @once
@@ -98,8 +168,6 @@ body.dark-mode .compact-dropzone .dz-preview {
 </style>
 @endonce
 
-
-
 {{-- Combined Content Files Card --}}
 <div class="card owl-main-card mb-3">
     <div class="card-header d-flex align-items-center">
@@ -108,10 +176,76 @@ body.dark-mode .compact-dropzone .dz-preview {
     </div>
     <div class="card-body">
         <div class="row g-3">
-            {{-- Content File --}}
+            {{-- Content File Column --}}
             <div class="col-md-6 col-12">
+                @if ($mode === 'edit' && $hasExistingFile)
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold mb-1 text-muted small text-uppercase" style="letter-spacing: 0.04em;">Current Content File</label>
+                        <div class="card card-sm border bg-surface-secondary" style="border-radius: var(--tblr-border-radius, .375rem);">
+                            <div class="card-body p-2 px-3">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2 overflow-hidden" style="max-width: calc(100% - 150px);">
+                                        <div class="avatar bg-primary-lt text-primary rounded flex-shrink-0" style="width: 34px; height: 34px;">
+                                            @if ($isPdfFile)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-danger" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+                                                    <path d="M9 9l1 0" />
+                                                    <path d="M9 13l6 0" />
+                                                    <path d="M9 17l6 0" />
+                                                </svg>
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                    <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z" />
+                                                    <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" />
+                                                </svg>
+                                            @endif
+                                        </div>
+                                        <div class="overflow-hidden">
+                                            <div class="fw-medium text-reset text-truncate small mb-0" title="{{ $existingFileName }}">
+                                                {{ $existingFileName }}
+                                            </div>
+                                            <div class="text-muted" style="font-size: 11px;">
+                                                <span>{{ $existingFileType }}</span>
+                                                @if ($existingFileSizeFormatted)
+                                                    <span class="mx-1">•</span>
+                                                    <span>{{ $existingFileSizeFormatted }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1 ms-auto">
+                                        <a href="{{ $existingFileUrl }}" class="btn btn-outline-primary btn-sm px-2 py-1" download="{{ $existingFileName }}" target="_blank" title="Download File">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                                                <path d="M7 11l5 5l5 -5" />
+                                                <path d="M12 4l0 12" />
+                                            </svg>
+                                            <span class="d-none d-sm-inline ms-1">Download</span>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-danger btn-sm px-2 py-1 btn-remove-content" data-url="{{ route('contentdelete.deletecontentajax', $content->slug) }}" title="Remove File">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M4 7l16 0" />
+                                                <path d="M10 11l0 6" />
+                                                <path d="M14 11l0 6" />
+                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                                            </svg>
+                                            <span class="d-none d-sm-inline ms-1">Remove</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <label class="form-label fw-semibold mb-1">
-                    {{ $mode === 'edit' ? 'Replace Content File' : 'Content File' }}
+                    {{ ($mode === 'edit' && $hasExistingFile) ? 'Replace Content File' : 'Content File' }}
                 </label>
                 <div class="dropzone compact-dropzone" id="document-dropzone">
                     <div class="dz-message m-0 d-flex align-items-center gap-2">
@@ -131,9 +265,50 @@ body.dark-mode .compact-dropzone .dz-preview {
                 <small class="text-muted d-block mt-1" style="font-size: 11px;">Format: PDF, MP4{{ $mode === 'create' ? ', AVI' : '' }} — maks. 1 file, 1 GB</small>
             </div>
 
-            {{-- Thumbnail File --}}
+            {{-- Thumbnail File Column --}}
             <div class="col-md-6 col-12">
-                <label class="form-label fw-semibold mb-1">Thumbnail</label>
+                @if ($mode === 'edit' && $hasExistingThumb)
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold mb-1 text-muted small text-uppercase" style="letter-spacing: 0.04em;">Current Thumbnail</label>
+                        <div class="card card-sm border bg-surface-secondary" style="border-radius: var(--tblr-border-radius, .375rem);">
+                            <div class="card-body p-2 px-3">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2 overflow-hidden" style="max-width: calc(100% - 110px);">
+                                        <div class="avatar rounded border overflow-hidden flex-shrink-0" style="width: 48px; height: 34px; background-size: cover; background-position: center; background-image: url('{{ $existingThumbUrl }}');">
+                                        </div>
+                                        <div class="overflow-hidden">
+                                            <div class="fw-medium text-reset text-truncate small mb-0" title="{{ $existingThumbName }}">
+                                                {{ $existingThumbName }}
+                                            </div>
+                                            <div class="text-muted" style="font-size: 11px;">
+                                                <span>JPEG Image</span>
+                                                @if ($existingThumbSizeFormatted)
+                                                    <span class="mx-1">•</span>
+                                                    <span>{{ $existingThumbSizeFormatted }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1 ms-auto">
+                                        <a href="{{ $existingThumbUrl }}" class="btn btn-outline-primary btn-sm px-2 py-1" download="thumbnail.jpg" target="_blank" title="Download Thumbnail">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                                                <path d="M7 11l5 5l5 -5" />
+                                                <path d="M12 4l0 12" />
+                                            </svg>
+                                            <span class="d-none d-sm-inline ms-1">Download</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <label class="form-label fw-semibold mb-1">
+                    {{ ($mode === 'edit' && $hasExistingThumb) ? 'Replace Thumbnail' : 'Thumbnail' }}
+                </label>
                 <div class="dropzone compact-dropzone" id="thumbnail-dropzone">
                     <div class="dz-message m-0 d-flex align-items-center gap-2">
                         <span class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-1" style="height: 36px; pointer-events: none;">
