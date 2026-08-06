@@ -1,65 +1,26 @@
-<div class="card playlist-hero border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-4">
+<div class="card content-hero-card mb-4 overflow-hidden border-0 shadow-sm">
+    <div class="card-body content-hero-surface text-white">
+        <div class="row align-items-center g-4">
 
-        <div class="row align-items-center">
-
-            <div class="col-lg-8">
-
-                <div class="text-uppercase small text-muted fw-semibold mb-1">
+            <div class="col-lg-8 content-hero-copy">
+                <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-2 rounded-pill content-hero-badge">
+                    <i class="ti ti-sparkles"></i>
                     Learning Playlist
                 </div>
 
-                <h1 class="mb-2">
-                    Continue Your Learning Journey
-                </h1>
-
-                <div class="text-muted">
+                <h1 class="mb-1 fw-bold">Learning Playlist</h1>
+                <p class="mb-0 text-white-75">
                     Explore curated learning paths and playlists designed for your professional development.
-                </div>
-
+                </p>
             </div>
 
-            <div class="col-lg-4">
-
-                <div class="row g-2">
-
-                    <div class="col-6">
-                        <div class="card border-0 bg-primary-lt playlist-stat-card">
-                            <div class="card-body text-center">
-
-                                <div class="h1 mb-1 text-primary">
-                                    {{ $totalPlaylists }}
-                                </div>
-
-                                <div class="small text-muted">
-                                    Playlists
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="card border-0 bg-success-lt playlist-stat-card">
-                            <div class="card-body text-center">
-
-                                <div class="h1 mb-1 text-success">
-                                    {{ $totalContents }}
-                                </div>
-
-                                <div class="small text-muted">
-                                    Contents
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
+            <div class="col-lg-4 d-flex justify-content-lg-end">
+                <div class="content-hero-count">
+                    <span>ALL PLAYLISTS</span>
+                    <strong>{{ $totalPlaylists }}</strong>
                 </div>
-
             </div>
 
         </div>
-
     </div>
 </div>

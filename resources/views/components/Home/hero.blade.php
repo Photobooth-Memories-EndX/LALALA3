@@ -4,14 +4,24 @@
     $completedCourseVal = (int) ($completedCourse ?? 58);
     $totalCourseVal = $ongoingCourseVal + $completedCourseVal;
     $learningHours = $learningHours ?? 20.8;
+
+    $teamName = $user?->team ?? $user?->department ?? '';
+    $empId = $user?->id_emp ?? $user?->id ?? '';
+    if ($teamName && $empId) {
+        $userDetail = "{$teamName} / {$empId}";
+    } elseif ($teamName || $empId) {
+        $userDetail = $teamName ?: $empId;
+    } else {
+        $userDetail = 'Training Team / 104921';
+    }
 @endphp
 
 @include('components.shared.hero-section', [
     'user' => $user,
-    'heroLabel' => 'Home',
-    'heroTitle' => 'OWl Learning Hub',
+    'heroLabel' => '',
+    'heroTitle' => '',
     'heroName' => $user?->name ?? 'Learner',
-    'heroSubtitle' => 'Open Mind, Wide Growth, Lead Impact',
+    'heroSubtitle' => $userDetail,
     'ongoingCourseVal' => $ongoingCourseVal,
     'completedCourseVal' => $completedCourseVal,
     'totalCourseVal' => $totalCourseVal,

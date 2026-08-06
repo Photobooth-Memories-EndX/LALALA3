@@ -12,6 +12,10 @@
     $isNotStarted     = $hasDeadline && $fromDate && now()->lt($fromDate);
     // thumbnail_url is null when missing, external URL, or file not on disk
     $thumbUrl         = $playlist->thumbnail_url;
+
+    $durationSec       = (int) ($playlist->total_duration_seconds ?? 0);
+    $formattedDuration = $playlist->duration ?? ($durationSec > 0 ? sprintf('%02d:%02d:%02d', floor($durationSec / 3600), floor(($durationSec % 3600) / 60), $durationSec % 60) : '00:00:00');
+    $learningHours     = $playlist->learning_hours ?? ($durationSec > 0 ? round($durationSec / 3600, 1) : 0);
 @endphp
 
 <div class="col-xl-4 col-lg-6 mb-4 playlist-item">
@@ -48,18 +52,28 @@
 
         <div class="card-body">
 
-            <div class="small text-muted mb-2">
-                <i class="ti ti-book-2 me-1"></i>
-                {{ $totalContent }} Learning Materials
+            <div class="small text-muted mb-1 d-flex flex-wrap align-items-center gap-2">
+                <span>
+                    <i class="ti ti-bookmarks me-1"></i>{{ $totalContent }} Content
+                </span>
+                <span class="text-muted">&bull;</span>
+                <span>
+                    <i class="ti ti-clock me-1"></i>Duration: {{ $formattedDuration }}
+                </span>
             </div>
 
             <div class="playlist-title mb-2">
                 {{ $playlist->title }}
             </div>
 
-            <div class="text-muted small mb-2">
-                <i class="ti ti-calendar me-1"></i>
-                Published on {{ date('d M Y', strtotime($playlist->created_at)) }}
+            <div class="small text-muted mb-2 d-flex flex-wrap align-items-center gap-2">
+                <span>
+                    <i class="ti ti-hourglass me-1"></i>Learning Hours: {{ $learningHours }} {{ $learningHours == 1 ? 'Hour' : 'Hours' }}
+                </span>
+                <span class="text-muted">&bull;</span>
+                <span>
+                    <i class="ti ti-calendar me-1"></i>Published on {{ date('d M Y', strtotime($playlist->created_at)) }}
+                </span>
             </div>
 
             @if($hasDeadline && $fromDate && $toDate)
@@ -85,7 +99,7 @@
 
             <div class="playlist-content-list small text-muted">
 
-                @foreach($playlist->trainingplandetail->take(3) as $detail)
+                @foreach($playlist->trainingplandetail->take(1) as $detail)
                     @if($detail->content)
                         <div class="mb-1">
                             • {{ Str::limit($detail->content->title, 45) }}
@@ -93,9 +107,9 @@
                     @endif
                 @endforeach
 
-                @if($totalContent > 3)
+                @if($totalContent > 1)
                     <div class="text-primary mt-1">
-                        + {{ $totalContent - 3 }} more materials
+                        + {{ $totalContent - 1 }} more contents
                     </div>
                 @endif
 
@@ -141,7 +155,7 @@
                 </a>
             @else
                 <button class="btn btn-secondary w-100 rounded-pill" disabled>
-                    No Material Available
+                    No Content Available
                 </button>
             @endif
 

@@ -29,6 +29,7 @@
 @endsection
 
 @section('style')
+<link rel="stylesheet" href="{{ asset('css/content.css') }}">
 <link rel="stylesheet" href="{{ asset('css/playlist.css') }}">
 @endsection
 

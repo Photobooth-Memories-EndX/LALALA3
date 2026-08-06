@@ -1,3 +1,4 @@
+{{--
 @php
     $featuredPlaylist = $trainingplan->first();
 @endphp
@@ -14,7 +15,6 @@
 
     <div class="row g-3 mb-4 playlist-learning-path-wrap">
 
-        {{-- CONTINUE LEARNING --}}
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4 playlist-continue-card">
                 <div class="card-body p-4">
@@ -72,3 +72,4 @@
 
     </div>
 @endif
+--}}

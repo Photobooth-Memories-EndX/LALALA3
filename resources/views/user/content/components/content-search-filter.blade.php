@@ -220,7 +220,7 @@
 
                             {{-- LEARNING HOUR --}}
                             <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">LEARNING HOUR</div>
+                                <div class="fw-semibold mb-2">Learning Hour</div>
                                 <div class="d-flex flex-wrap gap-3">
                                     <label class="form-check">
                                         <input class="form-check-input" type="radio"
