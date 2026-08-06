@@ -12,6 +12,9 @@
     'publishedAt' => null,
     'hasDeadline' => false,
     'deadlineAt' => null,
+    'fromDate' => null,
+    'toDate' => null,
+    'period' => null,
     'active' => '-',
     'statusLabel' => 'ongoing',
     'thumbnail' => null,
@@ -28,7 +31,32 @@
     $isPlaylist = $cardType === 'playlist';
 
     $title = $title ?? '-';
+    $classification = $classification ?? '-';
     $progress = (int) ($progress ?? 0);
+
+    $publishedDate = filled($publishedAt)
+        ? \Carbon\Carbon::parse($publishedAt)
+        : null;
+
+    $fromDateCarbon = filled($fromDate)
+        ? \Carbon\Carbon::parse($fromDate)
+        : null;
+
+    $toDateCarbon = filled($toDate ?? $deadlineAt)
+        ? \Carbon\Carbon::parse($toDate ?? $deadlineAt)
+        : null;
+
+    if (!blank($period)) {
+        $periodString = $period;
+    } elseif ($fromDateCarbon && $toDateCarbon) {
+        $periodString = $fromDateCarbon->format('d M Y') . ' - ' . $toDateCarbon->format('d M Y');
+    } elseif ($toDateCarbon) {
+        $periodString = $toDateCarbon->format('d M Y');
+    } elseif ($fromDateCarbon) {
+        $periodString = 'From ' . $fromDateCarbon->format('d M Y');
+    } else {
+        $periodString = 'No Period';
+    }
 
     if ($isPlaylist) {
         // Card Playlist memakai desain yang sama seperti Video/Document, hanya berbeda konten.
@@ -43,15 +71,11 @@
     } else {
         $playlistNames = collect($playlistNames ?? [])->filter()->values();
         $slug = $slug ?? null;
-        $classification = $classification ?? '-';
         $duration = $duration ?? '-';
         $type = $type ?? 'Content';
         $program = strtolower($program ?? 'optional');
         $month = $month ?? null;
         $year = $year ?? 'unknown';
-        $publishedDate = filled($publishedAt)
-            ? \Carbon\Carbon::parse($publishedAt)
-            : null;
         $deadlineDate = (bool) $hasDeadline && filled($deadlineAt)
             ? \Carbon\Carbon::parse($deadlineAt)->startOfDay()
             : null;
@@ -153,12 +177,25 @@
             </h3>
 
             <div class="text-muted small line-clamp-2">
-                @if ($isPlaylist)
-                    {{ $moduleCount }} Modules
-                @else
-                    {{ $classification }}
-                @endif
+                {{ $classification }}
             </div>
+        </div>
+
+        <div class="d-grid gap-1 small text-muted mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-calendar-plus flex-shrink-0"></i>
+                <span>Published: {{ $publishedDate ? $publishedDate->format('d M Y') : '-' }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-calendar-due flex-shrink-0"></i>
+                <span>Period: {{ $periodString }}</span>
+            </div>
+            @if (!$isPlaylist && isset($deadlineRemaining) && $deadlineRemaining)
+                <div class="d-flex align-items-center gap-2 {{ $deadlineStateClass }}">
+                    <i class="ti ti-hourglass flex-shrink-0"></i>
+                    <span>{{ $deadlineRemaining }}</span>
+                </div>
+            @endif
         </div>
 
         @if ($isPlaylist)
@@ -168,38 +205,19 @@
                 </span>
             </div>
         @else
-            <div class="d-grid gap-1 small text-muted mb-3">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="ti ti-calendar-plus flex-shrink-0"></i>
-                    <span>Published: {{ $publishedDate ? $publishedDate->format('d M Y') : '-' }}</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <i class="ti ti-calendar-due flex-shrink-0"></i>
-                    <span>Period: {{ $deadlineDate ? $deadlineDate->format('d M Y') : ' -' }}</span>
-                </div>
-                @if ($deadlineRemaining)
-                    <div class="d-flex align-items-center gap-2 {{ $deadlineStateClass }}">
-                        <i class="ti ti-hourglass flex-shrink-0"></i>
-                        <span>{{ $deadlineRemaining }}</span>
-                    </div>
-                @endif
-            </div>
+            @if ($playlistNames->isNotEmpty())
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <span class="badge bg-teal-lt text-teal" title="Playlist: {{ $playlistNames->implode(', ') }}">
+                        <i class="ti ti-playlist me-1"></i>{{ $playlistNames->first() }}
+                    </span>
 
-                {{-- Badge Playlist asal — hanya tampil bila content berasal dari Playlist.
-                     Bila lebih dari satu, tampilkan satu nama + "+N" agar card tetap ringkas. --}}
-                @if ($playlistNames->isNotEmpty())
-                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    @if ($playlistNames->count() > 1)
                         <span class="badge bg-teal-lt text-teal" title="Playlist: {{ $playlistNames->implode(', ') }}">
-                            <i class="ti ti-playlist me-1"></i>{{ $playlistNames->first() }}
+                            +{{ $playlistNames->count() - 1 }}
                         </span>
-
-                        @if ($playlistNames->count() > 1)
-                            <span class="badge bg-teal-lt text-teal" title="Playlist: {{ $playlistNames->implode(', ') }}">
-                                +{{ $playlistNames->count() - 1 }}
-                            </span>
-                        @endif
-                    </div>
-                @endif
+                    @endif
+                </div>
+            @endif
         @endif
 
         <div class="learning-card-progress">
@@ -221,7 +239,7 @@
             $cardUrl = $isPlaylist ? $continueUrl : ($slugUrl ?? null);
         @endphp
 
-        @if (! $isPlaylist && $isExpired)
+        @if (! $isPlaylist && isset($isExpired) && $isExpired)
             <button type="button" class="btn btn-primary btn-learning-primary btn-learning-lg learning-continue-btn learning-expired-btn w-100 mt-auto" disabled>
                 <i class="ti ti-lock"></i>
                 Expired

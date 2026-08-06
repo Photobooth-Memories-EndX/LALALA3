@@ -25,12 +25,25 @@
 
                         // Thumbnail playlist; null = card memakai placeholder default Playlist.
                         $plThumbnail = $plan->thumbnail_url ?? null;
+
+                        $classification = $plan->classification->classification_name ?? ($plan->classification ?? '-');
+                        $publishedAt    = $plan->published_at ?? ($plan->created_at ?? ($plan->last_activity_at ?? null));
+                        $hasDeadline    = (bool) ($plan->has_deadline ?? false);
+                        $fromDate       = $plan->from_date ?? null;
+                        $toDate         = $plan->to_date ?? null;
+                        $period         = $plan->period ?? null;
                     @endphp
 
                     <div class="col-md-6 col-xl-4">
                         <x-learning.ongoing-card
                             card-type="playlist"
                             :title="$plan->title ?? '-'"
+                            :classification="$classification"
+                            :published-at="$publishedAt"
+                            :has-deadline="$hasDeadline"
+                            :from-date="$fromDate"
+                            :to-date="$toDate"
+                            :period="$period"
                             :progress="$plPercent"
                             :module-count="$plTotal"
                             :completed-count="$plFinished"
@@ -59,3 +72,4 @@
 
     </div>
 </section>
+
