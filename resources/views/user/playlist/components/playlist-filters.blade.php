@@ -42,12 +42,18 @@
         '21-50' => '21 - 50',
         'gt50'  => '> 50',
     ];
+
+    $learningHourOptions = [
+        'lt1h' => '< 1 Hour',
+        '1-3h' => '1 - 3 hours',
+        'gt3h' => '> 3 Hours',
+    ];
 @endphp
 
 <div class="card playlist-filter-card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-body p-3">
         <label class="form-label small text-muted mb-2 playlist-fast-filter-label" for="playlistStatusFilter">
-            Fast Filter
+            QUICK FILTER
         </label>
 
         <div class="playlist-filter-toolbar">
@@ -60,20 +66,20 @@
                 </select>
             </div>
 
-            <div class="playlist-filter-field playlist-filter-field-month">
-                <select id="playlistMonthFilter" class="form-select playlist-filter-control" aria-label="Month">
-                    <option value="all">Month</option>
-                    @foreach ($playlistMonths as $monthNumber => $monthName)
-                        <option value="{{ $monthNumber }}">{{ $monthName }}</option>
-                    @endforeach
-                </select>
-            </div>
-
             <div class="playlist-filter-field playlist-filter-field-year">
                 <select id="playlistYearFilter" class="form-select playlist-filter-control" aria-label="Year">
                     <option value="all">Year</option>
                     @foreach ($playlistYears as $year)
                         <option value="{{ $year }}">{{ $year }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="playlist-filter-field playlist-filter-field-month">
+                <select id="playlistMonthFilter" class="form-select playlist-filter-control" aria-label="Month">
+                    <option value="all">Month</option>
+                    @foreach ($playlistMonths as $monthNumber => $monthName)
+                        <option value="{{ $monthNumber }}">{{ $monthName }}</option>
                     @endforeach
                 </select>
             </div>
@@ -153,62 +159,50 @@
 
                 <hr class="my-3">
 
-                {{-- Deadline Date --}}
-                <div class="learning-filter-group">
-                    <div class="fw-semibold mb-2">Deadline Date</div>
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <label class="form-label small text-muted mb-1" for="playlistFilterDeadlineFromDate">From Date</label>
-                            <input type="date" id="playlistFilterDeadlineFromDate" class="form-control rounded-3">
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label small text-muted mb-1" for="playlistFilterDeadlineToDate">To Date</label>
-                            <input type="date" id="playlistFilterDeadlineToDate" class="form-control rounded-3">
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="my-3">
-
                 {{-- Created Date --}}
                 <div class="learning-filter-group">
                     <div class="fw-semibold mb-2">Created Date</div>
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <label class="form-label small text-muted mb-1" for="playlistFilterCreatedFromDate">From Date</label>
-                            <input type="date" id="playlistFilterCreatedFromDate" class="form-control rounded-3">
+                            <input type="text" id="playlistFilterCreatedFromDate" class="form-control rounded-3" placeholder="dd/mm/yyyy" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label small text-muted mb-1" for="playlistFilterCreatedToDate">To Date</label>
-                            <input type="date" id="playlistFilterCreatedToDate" class="form-control rounded-3">
+                            <input type="text" id="playlistFilterCreatedToDate" class="form-control rounded-3" placeholder="dd/mm/yyyy" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
                         </div>
                     </div>
                 </div>
 
                 <hr class="my-3">
 
-                {{-- Deadline Status & Quick Filter --}}
-                <div class="row g-3">
-                    <div class="col-12 col-md-6">
-                        <label class="form-label fw-semibold" for="playlistFilterDeadlineStatus">Deadline</label>
-                        <select id="playlistFilterDeadlineStatus" class="form-select rounded-3">
-                            <option value="all">All</option>
-                            <option value="expired">Expired</option>
-                            <option value="today">Today</option>
-                            <option value="less_than_7_days">Less than 7 Days</option>
-                            <option value="less_than_30_days">Less than 30 Days</option>
-                            <option value="more_than_30_days">More than 30 Days</option>
-                        </select>
+                {{-- Period --}}
+                <div class="learning-filter-group">
+                    <div class="fw-semibold mb-2">Period</div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-muted mb-1" for="playlistFilterDeadlineFromDate">From Date</label>
+                            <input type="text" id="playlistFilterDeadlineFromDate" class="form-control rounded-3" placeholder="dd/mm/yyyy" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small text-muted mb-1" for="playlistFilterDeadlineToDate">To Date</label>
+                            <input type="text" id="playlistFilterDeadlineToDate" class="form-control rounded-3" placeholder="dd/mm/yyyy" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
+                        </div>
                     </div>
-                    <div class="col-12 col-md-6">
-                        <label class="form-label fw-semibold" for="playlistFilterSort">Quick Filter</label>
-                        <select id="playlistFilterSort" class="form-select rounded-3">
-                            <option value="newest_course">Newest Course</option>
-                            <option value="oldest_course">Oldest Course</option>
-                            <option value="recently_updated">Recently Updated</option>
-                            <option value="old_update">Old Update</option>
-                        </select>
-                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                {{-- Sort By --}}
+                <div class="learning-filter-group">
+                    <div class="fw-semibold mb-2">Sort By</div>
+                    <select id="playlistFilterSort" class="form-select rounded-3">
+                        <option value="all" selected>All</option>
+                        <option value="oldest">Oldest</option>
+                        <option value="newest">Newest</option>
+                        <option value="asc">Ascending</option>
+                        <option value="desc">Descending</option>
+                    </select>
                 </div>
 
                 <hr class="my-3">
@@ -234,9 +228,9 @@
 
                 <hr class="my-3">
 
-                {{-- Duration --}}
+                {{-- Playlist Duration --}}
                 <div class="learning-filter-group">
-                    <div class="fw-semibold mb-2">Duration</div>
+                    <div class="fw-semibold mb-2">Playlist Duration</div>
                     <div class="d-flex flex-wrap gap-3">
                         <label class="form-check">
                             <input class="form-check-input" type="radio" name="playlist_duration" value="all" checked>
@@ -253,13 +247,32 @@
 
                 <hr class="my-3">
 
-                {{-- Total Pages / Materials --}}
+                {{-- Total Content --}}
                 <div class="learning-filter-group">
                     <div class="fw-semibold mb-2">Total Content</div>
                     <div class="d-flex flex-wrap gap-3">
                         @foreach ($totalPageOptions as $val => $label)
                             <label class="form-check">
                                 <input class="form-check-input" type="checkbox" name="playlist_total_pages[]" value="{{ $val }}">
+                                <span class="form-check-label">{{ $label }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                {{-- LEARNING HOUR --}}
+                <div class="learning-filter-group">
+                    <div class="fw-semibold mb-2">LEARNING HOUR</div>
+                    <div class="d-flex flex-wrap gap-3">
+                        <label class="form-check">
+                            <input class="form-check-input" type="radio" name="playlist_learning_hour" value="all" checked>
+                            <span class="form-check-label">All</span>
+                        </label>
+                        @foreach ($learningHourOptions as $val => $label)
+                            <label class="form-check">
+                                <input class="form-check-input" type="radio" name="playlist_learning_hour" value="{{ $val }}">
                                 <span class="form-check-label">{{ $label }}</span>
                             </label>
                         @endforeach
@@ -280,3 +293,4 @@
         </div>
     </div>
 </div>
+

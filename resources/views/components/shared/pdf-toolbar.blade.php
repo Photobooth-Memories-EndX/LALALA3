@@ -72,11 +72,11 @@
                 title="Download PDF">
                 <i class="ti ti-download"></i>
             </a> -->
-            <button type="button" class="btn btn-sm btn-secondary pdf-tb-btn pdf-tb-hide-xs"
+            <!-- <button type="button" class="btn btn-sm btn-secondary pdf-tb-btn pdf-tb-hide-xs"
                 onclick="{{ $pdfActionPrefix }}DoPrint(); return false;"
                 title="Print PDF">
                 <i class="ti ti-printer"></i>
-            </button>
+            </button> -->
             <button type="button" class="btn btn-sm btn-secondary pdf-tb-btn"
                 onclick="{{ $pdfActionPrefix }}ToggleFullscreen(); return false;"
                 id="{{ $pdfFullscreenButtonId }}"

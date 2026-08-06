@@ -76,11 +76,11 @@
                 Boolean($('#playlistFilterDeadlineToDate').val()),
                 Boolean($('#playlistFilterCreatedFromDate').val()),
                 Boolean($('#playlistFilterCreatedToDate').val()),
-                $('#playlistFilterDeadlineStatus').val() !== 'all',
-                $('#playlistFilterSort').val() !== 'newest_course',
+                $('#playlistFilterSort').val() && $('#playlistFilterSort').val() !== 'all',
                 Boolean($('input[name="playlist_view_order"]:checked').val()),
                 $('input[name="playlist_duration"]:checked').val() !== 'all',
                 $('input[name="playlist_total_pages[]"]:checked').length > 0,
+                $('input[name="playlist_learning_hour"]:checked').val() !== 'all',
                 $('#playlistClassificationFilter').val() !== 'all'
             ].filter(Boolean).length;
 
@@ -109,10 +109,10 @@
             const deadlineToDate = $('#playlistFilterDeadlineToDate').val();
             const createdFromDate = $('#playlistFilterCreatedFromDate').val();
             const createdToDate = $('#playlistFilterCreatedToDate').val();
-            const deadlineStatus = $('#playlistFilterDeadlineStatus').val();
             const sort = $('#playlistFilterSort').val();
             const viewOrder = $('input[name="playlist_view_order"]:checked').val();
             const duration = $('input[name="playlist_duration"]:checked').val();
+            const learningHour = $('input[name="playlist_learning_hour"]:checked').val() || 'all';
             const selectedTotalPages = $('input[name="playlist_total_pages[]"]:checked').map(function () {
                 return $(this).val();
             }).get();
@@ -142,16 +142,19 @@
                 const matchesCreatedFrom = !createdFromDate || (itemFilters.createdAt && itemFilters.createdAt >= createdFromDate);
                 const matchesCreatedTo = !createdToDate || (itemFilters.createdAt && itemFilters.createdAt <= createdToDate);
 
-                // Deadline status
-                const matchesDeadlineStatus = (deadlineStatus === 'all') || (itemFilters.deadlineStatus === deadlineStatus);
-
-                // Duration
+                // Duration (in minutes)
                 const durationSeconds = Number(itemFilters.duration || 0);
                 const matchesDuration = duration === 'all' ||
                     (duration === 'lt10' && durationSeconds < 600) ||
                     (duration === '10-30' && durationSeconds >= 600 && durationSeconds <= 1800) ||
                     (duration === '30-60' && durationSeconds > 1800 && durationSeconds <= 3600) ||
                     (duration === 'gt60' && durationSeconds > 3600);
+
+                // Learning Hour (in hours)
+                const matchesLearningHour = learningHour === 'all' ||
+                    (learningHour === 'lt1h' && durationSeconds < 3600) ||
+                    (learningHour === '1-3h' && durationSeconds >= 3600 && durationSeconds <= 10800) ||
+                    (learningHour === 'gt3h' && durationSeconds > 10800);
 
                 // Total Pages / Materials
                 const materialCount = Number(itemFilters.materials || 0);
@@ -173,8 +176,8 @@
                 $item.toggle(
                     matchesKeyword && matchesStatus && matchesMonth && matchesYear &&
                     matchesAuthor && matchesDeadlineFrom && matchesDeadlineTo &&
-                    matchesCreatedFrom && matchesCreatedTo && matchesDeadlineStatus &&
-                    matchesDuration && matchesTotalPages && matchesClassification
+                    matchesCreatedFrom && matchesCreatedTo &&
+                    matchesDuration && matchesLearningHour && matchesTotalPages && matchesClassification
                 );
             });
 
@@ -193,15 +196,12 @@
                     return Number(dataA.views || 0) - Number(dataB.views || 0);
                 }
 
-                // Quick filter sort
-                if (sort === 'oldest_course') {
+                // Order sort dropdown
+                if (sort === 'oldest' || sort === 'oldest_course' || sort === 'asc' || sort === 'ascending') {
                     return (dataA.createdAt || '').localeCompare(dataB.createdAt || '');
                 }
-                if (sort === 'newest_course' || sort === 'recently_updated') {
+                if (sort === 'newest' || sort === 'newest_course' || sort === 'desc' || sort === 'descending') {
                     return (dataB.createdAt || '').localeCompare(dataA.createdAt || '');
-                }
-                if (sort === 'old_update') {
-                    return (dataA.createdAt || '').localeCompare(dataB.createdAt || '');
                 }
 
                 return 0;
@@ -232,22 +232,23 @@
             filterPlaylist();
         });
 
-        $('#playlistFilterAuthor, #playlistFilterDeadlineFromDate, #playlistFilterDeadlineToDate, #playlistFilterCreatedFromDate, #playlistFilterCreatedToDate, #playlistFilterDeadlineStatus, #playlistFilterSort, #playlistClassificationFilter').on('change', function () {
+        $('#playlistFilterAuthor, #playlistFilterDeadlineFromDate, #playlistFilterDeadlineToDate, #playlistFilterCreatedFromDate, #playlistFilterCreatedToDate, #playlistFilterSort, #playlistClassificationFilter').on('change', function () {
             updateFilterState();
         });
 
-        $('input[name="playlist_view_order"], input[name="playlist_duration"], input[name="playlist_total_pages[]"]').on('change', function () {
+        $('input[name="playlist_view_order"], input[name="playlist_duration"], input[name="playlist_total_pages[]"], input[name="playlist_learning_hour"]').on('change', function () {
             updateFilterState();
         });
 
         function resetAllFilters() {
             $('#playlistSearch').val('');
             $('#playlistStatusFilter, #playlistMonthFilter, #playlistYearFilter').val('all');
-            $('#playlistFilterAuthor, #playlistFilterDeadlineFromDate, #playlistFilterDeadlineToDate, #playlistFilterCreatedFromDate, #playlistFilterCreatedToDate').val('');
-            $('#playlistFilterDeadlineStatus, #playlistClassificationFilter').val('all');
-            $('#playlistFilterSort').val('newest_course');
+            $('#playlistFilterAuthor, #playlistFilterDeadlineFromDate, #playlistFilterDeadlineToDate, #playlistFilterCreatedFromDate, #playlistFilterCreatedToDate').val('').attr('type', 'text');
+            $('#playlistFilterSort').val('all');
+            $('#playlistClassificationFilter').val('all');
             $('input[name="playlist_view_order"][value=""]').prop('checked', true);
             $('input[name="playlist_duration"][value="all"]').prop('checked', true);
+            $('input[name="playlist_learning_hour"][value="all"]').prop('checked', true);
             $('input[name="playlist_total_pages[]"]').prop('checked', false);
             filterPlaylist();
         }
