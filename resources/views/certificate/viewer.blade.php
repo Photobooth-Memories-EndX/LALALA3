@@ -11,15 +11,17 @@
             || !empty($setting->background_image)
         );
     $documentUrl = route('certificate.viewer.document', $certificate->credential_id);
+    $pdfViewerUrl = $documentUrl . '#toolbar=1&navpanes=0&view=FitH&zoom=page-width';
 @endphp
 
 <div class="certificate-viewer-page">
     <main class="certificate-viewer-shell" aria-labelledby="certificateViewerTitle">
         <header class="certificate-viewer-header">
             <a href="{{ route('user.learning.dashboard', ['learning_tab' => 'certificate']) }}"
-               class="btn btn-outline-secondary certificate-viewer-back">
+               class="btn btn-outline-secondary certificate-viewer-back"
+               title="Back to Certificates">
                 <i class="ti ti-arrow-left" aria-hidden="true"></i>
-                <span>Back to Certificates</span>
+                <span class="d-none d-md-inline">Back to Certificates</span>
             </a>
 
             <div class="certificate-viewer-title-wrap">
@@ -48,7 +50,7 @@
             <iframe
                 id="certificateViewerFrame"
                 class="certificate-viewer-frame"
-                src="{{ $documentUrl }}#toolbar=1&navpanes=0&view=FitH"
+                src="{{ $pdfViewerUrl }}"
                 title="{{ $certificate->title }} PDF certificate"
                 allow="fullscreen"
             ></iframe>
@@ -57,35 +59,38 @@
         <footer class="certificate-viewer-toolbar" aria-label="Certificate viewer toolbar">
             <div class="certificate-viewer-toolbar-primary">
                 <a href="{{ route('certificate.download.pdf', $certificate->credential_id) }}"
-                   class="btn btn-primary certificate-viewer-action">
+                   class="btn btn-primary certificate-viewer-action"
+                   title="Download PDF">
                     <i class="ti ti-download" aria-hidden="true"></i>
                     <span>Download PDF</span>
                 </a>
 
-                <button type="button" class="btn btn-outline-secondary certificate-viewer-action" id="certificateViewerPrint">
+                <button type="button" class="btn btn-outline-secondary certificate-viewer-action" id="certificateViewerPrint" title="Print">
                     <i class="ti ti-printer" aria-hidden="true"></i>
                     <span>Print</span>
                 </button>
 
-                <a href="{{ $documentUrl }}#toolbar=1&navpanes=0&view=FitH"
+                <a href="{{ $pdfViewerUrl }}"
                    target="_blank"
                    rel="noopener"
-                   class="btn btn-outline-secondary certificate-viewer-action">
+                   class="btn btn-outline-secondary certificate-viewer-action"
+                   title="Open in New Tab">
                     <i class="ti ti-external-link" aria-hidden="true"></i>
                     <span>Open in New Tab</span>
                 </a>
 
-                <button type="button" class="btn btn-outline-secondary certificate-viewer-action" id="certificateViewerFullscreen">
+                <button type="button" class="btn btn-outline-secondary certificate-viewer-action" id="certificateViewerFullscreen" title="Full Screen">
                     <i class="ti ti-maximize" aria-hidden="true"></i>
                     <span>Full Screen</span>
                 </button>
             </div>
 
-            <div class="dropdown certificate-viewer-more-actions">
+            <div class="dropdown dropup certificate-viewer-more-actions">
                 <button type="button"
                         class="btn btn-outline-secondary dropdown-toggle certificate-viewer-action"
                         data-toggle="dropdown"
-                        aria-expanded="false">
+                        aria-expanded="false"
+                        title="More options">
                     <i class="ti ti-dots" aria-hidden="true"></i>
                     <span>More</span>
                 </button>
@@ -125,18 +130,22 @@
 
 @section('style')
 <style>
+    /* DESKTOP BASE STYLES */
     .certificate-viewer-page {
         min-height: calc(100vh - 56px);
         padding: 16px;
         background: #eef1f5;
+        display: flex;
+        flex-direction: column;
     }
 
     .certificate-viewer-shell {
-        display: grid;
+        display: flex;
+        flex-direction: column;
         width: min(100%, 1440px);
-        min-height: calc(100vh - 88px);
+        height: calc(100vh - 88px);
+        min-height: 540px;
         margin: 0 auto;
-        grid-template-rows: auto minmax(420px, 1fr) auto;
         overflow: hidden;
         border: 1px solid var(--tblr-border-color, #dce1e7);
         border-radius: 14px;
@@ -154,6 +163,7 @@
         background: var(--tblr-bg-surface, #fff);
         grid-template-columns: minmax(170px, 1fr) minmax(0, 2fr) minmax(170px, 1fr);
         gap: 16px;
+        flex-shrink: 0;
     }
 
     .certificate-viewer-back {
@@ -190,6 +200,7 @@
 
     .certificate-viewer-stage {
         position: relative;
+        flex: 1 1 auto;
         min-height: 0;
         overflow: hidden;
         background: #dfe3e8;
@@ -227,8 +238,7 @@
     }
 
     .certificate-viewer-toolbar {
-        position: sticky;
-        bottom: 0;
+        position: relative;
         z-index: 4;
         display: flex;
         align-items: center;
@@ -238,6 +248,7 @@
         border-top: 1px solid var(--tblr-border-color, #dce1e7);
         background: var(--tblr-bg-surface, #fff);
         box-shadow: 0 -8px 22px rgba(15, 23, 42, .06);
+        flex-shrink: 0;
     }
 
     .certificate-viewer-toolbar-primary {
@@ -277,54 +288,179 @@
         background: #1f2937;
     }
 
+    .certificate-viewer-stage:fullscreen .certificate-viewer-frame,
+    .certificate-viewer-stage:-webkit-full-screen .certificate-viewer-frame {
+        width: 100vw;
+        height: 100vh;
+    }
+
+    /* MOBILE RESPONSIVE (< 768px) */
     @media (max-width: 767.98px) {
+        body {
+            overflow: hidden !important;
+        }
+
+        .page-wrapper {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
         .certificate-viewer-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1050;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             padding: 0;
+            margin: 0;
+            overflow: hidden;
+            background: var(--tblr-bg-surface, #fff);
         }
 
         .certificate-viewer-shell {
-            min-height: calc(100vh - 56px);
-            border-right: 0;
-            border-left: 0;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            margin: 0;
+            border: 0;
             border-radius: 0;
-            grid-template-rows: auto minmax(360px, 1fr) auto;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
         }
 
         .certificate-viewer-header {
-            grid-template-columns: auto minmax(0, 1fr);
+            display: flex;
+            align-items: center;
+            height: 56px;
+            min-height: 56px;
+            max-height: 64px;
+            padding: 8px 12px;
+            padding-top: max(8px, env(safe-area-inset-top));
+            grid-template-columns: none;
             gap: 10px;
+            flex-shrink: 0;
         }
 
-        .certificate-viewer-header-spacer,
-        .certificate-viewer-back span,
-        .certificate-viewer-status {
-            display: none;
+        .certificate-viewer-back {
+            width: 40px;
+            height: 40px;
+            min-height: 40px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 8px;
         }
 
         .certificate-viewer-title-wrap {
+            flex: 1;
+            min-width: 0;
             text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .certificate-viewer-header-spacer,
+        .certificate-viewer-status {
+            display: none !important;
+        }
+
+        .certificate-viewer-title {
+            font-size: 14px;
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        .certificate-viewer-meta {
+            font-size: 11px;
+            margin-top: 1px;
+        }
+
+        .certificate-viewer-stage {
+            flex: 1 1 auto;
+            min-height: 0;
+            height: calc(100vh - 116px - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
+            height: calc(100dvh - 116px - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
+            position: relative;
+            overflow: hidden;
         }
 
         .certificate-viewer-toolbar {
-            align-items: stretch;
-            justify-content: flex-start;
-            overflow-x: auto;
-            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 12px;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+            flex-shrink: 0;
+            background: var(--tblr-bg-surface, #fff);
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, .08);
         }
 
         .certificate-viewer-toolbar-primary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex: 4;
+            gap: 8px;
             flex-wrap: nowrap;
         }
 
         .certificate-viewer-action {
-            min-width: 42px;
+            flex: 1;
+            min-width: 0;
+            height: 40px;
+            min-height: 40px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .certificate-viewer-action i {
+            font-size: 1.25rem;
+            margin: 0 !important;
         }
 
         .certificate-viewer-action span {
-            display: none;
+            display: none !important;
+        }
+
+        .certificate-viewer-more-actions {
+            flex: 1;
+            min-width: 0;
+            display: inline-flex;
+        }
+
+        .certificate-viewer-more-actions .certificate-viewer-action {
+            width: 100%;
+        }
+
+        .certificate-viewer-more-actions .dropdown-toggle::after {
+            display: none !important;
+        }
+
+        .certificate-viewer-more-actions .dropdown-menu {
+            position: absolute;
+            bottom: 100%;
+            top: auto;
+            right: 0;
+            left: auto;
+            margin-bottom: 8px;
+            min-width: 220px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, .15);
         }
     }
 
+    /* DARK MODE STYLES */
     [data-bs-theme="dark"] .certificate-viewer-page,
     body.dark-mode .certificate-viewer-page {
         background: #0f1724;
@@ -362,36 +498,46 @@
         var printButton = document.getElementById('certificateViewerPrint');
         var fullscreenButton = document.getElementById('certificateViewerFullscreen');
 
-        frame.addEventListener('load', function () {
-            loading.classList.add('is-hidden');
-        });
+        if (frame && loading) {
+            frame.addEventListener('load', function () {
+                loading.classList.add('is-hidden');
+            });
+        }
 
-        printButton.addEventListener('click', function () {
-            try {
-                frame.contentWindow.focus();
-                frame.contentWindow.print();
-            } catch (error) {
-                window.open(@json($documentUrl), '_blank', 'noopener');
-            }
-        });
+        if (printButton && frame) {
+            printButton.addEventListener('click', function () {
+                try {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                } catch (error) {
+                    window.open(@json($documentUrl), '_blank', 'noopener');
+                }
+            });
+        }
 
-        fullscreenButton.addEventListener('click', function () {
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-                return;
-            }
+        if (fullscreenButton && stage) {
+            fullscreenButton.addEventListener('click', function () {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                    return;
+                }
 
-            var requestFullscreen = stage.requestFullscreen || stage.webkitRequestFullscreen;
-            if (requestFullscreen) requestFullscreen.call(stage);
-        });
+                var requestFullscreen = stage.requestFullscreen || stage.webkitRequestFullscreen;
+                if (requestFullscreen) requestFullscreen.call(stage);
+            });
 
-        document.addEventListener('fullscreenchange', function () {
-            var isFullscreen = Boolean(document.fullscreenElement);
-            var icon = fullscreenButton.querySelector('i');
-            var label = fullscreenButton.querySelector('span');
-            icon.className = 'ti ' + (isFullscreen ? 'ti-minimize' : 'ti-maximize');
-            label.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
-        });
+            document.addEventListener('fullscreenchange', function () {
+                var isFullscreen = Boolean(document.fullscreenElement);
+                var icon = fullscreenButton.querySelector('i');
+                var label = fullscreenButton.querySelector('span');
+                if (icon) {
+                    icon.className = 'ti ' + (isFullscreen ? 'ti-minimize' : 'ti-maximize');
+                }
+                if (label) {
+                    label.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
+                }
+            });
+        }
     });
 </script>
 @endsection
