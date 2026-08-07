@@ -22,9 +22,10 @@ class TrainingPlan extends Model
 
     protected $casts = [
         'total_duration_seconds' => 'integer',
-        'has_deadline' => 'boolean',
-        'from_date'    => 'date',
-        'to_date'      => 'date',
+        'learning_hours'         => 'float',
+        'has_deadline'           => 'boolean',
+        'from_date'              => 'date',
+        'to_date'                => 'date',
     ];
 
     public function getThumbnailUrlAttribute(): ?string

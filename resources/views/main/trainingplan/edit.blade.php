@@ -56,17 +56,39 @@
                                 <x-alert type="warning" />
 
                                 <div class="mb-3">
-                                    <label class="form-label required">Title</label>
-                                    <input type="text" class="form-control" placeholder="Enter playlist title"
+                                    <label for="title" class="form-label required">Title</label>
+                                    <input type="text" class="form-control @error('title') is-invalid @enderror" placeholder="Enter playlist title"
                                         name="title" id="title"
-                                        value="{{ $trainingplan->title }}" required>
+                                        value="{{ old('title', $trainingplan->title) }}" required>
+                                    @error('title')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                <div>
+                                <div class="mb-3">
                                     <label for="url-link" class="form-label">URL Link</label>
-                                    <input type="url" name="url_link" id="url-link" class="form-control"
-                                        value="{{ $trainingplan->url_link }}"
+                                    <input type="url" name="url_link" id="url-link" class="form-control @error('url_link') is-invalid @enderror"
+                                        value="{{ old('url_link', $trainingplan->url_link) }}"
                                         placeholder="https://...">
                                     <small class="form-hint">Opsional. Link eksternal terkait playlist ini.</small>
+                                    @error('url_link')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label for="learning_hours" class="form-label">Learning Hours</label>
+                                    <input type="number"
+                                        class="form-control @error('learning_hours') is-invalid @enderror"
+                                        id="learning_hours"
+                                        name="learning_hours"
+                                        value="{{ old('learning_hours', $trainingplan->learning_hours ?? 0) }}"
+                                        min="0"
+                                        step="0.5">
+                                    <small class="form-hint">Learning Hours can only be entered in increments of 0.5 (e.g. 0, 0.5, 1, 1.5, 2, 2.5).</small>
+                                    <div class="invalid-feedback" id="learning_hours_error" style="{{ $errors->has('learning_hours') ? 'display:block;' : '' }}">
+                                        @error('learning_hours')
+                                            {{ $message }}
+                                        @enderror
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -377,6 +399,57 @@
                     if (td) td.value = '';
                 }
             });
+        })();
+    </script>
+    <script>
+        (function () {
+            var $input = $('#learning_hours');
+            var $form = $('#trainingPlanForm');
+
+            function isValidLearningHours(val) {
+                if (val === '' || val === null || val === undefined) return false;
+                var num = parseFloat(val);
+                if (isNaN(num)) return false;
+                if (num < 0) return false;
+                if (num === 0) return true;
+
+                var timesTwo = Math.round(num * 10000) / 10000 * 2;
+                return Math.abs(timesTwo - Math.round(timesTwo)) < 0.0001;
+            }
+
+            function validateInput() {
+                var val = $input.val();
+                var $errorDiv = $('#learning_hours_error');
+
+                if (!isValidLearningHours(val)) {
+                    $input.addClass('is-invalid');
+                    if ($errorDiv.length) {
+                        $errorDiv.html('Learning Hours must be 0 or in increments of 0.5.<br><small class="text-muted">Examples: 0, 0.5, 1, 1.5, 2, 2.5</small>').show();
+                    }
+                    return false;
+                } else {
+                    $input.removeClass('is-invalid');
+                    if ($errorDiv.length) {
+                        $errorDiv.empty().hide();
+                    }
+                    return true;
+                }
+            }
+
+            $input.on('input change blur', function () {
+                validateInput();
+            });
+
+            if ($form.length) {
+                $form.on('submit', function (e) {
+                    if (!validateInput()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        $input.focus();
+                        return false;
+                    }
+                });
+            }
         })();
     </script>
 @endpush

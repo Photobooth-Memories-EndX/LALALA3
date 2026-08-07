@@ -51,7 +51,7 @@ class PlaylistUserController extends Controller
                     ->where('user_id', $userId)
                     ->select(['id', 'user_id', 'content_id', 'progress', 'finish']),
             ])
-            ->select(['id', 'title', 'slug', 'total_duration_seconds', 'url_link',
+            ->select(['id', 'title', 'slug', 'total_duration_seconds', 'learning_hours', 'url_link',
                       'active', 'created_at', 'thumbnail', 'has_deadline',
                       'from_date', 'to_date'])
             ->where('active', 'Active')

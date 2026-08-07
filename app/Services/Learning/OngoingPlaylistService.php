@@ -38,7 +38,8 @@ class OngoingPlaylistService
                 'trainingplan.title',
                 'trainingplan.slug',
                 'trainingplan.thumbnail',
-                'trainingplan.total_duration_seconds'
+                'trainingplan.total_duration_seconds',
+                'trainingplan.learning_hours'
             )
             ->whereExists(function ($q) use ($userId) {
                 $q->from('trainingplandetail')

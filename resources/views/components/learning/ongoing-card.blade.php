@@ -62,13 +62,13 @@
 
     $rawLearningHours = $learningHours ?? $learning_hours ?? null;
 
-    if (filled($rawLearningHours) && is_numeric($rawLearningHours) && (float) $rawLearningHours > 0) {
+    if (!is_null($rawLearningHours) && $rawLearningHours !== '' && is_numeric($rawLearningHours)) {
         $lhVal = ((float) $rawLearningHours == (int) $rawLearningHours)
             ? (int) $rawLearningHours
             : (float) $rawLearningHours;
         $learningHourDisplay = $lhVal . ' ' . ($lhVal == 1 ? 'Hour' : 'Hours');
     } else {
-        $learningHourDisplay = 'Not Available';
+        $learningHourDisplay = '-';
     }
 
     if ($isPlaylist) {
@@ -197,7 +197,7 @@
             </div>
             <div class="d-flex align-items-center gap-2">
                 <i class="ti ti-clock flex-shrink-0"></i>
-                <span>Learning Hour: {{ $learningHourDisplay }}</span>
+                <span>Learning Hours: {{ $learningHourDisplay }}</span>
             </div>
             @if (!$isPlaylist && isset($deadlineRemaining) && $deadlineRemaining)
                 <div class="d-flex align-items-center gap-2 {{ $deadlineStateClass }}">

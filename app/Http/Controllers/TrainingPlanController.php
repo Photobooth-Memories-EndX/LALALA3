@@ -130,11 +130,24 @@ class TrainingPlanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title'        => 'required',
-            'thumbnail'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'has_deadline' => 'nullable|boolean',
-            'from_date'    => 'nullable|date|required_if:has_deadline,1',
-            'to_date'      => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+            'title'          => 'required',
+            'learning_hours' => [
+                'required',
+                'numeric',
+                'min:0',
+                function ($attribute, $value, $fail) {
+                    if ($value == 0) {
+                        return;
+                    }
+                    if (fmod(round((float)$value * 2, 6), 1) != 0) {
+                        $fail('Learning Hours must be 0 or in increments of 0.5.');
+                    }
+                },
+            ],
+            'thumbnail'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'has_deadline'   => 'nullable|boolean',
+            'from_date'      => 'nullable|date|required_if:has_deadline,1',
+            'to_date'        => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
         ]);
 
         DB::beginTransaction();
@@ -143,12 +156,13 @@ class TrainingPlanController extends Controller
             $hasDeadline = $request->boolean('has_deadline');
 
             $trainingplan = new TrainingPlan();
-            $trainingplan->title       = $request->title;
-            $trainingplan->active      = $request->action == "publish" ? "Active" : "Inactive";
-            $trainingplan->url_link    = $request->url_link;
-            $trainingplan->has_deadline = $hasDeadline;
-            $trainingplan->from_date   = $hasDeadline ? $request->from_date : null;
-            $trainingplan->to_date     = $hasDeadline ? $request->to_date : null;
+            $trainingplan->title          = $request->title;
+            $trainingplan->learning_hours = $request->learning_hours;
+            $trainingplan->active         = $request->action == "publish" ? "Active" : "Inactive";
+            $trainingplan->url_link       = $request->url_link;
+            $trainingplan->has_deadline   = $hasDeadline;
+            $trainingplan->from_date      = $hasDeadline ? $request->from_date : null;
+            $trainingplan->to_date        = $hasDeadline ? $request->to_date : null;
 
             if ($request->hasFile('thumbnail')) {
                 $destDir = public_path('storage/files/training_plan');
@@ -218,11 +232,24 @@ class TrainingPlanController extends Controller
                 }
             } else {
                 $request->validate([
-                    'title'        => 'required',
-                    'thumbnail'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-                    'has_deadline' => 'nullable|boolean',
-                    'from_date'    => 'nullable|date|required_if:has_deadline,1',
-                    'to_date'      => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+                    'title'          => 'required',
+                    'learning_hours' => [
+                        'required',
+                        'numeric',
+                        'min:0',
+                        function ($attribute, $value, $fail) {
+                            if ($value == 0) {
+                                return;
+                            }
+                            if (fmod(round((float)$value * 2, 6), 1) != 0) {
+                                $fail('Learning Hours must be 0 or in increments of 0.5.');
+                            }
+                        },
+                    ],
+                    'thumbnail'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                    'has_deadline'   => 'nullable|boolean',
+                    'from_date'      => 'nullable|date|required_if:has_deadline,1',
+                    'to_date'        => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
                 ]);
 
                 $hasDeadline = $request->boolean('has_deadline');
@@ -246,12 +273,13 @@ class TrainingPlanController extends Controller
                     $thumbnailPath = 'files/training_plan/' . $filename;
                 }
 
-                $trainingplan->title        = $request->input('title');
-                $trainingplan->url_link     = $request->url_link;
-                $trainingplan->thumbnail    = $thumbnailPath;
-                $trainingplan->has_deadline = $hasDeadline;
-                $trainingplan->from_date    = $hasDeadline ? $request->from_date : null;
-                $trainingplan->to_date      = $hasDeadline ? $request->to_date : null;
+                $trainingplan->title          = $request->input('title');
+                $trainingplan->learning_hours = $request->input('learning_hours');
+                $trainingplan->url_link       = $request->url_link;
+                $trainingplan->thumbnail      = $thumbnailPath;
+                $trainingplan->has_deadline   = $hasDeadline;
+                $trainingplan->from_date      = $hasDeadline ? $request->from_date : null;
+                $trainingplan->to_date        = $hasDeadline ? $request->to_date : null;
 
                 if ($request->action == "publish") {
                     $trainingplan->active = "Active";
