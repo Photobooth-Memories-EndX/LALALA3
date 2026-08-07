@@ -101,23 +101,23 @@
                     </div>
 
                     <div class="assessment-filter-actions">
-                        <button type="button" class="btn btn-outline-success btn-learning-success assessment-filter-action-btn"
-                                id="assessmentDownloadExcel" title="Download Excel" aria-label="Download Excel">
-                            <i class="ti ti-download"></i>
+                        <button type="button" class="btn btn-primary btn-learning-primary assessment-filter-action-btn"
+                                id="assessmentApplyFilter" title="Apply Filter" aria-label="Apply Filter">
+                            <i class="ti ti-search"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-primary btn-learning-secondary assessment-filter-action-btn"
+                        <button type="button" class="btn btn-outline-primary btn-learning-secondary assessment-filter-action-btn position-relative"
                                 data-toggle="modal" data-target="#assessmentMoreFiltersModal"
                                 title="More Filters" aria-label="More Filters">
                             <i class="ti ti-adjustments-horizontal"></i>
                             <span class="badge bg-primary text-white {{ $activeAdvancedCount ? '' : 'd-none' }}" id="assessmentMoreFiltersCount">{{ $activeAdvancedCount ?: '' }}</span>
                         </button>
-                        <button type="button" class="btn btn-primary btn-learning-primary assessment-filter-action-btn"
-                                id="assessmentApplyFilter" title="Apply Filter" aria-label="Apply Filter">
-                            <i class="ti ti-search"></i>
-                        </button>
                         <button type="button" class="btn btn-outline-primary btn-learning-outline assessment-filter-action-btn"
                                 id="assessmentResetFilter" title="Reset Filter" aria-label="Reset Filter">
                             <i class="ti ti-refresh"></i>
+                        </button>
+                        <button type="button" class="btn btn-success btn-learning-success assessment-filter-action-btn"
+                                id="assessmentDownloadExcel" title="Download Excel" aria-label="Download Excel">
+                            <i class="ti ti-download"></i>
                         </button>
                     </div>
                 </div>

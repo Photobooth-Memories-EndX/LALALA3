@@ -5,13 +5,15 @@
 
 @php
     $finalResult = null;
+    $userAttempts = 0;
 
     if (($assessment->scores ?? null) != null) {
-        $finalResult = $assessment->scores
-            ->where('user_id', Auth::user()->id)
+        $userScores = $assessment->scores->where('user_id', Auth::user()->id);
+        $finalResult = $userScores
             ->where('final', 1)
             ->sortByDesc('score')
             ->first();
+        $userAttempts = $userScores->where('final', 1)->count();
     }
 
     $isCompleted = $finalResult != null;
@@ -49,6 +51,9 @@
     $availability = $fromDate && $today < $fromDate
         ? 'upcoming'
         : ($toDate && $today > $toDate ? 'expired' : 'available');
+
+    $totalRemedials = (int) ($assessment->total_remedials ?? 0);
+    $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
 @endphp
 
 <tr class="assessment-row"
@@ -61,9 +66,9 @@
     data-assessment-grade="{{ $assessment->passing_grade ?? '' }}"
     data-assessment-score="{{ $finalResult->score ?? '' }}"
     data-assessment-availability="{{ $availability }}">
-    <td class="text-muted">{{ $index }}</td>
+    <td class="text-center text-muted align-middle">{{ $index }}</td>
 
-    <td data-order="{{ mb_strtolower($assessment->title ?? '') }}" data-search="{{ $searchText }}">
+    <td class="text-start align-middle" data-order="{{ mb_strtolower($assessment->title ?? '') }}" data-search="{{ $searchText }}">
         @if ($assessmentUrl)
             <a href="{{ $assessmentUrl }}"
                class="fw-semibold text-primary assessment-title assessment-title-link">
@@ -73,37 +78,55 @@
             <div class="fw-semibold text-primary assessment-title">{{ $assessment->title ?? '-' }}</div>
         @endif
 
-        {{-- Jika subtitle juga ingin diubah menjadi biru muda/muted, bisa gunakan text-primary-lt (jika pakai Tabler) --}}
-        {{-- Atau jika ingin tetap abu-abu biarkan text-muted, namun di bawah ini saya ubah ke text-primary agar semuanya biru --}}
         <div class="text-primary small opacity-75 assessment-subtitle">
             {{ $assessment->trainingplan->title ?? 'Assessment' }}
         </div>
     </td>
 
-    <td data-order="{{ $assessment->fromdate ? strtotime($assessment->fromdate) : 0 }}">
+    <td class="text-start align-middle small lh-sm" data-order="{{ $assessment->fromdate ? strtotime($assessment->fromdate) : 0 }}">
         @if (($assessment->timer ?? 'n') == 'y')
-            <div class="small">
-                From: {{ $assessment->fromdate ? date('d/m/y H:i', strtotime($assessment->fromdate)) : '-' }}
+            <div>
+                <span class="text-muted fw-medium">From:</span> {{ $assessment->fromdate ? date('d/m/y H:i', strtotime($assessment->fromdate)) : '-' }}
             </div>
-            <div class="small">
-                To: {{ $assessment->todate ? date('d/m/y H:i', strtotime($assessment->todate)) : '-' }}
+            <div>
+                <span class="text-muted fw-medium">To:</span> {{ $assessment->todate ? date('d/m/y H:i', strtotime($assessment->todate)) : '-' }}
             </div>
         @else
             -
         @endif
     </td>
 
-    <td>
+    <td class="text-center align-middle">
         <x-learning.assessment.assessment-type
             :type="$assessment->type"
             :label="$typeLabel"
         />
     </td>
 
-    <td>{{ $finalResult->batch ?? '-' }}</td>
-    <td>{{ $finalResult && $finalResult->score !== null ? $finalResult->score : '-' }}</td>
+    <td class="text-center align-middle">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            {{ $finalResult->batch ?? '-' }}
+        </div>
+    </td>
 
-    <td>
+    <td class="text-center align-middle">
+        <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+            <div class="fw-semibold text-dark">
+                {{ $scoreDisplay }}
+            </div>
+            @if ($totalRemedials > 0)
+                <span class="badge border rounded-pill bg-white text-dark px-2 py-0 small">
+                    {{ $userAttempts }}/{{ $totalRemedials }}
+                </span>
+            @else
+                <span class="badge border rounded-pill bg-light text-secondary px-2 py-0 small">
+                    -
+                </span>
+            @endif
+        </div>
+    </td>
+
+    <td class="text-center align-middle">
         <x-learning.assessment.assessment-status
             :final-result="$finalResult"
             :is-completed="$isCompleted"
@@ -112,7 +135,7 @@
         />
     </td>
 
-    <td class="text-end">
+    <td class="text-center align-middle">
         <x-learning.assessment.assessment-action
             :url="$assessmentUrl"
             :is-completed="$isCompleted"
