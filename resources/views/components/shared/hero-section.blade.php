@@ -80,10 +80,10 @@
         <div class="col-lg-7">
             <div class="shared-hero-profile">
                 <!-- Badge Home Pill -->
-                <span class="shared-hero-label">
-                    <i class="ti ti-home" aria-hidden="true"></i>
-                    Home
-                </span>
+                <div class="badge bg-white text-primary rounded-pill px-3 py-2 d-inline-flex align-items-center gap-1 shadow-sm mb-2" style="color: #0d6efd !important;">
+                    <i class="ti ti-sparkles fs-6"></i>
+                    <span class="fw-bold">Home</span>
+                </div>
 
                 <!-- User Name -->
                 <h2 class="shared-hero-name">{{ $heroName }}</h2>

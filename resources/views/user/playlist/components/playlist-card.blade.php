@@ -71,11 +71,11 @@
                 </span>
             </div>
 
-            <div class="playlist-title mb-1 fw-bold" style="min-height: auto;">
+            <h5 class="card-title playlist-title mb-1 fw-bold line-clamp-2" style="min-height: 2.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                 <a href="{{ $playlistViewUrl }}" class="text-reset text-decoration-none">
                     {{ $playlist->title }}
                 </a>
-            </div>
+            </h5>
 
             {{-- Keterangan Author / Team --}}
             <div class="small text-muted mb-1 d-flex align-items-center">
@@ -138,7 +138,7 @@
 
             </div>
 
-            <div class="my-1.5">
+            <div class="progress-wrapper mt-2 pt-1 mb-1.5">
                 <div class="progress progress-sm mb-1">
                     <div class="progress-bar bg-primary"
                          style="width: {{ $progress }}%">
