@@ -304,7 +304,46 @@
             window.location.href = @json(route('user.learning.assessment.export')) + query;
         });
 
-        assessmentTable.on('order.dt', updateAssessmentSortIcons);
+        function initAssessmentScorePopovers() {
+            $table.find('.assessment-score-trigger').each(function () {
+                var $trigger = $(this);
+                if ($trigger.data('bs.popover') || $trigger.data('popover')) {
+                    return;
+                }
+
+                var $template = $trigger.find('.assessment-score-popover-template');
+                if (!$template.length) {
+                    return;
+                }
+
+                var htmlContent = $.trim($template.html());
+                if (!htmlContent) {
+                    return;
+                }
+
+                $trigger.popover({
+                    trigger: 'hover',
+                    placement: 'top',
+                    html: true,
+                    sanitize: false,
+                    content: htmlContent,
+                    template: '<div class="popover assessment-history-popover" role="tooltip"><div class="popover-arrow"></div><div class="popover-body"></div></div>',
+                    container: 'body',
+                    boundary: 'viewport'
+                });
+            });
+        }
+
+        assessmentTable.on('preDraw.dt', function () {
+            $('.popover.assessment-history-popover').remove();
+        });
+
+        assessmentTable.on('draw.dt order.dt', function () {
+            updateAssessmentSortIcons();
+            initAssessmentScorePopovers();
+        });
+
         updateAssessmentSortIcons();
+        initAssessmentScorePopovers();
     }
 </script>

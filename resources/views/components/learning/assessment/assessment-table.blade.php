@@ -9,12 +9,12 @@
                 @php
                     $headers = [
                         ['label' => 'NO', 'class' => 'text-center align-middle', 'style' => 'width: 60px;'],
-                        ['label' => 'ASSESSMENT', 'class' => 'align-middle', 'style' => ''],
-                        ['label' => 'DATE TIME', 'class' => 'text-center align-middle', 'style' => 'width: 170px;'],
+                        ['label' => 'ASSESSMENT', 'class' => 'text-start align-middle', 'style' => ''],
+                        ['label' => 'DATE TIME', 'class' => 'text-start align-middle', 'style' => 'width: 170px;'],
                         ['label' => 'TYPE', 'class' => 'text-center align-middle', 'style' => 'width: 95px;'],
                         ['label' => 'BATCH', 'class' => 'text-center align-middle', 'style' => 'width: 75px;'],
                         ['label' => 'SCORE', 'class' => 'text-center align-middle', 'style' => 'width: 95px;'],
-                        ['label' => 'STATUS', 'class' => 'text-center align-middle', 'style' => 'width: 120px;'],
+                        ['label' => 'STATUS', 'class' => 'text-center align-middle', 'style' => 'width: 130px;'],
                     ];
                 @endphp
 

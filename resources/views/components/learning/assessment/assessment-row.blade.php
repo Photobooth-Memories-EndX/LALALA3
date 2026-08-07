@@ -6,6 +6,7 @@
 @php
     $finalResult = null;
     $userAttempts = 0;
+    $historyScores = collect();
 
     if (($assessment->scores ?? null) != null) {
         $userScores = $assessment->scores->where('user_id', Auth::user()->id);
@@ -14,7 +15,11 @@
             ->sortByDesc('score')
             ->first();
         $userAttempts = $userScores->where('final', 1)->count();
+        $historyScores = $userScores->sortByDesc('created_at');
     }
+
+    $totalHistoryCount = $historyScores->count();
+    $latestScores = $historyScores->take(5);
 
     $isCompleted = $finalResult != null;
     $isPassed = $finalResult && $finalResult->pass;
@@ -109,20 +114,24 @@
         </div>
     </td>
 
-    <td class="text-center align-middle">
-        <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-            <div class="fw-semibold text-dark">
-                {{ $scoreDisplay }}
+    <td class="text-center align-middle score-column">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="d-inline-flex align-items-center justify-content-center assessment-score-trigger score-box position-relative"
+                 tabindex="0"
+                 role="button"
+                 aria-haspopup="true"
+                 aria-expanded="false">
+                <span class="score-value">
+                    {{ $scoreDisplay }}
+                </span>
+
+                <div class="d-none assessment-score-popover-template">
+                    <x-learning.assessment.assessment-score-popover
+                        :latest-scores="$latestScores"
+                        :total-history-count="$totalHistoryCount"
+                    />
+                </div>
             </div>
-            @if ($totalRemedials > 0)
-                <span class="badge border rounded-pill bg-white text-dark px-2 py-0 small">
-                    {{ $userAttempts }}/{{ $totalRemedials }}
-                </span>
-            @else
-                <span class="badge border rounded-pill bg-light text-secondary px-2 py-0 small">
-                    -
-                </span>
-            @endif
         </div>
     </td>
 
@@ -140,6 +149,8 @@
             :url="$assessmentUrl"
             :is-completed="$isCompleted"
             :is-passed="$isPassed"
+            :user-attempts="$userAttempts"
+            :total-remedials="$totalRemedials"
         />
     </td>
 </tr>
