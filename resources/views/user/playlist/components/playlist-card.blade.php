@@ -16,6 +16,9 @@
     $durationSec       = (int) ($playlist->total_duration_seconds ?? 0);
     $formattedDuration = $playlist->duration ?? ($durationSec > 0 ? sprintf('%02d:%02d:%02d', floor($durationSec / 3600), floor(($durationSec % 3600) / 60), $durationSec % 60) : '00:00:00');
     $learningHours     = $playlist->learning_hours ?? ($durationSec > 0 ? round($durationSec / 3600, 1) : 0);
+    
+    // Identik dengan view-hero.blade.php ($content->author)
+    $authorName        = $firstContent->author ?? $playlist->author ?? 'Training Team';
 @endphp
 
 <div class="col-xl-4 col-lg-6 mb-4 playlist-item">
@@ -62,8 +65,14 @@
                 </span>
             </div>
 
-            <div class="playlist-title mb-2">
+            <div class="playlist-title mb-1">
                 {{ $playlist->title }}
+            </div>
+
+            {{-- Keterangan Author / Team --}}
+            <div class="small text-muted mb-2 d-flex align-items-center">
+                <i class="ti ti-users me-1"></i>
+                <span>Author : {{ $authorName }}</span>
             </div>
 
             <div class="small text-muted mb-2 d-flex flex-wrap align-items-center gap-2">
