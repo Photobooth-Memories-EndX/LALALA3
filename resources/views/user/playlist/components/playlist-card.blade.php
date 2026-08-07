@@ -25,35 +25,41 @@
 
     <div class="card playlist-card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
 
+        @php
+            $playlistViewUrl = $firstContent
+                ? route('playlist.user.view', [$playlist->slug, $firstContent->slug])
+                : '#';
+        @endphp
+
         <div class="position-relative">
-
-            @if($thumbUrl)
-                <img src="{{ $thumbUrl }}"
-                     class="playlist-card-image"
-                     alt="{{ $playlist->title }}"
-                     onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="playlist-card-placeholder" style="display:none;">
-                    <div class="playlist-card-placeholder-icon">
-                        <i class="ti ti-playlist"></i>
+            <a href="{{ $playlistViewUrl }}" class="d-block text-decoration-none text-reset">
+                @if($thumbUrl)
+                    <img src="{{ $thumbUrl }}"
+                         class="playlist-card-image"
+                         alt="{{ $playlist->title }}"
+                         onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="playlist-card-placeholder" style="display:none;">
+                        <div class="playlist-card-placeholder-icon">
+                            <i class="ti ti-playlist"></i>
+                        </div>
+                        <div class="playlist-card-placeholder-text">Learning Playlist</div>
                     </div>
-                    <div class="playlist-card-placeholder-text">Learning Playlist</div>
-                </div>
-            @else
-                <div class="playlist-card-placeholder">
-                    <div class="playlist-card-placeholder-icon">
-                        <i class="ti ti-playlist"></i>
+                @else
+                    <div class="playlist-card-placeholder">
+                        <div class="playlist-card-placeholder-icon">
+                            <i class="ti ti-playlist"></i>
+                        </div>
+                        <div class="playlist-card-placeholder-text">Learning Playlist</div>
                     </div>
-                    <div class="playlist-card-placeholder-text">Learning Playlist</div>
-                </div>
-            @endif
+                @endif
+            </a>
 
-            <span class="badge bg-green position-absolute top-0 end-0 m-3">
+            <span class="badge bg-green position-absolute top-0 end-0 m-3" style="pointer-events: none;">
                 Playlist
             </span>
-
         </div>
 
-        <div class="card-body">
+        <div class="card-body p-3 d-flex flex-column">
 
             <div class="small text-muted mb-1 d-flex flex-wrap align-items-center gap-2">
                 <span>
@@ -65,28 +71,36 @@
                 </span>
             </div>
 
-            <div class="playlist-title mb-1">
-                {{ $playlist->title }}
+            <div class="playlist-title mb-1 fw-bold" style="min-height: auto;">
+                <a href="{{ $playlistViewUrl }}" class="text-reset text-decoration-none">
+                    {{ $playlist->title }}
+                </a>
             </div>
 
             {{-- Keterangan Author / Team --}}
-            <div class="small text-muted mb-2 d-flex align-items-center">
+            <div class="small text-muted mb-1 d-flex align-items-center">
                 <i class="ti ti-users me-1"></i>
                 <span>Author : {{ $authorName }}</span>
             </div>
 
-            <div class="small text-muted mb-2 d-flex flex-wrap align-items-center gap-2">
-                <span>
-                    <i class="ti ti-hourglass me-1"></i>Learning Hours: {{ $learningHours }} {{ $learningHours == 1 ? 'Hour' : 'Hours' }}
-                </span>
-                <span class="text-muted">&bull;</span>
-                <span>
-                    <i class="ti ti-calendar me-1"></i>Published on {{ date('d M Y', strtotime($playlist->created_at)) }}
-                </span>
+            <div class="small text-muted mb-1">
+                <i class="ti ti-hourglass me-1"></i>Learning Hours: {{ $learningHours }} {{ $learningHours == 1 ? 'Hour' : 'Hours' }}
+            </div>
+            <div class="small text-muted mb-1">
+                <i class="ti ti-calendar me-1"></i>Published on {{ date('d M Y', strtotime($playlist->created_at)) }}
+            </div>
+            @php
+                $playlistPeriod = $playlist->period
+                    ?? ($fromDate && $toDate
+                        ? ($fromDate instanceof \Carbon\Carbon ? $fromDate->format('d M Y') : date('d M Y', strtotime($fromDate))) . ' – ' . ($toDate instanceof \Carbon\Carbon ? $toDate->format('d M Y') : date('d M Y', strtotime($toDate)))
+                        : null);
+            @endphp
+            <div class="small text-muted mb-1.5">
+                <i class="ti ti-calendar-event me-1"></i>Period: {{ $playlist->period ?? $playlistPeriod ?? 'No Period' }}
             </div>
 
             @if($hasDeadline && $fromDate && $toDate)
-                <div class="mb-3">
+                <div class="mb-1.5">
                     @if($isExpired)
                         <span class="badge bg-danger-lt text-danger">
                             <i class="ti ti-clock-x me-1"></i>
@@ -106,26 +120,26 @@
                 </div>
             @endif
 
-            <div class="playlist-content-list small text-muted">
+            <div class="playlist-content-list small text-muted mb-1.5" style="min-height: auto;">
 
                 @foreach($playlist->trainingplandetail->take(1) as $detail)
                     @if($detail->content)
-                        <div class="mb-1">
+                        <div class="mb-0">
                             • {{ Str::limit($detail->content->title, 45) }}
                         </div>
                     @endif
                 @endforeach
 
                 @if($totalContent > 1)
-                    <div class="text-primary mt-1">
+                    <div class="text-primary mt-0">
                         + {{ $totalContent - 1 }} more contents
                     </div>
                 @endif
 
             </div>
 
-            <div class="mt-3">
-                <div class="progress progress-sm mb-2">
+            <div class="my-1.5">
+                <div class="progress progress-sm mb-1">
                     <div class="progress-bar bg-primary"
                          style="width: {{ $progress }}%">
                     </div>
@@ -144,7 +158,7 @@
 
         </div>
 
-        <div class="card-footer bg-transparent border-0">
+        <div class="card-footer bg-transparent border-0 pt-0 mt-0">
 
             @if($isExpired)
                 <button class="btn btn-danger-lt w-100 rounded-pill" disabled>

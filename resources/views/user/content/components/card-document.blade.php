@@ -19,10 +19,9 @@
     $deadlineDate = $hasDeadline && filled($item->to_date)
         ? \Carbon\Carbon::parse($item->to_date)->startOfDay()
         : null;
-    $showUpdatedDate = $updatedDate && (!$publishedDate || !$updatedDate->equalTo($publishedDate));
+    $isExpired = false;
     $deadlineStateClass = '';
     $deadlineRemaining = null;
-    $isExpired = false;
 
     if ($deadlineDate) {
         if ($deadlineDate->isSameDay($today)) {
@@ -38,95 +37,116 @@
             $deadlineRemaining = $days . ' ' . ($days === 1 ? 'Day' : 'Days') . ' Due';
         }
     }
+
+    $learningHoursVal = $item->learning_hours ?? null;
+    if ($learningHoursVal === null || $learningHoursVal === '') {
+        $durationSec = \App\Support\DurationFormatter::toSeconds($item->duration);
+        $learningHoursVal = $durationSec > 0 ? round($durationSec / 3600, 1) : 0.5;
+    }
+    $learningHoursNum = (float) $learningHoursVal;
+    $learningHoursDisplay = ($learningHoursNum == (int) $learningHoursNum) ? (int) $learningHoursNum : $learningHoursNum;
+    $learningHoursText = $learningHoursDisplay . ' ' . ($learningHoursNum == 1 ? 'Hour' : 'Hours');
+
+    $authorName = $item->author ?? 'Training Team';
 @endphp
 
-<div class="card content-card">
-    @if ($isExpired)
-        <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
-    @else
-        <a href="{{ route('content.user.view', $item->slug) }}">
-            <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
-        </a>
-    @endif
-
-    <div class="card-body">
-        <div class="d-flex align-items-center mb-2">
-            <span class="badge {{ $typeBadgeClass }}">{{ \App\Support\ContentTypeHelper::label($item->type ?? 'Document') }}</span>
-            <span class="ms-auto text-muted small">
-                @if (($item->type ?? null) === 'Document')
-                    <i class="ti ti-clock"></i>
-                    {{ \App\Support\DurationFormatter::format($item->duration) }}
-                @else
-                    <i class="ti ti-file-text"></i>
-                    Document
-                @endif
-            </span>
-        </div>
-
-        <h3 class="card-title content-card-title mb-2">
-            @if ($isExpired)
-                <span title="{{ $item->title }}">{{ $item->title }}</span>
-            @else
-                <a href="{{ route('content.user.view', $item->slug) }}"
-                   class="text-decoration-none"
-                   title="{{ $item->title }}">
-                    {{ $item->title }}
-                </a>
-            @endif
-        </h3>
-
-        <div class="content-card-details">
-            <div class="content-card-meta text-muted mb-2">
-                <i class="ti ti-folder me-1"></i>
-                {{ $item->classification->classification_name ?? '-' }}
-            </div>
-
-            <div class="d-flex align-items-center content-card-meta text-muted mb-2">
-                <span class="text-truncate me-2">
-                    <i class="ti ti-user me-1"></i>
-                    {{ $item->author ?? 'Training Team' }}
-                </span>
-                <span class="ms-auto flex-shrink-0">
-                    <i class="ti ti-eye me-1"></i>
-                    {{ $item->views ?? 0 }}
-                </span>
-            </div>
-
-            <div class="content-card-dates mb-3">
-                <div class="content-card-date-row">
-                    <i class="ti ti-calendar-plus"></i>
-                    <span>Published: {{ $publishedDate ? $publishedDate->format('d M Y') : '-' }}</span>
-                </div>
-                {{-- <div class="content-card-date-row">
-                    <i class="ti ti-refresh"></i>
-                    <span>Last Updated: {{ $showUpdatedDate ? $updatedDate->format('d M Y') : '-' }}</span>
-                </div> --}}
-                <div class="content-card-date-row">
-                    <i class="ti ti-calendar-due"></i>
-                    <span>Deadline: {{ $deadlineDate ? $deadlineDate->format('d M Y') : 'No deadline' }}</span>
-                </div>
-                @if ($deadlineRemaining)
-                    <div class="content-card-date-row">
-                        <i class="ti ti-hourglass"></i>
-                        <span class="content-card-deadline-state {{ $deadlineStateClass }}">
-                            {{ $deadlineRemaining }}
-                        </span>
-                    </div>
-                @endif
-            </div>
-        </div>
-
+<div class="card content-card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+    <div class="position-relative">
         @if ($isExpired)
-            <button type="button" class="btn btn-primary w-100 content-card-action is-expired" disabled>
-                <i class="ti ti-lock me-1"></i>
-                Expired
-            </button>
+            <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
         @else
-            <a href="{{ route('content.user.view', $item->slug) }}"
-               class="btn btn-primary w-100 content-card-action">
-                <i class="ti ti-player-play me-1"></i>
-                Start Learning
+            <a href="{{ route('content.user.view', $item->slug) }}" class="d-block text-decoration-none text-reset">
+                <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
             </a>
         @endif
+
+        <span class="badge {{ $typeBadgeClass }} position-absolute top-0 end-0 m-3" style="pointer-events: none;">
+            {{ \App\Support\ContentTypeHelper::label($item->type ?? 'Document') }}
+        </span>
+    </div>
+
+    <div class="card-body p-3 d-flex flex-column justify-content-between">
+        <div>
+            <div class="small text-muted mb-1 d-flex flex-wrap align-items-center gap-2">
+                <span>
+                    <i class="ti ti-eye me-1"></i>{{ number_format($item->views ?? 0) }} Views
+                </span>
+                <span class="text-muted">&bull;</span>
+                <span>
+                    <i class="ti ti-clock me-1"></i>{{ \App\Support\DurationFormatter::format($item->duration, 'Self-paced') }}
+                </span>
+            </div>
+
+            <h3 class="card-title content-card-title mb-1 fw-bold">
+                @if ($isExpired)
+                    <span title="{{ $item->title }}">{{ $item->title }}</span>
+                @else
+                    <a href="{{ route('content.user.view', $item->slug) }}"
+                       class="text-reset text-decoration-none"
+                       title="{{ $item->title }}">
+                        {{ $item->title }}
+                    </a>
+                @endif
+            </h3>
+
+            <div class="small text-muted mb-1 d-flex align-items-center">
+                <i class="ti ti-users me-1"></i>
+                <span>Author : {{ $authorName }}</span>
+            </div>
+
+            <div class="small text-muted mb-1">
+                <i class="ti ti-hourglass me-1"></i>Learning Hours: {{ $learningHoursText }}
+            </div>
+
+            <div class="small text-muted mb-1">
+                <i class="ti ti-calendar me-1"></i>Published on {{ $publishedDate ? $publishedDate->format('d M Y') : '-' }}
+            </div>
+
+            <div class="small text-muted mb-1.5">
+                <i class="ti ti-calendar-due me-1"></i>Period: {{ $deadlineDate ? $deadlineDate->format('d M Y') : 'No period' }}
+            </div>
+
+            @if ($deadlineRemaining)
+                <div class="mb-1.5">
+                    @if($isExpired)
+                        <span class="badge bg-danger-lt text-danger">
+                            <i class="ti ti-clock-x me-1"></i>
+                            Expired
+                        </span>
+                    @elseif($deadlineStateClass === 'is-today')
+                        <span class="badge bg-warning-lt text-warning">
+                            <i class="ti ti-calendar-due me-1"></i>
+                            {{ $deadlineRemaining }}
+                        </span>
+                    @else
+                        <span class="badge bg-info-lt text-info">
+                            <i class="ti ti-calendar-due me-1"></i>
+                            {{ $deadlineRemaining }}
+                        </span>
+                    @endif
+                </div>
+            @endif
+
+            @if (!empty($item->description))
+                <div class="small text-muted mb-2">
+                    {{ Str::limit(strip_tags($item->description), 60) }}
+                </div>
+            @endif
+        </div>
+
+        <div class="mt-2 pt-0">
+            @if ($isExpired)
+                <button type="button" class="btn btn-danger-lt w-100 rounded-pill" disabled>
+                    <i class="ti ti-lock me-1"></i>
+                    Akses Expired
+                </button>
+            @else
+                <a href="{{ route('content.user.view', $item->slug) }}"
+                   class="btn btn-primary w-100 rounded-pill">
+                    <i class="ti ti-player-play me-1"></i>
+                    Start Learning
+                </a>
+            @endif
+        </div>
     </div>
 </div>

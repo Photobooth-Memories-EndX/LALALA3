@@ -9,7 +9,7 @@
             <div class="min-w-0">
                 <div class="text-muted small mb-1">
                     {{ date('d F Y', strtotime($content->created_at)) }}
-                    by {{ $content->author ?? '-' }}
+                    created by {{ $content->author ?? '-' }}
                 </div>
 
                 <h2 class="mb-2 fs-2 fw-bold">
@@ -34,7 +34,8 @@
 
             <button type="button"
                     class="btn btn-icon btn-outline-secondary rounded-3"
-                    onclick="navigator.clipboard.writeText(window.location.href);">
+                    onclick="shareContent()"
+                    title="Bagikan">
                 <i class="fas fa-share-alt"></i>
             </button>
         </div>

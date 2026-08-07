@@ -13,9 +13,8 @@
     <div class="container-xl">
 
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary rounded-pill px-3 content-back-btn">
-                <i class="ti ti-arrow-left me-1"></i>
-                Back
+            <a href="{{ url()->previous() }}" class="btn btn-link px-0 text-decoration-none">
+                <i class="fas fa-arrow-left me-2"></i> Back
             </a>
 
             <button type="button"
@@ -671,6 +670,41 @@
     <script src="{{ asset('js/learning-progress.js') }}"></script>
 
     <script>
+        async function shareContent(title) {
+            const shareTitle = title || @json($content->title ?? '') || document.title;
+            const shareData = {
+                title: shareTitle,
+                text: 'Lihat materi pembelajaran ini',
+                url: window.location.href
+            };
+
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    await navigator.clipboard.writeText(window.location.href);
+
+                    if (window.Toastify) {
+                        Toastify({
+                            text: "Link berhasil disalin",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right"
+                        }).showToast();
+                    } else if (typeof toastr !== 'undefined') {
+                        toastr.success("Link berhasil disalin");
+                    } else {
+                        alert('Link berhasil disalin');
+                    }
+                }
+            } catch (err) {
+                if (err && err.name !== 'AbortError') {
+                    console.log(err);
+                }
+            }
+        }
+        window.shareContent = shareContent;
+
         document.addEventListener('click', function (event) {
             var button = event.target.closest('.overview-toggle');
             if (!button) return;

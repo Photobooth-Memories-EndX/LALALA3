@@ -231,16 +231,6 @@
             padding: 0.2rem;
         }
 
-        .assessment-wizard .nav {
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            padding-bottom: .5rem;
-        }
-
-        .assessment-wizard .nav .nav-item {
-            flex: 0 0 auto;
-        }
-
         .assessment-wizard .form-selectgroup-label {
             border: 1px solid rgba(98, 105, 118, .18);
             transition: .2s ease;
@@ -251,11 +241,11 @@
             background: rgba(32, 107, 196, .04);
         }
 
-        .sw-theme-dots>.nav .nav-link.error.done {
+        .sw-theme-dots > .nav .nav-link.error.done {
             color: #FF8C85 !important;
         }
 
-        .sw-theme-dots>.nav .nav-link.error.done::after {
+        .sw-theme-dots > .nav .nav-link.error.done::after {
             background-color: #FF8C85 !important;
         }
 
@@ -264,6 +254,16 @@
                 position: relative !important;
                 top: auto !important;
             }
+        }
+
+        /* Layout spacing: Safe clearance at bottom for fixed toolbars (e.g. Debugbar/extensions) */
+        .page-body {
+            padding-bottom: 90px !important;
+        }
+
+        /* Generous spacing under step navigator */
+        .assessment-wizard .nav {
+            margin-bottom: 2.25rem !important;
         }
     </style>
 @endsection
@@ -294,30 +294,28 @@
                 selected: 0,
                 theme: 'dots',
                 enableUrlHash: false,
+                anchor: {
+                    enableNavigationAlways: true
+                }
             });
 
+            // Leave step event is used for validating the forms
             $("#smartwizard").on("leaveStep", function (e, anchorObject, currentStepIdx, nextStepIdx, stepDirection) {
                 let radios = document.getElementsByClassName((currentStepIdx + 1));
-                let checked = false;
-
-                for (let i = 0, length = radios.length; i < length; i++) {
+                var checked = false;
+                for (var i = 0, length = radios.length; i < length; i++) {
                     if (radios[i].checked) {
                         checked = true;
                         $('#smartwizard').smartWizard("unsetState", [currentStepIdx], 'error');
                         break;
                     }
                 }
-
                 if (!checked) {
                     $('#smartwizard').smartWizard("setState", [currentStepIdx], 'error');
                 }
             });
-        });
-    </script>
 
-    @if (!auth()->user()->isAdmin())
-        <script>
-            $(function () {
+            @if (!auth()->user()->isAdmin())
                 $(document).on('click', '.sw-btn', function () {
                     let formData = new FormData($('#formAssesment')[0]);
 
@@ -336,9 +334,9 @@
                         }
                     });
                 });
-            });
-        </script>
-    @endif
+            @endif
+        });
+    </script>
 
     @if (($assesment->timer ?? 'n') == 'y')
         <script>
