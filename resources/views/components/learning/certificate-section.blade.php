@@ -18,11 +18,11 @@
     ];
     $advancedKeys = [
         'certificate_issuer', 'certificate_date_from', 'certificate_date_to',
-        'certificate_expiration_status', 'certificate_sort',
+        'certificate_sort',
     ];
     $advancedCount = collect($advancedKeys)->filter(function ($key) {
         $val = request($key);
-        if ($key === 'certificate_expiration_status' || $key === 'certificate_sort') {
+        if ($key === 'certificate_sort') {
             return $val && $val !== 'all';
         }
         return request()->filled($key);
@@ -167,39 +167,34 @@
                         </div>
                     </div>
 
+                    @if(false)
+                    {{-- Reserved for future Certificate Expiration feature per advisor decision --}}
                     <hr class="my-3">
-
-                    {{-- 3. Expiration Status --}}
-                    @php
-                        $expStatus = request('certificate_expiration_status', request('certificate_status', 'all'));
-                    @endphp
                     <div class="learning-filter-group">
                         <div class="fw-semibold mb-2">Expiration Status</div>
                         <div class="d-flex flex-wrap gap-3">
                             <label class="form-check">
                                 <input class="form-check-input certificate-advanced-input" type="radio"
-                                       name="certificate_expiration_status" value="all"
-                                       {{ $expStatus === 'all' ? 'checked' : '' }}>
+                                       name="certificate_expiration_status" value="all" checked>
                                 <span class="form-check-label">All</span>
                             </label>
                             <label class="form-check">
                                 <input class="form-check-input certificate-advanced-input" type="radio"
-                                       name="certificate_expiration_status" value="active"
-                                       {{ $expStatus === 'active' ? 'checked' : '' }}>
+                                       name="certificate_expiration_status" value="active">
                                 <span class="form-check-label">Active / Valid</span>
                             </label>
                             <label class="form-check">
                                 <input class="form-check-input certificate-advanced-input" type="radio"
-                                       name="certificate_expiration_status" value="expired"
-                                       {{ $expStatus === 'expired' ? 'checked' : '' }}>
+                                       name="certificate_expiration_status" value="expired">
                                 <span class="form-check-label">Expired</span>
                             </label>
                         </div>
                     </div>
+                    @endif
 
                     <hr class="my-3">
 
-                    {{-- 4. Sorting --}}
+                    {{-- 3. Sorting --}}
                     @php
                         $curSort = request('certificate_sort', 'all');
                     @endphp
@@ -209,7 +204,6 @@
                             <option value="all" {{ $curSort === 'all' ? 'selected' : '' }}>All</option>
                             <option value="issued_desc" {{ $curSort === 'issued_desc' ? 'selected' : '' }}>Newest Issued</option>
                             <option value="issued_asc" {{ $curSort === 'issued_asc' ? 'selected' : '' }}>Oldest Issued</option>
-                            <option value="expiration" {{ $curSort === 'expiration' ? 'selected' : '' }}>Expiration Date</option>
                         </select>
                     </div>
                 </div>

@@ -28,6 +28,7 @@
             }
         }
 
+        // Reserved for future Certificate Expiration feature per advisor decision.
         var certificateDefaults = {
             certificate_filter_type: 'all',
             certificate_filter_year: 'all',
@@ -35,7 +36,7 @@
             certificate_issuer: '',
             certificate_date_from: '',
             certificate_date_to: '',
-            certificate_expiration_status: 'all',
+            // certificate_expiration_status: 'all',
             certificate_sort: 'all',
             certificate_search: ''
         };
@@ -43,7 +44,7 @@
             'certificate_issuer',
             'certificate_date_from',
             'certificate_date_to',
-            'certificate_expiration_status',
+            // 'certificate_expiration_status',
             'certificate_sort'
         ];
 
@@ -133,12 +134,6 @@
             $('#certificate_date_from').val(certificateFilterState.certificate_date_from || '');
             $('#certificate_date_to').val(certificateFilterState.certificate_date_to || '');
 
-            var expStatus = certificateFilterState.certificate_expiration_status || 'all';
-            $('input[name="certificate_expiration_status"]')
-                .prop('checked', false)
-                .filter('[value="' + expStatus + '"]')
-                .prop('checked', true);
-
             var sortVal = certificateFilterState.certificate_sort || 'all';
             $('#certificateSort').val(sortVal);
         }
@@ -148,9 +143,6 @@
             if ($.trim($('#certificate_issuer').val()) !== '') count++;
             if ($.trim($('#certificate_date_from').val()) !== '') count++;
             if ($.trim($('#certificate_date_to').val()) !== '') count++;
-
-            var expStatus = $('input[name="certificate_expiration_status"]:checked').val() || 'all';
-            if (expStatus !== 'all') count++;
 
             var sortVal = $('#certificateSort').val() || 'all';
             if (sortVal !== 'all') count++;
@@ -177,7 +169,6 @@
             nextState.certificate_issuer = $.trim($('#certificate_issuer').val() || $('[name="certificate_issuer"]').val() || '');
             nextState.certificate_date_from = $.trim($('#certificate_date_from').val() || $('[name="certificate_date_from"]').val() || '');
             nextState.certificate_date_to = $.trim($('#certificate_date_to').val() || $('[name="certificate_date_to"]').val() || '');
-            nextState.certificate_expiration_status = $('input[name="certificate_expiration_status"]:checked').val() || 'all';
             nextState.certificate_sort = $('#certificateSort').val() || 'all';
             nextState.certificate_search = $.trim($('#certificateSearch').val());
 
@@ -237,7 +228,7 @@
         });
 
         $(document).off('change.learningCertificateRadio')
-            .on('change.learningCertificateRadio', 'input[name="certificate_filter_type"], input[name="certificate_filter_year"], input[name="certificate_filter_month"], input[name="certificate_expiration_status"]', function () {
+            .on('change.learningCertificateRadio', 'input[name="certificate_filter_type"], input[name="certificate_filter_year"], input[name="certificate_filter_month"]', function () {
                 var name = this.name;
                 var val = String($(this).val());
                 if (name === 'certificate_filter_type') {

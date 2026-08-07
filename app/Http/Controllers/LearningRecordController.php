@@ -341,6 +341,9 @@ class LearningRecordController extends Controller
         $month = (string) request('certificate_filter_month', 'all');
         $sort = (string) request('certificate_sort', 'issued_desc');
 
+        // Note: Certificate Expiration Status filtering is soft-disabled per advisor decision.
+        // Reserved for future development if Expiration requirement is reactivated.
+
         $query
             ->when($search !== '', function ($q) use ($search) {
                 $keyword = '%' . $search . '%';
