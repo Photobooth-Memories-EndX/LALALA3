@@ -262,10 +262,7 @@ class ContentController extends Controller
                     $fail('The duration format must be HH:MM:SS or mm:ss.');
                 }
             }],
-            'learning_hours' => ['nullable', 'regex:/^(?:\d+|\d+\.5)$/', 'numeric', 'min:0', 'max:99.5'],
-        ], [
-            'learning_hours.regex' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
-            'learning_hours.numeric' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
+            'learning_hours' => ['nullable'],
         ]);
 
         if ($request->type == "YouTube") {
@@ -281,7 +278,7 @@ class ContentController extends Controller
         $duration = $documentTotalPages > 0
             ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
             : DurationFormatter::normalize($request->duration);
-        $learningHours = $request->filled('learning_hours') ? (float) $request->learning_hours : null;
+        $learningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convert($duration);
         $newcontent = new Content([
             'title'            => $request->title,
             'type'             => $request->type,
@@ -379,10 +376,7 @@ class ContentController extends Controller
                     $fail('The duration format must be HH:MM:SS or mm:ss.');
                 }
             }],
-            'learning_hours' => ['nullable', 'regex:/^(?:\d+|\d+\.5)$/', 'numeric', 'min:0', 'max:99.5'],
-        ], [
-            'learning_hours.regex' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
-            'learning_hours.numeric' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
+            'learning_hours' => ['nullable'],
         ]);
 
         $path = public_path('storage/files/content/' . $request->id . '');
@@ -481,7 +475,7 @@ class ContentController extends Controller
             ? (int) $request->total_page
             : (int) ($getcontent->total_page ?: 0);
         $duration = DurationFormatter::normalize($request->duration);
-        $learningHours = $request->filled('learning_hours') ? (float) $request->learning_hours : null;
+        $learningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convert($duration);
         Content::where('id', $request->contentid)
             ->update([
                 'title'            => $request->title,
@@ -523,9 +517,12 @@ class ContentController extends Controller
             }
         }
         return to_route('content.edit', $request->slug)->with('success', 'Content successfully assigned');
+    }
 
+    public function synchronizeLearningHours(Request $request, Content $content, \App\Services\LearningHours\ContentLearningHourService $service): \Illuminate\Http\JsonResponse
+    {
+        $result = $service->syncSingleContent($content, $request->all());
 
-
-        // return $arrayexist;
+        return response()->json($result->toArray());
     }
 }

@@ -98,20 +98,132 @@ document.addEventListener("DOMContentLoaded", function () {
     {{-- Learning Hours --}}
     <div class="col-md-6">
         <label class="form-label" for="learning_hours">Learning Hours</label>
-        <input type="text"
-               class="form-control @error('learning_hours') is-invalid @enderror"
-               placeholder="Example: 0.5, 1, 1.5, 2, 2.5"
-               name="learning_hours"
-               id="learning_hours"
-               value="{{ $learningHoursVal }}"
-               autocomplete="off">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-sm-7 col-md-8">
+                <input type="text"
+                       class="form-control bg-light @error('learning_hours') is-invalid @enderror"
+                       placeholder="Auto-calculated"
+                       name="learning_hours"
+                       id="learning_hours"
+                       value="{{ $learningHoursVal }}"
+                       readonly
+                       autocomplete="off">
+            </div>
+            <div class="col-12 col-sm-5 col-md-4">
+                @if(isset($content) && $content->exists)
+                    <button type="button"
+                            class="btn btn-outline-primary w-100"
+                            id="btn-sync-content-lh"
+                            data-url="{{ route('content.synchronize-learning-hours', $content->slug ?? $content->id) }}">
+                        <i class="ti ti-refresh me-1 icon-sync"></i>
+                        <span class="btn-text">Synchronize</span>
+                    </button>
+                @else
+                    <button type="button" class="btn btn-outline-primary w-100" disabled title="Save content first to synchronize">
+                        <i class="ti ti-refresh me-1"></i>
+                        <span>Synchronize</span>
+                    </button>
+                @endif
+            </div>
+        </div>
         @error('learning_hours')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @else
-            <div class="invalid-feedback" id="learning_hours_feedback">Minimum value: 0.5 hours.</div>
+            <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
-        <small class="form-hint">Learning credit awarded after completing this content. The value must be a multiple of 0.5 (e.g., 0.5, 1, 1.5, 2, 2.5).</small>
+        <small class="form-hint mt-1">Learning Hours are calculated automatically from duration.</small>
     </div>
+
+@once
+<script>
+$(document).ready(function() {
+    function showToast(message, type) {
+        let bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        let icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+
+        let toastHtml = `
+            <div class="toast owl-toast ${bgClass} text-white align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-body d-flex align-items-center justify-content-between p-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas ${icon} me-2 fs-4"></i>
+                        <span>${message}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if ($('#owl-toast-wrapper').length === 0) {
+            $('body').append('<div id="owl-toast-wrapper" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; width: 320px;"></div>');
+        }
+
+        let $toast = $(toastHtml);
+        $('#owl-toast-wrapper').append($toast);
+        $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
+    }
+
+    $(document).on('click', '#btn-sync-content-lh', function(e) {
+        e.preventDefault();
+        let $btn = $(this);
+        let url = $btn.data('url');
+
+        if (!url || $btn.data('loading')) return;
+
+        $btn.data('loading', true);
+        let $form = $btn.closest('form');
+
+        $btn.prop('disabled', true);
+        $btn.find('.icon-sync').attr('class', 'spinner-border spinner-border-sm me-1 icon-sync');
+        $btn.find('.btn-text').text('Synchronizing...');
+        $('body').css('cursor', 'wait');
+
+        let csrfToken = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                _token: csrfToken,
+                duration: $form.find('[name="duration"]').val() || '',
+                page_duration: $form.find('[name="page_duration"]').val() || '',
+                document_total_pages: $form.find('[name="total_page"]').val() || $form.find('[name="document_total_pages"]').val() || '',
+                total_page: $form.find('[name="total_page"]').val() || $form.find('[name="document_total_pages"]').val() || '',
+                type: $form.find('[name="type"]').val() || ''
+            },
+            success: function(res) {
+                if (res && res.success) {
+                    if (res.learning_hours !== undefined) {
+                        $form.find('[name="learning_hours"]').val(res.learning_hours);
+                    }
+                    if (res.duration) {
+                        $form.find('[name="duration"]').val(res.duration);
+                    }
+                    showToast(res.message || 'Learning Hours synchronized successfully.', 'success');
+                } else {
+                    showToast(res && res.message ? res.message : 'Unable to synchronize Learning Hours.', 'danger');
+                }
+            },
+            error: function(xhr) {
+                let message = 'Unable to synchronize Learning Hours.';
+                if (xhr && xhr.responseJSON) {
+                    if (xhr.responseJSON.errors) {
+                        message = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                    } else if (xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                }
+                showToast(message, 'danger');
+            },
+            complete: function() {
+                $btn.find('.icon-sync').attr('class', 'ti ti-refresh me-1 icon-sync');
+                $btn.find('.btn-text').text('Synchronize');
+                $btn.prop('disabled', false);
+                $btn.data('loading', false);
+                $('body').css('cursor', 'default');
+            }
+        });
+    });
+});
+</script>
+@endonce
 
     {{-- Publish Date --}}
     <div class="col-md-6">

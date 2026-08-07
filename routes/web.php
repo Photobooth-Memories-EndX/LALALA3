@@ -33,6 +33,7 @@ use App\Http\Controllers\AssesmentUserController;
 use App\Http\Controllers\ContentDeleteController;
 use App\Http\Controllers\AssesmentImageController;
 use App\Http\Controllers\AssesmentQuestionBankController;
+use App\Http\Controllers\LearningHourSyncController;
 use App\Http\Controllers\ClassificationController;
 use App\Http\Controllers\LearningManageController;
 use App\Http\Controllers\AssesmentResultController;
@@ -344,13 +345,17 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('content/list/ongoing', [ContentController::class, 'ongoingcontent'])->name('content.ongoing');
         Route::put('content/delete/{slug}', [ContentDeleteController::class, 'deletecontentajax'])->name('contentdelete.deletecontentajax');
         Route::post('content/assign', [ContentController::class, 'assign'])->name('content.assign');
+        Route::post('content/{content}/synchronize-learning-hours', [ContentController::class, 'synchronizeLearningHours'])->name('content.synchronize-learning-hours');
     });
 
     Route::group(['middleware' => 'mpermission:playlist_learning_path'], function () {
         Route::get('playlist/order/{slug}', [TrainingPlanController::class, 'order'])->name('playlist.order');
         Route::get('playlist-thumbnail-test', [TrainingPlanController::class, 'thumbnailTest'])->name('playlist.thumbnailTest');
+        Route::post('playlist/{trainingplan?}/synchronize-learning-hours', [TrainingPlanController::class, 'synchronizeLearningHours'])->name('playlist.synchronize-learning-hours');
         Route::resource('playlist', TrainingPlanController::class)->parameters(['playlist' => 'trainingplan']);
     });
+
+    Route::post('learning-hours/sync', [LearningHourSyncController::class, 'sync'])->name('learning-hours.sync');
 
     Route::group(['middleware' => 'mpermission:event_documentation'], function () {
         Route::resource('eventphoto', EventPhotoController::class);

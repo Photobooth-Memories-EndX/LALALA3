@@ -41,7 +41,7 @@
 
             @if($setting->content)
 
-                <a href="{{ route('content.edit', $setting->content->id) }}"
+                <a href="{{ route('content.edit', $setting->content) }}"
                    class="font-weight-bold text-primary">
 
                     {{ $setting->content->title }}

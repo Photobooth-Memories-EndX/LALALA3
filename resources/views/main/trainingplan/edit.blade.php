@@ -76,14 +76,26 @@
                                 </div>
                                 <div>
                                     <label for="learning_hours" class="form-label">Learning Hours</label>
-                                    <input type="number"
-                                        class="form-control @error('learning_hours') is-invalid @enderror"
-                                        id="learning_hours"
-                                        name="learning_hours"
-                                        value="{{ old('learning_hours', $trainingplan->learning_hours ?? 0) }}"
-                                        min="0"
-                                        step="0.5">
-                                    <small class="form-hint">Learning Hours can only be entered in increments of 0.5 (e.g. 0, 0.5, 1, 1.5, 2, 2.5).</small>
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-12 col-sm-7 col-md-8">
+                                            <input type="text"
+                                                class="form-control bg-light @error('learning_hours') is-invalid @enderror"
+                                                id="learning_hours"
+                                                name="learning_hours"
+                                                value="{{ old('learning_hours', $trainingplan->learning_hours ?? 0) }}"
+                                                readonly>
+                                        </div>
+                                        <div class="col-12 col-sm-5 col-md-4">
+                                            <button type="button"
+                                                class="btn btn-outline-primary w-100"
+                                                id="btn-sync-playlist-lh"
+                                                data-url="{{ route('playlist.synchronize-learning-hours', $trainingplan->slug ?? $trainingplan->id) }}">
+                                                <i class="ti ti-refresh me-1 icon-sync"></i>
+                                                <span class="btn-text">Synchronize</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="form-hint mt-1">Learning Hours are calculated automatically from total playlist duration.</small>
                                     <div class="invalid-feedback" id="learning_hours_error" style="{{ $errors->has('learning_hours') ? 'display:block;' : '' }}">
                                         @error('learning_hours')
                                             {{ $message }}
@@ -451,5 +463,91 @@
                 });
             }
         })();
+
+        $(document).ready(function() {
+            function showToast(message, type) {
+                let bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+                let icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+
+                let toastHtml = `
+                    <div class="toast owl-toast ${bgClass} text-white align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-body d-flex align-items-center justify-content-between p-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas ${icon} me-2 fs-4"></i>
+                                <span>${message}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if ($('#owl-toast-wrapper').length === 0) {
+                    $('body').append('<div id="owl-toast-wrapper" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; width: 320px;"></div>');
+                }
+
+                let $toast = $(toastHtml);
+                $('#owl-toast-wrapper').append($toast);
+                $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
+            }
+
+            $(document).on('click', '#btn-sync-playlist-lh', function(e) {
+                e.preventDefault();
+                let $btn = $(this);
+                let url = $btn.data('url');
+
+                if (!url || $btn.data('loading')) return;
+
+                $btn.data('loading', true);
+                let $form = $btn.closest('form');
+                let selectedContents = [];
+                $form.find('input[name="content[]"]:checked, select[name="content[]"] option:selected, input.js-content-ordered').each(function() {
+                    selectedContents.push($(this).val());
+                });
+
+                $btn.prop('disabled', true);
+                $btn.find('.icon-sync').attr('class', 'spinner-border spinner-border-sm me-1 icon-sync');
+                $btn.find('.btn-text').text('Synchronizing...');
+                $('body').css('cursor', 'wait');
+
+                let csrfToken = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        _token: csrfToken,
+                        content: selectedContents
+                    },
+                    success: function(res) {
+                        if (res && res.success) {
+                            if (res.learning_hours !== undefined) {
+                                $form.find('[name="learning_hours"]').val(res.learning_hours);
+                            }
+                            showToast(res.message || 'Learning Hours synchronized successfully.', 'success');
+                        } else {
+                            showToast(res && res.message ? res.message : 'Unable to synchronize Learning Hours.', 'danger');
+                        }
+                    },
+                    error: function(xhr) {
+                        let message = 'Unable to synchronize Learning Hours.';
+                        if (xhr && xhr.responseJSON) {
+                            if (xhr.responseJSON.errors) {
+                                message = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                            } else if (xhr.responseJSON.message) {
+                                message = xhr.responseJSON.message;
+                            }
+                        }
+                        showToast(message, 'danger');
+                    },
+                    complete: function() {
+                        $btn.find('.icon-sync').attr('class', 'ti ti-refresh me-1 icon-sync');
+                        $btn.find('.btn-text').text('Synchronize');
+                        $btn.prop('disabled', false);
+                        $btn.data('loading', false);
+                        $('body').css('cursor', 'default');
+                    }
+                });
+            });
+        });
     </script>
 @endpush

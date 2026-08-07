@@ -126,4 +126,9 @@ class Content extends Model
     {
         return 'slug';
     }
+
+    public function getRouteKey()
+    {
+        return $this->slug ?: $this->id;
+    }
 }

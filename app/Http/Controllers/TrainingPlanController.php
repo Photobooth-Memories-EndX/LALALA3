@@ -131,19 +131,7 @@ class TrainingPlanController extends Controller
     {
         $request->validate([
             'title'          => 'required',
-            'learning_hours' => [
-                'required',
-                'numeric',
-                'min:0',
-                function ($attribute, $value, $fail) {
-                    if ($value == 0) {
-                        return;
-                    }
-                    if (fmod(round((float)$value * 2, 6), 1) != 0) {
-                        $fail('Learning Hours must be 0 or in increments of 0.5.');
-                    }
-                },
-            ],
+            'learning_hours' => 'nullable',
             'thumbnail'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'has_deadline'   => 'nullable|boolean',
             'from_date'      => 'nullable|date|required_if:has_deadline,1',
@@ -157,7 +145,7 @@ class TrainingPlanController extends Controller
 
             $trainingplan = new TrainingPlan();
             $trainingplan->title          = $request->title;
-            $trainingplan->learning_hours = $request->learning_hours;
+            $trainingplan->learning_hours = $request->input('learning_hours', 0);
             $trainingplan->active         = $request->action == "publish" ? "Active" : "Inactive";
             $trainingplan->url_link       = $request->url_link;
             $trainingplan->has_deadline   = $hasDeadline;
@@ -190,6 +178,7 @@ class TrainingPlanController extends Controller
             }
 
             app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
+            app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
             DB::commit();
             $addmessage = $request->action == "publish" ? " and published" : "";
             return to_route('playlist.edit', $trainingplan->slug)->with('success', 'Playlist successfully saved ' . $addmessage);
@@ -233,19 +222,7 @@ class TrainingPlanController extends Controller
             } else {
                 $request->validate([
                     'title'          => 'required',
-                    'learning_hours' => [
-                        'required',
-                        'numeric',
-                        'min:0',
-                        function ($attribute, $value, $fail) {
-                            if ($value == 0) {
-                                return;
-                            }
-                            if (fmod(round((float)$value * 2, 6), 1) != 0) {
-                                $fail('Learning Hours must be 0 or in increments of 0.5.');
-                            }
-                        },
-                    ],
+                    'learning_hours' => 'nullable',
                     'thumbnail'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                     'has_deadline'   => 'nullable|boolean',
                     'from_date'      => 'nullable|date|required_if:has_deadline,1',
@@ -274,7 +251,6 @@ class TrainingPlanController extends Controller
                 }
 
                 $trainingplan->title          = $request->input('title');
-                $trainingplan->learning_hours = $request->input('learning_hours');
                 $trainingplan->url_link       = $request->url_link;
                 $trainingplan->thumbnail      = $thumbnailPath;
                 $trainingplan->has_deadline   = $hasDeadline;
@@ -326,6 +302,7 @@ class TrainingPlanController extends Controller
             }
 
             app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
+            app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
             DB::commit();
 
             session()->flash('success', 'Playlist updated successfully');
@@ -376,5 +353,24 @@ class TrainingPlanController extends Controller
             'title' => 'Thumbnail Test — Training Plan',
             'rows'  => $rows,
         ]);
+    }
+
+    public function synchronizeLearningHours(Request $request, ?TrainingPlan $trainingplan, \App\Services\LearningHours\PlaylistLearningHourService $service): \Illuminate\Http\JsonResponse
+    {
+        if ($trainingplan && $trainingplan->exists) {
+            $result = $service->syncSinglePlaylist($trainingplan);
+            return response()->json($result->toArray());
+        }
+
+        $contentIds = (array) $request->input('content', []);
+        $hours = $service->calculateLearningHoursFromContentIds($contentIds);
+        $result = new \App\DataTransferObjects\LearningHourSyncResult(
+            success: true,
+            updated: false,
+            learningHours: $hours,
+            message: 'Learning Hours calculated successfully.'
+        );
+
+        return response()->json($result->toArray());
     }
 }
