@@ -34,12 +34,14 @@ class LearningAssessmentController extends Controller
             ->pluck('id');
 
         $assessmentQuery = $this->getUserAssessmentQuery($user, $userId, $completedPlaylistIds);
-        $assessments = $assessmentQuery->get();
+        $filterOptions   = $this->getFilterOptions($assessmentQuery);
+        $filteredQuery   = $this->applyFilters($assessmentQuery, $request, (int) $userId);
+        $assessments     = $filteredQuery->get();
 
         return view('user.learning.dashboard-partials.assessment', [
             'assessments' => $assessments,
             'assessmentStats' => $this->summarizeAssessments($assessments, (int) $userId),
-            'filterOptions' => $this->getFilterOptions($assessmentQuery),
+            'filterOptions' => $filterOptions,
             'result'      => $this->getUserAssessmentResults($userId),
         ]);
     }
@@ -140,6 +142,10 @@ class LearningAssessmentController extends Controller
             ->when($result === 'failed', fn ($q) => $q
                 ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 0))
                 ->whereDoesntHave('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 1)))
+            ->when($request->filled('assessment_filter_from_date'),
+                fn ($q) => $q->whereDate('fromdate', '>=', $request->input('assessment_filter_from_date')))
+            ->when($request->filled('assessment_filter_to_date'),
+                fn ($q) => $q->whereDate('fromdate', '<=', $request->input('assessment_filter_to_date')))
             ->when($date === 'this_month', fn ($q) => $q->whereYear('fromdate', $now->year)->whereMonth('fromdate', $now->month))
             ->when($date === 'last_month', function ($q) use ($now) {
                 $lastMonth = $now->copy()->subMonthNoOverflow();
@@ -151,15 +157,17 @@ class LearningAssessmentController extends Controller
             ->when($availability === 'expired', fn ($q) => $q->where('todate', '<', $now))
             ->when($date === 'newest', fn ($q) => $q->orderByDesc('fromdate'))
             ->when($date === 'oldest', fn ($q) => $q->orderBy('fromdate'))
-            ->when(!in_array($date, ['newest', 'oldest'], true), fn ($q) => $q->latest());
+            ->when($date === 'title_asc', fn ($q) => $q->orderBy('title', 'asc'))
+            ->when($date === 'title_desc', fn ($q) => $q->orderBy('title', 'desc'))
+            ->when(!in_array($date, ['newest', 'oldest', 'title_asc', 'title_desc'], true), fn ($q) => $q->latest());
     }
 
     private function getFilterOptions($query): array
     {
         return [
-            'years' => (clone $query)->whereNotNull('fromdate')->selectRaw('YEAR(fromdate) as year')->distinct()->orderByDesc('year')->pluck('year'),
+            'years' => (clone $query)->reorder()->whereNotNull('fromdate')->selectRaw('YEAR(fromdate) as year')->distinct()->orderByDesc('year')->pluck('year'),
             'batches' => collect([1, 2, 4]),
-            'passingGrades' => (clone $query)->whereNotNull('passing_grade')
+            'passingGrades' => (clone $query)->reorder()->whereNotNull('passing_grade')
                 ->select('passing_grade')
                 ->distinct()
                 ->orderBy('passing_grade')
