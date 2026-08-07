@@ -79,14 +79,21 @@
     <div class="row align-items-center g-3 shared-hero-content">
         <div class="col-lg-7">
             <div class="shared-hero-profile">
+                <!-- Badge Home Pill -->
                 <span class="shared-hero-label">
-                    <i class="ti ti-school" aria-hidden="true"></i>
-                    {{ $heroLabel }}
+                    <i class="ti ti-home" aria-hidden="true"></i>
+                    Home
                 </span>
-                <h1 class="shared-hero-title">{{ $heroTitle }}</h1>
-                <h2 class="shared-hero-name">{{ $heroName }}</h2>
-                <p class="shared-hero-subtitle">{{ $heroSubtitle }}</p>
 
+                <!-- User Name -->
+                <h2 class="shared-hero-name">{{ $heroName }}</h2>
+
+                <!-- Department / Team & ID -->
+                @if (!empty($heroSubtitle))
+                    <p class="shared-hero-subtitle">{{ $heroSubtitle }}</p>
+                @endif
+
+                <!-- Keep Learning Action -->
                 <div class="shared-hero-actions">
                     <span class="shared-hero-pill">
                         <i class="ti ti-flame me-1" aria-hidden="true"></i>

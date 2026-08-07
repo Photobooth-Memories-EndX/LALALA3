@@ -1,5 +1,6 @@
 @php
     $filterDuration = request('duration', 'all');
+    $filterLearningHour = request('learning_hour', 'all');
     $filterTotalPages = array_values(array_filter((array) request('total_pages', [])));
     $selectedMonth = request('month', '');
     $selectedYear = request('year', '');
@@ -11,26 +12,23 @@
         'gt60'  => '> 1 Jam',
     ];
 
-    $totalPageOptions = [
-        'lt10'  => '< 10',
-        '10-20' => '10 - 20',
-        '21-50' => '21 - 50',
-        'gt50'  => '> 50',
+    $learningHourOptions = [
+        'lt1h' => '< 1 Hour',
+        '1-3h' => '1 - 3 hours',
+        'gt3h' => '> 3 Hours',
     ];
 
     $modalFilterCount = 0;
     $modalFilterCount += filled($filterAuthor) ? 1 : 0;
-    $modalFilterCount += filled($filterDeadlineFromDate) ? 1 : 0;
-    $modalFilterCount += filled($filterDeadlineToDate) ? 1 : 0;
     $modalFilterCount += filled($filterCreatedFromDate) ? 1 : 0;
     $modalFilterCount += filled($filterCreatedToDate) ? 1 : 0;
-    $modalFilterCount += filled($filterUpdatedFromDate) ? 1 : 0;
-    $modalFilterCount += filled($filterUpdatedToDate) ? 1 : 0;
+    $modalFilterCount += filled($filterDeadlineFromDate) ? 1 : 0;
+    $modalFilterCount += filled($filterDeadlineToDate) ? 1 : 0;
     $modalFilterCount += $filterDeadlineStatus !== 'all' ? 1 : 0;
-    $modalFilterCount += $filterSort !== 'newest_course' ? 1 : 0;
+    $modalFilterCount += ($filterSort && $filterSort !== 'all' && $filterSort !== 'newest_course') ? 1 : 0;
     $modalFilterCount += filled($filterViewOrder) ? 1 : 0;
     $modalFilterCount += $filterDuration !== 'all' ? 1 : 0;
-    $modalFilterCount += count($filterTotalPages);
+    $modalFilterCount += $filterLearningHour !== 'all' ? 1 : 0;
 
     $activeFilterCount = $modalFilterCount;
     $activeFilterCount += filled($filterSearch) ? 1 : 0;
@@ -66,10 +64,7 @@
                         </div>
 
                         <div class="modal-body pt-2">
-                            {{-- <p class="text-muted small mb-4">
-                                Semua filter di bawah hanya menggunakan data Content yang relevan.
-                            </p> --}}
-
+                            {{-- Author --}}
                             <div class="learning-filter-group">
                                 <div class="fw-semibold mb-2">Author</div>
                                 <select name="author" id="contentFilterAuthor" class="form-select rounded-3">
@@ -84,78 +79,69 @@
 
                             <hr class="my-3">
 
-                            <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Deadline Date</div>
-                                <div class="row g-3">
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-muted mb-1" for="contentFilterDeadlineFromDate">From Date</label>
-                                        <input type="date"
-                                               name="deadline_from_date"
-                                               id="contentFilterDeadlineFromDate"
-                                               value="{{ $filterDeadlineFromDate }}"
-                                               class="form-control rounded-3">
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small text-muted mb-1" for="contentFilterDeadlineToDate">To Date</label>
-                                        <input type="date"
-                                               name="deadline_to_date"
-                                               id="contentFilterDeadlineToDate"
-                                               value="{{ $filterDeadlineToDate }}"
-                                               class="form-control rounded-3">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <hr class="my-3">
-
+                            {{-- Created Date --}}
                             <div class="learning-filter-group">
                                 <div class="fw-semibold mb-2">Created Date</div>
                                 <div class="row g-3">
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small text-muted mb-1" for="contentFilterCreatedFromDate">From Date</label>
-                                        <input type="date"
+                                        <input type="{{ $filterCreatedFromDate ? 'date' : 'text' }}"
                                                name="created_from_date"
                                                id="contentFilterCreatedFromDate"
                                                value="{{ $filterCreatedFromDate }}"
-                                               class="form-control rounded-3">
+                                               class="form-control rounded-3"
+                                               placeholder="dd/mm/yyyy"
+                                               onfocus="(this.type='date')"
+                                               onblur="if(!this.value)this.type='text'">
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small text-muted mb-1" for="contentFilterCreatedToDate">To Date</label>
-                                        <input type="date"
+                                        <input type="{{ $filterCreatedToDate ? 'date' : 'text' }}"
                                                name="created_to_date"
                                                id="contentFilterCreatedToDate"
                                                value="{{ $filterCreatedToDate }}"
-                                               class="form-control rounded-3">
+                                               class="form-control rounded-3"
+                                               placeholder="dd/mm/yyyy"
+                                               onfocus="(this.type='date')"
+                                               onblur="if(!this.value)this.type='text'">
                                     </div>
                                 </div>
                             </div>
 
                             <hr class="my-3">
 
-                            {{-- <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Updated Date</div>
+                            {{-- Period --}}
+                            <div class="learning-filter-group">
+                                <div class="fw-semibold mb-2">Period</div>
                                 <div class="row g-3">
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small text-muted mb-1" for="contentFilterUpdatedFromDate">From Date</label>
-                                        <input type="date"
-                                               name="updated_from_date"
-                                               id="contentFilterUpdatedFromDate"
-                                               value="{{ $filterUpdatedFromDate }}"
-                                               class="form-control rounded-3">
+                                        <label class="form-label small text-muted mb-1" for="contentFilterDeadlineFromDate">From Date</label>
+                                        <input type="{{ $filterDeadlineFromDate ? 'date' : 'text' }}"
+                                               name="deadline_from_date"
+                                               id="contentFilterDeadlineFromDate"
+                                               value="{{ $filterDeadlineFromDate }}"
+                                               class="form-control rounded-3"
+                                               placeholder="dd/mm/yyyy"
+                                               onfocus="(this.type='date')"
+                                               onblur="if(!this.value)this.type='text'">
                                     </div>
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small text-muted mb-1" for="contentFilterUpdatedToDate">To Date</label>
-                                        <input type="date"
-                                               name="updated_to_date"
-                                               id="contentFilterUpdatedToDate"
-                                               value="{{ $filterUpdatedToDate }}"
-                                               class="form-control rounded-3">
+                                        <label class="form-label small text-muted mb-1" for="contentFilterDeadlineToDate">To Date</label>
+                                        <input type="{{ $filterDeadlineToDate ? 'date' : 'text' }}"
+                                               name="deadline_to_date"
+                                               id="contentFilterDeadlineToDate"
+                                               value="{{ $filterDeadlineToDate }}"
+                                               class="form-control rounded-3"
+                                               placeholder="dd/mm/yyyy"
+                                               onfocus="(this.type='date')"
+                                               onblur="if(!this.value)this.type='text'">
                                     </div>
                                 </div>
-                            </div> --}}
+                            </div>
 
                             <hr class="my-3">
 
+                            {{-- Deadline & Sort by --}}
                             <div class="row g-3">
                                 <div class="col-12 col-md-6">
                                     <label class="form-label fw-semibold" for="contentFilterDeadlineStatus">Deadline</label>
@@ -169,18 +155,20 @@
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-6">
-                                    <label class="form-label fw-semibold" for="contentFilterSort">Quick Filter</label>
+                                    <label class="form-label fw-semibold" for="contentFilterSort">Sort by</label>
                                     <select name="sort" id="contentFilterSort" class="form-select rounded-3">
-                                        <option value="newest_course" {{ $filterSort === 'newest_course' ? 'selected' : '' }}>Newest Course</option>
-                                        <option value="oldest_course" {{ $filterSort === 'oldest_course' ? 'selected' : '' }}>Oldest Course</option>
-                                        <option value="recently_updated" {{ $filterSort === 'recently_updated' ? 'selected' : '' }}>Recently Updated</option>
-                                        <option value="old_update" {{ $filterSort === 'old_update' ? 'selected' : '' }}>Old Update</option>
+                                        <option value="all" {{ ($filterSort === 'all' || blank($filterSort)) ? 'selected' : '' }}>All</option>
+                                        <option value="oldest" {{ ($filterSort === 'oldest' || $filterSort === 'oldest_course') ? 'selected' : '' }}>Oldest</option>
+                                        <option value="newest" {{ ($filterSort === 'newest' || $filterSort === 'newest_course') ? 'selected' : '' }}>Newest</option>
+                                        <option value="asc" {{ $filterSort === 'asc' ? 'selected' : '' }}>Ascending</option>
+                                        <option value="desc" {{ $filterSort === 'desc' ? 'selected' : '' }}>Descending</option>
                                     </select>
                                 </div>
                             </div>
 
                             <hr class="my-3">
 
+                            {{-- Sort Views --}}
                             <div class="learning-filter-group">
                                 <div class="fw-semibold mb-2">Sort Views</div>
                                 <div class="d-flex flex-wrap gap-3">
@@ -207,6 +195,7 @@
 
                             <hr class="my-3">
 
+                            {{-- Duration --}}
                             <div class="learning-filter-group">
                                 <div class="fw-semibold mb-2">Duration</div>
                                 <div class="d-flex flex-wrap gap-3">
@@ -225,27 +214,28 @@
                                         </label>
                                     @endforeach
                                 </div>
-                                <div class="form-hint mt-2">
-                                    {{-- Mendukung format 04:38, 30:00, 60:00, dan 01:25:30. --}}
-                                </div>
                             </div>
 
                             <hr class="my-3">
 
+                            {{-- LEARNING HOUR --}}
                             <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Total Pages</div>
+                                <div class="fw-semibold mb-2">Learning Hour</div>
                                 <div class="d-flex flex-wrap gap-3">
-                                    @foreach ($totalPageOptions as $value => $label)
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="radio"
+                                               name="learning_hour" value="all"
+                                               {{ $filterLearningHour === 'all' ? 'checked' : '' }}>
+                                        <span class="form-check-label">All</span>
+                                    </label>
+                                    @foreach ($learningHourOptions as $value => $label)
                                         <label class="form-check">
-                                            <input class="form-check-input" type="checkbox"
-                                                   name="total_pages[]" value="{{ $value }}"
-                                                   {{ in_array($value, $filterTotalPages, true) ? 'checked' : '' }}>
+                                            <input class="form-check-input" type="radio"
+                                                   name="learning_hour" value="{{ $value }}"
+                                                   {{ $filterLearningHour === $value ? 'checked' : '' }}>
                                             <span class="form-check-label">{{ $label }}</span>
                                         </label>
                                     @endforeach
-                                </div>
-                                <div class="form-hint mt-2">
-                                    {{-- UI disiapkan tanpa mengubah struktur database atau query existing. --}}
                                 </div>
                             </div>
                         </div>

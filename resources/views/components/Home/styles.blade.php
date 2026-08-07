@@ -113,16 +113,16 @@ body.dark-mode .home-modern-text-primary {
 
     padding: 14px 20px;
 
-    border-radius: 12px;
+    border-radius: 8px;
 
-    background: var(--kp-primary);
-    color: #fff;
+    background: #ff5700;
+    color: #ffffff;
 
     font-size: 15px;
     font-weight: 600;
     text-decoration: none;
 
-    box-shadow: 0 4px 14px rgba(var(--kp-primary-rgb),.20);
+    box-shadow: 0 4px 6px -1px rgba(255, 87, 0, 0.4);
 
     transition: all .25s ease;
 }
@@ -137,10 +137,10 @@ body.dark-mode .home-modern-text-primary {
 }
 
 .home-modern-btn-training-plan:hover {
-    background: var(--kp-light-blue);
-    color: var(--kp-primary-deep);
+    background: #e04d00;
+    color: #ffffff;
     transform: translateY(-2px);
-    box-shadow: 0 8px 22px rgba(var(--kp-primary-rgb),.30);
+    box-shadow: 0 6px 14px -1px rgba(255, 87, 0, 0.5);
 }
 
 .home-modern-btn-training-plan:active {
@@ -148,11 +148,15 @@ body.dark-mode .home-modern-text-primary {
 }
 
 [data-bs-theme="dark"] .home-modern-btn-training-plan {
-    box-shadow: 0 4px 14px rgba(var(--kp-primary-rgb),.15);
+    background: #ff5700;
+    color: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(255, 87, 0, 0.4);
 }
 
 [data-bs-theme="dark"] .home-modern-btn-training-plan:hover {
-    box-shadow: 0 8px 22px rgba(var(--kp-primary-rgb),.25);
+    background: #e04d00;
+    color: #ffffff;
+    box-shadow: 0 6px 14px -1px rgba(255, 87, 0, 0.5);
 }
 
 /* =====================================================
@@ -1672,7 +1676,25 @@ body.dark-mode .home-modern-mobile-bell-link:hover {
 }
 
 @media (max-width: 767.98px) {
-    /* Legacy mobile profile strip cleanup: hide legacy full-width info bar under navbar */
+    .home-modern-mobile-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 16px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    }
+
+    .home-modern-mobile-header .user-info-mobile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Legacy mobile profile strip cleanup & hide sidebar profile card on mobile */
+    .home-modern-sidebar-profile-card,
     .legacy-mobile-profile-strip,
     .app-topbar .legacy-user-strip,
     .navbar-vertical .legacy-user-strip {
@@ -1701,19 +1723,20 @@ body.dark-mode .home-modern-mobile-bell-link:hover {
 .home-modern-assessment-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     position: relative;
     overflow: hidden;
-    background: #FBBF24;
+    background: #ff5700;
     color: #FFFFFF;
     border: none;
     padding: 10px 22px;
-    border-radius: 14px;
+    border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
     line-height: 1.4;
     cursor: pointer;
-    box-shadow: none;
+    box-shadow: 0 4px 6px -1px rgba(255, 87, 0, 0.4);
     transition: background-color .2s ease, border-color .2s ease,
         box-shadow .2s ease, transform .2s ease;
 }
@@ -1725,18 +1748,18 @@ body.dark-mode .home-modern-mobile-bell-link:hover {
 
 .home-modern-assessment-btn:hover,
 .home-modern-assessment-btn:focus-visible {
-    background: #D4A51F;
-    box-shadow: none;
+    background: #e04d00;
+    box-shadow: 0 6px 14px -1px rgba(255, 87, 0, 0.5);
     color: #FFFFFF;
 }
 
 [data-bs-theme="dark"] .home-modern-assessment-btn,
 body.dark .home-modern-assessment-btn,
 body.dark-mode .home-modern-assessment-btn {
-    background: #D4A51F;
+    background: #ff5700;
     border: none;
     color: #FFFFFF;
-    box-shadow: none;
+    box-shadow: 0 4px 6px -1px rgba(255, 87, 0, 0.4);
 }
 
 [data-bs-theme="dark"] .home-modern-assessment-btn i,
@@ -1751,9 +1774,9 @@ body.dark .home-modern-assessment-btn:hover,
 body.dark .home-modern-assessment-btn:focus-visible,
 body.dark-mode .home-modern-assessment-btn:hover,
 body.dark-mode .home-modern-assessment-btn:focus-visible {
-    background: #D4A51F;
+    background: #e04d00;
     color: #FFFFFF;
-    box-shadow: none;
+    box-shadow: 0 6px 14px -1px rgba(255, 87, 0, 0.5);
 }
 
 /* =====================================================

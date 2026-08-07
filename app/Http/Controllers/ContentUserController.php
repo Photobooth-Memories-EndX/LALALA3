@@ -148,7 +148,16 @@ class ContentUserController extends Controller
             default => null,
         };
 
-        if ($durationRange !== null) {
+        $learningHourRange = match ($request->get('learning_hour', 'all')) {
+            'lt1h' => [null, 3600, false, true],
+            '1-3h' => [3600, 10800, true, false],
+            'gt3h' => [10800, null, false, false],
+            default => null,
+        };
+
+        $targetRange = $durationRange ?? $learningHourRange;
+
+        if ($targetRange !== null) {
             // Supports both legacy mm:ss and normalized HH:mm:ss values.
             $durationInSeconds = "CASE
                 WHEN content.duration IS NULL OR TRIM(content.duration) = '' THEN NULL
@@ -162,7 +171,7 @@ class ContentUserController extends Controller
                 ELSE NULL
             END";
 
-            [$minimum, $maximum, $includeMinimum, $excludeMaximum] = $durationRange;
+            [$minimum, $maximum, $includeMinimum, $excludeMaximum] = $targetRange;
 
             if ($minimum !== null) {
                 $queryContent->whereRaw(
@@ -186,8 +195,17 @@ class ContentUserController extends Controller
         }
 
         switch ($filterSort) {
+            case 'oldest':
             case 'oldest_course':
                 $queryContent->orderBy('content.created_at', 'asc');
+                break;
+            case 'asc':
+            case 'ascending':
+                $queryContent->orderBy('content.title', 'asc');
+                break;
+            case 'desc':
+            case 'descending':
+                $queryContent->orderBy('content.title', 'desc');
                 break;
             case 'recently_updated':
                 $queryContent->orderBy('content.updated_at', 'desc');
@@ -195,6 +213,9 @@ class ContentUserController extends Controller
             case 'old_update':
                 $queryContent->orderBy('content.updated_at', 'asc');
                 break;
+            case 'all':
+            case 'newest':
+            case 'newest_course':
             default:
                 $queryContent->orderBy('content.created_at', 'desc');
                 break;
