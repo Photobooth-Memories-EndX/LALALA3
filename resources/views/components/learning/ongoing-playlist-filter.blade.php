@@ -44,10 +44,23 @@
         '100'   => '100%',
     ];
 
+    $curLearningHour = request('ongoing_learning_hour', 'all');
+    $curDateFrom     = request('ongoing_date_from', request('ongoing_from_date'));
+    $curDateTo       = request('ongoing_date_to', request('ongoing_to_date'));
+    $curActivitySort = request('ongoing_activity_sort', 'newest_activity');
+    $curProgram      = request('ongoing_status', 'all');
+    $selDur          = (array) request('ongoing_duration', []);
+
     $playlistFilterCount = ($curQuickStatus !== 'all' ? 1 : 0)
+        + ($curProgram !== 'all' ? 1 : 0)
         + ($curYear !== 'all' ? 1 : 0)
+        + ($curActivitySort !== 'newest_activity' ? 1 : 0)
+        + ($curLearningHour !== 'all' ? 1 : 0)
+        + (filled($curDateFrom) ? 1 : 0)
+        + (filled($curDateTo) ? 1 : 0)
         + count($activeQuickMonths)
-        + count($selectedProgress);
+        + count($selectedProgress)
+        + count(array_filter($selDur));
 
     // Reset mode playlist: bersihkan seluruh filter tetapi tetap di mode playlist.
     $resetUrl = route('user.learning.dashboard') . '?' . http_build_query(['ongoing_mode' => 'playlist']);
@@ -240,11 +253,12 @@
                             <div class="learning-filter-group">
                                 <label class="form-label fw-semibold mb-2" for="ongoing_playlist_activity_sort">Sort By</label>
                                 <select class="form-select" name="ongoing_activity_sort" id="ongoing_playlist_activity_sort">
-                                    <option value="newest_activity" {{ $curActivitySort === 'newest_activity' ? 'selected' : '' }}>All</option>
-                                    <option value="oldest_activity" {{ $curActivitySort === 'oldest_activity' ? 'selected' : '' }}>Oldest</option>
                                     <option value="newest_activity" {{ $curActivitySort === 'newest_activity' ? 'selected' : '' }}>Newest</option>
-                                    <option value="duration_shortest" {{ $curActivitySort === 'duration_shortest' ? 'selected' : '' }}>Ascending</option>
-                                    <option value="duration_longest" {{ $curActivitySort === 'duration_longest' ? 'selected' : '' }}>Descending</option>
+                                    <option value="oldest_activity" {{ $curActivitySort === 'oldest_activity' ? 'selected' : '' }}>Oldest</option>
+                                    <option value="duration_longest" {{ $curActivitySort === 'duration_longest' ? 'selected' : '' }}>Duration Longest</option>
+                                    <option value="duration_shortest" {{ $curActivitySort === 'duration_shortest' ? 'selected' : '' }}>Duration Shortest</option>
+                                    <option value="progress_highest" {{ $curActivitySort === 'progress_highest' ? 'selected' : '' }}>Highest Progress</option>
+                                    <option value="progress_lowest" {{ $curActivitySort === 'progress_lowest' ? 'selected' : '' }}>Lowest Progress</option>
                                 </select>
                             </div>
 

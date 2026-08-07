@@ -60,7 +60,7 @@ class LearningOngoingController extends Controller
         );
 
         $ongoingPlaylists = $this->paginateOngoingCards(
-            $cards->sortByDesc('sort_activity')->values()
+            $this->sortOngoingCards($cards, $filters['progress_sort'], $filters['activity_sort'])
         );
 
         return view('user.learning.dashboard-partials.ongoing-playlist', compact('ongoingPlaylists'));
@@ -80,6 +80,10 @@ class LearningOngoingController extends Controller
             'year'          => request('ongoing_year', 'all'),
             'activity_sort' => request('ongoing_activity_sort', 'newest_activity'),
             'progress_sort' => request('ongoing_progress_sort', 'all'),
+
+            'date_from'     => request('ongoing_date_from', request('ongoing_from_date')),
+            'date_to'       => request('ongoing_date_to', request('ongoing_to_date')),
+            'learning_hour' => request('ongoing_learning_hour', 'all'),
 
             // Quick filter Status (dropdown cepat): all|not_started|ongoing|completed|paused.
             'quick_status' => (string) request('ongoing_quick_status', 'all'),
@@ -107,10 +111,17 @@ class LearningOngoingController extends Controller
     {
         return [
             'search'           => trim((string) request('ongoing_search')),
+            'status'           => request('ongoing_status', 'all'),
             'quick_status'     => (string) request('ongoing_quick_status', 'all'),
             'year'             => request('ongoing_year', 'all'),
+            'activity_sort'    => request('ongoing_activity_sort', 'newest_activity'),
+            'progress_sort'    => request('ongoing_progress_sort', 'all'),
+            'date_from'        => request('ongoing_date_from', request('ongoing_from_date')),
+            'date_to'          => request('ongoing_date_to', request('ongoing_to_date')),
+            'learning_hour'    => request('ongoing_learning_hour', 'all'),
             'months'           => array_filter((array) request('ongoing_month', [])),
             'progress_buckets' => array_filter((array) request('ongoing_progress', [])),
+            'durations'        => array_filter((array) request('ongoing_duration', [])),
         ];
     }
 
@@ -132,19 +143,24 @@ class LearningOngoingController extends Controller
     }
 
     /**
-     * Urutkan koleksi card Content sesuai opsi sort yang aktif.
+     * Urutkan koleksi card Content/Playlist sesuai opsi sort yang aktif.
      *
      * @param  \Illuminate\Support\Collection  $cards
      */
     private function sortOngoingCards($cards, string $progressSort, string $activitySort)
     {
-        switch (true) {
-            case $progressSort === 'progress_highest':  return $cards->sortByDesc('sort_progress')->values();
-            case $progressSort === 'progress_lowest':   return $cards->sortBy('sort_progress')->values();
-            case $activitySort === 'duration_longest':  return $cards->sortByDesc('sort_duration')->values();
-            case $activitySort === 'duration_shortest': return $cards->sortBy('sort_duration')->values();
-            case $activitySort === 'oldest_activity':   return $cards->sortBy('sort_activity')->values();
-            default:                                    return $cards->sortByDesc('sort_activity')->values();
-        }
+        $sortKey = $activitySort !== 'newest_activity'
+            ? $activitySort
+            : ($progressSort !== 'all' ? $progressSort : $activitySort);
+
+        return match ($sortKey) {
+            'oldest_activity'   => $cards->sortBy('sort_activity')->values(),
+            'newest_activity'   => $cards->sortByDesc('sort_activity')->values(),
+            'duration_longest'  => $cards->sortByDesc('sort_duration')->values(),
+            'duration_shortest' => $cards->sortBy('sort_duration')->values(),
+            'progress_highest'  => $cards->sortByDesc('sort_progress')->values(),
+            'progress_lowest'   => $cards->sortBy('sort_progress')->values(),
+            default             => $cards->sortByDesc('sort_activity')->values(),
+        };
     }
 }

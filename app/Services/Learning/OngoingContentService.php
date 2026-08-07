@@ -76,8 +76,9 @@ class OngoingContentService
                 return;
         }
 
-        if ($filters['progress_sort'] === 'completed') {
-            $query->where('finish', '1');
+        $hasCompletedBucket = in_array('100', $filters['progress_buckets'], true);
+        if ($filters['progress_sort'] === 'completed' || $hasCompletedBucket) {
+            // allow finished contents if 100% bucket or completed progress sort is selected
         } else {
             $query->where('finish', '0');
         }
@@ -100,6 +101,9 @@ class OngoingContentService
         $lastPages       = $filters['last_pages'];
         $totalPagesFilt  = $filters['total_pages'];
         $progressSort    = $filters['progress_sort'];
+        $dateFrom        = $filters['date_from'] ?? null;
+        $dateTo          = $filters['date_to'] ?? null;
+        $learningHour    = $filters['learning_hour'] ?? 'all';
 
         $query->when($search !== '', function ($q) use ($search) {
             $q->whereHas('content', function ($q) use ($search) {
@@ -116,17 +120,31 @@ class OngoingContentService
         $query->when($progressSort === 'in_progress', fn ($q) => $q->whereBetween('progress', [1, 99]));
         $query->when($progressSort === 'almost_done', fn ($q) => $q->where('progress', '>=', 80)->where('progress', '<', 100));
 
-        // ── Filter tambahan (data asli content_users & relasi content) ──────────────
-        // Type diambil dari kolom content.type (Video, Document, YouTube, dll).
+        // Period filter (Date From & Date To)
+        $query->when(filled($dateFrom), fn ($q) => $q->whereDate('created_at', '>=', $dateFrom));
+        $query->when(filled($dateTo), fn ($q) => $q->whereDate('created_at', '<=', $dateTo));
+
+        // Learning Hour filter (content.learning_hours)
+        $query->when($learningHour !== 'all', function ($q) use ($learningHour) {
+            $q->whereHas('content', function ($c) use ($learningHour) {
+                switch ($learningHour) {
+                    case 'lt1':  $c->where('learning_hours', '<', 1); break;
+                    case '1-3':  $c->whereBetween('learning_hours', [1, 3]); break;
+                    case 'gt3':  $c->where('learning_hours', '>', 3); break;
+                }
+            });
+        });
+
+        // Type (Video, Document, YouTube, dll)
         $query->when(!empty($realTypes), fn ($q) => $q->whereHas('content', fn ($c) => $c->whereIn('type', $realTypes)));
 
-        // Learning status diambil dari kolom content_users.learning_status.
+        // Learning status
         $query->when(!empty($learningStatus), fn ($q) => $q->whereIn('learning_status', $learningStatus));
 
-        // Bulan berdasarkan content_users.created_at (angka 1-12).
+        // Month
         $query->when(!empty($months), fn ($q) => $q->whereIn(DB::raw('MONTH(created_at)'), $months));
 
-        // Progress dikelompokkan per rentang; antar pilihan bersifat OR.
+        // Progress buckets
         $query->when(!empty($progressBuckets), function ($q) use ($progressBuckets) {
             $q->where(function ($sub) use ($progressBuckets) {
                 foreach ($progressBuckets as $bucket) {
@@ -136,13 +154,13 @@ class OngoingContentService
                         case '26-50': $sub->orWhereBetween('progress', [26, 50]); break;
                         case '51-75': $sub->orWhereBetween('progress', [51, 75]); break;
                         case '76-99': $sub->orWhereBetween('progress', [76, 99]); break;
-                        case '100':   $sub->orWhere('progress', '>=', 100); break;
+                        case '100':   $sub->orWhere('progress', '>=', 100)->orWhere('finish', '1'); break;
                     }
                 }
             });
         });
 
-        // Durasi berdasarkan content_users.duration_seconds (detik); antar pilihan OR.
+        // Durasi berdasarkan content_users.duration_seconds (detik) atau content.duration
         $query->when(!empty($durations), function ($q) use ($durations) {
             $q->where(function ($sub) use ($durations) {
                 foreach ($durations as $d) {
@@ -156,7 +174,7 @@ class OngoingContentService
             });
         });
 
-        // Current learning time (content_users.current_time, posisi belajar dalam detik).
+        // Current learning time
         $query->when(!empty($currentTimes), function ($q) use ($currentTimes) {
             $q->where(function ($sub) use ($currentTimes) {
                 foreach ($currentTimes as $c) {
@@ -169,7 +187,7 @@ class OngoingContentService
             });
         });
 
-        // Last page (content_users.last_page).
+        // Last page
         $query->when(!empty($lastPages), function ($q) use ($lastPages) {
             $q->where(function ($sub) use ($lastPages) {
                 foreach ($lastPages as $p) {
@@ -183,7 +201,7 @@ class OngoingContentService
             });
         });
 
-        // Total pages (content_users.total_pages).
+        // Total pages
         $query->when(!empty($totalPagesFilt), function ($q) use ($totalPagesFilt) {
             $q->where(function ($sub) use ($totalPagesFilt) {
                 foreach ($totalPagesFilt as $p) {
