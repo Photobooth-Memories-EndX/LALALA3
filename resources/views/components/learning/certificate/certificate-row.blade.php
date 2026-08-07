@@ -24,6 +24,9 @@
             : '<ol>' . $playlistContents->map(fn ($title) => '<li>' . e($title) . '</li>')->implode('') . '</ol>')
         . '</div>';
     $shareUrl = $certificate->credential_url ?: ($certificate->verify_url ?: '');
+    $documentUrl = route('certificate.viewer.document', $certificate->credential_id);
+    $viewerUrl = route('certificate.viewer', $certificate->credential_id);
+    $downloadUrl = route('certificate.download.pdf', $certificate->credential_id);
 @endphp
 
 <tr class="certificate-row" data-certificate-id="{{ $certificate->id }}">
@@ -73,15 +76,18 @@
     <td class="certificate-col-action text-center">
         <div class="certificate-actions">
             <a class="btn certificate-action-button text-blue certificate-preview-trigger"
-               href="{{ route('certificate.viewer', $certificate->credential_id) }}"
-               data-certificate-preview-url="{{ route('certificate.preview', $certificate->credential_id) }}"
+               href="{{ $viewerUrl }}"
+               data-certificate-preview-url="{{ $documentUrl }}"
+               data-certificate-viewer-url="{{ $viewerUrl }}"
+               data-certificate-download-url="{{ $downloadUrl }}"
                data-certificate-preview-title="{{ $certificate->title }}"
+               data-credential-id="{{ $certificate->credential_id }}"
                aria-haspopup="dialog"
                title="Preview Certificate"
                aria-label="Preview Certificate">
                 <i class="ti ti-eye" aria-hidden="true"></i>
             </a>
-            <a class="btn certificate-action-button text-green" href="{{ route('certificate.download.pdf', $certificate->credential_id) }}" title="Download Certificate" aria-label="Download Certificate">
+            <a class="btn certificate-action-button text-green" href="{{ $downloadUrl }}" title="Download Certificate" aria-label="Download Certificate">
                 <i class="ti ti-download" aria-hidden="true"></i>
             </a>
             <button type="button"
