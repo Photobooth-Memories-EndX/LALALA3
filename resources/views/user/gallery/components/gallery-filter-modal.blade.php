@@ -1,106 +1,127 @@
-<div class="modal fade gallery-filter-modal" id="galleryFilterModal" tabindex="-1"
-    aria-labelledby="galleryFilterModalTitle" data-gallery-modal>
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div>
-                    <p class="gallery-modal-eyebrow mb-1">Refine results</p>
-                    <h2 class="modal-title" id="galleryFilterModalTitle">Filter Gallery</h2>
-                </div>
-                <a href="#" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
+<div class="modal fade gallery-filter-modal" id="galleryFilterModal" tabindex="-1" aria-hidden="true" data-gallery-modal>
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered learning-filter-modal">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h3 class="modal-title fw-bold">
+                    <i class="ti ti-adjustments-horizontal me-1 text-primary"></i>
+                    More Filters
+                </h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="gallery-filter-sections">
-                    <fieldset class="gallery-filter-group">
-                        <legend>Category</legend>
-                        <div class="gallery-check-grid">
-                            @forelse($categories as $category)
-                                <label class="gallery-check-option">
-                                    <input type="checkbox" name="category[]" value="{{ $category }}" @checked(in_array($category, $filters['category'], true))>
-                                    <span>{{ $category }}</span>
-                                </label>
-                            @empty
-                                <p class="gallery-option-empty">No categories available.</p>
-                            @endforelse
-                        </div>
-                    </fieldset>
-                    <div class="gallery-filter-two-column">
-                        <div class="gallery-filter-group">
-                            <label for="gallery-modal-uploader" class="gallery-filter-legend">Uploader</label>
-                            <select id="gallery-modal-uploader" name="modal_uploader" class="form-select" data-gallery-modal-uploader>
-                                <option value="">All Uploaders</option>
-                                @foreach($uploaders as $uploader)
-                                    <option value="{{ $uploader }}" @selected($filters['uploader'] === $uploader)>{{ $uploader }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <fieldset class="gallery-filter-group">
-                            <legend>Views</legend>
-                            <div class="gallery-radio-stack">
-                                @foreach(['' => 'All Views', 'most_viewed' => 'Most Viewed', 'least_viewed' => 'Least Viewed'] as $value => $label)
-                                    <label class="gallery-radio-option">
-                                        <input type="radio" name="modal_views" value="{{ $value }}" data-gallery-modal-views @checked($filters['views'] === ($value ?: null))>
-                                        <span>{{ $label }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        </fieldset>
+            <div class="modal-body pt-2">
+                {{-- 1. Uploader / Organizer (Full Width) --}}
+                <div class="learning-filter-group mb-3">
+                    <label class="form-label fw-semibold" for="gallery-modal-uploader">Uploader / Organizer</label>
+                    <select id="gallery-modal-uploader" name="uploader" class="form-select rounded-3" data-gallery-modal-uploader>
+                        <option value="">All Uploaders / Organizers</option>
+                        @foreach($uploaders as $uploader)
+                            <option value="{{ $uploader }}" @selected($filters['uploader'] === $uploader)>{{ $uploader }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <hr class="my-3">
+
+                {{-- 2. Type & Sort by (2 Kolom) --}}
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="gallery-modal-type">Type / Category</label>
+                        <select id="gallery-modal-type" name="category[]" class="form-select rounded-3">
+                            <option value="">All Types</option>
+                            <option value="On-site" @selected(in_array('On-site', $filters['category'], true))>On-site</option>
+                            <option value="Off-site" @selected(in_array('Off-site', $filters['category'], true))>Off-site</option>
+                            @foreach($categories as $category)
+                                @if(!in_array($category, ['On-site', 'Off-site'], true))
+                                    <option value="{{ $category }}" @selected(in_array($category, $filters['category'], true))>{{ $category }}</option>
+                                @endif
+                            @endforeach
+                        </select>
                     </div>
-                    <fieldset class="gallery-filter-group">
-                        <legend>Year</legend>
-                        <div class="gallery-check-grid gallery-check-grid-compact">
-                            @forelse($years as $year)
-                                <label class="gallery-check-option">
-                                    <input type="checkbox" name="year[]" value="{{ $year }}" @checked(in_array($year, $filters['year'], true))>
-                                    <span>{{ $year }}</span>
-                                </label>
-                            @empty
-                                <p class="gallery-option-empty">No event years available.</p>
-                            @endforelse
+
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="gallery-modal-sort">Sort by</label>
+                        <select id="gallery-modal-sort" name="sort" class="form-select rounded-3">
+                            <option value="latest" @selected($filters['sort'] === 'latest')>Newest</option>
+                            <option value="oldest" @selected($filters['sort'] === 'oldest')>Oldest</option>
+                            <option value="az" @selected($filters['sort'] === 'az')>Ascending (A–Z)</option>
+                            <option value="za" @selected($filters['sort'] === 'za')>Descending (Z–A)</option>
+                            <option value="most_viewed" @selected($filters['sort'] === 'most_viewed')>Most Viewed</option>
+                            <option value="least_viewed" @selected($filters['sort'] === 'least_viewed')>Least Viewed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                {{-- 3. Event Date Range (2 Kolom) --}}
+                <div class="learning-filter-group">
+                    <div class="fw-semibold mb-2"><i class="ti ti-calendar me-1"></i>Event Date</div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label for="gallery-date-from" class="form-label small text-muted mb-1"><i class="ti ti-calendar-event me-1"></i>From Date</label>
+                            <input id="gallery-date-from" type="{{ $filters['date_from'] ? 'date' : 'text' }}"
+                                   name="date_from" value="{{ $filters['date_from'] }}"
+                                   class="form-control rounded-3" placeholder="dd/mm/yyyy"
+                                   onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
                         </div>
-                    </fieldset>
-                    <fieldset class="gallery-filter-group">
-                        <legend>Month</legend>
-                        <div class="gallery-check-grid gallery-month-grid">
-                            @foreach($monthOptions as $month => $label)
-                                <label class="gallery-check-option">
-                                    <input type="checkbox" name="month[]" value="{{ $month }}" @checked(in_array($month, $filters['month'], true))>
-                                    <span>{{ $label }}</span>
-                                </label>
-                            @endforeach
+                        <div class="col-12 col-md-6">
+                            <label for="gallery-date-to" class="form-label small text-muted mb-1"><i class="ti ti-calendar-event me-1"></i>To Date</label>
+                            <input id="gallery-date-to" type="{{ $filters['date_to'] ? 'date' : 'text' }}"
+                                   name="date_to" value="{{ $filters['date_to'] }}"
+                                   class="form-control rounded-3" placeholder="dd/mm/yyyy"
+                                   onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
                         </div>
-                    </fieldset>
-                    <fieldset class="gallery-filter-group">
-                        <legend>Event Date</legend>
-                        <div class="gallery-date-grid">
-                            <div>
-                                <label for="gallery-date-from" class="form-label">From</label>
-                                <input id="gallery-date-from" type="date" name="date_from" value="{{ $filters['date_from'] }}" class="form-control">
-                            </div>
-                            <div>
-                                <label for="gallery-date-to" class="form-label">To</label>
-                                <input id="gallery-date-to" type="date" name="date_to" value="{{ $filters['date_to'] }}" class="form-control">
-                                <p class="invalid-feedback mb-0" data-gallery-date-error>Date To must be the same as or later than Date From.</p>
-                            </div>
-                        </div>
-                    </fieldset>
-                    <fieldset class="gallery-filter-group">
-                        <legend>Likes</legend>
-                        <div class="gallery-radio-stack gallery-radio-inline">
-                            @foreach(['' => 'All Likes', 'most_liked' => 'Most Liked', 'least_liked' => 'Least Liked'] as $value => $label)
-                                <label class="gallery-radio-option">
-                                    <input type="radio" name="likes" value="{{ $value }}" @checked($filters['likes'] === ($value ?: null))>
-                                    <span>{{ $label }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                    </fieldset>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <a href="{{ route('gallery.user.index') }}" class="btn gallery-modal-reset" data-gallery-modal-reset><i class="ti ti-refresh" aria-hidden="true"></i> Reset</a>
-                <button type="submit" name="gallery_source" value="advanced" class="btn gallery-modal-apply" data-gallery-modal-apply><i class="ti ti-check" aria-hidden="true"></i> Apply Filters</button>
+            <div class="modal-footer border-0 pt-0 d-flex justify-content-end align-items-center gap-2">
+                <a href="{{ route('gallery.user.index') }}"
+                   id="gallery-modal-reset-btn"
+                   class="btn btn-outline-secondary rounded-3 opacity-50 text-muted"
+                   data-gallery-modal-reset>
+                    <i class="ti ti-refresh me-1"></i> Reset
+                </a>
+                <button type="submit" name="gallery_source" value="advanced" class="btn btn-primary rounded-3" data-gallery-modal-apply>
+                    <i class="ti ti-check me-1"></i> Apply Filter
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateGalleryModalResetState() {
+        var modal = document.getElementById('galleryFilterModal');
+        var resetBtn = document.getElementById('gallery-modal-reset-btn');
+        if (!modal || !resetBtn) return;
+
+        var uploader = modal.querySelector('[name="uploader"]')?.value || '';
+        var category = modal.querySelector('[name="category[]"]')?.value || '';
+        var sort = modal.querySelector('[name="sort"]')?.value || 'latest';
+        var dateFrom = modal.querySelector('[name="date_from"]')?.value || '';
+        var dateTo = modal.querySelector('[name="date_to"]')?.value || '';
+
+        var hasFilter = uploader !== '' || category !== '' || (sort !== 'latest' && sort !== '') || dateFrom !== '' || dateTo !== '';
+
+        if (hasFilter) {
+            resetBtn.className = 'btn btn-outline-primary rounded-3 fw-semibold';
+            resetBtn.style.opacity = '1';
+        } else {
+            resetBtn.className = 'btn btn-outline-secondary rounded-3 opacity-50 text-muted';
+            resetBtn.style.opacity = '0.5';
+        }
+    }
+
+    var modal = document.getElementById('galleryFilterModal');
+    if (modal) {
+        modal.querySelectorAll('select, input').forEach(function(el) {
+            el.addEventListener('change', updateGalleryModalResetState);
+            el.addEventListener('input', updateGalleryModalResetState);
+        });
+
+        modal.addEventListener('shown.bs.modal', updateGalleryModalResetState);
+        updateGalleryModalResetState();
+    }
+});
+</script>

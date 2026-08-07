@@ -58,7 +58,7 @@
                     </span>
                 </div>
 
-                <a href="{{ route('gallery.user.view', $list->slug) }}" class="btn btn-primary w-100">
+                <a href="{{ route('gallery.user.view', $list->slug) }}" class="btn btn-primary w-100 rounded-pill">
                     <i class="ti ti-eye me-1"></i> View Gallery
                 </a>
             </div>

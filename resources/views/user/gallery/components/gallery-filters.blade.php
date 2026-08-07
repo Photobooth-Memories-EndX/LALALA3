@@ -30,23 +30,11 @@
         <label class="form-label small text-muted mb-2 gallery-fast-filter-label" for="gallery-search">Fast Filter</label>
         <div class="gallery-filter-toolbar">
             <div class="gallery-quick-dropdowns">
-                <div class="dropdown">
-                    <button type="button" class="btn gallery-fast-filter-control dropdown-toggle {{ $filters['month'] ? 'active' : '' }}"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Month: <span class="fw-semibold" data-gallery-filter-label="month">{{ $monthLabel }}</span>
-                    </button>
-                    <div class="dropdown-menu gallery-quick-dropdown-scroll">
-                        <a href="#" class="dropdown-item gallery-quick-filter-item {{ !$filters['month'] ? 'active' : '' }}" data-filter="month" data-value="">All</a>
-                        @foreach($monthOptions as $month => $label)
-                            <a href="#" class="dropdown-item gallery-quick-filter-item {{ count($filters['month']) === 1 && $filters['month'][0] === $month ? 'active' : '' }}"
-                                data-filter="month" data-value="{{ $month }}">{{ $label }}</a>
-                        @endforeach
-                    </div>
-                </div>
+                {{-- 1. Year --}}
                 <div class="dropdown">
                     <button type="button" class="btn gallery-fast-filter-control dropdown-toggle {{ $filters['year'] ? 'active' : '' }}"
                         data-bs-toggle="dropdown" aria-expanded="false">
-                        Year: <span class="fw-semibold" data-gallery-filter-label="year">{{ $yearLabel }}</span>
+                        <i class="ti ti-calendar-event me-1"></i>Year: <span class="fw-semibold" data-gallery-filter-label="year">{{ $yearLabel }}</span>
                     </button>
                     <div class="dropdown-menu">
                         <a href="#" class="dropdown-item gallery-quick-filter-item {{ !$filters['year'] ? 'active' : '' }}" data-filter="year" data-value="">All</a>
@@ -56,6 +44,23 @@
                         @endforeach
                     </div>
                 </div>
+
+                {{-- 2. Month --}}
+                <div class="dropdown">
+                    <button type="button" class="btn gallery-fast-filter-control dropdown-toggle {{ $filters['month'] ? 'active' : '' }}"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="ti ti-calendar me-1"></i>Month: <span class="fw-semibold" data-gallery-filter-label="month">{{ $monthLabel }}</span>
+                    </button>
+                    <div class="dropdown-menu gallery-quick-dropdown-scroll">
+                        <a href="#" class="dropdown-item gallery-quick-filter-item {{ !$filters['month'] ? 'active' : '' }}" data-filter="month" data-value="">All</a>
+                        @foreach($monthOptions as $month => $label)
+                            <a href="#" class="dropdown-item gallery-quick-filter-item {{ count($filters['month']) === 1 && $filters['month'][0] === $month ? 'active' : '' }}"
+                                data-filter="month" data-value="{{ $month }}">{{ $label }}</a>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- 3. Views --}}
                 <div class="dropdown">
                     <button type="button" class="btn gallery-fast-filter-control dropdown-toggle {{ $filters['views'] ? 'active' : '' }}"
                         data-bs-toggle="dropdown" aria-expanded="false">

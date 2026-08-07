@@ -66,29 +66,25 @@
         </div>
 
         {{-- FOOTER --}}
-        <div class="card-footer bg-transparent border-top pt-0 mt-auto">
-            <div class="d-flex align-items-center justify-content-between gap-3 py-3">
-
-                <div class="d-flex align-items-center gap-2 min-w-0">
-                    <span class="avatar avatar-sm bg-blue-lt text-blue fw-bold flex-shrink-0">
-                        {{ strtoupper(substr($item->user->name ?? 'U', 0, 1)) }}
-                    </span>
-                    <div class="min-w-0">
-                        <div class="fw-semibold small text-truncate owl-card-author-name">
-                            {{ $item->user->name ?? 'Unknown' }}
-                        </div>
-                        <div class="text-secondary owl-card-views">
-                            {{ number_format($item->views ?? 0) }} views
-                        </div>
+        <div class="card-footer bg-transparent border-top pt-3 pb-3 mt-auto">
+            <div class="d-flex align-items-center gap-2 min-w-0 mb-3">
+                <span class="avatar avatar-sm bg-blue-lt text-blue fw-bold flex-shrink-0">
+                    {{ strtoupper(substr($item->user->name ?? 'U', 0, 1)) }}
+                </span>
+                <div class="min-w-0">
+                    <div class="fw-semibold small text-truncate owl-card-author-name">
+                        {{ $item->user->name ?? 'Unknown' }}
+                    </div>
+                    <div class="text-secondary owl-card-views small">
+                        <i class="ti ti-eye me-1"></i>{{ number_format($item->views ?? 0) }} views
                     </div>
                 </div>
-
-                <a href="{{ route('news.user.view', $item->slug) }}"
-                   class="btn btn-sm btn-outline-primary rounded-pill owl-card-cta flex-shrink-0">
-                    Read more <i class="ti ti-arrow-right ms-1"></i>
-                </a>
-
             </div>
+
+            <a href="{{ route('news.user.view', $item->slug) }}"
+               class="btn btn-primary w-100 rounded-pill">
+                Read more <i class="ti ti-arrow-right ms-1"></i>
+            </a>
         </div>
 
     </div>
