@@ -39,6 +39,7 @@
                             card-type="playlist"
                             :title="$plan->title ?? '-'"
                             :classification="$classification"
+                            :duration="$plan->duration ?? \App\Support\DurationFormatter::fromSeconds((int) ($plan->total_duration_seconds ?? 0))"
                             :published-at="$publishedAt"
                             :has-deadline="$hasDeadline"
                             :from-date="$fromDate"
@@ -49,6 +50,7 @@
                             :completed-count="$plFinished"
                             :continue-url="$continueUrl"
                             :thumbnail="$plThumbnail"
+                            :learning-hours="$plan->learning_hours ?? null"
                         />
                     </div>
                 @endforeach

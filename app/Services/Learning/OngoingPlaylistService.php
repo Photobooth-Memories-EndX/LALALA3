@@ -33,7 +33,13 @@ class OngoingPlaylistService
     public function userPlaylists(int $userId): Collection
     {
         return TrainingPlan::query()
-            ->select('trainingplan.id', 'trainingplan.title', 'trainingplan.slug', 'trainingplan.thumbnail')
+            ->select(
+                'trainingplan.id',
+                'trainingplan.title',
+                'trainingplan.slug',
+                'trainingplan.thumbnail',
+                'trainingplan.total_duration_seconds'
+            )
             ->whereExists(function ($q) use ($userId) {
                 $q->from('trainingplandetail')
                     ->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')
@@ -65,13 +71,6 @@ class OngoingPlaylistService
                 'avg_progress'
             )
             ->selectSub(
-                ContentUser::selectRaw('COALESCE(SUM(content_users.duration_seconds), 0)')
-                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId),
-                'total_duration_seconds'
-            )
-            ->selectSub(
                 ContentUser::selectRaw('MAX(content_users.updated_at)')
                     ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
                     ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
@@ -95,6 +94,9 @@ class OngoingPlaylistService
                 // Progress playlist = module selesai / total module (bukan progress content).
                 $plan->progress_percent = $total > 0 ? (int) round($finished / $total * 100) : 0;
                 $plan->is_completed     = $total > 0 && $finished >= $total;
+
+                $seconds = max(0, (int) ($plan->total_duration_seconds ?? 0));
+                $plan->duration = \App\Support\DurationFormatter::fromSeconds($seconds);
 
                 return $plan;
             });
