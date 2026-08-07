@@ -84,6 +84,8 @@
         </div>
         {{ $certificates->onEachSide(1)->links() }}
     </div>
+
+    <x-certificate.hover-preview />
 @else
     <div class="certificate-empty-state">
         <span class="avatar avatar-xl bg-blue-lt text-blue certificate-empty-icon"><i class="ti ti-certificate"></i></span>

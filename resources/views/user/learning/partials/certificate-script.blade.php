@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="{{ asset('css/certificate-hover-preview.css') }}">
+<script src="{{ asset('js/certificate-hover-preview.js') }}"></script>
 <script>
     function initLearningCertificate() {
         var tableId = '#certificateTable';
@@ -8,230 +10,22 @@
             certificateTable = $.fn.DataTable.isDataTable(tableId)
                 ? $table.DataTable()
                 : $table.DataTable({
-                ordering: false,
-                paging: false,
-                searching: false,
-                info: false,
-                autoWidth: false,
-                dom: 't',
-                language: { emptyTable: 'No certificates available.' }
+                    ordering: false,
+                    paging: false,
+                    searching: false,
+                    info: false,
+                    autoWidth: false,
+                    dom: 't',
+                    language: { emptyTable: 'No certificates available.' }
                 });
         }
 
         function initCertificateHoverPreview() {
-            var canHover = window.matchMedia
-                && window.matchMedia('(min-width: 768px) and (hover: hover)').matches;
-            var previewId = 'certificateHoverPreview';
-            var $triggers = $('.certificate-preview-trigger[data-certificate-preview-url]');
-
-            if (!canHover || !$triggers.length) {
-                $('#' + previewId).remove();
-                return;
+            if (typeof window.initCertificateHoverPreview === 'function') {
+                window.initCertificateHoverPreview();
+            } else if (typeof window.initCertificatePreviewModal === 'function') {
+                window.initCertificatePreviewModal();
             }
-
-            var previewCache = window._certificatePreviewHtmlCache || {};
-            window._certificatePreviewHtmlCache = previewCache;
-
-            var $preview = $('#' + previewId);
-            if (!$preview.length) {
-                $preview = $(
-                    '<aside class="certificate-hover-preview" id="' + previewId + '" role="dialog" aria-hidden="true" aria-label="Certificate preview">' +
-                        '<div class="certificate-hover-preview-header">' +
-                            '<div class="certificate-hover-preview-heading"></div>' +
-                            '<button type="button" class="certificate-hover-preview-close" aria-label="Close certificate preview">' +
-                                '<i class="ti ti-x" aria-hidden="true"></i>' +
-                            '</button>' +
-                        '</div>' +
-                        '<div class="certificate-hover-preview-document">' +
-                            '<iframe class="certificate-hover-preview-frame" title="Certificate document preview" sandbox=""></iframe>' +
-                            '<div class="certificate-hover-preview-state" aria-live="polite">' +
-                                '<span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>' +
-                                '<span>Loading certificate preview...</span>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="certificate-hover-preview-footer">' +
-                            '<a class="btn btn-primary certificate-hover-preview-link" href="#">' +
-                                '<span>View Full Certificate</span>' +
-                                '<i class="ti ti-arrow-right" aria-hidden="true"></i>' +
-                            '</a>' +
-                        '</div>' +
-                    '</aside>'
-                ).appendTo(document.body);
-            }
-
-            var $heading = $preview.find('.certificate-hover-preview-heading');
-            var $documentViewport = $preview.find('.certificate-hover-preview-document');
-            var $frame = $preview.find('.certificate-hover-preview-frame');
-            var $state = $preview.find('.certificate-hover-preview-state');
-            var $fullLink = $preview.find('.certificate-hover-preview-link');
-            var openTimer = null;
-            var closeTimer = null;
-            var activeTrigger = null;
-            var activeUrl = '';
-            var renderedUrl = '';
-
-            function showState(message, isError) {
-                $frame.hide();
-                $state
-                    .removeClass('d-none')
-                    .toggleClass('text-danger', Boolean(isError))
-                    .html(
-                        isError
-                            ? '<i class="ti ti-alert-circle fs-2" aria-hidden="true"></i><span>' + message + '</span>'
-                            : '<span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span><span>' + message + '</span>'
-                    );
-            }
-
-            function sizeFrame() {
-                var sourceWidth = 930;
-                var displayWidth = $documentViewport.innerWidth();
-                var displayHeight = $documentViewport.innerHeight();
-                var scale = Math.min(1, displayWidth / sourceWidth);
-
-                $frame.css({
-                    width: sourceWidth + 'px',
-                    height: Math.ceil(displayHeight / scale) + 'px',
-                    transform: 'scale(' + scale + ')'
-                });
-            }
-
-            function positionPreview($trigger) {
-                var rect = $trigger[0].getBoundingClientRect();
-                var gap = 12;
-                var edge = 12;
-                var previewWidth = $preview.outerWidth();
-                var previewHeight = $preview.outerHeight();
-                var left = rect.right + gap;
-                var top = rect.top;
-
-                if (left + previewWidth > window.innerWidth - edge) {
-                    left = rect.left - previewWidth - gap;
-                }
-
-                left = Math.max(edge, Math.min(left, window.innerWidth - previewWidth - edge));
-                top = Math.max(edge, Math.min(top, window.innerHeight - previewHeight - edge));
-
-                $preview.css({ left: Math.round(left) + 'px', top: Math.round(top) + 'px' });
-            }
-
-            function renderHtml(html, url) {
-                if (activeUrl !== url) return;
-
-                showState('Loading certificate preview...', false);
-                $frame.off('load.certificatePreview').one('load.certificatePreview', function () {
-                    if (activeUrl !== url) return;
-                    sizeFrame();
-                    $state.addClass('d-none');
-                    $frame.show();
-                    renderedUrl = url;
-                });
-                $frame[0].srcdoc = html;
-            }
-
-            function loadPreview(url) {
-                if (renderedUrl === url) {
-                    sizeFrame();
-                    $state.addClass('d-none');
-                    $frame.show();
-                    return;
-                }
-
-                if (typeof previewCache[url] === 'string') {
-                    renderHtml(previewCache[url], url);
-                    return;
-                }
-
-                showState('Loading certificate preview...', false);
-
-                if (previewCache[url] && typeof previewCache[url].done === 'function') {
-                    previewCache[url].done(function (html) {
-                        if (activeUrl === url) renderHtml(html, url);
-                    });
-                    return;
-                }
-
-                var request = $.ajax({
-                    url: url,
-                    method: 'GET',
-                    dataType: 'html',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                previewCache[url] = request;
-
-                request.done(function (html) {
-                    previewCache[url] = html;
-                    if (activeUrl === url) renderHtml(html, url);
-                }).fail(function () {
-                    delete previewCache[url];
-                    if (activeUrl === url) {
-                        showState('Certificate preview could not be loaded.', true);
-                    }
-                });
-            }
-
-            function openPreview(trigger) {
-                var $trigger = $(trigger);
-                var url = String($trigger.data('certificate-preview-url') || '');
-                if (!url) return;
-
-                clearTimeout(closeTimer);
-                if (activeTrigger && activeTrigger !== trigger) {
-                    $(activeTrigger).attr('aria-expanded', 'false');
-                }
-
-                activeTrigger = trigger;
-                activeUrl = url;
-                $trigger.attr({ 'aria-expanded': 'true', 'aria-controls': previewId });
-                $heading.text(String($trigger.data('certificate-preview-title') || 'Certificate'));
-                $fullLink.attr('href', $trigger.attr('href'));
-                $preview.addClass('is-visible').attr('aria-hidden', 'false');
-                positionPreview($trigger);
-                loadPreview(url);
-            }
-
-            function closePreview(immediate) {
-                clearTimeout(openTimer);
-                clearTimeout(closeTimer);
-
-                var close = function () {
-                    if (activeTrigger) $(activeTrigger).attr('aria-expanded', 'false');
-                    activeTrigger = null;
-                    activeUrl = '';
-                    $preview.removeClass('is-visible').attr('aria-hidden', 'true');
-                };
-
-                if (immediate) {
-                    close();
-                } else {
-                    closeTimer = setTimeout(close, 180);
-                }
-            }
-
-            $triggers.off('.certificatePreview')
-                .on('mouseenter.certificatePreview', function () {
-                    var trigger = this;
-                    clearTimeout(openTimer);
-                    clearTimeout(closeTimer);
-                    openTimer = setTimeout(function () { openPreview(trigger); }, 150);
-                })
-                .on('mouseleave.certificatePreview', function () { closePreview(false); })
-                .on('focusin.certificatePreview', function () { openPreview(this); })
-                .on('focusout.certificatePreview', function () { closePreview(false); });
-
-            $preview.off('.certificatePreview')
-                .on('mouseenter.certificatePreview', function () { clearTimeout(closeTimer); })
-                .on('mouseleave.certificatePreview', function () { closePreview(false); });
-
-            $preview.find('.certificate-hover-preview-close')
-                .off('.certificatePreview')
-                .on('click.certificatePreview', function () { closePreview(true); });
-
-            $(document).off('keydown.certificatePreview').on('keydown.certificatePreview', function (event) {
-                if (event.key === 'Escape') closePreview(true);
-            });
-
-            $(window).off('resize.certificatePreview scroll.certificatePreview')
-                .on('resize.certificatePreview scroll.certificatePreview', function () { closePreview(true); });
         }
 
         var certificateDefaults = {
@@ -253,8 +47,6 @@
             'certificate_sort'
         ];
 
-        // Keep one stable object across AJAX partial reloads. The URL remains the
-        // durable source of truth, while this object preserves committed modal state.
         window._certificateFilterState = window._certificateFilterState || {};
         var certificateFilterState = window._certificateFilterState;
 
