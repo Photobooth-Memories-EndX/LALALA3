@@ -10,16 +10,19 @@
     $finishTimestamp = $row['finish_date'] !== '' ? \Illuminate\Support\Carbon::parse($row['finish_date']) : null;
     $startDateDisplay = ($row['start_date'] ?? '') !== ''
         ? \Illuminate\Support\Carbon::parse($row['start_date'])->format('d/m/y H:i:s')
-        : '-';
-    $finishDateDisplay = $finishTimestamp?->format('d/m/y H:i:s') ?? '-';
+        : '';
+    $finishDateDisplay = $finishTimestamp?->format('d/m/y H:i:s') ?? '';
 
     // Search memakai title + classification untuk Content dan Playlist.
     $searchText = $row['title'] . ' ' . $row['classification'];
     $learningProgram = str_contains(strtolower($row['subtitle'] ?? ''), 'mandatory') ? 'mandatory'
         : (str_contains(strtolower($row['subtitle'] ?? ''), 'optional') ? 'optional' : '');
     $progressValue = (int) ($row['progress'] ?? 0);
-    $learningStatus = $progressValue >= 100 ? 'completed'
-        : ($progressValue <= 0 ? 'not_started' : 'ongoing');
+    $hasScore = ($row['assessment_required'] ?? false) && !is_null($row['score'] ?? null);
+    $scorePassed = $hasScore && ($row['score'] >= ($row['min_score'] ?? 0));
+    $learningStatus = $progressValue >= 100
+        ? ($scorePassed ? 'completed passed' : ($hasScore ? 'completed failed' : 'completed'))
+        : ($hasScore ? ($scorePassed ? 'passed' : 'failed') : ($progressValue <= 0 ? 'not_started' : 'ongoing'));
     $durationSeconds = max(0, (int) ($row['duration_sort'] ?? 0));
     $durationDisplay = sprintf(
         '%02d:%02d:%02d',
@@ -27,7 +30,7 @@
         intdiv($durationSeconds % 3600, 60),
         $durationSeconds % 60
     );
-    $learningHourDisplay = str_replace([' hours', ' hour'], [' h', ' h'], $row['learning_hour'] ?? '-');
+    $learningHourDisplay = str_replace([' hours', ' hour'], [' h', ' h'], $row['learning_hour'] ?? '');
 @endphp
 
 <tr class="record-row"

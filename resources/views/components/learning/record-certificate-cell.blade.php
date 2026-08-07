@@ -23,5 +23,13 @@
         @endif
     </div>
 @else
-    <div class="text-center text-muted">-</div>
+    <div class="d-flex justify-content-center">
+        <button type="button"
+                class="btn btn-learning-certificate-disabled"
+                disabled
+                title="Certificate Not Available"
+                aria-label="Certificate Not Available">
+            <i class="ti ti-certificate" aria-hidden="true"></i>
+        </button>
+    </div>
 @endif

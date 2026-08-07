@@ -37,7 +37,7 @@
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
         ['label' => 'No',             'width' => '4%'],
-        ['label' => 'Class',          'width' => '23%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Course',        'width' => '23%', 'sort' => 'title',          'type' => 'text'],
         ['label' => 'Type',           'width' => '9%',  'sort' => 'type',           'type' => 'text'],
         ['label' => 'Classification', 'width' => '10%', 'sort' => 'classification', 'type' => 'text'],
         ['label' => 'Duration',       'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
@@ -48,6 +48,105 @@
         ['label' => 'Certificate',    'width' => '11%'],
     ];
 @endphp
+
+<style>
+.learning-classification-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.15 !important;
+    padding: 6px 12px !important;
+    min-height: 28px !important;
+    max-width: 140px !important;
+    border-radius: 999px !important;
+    vertical-align: middle !important;
+    font-weight: 500 !important;
+}
+.btn-learning-certificate,
+.btn-learning-certificate-disabled {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    font-size: 1.1rem !important;
+    box-sizing: border-box !important;
+}
+.btn-learning-certificate-disabled {
+    background-color: #d1d5db !important;
+    border: 1px solid #bfc6cf !important;
+    color: #4b5563 !important;
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important;
+    box-shadow: none !important;
+}
+.btn-learning-certificate-disabled:hover,
+.btn-learning-certificate-disabled:focus,
+.btn-learning-certificate-disabled:active {
+    background-color: #d1d5db !important;
+    border-color: #bfc6cf !important;
+    color: #4b5563 !important;
+    box-shadow: none !important;
+}
+.learning-score-empty-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 32px !important;
+    height: 22px !important;
+    padding: 0 10px !important;
+    border-radius: 999px !important;
+    background: #eef1f4 !important;
+    border: 1px solid #d6dce3 !important;
+    color: #7b8794 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+}
+.learning-score-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 32px !important;
+    height: 22px !important;
+    padding: 0 10px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+}
+.record-filter-section {
+    border-color: #f1f3f5 !important;
+}
+.record-filter-section .form-label {
+    letter-spacing: 0.5px;
+    font-size: 0.725rem;
+}
+.record-filter-action-btn {
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    font-size: 1.1rem !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+.record-filter-action-btn i {
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+    color: inherit !important;
+}
+</style>
 
         <div class="card border-0 shadow-sm rounded-4 learning-record-card">
             <div class="card-body p-4 border-bottom">
@@ -181,44 +280,52 @@
                     </div>
                     </div>
 
+                    {{-- 1. Search --}}
                     <div class="record-toolbar-search">
                         <label class="visually-hidden" for="recordSearch">Search learning records</label>
                         <div class="input-icon">
                             <span class="input-icon-addon"><i class="ti ti-search"></i></span>
                             <input type="text" class="form-control" id="recordSearch"
-                                   placeholder="Search class, playlist or classification..." autocomplete="off">
+                                   placeholder="Search course, playlist or classification..." autocomplete="off">
                         </div>
                     </div>
 
-                    <div class="record-filter-actions">
-                    {{-- TOMBOL DOWNLOAD EXCEL --}}
-                    <a href="{{ route('user.learning.record.export') }}"
-                       data-export-url="{{ route('user.learning.record.export') }}"
-                       class="btn btn-outline-success btn-learning-success record-filter-action-btn"
-                       id="recordDownloadExcel"
-                       title="Download Excel"
-                       aria-label="Download Excel">
-                        <i class="ti ti-download"></i>
-                    </a>
-                    {{-- TOMBOL MORE FILTERS --}}
-                    <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn" id="recordMoreFiltersToggle"
-                            data-toggle="modal" data-target="#recordMoreFiltersModal"
-                            aria-controls="recordMoreFiltersModal"
-                            title="More Filters"
-                            aria-label="More Filters">
-                        <i class="ti ti-adjustments-horizontal"></i>
-                        <span class="badge bg-primary text-white d-none" id="recordMoreFiltersCount"></span>
-                    </button>
-                    <button type="button" class="btn btn-primary btn-learning-primary record-apply-filter record-filter-action-btn"
-                            title="Apply Filter"
-                            aria-label="Apply Filter">
-                        <i class="ti ti-search"></i>
-                    </button>
-                    <button type="button" class="btn btn-outline-primary btn-learning-outline record-clear-filter record-filter-action-btn"
-                            title="Reset Filter"
-                            aria-label="Reset Filter">
-                        <i class="ti ti-refresh"></i>
-                    </button>
+                    <div class="record-filter-actions d-flex align-items-center gap-2">
+                        {{-- 1. Search Button --}}
+                        <button type="button" class="btn btn-primary btn-learning-primary record-apply-filter record-filter-action-btn"
+                                id="recordApplyFilterBtn"
+                                title="Search & Apply Filter"
+                                aria-label="Search & Apply Filter">
+                            <i class="ti ti-search" aria-hidden="true"></i>
+                        </button>
+
+                        {{-- 2. More Filter Button --}}
+                        <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn" id="recordMoreFiltersToggle"
+                                data-bs-toggle="modal" data-bs-target="#recordMoreFiltersModal"
+                                data-toggle="modal" data-target="#recordMoreFiltersModal"
+                                aria-controls="recordMoreFiltersModal"
+                                title="More Filters"
+                                aria-label="More Filters">
+                            <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+                            <span class="badge bg-primary text-white d-none ms-1" id="recordMoreFiltersCount"></span>
+                        </button>
+
+                        {{-- 3. Reset Button --}}
+                        <button type="button" class="btn btn-outline-secondary btn-learning-outline record-clear-filter record-filter-action-btn"
+                                title="Reset Filter"
+                                aria-label="Reset Filter">
+                            <i class="ti ti-refresh" aria-hidden="true"></i>
+                        </button>
+
+                        {{-- 4. Download Excel Button --}}
+                        <a href="{{ route('user.learning.record.export') }}"
+                           data-export-url="{{ route('user.learning.record.export') }}"
+                           class="btn btn-outline-success btn-learning-success record-filter-action-btn"
+                           id="recordDownloadExcel"
+                           title="Download Excel"
+                           aria-label="Download Excel">
+                            <i class="ti ti-download" aria-hidden="true"></i>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -243,135 +350,187 @@
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <div class="modal-body record-more-filters" id="recordMoreFilters">
-                {{-- data-record-mode: filter hanya relevan untuk mode tsb — mode lain
-                     menyembunyikannya dan me-reset nilainya (learning-record.js). --}}
-                <div class="record-filter-sections">
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Type</div>
-                        @foreach (['all' => 'All', 'Document' => 'Document', 'Video' => 'Video', 'Playlist' => 'Playlist'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input record-modal-checkbox" type="checkbox" name="recordModalType[]" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
+                        <div class="modal-body record-more-filters p-4" id="recordMoreFilters">
+                            <div class="record-filter-sections d-flex flex-column gap-3">
 
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Learning Program</div>
-                        @foreach (['all' => 'All Learning', 'mandatory' => 'Mandatory Learning', 'optional' => 'Optional Learning'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalProgram" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
+                                {{-- 1. LEARNING PROGRAM --}}
+                                <div class="record-filter-section border-bottom pb-3">
+                                    <label class="form-label fw-bold text-uppercase text-muted small mb-2">LEARNING PROGRAM</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @foreach (['all' => 'All Learning', 'mandatory' => 'Mandatory Learning', 'optional' => 'Optional Learning'] as $value => $label)
+                                            <label class="form-check form-check-inline mb-0">
+                                                <input class="form-check-input" type="radio" name="recordModalProgram" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
+                                                <span class="form-check-label">{{ $label }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
 
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Year</div>
-                        <label class="form-check">
-                            <input class="form-check-input" type="radio" name="recordModalYear" value="all" data-record-modal-filter checked>
-                            <span class="form-check-label">All</span>
-                        </label>
-                        @foreach ($years as $year)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalYear" value="{{ $year }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $year }}</span>
-                            </label>
-                        @endforeach
-                    </div>
+                                {{-- 2. COMPLETION STATUS --}}
+                                <div class="record-filter-section border-bottom pb-3">
+                                    <label class="form-label fw-bold text-uppercase text-muted small mb-2">COMPLETION STATUS</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="checkbox" name="recordModalLearningStatus[]" value="completed" data-record-modal-filter>
+                                            <span class="form-check-label">Completed</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="checkbox" name="recordModalLearningStatus[]" value="passed" data-record-modal-filter>
+                                            <span class="form-check-label">Passed</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="checkbox" name="recordModalLearningStatus[]" value="failed" data-record-modal-filter>
+                                            <span class="form-check-label">Failed</span>
+                                        </label>
+                                    </div>
+                                </div>
 
-                    {{-- <div class="record-filter-section">
-                        <div class="record-filter-title">Activity Sort</div>
-                        @foreach (['newest' => 'Newest Activity', 'oldest' => 'Oldest Activity', 'recent' => 'Recently Accessed', 'longest' => 'Longest Duration', 'shortest' => 'Shortest Duration'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalActivitySort" value="{{ $value }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div> --}}
-{{-- 
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Completion Status</div>
-                        @foreach (['all' => 'All Progress', 'highest' => 'Highest Progress', 'lowest' => 'Lowest Progress', 'not_started' => 'Not Started', 'in_progress' => 'In Progress', 'almost_done' => 'Almost Done', 'completed' => 'Completed'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalCompletion" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div> --}}
+                                {{-- 3. COMPLETION DATE --}}
+                                <div class="record-filter-section border-bottom pb-3">
+                                    <label class="form-label fw-bold text-uppercase text-muted small mb-2">COMPLETION DATE</label>
+                                    <div class="mb-2">
+                                        <div class="text-muted small mb-1 fw-semibold">Year:</div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <label class="form-check form-check-inline mb-0">
+                                                <input class="form-check-input" type="radio" name="recordModalYear" value="all" data-record-modal-filter checked>
+                                                <span class="form-check-label">All</span>
+                                            </label>
+                                            @foreach ($years as $year)
+                                                <label class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="radio" name="recordModalYear" value="{{ $year }}" data-record-modal-filter>
+                                                    <span class="form-check-label">{{ $year }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small mb-1 fw-semibold">Month:</div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach ($months as $num => $name)
+                                                <label class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="checkbox" name="recordModalMonth[]" value="{{ $num }}" data-record-modal-filter>
+                                                    <span class="form-check-label">{{ substr($name, 0, 3) }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
 
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Learning Status</div>
-                        @foreach (['not_started' => 'Not Started', 'ongoing' => 'Ongoing', 'paused' => 'Paused', 'completed' => 'Completed'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="checkbox" name="recordModalLearningStatus[]" value="{{ $value }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
+                                {{-- 4. SORT BY --}}
+                                <div class="record-filter-section border-bottom pb-3">
+                                    <label class="form-label fw-bold text-uppercase text-muted small mb-2">SORT BY</label>
+                                    <div style="max-width: 250px;">
+                                        <select class="form-select form-select-sm" id="recordModalActivitySortSelect" onchange="
+                                            var val = this.value;
+                                            var radio = document.querySelector('input[name=\'recordModalActivitySort\'][value=\'' + val + '\']');
+                                            if (radio) { radio.checked = true; $(radio).trigger('change'); }
+                                        ">
+                                            <option value="all">All</option>
+                                            <option value="oldest">Oldest</option>
+                                            <option value="newest">Newest</option>
+                                            <option value="ascending">Ascending</option>
+                                            <option value="descending">Descending</option>
+                                        </select>
+                                        <div class="d-none">
+                                            <input type="radio" name="recordModalActivitySort" value="all" checked data-record-modal-filter>
+                                            <input type="radio" name="recordModalActivitySort" value="oldest" data-record-modal-filter>
+                                            <input type="radio" name="recordModalActivitySort" value="newest" data-record-modal-filter>
+                                            <input type="radio" name="recordModalActivitySort" value="ascending" data-record-modal-filter>
+                                            <input type="radio" name="recordModalActivitySort" value="descending" data-record-modal-filter>
+                                        </div>
+                                    </div>
+                                </div>
 
-                    {{-- <div class="record-filter-section">
-                        <div class="record-filter-title">Progress</div>
-                        @foreach (['0' => '0%', '1-25' => '1-25%', '26-50' => '26-50%', '51-75' => '51-75%', '76-99' => '76-99%', '100' => '100%'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="checkbox" name="recordModalProgress[]" value="{{ $value }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div> --}}
+                                {{-- 5. DURATION --}}
+                                <div class="record-filter-section border-bottom pb-3">
+                                    <label class="form-label fw-bold text-uppercase text-muted small mb-2">DURATION</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="checkbox" name="recordModalDurationCheck[]" value="0-600" data-record-modal-filter onchange="
+                                                var checked = Array.from(document.querySelectorAll('input[name=\'recordModalDurationCheck[]\']:checked')).map(function(c){ return c.value; });
+                                                var val = checked.length ? checked[0] : 'all';
+                                                var radio = document.querySelector('input[name=\'recordModalDuration\'][value=\'' + val + '\']');
+                                                if (radio) { radio.checked = true; $(radio).trigger('change'); }
+                                            ">
+                                            <span class="form-check-label">&lt; 10 Minutes</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="checkbox" name="recordModalDurationCheck[]" value="600-1800" data-record-modal-filter onchange="
+                                                var checked = Array.from(document.querySelectorAll('input[name=\'recordModalDurationCheck[]\']:checked')).map(function(c){ return c.value; });
+                                                var val = checked.length ? checked[0] : 'all';
+                                                var radio = document.querySelector('input[name=\'recordModalDuration\'][value=\'' + val + '\']');
+                                                if (radio) { radio.checked = true; $(radio).trigger('change'); }
+                                            ">
+                                            <span class="form-check-label">10 - 30 Minutes</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="checkbox" name="recordModalDurationCheck[]" value="1800-3600" data-record-modal-filter onchange="
+                                                var checked = Array.from(document.querySelectorAll('input[name=\'recordModalDurationCheck[]\']:checked')).map(function(c){ return c.value; });
+                                                var val = checked.length ? checked[0] : 'all';
+                                                var radio = document.querySelector('input[name=\'recordModalDuration\'][value=\'' + val + '\']');
+                                                if (radio) { radio.checked = true; $(radio).trigger('change'); }
+                                            ">
+                                            <span class="form-check-label">30 - 60 Minutes</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="checkbox" name="recordModalDurationCheck[]" value="gt3600" data-record-modal-filter onchange="
+                                                var checked = Array.from(document.querySelectorAll('input[name=\'recordModalDurationCheck[]\']:checked')).map(function(c){ return c.value; });
+                                                var val = checked.length ? checked[0] : 'all';
+                                                var radio = document.querySelector('input[name=\'recordModalDuration\'][value=\'' + val + '\']');
+                                                if (radio) { radio.checked = true; $(radio).trigger('change'); }
+                                            ">
+                                            <span class="form-check-label">&gt; 1 Hour</span>
+                                        </label>
+                                    </div>
+                                    <div class="d-none">
+                                        <input type="radio" name="recordModalDuration" value="all" checked data-record-modal-filter>
+                                        <input type="radio" name="recordModalDuration" value="0-600" data-record-modal-filter>
+                                        <input type="radio" name="recordModalDuration" value="600-1800" data-record-modal-filter>
+                                        <input type="radio" name="recordModalDuration" value="1800-3600" data-record-modal-filter>
+                                        <input type="radio" name="recordModalDuration" value="gt3600" data-record-modal-filter>
+                                    </div>
+                                </div>
 
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Month</div>
-                        @foreach ($months as $num => $name)
-                            <label class="form-check">
-                                <input class="form-check-input" type="checkbox" name="recordModalMonth[]" value="{{ $num }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $name }}</span>
-                            </label>
-                        @endforeach
-                    </div>
+                                {{-- 6. LEARNING HOUR --}}
+                                <div class="record-filter-section border-bottom pb-3">
+                                    <label class="form-label fw-bold text-uppercase text-muted small mb-2">LEARNING HOUR</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @foreach (['all' => 'All', '0-1' => '< 1 Hour', '1-3' => '1 - 3 Hours', 'gt3' => '> 3 Hours'] as $value => $label)
+                                            <label class="form-check form-check-inline mb-0">
+                                                <input class="form-check-input" type="radio" name="recordModalLearningHour" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
+                                                <span class="form-check-label">{{ $label }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
 
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Duration</div>
-                        @foreach (['all' => 'All', '0-1800' => '00:00:00 - 00:30:00', '1801-3600' => '00:30:01 - 01:00:00', '3601-5400' => '01:00:01 - 01:30:00', '5401-7200' => '01:30:01 - 02:00:00', 'gt7200' => '> 02:00:00'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalDuration" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
+                                {{-- 7. SCORE TEST --}}
+                                <div class="record-filter-section border-bottom pb-3">
+                                    <label class="form-label fw-bold text-uppercase text-muted small mb-2">SCORE TEST</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @foreach (['all' => 'All', 'none' => 'No Assessment', 'lt60' => '< 60', '60-79' => '60 - 79', '80-100' => '80 - 100'] as $value => $label)
+                                            <label class="form-check form-check-inline mb-0">
+                                                <input class="form-check-input" type="radio" name="recordModalScoreTest" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
+                                                <span class="form-check-label">{{ $label }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
 
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Learning Hour</div>
-                        @foreach (['all' => 'All', '0.5' => '0.5 Hour', '1' => '1 Hour', '1.5' => '1.5 Hours', '2' => '2 Hours', '2.5' => '2.5 Hours', '3' => '3 Hours', 'gt3' => '> 3 Hours'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalLearningHour" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
+                                {{-- 8. CERTIFICATE --}}
+                                <div class="record-filter-section">
+                                    <label class="form-label fw-bold text-uppercase text-muted small mb-2">CERTIFICATE</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @foreach (['all' => 'All', 'ready' => 'Available', 'none' => 'Not Available'] as $value => $label)
+                                            <label class="form-check form-check-inline mb-0">
+                                                <input class="form-check-input" type="radio" name="recordModalCertificate" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
+                                                <span class="form-check-label">{{ $label }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
 
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Score Test</div>
-                        @foreach (['all' => 'All', 'none' => 'No Assessment', 'lt60' => '< 60', '60-79' => '60 - 79', '80-100' => '80 - 100'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalScoreTest" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Certificate</div>
-                        @foreach (['all' => 'All', 'ready' => 'Ready', 'none' => 'Not Ready'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalCertificate" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </div>
-
+                            </div>
                         </div>
                         <div class="modal-footer record-filter-modal-footer">
                     <button type="button" class="btn btn-outline-secondary btn-learning-outline" id="recordClearFilter">

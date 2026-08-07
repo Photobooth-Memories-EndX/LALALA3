@@ -16,7 +16,9 @@
             'IT'                    => 'bg-azure-lt text-azure',
             'Security'              => 'bg-dark-lt text-dark',
         ];
+
+        $classification = $row['classification'] ?? '';
     @endphp
 
-    <span class="badge {{ $colors[$row['classification']] ?? 'bg-secondary-lt text-secondary' }} learning-record-badge learning-classification-badge">{{ $row['classification'] }}</span>
+    <span class="badge {{ $colors[$classification] ?? 'bg-secondary-lt text-secondary' }} learning-record-badge learning-classification-badge">{{ $classification }}</span>
 @endif
