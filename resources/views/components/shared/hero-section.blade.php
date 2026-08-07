@@ -104,62 +104,44 @@
         </div>
 
         <div class="col-lg-5 mt-3 mt-lg-0">
-            <div class="shared-hero-summary">
-                <div class="shared-hero-donut"
-                     style="background: conic-gradient(rgb(var(--kp-hero-completed-rgb)) 0%, rgb(var(--kp-hero-completed-rgb)) {{ $donutBlendStart }}%, #00a8ff {{ $donutBlendEnd }}%, #00a8ff 100%);">
-                    <div class="shared-hero-donut-hit shared-hero-donut-hit-completed"
-                         role="link"
-                         tabindex="0"
-                         onclick="window.location.href='{{ route('user.learning.dashboard', ['learning_tab' => 'record']) }}'"
-                         onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }"
-                         style="clip-path: {{ $completedSlicePath }}"
-                         data-bs-toggle="tooltip"
-                         data-bs-placement="top"
-                         title="Completed {{ $completedCourseVal }} Learning"></div>
-                    <div class="shared-hero-donut-hit shared-hero-donut-hit-ongoing"
-                         role="link"
-                         tabindex="0"
-                         onclick="window.location.href='{{ route('user.learning.dashboard') }}'"
-                         onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }"
-                         style="clip-path: {{ $ongoingSlicePath }}"
-                         data-bs-toggle="tooltip"
-                         data-bs-placement="top"
-                         title="On Going {{ $ongoingCourseVal }} Learning"></div>
-                    <div class="shared-hero-donut-inner">
-                        <strong>{{ $learningHours }}</strong>
-                        <small>Total Learning Hours</small>
+            <a href="{{ url('/my-learning?learning_tab=record') }}" class="text-decoration-none text-white d-block position-relative rounded-4 overflow-hidden card-learning-summary-link" style="transition: transform 0.2s ease;">
+                <div class="shared-hero-summary">
+                    <div class="shared-hero-donut"
+                         style="background: conic-gradient(rgb(var(--kp-hero-completed-rgb)) 0%, rgb(var(--kp-hero-completed-rgb)) {{ $donutBlendStart }}%, #00a8ff {{ $donutBlendEnd }}%, #00a8ff 100%);">
+                        <div class="shared-hero-donut-inner">
+                            <strong>{{ $learningHours }}</strong>
+                            <small>Total Learning Hours</small>
+                        </div>
                     </div>
-                </div>
 
-                <div class="shared-hero-summary-detail">
-                    <div class="shared-hero-summary-title">Your Learning Summary</div>
-                    <div class="shared-hero-summary-list">
-                        <div class="shared-hero-summary-row">
-                            <div class="shared-hero-summary-meta">
-                                <span class="shared-hero-stat-dot total"></span>
-                                <span class="shared-hero-summary-label">Total Course</span>
+                    <div class="shared-hero-summary-detail">
+                        <div class="shared-hero-summary-title">Your Learning Summary</div>
+                        <div class="shared-hero-summary-list">
+                            <div class="shared-hero-summary-row">
+                                <div class="shared-hero-summary-meta">
+                                    <span class="shared-hero-stat-dot total"></span>
+                                    <span class="shared-hero-summary-label">Total Course</span>
+                                </div>
+                                <div class="shared-hero-summary-value">{{ $totalCourseVal }}</div>
                             </div>
-                            <div class="shared-hero-summary-value">{{ $totalCourseVal }}</div>
-                        </div>
-                        <div class="shared-hero-summary-row">
-                            <div class="shared-hero-summary-meta">
-                                <span class="shared-hero-stat-dot completed"></span>
-                                <a href="{{ route('user.learning.dashboard', ['learning_tab' => 'record']) }}"
-                                   class="shared-hero-summary-label">Completed</a>
+                            <div class="shared-hero-summary-row">
+                                <div class="shared-hero-summary-meta">
+                                    <span class="shared-hero-stat-dot completed"></span>
+                                    <span class="shared-hero-summary-label">Completed</span>
+                                </div>
+                                <div class="shared-hero-summary-value">{{ $completedCourseVal }}</div>
                             </div>
-                            <div class="shared-hero-summary-value">{{ $completedCourseVal }}</div>
-                        </div>
-                        <div class="shared-hero-summary-row">
-                            <div class="shared-hero-summary-meta">
-                                <span class="shared-hero-stat-dot ongoing"></span>
-                                <a href="{{ route('user.learning.dashboard') }}"
-                                   class="shared-hero-summary-label">On Going</a>
+                            <div class="shared-hero-summary-row">
+                                <div class="shared-hero-summary-meta">
+                                    <span class="shared-hero-stat-dot ongoing"></span>
+                                    <span class="shared-hero-summary-label">On Going</span>
+                                </div>
+                                <div class="shared-hero-summary-value">{{ $ongoingCourseVal }}</div>
                             </div>
-                            <div class="shared-hero-summary-value">{{ $ongoingCourseVal }}</div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 </div>

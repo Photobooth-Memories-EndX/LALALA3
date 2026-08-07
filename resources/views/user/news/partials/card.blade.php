@@ -6,23 +6,24 @@
 
         {{-- THUMBNAIL --}}
         <div class="owl-news-image-wrapper">
+            <a href="{{ route('news.user.view', $item->slug) }}" class="d-block w-100 h-100 text-decoration-none text-reset">
+                {{-- Placeholder always behind; image overlays on top --}}
+                <div class="news-img-placeholder">
+                    <i class="ti ti-news"></i>
+                </div>
 
-            {{-- Placeholder always behind; image overlays on top --}}
-            <div class="news-img-placeholder">
-                <i class="ti ti-news"></i>
-            </div>
+                @if(!empty($item->image))
+                    <img
+                        src="{{ asset('storage/news/' . $item->image) }}"
+                        class="owl-news-image"
+                        alt="{{ $item->title ?? '' }}"
+                        loading="lazy"
+                        onerror="this.style.display='none'"
+                    >
+                @endif
 
-            @if(!empty($item->image))
-                <img
-                    src="{{ asset('storage/news/' . $item->image) }}"
-                    class="owl-news-image"
-                    alt="{{ $item->title ?? '' }}"
-                    loading="lazy"
-                    onerror="this.style.display='none'"
-                >
-            @endif
-
-            <div class="owl-news-overlay"></div>
+                <div class="owl-news-overlay"></div>
+            </a>
 
             <div class="owl-news-badge d-flex align-items-center gap-2">
                 <i class="ti ti-tag"></i>
@@ -44,14 +45,9 @@
         <div class="card-body d-flex flex-column flex-grow-1">
 
             <div class="d-flex flex-wrap gap-2 align-items-center mb-3 owl-news-meta">
-                {{-- BADGE READ TIME (REVISED TO SOFT LIGHT BLUE) --}}
-                <span class="owl-news-pill-readtime">
-                    <i class="ti ti-clock-hour-4 me-1"></i>
-                    {{ ceil(str_word_count(strip_tags($item->description ?? '')) / 200) ?: 1 }} min read
-                </span>
-                
                 {{-- BADGE DATE --}}
                 <span class="owl-news-pill-muted">
+                    <i class="ti ti-calendar me-1"></i>
                     {{ $item->created_at ? $item->created_at->format('M d, Y') : '-' }}
                 </span>
             </div>
