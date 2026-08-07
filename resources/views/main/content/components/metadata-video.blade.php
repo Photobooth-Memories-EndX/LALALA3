@@ -18,6 +18,6 @@
         @error('duration')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
-        <small class="form-hint">Format: HH:MM:SS. Legacy mm:ss input is accepted and saved as HH:MM:SS.</small>
+        <small class="form-hint">Format: HH:MM:SS. Automatically detected when a local video file is attached.</small>
     </div>
 </div>

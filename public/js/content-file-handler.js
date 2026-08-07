@@ -1,6 +1,6 @@
 /**
  * ContentFileHandler
- * Centralized frontend upload and validation handler for Content Files and Thumbnails.
+ * Centralized frontend upload, validation, and metadata extraction handler for Content Files and Thumbnails.
  */
 class ContentFileHandler {
     constructor(config = {}) {
@@ -37,9 +37,9 @@ class ContentFileHandler {
                 invalidSizeError: 'Maximum file size is 10 MB.'
             },
             Video: {
-                extensions: ['mp4', 'avi'],
+                extensions: ['mp4', 'avi', 'mov', 'mkv', 'webm'],
                 maxSizeMB: 300,
-                invalidTypeError: 'Only MP4 and AVI files are allowed.',
+                invalidTypeError: 'Only video files (MP4, AVI, MOV, MKV, WEBM) are allowed.',
                 invalidSizeError: 'Maximum file size is 300 MB.'
             },
             Thumbnail: {
@@ -49,9 +49,9 @@ class ContentFileHandler {
                 invalidSizeError: 'Maximum thumbnail size is 1 MB.'
             },
             Default: {
-                extensions: ['pdf', 'mp4', 'avi'],
+                extensions: ['pdf', 'mp4', 'avi', 'mov', 'mkv', 'webm'],
                 maxSizeMB: 300,
-                invalidTypeError: 'Only PDF, MP4, and AVI files are allowed.',
+                invalidTypeError: 'Only PDF, MP4, AVI, MOV, MKV, and WEBM files are allowed.',
                 invalidSizeError: 'Maximum file size is 300 MB.'
             }
         };
@@ -71,7 +71,7 @@ class ContentFileHandler {
         const self = this;
         const formElement = document.getElementById(this.formId) || document.querySelector('form');
 
-        // 1. Initialize Document Dropzone
+        // 1. Initialize Document / Content File Dropzone
         const docElement = document.querySelector(this.documentDropzoneSelector);
         if (docElement) {
             if (docElement.dropzone) {
@@ -104,6 +104,10 @@ class ContentFileHandler {
                             self.showError(message);
                         }
                         self.clearSelection(this, file);
+                    });
+                    this.on("addedfile", function (file) {
+                        if (file.rejected || file.status === 'error') return;
+                        self.handleVideoUpload(file);
                     });
                 },
                 successmultiple: function (data, response) {
@@ -319,6 +323,115 @@ class ContentFileHandler {
                 this.clearSelection(this.docDropzone, file);
             }
         });
+    }
+
+    /**
+     * Handle local video upload and automatically extract duration.
+     * @param {File} file 
+     */
+    async handleVideoUpload(file) {
+        if (!file) return;
+
+        const type = this.getCurrentType();
+        const ext = (file.name || '').split('.').pop().toLowerCase();
+        const videoExts = ['mp4', 'avi', 'mov', 'mkv', 'webm'];
+
+        // Only detect duration if Content Type is Video or file is a valid video format
+        if (type !== 'Video' && !videoExts.includes(ext)) {
+            return;
+        }
+
+        // Validate file first — if invalid, do not update duration field
+        const validation = this.validateContentFile(file);
+        if (!validation.valid || file.rejected) {
+            return;
+        }
+
+        try {
+            const formattedDuration = await this.extractVideoDuration(file);
+            if (formattedDuration) {
+                this.updateDurationField(formattedDuration);
+            }
+        } catch (err) {
+            console.warn('Could not extract video duration automatically:', err);
+        }
+    }
+
+    /**
+     * Extract video duration in seconds using native HTML5 Video API.
+     * @param {File} file 
+     * @returns {Promise<string|null>} Formatted HH:MM:SS or null
+     */
+    extractVideoDuration(file) {
+        return new Promise((resolve) => {
+            if (!file) {
+                resolve(null);
+                return;
+            }
+
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+
+            const objectUrl = URL.createObjectURL(file);
+            video.src = objectUrl;
+
+            const cleanup = () => {
+                try {
+                    URL.revokeObjectURL(objectUrl);
+                } catch (e) {}
+            };
+
+            video.onloadedmetadata = () => {
+                cleanup();
+                const duration = video.duration;
+                if (isNaN(duration) || duration === Infinity || duration <= 0) {
+                    resolve(null);
+                } else {
+                    resolve(this.formatDuration(duration));
+                }
+            };
+
+            video.onerror = () => {
+                cleanup();
+                resolve(null);
+            };
+        });
+    }
+
+    /**
+     * Format duration in seconds to HH:MM:SS.
+     * @param {number} seconds 
+     * @returns {string} HH:MM:SS (padded 2 digits per segment)
+     */
+    formatDuration(seconds) {
+        if (seconds === null || seconds === undefined || isNaN(seconds)) {
+            return '';
+        }
+        const totalSec = Math.round(seconds);
+        const hours = Math.floor(totalSec / 3600);
+        const minutes = Math.floor((totalSec % 3600) / 60);
+        const secs = totalSec % 60;
+
+        const pad = (num) => String(num).padStart(2, '0');
+        return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+    }
+
+    /**
+     * Populate duration string into metadata duration input field.
+     * @param {string} durationString 
+     */
+    updateDurationField(durationString) {
+        if (!durationString) return;
+
+        const videoDurationInput = document.getElementById('video_duration') ||
+                                    document.getElementById('duration');
+
+        if (videoDurationInput) {
+            videoDurationInput.value = durationString;
+            // Trigger reactive event listeners
+            videoDurationInput.dispatchEvent(new Event('input', { bubbles: true }));
+            videoDurationInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
     }
 
     /**
