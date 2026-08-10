@@ -65,28 +65,28 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div>
+                                <div class="mb-3">
+                                    <label for="total_duration" class="form-label">Playlist Total Duration (HH:MM:SS)</label>
+                                    <input type="text"
+                                        class="form-control @error('total_duration') is-invalid @enderror"
+                                        id="total_duration"
+                                        name="total_duration"
+                                        placeholder="00:00:00"
+                                        value="{{ old('total_duration', '00:00:00') }}">
+                                    <small class="form-hint">Format: HH:MM:SS (contoh: 02:30:00). Dapat diisi manual.</small>
+                                    @error('total_duration')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
                                     <label for="learning_hours" class="form-label">Learning Hours</label>
-                                    <div class="row g-2 align-items-center">
-                                        <div class="col-12 col-sm-7 col-md-8">
-                                            <input type="text"
-                                                class="form-control bg-light @error('learning_hours') is-invalid @enderror"
-                                                id="learning_hours"
-                                                name="learning_hours"
-                                                value="{{ old('learning_hours', 0) }}"
-                                                readonly>
-                                        </div>
-                                        <div class="col-12 col-sm-5 col-md-4">
-                                            <button type="button"
-                                                class="btn btn-outline-primary w-100"
-                                                id="btn-sync-playlist-lh"
-                                                data-url="{{ route('playlist.synchronize-learning-hours') }}">
-                                                <i class="ti ti-refresh me-1 icon-sync"></i>
-                                                <span class="btn-text">Synchronize</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <small class="form-hint mt-1">Learning Hours are calculated automatically from total playlist duration.</small>
+                                    <input type="text"
+                                        class="form-control @error('learning_hours') is-invalid @enderror"
+                                        id="learning_hours"
+                                        name="learning_hours"
+                                        placeholder="0"
+                                        value="{{ old('learning_hours', 0) }}">
+                                    <small class="form-hint">Learning Hours dapat diisi manual.</small>
                                     <div class="invalid-feedback" id="learning_hours_error" style="{{ $errors->has('learning_hours') ? 'display:block;' : '' }}">
                                         @error('learning_hours')
                                             {{ $message }}
@@ -431,66 +431,6 @@
                 $('#owl-toast-wrapper').append($toast);
                 $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
             }
-
-            $(document).on('click', '#btn-sync-playlist-lh', function(e) {
-                e.preventDefault();
-                let $btn = $(this);
-                let url = $btn.data('url');
-
-                if (!url || $btn.data('loading')) return;
-
-                $btn.data('loading', true);
-                let $form = $btn.closest('form');
-                let selectedContents = [];
-                $form.find('input[name="content[]"]:checked, select[name="content[]"] option:selected, input.js-content-ordered').each(function() {
-                    selectedContents.push($(this).val());
-                });
-
-                $btn.prop('disabled', true);
-                $btn.find('.icon-sync').attr('class', 'spinner-border spinner-border-sm me-1 icon-sync');
-                $btn.find('.btn-text').text('Synchronizing...');
-                $('body').css('cursor', 'wait');
-
-                let csrfToken = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
-
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    dataType: 'json',
-                    data: {
-                        _token: csrfToken,
-                        content: selectedContents
-                    },
-                    success: function(res) {
-                        if (res && res.success) {
-                            if (res.learning_hours !== undefined) {
-                                $form.find('[name="learning_hours"]').val(res.learning_hours);
-                            }
-                            showToast(res.message || 'Learning Hours synchronized successfully.', 'success');
-                        } else {
-                            showToast(res && res.message ? res.message : 'Unable to synchronize Learning Hours.', 'danger');
-                        }
-                    },
-                    error: function(xhr) {
-                        let message = 'Unable to synchronize Learning Hours.';
-                        if (xhr && xhr.responseJSON) {
-                            if (xhr.responseJSON.errors) {
-                                message = Object.values(xhr.responseJSON.errors).flat().join('<br>');
-                            } else if (xhr.responseJSON.message) {
-                                message = xhr.responseJSON.message;
-                            }
-                        }
-                        showToast(message, 'danger');
-                    },
-                    complete: function() {
-                        $btn.find('.icon-sync').attr('class', 'ti ti-refresh me-1 icon-sync');
-                        $btn.find('.btn-text').text('Synchronize');
-                        $btn.prop('disabled', false);
-                        $btn.data('loading', false);
-                        $('body').css('cursor', 'default');
-                    }
-                });
-            });
         });
     </script>
 @endpush

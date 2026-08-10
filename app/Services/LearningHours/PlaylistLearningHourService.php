@@ -162,6 +162,7 @@ class PlaylistLearningHourService implements LearningHourSyncInterface
                 : 'Learning Hours already up to date.',
             meta: [
                 'total_duration_seconds' => $totalSeconds,
+                'duration'               => $this->parser->fromSeconds($totalSeconds),
             ]
         );
     }

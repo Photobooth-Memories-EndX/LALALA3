@@ -74,33 +74,43 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div>
-                                    <label for="learning_hours" class="form-label">Learning Hours</label>
+                                <div class="mb-3">
+                                    <label for="total_duration" class="form-label">Playlist Total Duration (HH:MM:SS)</label>
                                     <div class="row g-2 align-items-center">
                                         <div class="col-12 col-sm-7 col-md-8">
                                             <input type="text"
-                                                class="form-control bg-light @error('learning_hours') is-invalid @enderror"
-                                                id="learning_hours"
-                                                name="learning_hours"
-                                                value="{{ old('learning_hours', $trainingplan->learning_hours ?? 0) }}"
+                                                class="form-control bg-light @error('total_duration') is-invalid @enderror"
+                                                id="total_duration"
+                                                name="total_duration"
+                                                value="{{ old('total_duration', \App\Support\DurationFormatter::fromSeconds($trainingplan->total_duration_seconds ?? 0)) }}"
                                                 readonly>
                                         </div>
                                         <div class="col-12 col-sm-5 col-md-4">
                                             <button type="button"
                                                 class="btn btn-outline-primary w-100"
-                                                id="btn-sync-playlist-lh"
+                                                id="btn-sync-playlist"
                                                 data-url="{{ route('playlist.synchronize-learning-hours', $trainingplan->slug ?? $trainingplan->id) }}">
                                                 <i class="ti ti-refresh me-1 icon-sync"></i>
                                                 <span class="btn-text">Synchronize</span>
                                             </button>
                                         </div>
                                     </div>
-                                    <small class="form-hint mt-1">Learning Hours are calculated automatically from total playlist duration.</small>
-                                    <div class="invalid-feedback" id="learning_hours_error" style="{{ $errors->has('learning_hours') ? 'display:block;' : '' }}">
-                                        @error('learning_hours')
-                                            {{ $message }}
-                                        @enderror
-                                    </div>
+                                    <small class="form-hint mt-1">Gunakan tombol Synchronize untuk menghitung ulang total duration dan learning hours.</small>
+                                    @error('total_duration')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="learning_hours" class="form-label">Learning Hours</label>
+                                    <input type="text"
+                                        class="form-control bg-light @error('learning_hours') is-invalid @enderror"
+                                        id="learning_hours"
+                                        name="learning_hours"
+                                        value="{{ old('learning_hours', $trainingplan->learning_hours ?? 0) }}"
+                                        readonly>
+                                    @error('learning_hours')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
                         </div>
@@ -489,7 +499,7 @@
                 $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
             }
 
-            $(document).on('click', '#btn-sync-playlist-lh', function(e) {
+            $(document).on('click', '#btn-sync-playlist, #btn-sync-playlist-lh', function(e) {
                 e.preventDefault();
                 let $btn = $(this);
                 let url = $btn.data('url');
@@ -520,16 +530,19 @@
                     },
                     success: function(res) {
                         if (res && res.success) {
+                            if (res.duration !== undefined) {
+                                $form.find('[name="total_duration"]').val(res.duration);
+                            }
                             if (res.learning_hours !== undefined) {
                                 $form.find('[name="learning_hours"]').val(res.learning_hours);
                             }
-                            showToast(res.message || 'Learning Hours synchronized successfully.', 'success');
+                            showToast(res.message || 'Playlist duration synchronized successfully.', 'success');
                         } else {
-                            showToast(res && res.message ? res.message : 'Unable to synchronize Learning Hours.', 'danger');
+                            showToast(res && res.message ? res.message : 'Unable to synchronize duration.', 'danger');
                         }
                     },
                     error: function(xhr) {
-                        let message = 'Unable to synchronize Learning Hours.';
+                        let message = 'Unable to synchronize duration.';
                         if (xhr && xhr.responseJSON) {
                             if (xhr.responseJSON.errors) {
                                 message = Object.values(xhr.responseJSON.errors).flat().join('<br>');
