@@ -13,18 +13,24 @@
                         'expired'      => 'ti-calendar-x',
                         'inactive'     => 'ti-circle-x',
                         'progress'     => 'ti-progress-check',
+                        'max_attempts' => 'ti-alert-circle',
+                        'passed'       => 'ti-check',
                     ];
                     $colorMap = [
                         'before_start' => 'blue',
                         'expired'      => 'orange',
                         'inactive'     => 'red',
                         'progress'     => 'orange',
+                        'max_attempts' => 'orange',
+                        'passed'       => 'green',
                     ];
                     $titleMap = [
                         'before_start' => 'Assessment Not Yet Available',
                         'expired'      => 'Assessment Expired',
                         'inactive'     => 'Assessment Inactive',
                         'progress'     => 'Complete the Content First',
+                        'max_attempts' => 'Maximum Assessment Attempts Reached',
+                        'passed'       => 'Assessment Already Passed',
                     ];
 
                     $msgMap = [
@@ -32,6 +38,8 @@
                         'expired'      => 'The assessment period has ended.',
                         'inactive'     => 'This assessment is currently inactive. Please contact the LMS Administrator.',
                         'progress'     => $message ?? 'Complete the related content before starting this assessment.',
+                        'max_attempts' => $message ?? 'Maximum assessment attempts reached.',
+                        'passed'       => $message ?? 'You have already passed this assessment.',
                     ];
 
                     $icon    = $iconMap[$reason]  ?? 'ti-circle-x';

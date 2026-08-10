@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Assesment;
+use App\Models\AssesmentResult;
 use App\Models\ContentUser;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -15,6 +16,8 @@ final class AssessmentAccessService
     public const REASON_BEFORE_START = 'before_start';
     public const REASON_EXPIRED = 'expired';
     public const REASON_PROGRESS = 'progress';
+    public const REASON_MAX_ATTEMPTS = 'max_attempts';
+    public const REASON_PASSED = 'passed';
 
     public function denialReason(Assesment $assessment, User $user, ?Carbon $now = null): ?string
     {
@@ -67,6 +70,23 @@ final class AssessmentAccessService
             }
         }
 
+        $userResults = AssesmentResult::where('user_id', $user->id)
+            ->where('assesment_id', $assessment->id)
+            ->where('batch', $assessment->batch)
+            ->where('final', 1);
+
+        $hasPassed = (clone $userResults)->where('pass', 1)->exists();
+        if ($hasPassed) {
+            return self::REASON_PASSED;
+        }
+
+        $maxAttempts = 1 + (int) ($assessment->total_remedials ?? 0);
+        $userAttempts = $userResults->count();
+
+        if ($userAttempts >= $maxAttempts) {
+            return self::REASON_MAX_ATTEMPTS;
+        }
+
         return null;
     }
 
@@ -87,6 +107,8 @@ final class AssessmentAccessService
             self::REASON_BEFORE_START => 'This assessment is not yet available.',
             self::REASON_EXPIRED => 'This assessment has expired.',
             self::REASON_PROGRESS => 'Complete the related content before starting this assessment.',
+            self::REASON_PASSED => 'You have already passed this assessment.',
+            self::REASON_MAX_ATTEMPTS => 'Maximum assessment attempts reached.',
             default => 'You cannot access this assessment.',
         };
     }

@@ -4,8 +4,13 @@
     'isPassed' => false,
     'isExpired' => false,
     'userAttempts' => 0,
+    'maxAttempts' => 0,
     'totalRemedials' => 0,
 ])
+
+@php
+    $maxAttemptsDisplay = $maxAttempts > 0 ? $maxAttempts : 1 + (int) $totalRemedials;
+@endphp
 
 <div class="d-flex flex-column align-items-center justify-content-center">
     @if ($isPassed)
@@ -19,7 +24,15 @@
             <span>Expired</span>
         </button>
     @elseif ($isCompleted)
-        @if ($url)
+        @if ($userAttempts >= $maxAttemptsDisplay)
+            <button type="button"
+                    class="btn btn-sm assessment-action-btn btn-assessment-remedial"
+                    disabled
+                    style="cursor: not-allowed; opacity: 0.7;">
+                <i class="ti ti-refresh"></i>
+                <span>Remedial</span>
+            </button>
+        @elseif ($url)
             <a href="{{ $url }}"
                class="btn btn-sm assessment-action-btn btn-assessment-remedial">
                 <i class="ti ti-refresh"></i>
@@ -45,9 +58,9 @@
     @endif
 
     @if (!$isPassed && !$isExpired)
-        @if ($totalRemedials > 0)
+        @if ($maxAttemptsDisplay > 0)
             <span class="badge badge-outline-secondary rounded-pill px-2 py-1 mt-2 assessment-remedial-badge">
-                {{ $userAttempts }}/{{ $totalRemedials }} Attempts
+                {{ $userAttempts }}/{{ $maxAttemptsDisplay }} Attempts
             </span>
         @else
             <span class="badge badge-outline-secondary rounded-pill px-2 py-1 mt-2 assessment-remedial-badge">

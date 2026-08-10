@@ -91,6 +91,7 @@
     $availability = $isUpcoming ? 'upcoming' : ($isExpired ? 'expired' : 'available');
 
     $totalRemedials = (int) ($assessment->total_remedials ?? 0);
+    $maxAttempts = 1 + $totalRemedials;
     $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
 @endphp
 
@@ -184,6 +185,7 @@
             :is-passed="$isPassed"
             :is-expired="$isExpired"
             :user-attempts="$userAttempts"
+            :max-attempts="$maxAttempts"
             :total-remedials="$totalRemedials"
         />
     </td>
