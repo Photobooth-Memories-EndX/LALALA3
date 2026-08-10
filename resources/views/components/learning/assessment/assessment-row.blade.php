@@ -15,10 +15,24 @@
             ->sortByDesc('score')
             ->first();
         $userAttempts = $userScores->where('final', 1)->count();
-        $historyScores = $userScores->sortByDesc('created_at');
+        $historyScores = $userScores
+            ->sortBy(function ($score) {
+                if (!empty($score->created_at)) {
+                    return is_a($score->created_at, '\DateTimeInterface')
+                        ? $score->created_at->getTimestamp()
+                        : strtotime((string) $score->created_at);
+                }
+                return 0;
+            })
+            ->values();
     }
 
     $totalHistoryCount = $historyScores->count();
+    $historyScores = $historyScores->map(function ($scoreItem, $idx) use ($totalHistoryCount) {
+        $scoreItem->attempt_number = $idx + 1;
+        $scoreItem->total_attempts = $totalHistoryCount;
+        return $scoreItem;
+    });
     $latestScores = $historyScores->take(5);
 
     $isCompleted = $finalResult != null;

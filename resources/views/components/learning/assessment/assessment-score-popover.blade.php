@@ -18,9 +18,10 @@
             <table class="table table-sm table-borderless mb-0 assessment-mini-history-table">
                 <thead>
                     <tr>
+                        <th class="text-center">#</th>
                         <th class="text-start">Date & Time</th>
                         <th class="text-center">Score</th>
-                        <th class="text-center">Batch</th>
+                        <th class="text-center">Attempt</th>
                         <th class="text-center">Result</th>
                     </tr>
                 </thead>
@@ -41,12 +42,15 @@
                             }
 
                             $scoreVal = $scoreItem->score !== null ? $scoreItem->score : '-';
-                            $batchVal = $scoreItem->batch ?? '-';
+                            $attemptNum = $scoreItem->attempt_number ?? $loop->iteration;
+                            $totalAttempts = $scoreItem->total_attempts ?? $totalHistoryCount;
+                            $attemptVal = $attemptNum . '/' . $totalAttempts;
                         @endphp
                         <tr>
+                            <td class="text-center text-muted font-weight-medium fw-medium">{{ $attemptNum }}</td>
                             <td class="text-start text-muted text-nowrap">{{ $dateFormatted }}</td>
                             <td class="text-center font-weight-bold fw-semibold text-dark">{{ $scoreVal }}</td>
-                            <td class="text-center text-muted">{{ $batchVal }}</td>
+                            <td class="text-center text-muted">{{ $attemptVal }}</td>
                             <td class="text-center">
                                 @if ($isPassed)
                                     <span class="badge bg-green-lt text-green px-2 py-1">Passed</span>
@@ -63,7 +67,7 @@
 
             @if ($totalHistoryCount > 5)
                 <div class="assessment-score-popover-footer">
-                    Showing latest 5 attempts
+                    Showing first 5 attempts
                 </div>
             @endif
         @else
