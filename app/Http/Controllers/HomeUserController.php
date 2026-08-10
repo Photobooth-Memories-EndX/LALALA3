@@ -353,7 +353,41 @@ class HomeUserController extends Controller
         ]);
     }
 
-public function upcomingDeadline()
+    public function removeHeroBackground(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user && $user->hero_background) {
+            $disk = Storage::disk('public');
+            $oldPath = $user->hero_background;
+
+            $user->hero_background = null;
+            $user->save();
+
+            if ($oldPath && $disk->exists($oldPath)) {
+                try {
+                    $disk->delete($oldPath);
+                } catch (\Throwable $e) {
+                    Log::error('Failed deleting hero background on remove.', [
+                        'user_id' => $user->id,
+                        'path' => $oldPath,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
+        $defaultUrl = asset('uploads/template/exhero-1600-320.png');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Hero background reset to default template.',
+            'image_url' => $defaultUrl,
+            'is_default' => true,
+        ]);
+    }
+
+    public function upcomingDeadline()
 {
     return response()->json(
         $this->getUpcomingDeadlines()

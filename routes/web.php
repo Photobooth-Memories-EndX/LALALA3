@@ -70,6 +70,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/upcoming-deadline',[HomeUserController::class, 'upcomingDeadline'])->name('home.upcoming.deadline');
     Route::post('/hero-background', [HomeUserController::class, 'updateHeroBackground'])
         ->name('home.user.hero-background.update');
+    Route::post('/hero-background/remove', [HomeUserController::class, 'removeHeroBackground'])
+        ->name('home.user.hero-background.remove');
+
 
     Route::view('/trainingplan', 'user.trainingplan-user.index')->name('trainingplan.user.index');
 
