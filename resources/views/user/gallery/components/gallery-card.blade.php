@@ -10,40 +10,49 @@
     $eventDate = $list->eventdate
         ? date('d M Y', strtotime($list->eventdate))
         : 'Date unavailable';
+    $uploaderName = $list->uploader ?: 'Training Team';
 @endphp
 
 <article class="col-xl-4 col-md-6">
-    <div class="card gallery-card h-100">
-        <div class="gallery-thumb">
-            <div class="gallery-thumb-placeholder">
-                <i class="ti ti-photo"></i>
+    <div class="card gallery-card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+        <a href="{{ route('gallery.user.view', $list->slug) }}" class="d-block text-decoration-none text-reset">
+            <div class="gallery-thumb position-relative">
+                <div class="gallery-thumb-placeholder">
+                    <i class="ti ti-photo"></i>
+                </div>
+
+                @if($imgSrc)
+                    <img
+                        src="{{ $imgSrc }}"
+                        alt="{{ $list->title ?: 'Learning event gallery' }}"
+                        class="gallery-thumb-img"
+                        data-gallery-image
+                        loading="lazy"
+                    >
+                @endif
+
+                <span class="gallery-badge">{{ $list->category ?? 'Event' }}</span>
+
+                @if($photoCount > 0)
+                    <span class="gallery-photo-count">
+                        <i class="ti ti-photo"></i> {{ $photoCount }}
+                    </span>
+                @endif
             </div>
+        </a>
 
-            @if($imgSrc)
-                <img
-                    src="{{ $imgSrc }}"
-                    alt="{{ $list->title ?: 'Learning event gallery' }}"
-                    class="gallery-thumb-img"
-                    data-gallery-image
-                    loading="lazy"
-                >
-            @endif
+        <div class="card-body d-flex flex-column p-3">
+            <h3 class="gallery-card-title mb-2" title="{{ $list->title }}">
+                <a href="{{ route('gallery.user.view', $list->slug) }}" class="text-reset text-decoration-none fw-bold">
+                    {{ $list->title ?: 'Untitled Gallery' }}
+                </a>
+            </h3>
 
-            <span class="gallery-badge">{{ $list->category ?? 'Event' }}</span>
-
-            @if($photoCount > 0)
-                <span class="gallery-photo-count">
-                    <i class="ti ti-photo"></i> {{ $photoCount }}
-                </span>
-            @endif
-        </div>
-
-        <div class="card-body d-flex flex-column">
-            <h3 class="gallery-card-title" title="{{ $list->title }}">{{ $list->title ?: 'Untitled Gallery' }}</h3>
-
-            <div class="mt-auto">
-                <div class="gallery-event-uploader fw-semibold text-truncate mb-2">
-                    {{ $list->uploader ?: '—' }}
+            <div class="mt-auto pt-2">
+                {{-- AUTHOR ICON & NAME --}}
+                <div class="small text-muted mb-2 d-flex align-items-center">
+                    <i class="ti ti-users me-1"></i>
+                    <span>Author : {{ $uploaderName }}</span>
                 </div>
 
                 <div class="gallery-event-meta mb-3">

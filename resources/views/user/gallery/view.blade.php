@@ -6,6 +6,7 @@
     $eventDate = $eventphoto->eventdate
         ? date('d M Y', strtotime($eventphoto->eventdate))
         : 'Date unavailable';
+    $commentTotal = method_exists($comment, 'total') ? $comment->total() : (is_countable($comment) ? count($comment) : 0);
 @endphp
 
 @section('content')
@@ -45,14 +46,23 @@
                                 <i class="ti ti-user me-1"></i>{{ $eventphoto->uploader }}
                             </span>
                         @endif
+                        <button type="button" 
+                                class="btn btn-sm bg-white text-primary rounded-pill px-3 py-1.5 fw-medium d-inline-flex align-items-center gap-1 shadow-sm border-0 ms-auto" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modal-gallery-comments"
+                                style="color: #0d6efd !important; background-color: #ffffff !important;">
+                            <i class="ti ti-message-circle fs-6"></i>
+                            <span>{{ $commentTotal }} Comments</span>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <div class="row g-4">
-        <div class="col-lg-8">
+    {{-- PHOTO GRID SECTION (FULL WIDTH - EVENT INFORMATION REMOVED) --}}
+    <div class="row g-4 mb-4">
+        <div class="col-12">
             <section class="card gallery-view-card border-0 shadow-sm rounded-4" aria-labelledby="gallery-photo-grid-title">
                 <div class="card-header d-flex justify-content-between align-items-center bg-transparent border-bottom">
                     <h2 class="card-title mb-0 fw-bold" id="gallery-photo-grid-title">
@@ -83,34 +93,29 @@
                 </div>
             </section>
         </div>
-
-        <aside class="col-lg-4" aria-label="Event information">
-            <div class="card gallery-view-card gallery-view-info-card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-transparent border-bottom">
-                    <h2 class="card-title mb-0 fw-bold"><i class="ti ti-info-circle me-2 text-primary" aria-hidden="true"></i>Event Information</h2>
-                </div>
-                <div class="card-body p-0">
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Uploader</div><div class="fw-semibold">{{ $eventphoto->uploader ?: '—' }}</div></div>
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Category</div><span class="badge bg-blue-lt text-blue rounded-pill px-3">{{ $eventphoto->category ?: 'Event' }}</span></div>
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Event Date</div><div class="fw-semibold">{{ $eventDate }}</div></div>
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Total Photos</div><div class="fw-semibold">{{ $photoCount }} Photos</div></div>
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Total Views</div><div class="fw-semibold">{{ number_format((int) $eventphoto->views) }}</div></div>
-                </div>
-                {{-- BACK BUTTON REMOVED FROM EVENT INFORMATION CARD --}}
-            </div>
-        </aside>
     </div>
 
-    <section class="card gallery-view-card border-0 shadow-sm rounded-4 mt-4 mb-4" aria-labelledby="gallery-discussion-title">
-        <div class="card-header bg-transparent border-bottom">
-            <h2 class="card-title mb-0 fw-bold" id="gallery-discussion-title">
-                <i class="ti ti-messages me-2 text-primary" aria-hidden="true"></i>Comments
-            </h2>
+    {{-- COMMENT MODAL POPUP --}}
+    <div class="modal fade content-comment-modal" id="modal-gallery-comments" tabindex="-1"
+         aria-labelledby="modalGalleryCommentsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold" id="modalGalleryCommentsLabel">
+                        <i class="ti ti-message-circle me-2 text-primary"></i>
+                        {{ $commentTotal }} Comments
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-0">
+                    <div class="view-comment-wrapper p-3">
+                        <x-comment :content="$eventphoto" :comment="$comment" type="eventphoto" />
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <x-comment :content="$eventphoto" :comment="$comment" type="eventphoto" />
-        </div>
-    </section>
+    </div>
 </main>
 @endsection
 

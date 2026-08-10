@@ -30,57 +30,48 @@
                 <span>{{ $item->category ?? 'Technology' }}</span>
             </div>
 
-            <button
-                class="btn btn-icon btn-white rounded-circle owl-save-btn"
-                data-bs-toggle="tooltip"
-                title="Save for later"
-                aria-label="Save article"
-            >
-                <i class="ti ti-bookmark"></i>
-            </button>
+
 
         </div>
 
         {{-- BODY --}}
-        <div class="card-body d-flex flex-column flex-grow-1">
+        <div class="card-body d-flex flex-column flex-grow-1 p-3">
 
-            <div class="d-flex flex-wrap gap-2 align-items-center mb-3 owl-news-meta">
-                {{-- BADGE DATE --}}
-                <span class="owl-news-pill-muted">
-                    <i class="ti ti-calendar me-1"></i>
-                    {{ $item->created_at ? $item->created_at->format('M d, Y') : '-' }}
-                </span>
-            </div>
-
-            <h3 class="card-title mb-3 flex-grow-1 owl-card-title">
-                <a href="{{ route('news.user.view', $item->slug) }}"
-                   class="owl-card-title-link">
+            <h5 class="card-title line-clamp-2 mb-2 owl-card-title" style="min-height: 2.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+                <a href="{{ route('news.user.view', $item->slug) }}" class="owl-card-title-link text-reset text-decoration-none fw-bold">
                     {{ $item->title ?? '-' }}
                 </a>
-            </h3>
+            </h5>
 
-            <p class="owl-card-excerpt mb-4">
-                {{ Str::limit(strip_tags($item->description ?? ''), 130) }}
-            </p>
+            {{-- AUTHOR & META INFO --}}
+            <div class="mt-auto pt-2">
+                {{-- Meta Author --}}
+                <div class="d-flex align-items-center text-muted small mb-2">
+                    <i class="ti ti-users me-1 fs-6"></i>
+                    <span>Author : {{ $item->user->name ?? 'Unknown' }}</span>
+                </div>
+
+                {{-- Meta Stats (Satu Baris Sejajar Horizontal) --}}
+                <div class="d-flex align-items-center gap-3 text-muted small mb-3">
+                    <div class="d-flex align-items-center gap-1">
+                        <i class="ti ti-calendar fs-6"></i>
+                        <span>{{ $item->created_at ? $item->created_at->format('d M Y') : '-' }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <i class="ti ti-eye fs-6"></i>
+                        <span>{{ number_format($item->views ?? 0) }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <i class="ti ti-message-dots fs-6"></i>
+                        <span>{{ $item->comments_count ?? 0 }}</span>
+                    </div>
+                </div>
+            </div>
 
         </div>
 
         {{-- FOOTER --}}
         <div class="card-footer bg-transparent border-top pt-3 pb-3 mt-auto">
-            <div class="d-flex align-items-center gap-2 min-w-0 mb-3">
-                <span class="avatar avatar-sm bg-blue-lt text-blue fw-bold flex-shrink-0">
-                    {{ strtoupper(substr($item->user->name ?? 'U', 0, 1)) }}
-                </span>
-                <div class="min-w-0">
-                    <div class="fw-semibold small text-truncate owl-card-author-name">
-                        {{ $item->user->name ?? 'Unknown' }}
-                    </div>
-                    <div class="text-secondary owl-card-views small">
-                        <i class="ti ti-eye me-1"></i>{{ number_format($item->views ?? 0) }} views
-                    </div>
-                </div>
-            </div>
-
             <a href="{{ route('news.user.view', $item->slug) }}"
                class="btn btn-primary w-100 rounded-pill">
                 Read more <i class="ti ti-arrow-right ms-1"></i>

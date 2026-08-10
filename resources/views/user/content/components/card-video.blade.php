@@ -124,11 +124,7 @@
                 </div>
             @endif
 
-            @if (!empty($item->description))
-                <div class="small text-muted mb-2">
-                    {{ Str::limit(strip_tags($item->description), 60) }}
-                </div>
-            @endif
+
         </div>
 
         <div class="mt-2 pt-0">

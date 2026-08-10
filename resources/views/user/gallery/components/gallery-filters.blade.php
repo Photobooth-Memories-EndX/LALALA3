@@ -27,7 +27,7 @@
 <section class="gallery-filter-card mb-4" aria-labelledby="gallery-filter-title" data-gallery-filter-region>
     <h2 id="gallery-filter-title" class="visually-hidden">Search and filter gallery</h2>
     <form action="{{ route('gallery.user.index') }}" method="GET" class="gallery-filter-form" data-gallery-form>
-        <label class="form-label small text-muted mb-2 gallery-fast-filter-label" for="gallery-search">Fast Filter</label>
+        <label class="form-label small text-muted mb-2 gallery-fast-filter-label" for="gallery-search">Quick Filter</label>
         <div class="gallery-filter-toolbar">
             <div class="gallery-quick-dropdowns">
                 {{-- 1. Year --}}

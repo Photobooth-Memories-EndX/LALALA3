@@ -68,17 +68,7 @@
                 @endif
             </div>
 
-            {{-- Footer CTA --}}
-            @if(isset($trending) && $trending->count() > 0)
-                <div class="text-center px-4 pb-4">
-                    <a
-                        href="{{ route('news.user.index', ['sort' => 'most_viewed']) }}"
-                        class="btn btn-sm btn-outline-primary rounded-pill px-4 w-100"
-                    >
-                        View all trending
-                    </a>
-                </div>
-            @endif
+
 
         </div>
     </div>

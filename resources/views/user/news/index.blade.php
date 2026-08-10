@@ -52,7 +52,7 @@
                     <form method="GET" id="owlNewsFilterForm" class="record-filter-shell owl-news-filter-form">
                         <div class="record-fast-filter-section">
                             <label class="form-label small text-muted mb-2 learning-fast-filter-label" for="owl-search-input">
-                                Fast Filter
+                                Quick Filter
                             </label>
 
                             <div class="fast-filter-toolbar owl-news-filter-toolbar">
@@ -199,20 +199,10 @@
 
                             <hr class="my-3">
 
-                            {{-- 3. Published Period & Date Range (2 Kolom) --}}
+                            {{-- 3. Date Range (2 Kolom) --}}
                             <div class="learning-filter-group">
-                                <div class="fw-semibold mb-2">Published Period</div>
+                                <input type="hidden" name="published" id="owlNewsPublished" value="{{ request('published', 'all') }}" form="owlNewsFilterForm">
                                 <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label small text-muted mb-1" for="owlNewsPublished"><i class="ti ti-calendar me-1"></i>Period Shortcut</label>
-                                        <select name="published" id="owlNewsPublished" class="form-select rounded-3" form="owlNewsFilterForm">
-                                            <option value="all" {{ request('published', 'all') === 'all' ? 'selected' : '' }}>All Time</option>
-                                            <option value="today" {{ request('published') === 'today' ? 'selected' : '' }}>Today</option>
-                                            <option value="week" {{ request('published') === 'week' ? 'selected' : '' }}>This Week</option>
-                                            <option value="month" {{ request('published') === 'month' ? 'selected' : '' }}>This Month</option>
-                                            <option value="year" {{ request('published') === 'year' ? 'selected' : '' }}>This Year</option>
-                                        </select>
-                                    </div>
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small text-muted mb-1" for="owlNewsDateFrom"><i class="ti ti-calendar-event me-1"></i>From Date</label>
                                         <input type="{{ request('date_from') ? 'date' : 'text' }}"
@@ -258,14 +248,7 @@
             {{-- NEWS GRID --}}
             <div class="col-xl-9 col-lg-8 news-main">
 
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
-                    <div>
-                        <div class="text-uppercase text-primary small fw-semibold mb-2">AI News Hub</div>
-                        <h2 class="fw-bold mb-0">
-                            {{ request('search') ? 'Search Results' : 'Hub Highlights' }}
-                        </h2>
-                    </div>
-                </div>
+
 
                 @if($news->count() > 0)
 
@@ -281,11 +264,29 @@
                     </div>
 
                     {{-- PAGINATION --}}
-                    <nav class="mt-5">
-                        <div class="d-flex justify-content-center">
-                            {{ $news->links('pagination::owl') }}
+                    @if($news->hasPages() || $news->total() > 0)
+                        <div class="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-3 mt-5 pt-3 border-top owl-border-color text-muted small w-100 text-center">
+                            <div>
+                                Showing <b>{{ $news->firstItem() ?? 0 }}</b> to <b>{{ $news->lastItem() ?? 0 }}</b> of <b>{{ $news->total() }}</b> results
+                            </div>
+                            <ul class="pagination pagination-sm m-0 align-items-center gap-1">
+                                {{-- Previous Link --}}
+                                <li class="page-item {{ $news->onFirstPage() ? 'disabled' : '' }}">
+                                    <a class="page-link rounded-3 border-0 bg-transparent text-secondary" href="{{ $news->previousPageUrl() }}">&lsaquo;</a>
+                                </li>
+                                {{-- Pagination Elements --}}
+                                @foreach ($news->getUrlRange(1, $news->lastPage()) as $page => $url)
+                                    <li class="page-item">
+                                        <a class="page-link rounded-3 px-3 py-1.5 {{ $page == $news->currentPage() ? 'bg-primary text-white fw-bold' : 'border-0 bg-transparent text-secondary' }}" href="{{ $url }}">{{ $page }}</a>
+                                    </li>
+                                @endforeach
+                                {{-- Next Link --}}
+                                <li class="page-item {{ !$news->hasMorePages() ? 'disabled' : '' }}">
+                                    <a class="page-link rounded-3 border-0 bg-transparent text-secondary" href="{{ $news->nextPageUrl() }}">&rsaquo;</a>
+                                </li>
+                            </ul>
                         </div>
-                    </nav>
+                    @endif
 
                 @else
 
