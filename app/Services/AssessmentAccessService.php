@@ -99,6 +99,44 @@ final class AssessmentAccessService
         }
     }
 
+    public function denialReasonForViewingResult(Assesment $assessment, User $user): ?string
+    {
+        if ($user->isAdmin()) {
+            return null;
+        }
+
+        $assignedDescriptions = $assessment->assesments_assigned
+            ->pluck('assigned_description');
+
+        if ($assignedDescriptions->isNotEmpty()) {
+            $userAssignments = [
+                $user->name,
+                $user->team,
+                $user->department,
+                $user->division,
+            ];
+
+            if (!$assignedDescriptions->intersect($userAssignments)->isNotEmpty()) {
+                return self::REASON_ASSIGNED;
+            }
+        }
+
+        if ($assessment->status === 'NOT') {
+            return self::REASON_INACTIVE;
+        }
+
+        return null;
+    }
+
+    public function authorizeForViewingResult(Assesment $assessment, User $user): void
+    {
+        $reason = $this->denialReasonForViewingResult($assessment, $user);
+
+        if ($reason !== null) {
+            throw new AccessDeniedHttpException($this->message($reason));
+        }
+    }
+
     public function message(string $reason): string
     {
         return match ($reason) {

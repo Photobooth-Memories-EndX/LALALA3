@@ -26,11 +26,10 @@
     @elseif ($isCompleted)
         @if ($userAttempts >= $maxAttemptsDisplay)
             <button type="button"
-                    class="btn btn-sm assessment-action-btn btn-assessment-remedial"
-                    disabled
-                    style="cursor: not-allowed; opacity: 0.7;">
-                <i class="ti ti-refresh"></i>
-                <span>Remedial</span>
+                    class="btn btn-sm assessment-action-btn btn-assessment-failed"
+                    disabled>
+                <i class="ti ti-x"></i>
+                <span>Failed</span>
             </button>
         @elseif ($url)
             <a href="{{ $url }}"

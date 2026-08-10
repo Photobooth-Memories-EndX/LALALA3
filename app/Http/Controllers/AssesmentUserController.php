@@ -228,9 +228,24 @@
             if ($assesment === null) {
                 abort(404);
             }
-            $assessmentAccess->authorize($assesment, auth()->user());
+            $assessmentAccess->authorizeForViewingResult($assesment, auth()->user());
 
-            $assesment_result = AssesmentResult::findOrFail(session('assesmentResultId'));
+            $assesmentResultId = session('assesmentResultId');
+            $assesment_result = null;
+
+            if ($assesmentResultId) {
+                $assesment_result = AssesmentResult::where('id', $assesmentResultId)
+                    ->where('user_id', auth()->id())
+                    ->first();
+            }
+
+            if (!$assesment_result) {
+                $assesment_result = AssesmentResult::where('assesment_id', $assesment->id)
+                    ->where('user_id', auth()->id())
+                    ->where('final', 1)
+                    ->latest('id')
+                    ->firstOrFail();
+            }
 
             return view('user.assesment.result', compact('assesment', 'assesment_result'));
         }
