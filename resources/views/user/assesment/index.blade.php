@@ -32,11 +32,21 @@
                                 $finalResult = null;
 
                                 if (($assessment->scores ?? null) != null) {
-                                    $finalResult = $assessment->scores
-                                        ->where('user_id', Auth::id())
+                                    $userScores = collect($assessment->scores)->filter(function ($scoreItem) {
+                                        return (string) ($scoreItem->user_id ?? '') === (string) Auth::id();
+                                    });
+
+                                    $finalResult = $userScores
                                         ->where('final', 1)
                                         ->sortByDesc('score')
                                         ->first();
+
+                                    if (!$finalResult) {
+                                        $finalResult = $userScores
+                                            ->filter(fn ($s) => $s->score !== null)
+                                            ->sortByDesc('score')
+                                            ->first();
+                                    }
                                 }
 
                                 $isCompleted = $finalResult != null;

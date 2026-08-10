@@ -131,11 +131,20 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
         ]];
 
         foreach ($this->assessments ?? collect() as $index => $assessment) {
-            $finalResult = collect($assessment->scores ?? [])
-                ->where('user_id', $this->userId)
+            $userScores = collect($assessment->scores ?? [])
+                ->filter(fn ($score) => (string) ($score->user_id ?? '') === (string) $this->userId);
+
+            $finalResult = $userScores
                 ->where('final', 1)
                 ->sortByDesc('score')
                 ->first();
+
+            if (!$finalResult) {
+                $finalResult = $userScores
+                    ->filter(fn ($s) => $s->score !== null)
+                    ->sortByDesc('score')
+                    ->first();
+            }
             $type = $assessment->type === 'trainingplan'
                 ? 'Playlist'
                 : ucfirst((string) ($assessment->type ?? '-'));

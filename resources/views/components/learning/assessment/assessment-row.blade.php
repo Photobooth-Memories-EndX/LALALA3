@@ -7,14 +7,30 @@
     $finalResult = null;
     $userAttempts = 0;
     $historyScores = collect();
+    $currentUserId = Auth::id();
 
     if (($assessment->scores ?? null) != null) {
-        $userScores = $assessment->scores->where('user_id', Auth::user()->id);
+        $userScores = collect($assessment->scores)->filter(function ($scoreItem) use ($currentUserId) {
+            return (string) ($scoreItem->user_id ?? '') === (string) $currentUserId;
+        });
+
         $finalResult = $userScores
             ->where('final', 1)
             ->sortByDesc('score')
             ->first();
+
+        if (!$finalResult) {
+            $finalResult = $userScores
+                ->filter(fn ($s) => $s->score !== null)
+                ->sortByDesc('score')
+                ->first();
+        }
+
         $userAttempts = $userScores->where('final', 1)->count();
+        if ($userAttempts === 0 && $userScores->count() > 0) {
+            $userAttempts = $userScores->count();
+        }
+
         $historyScores = $userScores
             ->sortBy(function ($score) {
                 if (!empty($score->created_at)) {

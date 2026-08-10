@@ -191,11 +191,20 @@ class LearningAssessmentController extends Controller
         $failed = 0;
 
         foreach ($assessments as $assessment) {
-            $finalResult = $assessment->getRelation('scores')
-                ->where('user_id', $userId)
+            $userScores = collect($assessment->getRelation('scores') ?? [])
+                ->filter(fn ($score) => (string) ($score->user_id ?? '') === (string) $userId);
+
+            $finalResult = $userScores
                 ->where('final', 1)
                 ->sortByDesc('score')
                 ->first();
+
+            if (!$finalResult) {
+                $finalResult = $userScores
+                    ->filter(fn ($s) => $s->score !== null)
+                    ->sortByDesc('score')
+                    ->first();
+            }
 
             if ($finalResult !== null) {
                 if ($finalResult->pass) {
