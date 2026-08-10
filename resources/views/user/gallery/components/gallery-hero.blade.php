@@ -35,7 +35,7 @@
             <div class="col-lg-4 col-xl-4 d-none d-lg-flex justify-content-end align-items-center">
                 <div class="gallery-hero-media ratio ratio-16x9 rounded-3 overflow-hidden shadow-sm border border-2 border-white-20 w-100" style="max-width: 260px;">
                     @if($latestImage)
-                        <a href="{{ $latestGallery ? route('gallery.user.view', $latestGallery->slug) : '#' }}" class="d-block w-100 h-100 text-decoration-none">
+                        <a href="{{ $latestGallery ? route('gallery.user.view', array_merge(['slug' => $latestGallery->slug], request()->query())) : '#' }}" class="d-block w-100 h-100 text-decoration-none">
                             <img
                                 src="{{ $latestImage }}"
                                 alt="Latest gallery: {{ $latestGallery->title ?: 'Learning event' }}"

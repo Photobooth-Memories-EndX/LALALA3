@@ -6,7 +6,7 @@
 
         {{-- THUMBNAIL --}}
         <div class="owl-news-image-wrapper">
-            <a href="{{ route('news.user.view', $item->slug) }}" class="d-block w-100 h-100 text-decoration-none text-reset">
+            <a href="{{ route('news.user.view', array_merge(['slug' => $item->slug], request()->query())) }}" class="d-block w-100 h-100 text-decoration-none text-reset">
                 {{-- Placeholder always behind; image overlays on top --}}
                 <div class="news-img-placeholder">
                     <i class="ti ti-news"></i>
@@ -38,7 +38,7 @@
         <div class="card-body d-flex flex-column flex-grow-1 p-3">
 
             <h5 class="card-title line-clamp-2 mb-2 owl-card-title" style="min-height: 2.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
-                <a href="{{ route('news.user.view', $item->slug) }}" class="owl-card-title-link text-reset text-decoration-none fw-bold">
+                <a href="{{ route('news.user.view', array_merge(['slug' => $item->slug], request()->query())) }}" class="owl-card-title-link text-reset text-decoration-none fw-bold">
                     {{ $item->title ?? '-' }}
                 </a>
             </h5>
@@ -72,7 +72,7 @@
 
         {{-- FOOTER --}}
         <div class="card-footer bg-transparent border-top pt-3 pb-3 mt-auto">
-            <a href="{{ route('news.user.view', $item->slug) }}"
+            <a href="{{ route('news.user.view', array_merge(['slug' => $item->slug], request()->query())) }}"
                class="btn btn-primary w-100 rounded-pill">
                 Read more <i class="ti ti-arrow-right ms-1"></i>
             </a>

@@ -12,8 +12,13 @@
 @section('content')
 <main class="container-xl py-4 gallery-page gallery-detail-page">
 
+    @php
+        $galleryBackUrl = request()->query()
+            ? route('gallery.user.index', request()->query())
+            : (url()->previous() !== url()->current() ? url()->previous() : route('gallery.user.index'));
+    @endphp
     {{-- 1. BACK BUTTON --}}
-    <a href="{{ route('gallery.user.index') }}" class="btn btn-link text-decoration-none ps-0 mb-3">
+    <a href="{{ $galleryBackUrl }}" class="btn btn-link text-decoration-none ps-0 mb-3">
         <i class="ti ti-arrow-left me-1"></i> Back
     </a>
 

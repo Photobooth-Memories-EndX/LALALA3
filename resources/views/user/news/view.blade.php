@@ -9,8 +9,13 @@
 <div class="page-body owl-article-page content-detail-page">
     <div class="container-xl py-4">
 
+        @php
+            $newsBackUrl = request()->query()
+                ? route('news.user.index', request()->query())
+                : (url()->previous() !== url()->current() ? url()->previous() : route('news.user.index'));
+        @endphp
         {{-- BACK BUTTON --}}
-        <a href="{{ route('news.user.index') }}" class="btn btn-link text-decoration-none ps-0 mb-3">
+        <a href="{{ $newsBackUrl }}" class="btn btn-link text-decoration-none ps-0 mb-3">
             <i class="ti ti-arrow-left me-1"></i> Back
         </a>
 
@@ -91,7 +96,7 @@
                                 @foreach($related as $article)
                                     <div class="col">
                                         <a
-                                            href="{{ route('news.user.view', $article->slug) }}"
+                                            href="{{ route('news.user.view', array_merge(['slug' => $article->slug], request()->query())) }}"
                                             class="card border-0 h-100 owl-explore-card shadow-sm text-decoration-none overflow-hidden owl-text-color rounded-4"
                                         >
                                             <div class="owl-explore-image-wrapper overflow-hidden">

@@ -25,7 +25,7 @@
 
                     @foreach($trending as $index => $trend)
                         <a
-                            href="{{ route('news.user.view', $trend->slug) }}"
+                            href="{{ route('news.user.view', array_merge(['slug' => $trend->slug], request()->query())) }}"
                             class="owl-trending-item d-flex gap-3 align-items-start text-decoration-none mb-2"
                         >
                             {{-- Thumbnail with ranking badge --}}

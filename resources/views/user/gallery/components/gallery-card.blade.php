@@ -15,7 +15,7 @@
 
 <article class="col-xl-4 col-md-6">
     <div class="card gallery-card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-        <a href="{{ route('gallery.user.view', $list->slug) }}" class="d-block text-decoration-none text-reset">
+        <a href="{{ route('gallery.user.view', array_merge(['slug' => $list->slug], request()->query())) }}" class="d-block text-decoration-none text-reset">
             <div class="gallery-thumb position-relative">
                 <div class="gallery-thumb-placeholder">
                     <i class="ti ti-photo"></i>
@@ -43,7 +43,7 @@
 
         <div class="card-body d-flex flex-column p-3">
             <h3 class="gallery-card-title mb-2" title="{{ $list->title }}">
-                <a href="{{ route('gallery.user.view', $list->slug) }}" class="text-reset text-decoration-none fw-bold">
+                <a href="{{ route('gallery.user.view', array_merge(['slug' => $list->slug], request()->query())) }}" class="text-reset text-decoration-none fw-bold">
                     {{ $list->title ?: 'Untitled Gallery' }}
                 </a>
             </h3>
@@ -67,7 +67,7 @@
                     </span>
                 </div>
 
-                <a href="{{ route('gallery.user.view', $list->slug) }}" class="btn btn-primary w-100 rounded-pill">
+                <a href="{{ route('gallery.user.view', array_merge(['slug' => $list->slug], request()->query())) }}" class="btn btn-primary w-100 rounded-pill">
                     <i class="ti ti-eye me-1"></i> View Gallery
                 </a>
             </div>
