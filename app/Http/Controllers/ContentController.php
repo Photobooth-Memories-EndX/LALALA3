@@ -547,4 +547,80 @@ class ContentController extends Controller
 
         return response()->json($result->toArray());
     }
+
+    public function documentPdfList(): \Illuminate\Http\JsonResponse
+    {
+        $contents = Content::where('type', 'Document')
+            ->select(['id', 'title', 'type', 'file', 'total_page', 'page_duration'])
+            ->get();
+
+        $data = $contents->map(function ($item) {
+            $contentfile = is_string($item->file) ? json_decode($item->file, true) : [];
+            $getcontentfile = is_array($contentfile) ? ($contentfile[0] ?? '') : ($item->file ?? '');
+            $filename = is_string($getcontentfile) ? trim($getcontentfile) : '';
+
+            $filePath = !empty($filename) ? public_path('storage/files/content/' . $item->id . '/' . $filename) : '';
+            $fileUrl = !empty($filename) ? asset('storage/files/content/' . $item->id . '/' . $filename) : '';
+
+            return [
+                'id' => $item->id,
+                'title' => $item->title,
+                'file_name' => $filename,
+                'file_url' => $fileUrl,
+                'file_exists' => !empty($filePath) && file_exists($filePath),
+                'total_page' => (int) ($item->total_page ?? 0),
+                'page_duration' => (int) ($item->page_duration ?: 30),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'count' => $data->count(),
+        ]);
+    }
+
+    public function syncTotalPage(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => 'required|integer|exists:content,id',
+            'total_page' => 'required|integer|min:1|max:100000',
+        ]);
+
+        $content = Content::findOrFail($validated['id']);
+
+        if ($content->type !== 'Document') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Content is not of type Document.',
+            ], 422);
+        }
+
+        $newTotalPage = (int) $validated['total_page'];
+        $oldTotalPage = (int) ($content->total_page ?? 0);
+
+        if ($oldTotalPage === $newTotalPage) {
+            return response()->json([
+                'success' => true,
+                'updated' => false,
+                'id' => $content->id,
+                'total_page' => $content->total_page,
+                'message' => 'Already synchronized.',
+            ]);
+        }
+
+        $content->total_page = $newTotalPage;
+        $content->save();
+
+        return response()->json([
+            'success' => true,
+            'updated' => true,
+            'id' => $content->id,
+            'old_total_page' => $oldTotalPage,
+            'new_total_page' => $content->total_page,
+            'duration' => $content->duration,
+            'learning_hours' => $content->learning_hours,
+            'message' => 'Total page updated successfully.',
+        ]);
+    }
 }
