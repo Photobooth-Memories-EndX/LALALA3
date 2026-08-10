@@ -9,6 +9,20 @@
     $discussionCount = $discussionCount ?? 0;
     $isBookmarked = $isBookmarked ?? false;
 
+    $favoritesCount = $favoritesCount ?? $content->favorites_count ?? $bookmarkCount;
+    $isFavorite = $isFavorite ?? $content->is_favorite ?? $isBookmarked;
+
+    $learningHoursVal = $content->learning_hours ?? null;
+    if ($learningHoursVal === null || $learningHoursVal === '') {
+        $durationSeconds = \App\Support\DurationFormatter::toSeconds($content->duration);
+        $learningHoursVal = $durationSeconds > 0 ? round($durationSeconds / 3600, 1) : 0.5;
+    }
+    $learningHoursNum = (float) $learningHoursVal;
+    $learningHoursDisplay = ($learningHoursNum == (int) $learningHoursNum)
+        ? (int) $learningHoursNum
+        : $learningHoursNum;
+    $learningHoursText = $learningHoursDisplay . ' ' . ($learningHoursNum == 1 ? 'Hour' : 'Hours');
+
     $learningStatusLabels = [
         'not_started' => 'Not Started',
         'in_progress' => 'In Progress',
@@ -30,9 +44,9 @@
                         Your Progress
                     </div>
 
-                    <h1 id="contentProgressValue" class="fw-bold text-primary mb-2" style="font-size:2.4rem; line-height:1;">
+                    <h2 id="contentProgressValue" class="fw-bold text-primary mb-2 fs-2" style="line-height:1;">
                         {{ $progress }}%
-                    </h1>
+                    </h2>
 
                     @if (in_array($content->type, ['Document', 'SOP/Regulation']))
                         <div class="text-muted small mb-1">
@@ -78,9 +92,20 @@
                 </span>
             </div>
 
+            <div class="text-start mb-2">
+                <span class="text-muted small d-block">
+                    Learning Hours
+                </span>
+
+                <span class="fw-semibold text-dark d-block">
+                    <i class="ti ti-hourglass me-1 text-muted"></i>
+                    {{ $learningHoursText }}
+                </span>
+            </div>
+
             <div class="text-start">
                 <span class="text-muted small d-block">
-                    Deadline
+                    Period
                 </span>
 
                 <span class="fw-semibold text-dark d-block">
@@ -92,26 +117,70 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 text-center glass-surface content-sidebar-card">
-        <div class="card-body p-3">
+    @php
+        $assessmentObj = $assessment ?? $assesment ?? null;
+    @endphp
 
-            <div class="mb-2">
-                <span class="badge rounded-pill bg-primary-lt text-primary px-3 py-2">
-                    Created by
-                </span>
+    @if ($assessmentObj)
+        @php
+            $attempts = $assessmentObj->attempts_count ?? $assessmentCount ?? 0;
+            $maxAttempts = $assessmentObj->max_attempts ?? (isset($assessmentObj->total_remedials) ? (1 + (int)$assessmentObj->total_remedials) : 3);
+            $latestScore = $assessmentObj->latest_score ?? $assessmentLatestScores ?? 0;
+            $passingGrade = $assessmentObj->passing_grade ?? 80;
+            $isPassed = $latestScore >= $passingGrade;
+            $meetsProgressRequirement = isset($content_user) && method_exists($content_user, 'meetsAssessmentProgressRequirement')
+                ? $content_user->meetsAssessmentProgressRequirement()
+                : true;
+            $assessmentSlug = $assessmentObj->slug ?? '#';
+        @endphp
+
+        <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card">
+            <div class="card-body p-4">
+
+                <h3 class="card-title mb-3">
+                    <i class="ti ti-clipboard-check text-primary me-1"></i>
+                    Assessment
+                </h3>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Passing Grade</span>
+                    <strong>{{ $passingGrade }}</strong>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Latest Score</span>
+                    <strong>{{ $latestScore }}</strong>
+                </div>
+
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted">Attempt</span>
+                    <strong>{{ $attempts }}/{{ $maxAttempts }}</strong>
+                </div>
+
+                @if ($isPassed)
+                    <button type="button" class="btn btn-success disabled w-100 rounded-pill" disabled>
+                        <i class="ti ti-check me-1"></i> Passed
+                    </button>
+                @elseif ($attempts == 0)
+                    <a href="{{ route('assesment.user.view', $assessmentSlug) }}"
+                       class="btn btn-primary w-100 rounded-pill {{ !$meetsProgressRequirement ? 'disabled' : '' }}">
+                        Start Assessment
+                    </a>
+                @elseif ($attempts < $maxAttempts)
+                    <a href="{{ route('assesment.user.view', $assessmentSlug) }}"
+                       class="btn w-100 rounded-pill shadow-sm {{ !$meetsProgressRequirement ? 'disabled' : '' }}"
+                       style="background-color: #ff7a00; color: white; border: none;">
+                        <i class="ti ti-refresh me-1"></i> Remedial
+                    </a>
+                @else
+                    <button type="button" class="btn btn-secondary disabled w-100 rounded-pill" disabled>
+                        Max Attempt Reached
+                    </button>
+                @endif
+
             </div>
-
-            <h3 class="mb-1">
-                {{ $content->author ?? 'Training Team' }}
-            </h3>
-
-            <div class="text-muted small mt-2">
-                <i class="ti ti-clock me-1"></i>
-                {{ \App\Support\DurationFormatter::format($content->duration, 'Flexible') }}
-            </div>
-
         </div>
-    </div>
+    @endif
 
     <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card">
         <div class="card-body p-4">
@@ -122,8 +191,8 @@
                     Content Stats
                 </h3>
 
-                @if($isBookmarked)
-                    <span class="badge rounded-pill bg-primary-lt text-primary">Saved</span>
+                @if($isFavorite)
+                    <span class="badge rounded-pill bg-primary-lt text-primary">Favorite</span>
                 @endif
             </div>
 
@@ -145,8 +214,8 @@
 
                 <div class="col-6">
                     <div class="sidebar-stat-card">
-                        <div class="text-muted small">Saved</div>
-                        <div class="fw-bold fs-3">{{ number_format($bookmarkCount) }}</div>
+                        <div class="text-muted small">Favorite</div>
+                        <div class="fw-bold fs-3">{{ number_format($favoritesCount) }}</div>
                     </div>
                 </div>
 
@@ -160,39 +229,6 @@
 
         </div>
     </div>
-
-    @if ($assesment)
-        <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card">
-            <div class="card-body p-4">
-
-                <h3 class="card-title mb-3">
-                    <i class="ti ti-clipboard-check text-primary me-1"></i>
-                    Assessment
-                </h3>
-
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Passing Grade</span>
-                    <strong>{{ $assesment->passing_grade }}</strong>
-                </div>
-
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Latest Score</span>
-                    <strong>{{ $assessmentLatestScores ?? 0 }}</strong>
-                </div>
-
-                <div class="d-flex justify-content-between mb-3">
-                    <span class="text-muted">Attempt</span>
-                    <strong>{{ $assessmentCount ?? 0 }}/{{ 1 + $assesment->total_remedials }}</strong>
-                </div>
-
-                <a href="{{ route('assesment.user.view', $assesment->slug) }}"
-                   class="btn btn-primary w-100 {{ !$content_user->meetsAssessmentProgressRequirement() || ($assessmentCount >= 1 + $assesment->total_remedials && $assessmentLatestScores < $assesment->passing_grade) || $assessmentLatestScores >= $assesment->passing_grade ? 'disabled' : '' }}">
-                    Start Assessment
-                </a>
-
-            </div>
-        </div>
-    @endif
 
     <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card ai-assistant-card">
         <div class="card-body p-4">

@@ -1,144 +1,103 @@
 @extends('layouts.sidebar-master')
 
+@php
+    $commentTotal = method_exists($comment, 'total') ? $comment->total() : (is_countable($comment) ? count($comment) : 0);
+@endphp
+
 @section('content')
 
-<div class="page-body owl-article-page">
-    <div class="container-fluid px-4 px-xl-5">
+<div class="page-body owl-article-page content-detail-page">
+    <div class="container-xl py-4">
 
-        {{-- ============================================================
-             BREADCRUMB + META
-             ============================================================ --}}
-        <div class="row owl-article-layout">
+        @php
+            $newsBackUrl = request()->query()
+                ? route('news.user.index', request()->query())
+                : (url()->previous() !== url()->current() ? url()->previous() : route('news.user.index'));
+        @endphp
+        {{-- BACK BUTTON --}}
+        <a href="{{ $newsBackUrl }}" class="btn btn-link text-decoration-none ps-0 mb-3">
+            <i class="ti ti-arrow-left me-1"></i> Back
+        </a>
+
+        <div class="row owl-article-layout g-4">
             <div class="col-12">
 
-                <nav class="owl-breadcrumb mb-4">
-                    <ol class="breadcrumb bg-transparent px-0 mb-0">
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('news.user.index') }}" class="text-secondary">News Hub</a>
-                        </li>
-                        <li class="breadcrumb-item active fw-semibold owl-text-color">
-                            {{ Str::limit($news->title ?? '', 45) }}
-                        </li>
-                    </ol>
-                </nav>
+                {{-- 1. BANNER / HERO IMAGE DI PALING ATAS --}}
+                <div class="owl-article-hero-wrapper rounded-4 overflow-hidden mb-4 shadow-sm">
+                    <div class="news-img-placeholder news-article-hero-placeholder">
+                        <i class="ti ti-news"></i>
+                    </div>
 
-                {{-- META PILLS --}}
-                <div class="d-flex flex-wrap gap-2 align-items-center owl-article-meta">
-                    <span class="owl-news-pill">
-                        <i class="ti ti-calendar-event"></i>
-                        {{ $news->created_at ? $news->created_at->format('F d, Y') : '-' }}
-                    </span>
-                    <span class="owl-news-pill">
-                        <i class="ti ti-clock"></i>
-                        {{ $readTime }} min read
-                    </span>
-                    <span class="owl-news-pill">
-                        <i class="ti ti-eye"></i>
-                        {{ number_format($news->views ?? 0) }} views
-                    </span>
+                    @if(!empty($news->image))
+                        <img
+                            src="{{ asset('storage/news/' . $news->image) }}"
+                            class="news-cover-img"
+                            alt="{{ $news->title ?? '' }}"
+                            loading="lazy"
+                            onerror="this.style.display='none'"
+                        >
+                    @endif
                 </div>
 
-                {{-- TITLE --}}
-                <h1 class="fw-bold owl-article-title mb-4">
-                    {{ $news->title ?? '-' }}
-                </h1>
-
-                {{-- AUTHOR --}}
-                <div class="d-flex align-items-center gap-3 border-bottom owl-border-color owl-article-author">
-                    <div
-                        class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0 owl-article-author-avatar"
-                    >
-                        {{ strtoupper(substr($news->user->name ?? 'U', 0, 1)) }}
-                    </div>
-                    <div class="owl-article-author-copy">
-                        <h5 class="mb-1 fw-semibold owl-text-color owl-article-author-name">
-                            {{ $news->user->name ?? 'Training Team' }}
-                        </h5>
-                        <div class="text-secondary small owl-article-author-email">
-                            {{ $news->user->email ?? '' }}
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ARTICLE INSIGHTS --}}
-                <div class="card border-0 shadow-sm rounded-4 mb-4 owl-insights-card">
+                {{-- MAIN CONTENT CARD / OVERVIEW BOX STRUCTURE LIKE ALL CONTENT --}}
+                <div class="card border-0 shadow-sm rounded-4 mb-4 view-content-info-card">
                     <div class="card-body p-4">
-                        <h5 class="fw-semibold mb-4 owl-text-color">Article Insights</h5>
-                        <div class="row text-center gy-3 owl-insights-grid">
-                            <div class="col-md-4 owl-insight-item">
-                                <div class="text-secondary small">Read Time</div>
-                                <div class="fw-bold fs-5 owl-text-color">{{ $readTime }} min</div>
-                            </div>
-                            <div class="col-md-4 owl-insight-item">
-                                <div class="text-secondary small">Views</div>
-                                <div class="fw-bold fs-5 owl-text-color">{{ number_format($news->views ?? 0) }}</div>
-                            </div>
-                            <div class="col-md-4 owl-insight-item">
-                                <div class="text-secondary small">Author</div>
-                                <div class="fw-bold owl-text-color">{{ $news->user->name ?? 'Training Team' }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="row">
-                    <div class="col-12">
+                        {{-- 2. JUDUL ARTIKEL --}}
+                        <h1 class="fw-bold owl-article-title mb-3">
+                            {{ $news->title ?? '-' }}
+                        </h1>
 
-                        {{-- HERO IMAGE --}}
-                        <div class="owl-article-hero-wrapper rounded-4 overflow-hidden mb-5">
-
-                            {{-- Placeholder always behind --}}
-                            <div class="news-img-placeholder news-article-hero-placeholder">
-                                <i class="ti ti-news"></i>
-                            </div>
-
-                            {{-- Real image on top --}}
-                            @if(!empty($news->image))
-                                <img
-                                    src="{{ asset('storage/news/' . $news->image) }}"
-                                    class="news-cover-img"
-                                    alt="{{ $news->title ?? '' }}"
-                                    loading="lazy"
-                                    onerror="this.style.display='none'"
-                                >
-                            @endif
-
+                        {{-- 3. META BAR AUTHOR - FORMAT: [Author] - [Tanggal] - [Views] - [Comments] --}}
+                        <div class="d-flex flex-wrap align-items-center gap-2 text-muted small mb-4 pb-3 border-bottom owl-border-color">
+                            <span class="d-inline-flex align-items-center">
+                                <i class="ti ti-user me-1 text-primary"></i>
+                                <strong class="text-dark me-1">{{ $news->user->name ?? 'Training Team' }}</strong>
+                            </span>
+                            <span>-</span>
+                            <span class="d-inline-flex align-items-center">
+                                <i class="ti ti-calendar me-1"></i>
+                                {{ $news->created_at ? $news->created_at->format('d M Y') : '-' }}
+                            </span>
+                            <span>-</span>
+                            <span class="d-inline-flex align-items-center">
+                                <i class="ti ti-eye me-1"></i>
+                                {{ number_format($news->views ?? 0) }} Views
+                            </span>
+                            <span>-</span>
+                            <button type="button"
+                                    class="btn btn-link text-muted p-0 text-decoration-none d-inline-flex align-items-center fw-semibold"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modal-news-comments">
+                                <i class="ti ti-message-circle me-1 text-primary"></i>
+                                {{ $commentTotal }} Comments
+                            </button>
                         </div>
 
-                        {{-- ARTICLE BODY --}}
-                        <article class="owl-article-content mb-5">
-                            <div class="article-body text-dark">
+                        {{-- 4. OVERVIEW BOX FOR ARTICLE DESCRIPTION / CONTENT --}}
+                        <div class="chapter-description-box mb-0">
+                            <h4 class="fs-6 fw-bold mb-3">Overview</h4>
+                            <div class="overview-text text-dark" style="font-size: 1.05rem; line-height: 1.8;">
                                 {!! nl2br(e($news->description ?? '')) !!}
                             </div>
-                        </article>
-
-                        {{-- ============================================================
-                             COMMENTS
-                             ============================================================ --}}
-                        <div class="owl-comment-area">
-
-                            <x-comment :content="$news" :comment="$comment" type="news" />
-
-                        </div>{{-- end comments --}}
+                        </div>
 
                     </div>
                 </div>
 
-                {{-- ============================================================
-                     RELATED ARTICLES
-                     ============================================================ --}}
+                {{-- RELATED ARTICLES --}}
                 @if($related->count() > 0)
-                    <div class="row border-top owl-border-color-important owl-explore-section">
+                    <div class="row border-top owl-border-color-important owl-explore-section pt-4">
                         <div class="col-12 mb-4">
-                            <h2 class="fw-bold owl-text-color owl-explore-heading">
-                                <i class="ti ti-arrow-right me-2"></i>Continue exploring
+                            <h2 class="fw-bold owl-text-color owl-explore-heading mb-3">
+                                <i class="ti ti-arrow-right me-2 text-primary"></i>Continue exploring
                             </h2>
                             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                                 @foreach($related as $article)
                                     <div class="col">
                                         <a
-                                            href="{{ route('news.user.view', $article->slug) }}"
-                                            class="card border-0 h-100 owl-explore-card shadow-sm text-decoration-none overflow-hidden owl-text-color"
+                                            href="{{ route('news.user.view', array_merge(['slug' => $article->slug], request()->query())) }}"
+                                            class="card border-0 h-100 owl-explore-card shadow-sm text-decoration-none overflow-hidden owl-text-color rounded-4"
                                         >
                                             <div class="owl-explore-image-wrapper overflow-hidden">
                                                 <div class="news-img-placeholder news-explore-placeholder">
@@ -154,11 +113,11 @@
                                                     >
                                                 @endif
                                             </div>
-                                            <div class="card-body owl-surface-bg owl-explore-body">
-                                                <small class="text-secondary">
+                                            <div class="card-body owl-surface-bg owl-explore-body p-3">
+                                                <small class="text-secondary d-block mb-1">
                                                     {{ $article->created_at ? $article->created_at->format('M d, Y') : '-' }}
                                                 </small>
-                                                <h5 class="fw-bold owl-text-color owl-explore-title">
+                                                <h5 class="fw-bold owl-text-color owl-explore-title mb-3">
                                                     {{ Str::limit($article->title ?? '', 65) }}
                                                 </h5>
                                                 <span class="btn btn-sm btn-outline-primary rounded-pill">
@@ -173,11 +132,13 @@
                     </div>
                 @endif
 
-            </div>{{-- col-12 --}}
-        </div>{{-- row --}}
+            </div>
+        </div>
 
-    </div>{{-- container --}}
-</div>{{-- page-body --}}
+    </div>
+</div>
+
+@include('user.news.partials.comment-modal', ['news' => $news, 'comment' => $comment])
 
 @endsection
 

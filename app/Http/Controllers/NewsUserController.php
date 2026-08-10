@@ -11,9 +11,17 @@ class NewsUserController extends Controller
 {
     public function index()
     {
-        $search = request('search');
-        $sort = request('sort', 'latest');
-        $author = request('author');
+        $search     = request('search');
+        $sort       = request('sort', 'latest');
+        $author     = request('author');
+        $month      = request('month');
+        $year       = request('year');
+        $views      = request('views');
+        $published  = request('published');
+        $sortDate   = request('sort_date');
+        $sortTitle  = request('sort_title');
+        $dateFrom   = request('date_from');
+        $dateTo     = request('date_to');
 
         $query = News::with('user');
 
@@ -21,7 +29,10 @@ class NewsUserController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -30,15 +41,58 @@ class NewsUserController extends Controller
             $query->where('user_id', $author);
         }
 
-        // Sorting
-        $query = match ($sort) {
-            'oldest' => $query->oldest(),
-            'most_viewed' => $query->orderBy('views', 'desc'),
-            'least_viewed' => $query->orderBy('views', 'asc'),
-            default => $query->latest(),
-        };
+        // Month filter
+        if ($month && $month !== 'all') {
+            $query->whereMonth('created_at', (int) $month);
+        }
+
+        // Year filter
+        if ($year && $year !== 'all') {
+            $query->whereYear('created_at', (int) $year);
+        }
+
+        // Date range filter
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        // Published date shortcut
+        if ($published && $published !== 'all') {
+            match ($published) {
+                'today' => $query->whereDate('created_at', \Carbon\Carbon::today()),
+                'week'  => $query->whereBetween('created_at', [\Carbon\Carbon::now()->startOfWeek(), \Carbon\Carbon::now()->endOfWeek()]),
+                'month' => $query->whereMonth('created_at', \Carbon\Carbon::now()->month)->whereYear('created_at', \Carbon\Carbon::now()->year),
+                'year'  => $query->whereYear('created_at', \Carbon\Carbon::now()->year),
+                default => null,
+            };
+        }
+
+        // Views sorting/filter
+        if ($views === 'most_viewed' || $sort === 'most_viewed') {
+            $query->orderBy('views', 'desc');
+        } elseif ($views === 'least_viewed' || $sort === 'least_viewed') {
+            $query->orderBy('views', 'asc');
+        }
+
+        // Title sorting
+        if ($sortTitle === 'az') {
+            $query->orderBy('title', 'asc');
+        } elseif ($sortTitle === 'za') {
+            $query->orderBy('title', 'desc');
+        }
+
+        // Date sorting
+        if ($sortDate === 'oldest' || $sort === 'oldest') {
+            $query->oldest();
+        } elseif ($sortDate === 'newest' || $sort === 'newest' || ($sort === 'latest' && !$views && !$sortTitle)) {
+            $query->latest();
+        }
 
         $news = $query->paginate(9)->withQueryString();
+        $newsCount = $news->total();
 
         // Get all authors for filter dropdown
         $authors = User::whereHas('news')->select('id', 'name')->distinct()->get();
@@ -49,7 +103,7 @@ class NewsUserController extends Controller
             ->limit(5)
             ->get();
 
-        return view('user.news.index', compact('news', 'authors', 'trending'));
+        return view('user.news.index', compact('news', 'newsCount', 'authors', 'trending'));
     }
 
     public function view($slug)

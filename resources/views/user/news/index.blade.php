@@ -52,7 +52,7 @@
                     <form method="GET" id="owlNewsFilterForm" class="record-filter-shell owl-news-filter-form">
                         <div class="record-fast-filter-section">
                             <label class="form-label small text-muted mb-2 learning-fast-filter-label" for="owl-search-input">
-                                Fast Filter
+                                Quick Filter
                             </label>
 
                             <div class="fast-filter-toolbar owl-news-filter-toolbar">
@@ -74,7 +74,7 @@
                                     <button type="button"
                                             class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ request('month', 'all') !== 'all' ? 'active' : '' }}"
                                             data-bs-toggle="dropdown" aria-expanded="false">
-                                        Month: <span class="fw-semibold" data-news-filter-label="month">{{ request('month', 'all') === 'all' ? 'All' : ($newsMonths[(int) request('month')] ?? 'All') }}</span>
+                                        <i class="ti ti-calendar me-1"></i>Month: <span class="fw-semibold" data-news-filter-label="month">{{ request('month', 'all') === 'all' ? 'All' : ($newsMonths[(int) request('month')] ?? 'All') }}</span>
                                     </button>
                                     <div class="dropdown-menu learning-quick-dropdown-scroll">
                                         <a href="#" class="dropdown-item news-quick-filter-item {{ request('month', 'all') === 'all' ? 'active' : '' }}" data-filter="month" data-value="all">All</a>
@@ -88,7 +88,7 @@
                                     <button type="button"
                                         class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ request('year', 'all') !== 'all' ? 'active' : '' }}"
                                         data-bs-toggle="dropdown" aria-expanded="false">
-                                        Year: <span class="fw-semibold" data-news-filter-label="year">{{ request('year', 'all') === 'all' ? 'All' : request('year') }}</span>
+                                        <i class="ti ti-calendar-event me-1"></i>Year: <span class="fw-semibold" data-news-filter-label="year">{{ request('year', 'all') === 'all' ? 'All' : request('year') }}</span>
                                     </button>
                                     <div class="dropdown-menu">
                                         <a href="#" class="dropdown-item news-quick-filter-item {{ request('year', 'all') === 'all' ? 'active' : '' }}" data-filter="year" data-value="all">All</a>
@@ -148,91 +148,93 @@
                 </div>
             </div>
 
-            <div class="modal fade" id="owlNewsMoreFiltersModal" tabindex="-1" role="dialog"
-                 aria-labelledby="owlNewsMoreFiltersTitle" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered" role="document">
-                    <div class="modal-content record-filter-modal owl-news-filter-modal">
-                        <div class="modal-header">
-                            <div>
-                                <h5 class="modal-title mb-0" id="owlNewsMoreFiltersTitle">More Filters</h5>
-                                <div class="text-muted small">Advanced news filters</div>
-                            </div>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
+            <div class="modal fade" id="owlNewsMoreFiltersModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered learning-filter-modal">
+                    <div class="modal-content rounded-4 border-0 shadow">
+                        <div class="modal-header border-0 pb-0">
+                            <h3 class="modal-title fw-bold">
+                                <i class="ti ti-adjustments-horizontal me-1 text-primary"></i>
+                                More Filters
+                            </h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body record-more-filters owl-news-more-filters">
-                            <div class="owl-news-more-filter-field">
-                                <label class="form-label" for="owlNewsSortDate">Sort</label>
-                                <select name="sort_date" id="owlNewsSortDate" class="form-select" form="owlNewsFilterForm">
-                                    <option value="all" {{ $newsSortDate === 'all' ? 'selected' : '' }}>All</option>
-                                    <option value="newest" {{ $newsSortDate === 'newest' ? 'selected' : '' }}>Newest</option>
-                                    <option value="oldest" {{ $newsSortDate === 'oldest' ? 'selected' : '' }}>Oldest</option>
-                                </select>
-                            </div>
-
-                            <div class="owl-news-more-filter-field">
-                                <label class="form-label" for="owlNewsSortTitle">Title</label>
-                                <select name="sort_title" id="owlNewsSortTitle" class="form-select" form="owlNewsFilterForm">
-                                    <option value="default" {{ $newsSortTitle === 'default' ? 'selected' : '' }}>Default</option>
-                                    <option value="az" {{ $newsSortTitle === 'az' ? 'selected' : '' }}>A - Z</option>
-                                    <option value="za" {{ $newsSortTitle === 'za' ? 'selected' : '' }}>Z - A</option>
-                                </select>
-                            </div>
-
-                            <div class="owl-news-more-filter-field">
-                                <label class="form-label" for="owlNewsAuthor">Author</label>
-                                <select name="author" id="owlNewsAuthor" class="form-select" form="owlNewsFilterForm">
-                                    <option value="">All Author</option>
+                        <div class="modal-body pt-2">
+                            {{-- 1. Author (Full Width) --}}
+                            <div class="learning-filter-group mb-3">
+                                <label class="form-label fw-semibold" for="owlNewsAuthor">Author</label>
+                                <select name="author" id="owlNewsAuthor" class="form-select rounded-3" form="owlNewsFilterForm">
+                                    <option value="">All Authors</option>
                                     @foreach($authors as $author)
                                         <option value="{{ $author->id }}" {{ (string) request('author') === (string) $author->id ? 'selected' : '' }}>{{ $author->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
 
-                            <div class="owl-news-more-filter-field">
-                                <label class="form-label" for="owlNewsPublished">Published</label>
-                                <select name="published" id="owlNewsPublished" class="form-select" form="owlNewsFilterForm">
-                                    <option value="all">All</option>
-                                    <option value="today" {{ request('published') === 'today' ? 'selected' : '' }}>Today</option>
-                                    <option value="week" {{ request('published') === 'week' ? 'selected' : '' }}>This Week</option>
-                                    <option value="month" {{ request('published') === 'month' ? 'selected' : '' }}>This Month</option>
-                                    <option value="year" {{ request('published') === 'year' ? 'selected' : '' }}>This Year</option>
-                                </select>
+                            <hr class="my-3">
+
+                            {{-- 2. Category / Topic & Sort by (2 Kolom) --}}
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="owlNewsCategory">Category / Topic</label>
+                                    <select name="category" id="owlNewsCategory" class="form-select rounded-3" form="owlNewsFilterForm">
+                                        <option value="all" {{ request('category', 'all') === 'all' ? 'selected' : '' }}>All Categories</option>
+                                        <option value="Technology" {{ request('category') === 'Technology' ? 'selected' : '' }}>Technology</option>
+                                        <option value="Leadership" {{ request('category') === 'Leadership' ? 'selected' : '' }}>Leadership</option>
+                                        <option value="Announcement" {{ request('category') === 'Announcement' ? 'selected' : '' }}>Announcement</option>
+                                        <option value="General" {{ request('category') === 'General' ? 'selected' : '' }}>General</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label fw-semibold" for="owlNewsSortSelect">Sort by</label>
+                                    <select name="sort" id="owlNewsSortSelect" class="form-select rounded-3" form="owlNewsFilterForm" onchange="document.getElementById('owlNewsSort').value = this.value">
+                                        <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>Newest</option>
+                                        <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Oldest</option>
+                                        <option value="most_viewed" {{ request('sort') === 'most_viewed' || request('views') === 'most_viewed' ? 'selected' : '' }}>Most Viewed</option>
+                                        <option value="least_viewed" {{ request('sort') === 'least_viewed' || request('views') === 'least_viewed' ? 'selected' : '' }}>Least Viewed</option>
+                                        <option value="az" {{ request('sort') === 'az' || request('sort_title') === 'az' ? 'selected' : '' }}>Title (A - Z)</option>
+                                        <option value="za" {{ request('sort') === 'za' || request('sort_title') === 'za' ? 'selected' : '' }}>Title (Z - A)</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <div class="owl-news-more-filter-field">
-                                <label class="form-label" for="owlNewsModalMonth">Month</label>
-                                <select id="owlNewsModalMonth" class="form-select" data-news-modal-filter="month">
-                                    <option value="all" {{ request('month', 'all') === 'all' ? 'selected' : '' }}>All</option>
-                                    @foreach ($newsMonths as $monthNumber => $monthName)
-                                        <option value="{{ $monthNumber }}" {{ (string) request('month', 'all') === (string) $monthNumber ? 'selected' : '' }}>{{ $monthName }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            <hr class="my-3">
 
-                            <div class="owl-news-more-filter-field">
-                                <label class="form-label" for="owlNewsModalYear">Year</label>
-                                <select id="owlNewsModalYear" class="form-select" data-news-modal-filter="year">
-                                    <option value="all" {{ request('year', 'all') === 'all' ? 'selected' : '' }}>All</option>
-                                    @foreach ($newsYears as $year)
-                                        <option value="{{ $year }}" {{ (string) request('year', 'all') === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="owl-news-more-filter-field">
-                                <label class="form-label" for="owlNewsModalViews">Views</label>
-                                <select id="owlNewsModalViews" class="form-select" data-news-modal-filter="views">
-                                    @foreach ($newsViews as $viewValue => $viewLabel)
-                                        <option value="{{ $viewValue }}" {{ $currentNewsViews === $viewValue ? 'selected' : '' }}>{{ $viewLabel }}</option>
-                                    @endforeach
-                                </select>
+                            {{-- 3. Date Range (2 Kolom) --}}
+                            <div class="learning-filter-group">
+                                <input type="hidden" name="published" id="owlNewsPublished" value="{{ request('published', 'all') }}" form="owlNewsFilterForm">
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="owlNewsDateFrom"><i class="ti ti-calendar-event me-1"></i>From Date</label>
+                                        <input type="{{ request('date_from') ? 'date' : 'text' }}"
+                                               name="date_from" id="owlNewsDateFrom"
+                                               class="form-control rounded-3"
+                                               value="{{ request('date_from') }}"
+                                               placeholder="dd/mm/yyyy"
+                                               onfocus="(this.type='date')"
+                                               onblur="if(!this.value)this.type='text'"
+                                               form="owlNewsFilterForm">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small text-muted mb-1" for="owlNewsDateTo"><i class="ti ti-calendar-event me-1"></i>To Date</label>
+                                        <input type="{{ request('date_to') ? 'date' : 'text' }}"
+                                               name="date_to" id="owlNewsDateTo"
+                                               class="form-control rounded-3"
+                                               value="{{ request('date_to') }}"
+                                               placeholder="dd/mm/yyyy"
+                                               onfocus="(this.type='date')"
+                                               onblur="if(!this.value)this.type='text'"
+                                               form="owlNewsFilterForm">
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary" form="owlNewsFilterForm">Apply</button>
+                        <div class="modal-footer border-0 pt-0">
+                            <a href="{{ route('news.user.index') }}" class="btn btn-outline-secondary rounded-3 me-2">
+                                <i class="ti ti-refresh me-1"></i> Reset
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-3" form="owlNewsFilterForm">
+                                <i class="ti ti-check me-1"></i> Apply Filter
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -246,14 +248,7 @@
             {{-- NEWS GRID --}}
             <div class="col-xl-9 col-lg-8 news-main">
 
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
-                    <div>
-                        <div class="text-uppercase text-primary small fw-semibold mb-2">AI News Hub</div>
-                        <h2 class="fw-bold mb-0">
-                            {{ request('search') ? 'Search Results' : 'Hub Highlights' }}
-                        </h2>
-                    </div>
-                </div>
+
 
                 @if($news->count() > 0)
 
@@ -269,11 +264,29 @@
                     </div>
 
                     {{-- PAGINATION --}}
-                    <nav class="mt-5">
-                        <div class="d-flex justify-content-center">
-                            {{ $news->links('pagination::owl') }}
+                    @if($news->hasPages() || $news->total() > 0)
+                        <div class="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-3 mt-5 pt-3 border-top owl-border-color text-muted small w-100 text-center">
+                            <div>
+                                Showing <b>{{ $news->firstItem() ?? 0 }}</b> to <b>{{ $news->lastItem() ?? 0 }}</b> of <b>{{ $news->total() }}</b> results
+                            </div>
+                            <ul class="pagination pagination-sm m-0 align-items-center gap-1">
+                                {{-- Previous Link --}}
+                                <li class="page-item {{ $news->onFirstPage() ? 'disabled' : '' }}">
+                                    <a class="page-link rounded-3 border-0 bg-transparent text-secondary" href="{{ $news->previousPageUrl() }}">&lsaquo;</a>
+                                </li>
+                                {{-- Pagination Elements --}}
+                                @foreach ($news->getUrlRange(1, $news->lastPage()) as $page => $url)
+                                    <li class="page-item">
+                                        <a class="page-link rounded-3 px-3 py-1.5 {{ $page == $news->currentPage() ? 'bg-primary text-white fw-bold' : 'border-0 bg-transparent text-secondary' }}" href="{{ $url }}">{{ $page }}</a>
+                                    </li>
+                                @endforeach
+                                {{-- Next Link --}}
+                                <li class="page-item {{ !$news->hasMorePages() ? 'disabled' : '' }}">
+                                    <a class="page-link rounded-3 border-0 bg-transparent text-secondary" href="{{ $news->nextPageUrl() }}">&rsaquo;</a>
+                                </li>
+                            </ul>
                         </div>
-                    </nav>
+                    @endif
 
                 @else
 
@@ -393,12 +406,13 @@
         // Initialize dark mode
         initDarkMode();
 
-        // Search functionality
+        // Search functionality (Instant Auto-Submit with 400ms debounce)
         var searchInput = document.getElementById('owl-search-input');
         if(searchInput){
             var form = searchInput.closest('form');
-            var submit = debounce(function(){ if(form) form.submit(); }, 600);
-            searchInput.addEventListener('input', submit);
+            var submitForm = debounce(function(){ if(form) form.submit(); }, 400);
+            searchInput.addEventListener('input', submitForm);
+            searchInput.addEventListener('keyup', submitForm);
             document.addEventListener('keydown', function(e){
                 if(e.key === '/' && document.activeElement.tagName.toLowerCase() !== 'input'){
                     e.preventDefault();
@@ -448,6 +462,8 @@
             item.addEventListener('click', function(event) {
                 event.preventDefault();
                 syncNewsQuickFilter(item.dataset.filter, item.dataset.value ?? '');
+                var filterForm = document.getElementById('owlNewsFilterForm');
+                if (filterForm) filterForm.submit();
             });
         });
 

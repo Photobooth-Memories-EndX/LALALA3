@@ -80,7 +80,7 @@
                     {{-- BAGIKAN --}}
                     <button type="button"
                             class="btn btn-outline-primary rounded-pill px-3"
-                            onclick="navigator.clipboard.writeText(window.location.href); this.innerHTML='<i class=&quot;ti ti-check me-1&quot;></i> Tersalin';">
+                            onclick="shareContent()">
                         <i class="ti ti-share me-1"></i>
                         Bagikan
                     </button>

@@ -9,8 +9,8 @@
     <div class="home-modern-trainingplan-card-body">
         <a href="{{ route('trainingplan.user.index') }}"
            class="home-modern-btn-training-plan home-modern-assessment-btn bg-[#ff5700] hover:bg-[#e04d00] text-white font-semibold rounded-lg shadow-md shadow-orange-500/40">
-            <i class="ti ti-clipboard-list"></i>
-            <span>Training Plan</span>
+            <i class="ti ti-calendar-event"></i>
+            <span>Training Schedule</span>
         </a>
     </div>
 </div>

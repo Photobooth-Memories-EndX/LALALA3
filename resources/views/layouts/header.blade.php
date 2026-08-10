@@ -84,7 +84,7 @@
                 <li class="nav-item {{ request()->is('trainingplan*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('trainingplan.user.index') }}">
                         <span class="nav-link-icon"><i class="ti ti-clipboard-list"></i></span>
-                        <span class="nav-link-title">Training Plan</span>
+                        <span class="nav-link-title">Training Schedule</span>
                     </a>
                 </li>
                 {{-- Manage LMS: Admin Training (2) & Super Admin (3) --}}

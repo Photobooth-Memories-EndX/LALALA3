@@ -1,4 +1,5 @@
 @php
+    $latestGallery = $latestGallery ?? \App\Models\EventPhoto::where('active', 'Active')->latest()->first();
     $latestPhotos = $latestGallery ? (json_decode($latestGallery->photos, true) ?? []) : [];
     $latestPhotos = is_array($latestPhotos) ? $latestPhotos : [];
     $latestCover = $latestGallery?->thumbnail ?: ($latestPhotos[0] ?? null);
@@ -7,43 +8,44 @@
         : null;
 @endphp
 
-<section class="card content-hero-card gallery-hero mb-4 overflow-hidden border-0 shadow-sm" aria-labelledby="gallery-page-title">
-    <div class="card-body content-hero-surface text-white">
-        <div class="row align-items-center g-4">
-            <div class="col-lg-8 content-hero-copy">
-                <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-2 rounded-pill content-hero-badge">
-                    <i class="ti ti-photo"></i>
-                    GALLERY
-                </div>
+<section class="card content-hero-card gallery-hero mb-4 overflow-hidden border-0 shadow-sm rounded-4" aria-labelledby="gallery-page-title">
+    <div class="card-body content-hero-surface text-white py-3 px-4">
+        <div class="row align-items-center gy-2">
+            <!-- Kolom Kiri: Teks & Tombol -->
+            <div class="col-lg-8 col-xl-8 content-hero-copy">
+                <span class="d-inline-flex align-items-center gap-1 badge bg-white text-primary mb-2 rounded-pill content-hero-badge px-3 py-1 fw-bold shadow-sm small">
+                    <i class="ti ti-photo fs-6"></i>
+                    <span>GALLERY</span>
+                </span>
 
-                <h1 id="gallery-page-title" class="mb-1 fw-bold">Learning Event Gallery Hub</h1>
+                <h2 id="gallery-page-title" class="mb-1 fw-bold text-white fs-3">Learning Event Gallery</h2>
 
-                <p class="mb-0 text-white-75">
+                <p class="mb-3 text-white-75 small pe-lg-4">
                     Capturing the journey of growth and innovation across workshops, technical training, and professional development.
                 </p>
 
-                <div class="mt-3">
-                    <a href="#gallery-list" class="btn btn-sm btn-white text-primary fw-bold rounded-pill px-3 py-2 shadow-sm">
+                <div>
+                    <a href="#gallery-results" class="btn btn-white btn-sm text-primary fw-semibold rounded-pill px-3 py-1.5 shadow-sm">
                         <i class="ti ti-arrow-down me-1"></i> Explore Gallery
                     </a>
                 </div>
             </div>
 
-            <div class="col-lg-4 d-flex justify-content-lg-end justify-content-center">
-                <div class="gallery-hero-media">
+            <!-- Kolom Kanan: Preview Gambar 16:9 Ringkas -->
+            <div class="col-lg-4 col-xl-4 d-none d-lg-flex justify-content-end align-items-center">
+                <div class="gallery-hero-media ratio ratio-16x9 rounded-3 overflow-hidden shadow-sm border border-2 border-white-20 w-100" style="max-width: 260px;">
                     @if($latestImage)
-                        <img
-                            src="{{ $latestImage }}"
-                            alt="Latest gallery: {{ $latestGallery->title ?: 'Learning event' }}"
-                            class="gallery-hero-img"
-                            data-gallery-image
-                        >
-                        <div class="kp-hero-media-placeholder gallery-image-placeholder" aria-hidden="true">
-                            <i class="ti ti-photo"></i>
-                        </div>
+                        <a href="{{ $latestGallery ? route('gallery.user.view', array_merge(['slug' => $latestGallery->slug], request()->query())) : '#' }}" class="d-block w-100 h-100 text-decoration-none">
+                            <img
+                                src="{{ $latestImage }}"
+                                alt="Latest gallery: {{ $latestGallery->title ?: 'Learning event' }}"
+                                class="gallery-hero-img w-100 h-100 object-fit-cover"
+                                data-gallery-image
+                            >
+                        </a>
                     @else
-                        <div class="kp-hero-media-placeholder">
-                            <i class="ti ti-photo"></i>
+                        <div class="kp-hero-media-placeholder w-100 h-100 d-flex align-items-center justify-content-center">
+                            <i class="ti ti-photo fs-3"></i>
                         </div>
                     @endif
                 </div>

@@ -3,47 +3,77 @@
 @php
     $urlLightboxJs = asset('Tabler/dist/libs/fslightbox/index.js?1684106062');
     $validPhotos = collect($photos)->filter(static fn ($photo) => is_string($photo) && trim($photo) !== '')->values();
-    $heroFile = $eventphoto->thumbnail ?: $validPhotos->first();
-    $heroImage = $heroFile
-        ? asset('storage/gallery/photo/' . $eventphoto->id . '/' . $heroFile)
-        : null;
     $eventDate = $eventphoto->eventdate
         ? date('d M Y', strtotime($eventphoto->eventdate))
         : 'Date unavailable';
+    $commentTotal = method_exists($comment, 'total') ? $comment->total() : (is_countable($comment) ? count($comment) : 0);
 @endphp
 
 @section('content')
 <main class="container-xl py-4 gallery-page gallery-detail-page">
-    <a href="{{ route('gallery.user.index') }}" class="btn btn-outline-secondary mb-4 px-3 gallery-back-link">
-        <i class="ti ti-arrow-left me-1" aria-hidden="true"></i> Back to Gallery
+
+    @php
+        $galleryBackUrl = request()->query()
+            ? route('gallery.user.index', request()->query())
+            : (url()->previous() !== url()->current() ? url()->previous() : route('gallery.user.index'));
+    @endphp
+    {{-- 1. BACK BUTTON --}}
+    <a href="{{ $galleryBackUrl }}" class="btn btn-link text-decoration-none ps-0 mb-3">
+        <i class="ti ti-arrow-left me-1"></i> Back
     </a>
 
-    <section class="gallery-view-hero mb-4" aria-labelledby="gallery-detail-title">
-        @if($heroImage)
-            <img src="{{ $heroImage }}" alt="" class="gallery-view-hero-image" data-gallery-image aria-hidden="true">
-        @endif
-        <div class="gallery-view-overlay">
-            <span class="gallery-view-badge">{{ $eventphoto->category ?: 'Event' }}</span>
-            <h1 class="gallery-view-title" id="gallery-detail-title">{{ $eventphoto->title ?: 'Untitled Gallery' }}</h1>
-            <div class="gallery-view-meta">
-                <span><i class="ti ti-calendar me-1" aria-hidden="true"></i>{{ $eventDate }}</span>
-                <span><i class="ti ti-photo me-1" aria-hidden="true"></i>{{ $photoCount }} Photos</span>
-                <span><i class="ti ti-eye me-1" aria-hidden="true"></i>{{ number_format((int) $eventphoto->views) }} Views</span>
-                @if($eventphoto->uploader)
-                    <span><i class="ti ti-user me-1" aria-hidden="true"></i>{{ $eventphoto->uploader }}</span>
-                @endif
+    {{-- 2. COMPACT HERO BIRU GRADASI --}}
+    <section class="card content-hero-card gallery-hero mb-4 overflow-hidden border-0 shadow-sm" aria-labelledby="gallery-detail-title">
+        <div class="card-body content-hero-surface text-white p-4 p-lg-5">
+            <div class="row align-items-center g-3">
+                <div class="col-lg-12">
+                    <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-2 rounded-pill content-hero-badge px-3 py-2 shadow-sm">
+                        <i class="ti ti-photo"></i>
+                        <span>{{ $eventphoto->category ?: 'Event' }}</span>
+                    </div>
+
+                    <h1 class="mb-2 fw-bold text-white display-6" id="gallery-detail-title">
+                        {{ $eventphoto->title ?: 'Untitled Gallery' }}
+                    </h1>
+
+                    <div class="d-flex flex-wrap gap-3 align-items-center text-white-75 mt-3">
+                        <span class="d-inline-flex align-items-center">
+                            <i class="ti ti-calendar me-1"></i>{{ $eventDate }}
+                        </span>
+                        <span class="d-inline-flex align-items-center">
+                            <i class="ti ti-photo me-1"></i>{{ $photoCount }} Photos
+                        </span>
+                        <span class="d-inline-flex align-items-center">
+                            <i class="ti ti-eye me-1"></i>{{ number_format((int) $eventphoto->views) }} Views
+                        </span>
+                        @if($eventphoto->uploader)
+                            <span class="d-inline-flex align-items-center">
+                                <i class="ti ti-user me-1"></i>{{ $eventphoto->uploader }}
+                            </span>
+                        @endif
+                        <button type="button" 
+                                class="btn btn-sm bg-white text-primary rounded-pill px-3 py-1.5 fw-medium d-inline-flex align-items-center gap-1 shadow-sm border-0 ms-auto" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modal-gallery-comments"
+                                style="color: #0d6efd !important; background-color: #ffffff !important;">
+                            <i class="ti ti-message-circle fs-6"></i>
+                            <span>{{ $commentTotal }} Comments</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <section class="card gallery-view-card" aria-labelledby="gallery-photo-grid-title">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h2 class="card-title mb-0" id="gallery-photo-grid-title">
+    {{-- PHOTO GRID SECTION (FULL WIDTH - EVENT INFORMATION REMOVED) --}}
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <section class="card gallery-view-card border-0 shadow-sm rounded-4" aria-labelledby="gallery-photo-grid-title">
+                <div class="card-header d-flex justify-content-between align-items-center bg-transparent border-bottom">
+                    <h2 class="card-title mb-0 fw-bold" id="gallery-photo-grid-title">
                         <i class="ti ti-layout-grid me-2 text-primary" aria-hidden="true"></i>Event Gallery
                     </h2>
-                    <span class="badge bg-primary-lt text-primary fw-semibold">{{ $photoCount }} Photos</span>
+                    <span class="badge bg-primary-lt text-primary fw-semibold rounded-pill px-3 py-2">{{ $photoCount }} Photos</span>
                 </div>
                 <div class="card-body">
                     @if($validPhotos->isNotEmpty())
@@ -68,38 +98,29 @@
                 </div>
             </section>
         </div>
-
-        <aside class="col-lg-4" aria-label="Event information">
-            <div class="card gallery-view-card gallery-view-info-card">
-                <div class="card-header">
-                    <h2 class="card-title mb-0"><i class="ti ti-info-circle me-2 text-primary" aria-hidden="true"></i>Event Information</h2>
-                </div>
-                <div class="card-body p-0">
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Uploader</div><div class="fw-semibold">{{ $eventphoto->uploader ?: '—' }}</div></div>
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Category</div><span class="badge bg-blue-lt text-blue">{{ $eventphoto->category ?: 'Event' }}</span></div>
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Event Date</div><div class="fw-semibold">{{ $eventDate }}</div></div>
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Total Photos</div><div class="fw-semibold">{{ $photoCount }} Photos</div></div>
-                    <div class="gallery-view-info-row"><div class="text-muted small mb-1">Total Views</div><div class="fw-semibold">{{ number_format((int) $eventphoto->views) }}</div></div>
-                </div>
-                <div class="card-footer bg-transparent">
-                    <a href="{{ route('gallery.user.index') }}" class="btn btn-outline-secondary w-100">
-                        <i class="ti ti-arrow-left me-1" aria-hidden="true"></i> Back to Gallery
-                    </a>
-                </div>
-            </div>
-        </aside>
     </div>
 
-    <section class="card gallery-view-card mt-4 mb-4" aria-labelledby="gallery-discussion-title">
-        <div class="card-header">
-            <h2 class="card-title mb-0" id="gallery-discussion-title">
-                <i class="ti ti-messages me-2 text-primary" aria-hidden="true"></i>Discussion &amp; Reflection
-            </h2>
+    {{-- COMMENT MODAL POPUP --}}
+    <div class="modal fade content-comment-modal" id="modal-gallery-comments" tabindex="-1"
+         aria-labelledby="modalGalleryCommentsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content border-0 rounded-4 shadow">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold" id="modalGalleryCommentsLabel">
+                        <i class="ti ti-message-circle me-2 text-primary"></i>
+                        {{ $commentTotal }} Comments
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-0">
+                    <div class="view-comment-wrapper p-3">
+                        <x-comment :content="$eventphoto" :comment="$comment" type="eventphoto" />
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <x-comment :content="$eventphoto" :comment="$comment" type="eventphoto" />
-        </div>
-    </section>
+    </div>
 </main>
 @endsection
 

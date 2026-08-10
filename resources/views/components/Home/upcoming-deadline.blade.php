@@ -2,7 +2,7 @@
 
     <div class="home-modern-card-header">
         <h2 class="home-modern-section-title">Upcoming Deadlines</h2>
-        <a href="{{ route('user.learning.dashboard') }}" class="home-modern-view-all">
+        <a href="{{ url('/my-learning?learning_tab=assessment') }}" class="home-modern-view-all">
             View All <i class="ti ti-arrow-right ms-1"></i>
         </a>
     </div>

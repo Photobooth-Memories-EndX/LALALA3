@@ -16,8 +16,8 @@
 
             <div class="home-modern-db-header mb-3">
                 <div>
-                    <h1 class="home-modern-db-title">Training Plan</h1>
-                    <p class="home-modern-db-subtitle">Plan and track your learning path</p>
+                    <h1 class="home-modern-db-title">Training Schedule</h1>
+                    <p class="home-modern-db-subtitle">View and keep track of your upcoming training sessions and schedule.</p>
                 </div>
             </div>
 

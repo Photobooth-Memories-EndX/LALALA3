@@ -12,9 +12,9 @@
             </div>
 
             <div class="modal-body">
-                <div class="alert alert-info d-flex align-items-center gap-2 mb-3">
-                    <i class="ti ti-info-circle flex-shrink-0"></i>
-                    <span>Please input the unique code to access the assessment.</span>
+                <div class="alert alert-success d-flex align-items-center text-success mb-3" role="alert" style="background-color: #e8f5e9; border-color: #c8e6c9; color: #2e7d32 !important;">
+                    <i class="ti ti-info-circle me-2 fs-4 flex-shrink-0"></i>
+                    <div>Please input the unique code to access the assessment.</div>
                 </div>
                 <input type="text"
                        name="unique_code"
@@ -26,10 +26,16 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">
+                <button type="button" 
+                        class="btn text-white" 
+                        data-bs-dismiss="modal" 
+                        style="background-color: #d63939 !important; border-color: #d63939 !important; color: #ffffff !important;">
                     <i class="ti ti-x me-1"></i>Cancel
                 </button>
-                <button type="button" onclick="submitAssessmentAccess()" class="btn btn-primary">
+                <button type="button" 
+                        onclick="submitAssessmentAccess()" 
+                        class="btn text-white" 
+                        style="background-color: #2fb344 !important; border-color: #2fb344 !important; color: #ffffff !important;">
                     <i class="ti ti-clipboard-check me-1"></i>Submit
                 </button>
             </div>
