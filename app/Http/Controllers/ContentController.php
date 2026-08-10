@@ -144,7 +144,20 @@ class ContentController extends Controller
                 $query->orderBy('content.title');
                 break;
             default:
-                $query->orderBy('content.created_at', 'desc');
+                $query->orderByRaw("
+                    (
+                        (CASE WHEN content.title IS NOT NULL AND TRIM(content.title) <> '' THEN 3 ELSE 0 END) +
+                        (CASE WHEN content.classification_id IS NOT NULL AND TRIM(content.classification_id) <> '' AND content.classification_id <> '0' THEN 3 ELSE 0 END) +
+                        (CASE WHEN content.date IS NOT NULL THEN 3 ELSE 0 END) +
+                        (CASE WHEN content.slug IS NOT NULL AND TRIM(content.slug) <> '' THEN 2 ELSE 0 END) +
+                        (CASE WHEN content.learning_hours IS NOT NULL AND content.learning_hours > 0 THEN 2 ELSE 0 END) +
+                        (CASE WHEN content.duration IS NOT NULL AND TRIM(content.duration) <> '' THEN 1 ELSE 0 END) +
+                        (CASE WHEN content.type IS NOT NULL AND TRIM(content.type) <> '' THEN 1 ELSE 0 END) +
+                        (CASE WHEN content.description IS NOT NULL AND TRIM(content.description) <> '' THEN 1 ELSE 0 END) +
+                        (CASE WHEN (content.file IS NOT NULL AND TRIM(content.file) <> '' AND content.file <> '[]') OR (content.link IS NOT NULL AND TRIM(content.link) <> '') THEN 1 ELSE 0 END) +
+                        (CASE WHEN content.active = 'Active' THEN 2 ELSE 0 END)
+                    ) DESC, content.created_at DESC
+                ");
                 break;
         }
 
