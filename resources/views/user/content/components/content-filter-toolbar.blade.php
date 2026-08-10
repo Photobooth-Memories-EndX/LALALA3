@@ -1,5 +1,5 @@
 <label class="form-label small text-muted mb-2 content-fast-filter-label" for="contentFilterType">
-    QUICK FILTER
+    Quick Filter
 </label>
 
 <div class="content-filter-toolbar">

@@ -64,12 +64,15 @@
         $assessment->title ?? null,
         $assessment->trainingplan->title ?? null,
     ])->merge($contentTitles)->filter()->implode(' ');
-    $today = strtotime(date('Y-m-d'));
-    $fromDate = !empty($assessment->fromdate) ? strtotime(date('Y-m-d', strtotime($assessment->fromdate))) : null;
-    $toDate = !empty($assessment->todate) ? strtotime(date('Y-m-d', strtotime($assessment->todate))) : null;
-    $availability = $fromDate && $today < $fromDate
-        ? 'upcoming'
-        : ($toDate && $today > $toDate ? 'expired' : 'available');
+    $now = time();
+    $fromDateRaw = !empty($assessment->fromdate) ? (strlen(trim((string) $assessment->fromdate)) === 10 ? trim((string) $assessment->fromdate) . ' 23:59:59' : (string) $assessment->fromdate) : null;
+    $toDateRaw = !empty($assessment->todate) ? (strlen(trim((string) $assessment->todate)) === 10 ? trim((string) $assessment->todate) . ' 23:59:59' : (string) $assessment->todate) : null;
+    $fromDate = $fromDateRaw ? strtotime($fromDateRaw) : null;
+    $toDate = $toDateRaw ? strtotime($toDateRaw) : null;
+
+    $isExpired = $toDate ? ($now > $toDate) : false;
+    $isUpcoming = $fromDate ? ($now < $fromDate) : false;
+    $availability = $isUpcoming ? 'upcoming' : ($isExpired ? 'expired' : 'available');
 
     $totalRemedials = (int) ($assessment->total_remedials ?? 0);
     $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
@@ -163,6 +166,7 @@
             :url="$assessmentUrl"
             :is-completed="$isCompleted"
             :is-passed="$isPassed"
+            :is-expired="$isExpired"
             :user-attempts="$userAttempts"
             :total-remedials="$totalRemedials"
         />

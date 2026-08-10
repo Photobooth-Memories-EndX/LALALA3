@@ -38,7 +38,7 @@
     <div class="card-body p-4 border-bottom">
         <div class="assessment-filter-shell" id="assessmentFilterBar">
             <div class="assessment-fast-filter-section">
-                <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
+                <label class="form-label small text-muted mb-2 learning-fast-filter-label">Quick Filter</label>
 
                 <div class="assessment-fast-filter-toolbar">
                     <div class="assessment-quick-dropdowns">

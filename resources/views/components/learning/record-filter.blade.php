@@ -27,7 +27,7 @@
 <div class="record-filter-shell" id="recordFilterBar">
     {{-- ── Fast Filter Toolbar (client-side — tanpa AJAX, tanpa reload halaman) ── --}}
     <div class="record-fast-filter-section mt-3">
-        <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
+        <label class="form-label small text-muted mb-2 learning-fast-filter-label">Quick Filter</label>
 
         <div class="fast-filter-toolbar">
             <div class="learning-quick-dropdowns learning-fast-filter">

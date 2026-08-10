@@ -41,6 +41,10 @@
 
                                 $isCompleted = $finalResult != null;
                                 $isPassed = $finalResult && $finalResult->pass;
+                                $now = time();
+                                $toDateRaw = !empty($assessment->todate) ? (strlen(trim((string) $assessment->todate)) === 10 ? trim((string) $assessment->todate) . ' 23:59:59' : (string) $assessment->todate) : null;
+                                $toDate = $toDateRaw ? strtotime($toDateRaw) : null;
+                                $isExpired = $toDate ? ($now > $toDate) : false;
 
                                 $typeLabel = match (strtolower((string) ($assessment->type ?? ''))) {
                                     'trainingplan', 'playlist' => 'Playlist',
@@ -86,7 +90,7 @@
                                 <td>
                                     @if ($isCompleted)
                                         @if ($isPassed)
-                                            <span class="badge bg-green-lt text-green">Completed</span>
+                                            <span class="badge bg-green-lt text-green">Passed</span>
                                         @else
                                             <span class="badge bg-red-lt text-red">Failed</span>
                                         @endif
@@ -100,15 +104,19 @@
                                 </td>
 
                                 <td class="text-end">
-                                    @if ($isCompleted && $isPassed)
+                                    @if ($isPassed)
+                                        <button class="btn btn-sm btn-outline-success" disabled>
+                                            Passed
+                                        </button>
+                                    @elseif ($isExpired)
                                         <button class="btn btn-sm btn-outline-secondary" disabled>
-                                            Completed
+                                            Expired
                                         </button>
                                     @else
                                         @if (!empty($assessment->slug))
                                             <a href="{{ route('assesment.user.view', $assessment->slug) }}"
                                                class="btn btn-sm btn-primary">
-                                                {{ $isCompleted ? 'Remedial' : 'Kerjakan' }}
+                                                {{ $isCompleted ? 'Remedial' : 'Start Test' }}
                                             </a>
                                         @else
                                             <button class="btn btn-sm btn-secondary" disabled>

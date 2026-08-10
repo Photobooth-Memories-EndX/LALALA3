@@ -53,7 +53,7 @@
 <div class="card playlist-filter-card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-body p-3">
         <label class="form-label small text-muted mb-2 playlist-fast-filter-label" for="playlistStatusFilter">
-            QUICK FILTER
+            Quick Filter
         </label>
 
         <div class="playlist-filter-toolbar">

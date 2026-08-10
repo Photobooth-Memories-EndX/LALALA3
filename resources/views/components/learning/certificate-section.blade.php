@@ -36,7 +36,7 @@
             <div class="text-muted small">View all certificates that have been successfully generated.</div> --}}
 
             <div class="certificate-fast-filter-section mt-3">
-                <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
+                <label class="form-label small text-muted mb-2 learning-fast-filter-label">Quick Filter</label>
 
                 <div class="certificate-fast-filter-toolbar">
                     <div class="certificate-quick-dropdowns">

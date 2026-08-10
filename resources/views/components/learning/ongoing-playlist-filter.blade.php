@@ -73,7 +73,7 @@
 
             <div class="ongoing-filter-heading fast-filter-header">
                 <div class="fast-filter-header-copy">
-                    <h3 class="card-title fast-filter-title">Fast Filter</h3>
+                    <h3 class="card-title fast-filter-title">Quick Filter</h3>
                     {{-- <p class="fast-filter-subtitle">Quickly filter your learning playlists.</p> --}}
                 </div>
                 <x-learning.ongoing-mode-switch mode="playlist" />

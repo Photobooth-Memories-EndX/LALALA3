@@ -480,80 +480,118 @@
 /* Semantic actions used by the Assessment table. */
 .assessment-action-btn {
     display: inline-flex;
-    width: 108px;
-    min-width: 108px;
+    width: 112px;
+    min-width: 112px;
     min-height: 34px;
+    height: 34px;
     align-items: center;
     justify-content: center;
     gap: 6px;
     padding: 0 12px;
-    border-radius: 10px !important;
+    border-radius: 9px !important;
     font-size: 13px;
     font-weight: 600;
     line-height: 1;
+    letter-spacing: 0.01em;
     white-space: nowrap;
-    transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease,
-        color 0.18s ease,
-        background-color 0.18s ease,
-        border-color 0.18s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .assessment-action-btn > i {
     margin: 0;
     flex: 0 0 auto;
     font-size: 1rem;
+    line-height: 1;
 }
 
 .btn-assessment-start {
-    border-color: #16a34a !important;
-    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
-    color: #fff !important;
-    box-shadow: 0 5px 12px rgba(22, 163, 74, 0.2);
+    border: 1px solid #16a34a !important;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.22) !important;
 }
 
 .btn-assessment-start:hover,
 .btn-assessment-start:focus {
     border-color: #15803d !important;
-    background: linear-gradient(135deg, #20b957, #15803d) !important;
-    color: #fff !important;
-    box-shadow: 0 8px 16px rgba(22, 163, 74, 0.26);
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px rgba(25, 135, 84, 0.32) !important;
     transform: translateY(-1px);
 }
 
+.btn-assessment-start:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(25, 135, 84, 0.2) !important;
+}
+
 .btn-assessment-remedial {
-    border-color: #ea580c !important;
-    background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
-    color: #fff !important;
-    box-shadow: 0 5px 12px rgba(234, 88, 12, 0.2);
+    border: 1px solid #ea580c !important;
+    background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(255, 127, 0, 0.22) !important;
 }
 
 .btn-assessment-remedial:hover,
 .btn-assessment-remedial:focus {
     border-color: #c2410c !important;
-    background: linear-gradient(135deg, #e78c08, #c2410c) !important;
-    color: #fff !important;
-    box-shadow: 0 8px 16px rgba(234, 88, 12, 0.26);
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px rgba(255, 127, 0, 0.32) !important;
     transform: translateY(-1px);
 }
 
+.btn-assessment-remedial:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(255, 127, 0, 0.2) !important;
+}
+
+.btn-assessment-passed,
+.btn-assessment-passed:disabled,
+.btn-assessment-passed:hover,
+.btn-assessment-passed:focus,
+.btn-assessment-passed:active {
+    border: 1px solid #16a34a !important;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.22) !important;
+    opacity: 1 !important;
+    transform: none !important;
+    cursor: default;
+    user-select: none;
+}
+
+.btn-assessment-expired,
+.btn-assessment-expired:disabled,
+.btn-assessment-expired:hover,
+.btn-assessment-expired:focus,
+.btn-assessment-expired:active {
+    border: 1px solid #4b5563 !important;
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(75, 85, 99, 0.22) !important;
+    opacity: 0.95 !important;
+    transform: none !important;
+    cursor: not-allowed;
+    user-select: none;
+}
+
 .btn-assessment-completed {
-    border-color: #cbd5e1 !important;
-    background: #fff !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
     color: #64748b !important;
 }
 
 .btn-assessment-unavailable {
-    border-color: #e2e8f0 !important;
-    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #f8fafc !important;
     color: #94a3b8 !important;
+    cursor: not-allowed;
 }
 
 .btn-assessment-completed:disabled,
 .btn-assessment-unavailable:disabled {
-    opacity: 1;
-    box-shadow: none;
+    opacity: 0.95;
     transform: none;
 }
 
@@ -568,8 +606,11 @@
     white-space: nowrap;
     color: #64748b;
     background-color: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 50rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-top: 6px !important;
+    letter-spacing: 0.02em;
 }
 
 @media (max-width: 767.98px) {
@@ -690,6 +731,38 @@ body.dark-mode .badge-outline-secondary {
     color: #94a3b8;
     background-color: #192d45;
     border-color: rgba(148, 163, 184, 0.3);
+}
+
+[data-bs-theme="dark"] .btn-assessment-passed,
+[data-bs-theme="dark"] .btn-assessment-passed:hover,
+[data-bs-theme="dark"] .btn-assessment-passed:focus,
+[data-bs-theme="dark"] .btn-assessment-passed:disabled,
+body.dark-mode .btn-assessment-passed,
+body.dark-mode .btn-assessment-passed:hover,
+body.dark-mode .btn-assessment-passed:focus,
+body.dark-mode .btn-assessment-passed:disabled {
+    border: 1px solid #16a34a !important;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+[data-bs-theme="dark"] .btn-assessment-expired,
+[data-bs-theme="dark"] .btn-assessment-expired:hover,
+[data-bs-theme="dark"] .btn-assessment-expired:focus,
+[data-bs-theme="dark"] .btn-assessment-expired:disabled,
+body.dark-mode .btn-assessment-expired,
+body.dark-mode .btn-assessment-expired:hover,
+body.dark-mode .btn-assessment-expired:focus,
+body.dark-mode .btn-assessment-expired:disabled {
+    border: 1px solid #334155 !important;
+    background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+    opacity: 0.95 !important;
+    transform: none !important;
 }
 
 /* Assessment Score Column & Score Box Styling */
