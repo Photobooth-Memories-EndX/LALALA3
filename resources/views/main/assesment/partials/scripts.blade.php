@@ -40,6 +40,94 @@
             }
         });
 
+        function positionAssessmentDropdown($dropdown) {
+            let $menu = $dropdown.find('.dropdown-menu');
+            let $button = $dropdown.find('.owl-dropdown-btn, [data-toggle="dropdown"], [data-bs-toggle="dropdown"]');
+
+            if (!$button.length || !$menu.length) return;
+
+            $menu.css({
+                'position': 'fixed',
+                'top': '0',
+                'left': '0',
+                'right': 'auto',
+                'bottom': 'auto',
+                'margin': '0',
+                'z-index': '1065',
+                'visibility': 'hidden',
+                'display': 'block'
+            });
+
+            let btnRect = $button[0].getBoundingClientRect();
+            let menuWidth = $menu.outerWidth();
+            let menuHeight = $menu.outerHeight();
+
+            let windowWidth = $(window).width();
+            let windowHeight = $(window).height();
+
+            let leftPos = btnRect.right - menuWidth;
+
+            if (leftPos < 10) {
+                leftPos = Math.max(10, btnRect.left);
+            }
+            if (leftPos + menuWidth > windowWidth - 10) {
+                leftPos = windowWidth - menuWidth - 10;
+            }
+
+            let topPos = btnRect.bottom + 4;
+
+            if (topPos + menuHeight > windowHeight - 10) {
+                if (btnRect.top - menuHeight - 4 > 10) {
+                    topPos = btnRect.top - menuHeight - 4;
+                } else {
+                    topPos = Math.max(10, windowHeight - menuHeight - 10);
+                }
+            }
+
+            $menu.css({
+                'top': topPos + 'px',
+                'left': leftPos + 'px',
+                'visibility': 'visible'
+            });
+        }
+
+        function resetAssessmentDropdown($dropdown) {
+            let $menu = $dropdown.find('.dropdown-menu');
+            $menu.css({
+                'position': '',
+                'top': '',
+                'left': '',
+                'right': '',
+                'bottom': '',
+                'margin': '',
+                'z-index': '',
+                'visibility': '',
+                'display': ''
+            });
+        }
+
+        $(document).on('show.bs.dropdown shown.bs.dropdown', '.table-responsive .dropdown', function () {
+            positionAssessmentDropdown($(this));
+        });
+
+        $(document).on('hidden.bs.dropdown', '.table-responsive .dropdown', function () {
+            resetAssessmentDropdown($(this));
+        });
+
+        $(window).add('.table-responsive').on('scroll resize', function () {
+            $('.table-responsive .dropdown.show, .table-responsive .dropdown .show').each(function () {
+                let $dropdown = $(this).hasClass('dropdown') ? $(this) : $(this).closest('.dropdown');
+                let $btn = $dropdown.find('[data-toggle="dropdown"], [data-bs-toggle="dropdown"]');
+                if ($btn.length && typeof $btn.dropdown === 'function') {
+                    $btn.dropdown('hide');
+                } else {
+                    $dropdown.removeClass('show');
+                    $dropdown.find('.dropdown-menu').removeClass('show');
+                    resetAssessmentDropdown($dropdown);
+                }
+            });
+        });
+
     });
 
     function copyAssessmentLink(text, button) {
