@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('content', function (Blueprint $table) {
             $table->unsignedInteger('page_duration')
-                ->default(15)
+                ->default(30)
                 ->comment('Minimum viewing time per page (seconds)')
                 ->after('duration');
         });

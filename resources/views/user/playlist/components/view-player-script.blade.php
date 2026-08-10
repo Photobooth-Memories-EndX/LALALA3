@@ -101,7 +101,7 @@
                     .replaceAll('&amp;', '&');
                 let pdfFile = "{{ asset('storage/files/content/' . $content->id) }}/" + fileNameFixed;
                 var isTimedDocument = @json($content->type === 'Document');
-                var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 15)) }};
+                var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 30)) }};
                 var playlistPdfReader = new OwlPdfReader({
                     shellId: 'playlist-pdf-shell',
                     viewerSelector: '.playlist-pdfjs-viewer',

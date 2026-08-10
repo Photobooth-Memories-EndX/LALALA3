@@ -13,7 +13,7 @@
     $pdfPreviousButtonId = $previousButtonId ?? 'pdf-previous-page';
     $pdfNextButtonId = $nextButtonId ?? 'pdf-next-page';
     $pdfShowPageTiming = (bool) ($showPageTiming ?? false);
-    $pdfPageDuration = max(1, (int) ($pageDuration ?? 15));
+    $pdfPageDuration = max(1, (int) ($pageDuration ?? 30));
 @endphp
 
 <div class="pdf-toolbar {{ $pdfToolbarClass }}" id="{{ $pdfToolbarId }}" role="toolbar" aria-label="PDF Controls">

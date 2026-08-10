@@ -55,7 +55,7 @@
                             'previousButtonId' => 'playlist-pdf-previous-page',
                             'nextButtonId' => 'playlist-pdf-next-page',
                             'showPageTiming' => $content->type === 'Document',
-                            'pageDuration' => (int) ($content->page_duration ?: 15),
+                            'pageDuration' => (int) ($content->page_duration ?: 30),
                         ])
                         <div class="playlist-pdf-reader-stage owl-pdf-reader-stage">
                             <div class="pdfjs-viewer playlist-pdfjs-viewer owl-pdf-viewer"></div>

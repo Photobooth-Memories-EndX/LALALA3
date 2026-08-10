@@ -295,7 +295,7 @@ class ContentController extends Controller
             $ytid = null;
         }
         $hasDeadline = $request->boolean('has_deadline');
-        $pageDuration = $request->type === 'Document' ? (int) $request->page_duration : 15;
+        $pageDuration = $request->type === 'Document' ? (int) $request->page_duration : 30;
         $documentTotalPages = $request->type === 'Document' ? (int) $request->document_total_pages : 0;
         $duration = $documentTotalPages > 0
             ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
@@ -492,7 +492,7 @@ class ContentController extends Controller
         $hasDeadlineUpdate = $request->boolean('has_deadline');
         $pageDuration = $request->type === 'Document'
             ? (int) $request->page_duration
-            : (int) ($getcontent->page_duration ?: 15);
+            : (int) ($getcontent->page_duration ?: 30);
         $totalPage = $request->type === 'Document'
             ? (int) $request->total_page
             : (int) ($getcontent->total_page ?: 0);

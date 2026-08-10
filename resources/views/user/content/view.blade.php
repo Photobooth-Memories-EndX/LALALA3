@@ -721,7 +721,7 @@
             });
 
             var isTimedDocument = @json($content->type === 'Document');
-            var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 15)) }};
+            var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 30)) }};
 
             var contentPdfReader = new OwlPdfReader({
                 shellId: 'pdfviewer-shell',
