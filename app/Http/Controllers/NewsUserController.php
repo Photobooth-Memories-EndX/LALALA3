@@ -23,7 +23,7 @@ class NewsUserController extends Controller
         $dateFrom   = request('date_from');
         $dateTo     = request('date_to');
 
-        $query = News::with('user');
+        $query = News::with('user')->withCount(['allComments as comments_count']);
 
         // Search functionality
         if ($search) {
@@ -112,6 +112,7 @@ class NewsUserController extends Controller
         // Calling findBySlug() directly on the query builder may fail,
         // so we filter by the slug column instead.
         $news = News::with('user')
+            ->withCount(['allComments as total_comments_count'])
             ->where('slug', $slug)
             ->first();
 

@@ -1,5 +1,5 @@
 @php
-    $commentTotal = method_exists($comment, 'total') ? $comment->total() : (is_countable($comment) ? count($comment) : 0);
+    $commentTotal = $news->total_comments_count ?? ($news->allComments ? $news->allComments->count() : $news->allComments()->count());
 @endphp
 
 <div class="modal fade content-comment-modal" id="modal-news-comments" tabindex="-1"
@@ -9,7 +9,7 @@
             <div class="modal-header border-bottom">
                 <h5 class="modal-title fw-bold" id="modalNewsCommentsLabel">
                     <i class="ti ti-message-circle me-2 text-primary"></i>
-                    {{ $commentTotal }} Comments
+                    <span class="news-comment-total-count">{{ $commentTotal }}</span> Comments
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

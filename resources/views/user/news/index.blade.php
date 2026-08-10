@@ -201,6 +201,7 @@
 
                             {{-- 3. Date Range (2 Kolom) --}}
                             <div class="learning-filter-group">
+                                <label class="form-label fw-semibold mb-2"><i class="ti ti-calendar me-1"></i> Period</label>
                                 <input type="hidden" name="published" id="owlNewsPublished" value="{{ request('published', 'all') }}" form="owlNewsFilterForm">
                                 <div class="row g-3">
                                     <div class="col-12 col-md-6">

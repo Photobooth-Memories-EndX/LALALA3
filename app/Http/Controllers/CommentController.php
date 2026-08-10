@@ -104,6 +104,15 @@ class CommentController extends Controller
     private function createdResponse(Request $request, Comment $comment, string $route, $parameters)
     {
         if ($request->expectsJson()) {
+            $totalComments = 0;
+            if ($comment->type === 'news' && $comment->news_id) {
+                $totalComments = Comment::where('type', 'news')->where('news_id', $comment->news_id)->count();
+            } elseif ($comment->type === 'content' && $comment->content_id) {
+                $totalComments = Comment::where('type', 'content')->where('content_id', $comment->content_id)->count();
+            } elseif ($comment->type === 'eventphoto' && $comment->eventphoto_id) {
+                $totalComments = Comment::where('type', 'eventphoto')->where('eventphoto_id', $comment->eventphoto_id)->count();
+            }
+
             return response()->json([
                 'message' => 'Comment posted successfully.',
                 'comment' => [
@@ -111,6 +120,7 @@ class CommentController extends Controller
                     'parent_id' => $comment->parent_id,
                     'description' => $comment->description,
                 ],
+                'total_comments' => $totalComments,
             ], 201);
         }
 

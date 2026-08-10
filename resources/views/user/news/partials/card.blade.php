@@ -63,7 +63,7 @@
                     </div>
                     <div class="d-flex align-items-center gap-1">
                         <i class="ti ti-message-dots fs-6"></i>
-                        <span>{{ $item->comments_count ?? 0 }}</span>
+                        <span>{{ $item->comments_count ?? (isset($item->comments) ? $item->comments->count() : 0) }}</span>
                     </div>
                 </div>
             </div>

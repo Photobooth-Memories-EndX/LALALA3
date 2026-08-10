@@ -1,7 +1,7 @@
 @extends('layouts.sidebar-master')
 
 @php
-    $commentTotal = method_exists($comment, 'total') ? $comment->total() : (is_countable($comment) ? count($comment) : 0);
+    $commentTotal = $news->total_comments_count ?? ($news->allComments ? $news->allComments->count() : $news->allComments()->count());
 @endphp
 
 @section('content')
@@ -39,49 +39,31 @@
                     @endif
                 </div>
 
-                {{-- MAIN CONTENT CARD / OVERVIEW BOX STRUCTURE LIKE ALL CONTENT --}}
-                <div class="card border-0 shadow-sm rounded-4 mb-4 view-content-info-card">
-                    <div class="card-body p-4">
+                {{-- MAIN CONTENT CARD (PLAYLIST STYLE) --}}
+                <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white p-4 p-md-5">
+                    <!-- 1. Meta Atas Judul -->
+                    <div class="text-muted small mb-1">
+                        {{ $news->created_at ? $news->created_at->format('d F Y') : '-' }} created by {{ $news->user->name ?? 'Training Team' }}
+                    </div>
 
-                        {{-- 2. JUDUL ARTIKEL --}}
-                        <h1 class="fw-bold owl-article-title mb-3">
-                            {{ $news->title ?? '-' }}
-                        </h1>
+                    <!-- 2. Judul (Tanpa Tombol Share) -->
+                    <h2 class="fw-bold text-dark fs-3 mb-2">{{ $news->title ?? '-' }}</h2>
 
-                        {{-- 3. META BAR AUTHOR - FORMAT: [Author] - [Tanggal] - [Views] - [Comments] --}}
-                        <div class="d-flex flex-wrap align-items-center gap-2 text-muted small mb-4 pb-3 border-bottom owl-border-color">
-                            <span class="d-inline-flex align-items-center">
-                                <i class="ti ti-user me-1 text-primary"></i>
-                                <strong class="text-dark me-1">{{ $news->user->name ?? 'Training Team' }}</strong>
-                            </span>
-                            <span>-</span>
-                            <span class="d-inline-flex align-items-center">
-                                <i class="ti ti-calendar me-1"></i>
-                                {{ $news->created_at ? $news->created_at->format('d M Y') : '-' }}
-                            </span>
-                            <span>-</span>
-                            <span class="d-inline-flex align-items-center">
-                                <i class="ti ti-eye me-1"></i>
-                                {{ number_format($news->views ?? 0) }} Views
-                            </span>
-                            <span>-</span>
-                            <button type="button"
-                                    class="btn btn-link text-muted p-0 text-decoration-none d-inline-flex align-items-center fw-semibold"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modal-news-comments">
-                                <i class="ti ti-message-circle me-1 text-primary"></i>
-                                {{ $commentTotal }} Comments
-                            </button>
+                    <!-- 3. Meta Stats Bawah Judul -->
+                    <div class="d-flex align-items-center gap-2 text-muted small mb-4">
+                        <button type="button" class="btn btn-link text-muted p-0 text-decoration-none d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modal-news-comments">
+                            <i class="ti ti-message-dots me-1"></i> <span class="news-comment-total-count">{{ $commentTotal }}</span> Comments
+                        </button>
+                        <span>•</span>
+                        <span><i class="ti ti-eye me-1"></i> {{ number_format($news->views ?? 0) }} Views</span>
+                    </div>
+
+                    <!-- 4. Kontainer Overview Style Playlist -->
+                    <div class="rounded-4 p-4 p-md-5" style="background-color: #f8fafc; border: 1px solid #f1f5f9;">
+                        <div class="text-muted small fw-bold mb-3">Overview</div>
+                        <div class="news-content text-dark fs-5 lh-lg" style="color: #212529 !important; font-size: 1.05rem !important;">
+                            {!! nl2br(e($news->description ?? '')) !!}
                         </div>
-
-                        {{-- 4. OVERVIEW BOX FOR ARTICLE DESCRIPTION / CONTENT --}}
-                        <div class="chapter-description-box mb-0">
-                            <h4 class="fs-6 fw-bold mb-3">Overview</h4>
-                            <div class="overview-text text-dark" style="font-size: 1.05rem; line-height: 1.8;">
-                                {!! nl2br(e($news->description ?? '')) !!}
-                            </div>
-                        </div>
-
                     </div>
                 </div>
 
@@ -210,6 +192,19 @@
         initArticleImages();
     });
 })();
+
+function shareNews() {
+    if (navigator.share) {
+        navigator.share({
+            title: {{ json_encode($news->title ?? 'News') }},
+            url: window.location.href
+        }).catch(function() {});
+    } else {
+        navigator.clipboard.writeText(window.location.href).then(function() {
+            alert('Article link copied to clipboard!');
+        });
+    }
+}
 </script>
 
 @endsection

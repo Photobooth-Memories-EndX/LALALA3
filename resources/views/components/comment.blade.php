@@ -17,8 +17,15 @@
         $url = $slug ? route('gallery.comment.store', $slug) : '#';
     }
 
-    $user = auth()->user();
-    $commentTotal = method_exists($comment, 'total') ? $comment->total() : $comment->count();
+    if (isset($content->total_comments_count)) {
+        $commentTotal = $content->total_comments_count;
+    } elseif (optional($content)->relationLoaded('allComments')) {
+        $commentTotal = $content->allComments->count();
+    } elseif (method_exists($content, 'allComments')) {
+        $commentTotal = $content->allComments()->count();
+    } else {
+        $commentTotal = method_exists($comment, 'total') ? $comment->total() : $comment->count();
+    }
 @endphp
 
 <div class="mt-3 mb-4 comment-ajax-root" data-comment-refresh-url="{{ request()->fullUrl() }}">
@@ -515,6 +522,12 @@
 
             $root.html($freshRoot.html());
             $root.attr('data-comment-refresh-url', $freshRoot.attr('data-comment-refresh-url') || $root.attr('data-comment-refresh-url'));
+
+            var freshCount = $freshRoot.find('.comment-count-num').text();
+            if (freshCount) {
+                $('.news-comment-total-count').text(freshCount);
+            }
+
             restoreState($root, state);
 
             return $root;
