@@ -33,7 +33,14 @@ class OngoingPlaylistService
     public function userPlaylists(int $userId): Collection
     {
         return TrainingPlan::query()
-            ->select('trainingplan.id', 'trainingplan.title', 'trainingplan.slug', 'trainingplan.thumbnail')
+            ->select(
+                'trainingplan.id',
+                'trainingplan.title',
+                'trainingplan.slug',
+                'trainingplan.thumbnail',
+                'trainingplan.total_duration_seconds',
+                'trainingplan.learning_hours'
+            )
             ->whereExists(function ($q) use ($userId) {
                 $q->from('trainingplandetail')
                     ->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')
@@ -65,13 +72,6 @@ class OngoingPlaylistService
                 'avg_progress'
             )
             ->selectSub(
-                ContentUser::selectRaw('COALESCE(SUM(content_users.duration_seconds), 0)')
-                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId),
-                'total_duration_seconds'
-            )
-            ->selectSub(
                 ContentUser::selectRaw('MAX(content_users.updated_at)')
                     ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
                     ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
@@ -95,6 +95,9 @@ class OngoingPlaylistService
                 // Progress playlist = module selesai / total module (bukan progress content).
                 $plan->progress_percent = $total > 0 ? (int) round($finished / $total * 100) : 0;
                 $plan->is_completed     = $total > 0 && $finished >= $total;
+
+                $seconds = max(0, (int) ($plan->total_duration_seconds ?? 0));
+                $plan->duration = \App\Support\DurationFormatter::fromSeconds($seconds);
 
                 return $plan;
             });
@@ -172,6 +175,53 @@ class OngoingPlaylistService
             $plans  = $plans->filter(
                 fn ($p) => $p->last_activity_at && in_array((int) date('n', strtotime($p->last_activity_at)), $months, true)
             );
+        }
+
+        // Duration filter (total_duration_seconds)
+        if (!empty($filters['durations'])) {
+            $durations = $filters['durations'];
+            $plans = $plans->filter(function ($p) use ($durations) {
+                $sec = (int) ($p->total_duration_seconds ?? 0);
+                foreach ($durations as $d) {
+                    switch ($d) {
+                        case 'lt10':  if ($sec < 600) return true; break;
+                        case '10-30': if ($sec >= 600 && $sec <= 1800) return true; break;
+                        case '30-60': if ($sec >= 1801 && $sec <= 3600) return true; break;
+                        case 'gt60':  if ($sec > 3600) return true; break;
+                    }
+                }
+                return false;
+            });
+        }
+
+        // Period filter (Date From & Date To)
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo   = $filters['date_to'] ?? null;
+        if (filled($dateFrom)) {
+            $plans = $plans->filter(function ($p) use ($dateFrom) {
+                $dateStr = $p->last_activity_at ?? $p->created_at;
+                return $dateStr && date('Y-m-d', strtotime($dateStr)) >= $dateFrom;
+            });
+        }
+        if (filled($dateTo)) {
+            $plans = $plans->filter(function ($p) use ($dateTo) {
+                $dateStr = $p->last_activity_at ?? $p->created_at;
+                return $dateStr && date('Y-m-d', strtotime($dateStr)) <= $dateTo;
+            });
+        }
+
+        // Learning Hour filter
+        $learningHour = $filters['learning_hour'] ?? 'all';
+        if ($learningHour !== 'all') {
+            $plans = $plans->filter(function ($p) use ($learningHour) {
+                $lh = (float) ($p->learning_hours ?? (($p->total_duration_seconds ?? 0) / 3600));
+                return match ($learningHour) {
+                    'lt1' => $lh < 1.0,
+                    '1-3' => $lh >= 1.0 && $lh <= 3.0,
+                    'gt3' => $lh > 3.0,
+                    default => true,
+                };
+            });
         }
 
         return $plans->values();

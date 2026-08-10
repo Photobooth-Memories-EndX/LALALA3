@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('content', function (Blueprint $table) {
             $table->unsignedInteger('total_page')
                 ->nullable()
-                ->default(0)
+                ->default(30)
                 ->comment('Total pages for PDF document content')
                 ->after('page_duration');
         });

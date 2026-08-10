@@ -1,5 +1,5 @@
 @php
-    $pageDurationValue = old('page_duration', (int) ($content->page_duration ?: 15));
+    $pageDurationValue = old('page_duration', (int) ($content->page_duration ?: 30));
     $totalPageValue = old('total_page', (int) ($content->total_page ?: 0));
     $isDocument = old('type', $content->type) === 'Document';
 @endphp
@@ -47,7 +47,7 @@
                max="300"
                step="1"
                inputmode="numeric"
-               placeholder="15">
+               placeholder="30">
         @error('page_duration')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror

@@ -56,17 +56,61 @@
                                 <x-alert type="warning" />
 
                                 <div class="mb-3">
-                                    <label class="form-label required">Title</label>
-                                    <input type="text" class="form-control" placeholder="Enter playlist title"
+                                    <label for="title" class="form-label required">Title</label>
+                                    <input type="text" class="form-control @error('title') is-invalid @enderror" placeholder="Enter playlist title"
                                         name="title" id="title"
-                                        value="{{ $trainingplan->title }}" required>
+                                        value="{{ old('title', $trainingplan->title) }}" required>
+                                    @error('title')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                <div>
+                                <div class="mb-3">
                                     <label for="url-link" class="form-label">URL Link</label>
-                                    <input type="url" name="url_link" id="url-link" class="form-control"
-                                        value="{{ $trainingplan->url_link }}"
+                                    <input type="url" name="url_link" id="url-link" class="form-control @error('url_link') is-invalid @enderror"
+                                        value="{{ old('url_link', $trainingplan->url_link) }}"
                                         placeholder="https://...">
                                     <small class="form-hint">Opsional. Link eksternal terkait playlist ini.</small>
+                                    @error('url_link')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="total_duration" class="form-label">Playlist Total Duration (HH:MM:SS)</label>
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-12 col-sm-7 col-md-8">
+                                            <input type="text"
+                                                class="form-control bg-light @error('total_duration') is-invalid @enderror"
+                                                id="total_duration"
+                                                name="total_duration"
+                                                value="{{ old('total_duration', \App\Support\DurationFormatter::fromSeconds($trainingplan->total_duration_seconds ?? 0)) }}"
+                                                readonly>
+                                        </div>
+                                        <div class="col-12 col-sm-5 col-md-4">
+                                            <button type="button"
+                                                class="btn btn-outline-primary w-100"
+                                                id="btn-sync-playlist"
+                                                data-url="{{ route('playlist.synchronize-learning-hours', $trainingplan->slug ?? $trainingplan->id) }}">
+                                                <i class="ti ti-refresh me-1 icon-sync"></i>
+                                                <span class="btn-text">Synchronize</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="form-hint mt-1">Gunakan tombol Synchronize untuk menghitung ulang total duration dan learning hours.</small>
+                                    @error('total_duration')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="learning_hours" class="form-label">Learning Hours</label>
+                                    <input type="text"
+                                        class="form-control bg-light @error('learning_hours') is-invalid @enderror"
+                                        id="learning_hours"
+                                        name="learning_hours"
+                                        value="{{ old('learning_hours', $trainingplan->learning_hours ?? 0) }}"
+                                        readonly>
+                                    @error('learning_hours')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
                         </div>
@@ -378,5 +422,145 @@
                 }
             });
         })();
+    </script>
+    <script>
+        (function () {
+            var $input = $('#learning_hours');
+            var $form = $('#trainingPlanForm');
+
+            function isValidLearningHours(val) {
+                if (val === '' || val === null || val === undefined) return false;
+                var num = parseFloat(val);
+                if (isNaN(num)) return false;
+                if (num < 0) return false;
+                if (num === 0) return true;
+
+                var timesTwo = Math.round(num * 10000) / 10000 * 2;
+                return Math.abs(timesTwo - Math.round(timesTwo)) < 0.0001;
+            }
+
+            function validateInput() {
+                var val = $input.val();
+                var $errorDiv = $('#learning_hours_error');
+
+                if (!isValidLearningHours(val)) {
+                    $input.addClass('is-invalid');
+                    if ($errorDiv.length) {
+                        $errorDiv.html('Learning Hours must be 0 or in increments of 0.5.<br><small class="text-muted">Examples: 0, 0.5, 1, 1.5, 2, 2.5</small>').show();
+                    }
+                    return false;
+                } else {
+                    $input.removeClass('is-invalid');
+                    if ($errorDiv.length) {
+                        $errorDiv.empty().hide();
+                    }
+                    return true;
+                }
+            }
+
+            $input.on('input change blur', function () {
+                validateInput();
+            });
+
+            if ($form.length) {
+                $form.on('submit', function (e) {
+                    if (!validateInput()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        $input.focus();
+                        return false;
+                    }
+                });
+            }
+        })();
+
+        $(document).ready(function() {
+            function showToast(message, type) {
+                let bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+                let icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+
+                let toastHtml = `
+                    <div class="toast owl-toast ${bgClass} text-white align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-body d-flex align-items-center justify-content-between p-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas ${icon} me-2 fs-4"></i>
+                                <span>${message}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if ($('#owl-toast-wrapper').length === 0) {
+                    $('body').append('<div id="owl-toast-wrapper" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; width: 320px;"></div>');
+                }
+
+                let $toast = $(toastHtml);
+                $('#owl-toast-wrapper').append($toast);
+                $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
+            }
+
+            $(document).on('click', '#btn-sync-playlist, #btn-sync-playlist-lh', function(e) {
+                e.preventDefault();
+                let $btn = $(this);
+                let url = $btn.data('url');
+
+                if (!url || $btn.data('loading')) return;
+
+                $btn.data('loading', true);
+                let $form = $btn.closest('form');
+                let selectedContents = [];
+                $form.find('input[name="content[]"]:checked, select[name="content[]"] option:selected, input.js-content-ordered').each(function() {
+                    selectedContents.push($(this).val());
+                });
+
+                $btn.prop('disabled', true);
+                $btn.find('.icon-sync').attr('class', 'spinner-border spinner-border-sm me-1 icon-sync');
+                $btn.find('.btn-text').text('Synchronizing...');
+                $('body').css('cursor', 'wait');
+
+                let csrfToken = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        _token: csrfToken,
+                        content: selectedContents
+                    },
+                    success: function(res) {
+                        if (res && res.success) {
+                            if (res.duration !== undefined) {
+                                $form.find('[name="total_duration"]').val(res.duration);
+                            }
+                            if (res.learning_hours !== undefined) {
+                                $form.find('[name="learning_hours"]').val(res.learning_hours);
+                            }
+                            showToast(res.message || 'Playlist duration synchronized successfully.', 'success');
+                        } else {
+                            showToast(res && res.message ? res.message : 'Unable to synchronize duration.', 'danger');
+                        }
+                    },
+                    error: function(xhr) {
+                        let message = 'Unable to synchronize duration.';
+                        if (xhr && xhr.responseJSON) {
+                            if (xhr.responseJSON.errors) {
+                                message = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                            } else if (xhr.responseJSON.message) {
+                                message = xhr.responseJSON.message;
+                            }
+                        }
+                        showToast(message, 'danger');
+                    },
+                    complete: function() {
+                        $btn.find('.icon-sync').attr('class', 'ti ti-refresh me-1 icon-sync');
+                        $btn.find('.btn-text').text('Synchronize');
+                        $btn.prop('disabled', false);
+                        $btn.data('loading', false);
+                        $('body').css('cursor', 'default');
+                    }
+                });
+            });
+        });
     </script>
 @endpush

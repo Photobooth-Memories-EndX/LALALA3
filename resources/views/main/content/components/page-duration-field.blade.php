@@ -1,6 +1,6 @@
 @php
     $content = $content ?? null;
-    $pageDurationValue = old('page_duration', (int) ($content?->page_duration ?: 15));
+    $pageDurationValue = old('page_duration', (int) ($content?->page_duration ?: 30));
     $totalPagesValue = old('document_total_pages', (int) ($content?->total_page ?: 0));
 @endphp
 
@@ -35,7 +35,7 @@
                min="1"
                max="300"
                step="1"
-               placeholder="15">
+               placeholder="30">
         @error('page_duration')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror

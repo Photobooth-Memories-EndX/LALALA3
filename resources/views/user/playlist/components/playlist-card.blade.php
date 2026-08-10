@@ -15,7 +15,14 @@
 
     $durationSec       = (int) ($playlist->total_duration_seconds ?? 0);
     $formattedDuration = $playlist->duration ?? ($durationSec > 0 ? sprintf('%02d:%02d:%02d', floor($durationSec / 3600), floor(($durationSec % 3600) / 60), $durationSec % 60) : '00:00:00');
-    $learningHours     = $playlist->learning_hours ?? ($durationSec > 0 ? round($durationSec / 3600, 1) : 0);
+    
+    $rawLh = $playlist->learning_hours ?? null;
+    if (!is_null($rawLh) && $rawLh !== '') {
+        $numLh = (float) $rawLh == (int) $rawLh ? (int) $rawLh : (float) $rawLh;
+        $learningHoursDisplay = $numLh . ' ' . ($numLh == 1 ? 'Hour' : 'Hours');
+    } else {
+        $learningHoursDisplay = '-';
+    }
     
     // Identik dengan view-hero.blade.php ($content->author)
     $authorName        = $firstContent->author ?? $playlist->author ?? 'Training Team';
@@ -77,7 +84,7 @@
 
             <div class="small text-muted mb-2 d-flex flex-wrap align-items-center gap-2">
                 <span>
-                    <i class="ti ti-hourglass me-1"></i>Learning Hours: {{ $learningHours }} {{ $learningHours == 1 ? 'Hour' : 'Hours' }}
+                    <i class="ti ti-hourglass me-1"></i>Learning Hours: {{ $learningHoursDisplay }}
                 </span>
                 <span class="text-muted">&bull;</span>
                 <span>

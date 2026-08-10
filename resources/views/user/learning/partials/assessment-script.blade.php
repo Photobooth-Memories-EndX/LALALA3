@@ -158,6 +158,12 @@
             $('#assessmentMoreFiltersModal').modal('hide');
             history.pushState({}, '', window.location.pathname + (query ? '?' + query : ''));
 
+            if (typeof loadLearningTab === 'function') {
+                _activeTab = null;
+                loadLearningTab('assessment');
+                return;
+            }
+
             assessmentFilterParams = new URLSearchParams(window.location.search);
             assessmentTable.search($.trim($('#assessmentSearch').val()));
 
@@ -171,17 +177,31 @@
             assessmentTable.page('first').draw(false);
         }
 
+        function getModalFilterValue(name) {
+            var $select = $('#assessmentMoreFiltersModal select[name="' + name + '"]');
+            if ($select.length && $select.val()) {
+                return String($select.val());
+            }
+            var $radio = $('#assessmentMoreFiltersModal input[name="' + name + '"]:checked');
+            if ($radio.length && $radio.val()) {
+                return String($radio.val());
+            }
+            return 'all';
+        }
+
         function collectAssessmentFilterState() {
             var state = {};
             $('#assessmentFilterBar [data-assessment-filter]').each(function () {
                 state[String($(this).data('assessment-filter'))] = String($(this).attr('data-selected-value') || 'all');
             });
-            state.batch = String($('input[name="assessmentModalBatch"]:checked').val() || 'all');
-            state.grade = String($('input[name="assessmentModalGrade"]:checked').val() || 'all');
-            state.score = String($('input[name="assessmentModalScore"]:checked').val() || 'all');
-            state.result = String($('input[name="assessmentModalResult"]:checked').val() || 'all');
-            state.date = String($('input[name="assessmentModalDate"]:checked').val() || 'all');
-            state.availability = String($('input[name="assessmentModalAvailability"]:checked').val() || 'all');
+            state.batch = getModalFilterValue('assessmentModalBatch');
+            state.grade = getModalFilterValue('assessmentModalGrade');
+            state.score = getModalFilterValue('assessmentModalScore');
+            state.result = getModalFilterValue('assessmentModalResult');
+            state.date = getModalFilterValue('assessmentModalDate');
+            state.availability = getModalFilterValue('assessmentModalAvailability');
+            state.from_date = $.trim($('#assessmentFilterFromDate').val() || '');
+            state.to_date = $.trim($('#assessmentFilterToDate').val() || '');
             return state;
         }
 
@@ -194,7 +214,7 @@
             });
 
             Object.keys(state).forEach(function (key) {
-                if (state[key] !== 'all') {
+                if (state[key] !== 'all' && state[key] !== '') {
                     params.set('assessment_filter_' + key, state[key]);
                 }
             });
@@ -213,9 +233,12 @@
                 'assessmentModalAvailability'
             ];
             var activeCount = advancedNames.reduce(function (count, name) {
-                var value = String($('input[name="' + name + '"]:checked').val() || 'all');
+                var value = getModalFilterValue(name);
                 return count + (value !== 'all' ? 1 : 0);
             }, 0);
+
+            if ($('#assessmentFilterFromDate').val()) activeCount++;
+            if ($('#assessmentFilterToDate').val()) activeCount++;
 
             $('#assessmentMoreFiltersCount')
                 .toggleClass('d-none', activeCount === 0)
@@ -250,12 +273,14 @@
 
         function resetAdvancedFilters() {
             $('#assessmentMoreFiltersModal input[type="radio"][value="all"]').prop('checked', true);
+            $('#assessmentMoreFiltersModal select').val('all');
+            $('#assessmentFilterFromDate, #assessmentFilterToDate').val('');
             updateAdvancedFilterBadge();
         }
 
-        $('#assessmentMoreFiltersModal input[type="radio"]')
+        $('#assessmentMoreFiltersModal input, #assessmentMoreFiltersModal select')
             .off('.learningAssessment')
-            .on('change.learningAssessment', updateAdvancedFilterBadge);
+            .on('change.learningAssessment input.learningAssessment', updateAdvancedFilterBadge);
 
         $('#assessmentModalReset, #assessmentResetFilter').off('.learningAssessment').on('click.learningAssessment', function () {
             clearTimeout(window.learningAssessmentSearchTimer);
@@ -279,7 +304,46 @@
             window.location.href = @json(route('user.learning.assessment.export')) + query;
         });
 
-        assessmentTable.on('order.dt', updateAssessmentSortIcons);
+        function initAssessmentScorePopovers() {
+            $table.find('.assessment-score-trigger').each(function () {
+                var $trigger = $(this);
+                if ($trigger.data('bs.popover') || $trigger.data('popover')) {
+                    return;
+                }
+
+                var $template = $trigger.find('.assessment-score-popover-template');
+                if (!$template.length) {
+                    return;
+                }
+
+                var htmlContent = $.trim($template.html());
+                if (!htmlContent) {
+                    return;
+                }
+
+                $trigger.popover({
+                    trigger: 'hover',
+                    placement: 'top',
+                    html: true,
+                    sanitize: false,
+                    content: htmlContent,
+                    template: '<div class="popover assessment-history-popover" role="tooltip"><div class="popover-arrow"></div><div class="popover-body"></div></div>',
+                    container: 'body',
+                    boundary: 'viewport'
+                });
+            });
+        }
+
+        assessmentTable.on('preDraw.dt', function () {
+            $('.popover.assessment-history-popover').remove();
+        });
+
+        assessmentTable.on('draw.dt order.dt', function () {
+            updateAssessmentSortIcons();
+            initAssessmentScorePopovers();
+        });
+
         updateAssessmentSortIcons();
+        initAssessmentScorePopovers();
     }
 </script>

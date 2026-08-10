@@ -407,7 +407,7 @@ class ContentUserController extends Controller
             }
 
             if ($content->type === 'Document' && $totalPages > 0) {
-                $pageDuration = max(1, min(300, (int) ($content->page_duration ?: 15)));
+                $pageDuration = max(1, min(300, (int) ($content->page_duration ?: 30)));
                 $officialDuration = $totalPages * $pageDuration;
                 $officialDurationValue = DurationFormatter::fromSeconds($officialDuration);
 

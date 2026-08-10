@@ -50,6 +50,7 @@
             'materials' => (int) ($playlistStats[$playlist->id]['totalContent'] ?? 0),
             'classifications' => $classificationIds,
             'duration' => (int) $playlist->total_duration_seconds,
+            'learningHours' => $playlist->learning_hours !== null ? (float) $playlist->learning_hours : null,
             'authors' => $authors,
             'views' => $totalViews,
             'createdAt' => $createdAt,
@@ -151,10 +152,13 @@
                     (duration === 'gt60' && durationSeconds > 3600);
 
                 // Learning Hour (in hours)
+                const playlistLh = itemFilters.learningHours !== null && itemFilters.learningHours !== undefined
+                    ? Number(itemFilters.learningHours)
+                    : (durationSeconds / 3600);
                 const matchesLearningHour = learningHour === 'all' ||
-                    (learningHour === 'lt1h' && durationSeconds < 3600) ||
-                    (learningHour === '1-3h' && durationSeconds >= 3600 && durationSeconds <= 10800) ||
-                    (learningHour === 'gt3h' && durationSeconds > 10800);
+                    (learningHour === 'lt1h' && playlistLh < 1) ||
+                    (learningHour === '1-3h' && playlistLh >= 1 && playlistLh <= 3) ||
+                    (learningHour === 'gt3h' && playlistLh > 3);
 
                 // Total Pages / Materials
                 const materialCount = Number(itemFilters.materials || 0);

@@ -18,7 +18,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-auto">
+                <div class="col-auto d-flex gap-2">
+                    <form action="{{ route('learning-hours.sync') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-primary" onclick="return confirm('Synchronize all Learning Hours?')">
+                            <i class="ti ti-refresh me-1"></i>Synchronize
+                        </button>
+                    </form>
                     <a href="{{ route('playlist.create') }}" class="btn btn-primary">
                         <i class="ti ti-plus me-1"></i>Add Playlist
                     </a>
@@ -39,7 +45,7 @@
                                 <path d="M5 12l5 5l10 -10"></path>
                             </svg>
                         </div>
-                        <div>{{ session('success') }}</div>
+                        <div style="white-space: pre-line;">{{ session('success') }}</div>
                     </div>
                     <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>

@@ -9,6 +9,7 @@ $(function () {
     var $input = $form.find('.js-hero-background-input');
     var $trigger = $form.find('.js-hero-background-trigger');
     var $saveButton = $form.find('.js-hero-background-save');
+    var $removeButton = $form.find('.js-hero-background-remove');
     var $modal = $('#heroBackgroundCropModal');
     var $cropImage = $('#heroCropImage');
     var $zoom = $('#heroCropZoom');
@@ -368,10 +369,14 @@ $(function () {
 
                 if (backgroundUrl) {
                     $hero.attr('data-background-url', backgroundUrl);
+                    $hero.attr('data-has-custom', 'true');
                     setHeroBackground(backgroundUrl);
+                    $removeButton.removeClass('d-none');
                 } else if (previewUrl) {
                     $hero.attr('data-background-url', previewUrl);
+                    $hero.attr('data-has-custom', 'true');
                     previewUrl = null;
+                    $removeButton.removeClass('d-none');
                 }
 
                 window.alert(response && response.message
@@ -397,6 +402,46 @@ $(function () {
                 compressedBackground = null;
                 $input.val('');
                 setSaving(false);
+            }
+        });
+    });
+
+    $removeButton.on('click', function () {
+        if (!window.confirm('Are you sure you want to reset your hero background to the default template?')) {
+            return;
+        }
+
+        var removeUrl = $form.data('remove-url');
+        if (!removeUrl) return;
+
+        $removeButton.prop('disabled', true);
+
+        $.ajax({
+            url: removeUrl,
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': $form.find('input[name="_token"]').val(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function (response) {
+                var defaultUrl = (response && response.image_url) || $hero.attr('data-default-background-url');
+                if (defaultUrl) {
+                    $hero.attr('data-background-url', defaultUrl);
+                    $hero.attr('data-has-custom', 'false');
+                    setHeroBackground(defaultUrl);
+                }
+                $removeButton.addClass('d-none');
+                window.alert(response && response.message
+                    ? response.message
+                    : 'Hero background reset to default template.');
+            },
+            error: function (xhr) {
+                var response = xhr.responseJSON || {};
+                window.alert(response.message || 'Failed to remove custom background.');
+            },
+            complete: function () {
+                $removeButton.prop('disabled', false);
             }
         });
     });

@@ -144,7 +144,20 @@ class ContentController extends Controller
                 $query->orderBy('content.title');
                 break;
             default:
-                $query->orderBy('content.created_at', 'desc');
+                $query->orderByRaw("
+                    (
+                        (CASE WHEN content.title IS NOT NULL AND TRIM(content.title) <> '' THEN 3 ELSE 0 END) +
+                        (CASE WHEN content.classification_id IS NOT NULL AND TRIM(content.classification_id) <> '' AND content.classification_id <> '0' THEN 3 ELSE 0 END) +
+                        (CASE WHEN content.date IS NOT NULL THEN 3 ELSE 0 END) +
+                        (CASE WHEN content.slug IS NOT NULL AND TRIM(content.slug) <> '' THEN 2 ELSE 0 END) +
+                        (CASE WHEN content.learning_hours IS NOT NULL AND content.learning_hours > 0 THEN 2 ELSE 0 END) +
+                        (CASE WHEN content.duration IS NOT NULL AND TRIM(content.duration) <> '' THEN 1 ELSE 0 END) +
+                        (CASE WHEN content.type IS NOT NULL AND TRIM(content.type) <> '' THEN 1 ELSE 0 END) +
+                        (CASE WHEN content.description IS NOT NULL AND TRIM(content.description) <> '' THEN 1 ELSE 0 END) +
+                        (CASE WHEN (content.file IS NOT NULL AND TRIM(content.file) <> '' AND content.file <> '[]') OR (content.link IS NOT NULL AND TRIM(content.link) <> '') THEN 1 ELSE 0 END) +
+                        (CASE WHEN content.active = 'Active' THEN 2 ELSE 0 END)
+                    ) DESC, content.created_at DESC
+                ");
                 break;
         }
 
@@ -262,10 +275,16 @@ class ContentController extends Controller
                     $fail('The duration format must be HH:MM:SS or mm:ss.');
                 }
             }],
-            'learning_hours' => ['nullable', 'regex:/^(?:\d+|\d+\.5)$/', 'numeric', 'min:0', 'max:99.5'],
-        ], [
-            'learning_hours.regex' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
-            'learning_hours.numeric' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
+            'learning_hours' => [
+                'required',
+                'numeric',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    if (fmod((float) $value * 2, 1.0) !== 0.0) {
+                        $fail('Learning Hours must be in increments of 0.5.');
+                    }
+                },
+            ],
         ]);
 
         if ($request->type == "YouTube") {
@@ -276,12 +295,12 @@ class ContentController extends Controller
             $ytid = null;
         }
         $hasDeadline = $request->boolean('has_deadline');
-        $pageDuration = $request->type === 'Document' ? (int) $request->page_duration : 15;
+        $pageDuration = $request->type === 'Document' ? (int) $request->page_duration : 30;
         $documentTotalPages = $request->type === 'Document' ? (int) $request->document_total_pages : 0;
         $duration = $documentTotalPages > 0
             ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
             : DurationFormatter::normalize($request->duration);
-        $learningHours = $request->filled('learning_hours') ? (float) $request->learning_hours : null;
+        $learningHours = (float) $request->input('learning_hours');
         $newcontent = new Content([
             'title'            => $request->title,
             'type'             => $request->type,
@@ -379,10 +398,7 @@ class ContentController extends Controller
                     $fail('The duration format must be HH:MM:SS or mm:ss.');
                 }
             }],
-            'learning_hours' => ['nullable', 'regex:/^(?:\d+|\d+\.5)$/', 'numeric', 'min:0', 'max:99.5'],
-        ], [
-            'learning_hours.regex' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
-            'learning_hours.numeric' => 'Learning Hours format is invalid. Examples: 0.5, 1, 1.5, 2, 2.5',
+            'learning_hours' => ['nullable'],
         ]);
 
         $path = public_path('storage/files/content/' . $request->id . '');
@@ -476,12 +492,12 @@ class ContentController extends Controller
         $hasDeadlineUpdate = $request->boolean('has_deadline');
         $pageDuration = $request->type === 'Document'
             ? (int) $request->page_duration
-            : (int) ($getcontent->page_duration ?: 15);
+            : (int) ($getcontent->page_duration ?: 30);
         $totalPage = $request->type === 'Document'
             ? (int) $request->total_page
             : (int) ($getcontent->total_page ?: 0);
         $duration = DurationFormatter::normalize($request->duration);
-        $learningHours = $request->filled('learning_hours') ? (float) $request->learning_hours : null;
+        $learningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convert($duration);
         Content::where('id', $request->contentid)
             ->update([
                 'title'            => $request->title,
@@ -523,9 +539,88 @@ class ContentController extends Controller
             }
         }
         return to_route('content.edit', $request->slug)->with('success', 'Content successfully assigned');
+    }
 
+    public function synchronizeLearningHours(Request $request, Content $content, \App\Services\LearningHours\ContentLearningHourService $service): \Illuminate\Http\JsonResponse
+    {
+        $result = $service->syncSingleContent($content, $request->all());
 
+        return response()->json($result->toArray());
+    }
 
-        // return $arrayexist;
+    public function documentPdfList(): \Illuminate\Http\JsonResponse
+    {
+        $contents = Content::where('type', 'Document')
+            ->select(['id', 'title', 'type', 'file', 'total_page', 'page_duration'])
+            ->get();
+
+        $data = $contents->map(function ($item) {
+            $contentfile = is_string($item->file) ? json_decode($item->file, true) : [];
+            $getcontentfile = is_array($contentfile) ? ($contentfile[0] ?? '') : ($item->file ?? '');
+            $filename = is_string($getcontentfile) ? trim($getcontentfile) : '';
+
+            $filePath = !empty($filename) ? public_path('storage/files/content/' . $item->id . '/' . $filename) : '';
+            $fileUrl = !empty($filename) ? asset('storage/files/content/' . $item->id . '/' . $filename) : '';
+
+            return [
+                'id' => $item->id,
+                'title' => $item->title,
+                'file_name' => $filename,
+                'file_url' => $fileUrl,
+                'file_exists' => !empty($filePath) && file_exists($filePath),
+                'total_page' => (int) ($item->total_page ?? 0),
+                'page_duration' => (int) ($item->page_duration ?: 30),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'count' => $data->count(),
+        ]);
+    }
+
+    public function syncTotalPage(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => 'required|integer|exists:content,id',
+            'total_page' => 'required|integer|min:1|max:100000',
+        ]);
+
+        $content = Content::findOrFail($validated['id']);
+
+        if ($content->type !== 'Document') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Content is not of type Document.',
+            ], 422);
+        }
+
+        $newTotalPage = (int) $validated['total_page'];
+        $oldTotalPage = (int) ($content->total_page ?? 0);
+
+        if ($oldTotalPage === $newTotalPage) {
+            return response()->json([
+                'success' => true,
+                'updated' => false,
+                'id' => $content->id,
+                'total_page' => $content->total_page,
+                'message' => 'Already synchronized.',
+            ]);
+        }
+
+        $content->total_page = $newTotalPage;
+        $content->save();
+
+        return response()->json([
+            'success' => true,
+            'updated' => true,
+            'id' => $content->id,
+            'old_total_page' => $oldTotalPage,
+            'new_total_page' => $content->total_page,
+            'duration' => $content->duration,
+            'learning_hours' => $content->learning_hours,
+            'message' => 'Total page updated successfully.',
+        ]);
     }
 }

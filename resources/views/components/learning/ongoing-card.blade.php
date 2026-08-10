@@ -24,6 +24,8 @@
     'moduleCount' => 0,
     'completedCount' => 0,
     'continueUrl' => null,
+    'learningHours' => null,
+    'learning_hours' => null,
 ])
 
 @php
@@ -58,6 +60,17 @@
         $periodString = 'No Period';
     }
 
+    $rawLearningHours = $learningHours ?? $learning_hours ?? null;
+
+    if (!is_null($rawLearningHours) && $rawLearningHours !== '' && is_numeric($rawLearningHours)) {
+        $lhVal = ((float) $rawLearningHours == (int) $rawLearningHours)
+            ? (int) $rawLearningHours
+            : (float) $rawLearningHours;
+        $learningHourDisplay = $lhVal . ' ' . ($lhVal == 1 ? 'Hour' : 'Hours');
+    } else {
+        $learningHourDisplay = '-';
+    }
+
     if ($isPlaylist) {
         // Card Playlist memakai desain yang sama seperti Video/Document, hanya berbeda konten.
         $typeLabel       = 'Playlist';
@@ -71,7 +84,7 @@
     } else {
         $playlistNames = collect($playlistNames ?? [])->filter()->values();
         $slug = $slug ?? null;
-        $duration = $duration ?? '-';
+        // $duration = $duration ?? '-';
         $type = $type ?? 'Content';
         $program = strtolower($program ?? 'optional');
         $month = $month ?? null;
@@ -153,19 +166,11 @@
             <span class="badge {{ $typeBadgeClass }} shadow-sm">
                 {{ $typeLabel }}
             </span>
-
-            <span class="badge bg-azure-lt text-azure border border-1 border-white">
-                Sedang Berlangsung
-            </span>
         </div>
 
         <div class="position-absolute top-0 end-0 p-3">
             <span class="badge bg-dark text-white bg-opacity-50 shadow-sm">
-                @if ($isPlaylist)
-                    {{ $moduleCount }} Modules
-                @else
-                    {{ $duration }}
-                @endif
+                {{ $duration }}
             </span>
         </div>
     </div>
@@ -189,6 +194,10 @@
             <div class="d-flex align-items-center gap-2">
                 <i class="ti ti-calendar-due flex-shrink-0"></i>
                 <span>Period: {{ $periodString }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="ti ti-clock flex-shrink-0"></i>
+                <span>Learning Hours: {{ $learningHourDisplay }}</span>
             </div>
             @if (!$isPlaylist && isset($deadlineRemaining) && $deadlineRemaining)
                 <div class="d-flex align-items-center gap-2 {{ $deadlineStateClass }}">

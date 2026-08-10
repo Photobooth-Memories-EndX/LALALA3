@@ -76,6 +76,9 @@
 
 @once
 <style>
+.min-w-0 {
+    min-width: 0 !important;
+}
 .compact-dropzone {
     min-height: 48px !important;
     padding: 6px 12px !important;
@@ -177,67 +180,65 @@ body.dark-mode .compact-dropzone .dz-preview {
     <div class="card-body">
         <div class="row g-3">
             {{-- Content File Column --}}
-            <div class="col-md-6 col-12">
+            <div class="col-md-6 col-12 d-flex flex-column">
                 @if ($mode === 'edit' && $hasExistingFile)
-                    <div class="mb-2">
+                    <div class="mb-2 flex-grow-1 d-flex flex-column">
                         <label class="form-label fw-semibold mb-1 text-muted small text-uppercase" style="letter-spacing: 0.04em;">Current Content File</label>
-                        <div class="card card-sm border bg-surface-secondary" style="border-radius: var(--tblr-border-radius, .375rem);">
-                            <div class="card-body p-2 px-3">
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                    <div class="d-flex align-items-center gap-2 overflow-hidden" style="max-width: calc(100% - 150px);">
-                                        <div class="avatar bg-primary-lt text-primary rounded flex-shrink-0" style="width: 34px; height: 34px;">
-                                            @if ($isPdfFile)
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-danger" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
-                                                    <path d="M9 9l1 0" />
-                                                    <path d="M9 13l6 0" />
-                                                    <path d="M9 17l6 0" />
-                                                </svg>
-                                            @else
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                    <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z" />
-                                                    <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" />
-                                                </svg>
+                        <div class="card card-sm border bg-surface-secondary flex-fill" style="border-radius: var(--tblr-border-radius, .375rem);">
+                            <div class="card-body p-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2 h-100">
+                                <div class="d-flex align-items-center gap-2 overflow-hidden flex-fill min-w-0">
+                                    <div class="avatar bg-primary-lt text-primary rounded flex-shrink-0" style="width: 34px; height: 34px;">
+                                        @if ($isPdfFile)
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon text-danger" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+                                                <path d="M9 9l1 0" />
+                                                <path d="M9 13l6 0" />
+                                                <path d="M9 17l6 0" />
+                                            </svg>
+                                        @else
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M15 10l4.553 -2.276a1 1 0 0 1 1.447 .894v6.764a1 1 0 0 1 -1.447 .894l-4.553 -2.276v-4z" />
+                                                <path d="M3 6m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" />
+                                            </svg>
+                                        @endif
+                                    </div>
+                                    <div class="overflow-hidden min-w-0">
+                                        <div class="fw-medium text-reset text-truncate small mb-0" title="{{ $existingFileName }}">
+                                            {{ $existingFileName }}
+                                        </div>
+                                        <div class="text-muted" style="font-size: 11px;">
+                                            <span>{{ $existingFileType }}</span>
+                                            @if ($existingFileSizeFormatted)
+                                                <span class="mx-1">•</span>
+                                                <span>{{ $existingFileSizeFormatted }}</span>
                                             @endif
                                         </div>
-                                        <div class="overflow-hidden">
-                                            <div class="fw-medium text-reset text-truncate small mb-0" title="{{ $existingFileName }}">
-                                                {{ $existingFileName }}
-                                            </div>
-                                            <div class="text-muted" style="font-size: 11px;">
-                                                <span>{{ $existingFileType }}</span>
-                                                @if ($existingFileSizeFormatted)
-                                                    <span class="mx-1">•</span>
-                                                    <span>{{ $existingFileSizeFormatted }}</span>
-                                                @endif
-                                            </div>
-                                        </div>
                                     </div>
-                                    <div class="d-flex align-items-center gap-1 ms-auto">
-                                        <a href="{{ $existingFileUrl }}" class="btn btn-outline-primary btn-sm px-2 py-1" download="{{ $existingFileName }}" target="_blank" title="Download File">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
-                                                <path d="M7 11l5 5l5 -5" />
-                                                <path d="M12 4l0 12" />
-                                            </svg>
-                                            <span class="d-none d-sm-inline ms-1">Download</span>
-                                        </a>
-                                        <a href="#" class="btn btn-outline-danger btn-sm px-2 py-1 btn-remove-content" data-url="{{ route('contentdelete.deletecontentajax', $content->slug) }}" title="Remove File">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                <path d="M4 7l16 0" />
-                                                <path d="M10 11l0 6" />
-                                                <path d="M14 11l0 6" />
-                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
-                                                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
-                                            </svg>
-                                            <span class="d-none d-sm-inline ms-1">Remove</span>
-                                        </a>
-                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 ms-auto flex-shrink-0">
+                                    <a href="{{ $existingFileUrl }}" class="btn btn-outline-primary btn-sm px-2 py-1" download="{{ $existingFileName }}" target="_blank" title="Download File">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                                            <path d="M7 11l5 5l5 -5" />
+                                            <path d="M12 4l0 12" />
+                                        </svg>
+                                        <span class="d-none d-sm-inline ms-1">Download</span>
+                                    </a>
+                                    <a href="#" class="btn btn-outline-danger btn-sm px-2 py-1 btn-remove-content" data-url="{{ route('contentdelete.deletecontentajax', $content->slug) }}" title="Remove File">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M4 7l16 0" />
+                                            <path d="M10 11l0 6" />
+                                            <path d="M14 11l0 6" />
+                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                                        </svg>
+                                        <span class="d-none d-sm-inline ms-1">Remove</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -266,40 +267,49 @@ body.dark-mode .compact-dropzone .dz-preview {
             </div>
 
             {{-- Thumbnail File Column --}}
-            <div class="col-md-6 col-12">
+            <div class="col-md-6 col-12 d-flex flex-column">
                 @if ($mode === 'edit' && $hasExistingThumb)
-                    <div class="mb-2">
+                    <div class="mb-2 flex-grow-1 d-flex flex-column">
                         <label class="form-label fw-semibold mb-1 text-muted small text-uppercase" style="letter-spacing: 0.04em;">Current Thumbnail</label>
-                        <div class="card card-sm border bg-surface-secondary" style="border-radius: var(--tblr-border-radius, .375rem);">
-                            <div class="card-body p-2 px-3">
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                    <div class="d-flex align-items-center gap-2 overflow-hidden" style="max-width: calc(100% - 110px);">
-                                        <div class="avatar rounded border overflow-hidden flex-shrink-0" style="width: 48px; height: 34px; background-size: cover; background-position: center; background-image: url('{{ $existingThumbUrl }}');">
+                        <div class="card card-sm border bg-surface-secondary flex-fill" style="border-radius: var(--tblr-border-radius, .375rem);">
+                            <div class="card-body p-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2 h-100">
+                                <div class="d-flex align-items-center gap-2 overflow-hidden flex-fill min-w-0">
+                                    <div class="avatar rounded border overflow-hidden flex-shrink-0" style="width: 48px; height: 34px; background-size: cover; background-position: center; background-image: url('{{ $existingThumbUrl }}');">
+                                    </div>
+                                    <div class="overflow-hidden min-w-0">
+                                        <div class="fw-medium text-reset text-truncate small mb-0" title="{{ $existingThumbName }}">
+                                            {{ $existingThumbName }}
                                         </div>
-                                        <div class="overflow-hidden">
-                                            <div class="fw-medium text-reset text-truncate small mb-0" title="{{ $existingThumbName }}">
-                                                {{ $existingThumbName }}
-                                            </div>
-                                            <div class="text-muted" style="font-size: 11px;">
-                                                <span>JPEG Image</span>
-                                                @if ($existingThumbSizeFormatted)
-                                                    <span class="mx-1">•</span>
-                                                    <span>{{ $existingThumbSizeFormatted }}</span>
-                                                @endif
-                                            </div>
+                                        <div class="text-muted" style="font-size: 11px;">
+                                            <span>{{ ($existingThumbName === 'YouTube Thumbnail' || (isset($content) && $content->type === 'YouTube')) ? 'YouTube Image' : 'JPEG Image' }}</span>
+                                            @if ($existingThumbSizeFormatted)
+                                                <span class="mx-1">•</span>
+                                                <span>{{ $existingThumbSizeFormatted }}</span>
+                                            @endif
                                         </div>
                                     </div>
-                                    <div class="d-flex align-items-center gap-1 ms-auto">
-                                        <a href="{{ $existingThumbUrl }}" class="btn btn-outline-primary btn-sm px-2 py-1" download="thumbnail.jpg" target="_blank" title="Download Thumbnail">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
-                                                <path d="M7 11l5 5l5 -5" />
-                                                <path d="M12 4l0 12" />
-                                            </svg>
-                                            <span class="d-none d-sm-inline ms-1">Download</span>
-                                        </a>
-                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 ms-auto flex-shrink-0">
+                                    <a href="{{ $existingThumbUrl }}" class="btn btn-outline-primary btn-sm px-2 py-1" download="{{ $existingThumbName ?? 'thumbnail.jpg' }}" target="_blank" title="Download Thumbnail">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                                            <path d="M7 11l5 5l5 -5" />
+                                            <path d="M12 4l0 12" />
+                                        </svg>
+                                        <span class="d-none d-sm-inline ms-1">Download</span>
+                                    </a>
+                                    <a href="#" class="btn btn-outline-danger btn-sm px-2 py-1 btn-remove-thumb" data-url="" title="Remove Thumbnail">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M4 7l16 0" />
+                                            <path d="M10 11l0 6" />
+                                            <path d="M14 11l0 6" />
+                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                                        </svg>
+                                        <span class="d-none d-sm-inline ms-1">Remove</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -332,3 +342,4 @@ body.dark-mode .compact-dropzone .dz-preview {
         </div>
     </div>
 </div>
+

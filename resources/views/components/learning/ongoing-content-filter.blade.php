@@ -48,12 +48,19 @@
         ->filter()
         ->values();
 
-    // Hitung jumlah filter aktif di dalam modal (Type tidak dihitung karena tampil sbg chip).
+    $curLearningHour = request('ongoing_learning_hour', 'all');
+    $curDateFrom     = request('ongoing_date_from', request('ongoing_from_date'));
+    $curDateTo       = request('ongoing_date_to', request('ongoing_to_date'));
+
+    // Hitung jumlah filter aktif di dalam modal.
     $advancedCount = 0;
     $advancedCount += $curProgram !== 'all' ? 1 : 0;
     $advancedCount += $curYear !== 'all' ? 1 : 0;
     $advancedCount += $curActivitySort !== 'newest_activity' ? 1 : 0;
     $advancedCount += $curProgressSort !== 'all' ? 1 : 0;
+    $advancedCount += $curLearningHour !== 'all' ? 1 : 0;
+    $advancedCount += filled($curDateFrom) ? 1 : 0;
+    $advancedCount += filled($curDateTo) ? 1 : 0;
     $advancedCount += count(array_filter($selStatus));
     $advancedCount += count(array_filter($selProg));
     $advancedCount += count(array_filter($selDur));
@@ -385,11 +392,12 @@
                             <div class="learning-filter-group">
                                 <label class="form-label fw-semibold mb-2" for="ongoing_activity_sort">Sort By</label>
                                 <select class="form-select" name="ongoing_activity_sort" id="ongoing_activity_sort">
-                                    <option value="newest_activity" {{ $curActivitySort === 'newest_activity' ? 'selected' : '' }}>All</option>
-                                    <option value="oldest_activity" {{ $curActivitySort === 'oldest_activity' ? 'selected' : '' }}>Oldest</option>
                                     <option value="newest_activity" {{ $curActivitySort === 'newest_activity' ? 'selected' : '' }}>Newest</option>
-                                    <option value="duration_shortest" {{ $curActivitySort === 'duration_shortest' ? 'selected' : '' }}>Ascending</option>
-                                    <option value="duration_longest" {{ $curActivitySort === 'duration_longest' ? 'selected' : '' }}>Descending</option>
+                                    <option value="oldest_activity" {{ $curActivitySort === 'oldest_activity' ? 'selected' : '' }}>Oldest</option>
+                                    <option value="duration_longest" {{ $curActivitySort === 'duration_longest' ? 'selected' : '' }}>Duration Longest</option>
+                                    <option value="duration_shortest" {{ $curActivitySort === 'duration_shortest' ? 'selected' : '' }}>Duration Shortest</option>
+                                    <option value="progress_highest" {{ $curActivitySort === 'progress_highest' ? 'selected' : '' }}>Highest Progress</option>
+                                    <option value="progress_lowest" {{ $curActivitySort === 'progress_lowest' ? 'selected' : '' }}>Lowest Progress</option>
                                 </select>
                             </div>
 

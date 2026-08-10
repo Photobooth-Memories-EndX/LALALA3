@@ -4,6 +4,9 @@
         class="btn btn-sm btn-light owl-dropdown-btn"
         type="button"
         data-toggle="dropdown"
+        data-display="static"
+        data-bs-toggle="dropdown"
+        data-bs-display="static"
         aria-expanded="false">
 
         <i class="fas fa-ellipsis-h"></i>

@@ -18,7 +18,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-auto">
+                <div class="col-auto d-flex gap-2">
+                    <form action="{{ route('learning-hours.sync') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-primary" onclick="return confirm('Synchronize all Learning Hours?')">
+                            <i class="ti ti-refresh me-1"></i>Sync Learning Hours
+                        </button>
+                    </form>
+                    <button type="button" id="btnSyncPdfTotalPage" class="btn btn-outline-primary">
+                        <i class="ti ti-file-description me-1"></i>Sync Total Page PDF
+                    </button>
                     <a href="{{ route('content.create') }}" class="btn btn-primary">
                         <i class="ti ti-plus me-1"></i>Add Content
                     </a>
@@ -39,7 +48,7 @@
                                 <path d="M5 12l5 5l10 -10"></path>
                             </svg>
                         </div>
-                        <div>{{ session('success') }}</div>
+                        <div style="white-space: pre-line;">{{ session('success') }}</div>
                     </div>
                     <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>
@@ -372,12 +381,12 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-1">
-                                                    <a href="{{ route('content.edit', $list->slug) }}"
+                                                    <a href="{{ route('content.edit', $list) }}"
                                                         class="btn btn-sm btn-info owl-action-btn"
                                                         title="Edit">
                                                         <i class="ti ti-edit"></i>
                                                     </a>
-                                                    <form action="{{ route('content.destroy', $list->slug) }}" method="POST" class="d-inline">
+                                                    <form action="{{ route('content.destroy', $list) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit"
@@ -447,4 +456,26 @@ body.theme-dark .card {
     background: var(--tblr-bg-surface, #1f2937);
 }
 </style>
+@endsection
+
+@section('script')
+    <script src="{{ asset('js/pdf.min.js') }}"></script>
+    <script>
+        var pdfjsLib = window["pdfjs-dist/build/pdf"];
+        if (pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
+        }
+    </script>
+    <script src="{{ asset('js/sync-content-document-total-page.js') }}?v={{ filemtime(public_path('js/sync-content-document-total-page.js')) }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            new SyncContentDocumentTotalPage({
+                buttonId: 'btnSyncPdfTotalPage',
+                fetchListUrl: "{{ route('content.document-pdf-list') }}",
+                syncUrl: "{{ route('content.sync-total-page') }}",
+                csrfToken: "{{ csrf_token() }}",
+                workerSrc: "{{ asset('js/pdf.worker.min.js') }}"
+            });
+        });
+    </script>
 @endsection

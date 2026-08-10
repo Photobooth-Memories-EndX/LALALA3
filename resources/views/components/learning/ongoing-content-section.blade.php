@@ -66,6 +66,7 @@
                                 :active="$list->active ?? '-'"
                                 :status-label="$statusLabel"
                                 :thumbnail="$thumbnail"
+                                :learning-hours="$content->learning_hours ?? null"
                             />
                         </div>
                     @endif

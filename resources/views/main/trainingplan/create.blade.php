@@ -50,14 +50,48 @@
 
                                 <div class="mb-3">
                                     <label for="title" class="form-label required">Title</label>
-                                    <input type="text" class="form-control" placeholder="Enter playlist title"
-                                        name="title" id="title" required>
+                                    <input type="text" class="form-control @error('title') is-invalid @enderror" placeholder="Enter playlist title"
+                                        name="title" id="title" value="{{ old('title') }}" required>
+                                    @error('title')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                <div>
+                                <div class="mb-3">
                                     <label for="url-link" class="form-label">URL Link</label>
-                                    <input type="text" name="url_link" id="url-link" class="form-control"
-                                        placeholder="https://...">
+                                    <input type="text" name="url_link" id="url-link" class="form-control @error('url_link') is-invalid @enderror"
+                                        placeholder="https://..." value="{{ old('url_link') }}">
                                     <small class="form-hint">Optional. An external link related to this playlist.</small>
+                                    @error('url_link')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="total_duration" class="form-label">Playlist Total Duration (HH:MM:SS)</label>
+                                    <input type="text"
+                                        class="form-control @error('total_duration') is-invalid @enderror"
+                                        id="total_duration"
+                                        name="total_duration"
+                                        placeholder="00:00:00"
+                                        value="{{ old('total_duration', '00:00:00') }}">
+                                    <small class="form-hint">Format: HH:MM:SS (contoh: 02:30:00). Dapat diisi manual.</small>
+                                    @error('total_duration')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
+                                    <label for="learning_hours" class="form-label">Learning Hours</label>
+                                    <input type="text"
+                                        class="form-control @error('learning_hours') is-invalid @enderror"
+                                        id="learning_hours"
+                                        name="learning_hours"
+                                        placeholder="0"
+                                        value="{{ old('learning_hours', 0) }}">
+                                    <small class="form-hint">Learning Hours dapat diisi manual.</small>
+                                    <div class="invalid-feedback" id="learning_hours_error" style="{{ $errors->has('learning_hours') ? 'display:block;' : '' }}">
+                                        @error('learning_hours')
+                                            {{ $message }}
+                                        @enderror
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -321,5 +355,82 @@
                 }
             });
         })();
+    </script>
+    <script>
+        (function () {
+            var $input = $('#learning_hours');
+            var $form = $('#trainingPlanForm');
+
+            function isValidLearningHours(val) {
+                if (val === '' || val === null || val === undefined) return false;
+                var num = parseFloat(val);
+                if (isNaN(num)) return false;
+                if (num < 0) return false;
+                if (num === 0) return true;
+
+                var timesTwo = Math.round(num * 10000) / 10000 * 2;
+                return Math.abs(timesTwo - Math.round(timesTwo)) < 0.0001;
+            }
+
+            function validateInput() {
+                var val = $input.val();
+                var $errorDiv = $('#learning_hours_error');
+
+                if (!isValidLearningHours(val)) {
+                    $input.addClass('is-invalid');
+                    if ($errorDiv.length) {
+                        $errorDiv.html('Learning Hours must be 0 or in increments of 0.5.<br><small class="text-muted">Examples: 0, 0.5, 1, 1.5, 2, 2.5</small>').show();
+                    }
+                    return false;
+                } else {
+                    $input.removeClass('is-invalid');
+                    if ($errorDiv.length) {
+                        $errorDiv.empty().hide();
+                    }
+                    return true;
+                }
+            }
+
+            $input.on('input change blur', function () {
+                validateInput();
+            });
+
+            if ($form.length) {
+                $form.on('submit', function (e) {
+                    if (!validateInput()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        $input.focus();
+                        return false;
+                    }
+                });
+            }
+        })();
+
+        $(document).ready(function() {
+            function showToast(message, type) {
+                let bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+                let icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+
+                let toastHtml = `
+                    <div class="toast owl-toast ${bgClass} text-white align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-body d-flex align-items-center justify-content-between p-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas ${icon} me-2 fs-4"></i>
+                                <span>${message}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if ($('#owl-toast-wrapper').length === 0) {
+                    $('body').append('<div id="owl-toast-wrapper" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; width: 320px;"></div>');
+                }
+
+                let $toast = $(toastHtml);
+                $('#owl-toast-wrapper').append($toast);
+                $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
+            }
+        });
     </script>
 @endpush

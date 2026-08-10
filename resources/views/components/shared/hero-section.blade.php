@@ -31,8 +31,10 @@
 
     $completedSlicePath = $donutSlicePolygon(0, $completedPercent);
     $ongoingSlicePath = $donutSlicePolygon($completedPercent, 100);
-    $defaultHeroImage = asset('img/owl-dashboard.png');
-    $heroImage = filled($user?->hero_background)
+    $defaultHeroImage = asset('uploads/template/exhero-1600-320.png');
+    $hasCustomHero = filled($user?->hero_background)
+        && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->hero_background);
+    $heroImage = $hasCustomHero
         ? asset('storage/' . $user->hero_background)
         : $defaultHeroImage;
 @endphp
@@ -42,15 +44,18 @@
 <div class="shared-learning-hero {{ !empty($compactSummary) ? 'shared-learning-hero--compact-summary' : '' }} mb-4"
      data-hero-background
      data-hero-width="1600"
-     data-hero-height="600"
+     data-hero-height="320"
      data-background-url="{{ $heroImage }}"
+     data-default-background-url="{{ $defaultHeroImage }}"
+     data-has-custom="{{ $hasCustomHero ? 'true' : 'false' }}"
      style="--hero-bg-image: url('{{ $heroImage }}');">
     <div class="shared-hero-toolbar">
         <form action="{{ route('home.user.hero-background.update') }}"
               method="POST"
               enctype="multipart/form-data"
               class="shared-hero-upload-form js-hero-background-form"
-              id="heroBackgroundForm">
+              id="heroBackgroundForm"
+              data-remove-url="{{ route('home.user.hero-background.remove') }}">
             @csrf
             <label class="shared-hero-upload js-hero-background-trigger"
                    for="heroBackgroundInput"
@@ -72,6 +77,14 @@
                     data-hero-tooltip>
                 <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                 <span class="visually-hidden">Saving...</span>
+            </button>
+            <button type="button"
+                    class="shared-hero-remove {{ $hasCustomHero ? '' : 'd-none' }} js-hero-background-remove"
+                    title="Reset to Default Background"
+                    aria-label="Reset to Default Background"
+                    data-hero-tooltip>
+                <i class="ti ti-trash" aria-hidden="true"></i>
+                <span class="visually-hidden">Reset to Default Background</span>
             </button>
         </form>
     </div>

@@ -75,7 +75,6 @@
                                         <i class="ti ti-download me-1"></i>
                                         Download Certificate
                                     </a>
-                                ------------------------------------------------------------
                                 @else
                                     <form method="POST" action="{{ route('certificate.generate.setting', $setting) }}">
                                         @csrf

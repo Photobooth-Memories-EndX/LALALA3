@@ -37,7 +37,7 @@
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
         ['label' => 'No',             'width' => '4%'],
-        ['label' => 'Class',          'width' => '23%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Course',        'width' => '23%', 'sort' => 'title',          'type' => 'text'],
         ['label' => 'Type',           'width' => '9%',  'sort' => 'type',           'type' => 'text'],
         ['label' => 'Classification', 'width' => '10%', 'sort' => 'classification', 'type' => 'text'],
         ['label' => 'Duration',       'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
@@ -49,342 +49,236 @@
     ];
 @endphp
 
+<style>
+/* Classification Badges */
+.learning-classification-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.15 !important;
+    padding: 6px 12px !important;
+    min-height: 28px !important;
+    max-width: 140px !important;
+    border-radius: 999px !important;
+    vertical-align: middle !important;
+    font-weight: 500 !important;
+}
+
+/* Certificate Action Buttons */
+.btn-learning-certificate,
+.btn-learning-certificate-disabled {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    font-size: 1.1rem !important;
+    box-sizing: border-box !important;
+}
+.btn-learning-certificate-disabled {
+    background-color: #d1d5db !important;
+    border: 1px solid #bfc6cf !important;
+    color: #4b5563 !important;
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important;
+    box-shadow: none !important;
+}
+.btn-learning-certificate-disabled:hover,
+.btn-learning-certificate-disabled:focus,
+.btn-learning-certificate-disabled:active {
+    background-color: #d1d5db !important;
+    border-color: #bfc6cf !important;
+    color: #4b5563 !important;
+    box-shadow: none !important;
+}
+
+/* Assessment Score Badges */
+.learning-score-empty-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 32px !important;
+    height: 22px !important;
+    padding: 0 10px !important;
+    border-radius: 999px !important;
+    background: #eef1f4 !important;
+    border: 1px solid #d6dce3 !important;
+    color: #7b8794 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+}
+.learning-score-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 32px !important;
+    height: 22px !important;
+    padding: 0 10px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+}
+
+/* Filter Toolbar & Modal */
+.record-filter-section {
+    border-color: #f1f3f5 !important;
+}
+.record-filter-section .form-label {
+    letter-spacing: 0.5px;
+    font-size: 0.725rem;
+}
+.record-filter-action-btn {
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    font-size: 1.1rem !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+.record-filter-action-btn i {
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+    color: inherit !important;
+}
+
+/* Polished More Filter Modal Dialog (Matching Learning Ongoing Reference) */
+.record-filter-modal {
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    overflow: hidden;
+}
+.record-filter-modal .modal-header {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #f0f2f5 !important;
+    padding: 1.25rem 2rem !important;
+}
+.record-filter-modal .modal-title {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+}
+.record-filter-modal .modal-body {
+    max-height: 72vh;
+    overflow-y: auto;
+    padding: 1.5rem 2rem !important;
+    background-color: #ffffff !important;
+}
+
+/* Custom Smooth Scrollbar for Modal Body */
+.record-filter-modal .modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+.record-filter-modal .modal-body::-webkit-scrollbar-track {
+    background: #f8fafc;
+    border-radius: 999px;
+}
+.record-filter-modal .modal-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+.record-filter-modal .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Modal Divider Sections (Matching Learning Ongoing Reference Image) */
+.record-filter-divider-section {
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid #f0f2f5;
+}
+.record-filter-section-title {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    color: #475569 !important;
+    margin-bottom: 0.85rem !important;
+}
+.record-filter-sublabel {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Form Check / Input Customization inside Modal */
+.record-filter-divider-section .form-check {
+    margin-bottom: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    margin-right: 1.5rem !important;
+}
+.record-filter-divider-section .form-check-label {
+    font-size: 0.875rem !important;
+    color: #334155 !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+.record-filter-divider-section .form-check-input {
+    cursor: pointer !important;
+    width: 1.05rem !important;
+    height: 1.05rem !important;
+    margin-top: 0 !important;
+}
+
+/* Sort By Full Width Select */
+.record-filter-select {
+    width: 100% !important;
+    border-radius: 8px !important;
+    border: 1px solid #d1d5db !important;
+    padding: 0.5rem 0.85rem !important;
+    font-size: 0.875rem !important;
+    color: #334155 !important;
+    background-color: #ffffff !important;
+    height: 42px !important;
+}
+.record-filter-select:focus {
+    border-color: #206bc4 !important;
+    box-shadow: 0 0 0 3px rgba(32, 107, 196, 0.15) !important;
+}
+
+/* Modal Footer Buttons */
+.record-filter-modal-footer {
+    background-color: #ffffff !important;
+    border-top: 1px solid #f0f2f5 !important;
+    padding: 1rem 2rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+.record-filter-modal-footer .btn {
+    min-height: 40px !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.25rem !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+}
+</style>
+
         <div class="card border-0 shadow-sm rounded-4 learning-record-card">
             <div class="card-body p-4 border-bottom">
-        <div class="record-filter-shell" id="recordFilterBar">
-            {{-- <div>
-                <h3 class="card-title mb-1">Learning Record</h3>
-                <div class="text-muted small">
-                    Completed playlists, contents, and certificate status.
-                </div>
-
-        </div> --}}
-
-        {{-- ── Toolbar filter (client-side — tanpa AJAX, tanpa reload halaman) ── --}}
-            <div class="record-fast-filter-section mt-3">
-                <label class="form-label small text-muted mb-2 learning-fast-filter-label">Fast Filter</label>
-
-                <div class="fast-filter-toolbar">
-                    <div class="learning-quick-dropdowns learning-fast-filter">
-                    {{-- Dropdown Type --}}
-                    <div class="dropdown">
-                        <button type="button"
-                                class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterType !== 'all' ? 'active' : '' }}"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            Type: <span class="fw-semibold">{{ $typeOptions[$filterType] ?? 'All' }}</span>
-                        </button>
-
-                        <div class="dropdown-menu">
-                            @foreach ($typeOptions as $value => $label)
-                                <a href="#"
-                                   class="dropdown-item record-quick-item {{ $filterType === $value ? 'active' : '' }}"
-                                   data-param="record_filter_type"
-                                   data-value="{{ $value }}">
-                                    {{ $label }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    {{-- Dropdown Classification --}}
-                    <div class="dropdown">
-                        <button type="button"
-                                class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterClassification !== 'all' ? 'active' : '' }}"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            Classification:
-                            <span class="fw-semibold">
-                                {{ $filterClassification === 'all' ? 'All' : $filterClassification }}
-                            </span>
-                        </button>
-
-                        <div class="dropdown-menu learning-quick-dropdown-scroll">
-                            <a href="#"
-                               class="dropdown-item record-quick-item {{ $filterClassification === 'all' ? 'active' : '' }}"
-                               data-param="record_filter_classification"
-                               data-value="all">
-                                All Classification
-                            </a>
-
-                            @foreach ($classifications as $classification)
-                                <a href="#"
-                                   class="dropdown-item record-quick-item {{ (string) $filterClassification === (string) $classification ? 'active' : '' }}"
-                                   data-param="record_filter_classification"
-                                   data-value="{{ e($classification) }}">
-                                    {{ $classification }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    {{-- Dropdown Year --}}
-                    <div class="dropdown">
-                        <button type="button"
-                                class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterYear !== 'all' ? 'active' : '' }}"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            Year:
-                            <span class="fw-semibold">
-                                {{ $filterYear === 'all' ? 'All' : $filterYear }}
-                            </span>
-                        </button>
-
-                        <div class="dropdown-menu">
-                            <a href="#"
-                               class="dropdown-item record-quick-item {{ $filterYear === 'all' ? 'active' : '' }}"
-                               data-param="record_filter_year"
-                               data-value="all">
-                                All
-                            </a>
-
-                            @foreach ($years as $year)
-                                <a href="#"
-                                   class="dropdown-item record-quick-item {{ (string) $filterYear === (string) $year ? 'active' : '' }}"
-                                   data-param="record_filter_year"
-                                   data-value="{{ $year }}">
-                                    {{ $year }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    {{-- Dropdown Month --}}
-                    <div class="dropdown">
-                        <button type="button"
-                                class="btn btn-filter-chip learning-fast-filter-control dropdown-toggle {{ $filterMonth !== 'all' ? 'active' : '' }}"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            Month:
-                            <span class="fw-semibold">
-                                {{ $filterMonth === 'all' ? 'All' : ($months[(int) $filterMonth] ?? 'All') }}
-                            </span>
-                        </button>
-
-                        <div class="dropdown-menu learning-quick-dropdown-scroll">
-                            <a href="#"
-                               class="dropdown-item record-quick-item {{ $filterMonth === 'all' ? 'active' : '' }}"
-                               data-param="record_filter_month"
-                               data-value="all">
-                                All
-                            </a>
-
-                            @foreach ($months as $num => $name)
-                                <a href="#"
-                                   class="dropdown-item record-quick-item {{ (string) $filterMonth === (string) $num ? 'active' : '' }}"
-                                   data-param="record_filter_month"
-                                   data-value="{{ $num }}">
-                                    {{ $name }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                    </div>
-
-                    <div class="record-toolbar-search">
-                        <label class="visually-hidden" for="recordSearch">Search learning records</label>
-                        <div class="input-icon">
-                            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                            <input type="text" class="form-control" id="recordSearch"
-                                   placeholder="Search class, playlist or classification..." autocomplete="off">
-                        </div>
-                    </div>
-
-                    <div class="record-filter-actions">
-                    {{-- TOMBOL DOWNLOAD EXCEL --}}
-                    <a href="{{ route('user.learning.record.export') }}"
-                       data-export-url="{{ route('user.learning.record.export') }}"
-                       class="btn btn-outline-success btn-learning-success record-filter-action-btn"
-                       id="recordDownloadExcel"
-                       title="Download Excel"
-                       aria-label="Download Excel">
-                        <i class="ti ti-download"></i>
-                    </a>
-                    {{-- TOMBOL MORE FILTERS --}}
-                    <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn" id="recordMoreFiltersToggle"
-                            data-toggle="modal" data-target="#recordMoreFiltersModal"
-                            aria-controls="recordMoreFiltersModal"
-                            title="More Filters"
-                            aria-label="More Filters">
-                        <i class="ti ti-adjustments-horizontal"></i>
-                        <span class="badge bg-primary text-white d-none" id="recordMoreFiltersCount"></span>
-                    </button>
-                    <button type="button" class="btn btn-primary btn-learning-primary record-apply-filter record-filter-action-btn"
-                            title="Apply Filter"
-                            aria-label="Apply Filter">
-                        <i class="ti ti-search"></i>
-                    </button>
-                    <button type="button" class="btn btn-outline-primary btn-learning-outline record-clear-filter record-filter-action-btn"
-                            title="Reset Filter"
-                            aria-label="Reset Filter">
-                        <i class="ti ti-refresh"></i>
-                    </button>
-                    </div>
-                </div>
+                <x-learning.record-filter :filter-options="$filterOptions" />
             </div>
-
-            {{-- Hidden inputs untuk menjaga state form saat disubmit jika menggunakan form tradisional --}}
-            <input type="hidden" name="record_filter_type" id="hidden_record_filter_type" value="{{ $filterType }}">
-            <input type="hidden" name="record_filter_classification" id="hidden_record_filter_classification" value="{{ $filterClassification }}">
-            <input type="hidden" name="record_filter_year" id="hidden_record_filter_year" value="{{ $filterYear }}">
-            <input type="hidden" name="record_filter_month" id="hidden_record_filter_month" value="{{ $filterMonth }}">
-
-            {{-- Panel More Filters — seluruh filter lanjutan lama dipindah ke sini
-                 (tidak dihapus). Tersembunyi default, dibuka slideDown (learning-record.js). --}}
-            <div class="modal fade" id="recordMoreFiltersModal" tabindex="-1" role="dialog" aria-labelledby="recordMoreFiltersTitle" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-                    <div class="modal-content record-filter-modal">
-                        <div class="modal-header">
-                            <div>
-                                <h5 class="modal-title mb-0" id="recordMoreFiltersTitle">More Filters</h5>
-                                <div class="text-muted small">Refine the visible Learning Record rows.</div>
-                            </div>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body record-more-filters" id="recordMoreFilters">
-                {{-- data-record-mode: filter hanya relevan untuk mode tsb — mode lain
-                     menyembunyikannya dan me-reset nilainya (learning-record.js). --}}
-                <div class="record-filter-sections">
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Type</div>
-                        @foreach (['all' => 'All', 'Document' => 'Document', 'Video' => 'Video', 'Playlist' => 'Playlist'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input record-modal-checkbox" type="checkbox" name="recordModalType[]" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Learning Program</div>
-                        @foreach (['all' => 'All Learning', 'mandatory' => 'Mandatory Learning', 'optional' => 'Optional Learning'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalProgram" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Year</div>
-                        <label class="form-check">
-                            <input class="form-check-input" type="radio" name="recordModalYear" value="all" data-record-modal-filter checked>
-                            <span class="form-check-label">All</span>
-                        </label>
-                        @foreach ($years as $year)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalYear" value="{{ $year }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $year }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    {{-- <div class="record-filter-section">
-                        <div class="record-filter-title">Activity Sort</div>
-                        @foreach (['newest' => 'Newest Activity', 'oldest' => 'Oldest Activity', 'recent' => 'Recently Accessed', 'longest' => 'Longest Duration', 'shortest' => 'Shortest Duration'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalActivitySort" value="{{ $value }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div> --}}
-{{-- 
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Completion Status</div>
-                        @foreach (['all' => 'All Progress', 'highest' => 'Highest Progress', 'lowest' => 'Lowest Progress', 'not_started' => 'Not Started', 'in_progress' => 'In Progress', 'almost_done' => 'Almost Done', 'completed' => 'Completed'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalCompletion" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div> --}}
-
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Learning Status</div>
-                        @foreach (['not_started' => 'Not Started', 'ongoing' => 'Ongoing', 'paused' => 'Paused', 'completed' => 'Completed'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="checkbox" name="recordModalLearningStatus[]" value="{{ $value }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    {{-- <div class="record-filter-section">
-                        <div class="record-filter-title">Progress</div>
-                        @foreach (['0' => '0%', '1-25' => '1-25%', '26-50' => '26-50%', '51-75' => '51-75%', '76-99' => '76-99%', '100' => '100%'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="checkbox" name="recordModalProgress[]" value="{{ $value }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div> --}}
-
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Month</div>
-                        @foreach ($months as $num => $name)
-                            <label class="form-check">
-                                <input class="form-check-input" type="checkbox" name="recordModalMonth[]" value="{{ $num }}" data-record-modal-filter>
-                                <span class="form-check-label">{{ $name }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Duration</div>
-                        @foreach (['all' => 'All', '0-1800' => '00:00:00 - 00:30:00', '1801-3600' => '00:30:01 - 01:00:00', '3601-5400' => '01:00:01 - 01:30:00', '5401-7200' => '01:30:01 - 02:00:00', 'gt7200' => '> 02:00:00'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalDuration" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Learning Hour</div>
-                        @foreach (['all' => 'All', '0.5' => '0.5 Hour', '1' => '1 Hour', '1.5' => '1.5 Hours', '2' => '2 Hours', '2.5' => '2.5 Hours', '3' => '3 Hours', 'gt3' => '> 3 Hours'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalLearningHour" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Score Test</div>
-                        @foreach (['all' => 'All', 'none' => 'No Assessment', 'lt60' => '< 60', '60-79' => '60 - 79', '80-100' => '80 - 100'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalScoreTest" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    <div class="record-filter-section">
-                        <div class="record-filter-title">Certificate</div>
-                        @foreach (['all' => 'All', 'ready' => 'Ready', 'none' => 'Not Ready'] as $value => $label)
-                            <label class="form-check">
-                                <input class="form-check-input" type="radio" name="recordModalCertificate" value="{{ $value }}" data-record-modal-filter {{ $value === 'all' ? 'checked' : '' }}>
-                                <span class="form-check-label">{{ $label }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </div>
-
-                        </div>
-                        <div class="modal-footer record-filter-modal-footer">
-                    <button type="button" class="btn btn-outline-secondary btn-learning-outline" id="recordClearFilter">
-                        <i class="ti ti-refresh"></i><span>Reset</span>
-                    </button>
-                    <button type="button" class="btn btn-primary btn-learning-primary" id="recordApplyFilter">
-                        <i class="ti ti-search"></i><span>Apply Filter</span>
-                    </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="card-body p-0">

@@ -209,6 +209,7 @@
         min-width: 220px;
         border-radius: 14px;
         padding: .5rem;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .15);
     }
 
     .owl-dropdown-menu .dropdown-item {

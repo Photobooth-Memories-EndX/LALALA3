@@ -21,7 +21,7 @@
         this.documentReady = false;
         this.modeTransitionTimer = null;
         this.pageTimingEnabled = Boolean(this.config.pageTimingEnabled);
-        this.pageDuration = Math.max(1, parseInt(this.config.pageDuration, 10) || 15);
+        this.pageDuration = Math.max(1, parseInt(this.config.pageDuration, 10) || 30);
         this.completedPages = Math.max(0, parseInt(this.config.completedPages, 10) || 0);
         this.contentCompleted = Boolean(this.config.contentCompleted);
         this.totalPages = 0;

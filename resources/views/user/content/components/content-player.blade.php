@@ -57,7 +57,7 @@
                         'toolbarClass' => 'owl-pdf-toolbar',
                         'showReadingMode' => true,
                         'showPageTiming' => $content->type === 'Document',
-                        'pageDuration' => (int) ($content->page_duration ?: 15),
+                        'pageDuration' => (int) ($content->page_duration ?: 30),
                     ])
 
                     {{-- PDF VIEWER --}}

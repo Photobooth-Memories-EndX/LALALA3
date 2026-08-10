@@ -18,7 +18,7 @@ class CompletedPlaylistService
     public function forUser(int $userId): Collection
     {
         return TrainingPlan::query()
-            ->select('trainingplan.id', 'trainingplan.title', 'trainingplan.slug', 'trainingplan.thumbnail', 'trainingplan.total_duration_seconds')
+            ->select('trainingplan.id', 'trainingplan.title', 'trainingplan.slug', 'trainingplan.thumbnail', 'trainingplan.total_duration_seconds', 'trainingplan.learning_hours')
             ->whereExists(function ($q) use ($userId) {
                 $q->from('trainingplandetail')
                     ->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')
