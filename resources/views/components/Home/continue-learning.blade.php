@@ -2,7 +2,7 @@
 
     <div class="home-modern-card-header">
         <h2 class="home-modern-section-title">Continue Learning</h2>
-        <a href="{{ url('/my-learning') }}" class="home-modern-view-all">
+        <a href="{{ url('/my-learning') }}" class="home-modern-view-all view-all-link text-primary dark:text-white font-medium">
             View All <i class="ti ti-arrow-right ms-1"></i>
         </a>
     </div>

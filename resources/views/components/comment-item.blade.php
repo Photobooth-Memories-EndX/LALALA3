@@ -55,9 +55,14 @@
                 Reply
             </button>
 
-            @if(auth()->check() && (auth()->id() === $item->user_id || (method_exists(auth()->user(), 'isAdmin') && auth()->user()->isAdmin()) || auth()->user()->role === 'admin' || (int) auth()->user()->role === \App\Models\User::ROLE_ADMIN))
+            @if(auth()->check() && (
+                auth()->id() === $item->user_id || 
+                in_array(auth()->user()->role_, [2, 3]) ||
+                in_array((int) auth()->user()->role, [2, 3])
+            ))
                 <button type="button"
-                        class="btn btn-link p-0 comment-action text-danger text-decoration-none border-0 bg-transparent comment-delete-btn"
+                        class="btn btn-link text-danger p-0 ms-2 comment-action text-decoration-none border-0 bg-transparent comment-delete-btn btn-delete-comment"
+                        data-id="{{ $item->id }}"
                         data-comment-id="{{ $item->id }}"
                         data-url="{{ route('comments.destroy', $item->id) }}">
                     Delete

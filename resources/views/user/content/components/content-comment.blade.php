@@ -1,5 +1,5 @@
 @php
-    $commentTotal = method_exists($comment, 'total') ? $comment->total() : $comment->count();
+    $commentTotal = $totalCommentCount ?? $content->total_comments_count ?? (optional($content)->relationLoaded('allComments') ? $content->allComments->count() : (method_exists($content, 'allComments') ? $content->allComments()->count() : (method_exists($comment, 'total') ? $comment->total() : $comment->count())));
 @endphp
 
 <div class="modal fade content-comment-modal" id="contentCommentModal" tabindex="-1"
@@ -9,7 +9,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="contentCommentModalLabel">
                     <i class="ti ti-message-circle me-2"></i>
-                    {{ $commentTotal }} Comments
+                    <span class="content-comment-total-count">{{ $commentTotal }}</span> Comments
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

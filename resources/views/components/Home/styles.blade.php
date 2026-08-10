@@ -727,7 +727,8 @@ body.dark-mode .home-modern-text-primary {
    UPCOMING DEADLINES
 ===================================================== */
 
-.home-modern-deadline-row {
+.home-modern-deadline-row,
+.home-modern-deadline-row-static {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -739,19 +740,21 @@ body.dark-mode .home-modern-text-primary {
     margin-bottom: 10px;
     text-decoration: none;
     color: #53565A;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0);
-    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+    cursor: default !important;
 }
 
-.home-modern-deadline-row:last-child {
+.home-modern-deadline-row:last-child,
+.home-modern-deadline-row-static:last-child {
     margin-bottom: 0;
 }
 
-.home-modern-deadline-row:hover {
-    border-color: #b8daf0;
-    background: var(--kp-light-blue-soft);
+.home-modern-deadline-row:hover,
+.home-modern-deadline-row-static:hover {
+    border-color: #f1f5f9;
+    background: #f8fafc;
     color: #53565A;
-    box-shadow: 0 6px 16px rgba(var(--kp-primary-rgb), .08);
+    box-shadow: none;
+    cursor: default !important;
 }
 
 .home-modern-deadline-left {
@@ -1043,16 +1046,32 @@ body.dark-mode .home-modern-text-primary {
 [data-bs-theme="dark"] .home-modern-module-sub  { color: #7894a5; }
 [data-bs-theme="dark"] .home-modern-module-arrow { color: #376f90; }
 
+/* Home Header Title & Subtitle */
+[data-bs-theme="dark"] .home-header-title,
+[data-bs-theme="dark"] .home-header-subtitle {
+    color: #ffffff !important;
+}
+
+/* View All Links */
+[data-bs-theme="dark"] .view-all-link,
+[data-bs-theme="dark"] .home-modern-view-all {
+    color: #ffffff !important;
+}
+
 /* Deadlines */
-[data-bs-theme="dark"] .home-modern-deadline-row {
+[data-bs-theme="dark"] .home-modern-deadline-row,
+[data-bs-theme="dark"] .home-modern-deadline-row-static {
     background: var(--kp-dark-surface-raised);
     border-color: rgba(255,255,255,.07);
     color: #e2e8f0;
+    cursor: default !important;
 }
-[data-bs-theme="dark"] .home-modern-deadline-row:hover {
-    background: #0d4668;
-    border-color: rgba(var(--kp-light-blue-rgb),.25);
+[data-bs-theme="dark"] .home-modern-deadline-row:hover,
+[data-bs-theme="dark"] .home-modern-deadline-row-static:hover {
+    background: var(--kp-dark-surface-raised);
+    border-color: rgba(255,255,255,.07);
     color: #e2e8f0;
+    cursor: default !important;
 }
 [data-bs-theme="dark"] .home-modern-deadline-title { color: #f1f5f9; }
 [data-bs-theme="dark"] .home-modern-deadline-meta  { color: #8A8D8F; }
@@ -1608,14 +1627,16 @@ body.dark-mode .home-modern-text-primary {
     line-height: 1.2;
 }
 
-.home-modern-db-subtitle {
+.home-modern-db-subtitle,
+.home-header-subtitle {
     font-size: 14px;
-    color: #8A8D8F;
+    color: #212529 !important;
     margin: 0;
 }
 
 [data-bs-theme="dark"] .home-modern-db-title    { color: #f1f5f9; }
-[data-bs-theme="dark"] .home-modern-db-subtitle { color: #94a3b8; }
+[data-bs-theme="dark"] .home-modern-db-subtitle,
+[data-bs-theme="dark"] .home-header-subtitle { color: #ffffff !important; }
 
 .home-modern-mobile-header .home-modern-card {
     background: #ffffff;

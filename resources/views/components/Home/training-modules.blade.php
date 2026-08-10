@@ -40,7 +40,7 @@
 
                 <div class="d-flex justify-content-end mb-2">
                     <a href="{{ url('/content') }}?s=&classification=&type=Video&month=&year=&author=&deadline_from_date=&deadline_to_date=&created_from_date=&created_to_date=&deadline_status=all&sort=newest_course&view_order=&duration=all"
-                       class="home-modern-view-all">
+                       class="home-modern-view-all view-all-link text-primary dark:text-white font-medium">
                         View All <i class="ti ti-arrow-right ms-1"></i>
                     </a>
                 </div>
@@ -106,7 +106,7 @@
 
                 <div class="d-flex justify-content-end mb-2">
                     <a href="{{ url('/content') }}?s=&classification=&type=Document&month=&year=&author=&deadline_from_date=&deadline_to_date=&created_from_date=&created_to_date=&deadline_status=all&sort=newest_course&view_order=&duration=all"
-                       class="home-modern-view-all">
+                       class="home-modern-view-all view-all-link text-primary dark:text-white font-medium">
                         View All <i class="ti ti-arrow-right ms-1"></i>
                     </a>
                 </div>
@@ -162,7 +162,7 @@
 
                 <div class="d-flex justify-content-end mb-2">
                     <a href="{{ route('playlist.user.index') }}"
-                       class="home-modern-view-all">
+                       class="home-modern-view-all view-all-link text-primary dark:text-white font-medium">
                         View All <i class="ti ti-arrow-right ms-1"></i>
                     </a>
                 </div>

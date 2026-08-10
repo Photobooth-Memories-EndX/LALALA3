@@ -2,7 +2,7 @@
 
     <div class="home-modern-card-header">
         <h2 class="home-modern-section-title">Latest News</h2>
-        <a href="{{ route('news.user.index') }}" class="home-modern-view-all">
+        <a href="{{ route('news.user.index') }}" class="home-modern-view-all view-all-link text-primary dark:text-white font-medium">
             All <i class="ti ti-arrow-right ms-1"></i>
         </a>
     </div>

@@ -56,9 +56,23 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-    'email_verified_at' => 'datetime',
-    'role' => 'integer',
+        'email_verified_at' => 'datetime',
+        'role' => 'integer',
     ];
+
+    public function getRoleUnderscoreAttribute()
+    {
+        return (int) ($this->attributes['role'] ?? $this->attributes['role_'] ?? $this->role ?? 1);
+    }
+
+    public function __get($key)
+    {
+        if ($key === 'role_') {
+            return (int) ($this->attributes['role'] ?? $this->attributes['role_'] ?? $this->role ?? 1);
+        }
+
+        return parent::__get($key);
+    }
 
     public function isAdmin()
     {

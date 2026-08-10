@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use App\Models\ContentUser;
+use App\Models\Comment;
 use App\Services\PlaylistDurationService;
 
 class Content extends Model
@@ -74,6 +75,25 @@ class Content extends Model
     public function bookmarkContents()
     {
         return $this->hasMany(BookmarkContent::class);
+    }
+
+    public function allComments()
+    {
+        return $this->hasMany(Comment::class, 'content_id')->where('type', 'content');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'content_id')->where('type', 'content')->whereNull('parent_id');
+    }
+
+    public function getTotalCommentsCountAttribute(): int
+    {
+        if ($this->relationLoaded('allComments')) {
+            return $this->allComments->count();
+        }
+
+        return $this->allComments()->count();
     }
 
     public function isExpired(): bool

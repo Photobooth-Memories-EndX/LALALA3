@@ -34,4 +34,18 @@ class EventPhoto extends Model
     {
         return $this->hasMany(Comment::class, 'eventphoto_id', 'id');
     }
+
+    public function allComments()
+    {
+        return $this->hasMany(Comment::class, 'eventphoto_id', 'id');
+    }
+
+    public function getTotalCommentsCountAttribute(): int
+    {
+        if ($this->relationLoaded('allComments')) {
+            return $this->allComments->count();
+        }
+
+        return $this->allComments()->count();
+    }
 }

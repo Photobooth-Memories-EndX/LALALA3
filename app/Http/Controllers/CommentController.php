@@ -308,11 +308,14 @@ class CommentController extends Controller
             }
 
             $isOwner = (int) $user->id === (int) $comment->user_id;
-            $isAdmin = (method_exists($user, 'isAdmin') && $user->isAdmin())
-                || $user->role === 'admin'
-                || (int) $user->role === \App\Models\User::ROLE_ADMIN;
+            $userRole = (int) ($user->role_ ?? $user->role ?? 0);
+            $canDelete = $isOwner
+                || in_array($userRole, [2, 3], true)
+                || (method_exists($user, 'isAdmin') && $user->isAdmin())
+                || (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
+                || in_array((int) $user->role, [\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_SUPER_ADMIN], true);
 
-            if (!$isOwner && !$isAdmin) {
+            if (!$canDelete) {
                 if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
                     return response()->json(['message' => 'Unauthorized action.'], 403);
                 }

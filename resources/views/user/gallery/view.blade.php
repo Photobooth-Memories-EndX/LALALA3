@@ -6,7 +6,7 @@
     $eventDate = $eventphoto->eventdate
         ? date('d M Y', strtotime($eventphoto->eventdate))
         : 'Date unavailable';
-    $commentTotal = method_exists($comment, 'total') ? $comment->total() : (is_countable($comment) ? count($comment) : 0);
+    $commentTotal = $eventphoto->comments_count ?? $eventphoto->total_comments_count ?? (optional($eventphoto)->relationLoaded('allComments') ? $eventphoto->allComments->count() : (method_exists($eventphoto, 'allComments') ? $eventphoto->allComments()->count() : (method_exists($comment, 'total') ? $comment->total() : count($comment))));
 @endphp
 
 @section('content')
@@ -36,7 +36,7 @@
                         {{ $eventphoto->title ?: 'Untitled Gallery' }}
                     </h1>
 
-                    <div class="d-flex flex-wrap gap-3 align-items-center text-white-75 mt-3">
+                    <div class="d-flex align-items-center flex-wrap gap-3 text-white opacity-90 small mb-2 mt-3">
                         <span class="d-inline-flex align-items-center">
                             <i class="ti ti-calendar me-1"></i>{{ $eventDate }}
                         </span>
@@ -52,12 +52,12 @@
                             </span>
                         @endif
                         <button type="button" 
-                                class="btn btn-sm bg-white text-primary rounded-pill px-3 py-1.5 fw-medium d-inline-flex align-items-center gap-1 shadow-sm border-0 ms-auto" 
+                                class="btn btn-sm bg-white text-primary rounded-pill px-3 py-1 fw-medium d-inline-flex align-items-center gap-1 shadow-sm border-0" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#modal-gallery-comments"
                                 style="color: #0d6efd !important; background-color: #ffffff !important;">
-                            <i class="ti ti-message-circle fs-6"></i>
-                            <span>{{ $commentTotal }} Comments</span>
+                            <i class="ti ti-message-dots fs-6"></i>
+                            <span><span class="gallery-comment-total-count">{{ $commentTotal }}</span> Comments</span>
                         </button>
                     </div>
                 </div>
@@ -108,7 +108,7 @@
                 <div class="modal-header border-bottom">
                     <h5 class="modal-title fw-bold" id="modalGalleryCommentsLabel">
                         <i class="ti ti-message-circle me-2 text-primary"></i>
-                        {{ $commentTotal }} Comments
+                        <span class="gallery-comment-total-count">{{ $commentTotal }}</span> Comments
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

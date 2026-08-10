@@ -49,11 +49,8 @@
                     </h2>
 
                     @if (in_array($content->type, ['Document', 'SOP/Regulation']))
-                        <div class="text-muted small mb-1">
-                            <i class="ti ti-book-2 me-1"></i>
-                            <span class="pages-read-text">
-                                {{ $readPages }}/{{ $totalPages }} pages read
-                            </span>
+                        <div class="text-nowrap small text-muted d-inline-block mb-1">
+                            <i class="ti ti-book-2 me-1"></i><span class="pages-read-text">{{ $readPages }}/{{ $totalPages }} pages read</span>
                         </div>
                     @endif
                 </div>
@@ -196,36 +193,7 @@
                 @endif
             </div>
 
-            <div class="row g-2">
-                <div class="col-6">
-                    <div class="sidebar-stat-card">
-                        <div class="text-muted small">Views</div>
-                        <div class="fw-bold fs-3">{{ number_format($content->views ?? 0) }}</div>
-                    </div>
-                </div>
-
-                <div class="col-6">
-                    <button type="button" class="sidebar-stat-card w-100 text-start border-0"
-                            data-bs-toggle="modal" data-bs-target="#contentCommentModal">
-                        <div class="text-muted small">Comments</div>
-                        <div class="fw-bold fs-3">{{ number_format($discussionCount) }}</div>
-                    </button>
-                </div>
-
-                <div class="col-6">
-                    <div class="sidebar-stat-card">
-                        <div class="text-muted small">Favorite</div>
-                        <div class="fw-bold fs-3">{{ number_format($favoritesCount) }}</div>
-                    </div>
-                </div>
-
-                <div class="col-6">
-                    <div class="sidebar-stat-card">
-                        <div class="text-muted small">Type</div>
-                        <div class="fw-bold fs-3 text-truncate">{{ \App\Support\ContentTypeHelper::label($content->type) }}</div>
-                    </div>
-                </div>
-            </div>
+            @include('user.content.components.content-stats')
 
         </div>
     </div>

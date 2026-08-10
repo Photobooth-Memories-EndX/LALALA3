@@ -51,8 +51,9 @@
 
                     <!-- 3. Meta Stats Bawah Judul -->
                     <div class="d-flex align-items-center gap-2 text-muted small mb-4">
-                        <button type="button" class="btn btn-link text-muted p-0 text-decoration-none d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modal-news-comments">
-                            <i class="ti ti-message-dots me-1"></i> <span class="news-comment-total-count">{{ $commentTotal }}</span> Comments
+                        <button type="button" class="btn btn-link text-muted p-0 text-decoration-none d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modal-news-comments">
+                            <i class="ti ti-message-dots"></i>
+                            <span><span class="news-comment-total-count">{{ $commentTotal }}</span> Comments</span>
                         </button>
                         <span>•</span>
                         <span><i class="ti ti-eye me-1"></i> {{ number_format($news->views ?? 0) }} Views</span>

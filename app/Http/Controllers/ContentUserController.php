@@ -313,10 +313,9 @@ class ContentUserController extends Controller
             ->latest()
             ->paginate(5)->appends(request()->query());
 
-        $discussionCount = Comment::query()
-            ->where('type', 'content')
-            ->where('content_id', $content->id)
-            ->count();
+        $content->loadCount('allComments');
+        $totalCommentCount = $content->all_comments_count ?? $content->total_comments_count;
+        $discussionCount = $totalCommentCount;
 
         $bookmarkCount = $content->bookmarkedByUsers()->count();
         $isBookmarked = auth()->user()->bookmarkedContents()
@@ -331,6 +330,7 @@ class ContentUserController extends Controller
             'comment',
             'content_user',
             'discussionCount',
+            'totalCommentCount',
             'bookmarkCount',
             'isBookmarked'
         ));

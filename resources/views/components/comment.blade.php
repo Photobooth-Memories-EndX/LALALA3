@@ -777,6 +777,10 @@
                     ? findFreshRoot(response, $root)
                     : $();
 
+                if (response && typeof response.total_comments === 'number') {
+                    $('.content-comment-total-count, .news-comment-total-count, .gallery-comment-total-count, .comment-count-num, [data-comment-total]').text(response.total_comments);
+                }
+
                 if (freshRoot.length) {
                     replaceRoot($root, response, state);
                     $root.attr('data-comment-refresh-url', responseUrl);
@@ -836,7 +840,7 @@
                 }
             }
 
-            $root.find('.comment-count-num').each(function () {
+            $('.content-comment-total-count, .news-comment-total-count, .gallery-comment-total-count, .comment-count-num, [data-comment-total]').each(function () {
                 var count = parseInt($(this).text(), 10);
                 if (!isNaN(count) && count > 0) {
                     $(this).text(count - 1);
@@ -904,8 +908,11 @@
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 }
-            }).done(function () {
+            }).done(function (res) {
                 removeCommentFromDom($root, commentId);
+                if (res && typeof res.total_comments === 'number') {
+                    $('.content-comment-total-count, .news-comment-total-count, .gallery-comment-total-count, .comment-count-num, [data-comment-total]').text(res.total_comments);
+                }
                 showDeleteToast('Comment deleted successfully.');
             }).fail(function (xhr) {
                 if (xhr.status === 404) {

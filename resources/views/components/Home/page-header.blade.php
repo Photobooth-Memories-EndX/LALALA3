@@ -65,8 +65,8 @@
 {{-- Desktop Header (>= 768px) --}}
 <div class="home-modern-db-header d-none d-md-flex">
     <div>
-        <h1 class="home-modern-db-title" style="color: #0b2545 !important;">{{ $heroPageTitle }}</h1>
-        <p class="home-modern-db-subtitle" style="color: #0b2545 !important;">{{ $heroPageSubtitle }}</p>
+        <h1 class="fw-bold home-modern-db-title home-header-title text-dark dark:text-white mb-1">{{ $heroPageTitle }}</h1>
+        <p class="fw-medium home-modern-db-subtitle home-header-subtitle text-dark dark:text-white-50">{{ $heroPageSubtitle }}</p>
     </div>
     <button type="button"
             class="home-modern-assessment-btn bg-[#ff5700] hover:bg-[#e04d00] text-white font-semibold rounded-lg shadow-md shadow-orange-500/40"

@@ -16,7 +16,7 @@ class ContentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Content::query()->with('classification');
+        $query = Content::query()->with('classification')->withCount('allComments');
         $today = Carbon::today();
         $todayDate = $today->toDateString();
         $sevenDaysFromToday = $today->copy()->addDays(7)->toDateString();

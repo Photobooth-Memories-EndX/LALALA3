@@ -45,7 +45,7 @@
 
                 <span class="content-detail-meta">
                     <i class="ti ti-message-circle me-1"></i>
-                    {{ $comment->count() }} Comments
+                    <span class="content-comment-total-count">{{ $totalCommentCount ?? $content->total_comments_count ?? (optional($content)->relationLoaded('allComments') ? $content->allComments->count() : (method_exists($content, 'allComments') ? $content->allComments()->count() : (method_exists($comment, 'total') ? $comment->total() : $comment->count()))) }}</span> Comments
                 </span>
 
                 @if($content->duration)

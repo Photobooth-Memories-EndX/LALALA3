@@ -16,7 +16,7 @@ class GalleryUserController extends Controller
     {
         $filters = $this->normalizedFilters($request->validated());
         $query = EventPhoto::query()
-            ->withCount('comments')
+            ->withCount(['allComments as comments_count'])
             ->where('active', 'Active');
 
         $this->applyFilters($query, $filters);
@@ -79,6 +79,7 @@ class GalleryUserController extends Controller
     {
         $eventphoto = EventPhoto::where('active', 'Active')
             ->where('slug', $slug)
+            ->withCount(['allComments as comments_count'])
             ->firstOrFail();
 
         EventPhoto::whereKey($eventphoto->id)->update([

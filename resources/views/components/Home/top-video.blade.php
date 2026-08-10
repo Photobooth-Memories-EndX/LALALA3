@@ -4,7 +4,7 @@
         <h2 class="home-modern-section-title">
             <i class="ti ti-crown me-2 home-modern-text-primary"></i>Top Video Learning
         </h2>
-        <a href="{{ route('content.user.index') }}" class="home-modern-view-all">
+        <a href="{{ route('content.user.index') }}" class="home-modern-view-all view-all-link text-primary dark:text-white font-medium">
             View All <i class="ti ti-arrow-right ms-1"></i>
         </a>
     </div>

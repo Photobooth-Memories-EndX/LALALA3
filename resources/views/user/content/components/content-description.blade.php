@@ -1,5 +1,5 @@
 @php
-    $commentTotal = method_exists($comment, 'total') ? $comment->total() : $comment->count();
+    $commentTotal = $totalCommentCount ?? $content->total_comments_count ?? (optional($content)->relationLoaded('allComments') ? $content->allComments->count() : (method_exists($content, 'allComments') ? $content->allComments()->count() : (method_exists($comment, 'total') ? $comment->total() : $comment->count())));
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 mb-3 view-content-info-card">
@@ -12,7 +12,7 @@
                     created by {{ $content->author ?? '-' }}
                 </div>
 
-                <h2 class="mb-2 fs-2 fw-bold">
+                <h2 class="mb-2 fs-2 fw-bold text-dark">
                     {{ $content->title }}
                 </h2>
 
@@ -22,7 +22,7 @@
                             data-bs-toggle="modal"
                             data-bs-target="#contentCommentModal">
                         <i class="far fa-comment-dots me-1"></i>
-                        {{ $commentTotal }} Comments
+                        <span class="content-comment-total-count">{{ $commentTotal }}</span> Comments
                     </button>
                     <span class="overview-meta-separator">&bull;</span>
                     <span>
@@ -40,20 +40,9 @@
             </button>
         </div>
 
-        <div class="chapter-description-box mb-0">
-            <h4 class="fs-6 fw-bold mb-2">Overview</h4>
-
-            <div class="overview-text is-collapsed text-muted" id="contentOverviewText">
-                {!! nl2br($content->description) !!}
-            </div>
-
-            <button type="button"
-                    class="btn btn-link px-0 py-1 mt-2 overview-toggle"
-                    data-overview-target="#contentOverviewText"
-                    data-read-more="Read More"
-                    data-read-less="Read Less">
-                Read More
-            </button>
+        <div class="rounded-4 p-4 p-md-5" style="background-color: #f8fafc; border: 1px solid #f1f5f9;">
+            <div class="text-muted small fw-bold mb-3">Overview</div>
+            <div class="text-dark lh-lg fs-5" style="color: #212529 !important; font-size: 1.05rem !important;">{!! $content->description !!}</div>
         </div>
 
     </div>

@@ -30,7 +30,7 @@
 
                 <span class="badge bg-blue-lt text-blue">
                     <i class="ti ti-chart-bar me-1" aria-hidden="true"></i>
-                    {{ number_format($displayLearningProgress, 0) }}%
+                    100%
                 </span>
             </div>
         </div>

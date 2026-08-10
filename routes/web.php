@@ -168,6 +168,7 @@ Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
         Route::post('/{slug}/autosave', [AssesmentUserController::class, 'autosave'])->name('assesment.user.autosave');
     });
 });
+Route::get('/assessment-hub', [AssesmentUserController::class, 'index'])->middleware('auth')->name('assessment.index');
 
 /*
 |--------------------------------------------------------------------------

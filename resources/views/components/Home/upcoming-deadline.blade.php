@@ -1,9 +1,9 @@
 <div class="home-modern-card">
 
     <div class="home-modern-card-header">
-        <h2 class="home-modern-section-title">Upcoming Deadlines</h2>
-        <a href="{{ url('/my-learning?learning_tab=assessment') }}" class="home-modern-view-all">
-            View All <i class="ti ti-arrow-right ms-1"></i>
+        <h2 class="home-modern-section-title">Upcoming Deadline Assessment</h2>
+        <a href="{{ url('/my-learning?learning_tab=assessment') }}" class="home-modern-view-all view-all-link text-primary dark:text-white font-medium">
+            View All &rarr;
         </a>
     </div>
 
@@ -68,8 +68,7 @@
                 }
             @endphp
 
-            <a href="{{ route('assesment.user.view', $deadline->slug) }}"
-               class="home-modern-deadline-row">
+            <div class="home-modern-deadline-row home-modern-deadline-row-static">
 
                 <div class="home-modern-deadline-left">
 
@@ -101,9 +100,7 @@
 
                 </div>
 
-                <i class="ti ti-chevron-right home-modern-module-arrow"></i>
-
-            </a>
+            </div>
 
         @empty
 

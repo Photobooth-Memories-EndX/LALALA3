@@ -86,9 +86,9 @@
             ].filter(Boolean).length;
 
             const hasActiveFilters = activeModalCount > 0 ||
-                $('#playlistStatusFilter').val() !== 'all' ||
-                $('#playlistMonthFilter').val() !== 'all' ||
-                $('#playlistYearFilter').val() !== 'all' ||
+                (($('#playlistStatusFilter').val() || '') !== '' && $('#playlistStatusFilter').val() !== 'all') ||
+                (($('#playlistMonthFilter').val() || '') !== '' && $('#playlistMonthFilter').val() !== 'all') ||
+                (($('#playlistYearFilter').val() || '') !== '' && $('#playlistYearFilter').val() !== 'all') ||
                 Boolean(($('#playlistSearch').val() || '').trim());
 
             $('#playlistMoreFiltersCount')
@@ -128,9 +128,9 @@
                 const content = $item.find('.playlist-content-list').text().toLowerCase();
 
                 const matchesKeyword = !keyword || title.includes(keyword) || content.includes(keyword);
-                const matchesStatus = status === 'all' || itemFilters.status === status;
-                const matchesMonth = month === 'all' || String(itemFilters.month) === month;
-                const matchesYear = year === 'all' || String(itemFilters.year) === year;
+                const matchesStatus = !status || status === 'all' || itemFilters.status === status;
+                const matchesMonth = !month || month === 'all' || String(itemFilters.month) === month;
+                const matchesYear = !year || year === 'all' || String(itemFilters.year) === year;
 
                 // Author
                 const matchesAuthor = !author || (itemFilters.authors || []).includes(author);
@@ -174,7 +174,7 @@
                 }
 
                 // Classification
-                const matchesClassification = classification === 'all' ||
+                const matchesClassification = !classification || classification === 'all' ||
                     (itemFilters.classifications || []).includes(classification);
 
                 $item.toggle(
@@ -246,10 +246,12 @@
 
         function resetAllFilters() {
             $('#playlistSearch').val('');
-            $('#playlistStatusFilter, #playlistMonthFilter, #playlistYearFilter').val('all');
+            $('#playlistStatusFilter, #playlistMonthFilter, #playlistYearFilter').val('');
             $('#playlistFilterAuthor, #playlistFilterDeadlineFromDate, #playlistFilterDeadlineToDate, #playlistFilterCreatedFromDate, #playlistFilterCreatedToDate').val('').attr('type', 'text');
             $('#playlistFilterSort').val('all');
-            $('#playlistClassificationFilter').val('all');
+            if ($('#playlistClassificationFilter').length) {
+                $('#playlistClassificationFilter').val('all');
+            }
             $('input[name="playlist_view_order"][value=""]').prop('checked', true);
             $('input[name="playlist_duration"][value="all"]').prop('checked', true);
             $('input[name="playlist_learning_hour"][value="all"]').prop('checked', true);
