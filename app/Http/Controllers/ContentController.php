@@ -262,7 +262,16 @@ class ContentController extends Controller
                     $fail('The duration format must be HH:MM:SS or mm:ss.');
                 }
             }],
-            'learning_hours' => ['nullable'],
+            'learning_hours' => [
+                'required',
+                'numeric',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    if (fmod((float) $value * 2, 1.0) !== 0.0) {
+                        $fail('Learning Hours must be in increments of 0.5.');
+                    }
+                },
+            ],
         ]);
 
         if ($request->type == "YouTube") {
@@ -278,7 +287,7 @@ class ContentController extends Controller
         $duration = $documentTotalPages > 0
             ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
             : DurationFormatter::normalize($request->duration);
-        $learningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convert($duration);
+        $learningHours = (float) $request->input('learning_hours');
         $newcontent = new Content([
             'title'            => $request->title,
             'type'             => $request->type,
