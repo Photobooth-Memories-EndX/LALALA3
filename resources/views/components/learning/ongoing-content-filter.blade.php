@@ -31,9 +31,9 @@
     $quickStatusOptions = [
         'all'         => 'All',
         'not_started' => 'Not Started',
-        'ongoing'     => 'Sedang Berlangsung',
+        'ongoing'     => 'On Going',
         'completed'   => 'Completed',
-        'paused'      => 'Paused',
+        // 'paused'      => 'Paused',
     ];
     $curQuickStatus = (string) request('ongoing_quick_status', 'all');
     if (! array_key_exists($curQuickStatus, $quickStatusOptions)) {

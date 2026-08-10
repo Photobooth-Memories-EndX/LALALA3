@@ -24,6 +24,19 @@
         );
 @endphp
 
+<div class="page-header d-print-none mb-3">
+    <div class="container-xl">
+        <div class="mb-2">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+                <i class="ti ti-arrow-left me-1" aria-hidden="true"></i>
+                Back
+            </a>
+        </div>
+        <h2 class="page-title mb-1">Certificate</h2>
+        <div class="text-muted small">Certificate details and credential information</div>
+    </div>
+</div>
+
 <div class="page-body">
     <div class="container-xl">
 
@@ -213,133 +226,72 @@
                     <div class="text-center mt-4">
 
                         @if($isDebugCertificatePreview)
-                            <span class="debug-disabled-action mx-1 mb-2"
-                                  tabindex="0"
-                                  role="button"
-                                  data-debug-disabled-action
-                                  data-tooltip="Disabled in Debug Preview.">
-                                <button type="button" class="btn btn-primary" disabled aria-disabled="true">
-                                    <i class="ti ti-file-type-pdf mr-1"></i>
-                                    Download PDF
-                                </button>
-                            </span>
-                            <span class="debug-disabled-action mx-1 mb-2"
-                                  tabindex="0"
-                                  role="button"
-                                  data-debug-disabled-action
-                                  data-tooltip="Disabled in Debug Preview.">
-                                <button type="button" class="btn btn-success" disabled aria-disabled="true">
-                                    <i class="ti ti-file-type-html mr-1"></i>
-                                    Download HTML
-                                </button>
-                            </span>
-                            <span class="debug-disabled-action mx-1 mb-2"
-                                  tabindex="0"
-                                  role="button"
-                                  data-debug-disabled-action
-                                  data-tooltip="Disabled in Debug Preview.">
-                                <button type="button" class="btn btn-warning" disabled aria-disabled="true">
-                                    <i class="ti ti-shield-check mr-1"></i>
-                                    Verify
-                                </button>
-                            </span>
-                            <span class="debug-disabled-action mx-1 mb-2"
-                                  tabindex="0"
-                                  role="button"
-                                  data-debug-disabled-action
-                                  data-tooltip="Disabled in Debug Preview.">
-                                <button type="button" class="btn btn-secondary" disabled aria-disabled="true">
-                                    <i class="ti ti-link-off mr-1"></i>
-                                    Credential URL
-                                </button>
-                            </span>
-                            <span class="debug-disabled-action mx-1 mb-2"
-                                  tabindex="0"
-                                  role="button"
-                                  data-debug-disabled-action
-                                  data-tooltip="Disabled in Debug Preview.">
-                                <button type="button" class="btn btn-info" disabled aria-disabled="true">
-                                    <i class="ti ti-share mr-1"></i>
-                                    Share
-                                </button>
-                            </span>
-                            <span class="debug-disabled-action mx-1 mb-2"
-                                  tabindex="0"
-                                  role="button"
-                                  data-debug-disabled-action
-                                  data-tooltip="Disabled in Debug Preview.">
-                                <button type="button" class="btn btn-info" disabled aria-disabled="true">
-                                    <i class="ti ti-brand-linkedin mr-1"></i>
-                                    LinkedIn
-                                </button>
-                            </span>
-                            @if($hasCustomTemplate)
-                                <span class="debug-disabled-action mx-1 mb-2"
+                            <div class="certificate-actions-group d-flex flex-column flex-sm-row align-items-center justify-content-center gap-2 gap-sm-3">
+                                <span class="debug-disabled-action"
                                       tabindex="0"
                                       role="button"
                                       data-debug-disabled-action
                                       data-tooltip="Disabled in Debug Preview.">
-                                    <button type="button" class="btn btn-outline-primary" disabled aria-disabled="true">
-                                        <i class="ti ti-certificate mr-1"></i>
-                                        Custom Certificate
+                                    <button type="button" class="btn btn-primary btn-certificate-action" disabled aria-disabled="true">
+                                        <i class="ti ti-file-type-pdf me-2" aria-hidden="true"></i>
+                                        Download PDF
                                     </button>
                                 </span>
-                            @endif
-                            <div class="small text-muted mt-2">
+                                @if($hasCustomTemplate)
+                                    <span class="debug-disabled-action"
+                                          tabindex="0"
+                                          role="button"
+                                          data-debug-disabled-action
+                                          data-tooltip="Disabled in Debug Preview.">
+                                        <button type="button" class="btn btn-outline-primary btn-certificate-action" disabled aria-disabled="true">
+                                            <i class="ti ti-certificate me-2" aria-hidden="true"></i>
+                                            Download Custom Certificate
+                                        </button>
+                                    </span>
+                                @endif
+                                <span class="debug-disabled-action"
+                                      tabindex="0"
+                                      role="button"
+                                      data-debug-disabled-action
+                                      data-tooltip="Disabled in Debug Preview.">
+                                    <button type="button" class="btn btn-certificate-action btn-certificate-linkedin" disabled aria-disabled="true">
+                                        <i class="ti ti-brand-linkedin me-2" aria-hidden="true"></i>
+                                        Add to LinkedIn
+                                    </button>
+                                </span>
+                            </div>
+                            <div class="small text-muted mt-3">
                                 Production actions are disabled because this preview has no certificate record or credential.
                             </div>
                         @else
-                            {{-- PDF --}}
-                            <a href="{{ route('certificate.download.pdf', $certificate->credential_id) }}"
-                               class="btn btn-primary mx-1 mb-2">
-
-                                <i class="ti ti-file-type-pdf mr-1"></i>
-                                Download PDF
-
-                            </a>
-
-                            {{-- HTML --}}
-                            <a href="{{ route('certificate.download', $certificate->credential_id) }}"
-                               class="btn btn-success mx-1 mb-2">
-
-                                <i class="ti ti-file-type-html mr-1"></i>
-                                Download HTML
-
-                            </a>
-
-                            {{-- Verify --}}
-                            <a href="{{ route('certificate.verify', $certificate->credential_id) }}"
-                               target="_blank"
-                               class="btn btn-warning mx-1 mb-2">
-
-                                <i class="ti ti-shield-check mr-1"></i>
-                                Verify
-
-                            </a>
-
-                            {{-- Custom Certificate --}}
-                            @if($hasCustomTemplate)
-                                <a href="{{ route('certificate.download.custom', $certificate->credential_id) }}"
-                                   class="btn btn-outline-primary mx-1 mb-2">
-                                    <i class="ti ti-certificate mr-1"></i>
-                                    Download Custom Certificate
-                                </a>
-                            @endif
-
-                            {{-- LinkedIn --}}
-                            @if(!empty($certificate->linkedin_url))
-
-                                <a href="{{ $certificate->linkedin_url }}"
-                                   target="_blank"
-                                   rel="noopener"
-                                   class="btn btn-info mx-1 mb-2">
-
-                                    <i class="ti ti-brand-linkedin mr-1"></i>
-                                    Add To LinkedIn
-
+                            <div class="certificate-actions-group d-flex flex-column flex-sm-row align-items-center justify-content-center gap-2 gap-sm-3">
+                                {{-- PDF --}}
+                                <a href="{{ route('certificate.download.pdf', $certificate->credential_id) }}"
+                                   class="btn btn-primary btn-certificate-action">
+                                    <i class="ti ti-file-type-pdf me-2" aria-hidden="true"></i>
+                                    Download PDF
                                 </a>
 
-                            @endif
+                                {{-- Custom Certificate --}}
+                                @if($hasCustomTemplate)
+                                    <a href="{{ route('certificate.download.custom', $certificate->credential_id) }}"
+                                       class="btn btn-outline-primary btn-certificate-action">
+                                        <i class="ti ti-certificate me-2" aria-hidden="true"></i>
+                                        Download Custom Certificate
+                                    </a>
+                                @endif
+
+                                {{-- LinkedIn --}}
+                                @if(!empty($certificate->linkedin_url))
+                                    <a href="{{ $certificate->linkedin_url }}"
+                                       target="_blank"
+                                       rel="noopener"
+                                       class="btn btn-certificate-action btn-certificate-linkedin">
+                                        <i class="ti ti-brand-linkedin me-2" aria-hidden="true"></i>
+                                        Add to LinkedIn
+                                    </a>
+                                @endif
+                            </div>
                         @endif
 
                     </div>
@@ -435,6 +387,84 @@
         .debug-disabled-action.is-tooltip-visible::after {
             opacity: 1;
             transform: translate(-50%, 0);
+        }
+
+        .certificate-actions-group {
+            margin-top: 1.5rem;
+        }
+
+        .btn-certificate-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.625rem 1.375rem;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            line-height: 1.4;
+            border-radius: 6px;
+            min-height: 42px;
+            transition: all 0.2s ease-in-out;
+            text-decoration: none !important;
+        }
+
+        .btn-certificate-action .ti {
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+
+        .btn-certificate-action.btn-primary:hover,
+        .btn-certificate-action.btn-primary:focus {
+            box-shadow: 0 4px 12px rgba(32, 107, 196, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn-certificate-action.btn-primary:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .btn-certificate-linkedin {
+            background-color: #f4f7fa;
+            border: 1px solid #0a66c2;
+            color: #0a66c2;
+        }
+
+        .btn-certificate-linkedin:hover,
+        .btn-certificate-linkedin:focus {
+            background-color: #0a66c2;
+            border-color: #0a66c2;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(10, 102, 194, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-certificate-linkedin:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .btn-certificate-linkedin.disabled,
+        .btn-certificate-linkedin:disabled {
+            background-color: #f4f7fa;
+            border-color: #cbd5e1;
+            color: #94a3b8;
+            box-shadow: none;
+            transform: none;
+        }
+
+        @media (max-width: 575.98px) {
+            .certificate-actions-group {
+                width: 100%;
+            }
+
+            .certificate-actions-group > .btn-certificate-action,
+            .certificate-actions-group > .debug-disabled-action {
+                width: 100%;
+            }
+
+            .debug-disabled-action > .btn-certificate-action {
+                width: 100%;
+            }
         }
     </style>
 @endsection
