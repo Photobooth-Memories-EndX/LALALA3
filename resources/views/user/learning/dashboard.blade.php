@@ -29,12 +29,8 @@
                 class="{{ $initialLearningTab === 'ongoing' ? '' : 'd-none' }}"
                  aria-hidden="{{ $initialLearningTab === 'ongoing' ? 'false' : 'true' }}">
                 <x-shared.hero-learning-ongoing
-                    :stats="[
-                        ['label' => 'Total Learning', 'value' => number_format($totalLearning)],
-                        ['label' => 'Completed', 'value' => number_format($completedLearning)],
-                        ['label' => 'On Going', 'value' => number_format($ongoingLearning)],
-                        ['label' => 'Learning Hours', 'value' => number_format($learningHours ?? 0, 1)],
-                    ]"
+                    :mode="request('ongoing_mode', 'content')"
+                    :count="0"
                 />
             </div>
 

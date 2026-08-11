@@ -556,3 +556,20 @@ body.dark .playlist-card-placeholder-text {
         min-width: 96px;
     }
 }
+
+/* Playlist PDF Reader Orientation & Sizing Utilities */
+.playlist-pdfviewer {
+    width: 100%;
+    min-width: 0;
+}
+
+.playlist-pdfviewer.is-landscape,
+.playlist-pdfviewer.owl-pdf-mode-landscape {
+    max-width: 100%;
+}
+
+.playlist-pdfviewer .owl-pdf-viewer {
+    width: 100%;
+    min-width: 0;
+}
+

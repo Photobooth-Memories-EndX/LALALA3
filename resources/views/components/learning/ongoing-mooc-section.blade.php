@@ -1,3 +1,10 @@
+<template data-learning-ongoing-hero>
+    <x-shared.hero-learning-ongoing
+        mode="mooc"
+        :count="0"
+    />
+</template>
+
 <section class="learning-section-wrapper mooc-section-wrapper">
     <div class="learning-section-padding py-4 px-2 px-md-3 learning-dashboard-container">
         <div class="card border-0 shadow-sm rounded-4 mb-4 learning-filter-card ongoing-filter-card">

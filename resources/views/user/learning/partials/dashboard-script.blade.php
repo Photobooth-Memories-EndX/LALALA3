@@ -41,6 +41,18 @@
             .attr('aria-hidden', 'false');
     }
 
+    function syncLearningOngoingHero() {
+        var template = document.querySelector(
+            '#learning-tab-content template[data-learning-ongoing-hero]'
+        );
+        var heroRegion = document.querySelector('[data-learning-hero="ongoing"]');
+
+        if (!template || !heroRegion) return;
+
+        heroRegion.replaceChildren(template.content.cloneNode(true));
+        template.remove();
+    }
+
     function syncLearningAssessmentHero() {
         var template = document.querySelector(
             '#learning-tab-content template[data-learning-assessment-hero]'
@@ -108,6 +120,7 @@
         })
         .then(function (html) {
             $('#learning-tab-content').html(html);
+            syncLearningOngoingHero();
             syncLearningAssessmentHero();
             initLearningAssessment();
             initLearningCertificate();

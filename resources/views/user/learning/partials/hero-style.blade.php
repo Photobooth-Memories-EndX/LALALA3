@@ -60,7 +60,7 @@
 
     /* 3. Theme Variants: variables only */
     .learning-module-hero--ongoing {
-        --hero-panel-transform: translateX(calc(-1 * var(--learning-stat-space-2)));
+        --hero-panel-transform: none;
         --hero-blue: linear-gradient(135deg, rgba(5, 80, 125, .82), rgba(30, 64, 175, .55));
     }
 
@@ -548,6 +548,57 @@
     .learning-hero-ds-value--large {
         font-size: 32px;
         font-size: clamp(28px, 22cqw, 32px);
+    }
+
+    /* 11.1 Ongoing Symmetrical Statistic Card */
+    .learning-hero-ongoing-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+        height: 100%;
+        padding: 10px 14px;
+        gap: 4px;
+        box-sizing: border-box;
+    }
+
+    .learning-hero-ongoing-title {
+        display: block;
+        width: 100%;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: clamp(11px, 0.85vw, 13px);
+        font-weight: 600;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+    }
+
+    .learning-hero-ongoing-mode {
+        display: block;
+        width: 100%;
+        color: #ffffff;
+        font-size: clamp(13px, 1.1vw, 16px);
+        font-weight: 700;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        opacity: 0.95;
+        margin: 0;
+    }
+
+    .learning-hero-ongoing-value {
+        display: block;
+        width: 100%;
+        color: #ffffff;
+        font-size: clamp(34px, 4.5cqw, 48px);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+        margin-top: 2px;
     }
 
     /* 12. Responsive */

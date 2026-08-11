@@ -194,7 +194,7 @@
                 };
 
                 playlistPdfViewer.loadDocument(pdfFile).then(function() {
-                    playlistPdfViewer.setZoom('width');
+                    playlistPdfReader.scheduleAutoFit(true);
                 });
             }
         @endif

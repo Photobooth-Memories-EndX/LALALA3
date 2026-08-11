@@ -184,14 +184,24 @@
     border-radius: 0 0 1rem 1rem;
 }
 
-.owl-pdf-mode-portrait {
+.owl-pdf-mode-portrait,
+.owl-pdf-reader.is-portrait,
+.owl-pdf-reader.owl-pdf-is-portrait {
     --owl-pdf-viewport-max: 836px;
     --owl-pdf-stage-padding: clamp(18px, 4vw, 56px);
 }
 
-.owl-pdf-mode-landscape {
-    --owl-pdf-viewport-max: 1180px;
+.owl-pdf-mode-landscape,
+.owl-pdf-reader.is-landscape,
+.owl-pdf-reader.owl-pdf-is-landscape {
+    --owl-pdf-viewport-max: 100%;
     --owl-pdf-stage-padding: clamp(12px, 2.5vw, 36px);
+}
+
+.owl-pdf-mode-landscape .owl-pdf-viewer,
+.owl-pdf-reader.is-landscape .owl-pdf-viewer,
+.owl-pdf-reader.owl-pdf-is-landscape .owl-pdf-viewer {
+    height: clamp(520px, 72vh, 800px);
 }
 
 .owl-pdf-reader-stage {
@@ -220,6 +230,8 @@
 .owl-pdf-viewer .pdfpage {
     display: none;
     background: #ffffff;
+    margin: 12px auto;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
 }
 
 .owl-pdf-viewer .pdfpage.owl-pdf-page-active {

@@ -319,13 +319,33 @@
 
     /* Playlist sidebar */
     .view-playlist-card {
-        max-height: calc(100vh - 110px);
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 2rem);
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .view-playlist-card > .card-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .view-playlist-card > .card-body > div:not(.playlist-scroll-area) {
+        flex: 0 0 auto;
     }
 
     .playlist-scroll-area {
-        max-height: 640px;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
         overflow-y: auto;
+        overflow-x: hidden;
         padding-right: 4px;
+        scrollbar-width: thin;
     }
 
     .playlist-scroll-area::-webkit-scrollbar {
@@ -690,7 +710,7 @@
     .learning-left-panel,
     .learning-right-panel {
         min-width: 0;
-        overflow: hidden;
+        align-self: stretch;
         transition: opacity .25s ease;
     }
 
@@ -875,8 +895,12 @@
             width: 100%;
             max-width: 100%;
             min-width: 0;
-            overflow: visible !important;
+            max-height: none !important;
             transform: none;
+        }
+
+        .view-playlist-card .playlist-scroll-area {
+            max-height: 60vh;
         }
 
         .learning-main-panel {
