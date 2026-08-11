@@ -16,7 +16,8 @@
                     @foreach($eventphoto->take(3) as $index => $gallery)
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <a href="{{ route('gallery.user.view', $gallery->slug) }}"
-                           class="home-modern-gallery-slide">
+                           class="home-modern-gallery-slide"
+                           title="{{ $gallery->title }}">
 
                             <div class="home-modern-gallery-slide-thumb">
                                 @if(!empty($gallery->thumbnail))
@@ -34,7 +35,7 @@
                             </div>
 
                             <div class="home-modern-gallery-slide-body">
-                                <div class="home-modern-gallery-slide-title">{{ Str::limit($gallery->title, 40) }}</div>
+                                <div class="home-modern-gallery-slide-title" title="{{ $gallery->title }}">{{ Str::limit($gallery->title, 40) }}</div>
                                 <div class="home-modern-gallery-slide-date">
                                     <i class="ti ti-calendar me-1"></i>
                                     {{ \Carbon\Carbon::parse($gallery->created_at)->format('d M Y') }}

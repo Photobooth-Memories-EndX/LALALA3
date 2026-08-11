@@ -23,13 +23,20 @@
             --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
         }
 
-        body {
+        body, .page, .page-center {
             font-feature-settings: "cv03", "cv04", "cv11";
-            /* Latar belakang gradasi modern & lembut menyesuaikan warna logo OWL */
-            background: radial-gradient(circle at 0% 0%, rgba(32, 107, 196, 0.08) 0%, transparent 40%),
-                        radial-gradient(circle at 100% 100%, rgba(247, 103, 7, 0.08) 0%, transparent 40%),
-                        #f8fafc;
+            background: linear-gradient(135deg, #eef2f7 0%, #f8fafc 50%, #fff7ed 100%) !important;
+            border: none !important;
             min-height: 100vh;
+        }
+
+        body::before, body::after,
+        .page::before, .page::after,
+        .page-center::before, .page-center::after {
+            display: none !important;
+            content: none !important;
+            border: none !important;
+            background: transparent !important;
         }
 
         /* Mempercantik tampilan card login */
@@ -66,22 +73,6 @@
         .brand-logo:hover {
             transform: scale(1.03);
         }
-
-        /* Styling Tagline Open Mind */
-        .tagline-container {
-            font-size: 0.95rem;
-            font-weight: 600;
-        }
-        .tagline-blue {
-            color: #206bc4;
-        }
-        .tagline-orange {
-            color: #f76707;
-        }
-        .tagline-dot {
-            color: #f76707;
-            margin: 0 6px;
-        }
     </style>
 
     <script src="{{ asset('js/jquery.min.js') }}"></script>
@@ -105,12 +96,12 @@
                     <h2 class="h2 text-center mb-2 fw-bold text-dark" style="letter-spacing: -0.5px;">Corporate Learning Hub</h2>
                     
                     <!-- Tagline tambahan -->
-                    <div class="text-center mb-4 tagline-container">
-                        <span class="tagline-blue">Open Mind</span>
-                        <span class="tagline-dot">•</span>
-                        <span class="tagline-blue">Wide Growth</span>
-                        <span class="tagline-dot">•</span>
-                        <span class="tagline-orange">Lead Impact</span>
+                    <div class="tagline-subtext fs-5 fw-semibold text-center mb-3" style="font-size: 0.95rem !important;">
+                        <span style="color: #0b2545 !important;">Open Mind</span>
+                        <span style="color: #0d6efd !important;" class="mx-1">•</span>
+                        <span style="color: #0d6efd !important;">Wide Growth</span>
+                        <span style="color: #fd7e14 !important;" class="mx-1">•</span>
+                        <span style="color: #fd7e14 !important;">Lead Impact</span>
                     </div>
 
                     <form action="{{ route('authuser') }}" id="form-authentication" method="post" autocomplete="off" novalidate>

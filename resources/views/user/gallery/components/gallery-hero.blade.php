@@ -18,7 +18,7 @@
                     <span>GALLERY</span>
                 </span>
 
-                <h2 id="gallery-page-title" class="mb-1 fw-bold text-white fs-3">Learning Event Gallery</h2>
+                <h1 id="gallery-page-title" class="mb-1 fw-bold display-6 text-white">Learning Event Gallery</h1>
 
                 <p class="mb-3 text-white-75 small pe-lg-4">
                     Capturing the journey of growth and innovation across workshops, technical training, and professional development.

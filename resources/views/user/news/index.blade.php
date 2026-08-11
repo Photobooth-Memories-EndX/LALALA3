@@ -38,9 +38,7 @@
 
 @section('content')
 
-<div class="page-body owl-news-page">
-
-    <div class="container-xl">
+<div class="container-xl py-4 owl-news-page">
 
         {{-- HERO SECTION --}}
         @include('user.news.partials.hero')
@@ -306,8 +304,6 @@
         </div>
 
     </div>
-
-</div>
 
 @endsection
 

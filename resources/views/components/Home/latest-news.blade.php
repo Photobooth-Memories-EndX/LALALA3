@@ -17,7 +17,8 @@
                     @foreach($news as $index => $item)
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <a href="{{ route('news.user.view', $item->slug) }}"
-                           class="home-modern-news-slide">
+                           class="home-modern-news-slide"
+                           title="{{ $item->title }}">
 
                             <div class="home-modern-news-slide-thumb">
                                 @if(!empty($item->image))
@@ -35,7 +36,7 @@
                             </div>
 
                             <div class="home-modern-news-slide-body">
-                                <div class="home-modern-news-slide-title">{{ Str::limit($item->title, 60) }}</div>
+                                <div class="home-modern-news-slide-title" title="{{ $item->title }}">{{ Str::limit($item->title, 60) }}</div>
                                 <div class="home-modern-news-slide-date">
                                     <i class="ti ti-calendar me-1"></i>
                                     {{ $item->created_at->format('d M Y') }}

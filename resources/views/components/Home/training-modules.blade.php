@@ -51,7 +51,7 @@
                         <div class="home-modern-slide-track">
                     @foreach($content_video->take(6) as $item)
                     <div class="home-modern-slide-item">
-                        <a href="{{ route('content.user.view', $item->slug) }}" class="home-modern-video-card">
+                        <a href="{{ route('content.user.view', $item->slug) }}" class="home-modern-video-card" title="{{ $item->title }}">
 
                             <div class="home-modern-video-thumb">
                                 @if($item->type === 'YouTube')
@@ -77,7 +77,7 @@
                             </div>
 
                             <div class="home-modern-video-body">
-                                <h4 class="home-modern-video-title">{{ Str::limit($item->title, 55) }}</h4>
+                                <h4 class="home-modern-video-title" title="{{ $item->title }}">{{ Str::limit($item->title, 55) }}</h4>
                             </div>
 
                         </a>
@@ -117,7 +117,7 @@
                         <div class="home-modern-slide-track">
                     @foreach($content_pdf->take(6) as $pdf)
                     <div class="home-modern-slide-item">
-                        <a href="{{ route('content.user.view', $pdf->slug) }}" class="home-modern-video-card">
+                        <a href="{{ route('content.user.view', $pdf->slug) }}" class="home-modern-video-card" title="{{ $pdf->title }}">
 
                             <div class="home-modern-video-thumb home-modern-document-thumb">
                                 @php
@@ -133,7 +133,7 @@
 
                             <div class="home-modern-video-body">
                                 <span class="home-modern-category-badge home-modern-category-green">Document</span>
-                                <h4 class="home-modern-video-title">{{ Str::limit($pdf->title, 55) }}</h4>
+                                <h4 class="home-modern-video-title" title="{{ $pdf->title }}">{{ Str::limit($pdf->title, 55) }}</h4>
                             </div>
 
                         </a>
@@ -185,7 +185,7 @@
                         @endphp
                         <div class="home-modern-slide-item">
                             <a href="{{ route('playlist.user.view', ['slug' => $item->slug, 'vidslug' => $firstVideo->content->slug]) }}"
-                               class="home-modern-video-card home-modern-playlist-hcard">
+                               class="home-modern-video-card home-modern-playlist-hcard" title="{{ $item->title }}">
 
                                 <div class="home-modern-video-thumb">
                                     @if($plThumb)
@@ -204,7 +204,7 @@
 
                                 <div class="home-modern-video-body">
                                     <span class="home-modern-category-badge home-modern-category-purple">Playlist</span>
-                                    <h4 class="home-modern-video-title home-modern-playlist-htitle">{{ Str::limit($item->title, 55) }}</h4>
+                                    <h4 class="home-modern-video-title home-modern-playlist-htitle" title="{{ $item->title }}">{{ Str::limit($item->title, 55) }}</h4>
                                     <div class="home-modern-video-meta">
                                         <i class="ti ti-playlist me-1"></i>
                                         {{ $item->trainingplandetail->count() }} modules

@@ -25,7 +25,7 @@
                 <div class="owl-news-overlay"></div>
             </a>
 
-            <div class="owl-news-badge d-flex align-items-center gap-2">
+            <div class="owl-news-badge bg-success text-white px-2 py-1 rounded-pill d-flex align-items-center gap-1" style="font-size: 0.75rem;">
                 <i class="ti ti-tag"></i>
                 <span>{{ $item->category ?? 'Technology' }}</span>
             </div>
@@ -37,8 +37,8 @@
         {{-- BODY --}}
         <div class="card-body d-flex flex-column flex-grow-1 p-3">
 
-            <h5 class="card-title line-clamp-2 mb-2 owl-card-title" style="min-height: 2.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
-                <a href="{{ route('news.user.view', array_merge(['slug' => $item->slug], request()->query())) }}" class="owl-card-title-link text-reset text-decoration-none fw-bold">
+            <h5 class="card-title line-clamp-2 mb-2 owl-card-title" title="{{ $item->title ?? '' }}" style="min-height: 2.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+                <a href="{{ route('news.user.view', array_merge(['slug' => $item->slug], request()->query())) }}" class="owl-card-title-link text-reset text-decoration-none fw-bold" title="{{ $item->title ?? '' }}">
                     {{ $item->title ?? '-' }}
                 </a>
             </h5>

@@ -71,18 +71,25 @@
         });
 
         function updateFilterState() {
+            const authorVal = $('#playlistFilterAuthor').val() || '';
+            const sortVal = $('#playlistFilterSort').val() || '';
+            const viewOrderVal = $('input[name="playlist_view_order"]:checked').val() || '';
+            const durationVal = $('input[name="playlist_duration"]:checked').val() || '';
+            const learningHourVal = $('input[name="playlist_learning_hour"]:checked').val() || '';
+            const classificationVal = $('#playlistClassificationFilter').length ? ($('#playlistClassificationFilter').val() || '') : '';
+
             const activeModalCount = [
-                Boolean($('#playlistFilterAuthor').val()),
+                Boolean(authorVal) && authorVal !== 'all',
                 Boolean($('#playlistFilterDeadlineFromDate').val()),
                 Boolean($('#playlistFilterDeadlineToDate').val()),
                 Boolean($('#playlistFilterCreatedFromDate').val()),
                 Boolean($('#playlistFilterCreatedToDate').val()),
-                $('#playlistFilterSort').val() && $('#playlistFilterSort').val() !== 'all',
-                Boolean($('input[name="playlist_view_order"]:checked').val()),
-                $('input[name="playlist_duration"]:checked').val() !== 'all',
+                Boolean(sortVal) && !['all', 'default', 'latest'].includes(sortVal),
+                Boolean(viewOrderVal) && !['', 'default', 'all'].includes(viewOrderVal),
+                Boolean(durationVal) && !['all', 'default'].includes(durationVal),
                 $('input[name="playlist_total_pages[]"]:checked').length > 0,
-                $('input[name="playlist_learning_hour"]:checked').val() !== 'all',
-                $('#playlistClassificationFilter').val() !== 'all'
+                Boolean(learningHourVal) && !['all', 'default'].includes(learningHourVal),
+                Boolean(classificationVal) && classificationVal !== 'all'
             ].filter(Boolean).length;
 
             const hasActiveFilters = activeModalCount > 0 ||
@@ -91,9 +98,12 @@
                 (($('#playlistYearFilter').val() || '') !== '' && $('#playlistYearFilter').val() !== 'all') ||
                 Boolean(($('#playlistSearch').val() || '').trim());
 
-            $('#playlistMoreFiltersCount')
-                .text(activeModalCount || '')
-                .toggleClass('d-none', activeModalCount === 0);
+            if (activeModalCount > 0) {
+                $('#playlistMoreFiltersCount').text(activeModalCount).removeClass('d-none');
+            } else {
+                $('#playlistMoreFiltersCount').text('').addClass('d-none');
+            }
+
             $('#playlistResetFilter').toggleClass('is-active', hasActiveFilters);
             $('#playlistResetMoreFilters').toggleClass('is-active', activeModalCount > 0);
         }

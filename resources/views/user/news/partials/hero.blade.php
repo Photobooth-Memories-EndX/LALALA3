@@ -5,7 +5,7 @@
 @include('components.shared.hero-style')
 
 <div class="card content-hero-card news-hero-card mb-4 overflow-hidden border-0 shadow-sm">
-    <div class="card-body content-hero-surface news-hero-surface text-white">
+    <div class="card-body content-hero-surface news-hero-surface text-white py-3 px-4">
         <div class="row align-items-center g-4">
             <div class="col-lg-8 news-hero-copy">
                 <div class="d-inline-flex align-items-center gap-2 badge bg-white text-primary mb-2 rounded-pill content-hero-badge px-3 py-2 shadow-sm">

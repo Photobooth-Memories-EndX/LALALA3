@@ -106,8 +106,8 @@
                         data-toggle="modal" data-target="#playlistMoreFiltersModal"
                         title="More Filters" aria-label="More Filters">
                     <i class="ti ti-adjustments-horizontal"></i>
-                    <span class="badge bg-primary text-white playlist-filter-count d-none"
-                          id="playlistMoreFiltersCount"></span>
+                    <span class="badge bg-primary text-white playlist-filter-count {{ ($playlistAdvancedFilterCount ?? 0) > 0 ? '' : 'd-none' }}"
+                          id="playlistMoreFiltersCount">{{ ($playlistAdvancedFilterCount ?? 0) > 0 ? $playlistAdvancedFilterCount : '' }}</span>
                 </button>
 
                 <button type="button" class="btn btn-outline-primary playlist-filter-action-btn"

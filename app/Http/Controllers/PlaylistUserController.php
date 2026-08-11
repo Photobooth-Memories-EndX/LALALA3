@@ -120,13 +120,25 @@ class PlaylistUserController extends Controller
             ];
         }
 
+        $playlistAdvancedFilterCount = collect([
+            filled(request('author')) && request('author') !== 'all',
+            filled(request('date_from')),
+            filled(request('date_to')),
+            filled(request('period_from')),
+            filled(request('period_to')),
+            request('sort') && !in_array(request('sort'), ['default', 'latest', 'all']),
+            request('sort_views') && !in_array(request('sort_views'), ['default', 'all']),
+            request('duration') && request('duration') !== 'all',
+        ])->filter()->count();
+
         return view('user.playlist.index', [
-            'title'          => 'Playlist',
-            'trainingplan'   => $trainingplan,
-            'totalPlaylists' => $totalPlaylists,
-            'totalContents'  => $totalContents,
-            'playlistStats'  => $playlistStats,
-            'featuredStats'  => $featuredStats,
+            'title'                       => 'Playlist',
+            'trainingplan'                => $trainingplan,
+            'totalPlaylists'              => $totalPlaylists,
+            'totalContents'               => $totalContents,
+            'playlistStats'               => $playlistStats,
+            'featuredStats'               => $featuredStats,
+            'playlistAdvancedFilterCount' => $playlistAdvancedFilterCount,
         ]);
     }
 
