@@ -1,0 +1,895 @@
+/**
+ * Learning Record — style tabel client-side (dipisah dari dashboard-style
+ * mengikuti prinsip clean code: Blade = struktur, CSS = tampilan, JS = perilaku).
+ */
+
+/* Tabel Learning Record: tetap compact dengan ruang baca yang cukup. */
+.learning-record-table {
+    table-layout: auto;
+    width: 100%;
+    min-width: 1180px;
+    font-size: 12.5px;
+    line-height: 1.35;
+}
+
+.learning-record-table td {
+    padding: 12px 14px !important;
+    vertical-align: middle;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+/* Header sedikit lega dan konsisten, termasuk saat sticky. */
+.learning-record-table th {
+    padding: 12px 14px !important;
+    vertical-align: middle;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+/* Class fleksibel; kolom data compact memakai min-width agar tidak berhimpitan. */
+.learning-record-table th:nth-child(1),
+.learning-record-table td:nth-child(1) {
+    width: 52px !important;
+    min-width: 52px;
+    text-align: center;
+}
+
+.learning-record-table th:nth-child(2),
+.learning-record-table td:nth-child(2) {
+    width: auto !important;
+    min-width: 240px;
+}
+
+.learning-record-table th:nth-child(3),
+.learning-record-table td:nth-child(3) {
+    width: 90px !important;
+    min-width: 90px;
+}
+
+.learning-record-table th:nth-child(4),
+.learning-record-table td:nth-child(4) {
+    width: 130px !important;
+    min-width: 130px;
+}
+
+.learning-record-table th:nth-child(5),
+.learning-record-table td:nth-child(5) {
+    width: 100px !important;
+    min-width: 100px;
+}
+
+.learning-record-table th:nth-child(6),
+.learning-record-table td:nth-child(6) {
+    width: 110px !important;
+    min-width: 110px;
+}
+
+.learning-record-table th:nth-child(7),
+.learning-record-table td:nth-child(7) {
+    width: 100px !important;
+    min-width: 100px;
+}
+
+.learning-record-table th:nth-child(8),
+.learning-record-table td:nth-child(8) {
+    width: 180px !important;
+    min-width: 180px;
+}
+
+.learning-record-table th:nth-child(9),
+.learning-record-table td:nth-child(9) {
+    width: 110px !important;
+    min-width: 110px;
+}
+
+.learning-record-table th:nth-child(10),
+.learning-record-table td:nth-child(10) {
+    width: 100px !important;
+    min-width: 100px;
+}
+
+/* Kolom metrik, Date Time, dan aksi rata tengah; Class tetap rata kiri. */
+.learning-record-table th:nth-child(3),
+.learning-record-table td:nth-child(3),
+.learning-record-table th:nth-child(5),
+.learning-record-table td:nth-child(5),
+.learning-record-table th:nth-child(6),
+.learning-record-table td:nth-child(6),
+.learning-record-table th:nth-child(7),
+.learning-record-table td:nth-child(7),
+.learning-record-table th:nth-child(8),
+.learning-record-table td:nth-child(8),
+.learning-record-table th:nth-child(9),
+.learning-record-table td:nth-child(9),
+.learning-record-table th:nth-child(10),
+.learning-record-table td:nth-child(10) {
+    text-align: center;
+}
+
+.learning-record-table tbody tr.record-row {
+    transition: background-color 0.15s ease;
+}
+
+.learning-record-table tbody tr.record-row:hover {
+    background: var(--tblr-bg-surface-secondary, #D9D9D6);
+}
+
+.learning-record-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+}
+
+.learning-record-title-text {
+    font-weight: 600;
+    line-height: inherit;
+}
+
+.learning-record-subtitle {
+    margin-top: 1px;
+    font-size: 11px;
+    line-height: 1.15;
+}
+
+.learning-record-link,
+.learning-record-link:visited {
+    color: var(--tblr-primary, #05507D);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    line-height: inherit;
+}
+
+.learning-record-link:hover,
+.learning-record-link:focus {
+    color: var(--tblr-primary, #05507D);
+    text-decoration: underline;
+}
+
+.learning-record-progress {
+    line-height: 1.2;
+}
+
+.learning-record-progress .percent {
+    font-weight: 600;
+    color: #53565A;
+}
+
+.learning-record-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.learning-classification-badge {
+    max-width: 112px;
+    padding-left: 10px;
+    padding-right: 10px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    text-align: left;
+    justify-content: flex-start;
+    align-items: flex-start;
+    line-height: 1.15;
+}
+
+.learning-record-cert-btn {
+    min-height: 24px;
+    padding: 2px 7px;
+    font-size: 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.learning-record-table form {
+    margin: 0;
+    text-align: center;
+}
+
+.learning-record-duration,
+.learning-record-learning-hour {
+    font-size: 12px;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+
+.learning-record-datetime {
+    line-height: 1.4;
+    text-align: center;
+}
+
+.learning-record-date-row {
+    text-align: center;
+}
+
+.learning-record-date-row + .learning-record-date-row {
+    margin-top: 4px;
+}
+
+/* Header tabel Learning Record tetap terlihat saat scroll (sticky). */
+.learning-record-scroll {
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.learning-record-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--tblr-bg-surface, #fff);
+    box-shadow: inset 0 -1px 0 var(--tblr-border-color, #e6e7e9);
+}
+
+/* Pada viewport sempit, wrapper responsive menyediakan horizontal scroll. */
+@media (max-width: 767.98px) {
+    .learning-record-table {
+        min-width: 1120px;
+    }
+
+    .learning-record-table th,
+    .learning-record-table td {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+}
+
+/* ── Sorting header (client-side, jQuery) ──────────────────────────────── */
+
+.learning-record-table th.record-sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.record-sort-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    vertical-align: middle;
+}
+
+.record-sort-label {
+    min-width: 0;
+}
+
+/* Ikon ▲▼ ditumpuk vertikal di samping label header. */
+.record-sort-icons {
+    display: inline-flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    vertical-align: middle;
+    font-size: 7px;
+    line-height: 0.9;
+    color: #D9D9D6;
+}
+
+.record-sort-icons span {
+    transition: color 0.15s ease;
+}
+
+.learning-record-table th.record-sortable:hover .record-sort-icons {
+    color: #8A8D8F;
+}
+
+.learning-record-table th.record-sortable.is-sorted {
+    color: #05507D !important;
+}
+
+.record-sort-icons span.active {
+    color: #05507D;
+}
+
+/* Animasi kecil setiap kali urutan baris berubah. */
+@keyframes recordRowsFade {
+    from {
+        opacity: 0.35;
+        transform: translateY(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+tbody.record-sort-animate tr.record-row {
+    animation: recordRowsFade 0.25s ease;
+}
+
+/* ── Card counter "Certificates Ready" di header tabel ─────────────────── */
+
+.record-cert-ready-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid rgba(5, 80, 125, 0.25);
+    background: #D9D9D6;
+    color: #05507D;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.record-cert-ready-card:hover {
+    background: #D9D9D6;
+    box-shadow: 0 4px 10px rgba(5, 80, 125, 0.15);
+}
+
+.record-cert-ready-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #05507D;
+    color: #fff;
+    font-size: 11px;
+}
+
+/* ── Quick Filter (pill All / Content / Playlist) ──────────────────────── */
+
+.record-filter-shell {
+    width: 100%;
+}
+
+.learning-record-card {
+    /*
+     * The dashboard's generic card rule clips regular cards. This card owns
+     * floating quick-filter menus, so its overflow must remain open.
+     */
+    overflow: visible !important;
+}
+
+.record-fast-filter-section {
+    width: 100%;
+    overflow: visible;
+    container-name: record-fast-filter;
+    container-type: inline-size;
+}
+
+.fast-filter-toolbar {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow: visible;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns {
+    display: flex;
+    width: auto;
+    min-width: 0;
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    gap: 8px !important;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns > .dropdown {
+    position: relative;
+    overflow: visible;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown-menu {
+    z-index: 1050;
+    min-width: 100%;
+    box-sizing: border-box;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(1) .dropdown-menu {
+    width: 125px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-menu {
+    width: 220px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(3) .dropdown-menu {
+    width: 110px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(4) .dropdown-menu {
+    width: 140px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown-item {
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control {
+    min-height: 40px;
+    height: 40px;
+    padding: 0 10px;
+    border: 1px solid var(--tblr-border-color, #dbe0e6) !important;
+    border-radius: 8px !important;
+    background: var(--tblr-bg-surface, #fff) !important;
+}
+
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:hover {
+    border-color: rgba(5, 80, 125, 0.45) !important;
+    background: var(--tblr-bg-surface-secondary, #f4f7fa) !important;
+    color: var(--tblr-primary, #05507D) !important;
+}
+
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus,
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus-visible,
+.record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control.active {
+    border-color: var(--tblr-primary, #05507D) !important;
+    background: rgba(5, 80, 125, 0.08) !important;
+    color: var(--tblr-primary, #05507D) !important;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-toggle {
+    width: max-content;
+    min-width: 165px;
+    max-width: 260px;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown-toggle {
+    white-space: nowrap;
+}
+
+.fast-filter-toolbar .learning-quick-dropdowns .dropdown-toggle .fw-semibold {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.record-toolbar-search {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 180px;
+}
+
+@container record-fast-filter (min-width: 900px) {
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(1) .dropdown-toggle {
+        min-width: 105px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-toggle {
+        width: max-content;
+        min-width: 165px;
+        max-width: 260px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(3) .dropdown-toggle {
+        min-width: 100px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(4) .dropdown-toggle {
+        min-width: 110px;
+    }
+
+}
+
+.record-toolbar-search .input-icon,
+.record-toolbar-search .form-control {
+    width: 100%;
+    min-width: 0;
+}
+
+.record-filter-shell .record-toolbar-search .form-control {
+    min-height: 40px;
+    height: 40px;
+    border-radius: 8px;
+}
+
+.record-filter-shell .form-control,
+.record-filter-shell .form-select {
+    min-height: 42px;
+    border-radius: 6px;
+}
+
+.learning-quick-dropdowns .dropdown-toggle.active {
+    color: #05507D;
+    border-color: #05507D;
+    background: rgba(5, 80, 125, 0.08);
+}
+
+.learning-quick-dropdowns .dropdown-item.active {
+    color: #fff;
+    background-color: #05507D;
+}
+
+.learning-quick-dropdown-scroll {
+    max-height: 260px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.learning-record-filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.learning-record-fast-filter {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.learning-quick-dropdowns {
+    align-items: center;
+    gap: 12px !important;
+}
+
+.learning-quick-dropdowns .dropdown-toggle {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.record-fast-filter-row {
+    margin-left: -6px;
+    margin-right: -6px;
+}
+
+.record-fast-filter-row > [class*="col-"] {
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.record-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+}
+
+.fast-filter-toolbar .record-filter-actions {
+    gap: 8px;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.fast-filter-toolbar .record-filter-action-btn {
+    position: relative;
+    display: inline-flex;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    flex: 0 0 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 8px !important;
+    line-height: 1;
+}
+
+.fast-filter-toolbar .record-filter-action-btn > i {
+    margin: 0 !important;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.fast-filter-toolbar #recordMoreFiltersCount {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border: 2px solid var(--tblr-bg-surface, #fff);
+    border-radius: 999px;
+    font-size: 10px;
+    line-height: 14px;
+}
+
+.record-filter-reset-link {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    padding: 8px 4px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.record-filter-reset-link:hover,
+.record-filter-reset-link:focus {
+    text-decoration: none;
+}
+
+.record-chip {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    cursor: pointer;
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--tblr-border-color, #dbe0e6);
+    background: #fff;
+    color: var(--tblr-body-color, #4b5563);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+    user-select: none;
+}
+
+.record-chip:hover {
+    border-color: var(--tblr-primary, #05507D);
+    color: var(--tblr-primary, #05507D);
+}
+
+.record-chip.active {
+    background: var(--tblr-primary, #05507D);
+    border-color: var(--tblr-primary, #05507D);
+    color: #fff;
+}
+
+/* ── Panel More Filters ────────────────────────────────────────────────── */
+
+/* Tersembunyi default; dibuka jQuery slideDown ±250 ms (learning-record.js). */
+.record-more-filters {
+    display: none;
+    border: 1px solid var(--tblr-border-color, #e6e7e9);
+    border-radius: 12px;
+    padding: 16px;
+    background: var(--tblr-bg-surface-secondary, #f8fafc);
+}
+
+.record-filter-modal .record-more-filters {
+    display: block;
+    border: 0;
+    border-radius: 0;
+    padding: 0 1.5rem;
+    background: var(--tblr-bg-surface, #fff);
+}
+
+.record-filter-modal .modal-header,
+.record-filter-modal .modal-footer {
+    border-color: var(--tblr-border-color, #e6e7e9);
+}
+
+#recordMoreFiltersModal .modal-dialog {
+    max-width: 760px;
+}
+
+.record-filter-modal .modal-body {
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+}
+
+.record-filter-sections {
+    display: block;
+}
+
+.record-filter-section {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--tblr-border-color, #e6e7e9);
+}
+
+.record-filter-section:last-child {
+    border-bottom: 0;
+}
+
+.record-filter-title {
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--tblr-body-color, #1f2937);
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+
+.record-filter-section .form-check {
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.record-filter-section .form-check:last-child {
+    margin-bottom: 0;
+}
+
+.record-filter-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+}
+
+.record-filter-modal-footer .btn {
+    min-height: 42px;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 600;
+}
+
+@media (max-width: 1199.98px) {
+    .learning-record-fast-filter,
+    .learning-record-filter-row > .record-filter-actions {
+        flex-basis: 100%;
+    }
+
+    .learning-record-filter-row > .record-filter-actions {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .learning-record-filter-row > .record-filter-actions {
+        justify-content: flex-start;
+    }
+
+    .learning-record-filter-row > .record-filter-actions .record-filter-action-btn,
+    .record-filter-reset-link {
+        width: 100%;
+    }
+
+    .record-filter-modal .record-more-filters {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+@container record-fast-filter (min-width: 680px) and (max-width: 899.98px) {
+    .fast-filter-toolbar {
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns {
+        width: auto;
+        min-width: 0;
+        flex: 0 1 auto;
+        flex-wrap: nowrap;
+        gap: 6px !important;
+    }
+
+    .record-filter-shell .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control {
+        padding-right: 6px;
+        padding-left: 6px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(1) .dropdown-toggle {
+        width: 84px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(2) .dropdown-toggle {
+        width: max-content;
+        min-width: 138px;
+        max-width: 190px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(3) .dropdown-toggle {
+        width: 78px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns .dropdown:nth-child(4) .dropdown-toggle {
+        width: 90px;
+    }
+
+    .fast-filter-toolbar .record-filter-actions {
+        gap: 6px;
+    }
+}
+
+@container record-fast-filter (max-width: 679.98px) {
+    .fast-filter-toolbar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .fast-filter-toolbar .learning-quick-dropdowns {
+        width: 100%;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+    }
+
+    .record-toolbar-search {
+        width: 100%;
+        min-width: 100%;
+        max-width: none;
+        flex: 1 1 100%;
+    }
+
+    .fast-filter-toolbar .record-filter-actions {
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+    }
+}
+
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control {
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    background: #192d45 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:hover,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:hover {
+    border-color: rgba(147, 197, 253, 0.55) !important;
+    background: #203a57 !important;
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus,
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus-visible,
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control.active,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control:focus-visible,
+body.dark-mode #recordFilterBar .fast-filter-toolbar .learning-fast-filter .learning-fast-filter-control.active {
+    border-color: #6aaed6 !important;
+    background: rgba(106, 174, 214, 0.16) !important;
+    color: #bfdbfe !important;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .record-toolbar-search .form-control,
+body.dark-mode #recordFilterBar .record-toolbar-search .form-control {
+    border-color: rgba(148, 163, 184, 0.3);
+    background: #192d45;
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .record-toolbar-search .form-control::placeholder,
+body.dark-mode #recordFilterBar .record-toolbar-search .form-control::placeholder {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .record-toolbar-search .input-icon-addon,
+body.dark-mode #recordFilterBar .record-toolbar-search .input-icon-addon {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] #recordFilterBar .fast-filter-toolbar #recordMoreFiltersCount,
+body.dark-mode #recordFilterBar .fast-filter-toolbar #recordMoreFiltersCount {
+    border-color: #152235;
+}
+
+/* Caret pada tombol More Filters berputar saat panel terbuka. */
+.record-more-caret {
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+#recordMoreFiltersToggle.is-open .record-more-caret {
+    transform: rotate(180deg);
+}
+
+/* ── Badge Playlist (kolom Type) sebagai link ke halaman Playlist ──────── */
+
+.record-playlist-link {
+    cursor: pointer;
+    text-decoration: none;
+    transition: text-decoration-color 0.15s ease, opacity 0.15s ease;
+}
+
+.record-playlist-link:hover {
+    text-decoration: underline;
+    opacity: 0.85;
+}

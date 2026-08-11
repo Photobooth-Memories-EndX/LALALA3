@@ -1,0 +1,26 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('content', function (Blueprint $table) {
+            $table->unsignedInteger('total_page')
+                ->nullable()
+                ->default(30)
+                ->comment('Total pages for PDF document content')
+                ->after('page_duration');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('content', function (Blueprint $table) {
+            $table->dropColumn('total_page');
+        });
+    }
+};

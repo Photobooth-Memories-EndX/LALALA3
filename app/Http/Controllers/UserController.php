@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 
 class UserController extends Controller
 {
@@ -30,16 +31,24 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'id_emp' => 'required|unique:users',
-            'name' => 'required'
-        ], [
-            'id_emp.unique' => 'This employee has been registered',
-            'id_emp.required' => 'ID employee is required',
-            'name.required' => 'Name is required',
+            'id_emp' => 'required|unique:users,id_emp',
+            'name'   => 'required',
+            'email'  => 'nullable|unique:users,email',
         ]);
-        $input = $request->all();
-        $input['password'] =  Hash::make($request->input('id_emp'));
-        User::create($input);
+
+        User::create([
+            'id_emp'      => $request->id_emp,
+            'id_org_unit' => $request->id_org_unit ?: '0',
+            'id_user'     => $request->id_user ?: '0',
+            'ssohash'     => $request->ssohash ?: '-',
+            'sap_code'    => $request->sap_code ?: '-',
+            'name'        => $request->name,
+            'email'       => $request->email,
+            'team'        => $request->team ?: '-',
+            'department'  => $request->department ?: '-',
+            'division'    => $request->division ?: '-',
+            'password'    => Hash::make($request->id_emp),
+        ]);
 
         return redirect()->route('user.index')->with('success', 'New user created successfully.');
     }
@@ -96,12 +105,32 @@ class UserController extends Controller
         }
     }
 
-    public function update(Request $request, User $user)
-    {
-        $user->update($request->all());
-        return redirect()->route('user.index')
-            ->with('success', 'User updated successfully');
-    }
+        public function update(Request $request, User $user)
+        {
+            $data = $request->only([
+                'id_emp',
+                'id_org_unit',
+                'id_user',
+                'name',
+                'email',
+                'team',
+                'department',
+                'division',
+                'ssohash',
+                'sap_code',
+            ]);
+
+            foreach (['id_org_unit', 'id_user', 'ssohash', 'sap_code'] as $field) {
+                if (!$request->filled($field)) {
+                    unset($data[$field]);
+                }
+            }
+
+            $user->update($data);
+
+            return redirect()->route('user.index')
+                ->with('success', 'User updated successfully');
+        }
 
     public function updateOutsourcing(Request $request, User $user)
     {
@@ -141,27 +170,42 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        $hasLearningData = \App\Models\ContentUser::where('user_id', $user->id)->exists();
+
+        if ($hasLearningData) {
+            return redirect()->route('user.index')
+                ->with('warning', 'User tidak bisa dihapus karena masih memiliki data learning.');
+        }
+
         $user->delete();
+
         return redirect()->route('user.index')
             ->with('success', 'User deleted successfully');
     }
 
     public function resetpassword(User $user)
     {
-
         User::whereId($user->id)->update([
             'password' => Hash::make($user->id_emp)
         ]);
-        return redirect()->route('user.index')->with('success', 'User reset password successfully');
+
+        return redirect()->route('user.index')
+            ->with('success', 'User reset password successfully. Password baru: ' . $user->id_emp);
     }
 
     public function changestatus(Request $request)
     {
         $user = User::findOrFail($request->id);
+
         $user->active = $request->active;
         $user->save();
 
-        return response()->json(['success'=>'Status change successfully.']);
+        return response()->json([
+            'success' => true,
+            'message' => $request->active == 1
+                ? 'User activated successfully'
+                : 'User deactivated successfully'
+        ]);
     }
 
     public function searchUser(Request $request)
@@ -176,5 +220,61 @@ class UserController extends Controller
             ->paginate($entries)->withQueryString();
 
         return view('main.user.index', compact('user', 'search', 'entries'))->with('no', (request('page', 1) - 1) * $entries);
+    }
+
+    public function detail(User $user)
+    {
+        return response()->json([
+            'id' => $user->id,
+            'id_emp' => $user->id_emp,
+            'name' => $user->name,
+            'email' => $user->email,
+            'team' => $user->team,
+            'department' => $user->department,
+            'division' => $user->division,
+            'id_org_unit' => $user->id_org_unit,
+            'id_user' => $user->id_user,
+            'ssohash' => $user->ssohash,
+            'sap_code' => $user->sap_code,
+            'company_name' => $user->company_name,
+            'is_outsourcing' => substr($user->id_emp, 0, 2) === 'ex',
+            'id_employee_clean' => substr($user->id_emp, 0, 2) === 'ex'
+                ? substr($user->id_emp, 2)
+                : $user->id_emp,
+        ]);
+    }
+
+    public function getEmployeeData($id_emp)
+    {
+        $response = Http::get(config('api.employee.base_url') . $id_emp);
+
+        if ($response->failed()) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'Gagal mengambil data employee.'
+            ], 500);
+        }
+
+        $data = $response->json();
+
+        if (($data['status'] ?? null) == 404) {
+            return response()->json([
+                'status' => 404,
+                'message' => $data['message'] ?? 'Employee tidak ditemukan.'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'sap_code' => $data['sap_code'] ?? '-',
+            'ssohash' => $data['newhash'] ?? '-',
+            'name' => $data['name'] ?? '',
+            'email' => $data['email'] ?? '',
+            'team' => $data['team'] ?? '',
+            'department' => $data['department'] ?? '',
+            'division' => $data['division'] ?? '',
+            'id_org_unit' => $data['id_ou'] ?? null,
+            'id_user' => $data['id_user'] ?? null,
+        ]);
     }
 }

@@ -1,0 +1,123 @@
+@php
+    // Filter options are derived only from the paginated TrainingPlan data already
+    // loaded by PlaylistUserController. No query is executed from this view.
+    $playlistFilterItems = collect($trainingplan->items());
+    $playlistMonths = $playlistFilterItems
+        ->mapWithKeys(fn ($playlist) => [
+            (int) $playlist->created_at->format('n') => $playlist->created_at->format('F'),
+        ])
+        ->sortKeys();
+    $playlistYears = $playlistFilterItems
+        ->map(fn ($playlist) => (int) $playlist->created_at->format('Y'))
+        ->unique()
+        ->sortDesc()
+        ->values();
+    $playlistClassifications = $playlistFilterItems
+        ->flatMap(fn ($playlist) => $playlist->trainingplandetail
+            ->map(fn ($detail) => optional($detail->content)->classification)
+        )
+        ->filter(fn ($classification) => !empty($classification?->id))
+        ->unique('id')
+        ->sortBy('classification_name')
+        ->values();
+    $playlistAuthors = $playlistFilterItems
+        ->flatMap(fn ($playlist) => $playlist->trainingplandetail
+            ->map(fn ($detail) => optional($detail->content)->author)
+        )
+        ->filter(fn ($author) => !empty(trim($author ?? '')))
+        ->unique()
+        ->sort()
+        ->values();
+
+    $durationOptions = [
+        'lt10'  => '< 10 Menit',
+        '10-30' => '10 - 30 Menit',
+        '30-60' => '30 - 60 Menit',
+        'gt60'  => '> 1 Jam',
+    ];
+
+    $totalPageOptions = [
+        'lt10'  => '< 10',
+        '10-20' => '10 - 20',
+        '21-50' => '21 - 50',
+        'gt50'  => '> 50',
+    ];
+
+    $learningHourOptions = [
+        'lt1h' => '< 1 Hour',
+        '1-3h' => '1 - 3 hours',
+        'gt3h' => '> 3 Hours',
+    ];
+@endphp
+
+<div class="card playlist-filter-card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-3">
+        <label class="form-label small text-muted mb-2 playlist-fast-filter-label" for="playlistStatusFilter">
+            Quick Filter
+        </label>
+
+        <div class="playlist-filter-toolbar">
+            <div class="playlist-filter-field playlist-filter-field-status">
+                <select id="playlistStatusFilter" name="status" class="form-select playlist-filter-control" aria-label="Status">
+                    <option value="">All Status</option>
+                    <option value="not_started">Not Started</option>
+                    <option value="in_progress">On Going</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+
+            <div class="playlist-filter-field playlist-filter-field-year">
+                <select id="playlistYearFilter" name="year" class="form-select playlist-filter-control" aria-label="Year">
+                    <option value="">All Year</option>
+                    @foreach ($playlistYears as $year)
+                        <option value="{{ $year }}">{{ $year }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="playlist-filter-field playlist-filter-field-month">
+                <select id="playlistMonthFilter" name="month" class="form-select playlist-filter-control" aria-label="Month">
+                    <option value="">All Month</option>
+                    @foreach ($playlistMonths as $monthNumber => $monthName)
+                        <option value="{{ $monthNumber }}">{{ $monthName }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="playlist-filter-search">
+                <label class="sr-only" for="playlistSearch">Search playlist</label>
+                <div class="input-icon">
+                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                    <input type="search" id="playlistSearch" class="form-control"
+                           placeholder="Search playlist..." autocomplete="off">
+                </div>
+            </div>
+
+            <div class="playlist-filter-actions">
+                <button type="button" class="btn btn-primary playlist-filter-action-btn"
+                        id="playlistSearchAction" title="Search" aria-label="Search">
+                    <i class="ti ti-search"></i>
+                </button>
+
+                <button type="button"
+                        class="btn btn-outline-primary playlist-filter-action-btn position-relative"
+                        id="playlistMoreFiltersButton"
+                        data-bs-toggle="modal" data-bs-target="#playlistMoreFiltersModal"
+                        data-toggle="modal" data-target="#playlistMoreFiltersModal"
+                        title="More Filters" aria-label="More Filters">
+                    <i class="ti ti-adjustments-horizontal"></i>
+                    <span class="badge bg-primary text-white playlist-filter-count d-none"
+                          id="playlistMoreFiltersCount"></span>
+                </button>
+
+                <button type="button" class="btn btn-outline-primary playlist-filter-action-btn"
+                        id="playlistResetFilter" title="Reset Filter" aria-label="Reset Filter">
+                    <i class="ti ti-refresh"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@include('user.playlist.partials.modal-filter')
+

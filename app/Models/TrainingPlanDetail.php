@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\PlaylistDurationService;
 
 class TrainingPlanDetail extends Model
 {
@@ -11,6 +12,17 @@ class TrainingPlanDetail extends Model
 
     protected $table = 'trainingplandetail';
     protected $guarded = ['id'];
+
+    protected static function booted(): void
+    {
+        static::saved(function (TrainingPlanDetail $detail) {
+            app(PlaylistDurationService::class)->refresh((int) $detail->trainingplan_id);
+        });
+
+        static::deleted(function (TrainingPlanDetail $detail) {
+            app(PlaylistDurationService::class)->refresh((int) $detail->trainingplan_id);
+        });
+    }
 
     public function trainingplan()
     {

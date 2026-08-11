@@ -6,129 +6,191 @@ use App\Exports\LearningExport;
 use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
+use App\Services\Learning\LearningDatatableService;
+use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LearningManageController extends Controller
 {
     public function index()
     {
-        $ongoing = ContentUser::with('user')->where('finish', '0')->count();
-        $finish = ContentUser::with('user')->where('finish', '1')->count();
-        $classification = Classification::withCount('content')->with('content.contentuser')->get();
+        $totalLearning = ContentUser::count();
+        $ongoing = ContentUser::where('finish', '0')->count();
+        $finish = ContentUser::where('finish', '1')->count();
+
+        $completionRate = $totalLearning > 0
+            ? round(($finish / $totalLearning) * 100, 1)
+            : 0;
+
+        // Total Learning Hour dari semua content yang ada di content_users
+        $learningHours = ContentUser::with('content')
+            ->get()
+            ->sum(function ($item) {
+                return DurationFormatter::toHours($item->content->duration ?? null);
+            });
+
+        $learningHours = round($learningHours, 1);
+
+        $classification = DB::table('classification')
+            ->leftJoin('content', function ($join) {
+                $join->on('content.classification_id', '=', 'classification.id')
+                    ->whereNull('content.deleted_at');
+            })
+            ->leftJoin('content_users', 'content_users.content_id', '=', 'content.id')
+            ->select([
+                'classification.id',
+                DB::raw('MIN(classification.classification_name) as classification_name'),
+                DB::raw('MIN(classification.slug) as slug'),
+                DB::raw('COUNT(DISTINCT content.id) as content_total'),
+                DB::raw('COUNT(content_users.id) as total_learning'),
+
+                DB::raw("
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN content_users.finish = '0' THEN 1 
+                                ELSE 0 
+                            END
+                        ), 0
+                    ) as ongoing_learning
+                "),
+
+                DB::raw("
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN content_users.finish = '1' THEN 1 
+                                ELSE 0 
+                            END
+                        ), 0
+                    ) as finished_learning
+                "),
+
+                DB::raw("
+                    COALESCE(
+                        SUM(
+                            CASE 
+                                WHEN content_users.id IS NOT NULL 
+                                    AND content.duration IS NOT NULL 
+                                    AND content.duration != ''
+                                THEN CASE
+                                    WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2
+                                    THEN TIME_TO_SEC(content.duration) / 3600
+                                    ELSE TIME_TO_SEC(CONCAT('00:', content.duration)) / 3600
+                                END
+                                ELSE 0 
+                            END
+                        ), 0
+                    ) as learning_hours
+                "),
+            ])
+            ->whereNotNull('classification.classification_name')
+            ->whereNotNull('classification.slug')
+            ->where('classification.slug', '!=', '')
+            ->groupBy('classification.id')
+            ->orderBy('classification_name')
+            ->get();
+
         return view('main.learning.index', [
-            "ongoing" => $ongoing,
-            "finish" => $finish,
-            "classification" => $classification
+            'ongoing' => $ongoing,
+            'finish' => $finish,
+            'totalLearning' => $totalLearning,
+            'completionRate' => $completionRate,
+            'learningHours' => $learningHours,
+            'classification' => $classification,
         ]);
     }
 
-    public function all()
+    public function all(Request $request)
     {
-        if (request('status') && request('year')) {
-            $requestyear = request('year');
-            $requeststatus = request('status');
-
-            if (request('status') == 'all' && request('year') == 'all') {
-                $content = ContentUser::with(['user', 'content', 'content.classification'])->get();
-            } else if (request('status') == 'all') {
-                $content = ContentUser::with(['user', 'content', 'content.classification'])->whereYear('created_at', $requestyear)->get();
-            } else if (request('year') == 'all') {
-                $content = ContentUser::with(['user', 'content', 'content.classification'])->where('status', $requeststatus)->get();
-            } else {
-                $content = ContentUser::with(['user', 'content', 'content.classification'])->where('status', $requeststatus)->whereYear('created_at', $requestyear)->get();
-            }
-        } else {
-            $content = ContentUser::with(['user', 'content', 'content.classification'])->get();
-        }
-        return view('main.learning.all', [
-            "title" => 'All Learning',
-            "downloadslug" => "",
-            "content" => $content
-        ]);
+        return view('main.learning.all', $this->learningViewData($request, 'All Learning'));
     }
 
     public function category($slug, Request $request)
     {
-        $classification = Classification::firstWhere('slug', $slug);
-        $classification_id = $classification->id;
-        $years = range(date('Y'), date('Y') - 4, 1);
+        $classification = Classification::where('slug', $slug)->firstOrFail();
 
-        $status = $request->status ?? "";
-        $year = $request->year ?? "";
-        $entries = $request->show_entries ?? 25;
-        $search = $request->search ?? "";
-        $type = $request->type ?? "";
-        $slug = $request->slug ?? "";
-        
-        if ($request->action == 'download') {
-            return Excel::download(new LearningExport($type, $status, $year, $slug), now() . '_learning.xlsx');
+        if ($request->input('action') === 'download') {
+            return Excel::download(
+                new LearningExport(
+                    'category',
+                    $this->normalizeExportFilter($request->input('status')),
+                    $this->normalizeExportFilter($request->input('year')),
+                    $slug
+                ),
+                now()->format('Ymd_His') . '_learning.xlsx'
+            );
         }
 
-        $query = ContentUser::with(['user', 'content'])->whereHas('content', function ($query) use ($classification_id) {
-                $query->where('classification_id', $classification_id);
-            });
-
-        if ($status)
-            $query->where('status', $status);
-
-        if ($year)
-            $query->whereYear('created_at', $year);
-
-        if ($search)
-            $query->whereHas('user', function ($query) use ($search) {
-                $query->where('name', 'like', '%' . $search . '%');
-            });
-
-        $content = $query->paginate($entries)->withQueryString();
-
-        return view('main.learning.all', [
-            "title" => 'Classification: ' . $classification->classification_name,
-            "downloadslug" => $slug,
-            "content" => $content,
-            'entries' => $entries,
-            'search' => $search,
-            'years' => $years,
-        ])->with('no', (request('page', 1) - 1) * $entries);
+        return view('main.learning.all', $this->learningViewData(
+            $request,
+            'Classification: ' . $classification->classification_name,
+            $slug
+        ));
     }
 
-    public function content($slug)
+    public function content($slug, Request $request)
     {
-        if (request('status') && request('year')) {
-            $requestyear = request('year');
-            $requeststatus = request('status');
+        $contentModel = Content::where('slug', $slug)->first();
 
-            if (request('status') == 'all' && request('year') == 'all') {
-                $content = ContentUser::with(['user', 'content.classification'])->whereHas('content', function ($query) use ($slug) {
-                    $query->where('slug', $slug);
-                })->get();
-            } else if (request('status') == 'all') {
-                $content = ContentUser::with(['user', 'content.classification'])->whereYear('created_at', $requestyear)->whereHas('content', function ($query) use ($slug) {
-                    $query->where('slug', $slug);
-                })->get();
-            } else if (request('year') == 'all') {
-                $content = ContentUser::with(['user', 'content.classification'])->where('status', $requeststatus)->whereHas('content', function ($query) use ($slug) {
-                    $query->where('slug', $slug);
-                })->get();
-            } else {
-                $content = ContentUser::with(['user', 'content.classification'])->where('status', $requeststatus)->whereYear('created_at', $requestyear)->whereHas('content', function ($query) use ($slug) {
-                    $query->where('slug', $slug);
-                })->get();
-            }
-        } else {
-            $content = ContentUser::with(['user', 'content.classification'])->whereHas('content', function ($query) use ($slug) {
-                $query->where('slug', $slug);
-            })->get();
+        if ($request->input('action') === 'download') {
+            return Excel::download(
+                new LearningExport(
+                    'content',
+                    $this->normalizeExportFilter($request->input('status')),
+                    $this->normalizeExportFilter($request->input('year')),
+                    $slug
+                ),
+                now()->format('Ymd_His') . '_learning.xlsx'
+            );
         }
-        if (!$content->isEmpty()) {
-            $title = $content[0]->content->title;
-        } else {
-            $title = $slug;
-        }
-        return view('main.learning.all', [
-            "title" =>  $title,
-            "downloadslug" => $slug,
-            "content" => $content
-        ]);
+
+        return view('main.learning.all', $this->learningViewData(
+            $request,
+            'Content: ' . ($contentModel->title ?? $slug),
+            $slug
+        ));
     }
+
+    public function datatable(Request $request, LearningDatatableService $datatableService)
+    {
+        return $datatableService->make($request);
+    }
+
+    private function learningViewData(Request $request, string $title, string $downloadslug = ''): array
+    {
+        return [
+            'title' => $title,
+            'years' => $this->learningYears(),
+            'entries' => (int) $request->input('entries', 25),
+            'search' => (string) $request->input('search', ''),
+            'downloadslug' => $downloadslug,
+            'content' => collect(),
+        ];
+    }
+
+    private function learningYears(): array
+    {
+        return range((int) date('Y'), (int) date('Y') - 4);
+    }
+
+    private function normalizeExportFilter($value): string
+    {
+        if ($value === null || $value === '' || $value === 'all') {
+            return '';
+        }
+
+        return (string) $value;
+    }
+
+    private function durationToHours($duration): float
+    {
+        if (!$duration) {
+            return 0;
+        }
+
+        return DurationFormatter::toHours($duration);
+}
 }

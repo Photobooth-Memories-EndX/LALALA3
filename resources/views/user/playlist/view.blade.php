@@ -1,458 +1,649 @@
 @php
     $url_ytplayer_js = asset('Tabler/dist/libs/plyr/dist/plyr.min.js?1684106062');
     $url_ytplayer_css = asset('Tabler/dist/libs/plyr/dist/plyr.css?1684106062');
+
+    $canUsePlaylistDebug = (bool) auth()->user()?->canAccessManageModule('playlist_debug_tools');
+    $playlistDebugState = $canUsePlaylistDebug
+        ? session('playlist_debug.' . $playlist->getKey(), [])
+        : [];
+    $playlistDebugActive = !empty($playlistDebugState);
+
+    $playlistUiState = [
+        'learning_progress' => (float) $percentageProgressPlaylist,
+        'content_assessment_available' => $contentAssessmentTotal > 0,
+        'playlist_assessment_available' => $hasPlaylistAssessment
+            && ($assessmentAccess || $playlistAssessmentDone),
+        'certificate_available' => (bool) ($playlistCertificateEligibility?->eligible ?? false),
+    ];
+
+    if (($playlistDebugState['learning_progress'] ?? null) === 'pass') {
+        $playlistUiState['learning_progress'] = 100;
+    } elseif (($playlistDebugState['learning_progress'] ?? null) === 'fail') {
+        $playlistUiState['learning_progress'] = 0;
+    }
+
+    foreach ([
+        'content_assessment' => 'content_assessment_available',
+        'playlist_assessment' => 'playlist_assessment_available',
+        'certificate' => 'certificate_available',
+    ] as $debugKey => $uiKey) {
+        if (($playlistDebugState[$debugKey] ?? null) === 'available') {
+            $playlistUiState[$uiKey] = true;
+        } elseif (($playlistDebugState[$debugKey] ?? null) === 'not_available') {
+            $playlistUiState[$uiKey] = false;
+        }
+    }
 @endphp
 
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 
 @section('content')
-    <div class="page-body">
+    <div class="page-body learning-view-page">
         <div class="container-xl">
-            <a href="{{ url()->previous() }}" class="btn btn-secondary mb-3"><i class="fas fa-caret-left me-2"></i>Back</a>
-            <div class="card card-lg">
-                <div class="card-body p-5">
-                    <div class="row g-4">
-                        <div class="col-12 markdown">
-                            <h2 class="mb-2">{{ $playlist->title }}</h2>
-                            <h1 class="mb-2">{{ $content->title }}</h1>
 
-                            <div class="d-flex align-items-center justify-content-between fs-5">
-                                <div class="text-muted">{{ date('d F Y', strtotime($content->created_at)) }} by {{ $content->author }}. <span class="badge bg-blue text-blue-fg">{{ $content->classification->classification_name }}</span></div>
+            <a href="{{ url()->previous() }}" class="btn btn-link px-0 mb-3">
+                <i class="fas fa-arrow-left me-2"></i> Back
+            </a>
 
-                                <div class="d-flex align-items-center gap-2">
-                                    @if ($assessmentContent)
-                                        <a href="{{ route('assesment.user.view', $assessmentContent->slug) }}" class="btn btn-primary {{ $content_user->progress < 100 || ($assessmentContentCount >= 1 + $assessmentContent->total_remedials && $assessmentContentLatestScores < $assessmentContent->passing_grade) || $assessmentContentLatestScores >= $assessmentContent->passing_grade ? 'disabled' : '' }}">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
-                                                <path d="M9 9l1 0"></path>
-                                                <path d="M9 13l6 0"></path>
-                                                <path d="M9 17l6 0"></path>
-                                            </svg> Content Assessment
-                                        </a>
-                                    @endif
-                                    @if ($assesment)
-                                        <a href="{{ route('assesment.user.view', $assesment->slug) }}" class="btn btn-primary {{ $assessmentAccess == false || ($assessmentCount >= 1 + $assesment->total_remedials && $assessmentLatestScores < $assesment->passing_grade) || $assessmentLatestScores >= $assesment->passing_grade ? 'disabled' : '' }}">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
-                                                <path d="M9 9l1 0"></path>
-                                                <path d="M9 13l6 0"></path>
-                                                <path d="M9 17l6 0"></path>
-                                            </svg> Playlist Assessment
-                                        </a>
-                                    @endif
-                                    @if($playlist->url_link != '')
-                                        <a href="{{ str_replace('ssohash', Auth::user()->ssohash, $playlist->url_link) }}" class="btn btn-primary" target="_blank">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-external-link">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                <path d="M12 5a1 1 0 0 1 0 2h-6a1 1 0 0 0 -1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1 -1v-6a1 1 0 0 1 2 0v6a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-10a3 3 0 0 1 3 -3zm3 -2h5l.075 .003l.126 .017l.111 .03l.111 .044l.098 .052l.096 .067l.09 .08q .054 .053 .097 .112l.071 .11l.054 .114l.035 .105l.03 .148l.006 .118v5a1 1 0 0 1 -2 0v-2.586l-7.293 7.293a1 1 0 0 1 -1.414 -1.414l7.291 -7.293h-2.584a1 1 0 0 1 0 -2" />
-                                            </svg> Complete Pledge
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
+            @include('user.playlist.components.view-hero')
 
-                            <div class="row">
-                                <div class="col-9">
-                                    <div class="mt-3">
-                                        @php
-                                            $contentfile = json_decode($content->file);
-                                        @endphp
-                                        <div style="text-align: center" id="contentContainer">
-                                            @php
-                                                if (isset($contentfile[0])) {
-                                                    $getcontentfile = $contentfile[0];
-                                                    $displaycontent = 'display:block;';
-                                                } elseif ($content->type == 'YouTube') {
-                                                    $getcontentfile = '';
-                                                    $displaycontent = 'display:none;';
-                                                } else {
-                                                    $getcontentfile = '';
-                                                    $displaycontent = 'display:none;';
-                                                    echo 'No file exist';
-                                                }
-                                            @endphp
-                                            @if ($content->type == 'Video')
-                                                <video id="player" width="854" height="480" playsinline controls style="{{ $displaycontent }}" style="display: block; margin-left: auto; margin-right: auto;">
-                                                    <source src="{{ asset('storage/files/content/' . $content->id . '/' . $getcontentfile . '') }}" type="video/mp4">
-                                                    Your browser does not support the video tag.
-                                                    <input type="hidden" name="replacecontent" id="replacecontent" value="{{ $getcontentfile }}">
-                                                </video>
-                                            @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
-                                                <div class="row pdfviewer p-0 row h-100">
-                                                    <div class="pdftoolbar text-center row m-0 p-0">
-                                                    <div class="col-12 col-lg-6 my-1">
-                                                        <button class="btn btn-secondary btn-sm btn-first" onclick="pdfViewer.first()"><i class="material-icons-outlined">skip_previous</i></button>
-                                                        <button class="btn btn-secondary btn-sm btn-prev" onclick="pdfViewer.prev(); return false;"><i class="material-icons-outlined">navigate_before</i></button>
-                                                        <span class="pageno"></span>
-                                                        <button class="btn btn-secondary btn-sm btn-next" onclick="pdfViewer.next(); return false;"><i class="material-icons-outlined">navigate_next</i></button>
-                                                        <button class="btn btn-secondary btn-sm btn-last" onclick="pdfViewer.last()"><i class="material-icons-outlined">skip_next</i></button>
-                                                    </div>
-                                                    <div class="col-12 col-lg-6 my-1">
-                                                        <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('out')"><i class="material-icons-outlined">zoom_out</i></button>
-                                                        <span class="zoomval">100%</span>
-                                                        <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('in')"><i class="material-icons-outlined">zoom_in</i></button>
-                                                        <button class="btn btn-secondary btn-sm ms-3" onclick="pdfViewer.setZoom('width')"><i class="material-icons-outlined">swap_horiz</i></button>
-                                                        <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('height')"><i class="material-icons-outlined">swap_vert</i></button>
-                                                        <button class="btn btn-secondary btn-sm" onclick="pdfViewer.setZoom('fit')"><i class="material-icons-outlined">fit_screen</i></button>
-                                                    </div>
-                                                    </div>
-                                                    <div class="pdfjs-viewer h-100"></div>
-                                                </div>
+            <div class="playlist-learning-shell">
+                <button type="button"
+                        class="restore-toggle-btn restore-left"
+                        onclick="toggleLearningPanel('left', this)"
+                        aria-controls="content-list"
+                        aria-expanded="false"
+                        title="Buka Playlist">
+                    <i class="fas fa-bars"></i>
+                    <span>Content List</span>
+                </button>
 
-                                                @push('styles')
-                                                <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
-                                                <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
-                                                <style>
-                                                .pdftoolbar,
-                                                .pdftoolbar i {
-                                                    font-size: 14px;
-                                                }
-                                                .pdftoolbar span {
-                                                    margin-right: 0.5em;
-                                                    margin-left: 0.5em;
-                                                    width: 4em !important;
-                                                    font-size: 12px;
-                                                }
-                                                .pdftoolbar .btn-sm {
-                                                    padding: 0.12rem 0.25rem;
-                                                }
-                                                .pdfjs-viewer {
-                                                    height: 720px !important;
-                                                }
-                                                .pdftoolbar {
-                                                    width: 100%;
-                                                    height: auto;
-                                                    background: #ddd;
-                                                    z-index: 100;
-                                                }
-                                                </style>
-                                                @endpush
+                <button type="button"
+                        class="restore-toggle-btn restore-right"
+                        onclick="toggleLearningPanel('right', this)"
+                        aria-controls="ai-assistant"
+                        aria-expanded="false"
+                        title="Buka AI Assistant">
+                    <i class="fas fa-robot"></i>
+                    <span>AI Assistant</span>
+                </button>
 
-                                                @push('scripts')
+                <div id="playlistLearningLayout" class="playlist-learning-layout">
 
-                                                    <script src="{{ asset('js/pdf.min.js') }}"></script>
-                                                    <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
-                                                    <script>
-                                                        let fileName        = "{{ "$getcontentfile" }}";
-                                                        let fileNameFixed   = fileName.replaceAll(' ', '%20').replaceAll('&amp;', '&');
-                                                        let fileLocation    = "{{ asset('storage/files/content/' . $content->id . '/' . ':fileContent' . '') }}";
-                                                        let pdfFile         = fileLocation.replace(':fileContent', fileNameFixed);
+                    <div id="content-list" class="learning-left-panel">
+                        @include('user.playlist.components.view-playlist-sidebar')
+                    </div>
 
-                                                        var pdfjsLib = window["pdfjs-dist/build/pdf"];
-                                                        pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
+                    <div class="learning-main-panel">
+                        @include('user.playlist.components.view-player')
+                        @include('user.playlist.components.view-navigation', [
+                            'content' => $content,
+                            'content_all' => $content_all,
+                            'playlist' => $playlist,
+                        ])
+                        @include('user.playlist.components.view-content-info')
 
-                                                        let pdfViewer = new PDFjsViewer($(".pdfjs-viewer"), {
-                                                            onDocumentReady: () => {
-                                                                var progression = {{ (int)$content_user->progress }};
-                                                                var current_page = (progression * pdfViewer.getPageCount()) / 100;
+                        @if ($canUsePlaylistDebug)
+                            @include('user.playlist.components.view-debug-panel')
+                        @endif
+                    </div>
 
-                                                                if(parseInt(current_page) < pdfViewer.getPageCount()){
-                                                                    pdfViewer.scrollToPage(parseInt(current_page));
-                                                                }
-                                                            },
-                                                            onZoomChange: function (zoom) {
-                                                                zoom = parseInt(zoom * 10000) / 100;
-                                                                $(".zoomval").text(zoom + "%");
-                                                            },
-                                                            onActivePageChanged: function (page, pageno) {
-                                                                $(".pageno").text(pageno + "/" + this.getPageCount());
-                                                                $.ajax({
-                                                                    type: "PUT",
-                                                                    url: $('#player_paused').data('url'),
-                                                                    data: {'current_time': pageno, 'duration': this.getPageCount(), '_token': '{{ csrf_token() }}' },
-                                                                    success: function(data){
-                                                                        console.log(data.success)
-                                                                    }
-                                                                });
-                                                            }
-                                                        });
+                    <div id="ai-assistant" class="learning-right-panel">
+                        @include('user.playlist.components.view-ai-assistant')
+                    </div>
 
-                                                        pdfViewer
-                                                        .loadDocument(pdfFile)
-                                                        .then(function () {
-                                                            pdfViewer.setZoom("width");
-                                                        });
-                                                    </script>
+                </div>
+            </div>
 
-                                                @endpush
+        </div>
+    </div>
 
-                                            @elseif ($content->type == 'YouTube')
-                                                <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="{{ $content->link }}"></div>
-                                            @endif
+    @php
+        $commentTotal = method_exists($comment, 'total') ? $comment->total() : $comment->count();
+    @endphp
 
-                                            @if (($content->type == 'Video') || ($content->type == 'YouTube'))
-                                            @php
-                                                $time_duration = explode(':', $content->duration);
-                                                $minutes = (int)$time_duration[0];
-                                                $seconds = (int)$time_duration[1];
-                                            @endphp
-                                            <input type="hidden" id="player_duration" value="{{ ($minutes*60)+$seconds }}">
-                                            @endif
-                                            <input type="hidden" id="player_progress" value="{{ $content_user->progress }}">
-                                            <input type="hidden" data-url="{{ route('content.user.progress', $content->slug) }}" id="player_paused">
-
-                                        </div>
-                                    </div>
-
-                                    <div class="my-2">
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <a href="#" class="btn text-muted border-0 shadow-none">
-                                                    <!-- Download SVG icon from http://tabler-icons.io/i/eye -->
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                        <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path>
-                                                        <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"></path>
-                                                    </svg>
-                                                    {{ $content->views }}
-                                                </a>
-
-                                                <a href="#comment" class="btn text-muted border-0 shadow-none">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-message-circle" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                        <path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1"></path>
-                                                    </svg>
-                                                    {{ $comment->count() }}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <hr class="my-1">
-
-                                    <p>{!! nl2br($content->description) !!}</p>
-                                </div>
-                                <div class="col-3">
-                                    <div class="card-header pb-2">
-                                        <h3 class="card-title mb-0">On This Playlist</h3>
-                                    </div>
-                                    <div class="card-body p-0">
-                                        <div class="d-flex align-items-center gap-2 my-2">
-                                            <p class="mb-0">All Progress: </p>
-                                            <span class="badge bg-{{ $percentageProgressPlaylist < 100 ? 'red' : 'green' }}-lt">{{ number_format($percentageProgressPlaylist) . '%' }}</span>
-                                        </div>
-                                        <div class="list-group list-group-flush list-group-hoverable overflow-auto" style="max-height: 40rem">
-                                            @foreach ($content_all as $list)
-                                                @php
-                                                    $learningProgress = App\Models\ContentUser::where('user_id', Auth::user()->id)
-                                                        ->where('content_id', $list->content_id)
-                                                        ->first()->progress ?? 0;
-                                                @endphp
-                                                @if ($list->content->slug != null)
-                                                    <div class="list-group-item" @if ($content->slug == $list->content->slug) style="background-color: #ededed" @endif data-bs-trigger="hover" data-bs-toggle="popover" title="{{ $list->content->title }}" data-bs-html="true" data-bs-content="{{ $list->content->description }}">
-                                                        <div class="row g-2">
-                                                            <div class="col-auto">
-                                                                <div class="text-center">
-                                                                    @if ($list->content->type == 'YouTube')
-                                                                        <span class="avatar" style="background-image: url(http://img.youtube.com/vi/{{ $list->content->link }}/mqdefault.jpg)"></span>
-                                                                    @else
-                                                                        @php
-                                                                            $src = 'storage/files/content/' . $list->content->id . '/thumb.jpg';
-                                                                        @endphp
-                                                                        @if (\File::exists(public_path($src)) && !is_dir($src))
-                                                                            <span class="avatar" style="background-image: url({{ asset($src) }})"></span>
-                                                                        @else
-                                                                            <span class="avatar" style="background-image: url({{ asset('default-video.jpg') }})"></span>
-                                                                        @endif
-                                                                    @endif
-    
-                                                                    <div>
-                                                                        @if ($content->slug == $list->content->slug)
-                                                                            <span class="status-dot status-dot-animated status-blue"></span>
-                                                                            <span class="status-dot status-dot-animated status-azure"></span>
-                                                                            <span class="status-dot status-dot-animated status-indigo"></span>
-                                                                        @endif
-                                                                    </div>
-                                                                    <div class="badge bg-{{ $learningProgress < 100 ? 'red' : 'green' }}-lt">{{ $learningProgress . '%' }}</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col">
-                                                                <a href="{{ route('playlist.user.view', [$playlist->slug, $list->content->slug]) }}" class="text-reset fs-5">{{ $list->content->title }}</a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    <div class="modal fade playlist-comment-modal" id="playlistCommentModal" tabindex="-1" aria-labelledby="playlistCommentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content border-0 rounded-4">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="playlistCommentModalLabel">
+                        <i class="far fa-comment-dots me-2"></i>
+                        {{ $commentTotal }} Comments
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="view-comment-wrapper">
+                        <x-comment
+                            :content="$content"
+                            :comment="$comment"
+                            playlistslug="{{ $playlist->slug }}"
+                            type="contentplaylist"
+                        />
                     </div>
                 </div>
             </div>
         </div>
-
-        <x-comment :content="$content" :comment="$comment" playlistslug="{{ $playlist->slug }}" type="contentplaylist" />
-
     </div>
 @endsection
 
 @section('style')
     <link rel="stylesheet" href="{{ $url_ytplayer_css }}">
+
+    @if (in_array($content->type, ['Document', 'SOP/Regulation']))
+        <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/owl-pdf-reader.css') }}">
+    @endif
+
+    @include('user.playlist.components.view-style')
+
     <style>
-        .playing {
-            position: absolute;
-
-            width: auto;
-            transform: translateX(-50%) translateY(-50%);
+        .playlist-comment-modal .modal-dialog {
+            display: flex;
+            width: min(70vw, 920px);
+            max-width: min(70vw, 920px);
+            height: 88vh;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-
-        .now.playing .bar {
-            display: inline-block;
-            position: relative;
-            margin-right: 0px;
-            width: 2px;
-            height: 1px;
+        .playlist-comment-modal .modal-content {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            max-height: 100%;
             overflow: hidden;
-            background: linear-gradient(to bottom, #ff9500, #ff5e3a);
-            color: transparent;
-            animation-name: pulse;
-            animation-duration: 1s;
-            animation-iteration-count: infinite;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, .24);
         }
 
-        .paused.playing .bar {
-            animation-iteration-count: 1;
+        .playlist-comment-modal .modal-header {
+            flex: 0 0 auto;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
         }
 
-        .paused.playing:after {
-            content: "Paused (Lame)"
+        .playlist-comment-modal .modal-title {
+            display: inline-flex;
+            align-items: center;
+            color: #0f172a;
+            font-size: 16px;
+            font-weight: 800;
         }
 
-        .n1 {
-            animation-delay: 0.5s;
+        .playlist-comment-modal .modal-body {
+            display: flex;
+            flex: 1 1 auto;
+            min-height: 0;
+            padding: 0;
+            background: #f8fafc;
+            overflow: hidden;
         }
 
-        .n2 {
-            animation-delay: 0.2s;
+        .view-comment-wrapper {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            padding: 12px 14px 14px;
+            box-sizing: border-box;
+            background: #f8fafc;
+            overflow: hidden;
         }
 
-        .n3 {
-            animation-delay: 1.2s;
+        .view-comment-wrapper .comment-ajax-root {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            margin: 0 !important;
+            overflow: hidden;
         }
 
-        .n4 {
-            animation-delay: 0.9s;
+        .view-comment-wrapper.is-loading-comments,
+        .view-comment-wrapper .comment-ajax-root.is-loading-comments {
+            opacity: .65;
+            pointer-events: none;
+            transition: opacity .18s ease;
         }
 
-        .n5 {
-            animation-delay: 2.3s;
+        .view-comment-wrapper #comment {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            padding: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
         }
 
-        .n6 {
-            animation-delay: 1.3s;
+        .view-comment-wrapper #comment .card-header {
+            flex: 0 0 auto;
+            padding: 0 0 10px !important;
+            background: transparent !important;
         }
 
-        .n7 {
-            animation-delay: 3.1s;
+        .view-comment-wrapper #comment .card-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            padding: 0 !important;
+            background: transparent !important;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
         }
 
-        .n8 {
-            animation-delay: 1.9s;
+        .view-comment-wrapper .comment-count {
+            display: none !important;
         }
 
-        @keyframes pulse {
-            0% {
-                height: 1px;
-                margin-top: 0;
+        .view-comment-wrapper .comment-form > .d-flex {
+            gap: 8px !important;
+        }
+
+        .view-comment-wrapper .comment-form .avatar,
+        .view-comment-wrapper .comment-item-root > .flex-shrink-0 .avatar {
+            width: 38px !important;
+            height: 38px !important;
+            font-size: 13px !important;
+        }
+
+        .view-comment-wrapper .comment-item-reply > .flex-shrink-0 .avatar {
+            width: 30px !important;
+            height: 30px !important;
+            font-size: 11px !important;
+        }
+
+        .view-comment-wrapper .comment-thread-root {
+            padding: 12px 14px !important;
+        }
+
+        .view-comment-wrapper .comment-thread {
+            margin-bottom: 8px !important;
+            padding: 12px 14px !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            background: #ffffff !important;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, .04);
+        }
+
+        .view-comment-wrapper .comment-thread:last-child {
+            margin-bottom: 0 !important;
+        }
+
+        .view-comment-wrapper .comment-thread-reply {
+            margin-top: 6px !important;
+            padding: 10px 12px !important;
+            border-left: 3px solid #bfdbfe !important;
+            background: #f8fafc !important;
+            border-radius: 10px !important;
+        }
+
+        .view-comment-wrapper .comment-bubble {
+            background: transparent !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+        }
+
+        .view-comment-wrapper .comment-name {
+            margin-bottom: 2px !important;
+            color: #0f172a;
+            font-size: 13px !important;
+            line-height: 1.25 !important;
+        }
+
+        .view-comment-wrapper .comment-text {
+            color: #334155;
+            font-size: 13px !important;
+            line-height: 1.42 !important;
+        }
+
+        .view-comment-wrapper .comment-meta {
+            margin-top: 4px !important;
+            padding-left: 0 !important;
+            gap: 8px !important;
+            font-size: 11px !important;
+            line-height: 1.2 !important;
+        }
+
+        .view-comment-wrapper .comment-action {
+            font-size: 11px !important;
+            gap: 3px !important;
+        }
+
+        .view-comment-wrapper .comment-action i {
+            font-size: 14px !important;
+        }
+
+        .view-comment-wrapper .replies-block,
+        .view-comment-wrapper .reply-form {
+            margin-left: 34px !important;
+        }
+
+        .view-comment-wrapper .replies-block {
+            margin-top: 6px !important;
+        }
+
+        .view-comment-wrapper .reply-list {
+            margin-top: 8px !important;
+        }
+
+        .view-comment-wrapper .comment-replies-toggle {
+            padding: 4px 8px !important;
+            font-size: 12px !important;
+        }
+
+        .view-comment-wrapper textarea,
+        .view-comment-wrapper .form-control,
+        .view-comment-wrapper .modern-comment-input {
+            padding: 8px 10px !important;
+            border-radius: 9px !important;
+            font-size: 13px !important;
+            line-height: 1.35 !important;
+        }
+
+        .view-comment-wrapper .comment-textarea {
+            min-height: 74px !important;
+            max-height: 80px !important;
+            resize: vertical;
+        }
+
+        .view-comment-wrapper .comment-reply-textarea {
+            min-height: 38px !important;
+            max-height: 56px !important;
+        }
+
+        .view-comment-wrapper .comment-submit-row {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 8px !important;
+            margin-top: 6px !important;
+        }
+
+        .view-comment-wrapper .comment-submit-row .btn {
+            flex: 0 0 auto;
+            padding: 5px 12px !important;
+        }
+
+        .view-comment-wrapper .pagination {
+            margin: 10px 0 0;
+            justify-content: center;
+        }
+
+        .view-comment-wrapper .comment-pagination {
+            padding: 10px 0 0 !important;
+        }
+
+        body[data-bs-theme="dark"] .learning-view-page,
+        body.dark-mode .learning-view-page {
+            background: #0f172a;
+        }
+
+        body[data-bs-theme="dark"] .playlist-comment-modal .modal-title,
+        body.dark-mode .playlist-comment-modal .modal-title {
+            color: #e5e7eb;
+        }
+
+        body[data-bs-theme="dark"] .playlist-comment-modal .modal-body,
+        body.dark-mode .playlist-comment-modal .modal-body {
+            background: #0f172a;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper,
+        body.dark-mode .view-comment-wrapper {
+            background: #0f172a;
+            color: #e5e7eb;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .card,
+        body.dark-mode .view-comment-wrapper .card {
+            background: transparent !important;
+            color: #e5e7eb !important;
+            border-color: rgba(148, 163, 184, .18) !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-thread-reply,
+        body.dark-mode .view-comment-wrapper .comment-thread-reply {
+            background: #111827 !important;
+            border-left-color: #05507D !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-replies .comment-thread-reply,
+        body.dark-mode .view-comment-wrapper .comment-replies .comment-thread-reply {
+            background: #1f2937 !important;
+            border-left-color: #6AAED6 !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-thread,
+        body.dark-mode .view-comment-wrapper .comment-thread {
+            background: rgba(15, 23, 42, .72) !important;
+            border-color: rgba(148, 163, 184, .16) !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-name,
+        body.dark-mode .view-comment-wrapper .comment-name {
+            color: #f8fafc;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .comment-text,
+        body.dark-mode .view-comment-wrapper .comment-text {
+            color: #cbd5e1;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper textarea,
+        body[data-bs-theme="dark"] .view-comment-wrapper .form-control,
+        body[data-bs-theme="dark"] .view-comment-wrapper .modern-comment-input,
+        body.dark-mode .view-comment-wrapper textarea,
+        body.dark-mode .view-comment-wrapper .form-control,
+        body.dark-mode .view-comment-wrapper .modern-comment-input {
+            background: #0f172a !important;
+            color: #e5e7eb !important;
+            border-color: #334155 !important;
+        }
+
+        body[data-bs-theme="dark"] .view-comment-wrapper .text-muted,
+        body.dark-mode .view-comment-wrapper .text-muted {
+            color: #94a3b8 !important;
+        }
+
+        @media (max-width: 768px) {
+            .playlist-comment-modal .modal-dialog {
+                align-items: center;
+                width: 90vw;
+                max-width: 90vw;
+                height: 90vh;
+                margin: 0 auto;
             }
 
-            10% {
-                height: 20px;
-                margin-top: -20px;
+            .playlist-comment-modal .modal-content {
+                max-height: 100%;
+                width: 100%;
             }
 
-            50% {
-                height: 10px;
-                margin-top: -10px;
+            .playlist-comment-modal .modal-body {
+                min-height: 0;
+                max-height: none;
+                overflow: hidden;
             }
 
-            60% {
-                height: 15px;
-                margin-top: -15px;
+            .view-comment-wrapper {
+                padding: 10px;
             }
 
-            80% {
-                height: 30px;
-                margin-top: -30px;
+            .view-comment-wrapper .comment-thread {
+                margin-bottom: 8px !important;
+                padding: 12px !important;
             }
 
-            100% {
-                height: 1px;
-                margin-top: 0;
+            .view-comment-wrapper .replies-block,
+            .view-comment-wrapper .reply-form {
+                margin-left: 28px !important;
+            }
+
+            .view-comment-wrapper .comment-form .avatar,
+            .view-comment-wrapper .comment-item-root > .flex-shrink-0 .avatar {
+                width: 36px !important;
+                height: 36px !important;
+            }
+
+            .view-comment-wrapper .comment-item-reply > .flex-shrink-0 .avatar {
+                width: 28px !important;
+                height: 28px !important;
+            }
+
+            .view-comment-wrapper .comment-textarea {
+                min-height: 70px !important;
+                max-height: 78px !important;
+            }
+
+            .view-comment-wrapper .comment-submit-row {
+                flex-direction: row !important;
+                align-items: center !important;
+            }
+
+            .view-comment-wrapper .comment-submit-row #note_remaining {
+                min-width: 0;
+                font-size: 11px !important;
+            }
+
+            .view-comment-wrapper .comment-submit-row .btn {
+                padding: 5px 10px !important;
             }
         }
     </style>
 @endsection
 
 @section('script')
-    <script src={{ $url_ytplayer_js }}></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // window.Plyr && (new Plyr('#player'));
-            @if ($content_user->progress >= 100)
-            const player = new Plyr('#player');
-            @else
-            const player = new Plyr('#player', {
-                                listeners: { //disable fast forward
-                                    seek (e) {
-                                        e.preventDefault();
-                                        console.log('prevented');
-                                        return false;
-                                    }
-                                }
-                            });
-            @endif
+<script>
+    (function () {
+        var layout  = document.getElementById('playlistLearningLayout');
+        var LS_LEFT  = 'owl_playlist_left_collapsed';
+        var LS_RIGHT = 'owl_playlist_right_collapsed';
+        var mobileQuery = window.matchMedia('(max-width: 991px)');
+        var lastMobileState = null;
+        var leftButton = document.querySelector('.learning-view-page .restore-left');
+        var rightButton = document.querySelector('.learning-view-page .restore-right');
+        var leftPanel = document.getElementById('content-list');
+        var rightPanel = document.getElementById('ai-assistant');
 
-            // player.on('ready', function() {
-            //     var progression = $('#player_progress').val();
-            //     var durasi = $('#player_duration').val();
-            //     var current_player_time = (progression * durasi) / 100;
+        function applyDesktopState() {
+            if (!layout) return;
 
-            //     if (current_player_time < durasi) {
-            //         player.currentTime = current_player_time;
-            //     }
-            // })
+            layout.classList.toggle('left-collapsed', localStorage.getItem(LS_LEFT) === '1');
+            layout.classList.toggle('right-collapsed', localStorage.getItem(LS_RIGHT) === '1');
+        }
 
-            player.on('loadeddata', onDataLoaded)
-            function onDataLoaded () {
+        function isMobileView() {
+            return mobileQuery.matches;
+        }
 
-                var progression = $('#player_progress').val();
-                var durasi = $('#player_duration').val();
-                var current_player_time = (progression * durasi) / 100;
+        function syncPanelAccessibility() {
+            var leftOpen = isMobileView()
+                ? layout.classList.contains('mobile-left-open')
+                : !layout.classList.contains('left-collapsed');
+            var rightOpen = isMobileView()
+                ? layout.classList.contains('mobile-right-open')
+                : !layout.classList.contains('right-collapsed');
 
-                if(current_player_time < durasi){
-                    player.currentTime = current_player_time;
-                }
+            if (leftButton) leftButton.setAttribute('aria-expanded', leftOpen ? 'true' : 'false');
+            if (rightButton) rightButton.setAttribute('aria-expanded', rightOpen ? 'true' : 'false');
+            if (leftPanel) leftPanel.setAttribute('aria-hidden', leftOpen ? 'false' : 'true');
+            if (rightPanel) rightPanel.setAttribute('aria-hidden', rightOpen ? 'false' : 'true');
+        }
 
-                if (current_player_time <= player.duration) {
-                player.off('loadeddata', onDataLoaded)
-                player.currentTime = current_player_time
-                }
+        function resetResponsiveState(force) {
+            if (!layout) return;
+
+            var mobile = isMobileView();
+            if (!force && mobile === lastMobileState) return;
+            lastMobileState = mobile;
+
+            layout.classList.remove('mobile-left-open', 'mobile-right-open');
+
+            if (mobile) {
+                layout.classList.remove('left-collapsed', 'right-collapsed');
+            } else {
+                applyDesktopState();
             }
 
-            player.on('pause', function() {
-                var durasi = $('#player_duration').val();
-                $.ajax({
-                    type: "PUT",
-                    url: $('#player_paused').data('url'),
-                    data: {
-                        'current_time': player.currentTime,
-                        'duration': durasi,
-                        '_token': '{{ csrf_token() }}'
-                    },
-                    success: function(data) {
-                        console.log(data.success)
-                    }
-                });
-            })
+            syncPanelAccessibility();
+        }
 
+        function toggleMobilePanel(side) {
+            var targetClass = side === 'left' ? 'mobile-left-open' : 'mobile-right-open';
+            var wasOpen = layout.classList.contains(targetClass);
+
+            layout.classList.remove('mobile-left-open', 'mobile-right-open');
+            if (!wasOpen) layout.classList.add(targetClass);
+
+            syncPanelAccessibility();
+        }
+
+        function toggleLearningPanel(side) {
+            if (!layout) return;
+
+            if (isMobileView()) {
+                toggleMobilePanel(side);
+                return;
+            }
+
+            if (side === 'left') {
+                layout.classList.toggle('left-collapsed');
+                localStorage.setItem(LS_LEFT, layout.classList.contains('left-collapsed') ? '1' : '0');
+            }
+            if (side === 'right') {
+                layout.classList.toggle('right-collapsed');
+                localStorage.setItem(LS_RIGHT, layout.classList.contains('right-collapsed') ? '1' : '0');
+            }
+
+            syncPanelAccessibility();
+        }
+
+        window.toggleLearningPanel = toggleLearningPanel;
+        resetResponsiveState(true);
+        window.addEventListener('resize', function () {
+            resetResponsiveState(false);
         });
-    </script>
+
+        function syncPlayerFullscreenState() {
+            var player = document.getElementById('contentContainer');
+            var overlay = document.querySelector('.fullscreen-player-overlays');
+            if (!player) return;
+
+            var fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement || null;
+            var isFullscreen = fullscreenElement && (fullscreenElement === player || fullscreenElement.contains(player) || player.contains(fullscreenElement));
+            player.classList.toggle('is-fullscreen', !!isFullscreen);
+
+            if (!overlay) return;
+            if (isFullscreen && fullscreenElement && !fullscreenElement.contains(overlay)) {
+                fullscreenElement.appendChild(overlay);
+            } else if (!isFullscreen && overlay.parentElement !== player) {
+                player.insertBefore(overlay, player.firstChild);
+            }
+        }
+
+        document.addEventListener('fullscreenchange', syncPlayerFullscreenState);
+        document.addEventListener('webkitfullscreenchange', syncPlayerFullscreenState);
+
+        $(document).on('click', '.overview-toggle', function () {
+            var $button = $(this);
+            var $overview = $('#playlistOverviewText');
+            var expanded = !$overview.toggleClass('is-collapsed').hasClass('is-collapsed');
+            $button.text(expanded ? $button.data('read-less') : $button.data('read-more'));
+        });
+
+    })();
+</script>
+    <script src="{{ asset('js/learning-progress.js') }}"></script>
+    <script src="{{ $url_ytplayer_js }}"></script>
+
+    @if (in_array($content->type, ['Document', 'SOP/Regulation']))
+        <script src="{{ asset('js/pdf.min.js') }}"></script>
+        <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
+        <script src="{{ asset('js/owl-pdf-reader.js') }}"></script>
+    @endif
+
+    @include('user.playlist.components.view-player-script')
 @endsection

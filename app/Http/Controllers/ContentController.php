@@ -7,16 +7,183 @@ use Illuminate\Http\Request;
 use App\Models\Classification;
 use App\Models\ContentUser;
 use App\Models\User;
+use App\Support\DurationFormatter;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class ContentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $content = Content::with('classification')->latest()->get();
+        $query = Content::query()->with('classification')->withCount('allComments');
+        $today = Carbon::today();
+        $todayDate = $today->toDateString();
+        $sevenDaysFromToday = $today->copy()->addDays(7)->toDateString();
+        $thirtyDaysFromToday = $today->copy()->addDays(30)->toDateString();
+
+        if ($request->filled('s')) {
+            $search = $request->s;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('author', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('classification_id')) {
+            $query->where('classification_id', $request->classification_id);
+        }
+
+        if ($request->filled('active')) {
+            $query->where('active', $request->active);
+        }
+
+        if ($request->filled('exam')) {
+            $query->where('exam', $request->exam);
+        }
+
+        if ($request->filled('playlistonly')) {
+            $query->where('playlistonly', $request->playlistonly);
+        }
+
+        if ($request->filled('deadline')) {
+            if ($request->deadline === 'with') {
+                $query->where('has_deadline', 1);
+            } elseif ($request->deadline === 'without') {
+                $query->where(function ($q) {
+                    $q->whereNull('has_deadline')->orWhere('has_deadline', 0);
+                });
+            } elseif ($request->deadline === 'expired') {
+                $query->where('has_deadline', 1)
+                      ->whereDate('to_date', '<', $todayDate);
+            } elseif ($request->deadline === 'active') {
+                $query->where('has_deadline', 1)
+                      ->whereDate('from_date', '<=', $todayDate)
+                      ->whereDate('to_date', '>=', $todayDate);
+            }
+        }
+
+        if ($request->filled('date_from') && $request->filled('date_to')) {
+            $query->whereBetween('content.date', [$request->date_from, $request->date_to]);
+        } elseif ($request->filled('date_from')) {
+            $query->whereDate('content.date', '>=', $request->date_from);
+        } elseif ($request->filled('date_to')) {
+            $query->whereDate('content.date', '<=', $request->date_to);
+        }
+
+        if ($request->filled('deadline_from_date') && $request->filled('deadline_to_date')) {
+            $query->whereBetween('content.date', [
+                $request->deadline_from_date,
+                $request->deadline_to_date,
+            ]);
+        } elseif ($request->filled('deadline_from_date')) {
+            $query->whereDate('content.date', '>=', $request->deadline_from_date);
+        } elseif ($request->filled('deadline_to_date')) {
+            $query->whereDate('content.date', '<=', $request->deadline_to_date);
+        }
+
+        if ($request->filled('created_from_date')) {
+            $query->whereDate('content.created_at', '>=', $request->created_from_date);
+        }
+
+        if ($request->filled('created_to_date')) {
+            $query->whereDate('content.created_at', '<=', $request->created_to_date);
+        }
+
+        if ($request->filled('updated_from_date')) {
+            $query->whereDate('content.updated_at', '>=', $request->updated_from_date);
+        }
+
+        if ($request->filled('updated_to_date')) {
+            $query->whereDate('content.updated_at', '<=', $request->updated_to_date);
+        }
+
+        switch ($request->get('deadline_status')) {
+            case 'expired':
+                $query->whereDate('content.date', '<', $todayDate);
+                break;
+            case 'today':
+                $query->whereDate('content.date', $todayDate);
+                break;
+            case 'less_than_7_days':
+                $query->whereDate('content.date', '>', $todayDate)
+                    ->whereDate('content.date', '<=', $sevenDaysFromToday);
+                break;
+            case 'less_than_30_days':
+                $query->whereDate('content.date', '>', $todayDate)
+                    ->whereDate('content.date', '<=', $thirtyDaysFromToday);
+                break;
+            case 'more_than_30_days':
+                $query->whereDate('content.date', '>', $thirtyDaysFromToday);
+                break;
+        }
+
+        switch ($request->get('sort')) {
+            case 'oldest_course':
+            case 'oldest':
+                $query->orderBy('content.created_at', 'asc');
+                break;
+            case 'recently_updated':
+                $query->orderBy('content.updated_at', 'desc');
+                break;
+            case 'old_update':
+                $query->orderBy('content.updated_at', 'asc');
+                break;
+            case 'newest_course':
+                $query->orderBy('content.created_at', 'desc');
+                break;
+            case 'views':
+                $query->orderBy('content.views', 'desc');
+                break;
+            case 'title':
+                $query->orderBy('content.title');
+                break;
+            default:
+                $query->orderByRaw("
+                    (
+                        (CASE WHEN content.title IS NOT NULL AND TRIM(content.title) <> '' THEN 3 ELSE 0 END) +
+                        (CASE WHEN content.classification_id IS NOT NULL AND TRIM(content.classification_id) <> '' AND content.classification_id <> '0' THEN 3 ELSE 0 END) +
+                        (CASE WHEN content.date IS NOT NULL THEN 3 ELSE 0 END) +
+                        (CASE WHEN content.slug IS NOT NULL AND TRIM(content.slug) <> '' THEN 2 ELSE 0 END) +
+                        (CASE WHEN content.learning_hours IS NOT NULL AND content.learning_hours > 0 THEN 2 ELSE 0 END) +
+                        (CASE WHEN content.duration IS NOT NULL AND TRIM(content.duration) <> '' THEN 1 ELSE 0 END) +
+                        (CASE WHEN content.type IS NOT NULL AND TRIM(content.type) <> '' THEN 1 ELSE 0 END) +
+                        (CASE WHEN content.description IS NOT NULL AND TRIM(content.description) <> '' THEN 1 ELSE 0 END) +
+                        (CASE WHEN (content.file IS NOT NULL AND TRIM(content.file) <> '' AND content.file <> '[]') OR (content.link IS NOT NULL AND TRIM(content.link) <> '') THEN 1 ELSE 0 END) +
+                        (CASE WHEN content.active = 'Active' THEN 2 ELSE 0 END)
+                    ) DESC, content.created_at DESC
+                ");
+                break;
+        }
+
+        $contents = $query->paginate(10)->withQueryString();
+
+        $types           = Content::whereNotNull('type')->distinct()->orderBy('type')->pluck('type');
+        $classifications = Classification::orderBy('classification_name')->get();
+
+        $totalContent   = Content::count();
+        $activeContent  = Content::where('active', 'Active')->count();
+        $inactiveContent = Content::where('active', 'Inactive')->count();
+        $playlistOnly   = Content::where('playlistonly', 'Y')->count();
+        $withDeadline   = Content::where('has_deadline', 1)->count();
+        $totalViews     = Content::sum('views');
+
         return view('main.content.index', [
-            "title" =>  "Content List",
-            "content" => $content
+            'title'           => 'Content Management',
+            'contents'        => $contents,
+            'types'           => $types,
+            'classifications' => $classifications,
+            'totalContent'    => $totalContent,
+            'activeContent'   => $activeContent,
+            'inactiveContent' => $inactiveContent,
+            'playlistOnly'    => $playlistOnly,
+            'withDeadline'    => $withDeadline,
+            'totalViews'      => $totalViews,
         ]);
     }
     // public function ongoingcontent()
@@ -33,9 +200,11 @@ class ContentController extends Controller
     public function create()
     {
         $classification = Classification::all();
+        $user = User::all();
         return view('main.content.create', [
             "title" =>  "Add Content",
-            "classification" => $classification
+            "classification" => $classification,
+            "user" => $user
         ]);
     }
     public function uploadfileajax(Request $request)
@@ -43,7 +212,7 @@ class ContentController extends Controller
         $name = [];
         $original_name = [];
         foreach ($request->file('file') as $key => $value) {
-            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . date('YmdHi') . '.' . $value->getClientOriginalExtension();
+            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . Carbon::now()->format('YmdHi') . '.' . $value->getClientOriginalExtension();
             $destinationPath = 'storage/files/tmp/';
             $value->move($destinationPath, $image);
             $name[] = $image;
@@ -72,7 +241,7 @@ class ContentController extends Controller
         $name = [];
         $original_name = [];
         foreach ($request->file('file') as $key => $value) {
-            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . date('YmdHi') . '.' . $value->getClientOriginalExtension();
+            $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . Carbon::now()->format('YmdHi') . '.' . $value->getClientOriginalExtension();
             $destinationPath = 'storage/files/tmp/thumb/';
             $value->move($destinationPath, $image);
             $name[] = $image;
@@ -96,17 +265,28 @@ class ContentController extends Controller
 
     public function store(Request $request)
     {
-        //
-        // $request->validate([
-        //     'title' => 'required',
-        //     'type' => 'required',
-        //     'classification' => 'required',
-        //     'date' => 'required',
-        //     'author' => 'required',
-        //     'duration' => 'required',
-        //     'description' => 'required'
-        // ]);
-        // return $request;
+        Log::info('ContentController@store called', ['user_id' => auth()->id(), 'payload' => $request->all()]);
+
+        $request->validate([
+            'page_duration' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:300'],
+            'document_total_pages' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'duration' => ['nullable', function ($attribute, $value, $fail) {
+                if (!DurationFormatter::isValid($value)) {
+                    $fail('The duration format must be HH:MM:SS or mm:ss.');
+                }
+            }],
+            'learning_hours' => [
+                'required',
+                'numeric',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    if (fmod((float) $value * 2, 1.0) !== 0.0) {
+                        $fail('Learning Hours must be in increments of 0.5.');
+                    }
+                },
+            ],
+        ]);
+
         if ($request->type == "YouTube") {
             parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
             // $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
@@ -114,16 +294,28 @@ class ContentController extends Controller
         } else {
             $ytid = null;
         }
+        $hasDeadline = $request->boolean('has_deadline');
+        $pageDuration = $request->type === 'Document' ? (int) $request->page_duration : 30;
+        $documentTotalPages = $request->type === 'Document' ? (int) $request->document_total_pages : 0;
+        $duration = $documentTotalPages > 0
+            ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
+            : DurationFormatter::normalize($request->duration);
+        $learningHours = (float) $request->input('learning_hours');
         $newcontent = new Content([
-            'title' => $request->title,
-            'type' => $request->type,
+            'title'            => $request->title,
+            'type'             => $request->type,
             'classification_id' => $request->classification,
-            'date' => $request->date,
-            'author' => $request->author,
-            'duration' => $request->duration,
-            'description' => $request->description,
-            'playlistonly' => $request->playlistonly,
-            'link' => $ytid
+            'date'             => $request->date,
+            'author'           => $request->author,
+            'duration'         => $duration,
+            'learning_hours'   => $learningHours,
+            'page_duration'    => $pageDuration,
+            'description'      => $request->description,
+            'playlistonly'     => $request->playlistonly,
+            'link'             => $ytid,
+            'has_deadline'     => $hasDeadline,
+            'from_date'        => $hasDeadline ? $request->from_date : null,
+            'to_date'          => $hasDeadline ? $request->to_date : null,
         ]);
         $newcontent->save();
         $newid = $newcontent->id;
@@ -198,6 +390,17 @@ class ContentController extends Controller
     }
     public function update(Request $request, Content $content)
     {
+        $request->validate([
+            'page_duration' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:300'],
+            'total_page' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:100000'],
+            'duration' => ['nullable', function ($attribute, $value, $fail) {
+                if (!DurationFormatter::isValid($value)) {
+                    $fail('The duration format must be HH:MM:SS or mm:ss.');
+                }
+            }],
+            'learning_hours' => ['nullable'],
+        ]);
+
         $path = public_path('storage/files/content/' . $request->id . '');
         $arraydoc = array();
         if ($request->type == "YouTube") {
@@ -213,13 +416,20 @@ class ContentController extends Controller
             }
         } else {
             $ytid = null;
+            $arraythumbnail = [];
+            $targetDir = public_path('storage/files/content/' . $request->contentid);
+
             if ($request->has('documents')) {
-                if (!File::isDirectory($path)) {
-                    File::makeDirectory($path, 0777, true, true);
+                if (!File::isDirectory($targetDir)) {
+                    File::makeDirectory($targetDir, 0755, true);
                 }
                 foreach ($request->documents as $doc) {
-                    $arraydoc[] = $doc;
-                    File::move(public_path('storage/files/tmp') . '/' . $doc, public_path('storage/files/content/' . $request->contentid . '') . '/' . $doc);
+                    $tmpPath    = public_path('storage/files/tmp/' . $doc);
+                    $targetPath = $targetDir . '/' . $doc;
+                    if (File::exists($tmpPath)) {
+                        $arraydoc[] = $doc;
+                        File::move($tmpPath, $targetPath);
+                    }
                 }
                 // replacecontent
                 $src = 'storage/files/content/' . $request->contentid . '/' . $request->replacecontent;
@@ -229,10 +439,18 @@ class ContentController extends Controller
                 Content::where('id', $request->contentid)
                     ->update(['file' => json_encode($arraydoc)]);
             }
+
             if ($request->has('thumbnail')) {
+                if (!File::isDirectory($targetDir)) {
+                    File::makeDirectory($targetDir, 0755, true);
+                }
                 foreach ($request->thumbnail as $thumbnail) {
-                    $arraythumbnail[] = $thumbnail;
-                    File::move(public_path('storage/files/tmp/thumb') . '/' . $thumbnail, public_path('storage/files/content/' .  $request->contentid . '') . '/thumb.jpg');
+                    $thumbTmpPath    = public_path('storage/files/tmp/thumb/' . $thumbnail);
+                    $thumbTargetPath = $targetDir . '/thumb.jpg';
+                    if (File::exists($thumbTmpPath)) {
+                        $arraythumbnail[] = $thumbnail;
+                        File::move($thumbTmpPath, $thumbTargetPath);
+                    }
                 }
             }
         }
@@ -260,25 +478,47 @@ class ContentController extends Controller
             $message = "Content successfully saved ";
             $redir = "-";
             $redirmessage = "-";
+        } else if ($request->action == "update") {
+            $active = $getcontent->active;
+            $message = "Content successfully updated ";
+            $redir = "-";
+            $redirmessage = "-";
         } else if ($request->action == "unpublish") {
             $active = "Inactive";
             $message = "Content successfully unpublished ";
             $redir = "-";
             $redirmessage = "-";
         }
+        $hasDeadlineUpdate = $request->boolean('has_deadline');
+        $pageDuration = $request->type === 'Document'
+            ? (int) $request->page_duration
+            : (int) ($getcontent->page_duration ?: 30);
+        $totalPage = $request->type === 'Document'
+            ? (int) $request->total_page
+            : (int) ($getcontent->total_page ?: 0);
+        $duration = DurationFormatter::normalize($request->duration);
+        $learningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convert($duration);
         Content::where('id', $request->contentid)
             ->update([
-                'title' => $request->title,
-                'type' => $request->type,
+                'title'            => $request->title,
+                'type'             => $request->type,
                 'classification_id' => $request->classification,
-                'date' => $request->date,
-                'author' => $request->author,
-                'duration' => $request->duration,
-                'description' => $request->description,
-                'playlistonly' => $request->playlistonly,
-                'active' => $active,
-                'link' => $ytid
+                'date'             => $request->date,
+                'author'           => $request->author,
+                'duration'         => $duration,
+                'learning_hours'   => $learningHours,
+                'page_duration'    => $pageDuration,
+                'total_page'       => $totalPage,
+                'description'      => $request->description,
+                'playlistonly'     => $request->playlistonly,
+                'active'           => $active,
+                'link'             => $ytid,
+                'has_deadline'     => $hasDeadlineUpdate,
+                'from_date'        => $hasDeadlineUpdate ? $request->from_date : null,
+                'to_date'          => $hasDeadlineUpdate ? $request->to_date : null,
             ]);
+
+        app(\App\Services\PlaylistDurationService::class)->refreshForContent((int) $request->contentid);
 
         return to_route('content.edit', $getcontent->slug)->with('success', $message)->with($redir, $redirmessage);
     }
@@ -299,9 +539,88 @@ class ContentController extends Controller
             }
         }
         return to_route('content.edit', $request->slug)->with('success', 'Content successfully assigned');
+    }
 
+    public function synchronizeLearningHours(Request $request, Content $content, \App\Services\LearningHours\ContentLearningHourService $service): \Illuminate\Http\JsonResponse
+    {
+        $result = $service->syncSingleContent($content, $request->all());
 
+        return response()->json($result->toArray());
+    }
 
-        // return $arrayexist;
+    public function documentPdfList(): \Illuminate\Http\JsonResponse
+    {
+        $contents = Content::where('type', 'Document')
+            ->select(['id', 'title', 'type', 'file', 'total_page', 'page_duration'])
+            ->get();
+
+        $data = $contents->map(function ($item) {
+            $contentfile = is_string($item->file) ? json_decode($item->file, true) : [];
+            $getcontentfile = is_array($contentfile) ? ($contentfile[0] ?? '') : ($item->file ?? '');
+            $filename = is_string($getcontentfile) ? trim($getcontentfile) : '';
+
+            $filePath = !empty($filename) ? public_path('storage/files/content/' . $item->id . '/' . $filename) : '';
+            $fileUrl = !empty($filename) ? asset('storage/files/content/' . $item->id . '/' . $filename) : '';
+
+            return [
+                'id' => $item->id,
+                'title' => $item->title,
+                'file_name' => $filename,
+                'file_url' => $fileUrl,
+                'file_exists' => !empty($filePath) && file_exists($filePath),
+                'total_page' => (int) ($item->total_page ?? 0),
+                'page_duration' => (int) ($item->page_duration ?: 30),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'count' => $data->count(),
+        ]);
+    }
+
+    public function syncTotalPage(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => 'required|integer|exists:content,id',
+            'total_page' => 'required|integer|min:1|max:100000',
+        ]);
+
+        $content = Content::findOrFail($validated['id']);
+
+        if ($content->type !== 'Document') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Content is not of type Document.',
+            ], 422);
+        }
+
+        $newTotalPage = (int) $validated['total_page'];
+        $oldTotalPage = (int) ($content->total_page ?? 0);
+
+        if ($oldTotalPage === $newTotalPage) {
+            return response()->json([
+                'success' => true,
+                'updated' => false,
+                'id' => $content->id,
+                'total_page' => $content->total_page,
+                'message' => 'Already synchronized.',
+            ]);
+        }
+
+        $content->total_page = $newTotalPage;
+        $content->save();
+
+        return response()->json([
+            'success' => true,
+            'updated' => true,
+            'id' => $content->id,
+            'old_total_page' => $oldTotalPage,
+            'new_total_page' => $content->total_page,
+            'duration' => $content->duration,
+            'learning_hours' => $content->learning_hours,
+            'message' => 'Total page updated successfully.',
+        ]);
     }
 }

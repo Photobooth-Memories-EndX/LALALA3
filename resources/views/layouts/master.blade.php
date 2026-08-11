@@ -6,10 +6,12 @@
     @include('partials.head-style')
     @yield('style')
 	@stack('styles')
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 </head>
 
 <body>
     <script src="{{ asset('Tabler/dist/js/demo-theme.min.js') }}"></script>
+
     <div class="page">
         @include('partials.header')
         <!-- Content Wrapper. Contains page content -->
@@ -21,8 +23,8 @@
     </div>
     <!-- ./wrapper -->
     @include('partials.foot-script')
-    @yield('script')
     @stack('scripts')
+    @yield('script')
 </body>
 
 </html>

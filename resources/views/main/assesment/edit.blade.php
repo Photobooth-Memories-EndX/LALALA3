@@ -1,31 +1,48 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 
 @section('content')
-    <div class="page-header d-print-none">
-        <div class="container-xl">
-            <div class="row g-2 align-items-center">
-                <div class="col">
-                    <h2 class="page-title">Manage Assesment</h2>
+    <div class="page-header d-print-none mb-4">
+    <div class="container-xl">
+        <div class="row align-items-center">
+            <div class="col">
+                <div class="page-pretitle text-muted">
+                    Learning Management System
                 </div>
-                <div class="col-auto ms-auto d-print-none">
-                    <div class="d-flex">
-                        <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-                            <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('assesment.index') }}">Assesment</a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><a href="#">Edit</a></li>
-                        </ol>
-                    </div>
-                </div>
+
+                <h2 class="page-title fw-bold">
+                    <i class="fas fa-file-alt me-2 text-primary"></i>
+                    Manage Assessment
+                </h2>
+            </div>
+
+            <div class="col-auto">
+                <ol class="breadcrumb breadcrumb-arrows mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="#">Manage</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('assesment.index') }}">
+                            Assessment
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        Edit
+                    </li>
+                </ol>
             </div>
         </div>
     </div>
+</div>
 
     <div class="page-body">
         <div class="page page-center">
             <div class="container">
-                <div class="card card-md">
-                    <div class="card-header">
-                        <h3 class="card-title">Edit Assesment</h3>
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary-lt">
+                       <h3 class="card-title fw-bold">
+                            <i class="fas fa-edit me-2"></i>
+                            Edit Assessment
+                        </h3>
                     </div>
                     <div class="card-body">
 
@@ -54,195 +71,360 @@
 
                             <x-alert type='success' />
 
-                            <div class="mb-3 row">
-                                <x-label class="col-3 col-form-label required">Type</x-label>
-                                <div class="col">
-                                    <x-select name="type" onchange="setRequired(this);">
-                                        <option value="">-choose-</option>
-                                        <option value="content" {{ ($assesment->type == 'content') ? 'selected' : ''  }}>Assesment for content</option>
-                                        <option value="trainingplan" {{ ($assesment->type == 'trainingplan') ? 'selected' : ''  }}>Assesment for playlist</option>
-                                        <option value="global" {{ ($assesment->type == 'global') ? 'selected' : ''  }}>Global Assesment</option>
-                                    </x-select>
-                                </div>
-                            </div>
-                            <div class="mb-3 row {{ ($assesment->type == 'trainingplan') || ($assesment->type == 'global') ? 'd-none' : ''  }}" id="content_id_wrapper">
-                                <x-label class="col-3 col-form-label">Learning Content</x-label>
-                                <div class="col">
-                                    <x-select name="content_id" id="content_id">
-                                        <option value="">-choose-</option>
-                                        @foreach ($contents as $item)
-                                        <option value="{{ $item->id }}" {{ ($assesment->content_id == $item->id) ? 'selected' : ''  }}>{{ $item->title }}</option>
-                                        @endforeach
-                                    </x-select>
-                                </div>
-                            </div>
-                            <div class="mb-3 row {{ ($assesment->type == 'content') || ($assesment->type == 'global') ? 'd-none' : ''  }}" id="trainingplan_id_wrapper">
-                                <x-label class="col-3 col-form-label">Training Plan</x-label>
-                                <div class="col">
-                                    <x-select name="trainingplan_id" id="trainingplan_id">
-                                        <option value="">-choose-</option>
-                                        @foreach ($trainingplan as $item)
-                                            <option value="{{ $item->id }}" {{ ($assesment->trainingplan_id == $item->id) ? 'selected' : ''  }}>{{ $item->title }}</option>
-                                        @endforeach
-                                    </x-select>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <x-label class="col-3 col-form-label required">Title</x-label>
-                                <div class="col">
-                                    <x-input type="text" name="title" placeholder="Enter title" value="{{ $assesment->title }}" />
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <x-label class="col-3 col-form-label">Unique Code (Optional)</x-label>
-                                <div class="col">
-                                    <x-input type="text" name="unique_code" placeholder="Enter unique code" value="{{ $assesment->unique_code }}" />
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <x-label class="col-3 col-form-label required">Passing Grade</x-label>
-                                <div class="col">
-                                    <x-input type="number" name="passing_grade" placeholder="Enter passing grade" value="{{ $assesment->passing_grade }}" />
-                                </div>
-                                <x-label class="col-2 col-form-label required">Time Limit?</x-label>
-                                <div class="col">
-                                    <x-select name="timer" onchange="setRequiredDate(this);">
-                                        <option value="">-choose-</option>
-                                        <option value="y" {{ ($assesment->timer == 'y') ? 'selected' : ''  }}>Yes</option>
-                                        <option value="n" {{ ($assesment->timer == 'n') ? 'selected' : ''  }}>No</option>
-                                    </x-select>
-                                </div>
-                            </div>
-                            <div class="mb-3 row" id="date_wrapper">
-                                <x-label class="col-3 col-form-label required">From Date</x-label>
-                                <div class="col">
-                                    <div class="input-icon">
-                                        <span class="input-icon-addon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
-                                                <path d="M16 3v4" />
-                                                <path d="M8 3v4" />
-                                                <path d="M4 11h16" />
-                                                <path d="M11 15h1" />
-                                                <path d="M12 15v3" />
-                                            </svg>
-                                        </span>
-                                        <x-input placeholder="Select a date" id="datepicker-fromdate" name="fromdate" value="{{ $assesment->fromdate }}" required class="input-date" />
-                                    </div>
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-cogs me-2"></i>
+                                        Assessment Configuration
+                                    </h3>
                                 </div>
 
-                                <x-label class="col-2 col-form-label required">To Date</x-label>
-                                <div class="col">
-                                    <div class="input-icon">
-                                        <span class="input-icon-addon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
-                                                <path d="M16 3v4" />
-                                                <path d="M8 3v4" />
-                                                <path d="M4 11h16" />
-                                                <path d="M11 15h1" />
-                                                <path d="M12 15v3" />
-                                            </svg>
-                                        </span>
-                                        <x-input placeholder="Select a date" id="datepicker-todate" name="todate" value="{{ $assesment->todate }}" required class="input-date" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <x-label class="col-3 col-form-label required">Total Remedials</x-label>
-                                <div class="col-3">
-                                    <input type="number" name="total_remedials" id="total-remedials" class="form-control @error('total_remedials') is-invalid @enderror" placeholder="0" value="{{ old('total_remedials', $assesment->total_remedials) }}">
-                                    @error('total_remedials')
-                                        <div class="invalid-feedback d-block">
-                                            {{ $message }}
+                                <div class="card-body">
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label class="form-label required">Assessment Type</label>
+
+                                                <x-select name="type" onchange="setRequired(this);">
+                                                    <option value="">-choose-</option>
+                                                    <option value="content" {{ ($assesment->type == 'content') ? 'selected' : '' }}>Assesment for content</option>
+                                                    <option value="trainingplan" {{ ($assesment->type == 'trainingplan') ? 'selected' : '' }}>Assesment for playlist</option>
+                                                    <option value="global" {{ ($assesment->type == 'global') ? 'selected' : '' }}>Global Assesment</option>
+                                                </x-select>
+                                            </div>
                                         </div>
-                                    @enderror
+
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label class="form-label required">Title</label>
+                                                <x-input type="text" name="title" placeholder="Enter title" value="{{ $assesment->title }}" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4 {{ ($assesment->type == 'trainingplan') || ($assesment->type == 'global') ? 'd-none' : '' }}" id="content_id_wrapper">
+                                        <label class="form-label">Learning Content</label>
+
+                                        <x-select name="content_id" id="content_id">
+                                            <option value="">-choose-</option>
+                                            @foreach ($contents as $item)
+                                                <option value="{{ $item->id }}" {{ ($assesment->content_id == $item->id) ? 'selected' : '' }}>{{ $item->title }}</option>
+                                            @endforeach
+                                        </x-select>
+                                    </div>
+
+                                    <div class="mb-4 {{ ($assesment->type == 'content') || ($assesment->type == 'global') ? 'd-none' : '' }}" id="trainingplan_id_wrapper">
+                                        <label class="form-label">Training Plan</label>
+
+                                        <x-select name="trainingplan_id" id="trainingplan_id">
+                                            <option value="">-choose-</option>
+                                            @foreach ($trainingplan as $item)
+                                                <option value="{{ $item->id }}" {{ ($assesment->trainingplan_id == $item->id) ? 'selected' : '' }}>{{ $item->title }}</option>
+                                            @endforeach
+                                        </x-select>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label class="form-label">Unique Code (Optional)</label>
+                                                <x-input type="text" name="unique_code" placeholder="Enter unique code" value="{{ $assesment->unique_code }}" />
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="mb-4">
+                                                <label class="form-label required">Passing Grade</label>
+                                                <x-input type="number" name="passing_grade" placeholder="Enter passing grade" value="{{ $assesment->passing_grade }}" />
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="mb-4">
+                                                <label class="form-label required">Time Limit?</label>
+
+                                                <x-select name="timer" onchange="setRequiredDate(this);">
+                                                    <option value="">-choose-</option>
+                                                    <option value="y" {{ ($assesment->timer == 'y') ? 'selected' : '' }}>Yes</option>
+                                                    <option value="n" {{ ($assesment->timer == 'n') ? 'selected' : '' }}>No</option>
+                                                </x-select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="date_wrapper">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-4">
+                                                    <label class="form-label required">From Date</label>
+
+                                                    <div class="input-icon">
+                                                        <span class="input-icon-addon">
+                                                            <i class="fas fa-calendar-alt"></i>
+                                                        </span>
+
+                                                        <x-input placeholder="Select a date" id="datepicker-fromdate" name="fromdate" value="{{ $assesment->fromdate }}" required class="input-date" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="mb-4">
+                                                    <label class="form-label required">To Date</label>
+
+                                                    <div class="input-icon">
+                                                        <span class="input-icon-addon">
+                                                            <i class="fas fa-calendar-alt"></i>
+                                                        </span>
+
+                                                        <x-input placeholder="Select a date" id="datepicker-todate" name="todate" value="{{ $assesment->todate }}" required class="input-date" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-0">
+                                                <label class="form-label required">Total Remedials</label>
+
+                                                <input type="number" name="total_remedials" id="total-remedials" class="form-control @error('total_remedials') is-invalid @enderror" placeholder="0" value="{{ old('total_remedials', $assesment->total_remedials) }}">
+
+                                                @error('total_remedials')
+                                                    <div class="invalid-feedback d-block">
+                                                        {{ $message }}
+                                                    </div>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <hr class="my-2">
                             
-                            <form action="{{ route('assessment.store.question.bank', $assesment->slug) }}" id="form-store-question-bank" method="post">
+                          <form action="{{ route('assessment.store.question.bank', $assesment->slug) }}"
+                                id="form-store-question-bank"
+                                method="post">
                                 @csrf
-                                <input type="hidden" id="assessment-slug" value="{{ $assesment->slug }}">
-                                <div class="mb-3 row align-items-end">
-                                    <div class="col-11">
-                                        <div class="row align-items-center">
-                                            <x-label class="col-2 form-label mb-0 required">Question Bank</x-label>
-                                            <div class="col-5">
-                                                <x-select name="id_question_bank" id="id-question-bank" class="select2 m-0">
-                                                    <option value="" data-total-questions="0">- Choose Question Bank -</option>
+                                <input type="hidden"
+                                    id="assessment-slug"
+                                    value="{{ $assesment->slug }}">
+
+                                <div class="card bg-dark-lt border-0 shadow-sm mb-4">
+
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-database me-2"></i>
+                                            Add Question Bank
+                                        </h3>
+                                    </div>
+
+                                    <div class="card-body">
+
+                                        <div class="row align-items-end">
+
+                                            <div class="col-lg-7">
+                                                <label class="form-label required">
+                                                    Question Bank
+                                                </label>
+
+                                                <x-select
+                                                    name="id_question_bank"
+                                                    id="id-question-bank"
+                                                    class="select2">
+
+                                                    <option value=""
+                                                            data-total-questions="0">
+                                                        - Choose Question Bank -
+                                                    </option>
+
                                                     @foreach ($questionBanks as $questionBank)
-                                                        <option value="{{ $questionBank->id }}" data-total-questions="{{ count($questionBank->questions) }}">{{ $questionBank->title }} ( {{ count($questionBank->questions) }} )</option>
+                                                        <option
+                                                            value="{{ $questionBank->id }}"
+                                                            data-total-questions="{{ count($questionBank->questions) }}">
+                                                            {{ $questionBank->title }}
+                                                            ({{ count($questionBank->questions) }})
+                                                        </option>
                                                     @endforeach
+
                                                 </x-select>
-                                                <div class="invalid-feedback d-none" id="invalid-id-question-bank"></div>
+
+                                                <div class="invalid-feedback d-none"
+                                                    id="invalid-id-question-bank">
+                                                </div>
                                             </div>
-                                            <x-label class="col-3 form-label text-end mb-0 required">Total Question Used/Bank</x-label>
-                                            <div class="col-2">
-                                                <input type="number" min="0" name="amount_question" id="amount-question" value="" class="form-control m-0">
-                                                <div class="invalid-feedback d-none" id="invalid-amount-question"></div>
+
+                                            <div class="col-lg-3">
+                                                <label class="form-label required">
+                                                    Question Used
+                                                </label>
+
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    name="amount_question"
+                                                    id="amount-question"
+                                                    value=""
+                                                    class="form-control">
+
+                                                <div class="invalid-feedback d-none"
+                                                    id="invalid-amount-question">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-lg-2">
+                                                <button
+                                                    type="button"
+                                                    id="btn-store-qeustion-bank"
+                                                    class="btn btn-success w-100">
+                                                    <i class="fas fa-plus me-2"></i>
+                                                    Add
+                                                </button>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="col-1 pt-auto">
-                                        <button type="button" id="btn-store-qeustion-bank" class="btn btn-success w-100 pb-auto"><i class="fas fa-plus me-2"></i>Add</button>
                                     </div>
                                 </div>
                             </form>
 
                             <div class="row">
                                 <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-body p-2">
-                                            <table class="table table-bordered table-striped w-100">
+
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-header">
+                                            <div class="row align-items-center w-100">
+                                                <div class="col">
+                                                    <h3 class="card-title mb-0">
+                                                        <i class="fas fa-list-ul me-2"></i>
+                                                        List of Questions Bank
+                                                    </h3>
+                                                </div>
+
+                                                <div class="col-auto">
+                                                    <span class="badge bg-primary-lt text-primary">
+                                                        Total: {{ $assessmentQuestionBanks->count() ?? 0 }} Bank
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-vcenter card-table table-hover">
                                                 <thead>
-                                                    <tr>
-                                                        <th colspan="5" class="text-center p-2">List of Questions Bank</th>
-                                                    </tr>
                                                     <tr class="text-center">
-                                                        <th class="p-2">No</th>
-                                                        <th class="p-2">Question Bank</th>
-                                                        <th class="p-2">Total Questions in the Bank</th>
-                                                        <th class="p-2">Total Question Used/Bank</th>
-                                                        <th class="p-2">Action</th>
+                                                        <th style="width: 70px;">No</th>
+                                                        <th class="text-start">Question Bank</th>
+                                                        <th>Total Questions in the Bank</th>
+                                                        <th>Total Question Used/Bank</th>
+                                                        <th style="width: 160px;">Action</th>
                                                     </tr>
                                                 </thead>
+
                                                 <tbody>
                                                     @forelse ($assessmentQuestionBanks as $aqb)
                                                         <tr>
-                                                            <td class="p-1 text-center">{{ $loop->iteration }}</td>
-                                                            <td class="p-1">{{ $aqb->question_bank->title }}</td>
-                                                            <td class="p-1 text-center">{{ count($aqb->question_bank->questions) }}</td>
-                                                            <td class="p-1 text-center">{{ $aqb->questions_amount }}</td>
-                                                            <td class="p-1 text-center">
-                                                                <a href="{{ route('assessment.syncronize.question.bank', $aqb->id) }}" class="btn btn-primary btn-sm" title="Syncronize"><i class="fas fa-sync-alt"></i></a>
-                                                                <a href="javascript:void(0)" class="btn btn-warning btn-sm btn-edit-assessment-question-bank" data-id-assessment-question-bank="{{ $aqb->id }}" title="Edit"><i class="fas fa-edit"></i></a>
-                                                                @if (count($aqb->assessment->scores) < 1)
-                                                                    <a href="javascript:void(0)" class="btn btn-danger btn-sm btn-delete-assessment-question-bank" data-question-bank-title="{{ $aqb->question_bank->title }}" data-id-assessment-question-bank="{{ $aqb->id }}" title="Delete"><i class="fas fa-trash-alt"></i></a>
-                                                                @endif
+                                                            <td class="text-center text-muted">
+                                                                {{ $loop->iteration }}
+                                                            </td>
+
+                                                            <td>
+                                                                <div class="fw-semibold">
+                                                                    {{ $aqb->question_bank->title }}
+                                                                </div>
+                                                                <div class="text-muted small">
+                                                                    Question bank source
+                                                                </div>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <span class="badge bg-blue-lt text-blue">
+                                                                    {{ count($aqb->question_bank->questions) }} Questions
+                                                                </span>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <span class="badge bg-green-lt text-green">
+                                                                    {{ $aqb->questions_amount }} Used
+                                                                </span>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <div class="btn-list justify-content-center flex-nowrap">
+                                                                    <a
+                                                                        href="{{ route('assessment.syncronize.question.bank', $aqb->id) }}"
+                                                                        class="btn btn-primary btn-sm"
+                                                                        title="Syncronize">
+
+                                                                        <i class="fas fa-sync-alt"></i>
+                                                                    </a>
+
+                                                                    <a
+                                                                        href="javascript:void(0)"
+                                                                        class="btn btn-warning btn-sm btn-edit-assessment-question-bank"
+                                                                        data-id-assessment-question-bank="{{ $aqb->id }}"
+                                                                        title="Edit">
+
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </a>
+
+                                                                    @if (count($aqb->assessment->scores) < 1)
+                                                                        <a
+                                                                            href="javascript:void(0)"
+                                                                            class="btn btn-danger btn-sm btn-delete-assessment-question-bank"
+                                                                            data-question-bank-title="{{ $aqb->question_bank->title }}"
+                                                                            data-id-assessment-question-bank="{{ $aqb->id }}"
+                                                                            title="Delete">
+
+                                                                            <i class="fas fa-trash-alt"></i>
+                                                                        </a>
+                                                                    @endif
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     @empty
                                                         <tr>
-                                                            <td colspan="5" class="text-center">No Data Available</td>
+                                                            <td colspan="5" class="text-center py-5">
+                                                                <div class="empty">
+                                                                    <div class="empty-icon">
+                                                                        <i class="fas fa-database fa-2x text-muted"></i>
+                                                                    </div>
+
+                                                                    <p class="empty-title">
+                                                                        No Data Available
+                                                                    </p>
+
+                                                                    <p class="empty-subtitle text-muted">
+                                                                        Question bank has not been added to this assessment.
+                                                                    </p>
+                                                                </div>
+                                                            </td>
                                                         </tr>
                                                     @endforelse
                                                 </tbody>
+
                                                 @isset($assessmentQuestionBanks)
                                                     <tfoot>
                                                         <tr class="fw-bold">
-                                                            <td class="p-1 text-end" colspan="3">Total Assessment Questions</td>
-                                                            <td class="p-1 text-center">{{ $totalQuestions }}</td>
-                                                            <td class="p-1"></td>
+                                                            <td colspan="3" class="text-end">
+                                                                Total Assessment Questions
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <span class="badge bg-primary-lt text-primary">
+                                                                    {{ $totalQuestions }}
+                                                                </span>
+                                                            </td>
+
+                                                            <td></td>
                                                         </tr>
                                                     </tfoot>
                                                 @endisset
                                             </table>
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
 
@@ -258,126 +440,196 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modal-add-question-bank" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                <div class="modal-status bg-success"></div>
-                <div class="modal-body text-center py-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-green icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M9 12l2 2l4 -4" />
-                    </svg>
-                    <h3>Questions Added Successfully.</h3>
-                    <div class="text-secondary" id="message-add-question-bank"></div>
+{{-- Modal: Add Question Bank Success --}}
+<div class="modal fade" id="modal-add-question-bank" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+            <div class="modal-status bg-success"></div>
+
+            <div class="modal-body text-center py-5 px-4">
+
+                <div class="avatar avatar-xl bg-success-lt text-success mb-3">
+                    <i class="fas fa-check fa-lg"></i>
                 </div>
+
+                <h3 class="mb-2">
+                    Questions Added Successfully
+                </h3>
+
+                <div class="text-secondary" id="message-add-question-bank"></div>
+
             </div>
+
         </div>
     </div>
+</div>
 
-    <div class="modal fade" id="modal-added-question-bank" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                <div class="modal-status bg-warning"></div>
-                <div class="modal-body text-center py-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-warning icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M12 9v2m0 4v.01" />
-                        <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
-                    </svg>
-                    <h3>Question Bank already exist!</h3>
-                    <div class="text-secondary" id="message-added-question-bank"></div>
+
+{{-- Modal: Question Bank Already Exist --}}
+<div class="modal fade" id="modal-added-question-bank" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+            <div class="modal-status bg-warning"></div>
+
+            <div class="modal-body text-center py-5 px-4">
+
+                <div class="avatar avatar-xl bg-warning-lt text-warning mb-3">
+                    <i class="fas fa-exclamation-triangle fa-lg"></i>
                 </div>
+
+                <h3 class="mb-2">
+                    Question Bank Already Exists
+                </h3>
+
+                <div class="text-secondary" id="message-added-question-bank"></div>
+
             </div>
+
         </div>
     </div>
+</div>
 
-    <div class="modal fade" id="modal-edit-assessment-question-bank" tabindex="-1">
-        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                <div class="modal-status bg-warning"></div>
-                <div class="modal-body py-4">
-                    <h3 class="text-center">Edit Question Bank.</h3>
-                    <form method="post" id="form-edit-assessment-question-bank">
-                        @csrf
-                        @method('PUT')
-                        <input type="hidden" name="id_assessment_question_bank" id="id-assessment-question-bank">
-                        <div class="row mb-3">
-                            <div class="col-3">
-                                <div class="d-flex justify-content-between">
-                                    <label for="edit-title" >Title</label>
-                                    <span>:</span>
-                                </div>
-                            </div>
-                            <div class="col-9">
-                                <p class="mb-0" id="edit-title"></p>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-3">
-                                <div class="d-flex justify-content-between">
-                                    <label for="edit-total-questions" >Total Questions</label>
-                                    <span>:</span>
-                                </div>
-                            </div>
-                            <div class="col-9">
-                                <p class="mb-0" id="edit-total-questions"></p>
-                            </div>
-                        </div>
-                        <div class="row align-items-center mb-3">
-                            <div class="col-3">
-                                <div class="d-flex justify-content-between">
-                                    <label for="edit-question-per-bank" >Question/Bank</label>
-                                    <span>:</span>
-                                </div>
-                            </div>
-                            <div class="col-9">
-                                <input type="number" min="1" name="edit_question_per_bank" id="edit-question-per-bank" class="form-control" autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-warning btn-sm px-5"><i class="fas fa-edit me-2"></i>Update</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="modal fade" id="modal-delete-question-bank" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                <div class="modal-status bg-danger"></div>
-                <div class="modal-body text-center py-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M12 9v2m0 4v.01" />
-                        <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
-                    </svg>
-                    <h3>Are you sure?</h3>
-                    <div class="text-secondary">Want to delete <span id="question-bank-title"></span>.</div>
-                </div>
-                <div class="modal-footer">
-                    <div class="w-100">
-                        <div class="row">
-                            <div class="col">
-                                <a href="javascript:void(0)" class="btn w-100" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cancel</a>
-                            </div>
-                            <div class="col">
-                                <form method="get" id="form-delete-assessment-question-bank">
-                                    <button type="submit" class="btn btn-danger w-100"><i class="fas fa-trash-alt me-2"></i>Delete</button>
-                                </form>
-                            </div>
-                        </div>
+{{-- Modal: Edit Question Bank --}}
+<div class="modal fade" id="modal-edit-assessment-question-bank" tabindex="-1">
+    <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+            <div class="modal-status bg-warning"></div>
+
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h3 class="modal-title mb-1">
+                        <i class="fas fa-edit me-2 text-warning"></i>
+                        Edit Question Bank
+                    </h3>
+
+                    <div class="text-secondary small">
+                        Update total question used from this question bank.
                     </div>
                 </div>
             </div>
+
+            <div class="modal-body pt-3">
+
+                <form method="post" id="form-edit-assessment-question-bank">
+                    @csrf
+                    @method('PUT')
+
+                    <input type="hidden" name="id_assessment_question_bank" id="id-assessment-question-bank">
+
+                    <div class="card bg-dark-lt border-0 mb-3">
+                        <div class="card-body">
+
+                            <div class="mb-3">
+                                <label for="edit-title" class="form-label">
+                                    Title
+                                </label>
+
+                                <div class="form-control-plaintext fw-semibold" id="edit-title"></div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label for="edit-total-questions" class="form-label">
+                                    Total Questions
+                                </label>
+
+                                <div class="form-control-plaintext" id="edit-total-questions"></div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="edit-question-per-bank" class="form-label required">
+                            Question/Bank
+                        </label>
+
+                        <input
+                            type="number"
+                            min="1"
+                            name="edit_question_per_bank"
+                            id="edit-question-per-bank"
+                            class="form-control"
+                            autocomplete="off">
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-warning px-5">
+                            <i class="fas fa-edit me-2"></i>
+                            Update
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+
         </div>
     </div>
+</div>
+
+
+{{-- Modal: Delete Question Bank --}}
+<div class="modal fade" id="modal-delete-question-bank" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+            <div class="modal-status bg-danger"></div>
+
+            <div class="modal-body text-center py-5 px-4">
+
+                <div class="avatar avatar-xl bg-danger-lt text-danger mb-3">
+                    <i class="fas fa-trash-alt fa-lg"></i>
+                </div>
+
+                <h3 class="mb-2">
+                    Are you sure?
+                </h3>
+
+                <div class="text-secondary">
+                    Want to delete <span class="fw-semibold" id="question-bank-title"></span>?
+                </div>
+
+            </div>
+
+            <div class="modal-footer border-0 pt-0">
+                <div class="w-100">
+                    <div class="row g-2">
+
+                        <div class="col">
+                            <a href="javascript:void(0)" class="btn w-100" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>
+                                Cancel
+                            </a>
+                        </div>
+
+                        <div class="col">
+                            <form method="get" id="form-delete-assessment-question-bank">
+                                <button type="submit" class="btn btn-danger w-100">
+                                    <i class="fas fa-trash-alt me-2"></i>
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('style')

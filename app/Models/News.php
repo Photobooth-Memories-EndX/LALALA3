@@ -28,4 +28,23 @@ class News extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function allComments()
+    {
+        return $this->hasMany(Comment::class, 'news_id')->where('type', 'news');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'news_id')->where('type', 'news')->whereNull('parent_id');
+    }
+
+    public function getTotalCommentsCountAttribute(): int
+    {
+        if ($this->relationLoaded('allComments')) {
+            return $this->allComments->count();
+        }
+
+        return $this->allComments()->count();
+    }
 }

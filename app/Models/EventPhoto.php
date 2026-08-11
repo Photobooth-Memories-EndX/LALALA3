@@ -28,8 +28,24 @@ class EventPhoto extends Model
     {
         return 'slug';
     }
+
+
     public function comments()
     {
         return $this->hasMany(Comment::class, 'eventphoto_id', 'id');
+    }
+
+    public function allComments()
+    {
+        return $this->hasMany(Comment::class, 'eventphoto_id', 'id');
+    }
+
+    public function getTotalCommentsCountAttribute(): int
+    {
+        if ($this->relationLoaded('allComments')) {
+            return $this->allComments->count();
+        }
+
+        return $this->allComments()->count();
     }
 }

@@ -1,300 +1,492 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
+
 @section('content')
-
-<div class="page-header d-print-none">
-    <div class="container-xl">
-      <div class="row g-2 align-items-center">
-        <div class="col">
-          <h2 class="page-title">
-            Manage Assesment
-          </h2>
-        </div>
-        <!-- Page title actions -->
-        <div class="col-auto ms-auto d-print-none">
-          <div class="d-flex">
-            <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-              <li class="breadcrumb-item"><a href="#">Manage</a></li>
-              <li class="breadcrumb-item"><a href="{{ route('assesment.index') }}">Assesment</a></li>
-              <li class="breadcrumb-item active" aria-current="page"><a href="#">Questions</a></li>
-            </ol>
-          </div>
-        </div>
-      </div>
-    </div>
-</div>
-
-<!-- Page body -->
-<div class="page-body">
-    <!-- Container Page -->
-    <div class="page page-center">
-    <div class="container">
-
-        <x-alert type='success' />
-
-        <x-form class="card card-md" action="{{ route('assesment.question.update', [$assesment->slug, $data->id]) }}" method="post" enctype="multipart/form-data">
-        @csrf
-        @method('put')
-        <div class="card-header">
-            <h3 class="card-title">Assesment Question and Answer</h3>
-          </div>
-          <div class="card-body">
-
-            <div class="mb-3">
-                <x-label class="form-label">Question</x-label>
-                {{-- <x-input type="text" name="question" id="question" placeholder="Input question" value="{{ $data->question }}" /> --}}
-                    <x-textarea name="question" rows="6" placeholder="Input question.." data-bs-toggle="autosize" id="tinymce-mytextarea">{{ $data->question }}</x-textarea>
-            </div>
-            <div class="mb-3">
-                <x-label class="form-label">Image</x-label>
-                @if (($data->image != '') or ($data->image != NULL))
-                  <div class="row align-items-center mb-2" id="container-img">
-                    <div class="col-auto"><span class="avatar avatar-2xl" style="background-image: url({{ asset('storage/assesment/') .'/'. $data->image }})"></span>
+    <div class="page-header d-print-none mb-4">
+        <div class="container-xl">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="page-pretitle text-muted">
+                        Learning Management System
                     </div>
-                    <div class="col-auto"><a href="#" data-url="{{ route('assesment.deleteImage', $data->id) }}" class="btn btn-danger btn-remove-img">
-                        Delete Image
-                      </a></div>
-                  </div>
-                  @endif
-                <img id="image-preview" alt="image preview" style="display:none;height:200px;" class="img-fluid mb-2" />
-                <x-input type="file" id="image" name="image" placeholder="Enter image" onchange="previewImage();" />
-            </div>
-            <div class="mb-3 row">
-                <div class="col-md-6">
-                    <div class="form-label">Options</div>
-                    <x-select class="small" name="option[]" id="options" multiple="multiple">
-                        @foreach ( $data->option as $answer )
-                         <option value="{{ $answer }}" selected>{{ $answer }}</option>
-                        @endforeach
-                    </x-select>
+
+                    <h2 class="page-title fw-bold">
+                        <i class="fas fa-question-circle me-2 text-primary"></i>
+                        Manage Assessment
+                    </h2>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-label">Answer</div>
-                    <x-select name="answer" id="answer">
-                        <option value="">-choose-</option>
-                        @foreach ( $data->option as $answer )
-                         <option value="{{ $answer }}" {{ ($data->answer == $answer) ? 'selected' : ''  }}>{{ $answer }}</option>
-                        @endforeach
-                    </x-select>
+
+                <div class="col-auto">
+                    <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
+                        <li class="breadcrumb-item"><a href="#">Manage</a></li>
+                        <li class="breadcrumb-item">
+                            <a href="{{ route('assesment.index') }}">Assessment</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">
+                            Questions
+                        </li>
+                    </ol>
                 </div>
-            </div>
-
-          </div>
-          <div class="card-footer text-end">
-            <x-button>Update</x-button>
-          </div>
-        </x-form>
-
-        <!-- Card -->
-      <div class="card mt-3">
-        <div class="card-header">
-            <h3 class="card-title">{{ $assesment->title }}</h3>
-            <div class="card-actions">
-                <a href="{{ route('assesment.question', $assesment->slug) }}" class="btn btn-primary">
-                  <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
-                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></svg>
-                  Add question
-                </a>
-
-                <form name="form1" id="form1" method="POST" action="{{ route('assesment.question.download') }}" class="d-inline">
-                    @csrf
-                    <input type="hidden" name="assessment_id" id="assessment_id" value="{{ $assesment->id }}">
-                    <input type="hidden" name="slug" id="slug" value="{{ $assesment->slug }}">
-                    <x-button class="btn-icon btn-green">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"></path>
-                            <path d="M7 11l5 5l5 -5"></path>
-                            <path d="M12 4l0 12"></path>
-                        </svg>
-                    </x-button>
-                </form>
-
-
             </div>
         </div>
-        <div class="card-body">
-          <div id="table-default" class="table-responsive">
-            @unless(count($assesment_question) == 0)
-            <table class="table table-bordered table-striped" id="MyTable">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Question</th>
-                        <th>Option</th>
-                        <th>Answer</th>
-                        <th>Status</th>
-                        <th width="65px"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach ($assesment_question as $list)
-                    <tr>
-                        <td>{{ $loop->index + 1 }}</td>
-                        <td>
-                            {!! $list->question !!} <br>
-                            @if ($list->image != '')
-                            <img src="{{ asset('storage/assesment').'/'.$list->image }}" class="img-fluid" style="height:90px;">
-                            @endif
-                        </td>
-                        <td>{!! implode('<hr class="my-1">', $list->option) !!}</td>
-                        {{-- <td></td> --}}
-                        <td>{{ $list->answer }}</td>
-                        <td>{{ ($list->status) ? 'Aktif' : 'Non Aktif' }}</td>
-                        <td>
-                            <div class="d-inline">
-                                <a href="{{ route('assesment.question.edit', [$assesment->slug, $list->id]) }}" class="btn btn-info btn-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path>
-                                        <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path>
-                                        <path d="M16 5l3 3"></path>
-                                     </svg>
-                                </a>
+    </div>
+
+    <div class="page-body">
+        <div class="container-xl">
+
+            <x-alert type='success' />
+
+            <x-form
+                class="card border-0 shadow-sm mb-4"
+                action="{{ route('assesment.question.update', [$assesment->slug, $data->id]) }}"
+                method="post"
+                enctype="multipart/form-data">
+
+                @csrf
+                @method('put')
+
+                <div class="card-header bg-primary-lt">
+                    <div class="row align-items-center w-100">
+                        <div class="col">
+                            <h3 class="card-title fw-bold mb-1">
+                                <i class="fas fa-edit me-2 text-primary"></i>
+                                Assessment Question and Answer
+                            </h3>
+
+                            <div class="text-muted small">
+                                Update question, image, options, and correct answer.
+                            </div>
+                        </div>
+
+                        <div class="col-auto">
+                            <span class="badge bg-primary-lt text-primary">
+                                Edit Question
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="card bg-dark-lt border-0 mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-align-left me-2"></i>
+                                Question Detail
+                            </h3>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <x-label class="form-label">
+                                    Question
+                                </x-label>
+
+                                <x-textarea
+                                    name="question"
+                                    rows="6"
+                                    placeholder="Input question.."
+                                    data-bs-toggle="autosize"
+                                    id="tinymce-mytextarea">{{ $data->question }}</x-textarea>
                             </div>
 
-                            <form action="{{ route('assesment.question.destroy', [$assesment->slug, $list->id]) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M4 7l16 0"></path>
-                                    <path d="M10 11l0 6"></path>
-                                    <path d="M14 11l0 6"></path>
-                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
-                                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
-                                 </svg></button>
-                            </form>
-                        </td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table>
-            @else
-            <p>No question-answer found for this assesment</p>
-            @endunless
-          </div>
+                            <div class="mb-0">
+                                <x-label class="form-label">
+                                    Image
+                                </x-label>
+
+                                @if (($data->image != '') or ($data->image != NULL))
+                                    <div class="card bg-dark-lt border-0 mb-3" id="container-img">
+                                        <div class="card-body">
+                                            <div class="row align-items-center">
+                                                <div class="col-auto">
+                                                    <span
+                                                        class="avatar avatar-2xl rounded"
+                                                        style="background-image: url({{ asset('storage/assesment/') .'/'. $data->image }})">
+                                                    </span>
+                                                </div>
+
+                                                <div class="col">
+                                                    <div class="fw-semibold">
+                                                        Current Question Image
+                                                    </div>
+                                                    <div class="text-muted small">
+                                                        Existing image attached to this question.
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-auto">
+                                                    <a
+                                                        href="#"
+                                                        data-url="{{ route('assesment.deleteImage', $data->id) }}"
+                                                        class="btn btn-danger btn-remove-img">
+
+                                                        <i class="fas fa-trash-alt me-2"></i>
+                                                        Delete Image
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <img
+                                    id="image-preview"
+                                    alt="image preview"
+                                    style="display:none;height:200px;"
+                                    class="img-fluid rounded border mb-3" />
+
+                                <x-input
+                                    type="file"
+                                    id="image"
+                                    name="image"
+                                    placeholder="Enter image"
+                                    onchange="previewImage();" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-dark-lt border-0">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-list-check me-2"></i>
+                                Options and Answer
+                            </h3>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="row">
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-label">
+                                            Options
+                                        </div>
+
+                                        <x-select class="small" name="option[]" id="options" multiple="multiple">
+                                            @foreach ($data->option as $answer)
+                                                <option value="{{ $answer }}" selected>{{ $answer }}</option>
+                                            @endforeach
+                                        </x-select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-label">
+                                            Answer
+                                        </div>
+
+                                        <x-select name="answer" id="answer">
+                                            <option value="">-choose-</option>
+
+                                            @foreach ($data->option as $answer)
+                                                <option value="{{ $answer }}" {{ ($data->answer == $answer) ? 'selected' : '' }}>
+                                                    {{ $answer }}
+                                                </option>
+                                            @endforeach
+                                        </x-select>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="card-footer bg-transparent d-flex justify-content-end">
+                    <x-button class="btn btn-primary px-5">
+                        <i class="fas fa-save me-2"></i>
+                        Update
+                    </x-button>
+                </div>
+            </x-form>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary-lt">
+                    <div class="row align-items-center w-100">
+                        <div class="col">
+                            <h3 class="card-title fw-bold mb-1">
+                                <i class="fas fa-clipboard-list me-2 text-primary"></i>
+                                {{ $assesment->title }}
+                            </h3>
+
+                            <div class="text-muted small">
+                                List of questions and answers for this assessment.
+                            </div>
+                        </div>
+
+                        <div class="col-auto">
+                            <div class="btn-list">
+                                <a href="{{ route('assesment.question', $assesment->slug) }}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Add Question
+                                </a>
+
+                                <form name="form1" id="form1" method="POST" action="{{ route('assesment.question.download') }}" class="d-inline">
+                                    @csrf
+
+                                    <input type="hidden" name="assessment_id" id="assessment_id" value="{{ $assesment->id }}">
+                                    <input type="hidden" name="slug" id="slug" value="{{ $assesment->slug }}">
+
+                                    <x-button class="btn btn-success">
+                                        <i class="fas fa-download me-2"></i>
+                                        Download
+                                    </x-button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div id="table-default" class="table-responsive">
+
+                        @unless(count($assesment_question) == 0)
+                            <table class="table table-vcenter card-table table-hover mb-0" id="MyTable">
+                                <thead>
+                                    <tr class="text-center">
+                                        <th style="width: 70px;">No</th>
+                                        <th class="text-start" style="min-width: 300px;">Question</th>
+                                        <th class="text-start" style="min-width: 260px;">Option</th>
+                                        <th class="text-start" style="min-width: 180px;">Answer</th>
+                                        <th style="width: 130px;">Status</th>
+                                        <th style="width: 170px;">Action</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach ($assesment_question as $list)
+                                        <tr>
+                                            <td class="text-center text-muted">
+                                                <span class="badge bg-secondary-lt text-secondary">
+                                                    {{ $loop->index + 1 }}
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <div class="fw-semibold text-wrap mb-2">
+                                                    {!! $list->question !!}
+                                                </div>
+
+                                                @if ($list->image != '')
+                                                    <div class="mt-2">
+                                                        <img
+                                                            src="{{ asset('storage/assesment').'/'.$list->image }}"
+                                                            class="img-fluid rounded border"
+                                                            style="height:90px;">
+                                                    </div>
+                                                @endif
+                                            </td>
+
+                                            <td>
+                                                <div class="list-group list-group-flush">
+                                                    @foreach ($list->option as $option)
+                                                        <div class="list-group-item px-0 py-2 bg-transparent border-0 border-bottom">
+                                                            <span class="text-muted">
+                                                                {{ $option }}
+                                                            </span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                <span class="badge bg-blue-lt text-blue text-wrap">
+                                                    {{ $list->answer }}
+                                                </span>
+                                            </td>
+
+                                            <td class="text-center">
+                                                @if ($list->status)
+                                                    <span class="badge bg-green-lt text-green">
+                                                        <i class="fas fa-check-circle me-1"></i>
+                                                        Aktif
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-red-lt text-red">
+                                                        <i class="fas fa-times-circle me-1"></i>
+                                                        Non Aktif
+                                                    </span>
+                                                @endif
+                                            </td>
+
+                                            <td class="text-center">
+                                                <div class="btn-list justify-content-center flex-nowrap">
+
+                                                    <a href="{{ route('assesment.question.edit', [$assesment->slug, $list->id]) }}"
+                                                       class="btn btn-sm btn-warning d-inline-flex align-items-center"
+                                                       title="Edit Question">
+
+                                                        <i class="fas fa-pen mr-1"></i>
+                                                        Edit
+                                                    </a>
+
+                                                    <form action="{{ route('assesment.question.destroy', [$assesment->slug, $list->id]) }}"
+                                                          method="POST"
+                                                          class="d-inline">
+
+                                                        @csrf
+                                                        @method('DELETE')
+
+                                                        <button
+                                                            type="submit"
+                                                            class="btn btn-sm btn-danger d-inline-flex align-items-center"
+                                                            onclick="return confirm('Delete this question ?')"
+                                                            title="Delete Question">
+
+                                                            <i class="fas fa-trash-alt mr-1"></i>
+                                                            Delete
+                                                        </button>
+
+                                                    </form>
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @else
+                            <div class="empty py-5">
+                                <div class="empty-icon">
+                                    <i class="fas fa-question-circle fa-3x text-muted"></i>
+                                </div>
+
+                                <p class="empty-title">
+                                    No question-answer found for this assessment
+                                </p>
+
+                                <p class="empty-subtitle text-muted">
+                                    Add a new question to start building this assessment.
+                                </p>
+                            </div>
+                        @endunless
+
+                    </div>
+                </div>
+            </div>
+
         </div>
-
-      </div>
-      <!-- Card -->
     </div>
-
-    </div>
-    <!-- Container Page -->
-  </div>
-  <!-- Page body -->
-
 @endsection
 
 @section('style')
-<!-- DataTables -->
-<link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
-<link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
+    <link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet" />
 @endsection
 
 @section('script')
-<script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
-<script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
-<script src="{{ asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062') }}"></script>
-<script>
-    // let table = new DataTable('#MyTable');
-    $(function() {
-        $("#MyTable").DataTable({
-            "lengthMenu": [
-                            [10, 25, 50, -1],
-                            [10, 25, 50, 'All'],
-                        ],
-            "pageLength" : 10,
-            "autoWidth": false,
+    <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062') }}"></script>
+
+    <script>
+        $(function() {
+            $("#MyTable").DataTable({
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, 'All'],
+                ],
+                "pageLength": 10,
+                "autoWidth": false,
+            });
         });
-    });
-</script>
+    </script>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var el;
-        window.TomSelect && (new TomSelect(el = document.getElementById('options'), {
-            create: true,
-            delimiter: ';',
-            copyClassesToDropdown: false,
-            dropdownParent: 'body',
-            controlInput: '<input>',
-            plugins: ['remove_button'],
-            render: {
-                item: function(data, escape) {
-                    if (data.customProperties) {
-                        return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
-                    }
-                    return '<div>' + escape(data.text) + '</div>';
-                },
-                option: function(data, escape) {
-                    if (data.customProperties) {
-                        return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
-                    }
-                    return '<div>' + escape(data.text) + '</div>';
-                },
-            },
-            onItemAdd : function(value) {
-                            $('#answer').append($('<option>', {
-                                value: value,
-                                text: value
-                            }));
-                        },
-            onItemRemove : function(value) {
-                            $("#answer option[value='"+value+"']").remove();
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var el;
+            window.TomSelect && (new TomSelect(el = document.getElementById('options'), {
+                create: true,
+                delimiter: ';',
+                copyClassesToDropdown: false,
+                dropdownParent: 'body',
+                controlInput: '<input>',
+                plugins: ['remove_button'],
+                render: {
+                    item: function(data, escape) {
+                        if (data.customProperties) {
+                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
                         }
-        }));
-    });
 
-    function previewImage() {
-        document.getElementById("image-preview").style.display = "block";
-        var oFReader = new FileReader();
-        oFReader.readAsDataURL(document.getElementById("image").files[0]);
-        oFReader.onload = function(oFREvent) {
-            document.getElementById("image-preview").src = oFREvent.target.result;
+                        return '<div>' + escape(data.text) + '</div>';
+                    },
+                    option: function(data, escape) {
+                        if (data.customProperties) {
+                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                        }
+
+                        return '<div>' + escape(data.text) + '</div>';
+                    },
+                },
+                onItemAdd: function(value) {
+                    $('#answer').append($('<option>', {
+                        value: value,
+                        text: value
+                    }));
+                },
+                onItemRemove: function(value) {
+                    $("#answer option[value='" + value + "']").remove();
+                }
+            }));
+        });
+
+        function previewImage() {
+            document.getElementById("image-preview").style.display = "block";
+
+            var oFReader = new FileReader();
+            oFReader.readAsDataURL(document.getElementById("image").files[0]);
+
+            oFReader.onload = function(oFREvent) {
+                document.getElementById("image-preview").src = oFREvent.target.result;
+            };
         };
-    };
 
-    $(document).on('click', '.btn-remove-img', function(e) {
-        e.preventDefault();
-        if (confirm("Are you sure want to delete this image?")) {
-            var column = $(this).data('column');
+        $(document).on('click', '.btn-remove-img', function(e) {
+            e.preventDefault();
+
+            if (confirm("Are you sure want to delete this image?")) {
+                var column = $(this).data('column');
+
                 $.ajax({
                     type: "PUT",
                     url: $(this).data('url'),
-                    data: {'_token': '{{ csrf_token() }}'},
-                    success: function(data){
+                    data: {
+                        '_token': '{{ csrf_token() }}'
+                    },
+                    success: function(data) {
                         if (data.status == 200) {
                             $("#container-img").load(" #container-img > *");
                         }
                     }
                 });
-        }
-    });
-</script>
-<script src="{{ asset('Tabler/dist/libs/tinymce/tinymce.min.js') }}" defer></script>
-<script>
-    // @formatter:off
-    document.addEventListener("DOMContentLoaded", function () {
-      let options = {
-        selector: '#tinymce-mytextarea',
-        height: 300,
-        menubar: false,
-        statusbar: false,
-        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
-        toolbar: 'undo redo | formatselect | ' +
-          'bold italic underline forecolor backcolor | bullist numlist outdent indent | ' +
-          'removeformat | table',
-        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }'
-      }
-      if (localStorage.getItem("tablerTheme") === 'dark') {
-        options.skin = 'oxide-dark';
-        options.content_css = 'dark';
-      }
-      tinyMCE.init(options);
-    })
-    // @formatter:on
-  </script>
+            }
+        });
+    </script>
+
+    <script src="{{ asset('Tabler/dist/libs/tinymce/tinymce.min.js') }}" defer></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let options = {
+                selector: '#tinymce-mytextarea',
+                height: 300,
+                menubar: false,
+                statusbar: false,
+                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
+                toolbar: 'undo redo | formatselect | ' +
+                    'bold italic underline forecolor backcolor | bullist numlist outdent indent | ' +
+                    'removeformat | table',
+                content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }'
+            }
+
+            if (localStorage.getItem("tablerTheme") === 'dark') {
+                options.skin = 'oxide-dark';
+                options.content_css = 'dark';
+            }
+
+            tinyMCE.init(options);
+        })
+    </script>
 @endsection
-
-

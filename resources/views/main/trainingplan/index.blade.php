@@ -1,30 +1,43 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 
 @section('content')
+    @include('main.monitoring.components.style')
+
+    {{-- Page Header --}}
     <div class="page-header d-print-none">
         <div class="container-xl">
-            <div class="row g-2 align-items-center">
+            <div class="row align-items-center">
                 <div class="col">
-                    <h2 class="page-title">{{ $title }}</h2>
-                </div>
-                <div class="col-auto ms-auto d-print-none">
-                    <div class="d-flex">
-                        <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-                            <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                            <li class="breadcrumb-item"><a href="#">Playlist</a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><a href="#">{{ $title }}</a></li>
-                        </ol>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="avatar avatar-lg bg-primary-lt">
+                            <i class="ti ti-playlist fs-2"></i>
+                        </div>
+                        <div>
+                            <h2 class="page-title mb-1">Playlist Management</h2>
+                            <div class="text-secondary">Manage learning playlists, content order, thumbnails, and training deadlines.</div>
+                        </div>
                     </div>
+                </div>
+                <div class="col-auto d-flex gap-2">
+                    <form action="{{ route('learning-hours.sync') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-primary" onclick="return confirm('Synchronize all Learning Hours?')">
+                            <i class="ti ti-refresh me-1"></i>Synchronize
+                        </button>
+                    </form>
+                    <a href="{{ route('playlist.create') }}" class="btn btn-primary">
+                        <i class="ti ti-plus me-1"></i>Add Playlist
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="page-body">
-        <div class="container">
+        <div class="container-xl">
 
             @if (session()->has('success'))
-                <div class="alert alert-important alert-success alert-dismissible" role="alert">
+                <div class="alert alert-important alert-success alert-dismissible mb-3" role="alert">
                     <div class="d-flex">
                         <div>
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -32,99 +45,292 @@
                                 <path d="M5 12l5 5l10 -10"></path>
                             </svg>
                         </div>
-                        <div>
-                            {{ session('success') }}
-                        </div>
+                        <div style="white-space: pre-line;">{{ session('success') }}</div>
                     </div>
                     <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>
             @endif
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">{{ $title }}</h3>
-                    <div class="card-actions">
-                        <a href="{{ route('trainingplan.create') }}" class="btn btn-primary">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M12 5l0 14"></path>
-                                <path d="M5 12l14 0"></path>
-                            </svg>
-                            Add new Playlist
-                        </a>
+            @if (session()->has('warning'))
+                <div class="alert alert-important alert-warning alert-dismissible mb-3" role="alert">
+                    <div class="d-flex">
+                        <div>{{ session('warning') }}</div>
+                    </div>
+                    <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
+                </div>
+            @endif
+
+            {{-- Stat Cards --}}
+            <div class="row row-cards mb-4">
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card admin-gallery-stat h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Total Playlist</div>
+                                    <div class="display-6 fw-bold">{{ number_format($totalTrainingPlan) }}</div>
+                                </div>
+                                <span class="avatar avatar-lg bg-primary-lt">
+                                    <i class="ti ti-playlist fs-2"></i>
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card admin-gallery-stat h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Active</div>
+                                    <div class="display-6 fw-bold text-success">{{ number_format($activeTrainingPlan) }}</div>
+                                </div>
+                                <span class="avatar avatar-lg bg-success-lt">
+                                    <i class="ti ti-circle-check fs-2"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card admin-gallery-stat h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Inactive</div>
+                                    <div class="display-6 fw-bold text-warning">{{ number_format($inactiveTrainingPlan) }}</div>
+                                </div>
+                                <span class="avatar avatar-lg bg-warning-lt">
+                                    <i class="ti ti-circle-x fs-2"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card admin-gallery-stat h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-secondary text-uppercase fw-bold small mb-2">With Deadline</div>
+                                    <div class="display-6 fw-bold text-info">{{ number_format($withDeadline) }}</div>
+                                </div>
+                                <span class="avatar avatar-lg bg-info-lt">
+                                    <i class="ti ti-clock fs-2"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card admin-gallery-stat h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Expired Deadline</div>
+                                    <div class="display-6 fw-bold text-danger">{{ number_format($expiredDeadline) }}</div>
+                                </div>
+                                <span class="avatar avatar-lg bg-danger-lt">
+                                    <i class="ti ti-calendar-x fs-2"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card admin-gallery-stat h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Total Materials</div>
+                                    <div class="display-6 fw-bold text-azure">{{ number_format($totalMaterials) }}</div>
+                                </div>
+                                <span class="avatar avatar-lg bg-azure-lt">
+                                    <i class="ti ti-books fs-2"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Filter Card --}}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="ti ti-filter me-2"></i>Filter & Search</h3>
+                </div>
                 <div class="card-body">
-                    {{-- <button type="button" class="btn btn-primary" data-bs-trigger="hover" data-bs-toggle="popover" title="Popover title" data-bs-content="And here's some amazing content. It's very engaging. Right?">
-                        Hover to toggle popover
-                    </button> --}}
-                    <div id="table-default" class="table-responsive">
-                        @unless (count($trainingplan) == 0)
-                            <table class="table table-bordered table-striped" id="MyTable">
+                    <form method="GET" action="{{ route('playlist.index') }}" id="filterForm">
+                        <div class="row g-2">
+                            <div class="col-md-4 col-lg-3">
+                                <label class="form-label small fw-semibold">Search</label>
+                                <input type="text" name="s" value="{{ request('s') }}"
+                                    class="form-control form-control-sm"
+                                    placeholder="Title, slug, URL...">
+                            </div>
+                            <div class="col-md-3 col-lg-2">
+                                <label class="form-label small fw-semibold">Status</label>
+                                <select name="active" class="form-select form-select-sm">
+                                    <option value="">All Status</option>
+                                    <option value="Active" @selected(request('active') == 'Active')>Active</option>
+                                    <option value="Inactive" @selected(request('active') == 'Inactive')>Inactive</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-lg-2">
+                                <label class="form-label small fw-semibold">Deadline</label>
+                                <select name="deadline" class="form-select form-select-sm">
+                                    <option value="">All</option>
+                                    <option value="with" @selected(request('deadline') == 'with')>With Deadline</option>
+                                    <option value="without" @selected(request('deadline') == 'without')>Without Deadline</option>
+                                    <option value="active" @selected(request('deadline') == 'active')>Active Deadline</option>
+                                    <option value="expired" @selected(request('deadline') == 'expired')>Expired</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-lg-2">
+                                <label class="form-label small fw-semibold">Thumbnail</label>
+                                <select name="thumbnail" class="form-select form-select-sm">
+                                    <option value="">All</option>
+                                    <option value="with" @selected(request('thumbnail') == 'with')>With Thumbnail</option>
+                                    <option value="without" @selected(request('thumbnail') == 'without')>Without Thumbnail</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-lg-2">
+                                <label class="form-label small fw-semibold">Created From</label>
+                                <input type="date" name="created_from" value="{{ request('created_from') }}"
+                                    class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3 col-lg-2">
+                                <label class="form-label small fw-semibold">Created To</label>
+                                <input type="date" name="created_to" value="{{ request('created_to') }}"
+                                    class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3 col-lg-2">
+                                <label class="form-label small fw-semibold">Sort By</label>
+                                <select name="sort" class="form-select form-select-sm">
+                                    <option value="" @selected(!request('sort'))>Newest</option>
+                                    <option value="oldest" @selected(request('sort') == 'oldest')>Oldest</option>
+                                    <option value="title" @selected(request('sort') == 'title')>Title A-Z</option>
+                                    <option value="materials" @selected(request('sort') == 'materials')>Most Materials</option>
+                                </select>
+                            </div>
+                            <div class="col-12 d-flex gap-2 justify-content-end mt-1">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="ti ti-search me-1"></i>Apply Filter
+                                </button>
+                                <a href="{{ route('playlist.index') }}" class="btn btn-secondary btn-sm">
+                                    <i class="ti ti-x me-1"></i>Reset
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Table Card --}}
+            <div class="card owl-main-card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">{{ $title }}</h3>
+                        <div class="card-subtitle text-muted mt-1">
+                            Showing {{ $trainingplans->firstItem() ?? 0 }}–{{ $trainingplans->lastItem() ?? 0 }} of {{ $trainingplans->total() }} playlist(s)
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        @if ($trainingplans->count() > 0)
+                            <table class="table table-hover owl-table mb-0">
                                 <thead>
                                     <tr>
-                                        <th>No</th>
+                                        <th style="width:48px">No</th>
+                                        <th style="width:80px">Thumbnail</th>
                                         <th>Title</th>
-                                        <th>Content</th>
-                                        <th>Status</th>
-                                        <th>Created At</th>
-                                        <th>Action</th>
+                                        <th>Slug</th>
+                                        <th class="text-center" style="width:90px">Materials</th>
+                                        <th style="width:90px">Status</th>
+                                        <th>Deadline</th>
+                                        <th>URL Link</th>
+                                        <th style="width:110px">Created At</th>
+                                        <th style="width:120px">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($trainingplan as $list)
-                                        @php
-                                            if ($list->active == 'Active') {
-                                                $activecolor = 'green';
-                                            } else {
-                                                $activecolor = 'orange';
-                                            }
-                                        @endphp
+                                    @foreach ($trainingplans as $list)
                                         <tr>
-                                            @php
-                                                $listcontent = '';
-                                                foreach ($list->trainingplandetail as $detail) {
-                                                    $listcontent .= '- ' . $detail->content->title . '<br>';
-                                                }
-                                            @endphp
-                                            <td>{{ $loop->index + 1 }}</td>
-                                            <td>{{ Str::limit($list->title, 25) }}</td>
-                                            <td data-bs-trigger="hover" data-bs-toggle="popover" title="Content List" data-bs-html="true" data-bs-content="{{ $listcontent }}">
-                                                @foreach ($list->trainingplandetail->take(3) as $detail)
-                                                    - {{ $detail->content->title }}<br>
-                                                @endforeach
-                                                @if (count($list->trainingplandetail) >= 4)
-                                                    - ......
+                                            <td>{{ $trainingplans->firstItem() + $loop->index }}</td>
+                                            <td>
+                                                @if($list->thumbnail_url)
+                                                    <img src="{{ $list->thumbnail_url }}"
+                                                        alt="thumb"
+                                                        class="tp-thumb-img"
+                                                        onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+                                                    <span class="avatar avatar-sm bg-blue-lt text-blue" style="display:none;">
+                                                        <i class="ti ti-playlist"></i>
+                                                    </span>
                                                 @else
+                                                    <span class="avatar avatar-sm bg-blue-lt text-blue">
+                                                        <i class="ti ti-playlist"></i>
+                                                    </span>
                                                 @endif
                                             </td>
-                                            <td style="text-align: center; vertical-align: middle;"><span class="badge bg-{{ $activecolor }}">{{ $list->active }}</span></td>
-                                            <td class="text-center">{{ date_format(date_create($list->created_at), 'Y-m-d') }}</td>
                                             <td>
-                                                <div class="d-flex gap-2">
-                                                    <a href="{{ route('trainingplan.edit', $list->slug) }}" class="btn btn-info btn-icon">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                            <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1">
-                                                            </path>
-                                                            <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z">
-                                                            </path>
-                                                            <path d="M16 5l3 3"></path>
-                                                        </svg>
+                                                <span class="monitoring-link fw-semibold">
+                                                    {{ Str::limit($list->title, 35) }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <code class="text-muted" style="font-size:11px;">{{ Str::limit($list->slug, 30) }}</code>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-azure-lt text-azure">
+                                                    {{ $list->trainingplandetail_count }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @php $isActive = $list->active == 'Active'; @endphp
+                                                <span class="badge bg-{{ $isActive ? 'success' : 'warning' }}-lt text-{{ $isActive ? 'success' : 'warning' }}">
+                                                    {{ $list->active }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if($list->has_deadline && $list->from_date && $list->to_date)
+                                                    @php $expired = now()->gt($list->to_date); @endphp
+                                                    <span class="badge bg-{{ $expired ? 'danger' : 'cyan' }}-lt text-{{ $expired ? 'danger' : 'cyan' }}" style="font-size:11px;">
+                                                        {{ $list->from_date->format('d/m/Y') }} – {{ $list->to_date->format('d/m/Y') }}
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-secondary-lt text-secondary" style="font-size:11px;">No Deadline</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($list->url_link)
+                                                    <a href="{{ $list->url_link }}" target="_blank" class="text-truncate d-inline-block" style="max-width:140px;" title="{{ $list->url_link }}">
+                                                        <i class="ti ti-external-link me-1"></i>{{ Str::limit($list->url_link, 20) }}
                                                     </a>
-
-                                                    <form action="{{ route('trainingplan.destroy', $list->slug) }}" method="POST" class="d-inline">
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-secondary small">
+                                                {{ $list->created_at->format('d/m/Y') }}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1 flex-wrap">
+                                                    <a href="{{ route('playlist.edit', $list->slug) }}"
+                                                        class="btn btn-sm btn-info owl-action-btn" title="Edit">
+                                                        <i class="ti ti-edit"></i>
+                                                    </a>
+                                                    <a href="{{ route('playlist.order', $list->slug) }}"
+                                                        class="btn btn-sm btn-secondary owl-action-btn" title="Order Content">
+                                                        <i class="ti ti-arrows-sort"></i>
+                                                    </a>
+                                                    <form action="{{ route('playlist.destroy', $list->slug) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-icon" onclick="return confirm('Are you sure want to delete this data?')"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                                <path d="M4 7l16 0"></path>
-                                                                <path d="M10 11l0 6"></path>
-                                                                <path d="M14 11l0 6"></path>
-                                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
-                                                                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
-                                                            </svg>
+                                                        <button type="submit"
+                                                            class="btn btn-sm btn-danger owl-action-btn" title="Delete"
+                                                            onclick="return confirm('Are you sure want to delete this data?')">
+                                                            <i class="ti ti-trash"></i>
                                                         </button>
                                                     </form>
                                                 </div>
@@ -134,32 +340,62 @@
                                 </tbody>
                             </table>
                         @else
-                            <p>No Playlist data found</p>
-                        @endunless
+                            <div class="empty py-5">
+                                <div class="empty-icon">
+                                    <i class="ti ti-playlist" style="font-size:3rem;opacity:.4;"></i>
+                                </div>
+                                <p class="empty-title">No training plans found</p>
+                                <p class="empty-subtitle text-secondary">Try adjusting your filters or add a new training plan.</p>
+                                <div class="empty-action">
+                                    <a href="{{ route('playlist.create') }}" class="btn btn-primary btn-sm">
+                                        <i class="ti ti-plus me-1"></i>Add Playlist
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
+                @if ($trainingplans->hasPages())
+                    <div class="card-footer d-flex align-items-center justify-content-center py-3">
+                        {{ $trainingplans->links() }}
+                    </div>
+                @endif
             </div>
+
         </div>
     </div>
+
 @endsection
 
 @section('style')
-    <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
-@endsection
-
-@section('script')
-    <script src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('js/dataTables.bootstrap5.min.js') }}"></script>
-    <script>
-        $(function() {
-            $("#MyTable").DataTable({
-                "lengthMenu": [
-                    [10, 25, 50, -1],
-                    [10, 25, 50, 'All'],
-                ],
-                "pageLength": 25,
-                "autoWidth": false,
-            });
-        });
-    </script>
+<style>
+.page-body {
+    background: #fff;
+}
+[data-bs-theme="dark"] .page-body,
+body.dark-mode .page-body,
+body.theme-dark .page-body {
+    background: var(--tblr-body-bg, #111827);
+}
+.admin-gallery-stat {
+    border-radius: 16px;
+    transition: transform .2s, box-shadow .2s;
+}
+.admin-gallery-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+}
+.tp-thumb-img {
+    width: 72px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--tblr-border-color);
+    display: block;
+}
+[data-theme="dark"] .card,
+body.theme-dark .card {
+    background: var(--tblr-bg-surface, #1f2937);
+}
+</style>
 @endsection

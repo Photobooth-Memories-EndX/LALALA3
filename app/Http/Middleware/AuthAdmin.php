@@ -21,7 +21,8 @@ class AuthAdmin
             return redirect()->route('loginpage');
         }
 
-        if (!auth()->user()->isAdmin()) {
+        // Manage LMS dapat diakses Admin Training (role 2) maupun Super Admin (role 3).
+        if (!auth()->user()->canManageLms()) {
             abort(403);
         }
         return $next($request);

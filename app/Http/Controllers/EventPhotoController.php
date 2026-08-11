@@ -13,12 +13,78 @@ class EventPhotoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
-    {
-        //
-        $eventphoto = EventPhoto::all();
-        return view('main.gallery.index', compact('eventphoto'));
-    }
+public function index(Request $request)
+{
+$query = EventPhoto::query();
+
+// Search
+if ($request->filled('search')) {
+
+    $query->where(
+        'title',
+        'like',
+        '%' . $request->search . '%'
+    );
+
+}
+
+// Status Filter
+if ($request->filled('status')) {
+
+    $query->where(
+        'active',
+        $request->status
+    );
+
+}
+
+$show = $request->show ?? 25;
+
+$eventphoto = $query
+    ->latest()
+    ->paginate($show)
+    ->withQueryString();
+
+$totalEvent = EventPhoto::count();
+
+$activeEvent = EventPhoto::where(
+    'active',
+    'Active'
+)->count();
+
+$draftEvent = EventPhoto::where(
+    'active',
+    'Inactive'
+)->count();
+
+$totalPhotos = 0;
+
+foreach (EventPhoto::all() as $event) {
+
+    $photos =
+        json_decode(
+            $event->photos,
+            true
+        ) ?? [];
+
+    $totalPhotos += count($photos);
+
+}
+
+return view(
+    'main.gallery.index',
+    compact(
+        'eventphoto',
+        'show',
+        'totalEvent',
+        'activeEvent',
+        'draftEvent',
+        'totalPhotos'
+    )
+);
+
+}
+
 
     /**
      * Show the form for creating a new resource.
@@ -27,7 +93,6 @@ class EventPhotoController extends Controller
      */
     public function create()
     {
-        //
         return view('main.gallery.create');
     }
 
@@ -39,18 +104,22 @@ class EventPhotoController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required'
-        ]);
-
+       $request->validate([
+    'title' => 'required',
+    'category' => 'nullable'
+]);
         $eventphoto = new EventPhoto();
 
         $eventphoto->title = $request->input('title');
+        $eventphoto->category = $request->input('category');
         $eventphoto->eventdate = $request->input('eventdate');
+
         $eventphoto->likes = '0';
         $eventphoto->views = '0';
+
         $eventphoto->user_id = auth()->user()->id;
         $eventphoto->uploader = auth()->user()->name;
+
         $eventphoto->save();
         $newid = $eventphoto->id;
         $path = public_path('storage/gallery/photo/' . $newid . '');
@@ -111,6 +180,10 @@ class EventPhotoController extends Controller
      */
     public function update(Request $request, EventPhoto $eventPhoto)
     {
+        $request->validate([
+    'title' => 'required',
+    'category' => 'nullable'
+]);
         //
         $eventphoto = EventPhoto::find($request->id);
         if ($request->action == 'unpublish') {
@@ -119,29 +192,53 @@ class EventPhotoController extends Controller
                     'active' => 'Inactive'
                 ]);
         } else {
-            EventPhoto::where('id', $request->id)
-                ->update([
-                    'title' => $request->title,
-                    'eventdate' => $request->eventdate,
-                    'thumbnail' => $request->thumbnail
-                ]);
+           EventPhoto::where('id', $request->id)
+        ->update([
+        'title' => $request->title,
+        'category' => $request->category,
+        'eventdate' => $request->eventdate,
+        'thumbnail' => $request->thumbnail
+    ]);
             if ($request->has('documents')) {
-                foreach ($request->documents as $doc) {
-                    $arraydoc[] = $doc;
-                    File::move(public_path('storage/gallery/tmp') . '/' . $doc, public_path('storage/gallery/photo/' . $request->id . '') . '/' . $doc);
-                }
-                $search = ['[', ']', '"'];
+                $arraydoc = [];
 
-                $oldarray = array();
-                // return $eventphoto;
-                foreach (explode(',', $eventphoto->photos) as $listphoto) {
-                    $oldarray[] = str_replace($search, '', $listphoto);
+                $targetDir = public_path('storage/gallery/photo/' . $request->id);
+
+                if (!File::exists($targetDir)) {
+                    File::makeDirectory($targetDir, 0755, true);
                 }
-                $newarray = array_merge($oldarray, $arraydoc);
-                EventPhoto::where('id', $request->id)
-                    ->update([
-                        'photos' => json_encode($newarray)
-                    ]);
+
+                foreach ($request->documents as $doc) {
+                    $tmpPath = public_path('storage/gallery/tmp/' . $doc);
+                    $targetPath = $targetDir . '/' . $doc;
+
+                    if (File::exists($tmpPath)) {
+                        $arraydoc[] = $doc;
+                        File::move($tmpPath, $targetPath);
+                    }
+                }
+
+                if (!empty($arraydoc)) {
+                    $search = ['[', ']', '"'];
+
+                    $oldarray = [];
+
+                    if (!empty($eventphoto->photos)) {
+                        foreach (explode(',', $eventphoto->photos) as $listphoto) {
+                            $cleanPhoto = str_replace($search, '', $listphoto);
+
+                            if (!empty($cleanPhoto)) {
+                                $oldarray[] = $cleanPhoto;
+                            }
+                        }
+                    }
+
+                    $newarray = array_merge($oldarray, $arraydoc);
+                    EventPhoto::where('id', $request->id)
+                        ->update([
+                            'photos' => json_encode($newarray)
+                        ]);
+                }
             }
             if ($request->action == 'publish') {
                 EventPhoto::where('id', $request->id)
@@ -165,6 +262,30 @@ class EventPhotoController extends Controller
         //
     }
 
+    public function deleteImage(Request $request)
+    {
+        $id = $request->id;
+        $option = $request->option;
+
+        $eventphoto = EventPhoto::find($id);
+
+        $photos = json_decode($eventphoto->photos, true) ?? [];
+        $photos = array_values(array_diff($photos, [$option]));
+
+        $path = public_path('storage/gallery/photo/' . $id . '/' . $option);
+        if (File::exists($path)) {
+            File::delete($path);
+        }
+
+        $eventphoto->update([
+            'photos' => json_encode($photos)
+        ]);
+
+        return response()->json([
+            'status' => 200
+        ]);
+    }
+
     public function uploadfileajax(Request $request)
     {
         $name = [];
@@ -182,32 +303,79 @@ class EventPhotoController extends Controller
             'original_name' => $original_name
         ]);
     }
-    public function deleteImage(Request $request)
+    public function deletefileajax(Request $request)
     {
-        // $eventphoto = EventPhoto::find($eventphoto);
-        $eventphoto = EventPhoto::find($request->id);
-        $search = ['[', ']', '"'];
-        $newarray = array();
-        foreach (explode(',', $eventphoto->photos) as $listphoto) {
-            $newarray[] = str_replace($search, '', $listphoto);
-        }
-        if (($key = array_search($request->option, $newarray)) !== false) {
-            unset($newarray[$key]);
-        }
-        $json = json_encode(array_values($newarray));
-        $src = 'storage/gallery/photo/' . $request->id . '/' . $request->option;
-        if (File::exists(public_path($src)) && !is_dir($src)) {
-            File::delete(public_path($src));
-            $status = "200";
-        } else {
-            $status = "404";
-        }
-        EventPhoto::where('id', $request->id)
-            ->update(['photos' => $json]);
-        // $news->image = '';
-        // $news->save();
+        $filename = $request->name;
 
-        return response()->json(['success' => $src, 'status' => $status]);
-        // return response()->json(['success' => $src, 'status' => $status]);
+        $path =
+            public_path(
+                'storage/gallery/tmp/' .
+                $filename
+            );
+
+        if (File::exists($path)) {
+
+            File::delete($path);
+
+        }
+
+        return response()->json([
+            'success' => true
+        ]);
     }
+public function search(Request $request)
+{
+    $keyword = $request->s;
+
+    $eventphoto = EventPhoto::query()
+
+        ->where(
+            'title',
+            'LIKE',
+            "%{$keyword}%"
+        )
+
+        ->latest()
+
+        ->paginate(6);
+
+    $totalEvent = EventPhoto::count();
+
+    $activeEvent =
+        EventPhoto::where(
+            'active',
+            'Active'
+        )->count();
+
+    $draftEvent =
+        EventPhoto::where(
+            'active',
+            'Inactive'
+        )->count();
+
+    $totalPhotos = 0;
+
+    foreach (EventPhoto::all() as $event) {
+
+        $photos =
+            json_decode(
+                $event->photos,
+                true
+            ) ?? [];
+
+        $totalPhotos += count($photos);
+    }
+
+    return view(
+        'main.gallery.index',
+        compact(
+            'eventphoto',
+            'totalEvent',
+            'activeEvent',
+            'draftEvent',
+            'totalPhotos'
+        )
+    );
+}
+
 }

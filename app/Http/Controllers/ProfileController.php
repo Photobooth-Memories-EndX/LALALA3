@@ -7,6 +7,7 @@ use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller
 {
@@ -19,15 +20,68 @@ class ProfileController extends Controller
     }
     public function update(Request $request)
     {
-
         $destinationPath = 'storage/profile/';
-        $files = $request->file('avatar'); // will get all files
-        $file_name = auth()->user()->id . "." . $files->getClientOriginalExtension(); //Get file original name
-        $files->move($destinationPath, $file_name); // move files to destination folder
-        User::where('id', auth()->user()->id)
-            ->update([
-                'avatar' => $file_name
+        $uploadedAvatarUrl = null;
+        $uploadedCoverUrl = null;
+
+        $validator = Validator::make($request->all(), [
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'cover' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => $validator->errors()->first(),
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            return back()->withErrors($validator)->withInput();
+        }
+
+        if (!File::exists(public_path($destinationPath))) {
+            File::makeDirectory(public_path($destinationPath), 0755, true);
+        }
+
+        if ($request->hasFile('avatar')) {
+            $files = $request->file('avatar'); // will get all files
+            $file_name = auth()->user()->id . "." . $files->getClientOriginalExtension(); //Get file original name
+            $files->move($destinationPath, $file_name); // move files to destination folder
+            User::where('id', auth()->user()->id)
+                ->update([
+                    'avatar' => $file_name
+                ]);
+            $uploadedAvatarUrl = asset($destinationPath . $file_name) . '?v=' . time();
+        }
+
+        if ($request->hasFile('cover')) {
+            $files = $request->file('cover');
+            $oldCovers = glob(public_path($destinationPath . 'cover_' . auth()->user()->id . '.*')) ?: [];
+
+            foreach ($oldCovers as $oldCover) {
+                if (File::exists($oldCover) && !is_dir($oldCover)) {
+                    File::delete($oldCover);
+                }
+            }
+
+            $file_name = 'cover_' . auth()->user()->id . "." . $files->getClientOriginalExtension();
+            $files->move($destinationPath, $file_name);
+            $uploadedCoverUrl = asset($destinationPath . $file_name) . '?v=' . time();
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'message' => 'Profile photo updated successfully.',
+                'avatar_url' => $uploadedAvatarUrl,
+                'cover_url' => $uploadedCoverUrl,
             ]);
+        }
+
+        if ($request->input('source') === 'home') {
+            return redirect()->route('home.user.index')->with('success', 'Profile saved successfully.');
+        }
+
         return redirect()->route('user.profile')->with('success', 'Profile saved successfully.');
     }
     public function deleteavatar()

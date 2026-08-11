@@ -13,11 +13,108 @@ use Illuminate\Support\Facades\Http;
 
 class AssesmentController extends Controller
 {
-    public function index()
+  public function index(Request $request)
     {
-        $assesment = Assesment::latest()->get();
+        $entries = $request->input('entries', 15);
 
-        return view('main.assesment.index', compact('assesment'));
+        $entries = in_array((int) $entries, [10, 15, 20, 25, 50])
+            ? (int) $entries
+            : 15;
+
+        $types = Assesment::select('type')
+            ->whereNotNull('type')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type');
+
+        $questionFilters = [
+            '1-10'   => '1 - 10 Questions',
+            '11-20'  => '11 - 20 Questions',
+            '21-30'  => '21 - 30 Questions',
+            '31-50'  => '31 - 50 Questions',
+            '51-100' => '51 - 100 Questions',
+            '100+'   => '100+ Questions',
+        ];
+
+        $timers = Assesment::select('timer')
+            ->whereNotNull('timer')
+            ->distinct()
+            ->orderBy('timer')
+            ->pluck('timer');
+
+        $statuses = Assesment::select('status')
+            ->whereNotNull('status')
+            ->distinct()
+            ->orderBy('status')
+            ->pluck('status');
+
+        $query = Assesment::with([
+            'assessment_question_banks',
+            'questions',
+        ]);
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('timer')) {
+            $query->where('timer', $request->timer);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('title', 'LIKE', '%' . $request->search . '%')
+                    ->orWhere('unique_code', 'LIKE', '%' . $request->search . '%')
+                    ->orWhere('slug', 'LIKE', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->filled('questions')) {
+            $query->whereHas('assessment_question_banks', function ($q) use ($request) {
+                switch ($request->questions) {
+                    case '1-10':
+                        $q->whereBetween('questions_amount', [1, 10]);
+                        break;
+
+                    case '11-20':
+                        $q->whereBetween('questions_amount', [11, 20]);
+                        break;
+
+                    case '21-30':
+                        $q->whereBetween('questions_amount', [21, 30]);
+                        break;
+
+                    case '31-50':
+                        $q->whereBetween('questions_amount', [31, 50]);
+                        break;
+
+                    case '51-100':
+                        $q->whereBetween('questions_amount', [51, 100]);
+                        break;
+
+                    case '100+':
+                        $q->where('questions_amount', '>', 100);
+                        break;
+                }
+            });
+        }
+
+        $assesment = $query
+            ->latest()
+            ->paginate($entries)
+            ->withQueryString();
+
+        return view('main.assesment.index', compact(
+            'assesment',
+            'types',
+            'timers',
+            'statuses',
+            'questionFilters'
+        ));
     }
 
     public function create()

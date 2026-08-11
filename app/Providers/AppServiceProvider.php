@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
-use App\Models\ContentUser;
+use App\Services\LearningAnalyticsService;
 use Illuminate\Support\Str;
 use App\Models\Classification;
 use Illuminate\Pagination\Paginator;
@@ -35,7 +35,10 @@ class AppServiceProvider extends ServiceProvider
             $view->with('category', Classification::select('classification_name', 'slug')->get());
         });
         view()->composer('partials.header', function ($view) {
-            $view->with('mylearningongoing', ContentUser::where('user_id', auth()->user()->id)->where('finish', '0')->count());
+            $view->with(
+                'mylearningongoing',
+                app(LearningAnalyticsService::class)->ongoingLearningCount((int) auth()->id())
+            );
         });
 
         Str::macro('initials', fn ($value, $sep = ' ', $glue = '') => trim(collect(explode($sep, $value))->map(function ($segment) {

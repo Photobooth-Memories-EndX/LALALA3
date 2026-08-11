@@ -12,54 +12,58 @@ class SearchController extends Controller
 {
     public function index($searchtype)
     {
-        $value = request('s');
-        // return $value;
-        $content = Content::where('title', 'LIKE', "%$value%")->get();
-        $news = News::where('title', 'LIKE', "%$value%")->get();
-        $eventphoto = EventPhoto::where('title', 'LIKE', "%$value%")->get();
-        // $playlist = TrainingPlan::where('title', 'LIKE', "%$value%")->get();
+        $keyword = request('s', '');
 
-        $playlist = TrainingPlan::where('title', 'LIKE', "%$value%")->with([
-            'trainingplandetail', 'trainingplandetail.content'
-        ])->get();
-        foreach ($content as $key => $value) {
-            $value->searchtype = "content";
-            $value->searchlabel = "Content";
+        $content    = Content::where('title', 'LIKE', "%{$keyword}%")->get();
+        $news       = News::where('title', 'LIKE', "%{$keyword}%")->get();
+        $eventphoto = EventPhoto::where('title', 'LIKE', "%{$keyword}%")->get();
+        $playlist   = TrainingPlan::where('title', 'LIKE', "%{$keyword}%")
+                        ->with(['trainingplandetail', 'trainingplandetail.content'])
+                        ->get();
+
+        foreach ($content as $item) {
+            $item->searchtype  = 'content';
+            $item->searchlabel = 'Content';
         }
-        foreach ($news as $key => $value) {
-            $value->searchtype = "news";
-            $value->searchlabel = "NEWS";
+        foreach ($news as $item) {
+            $item->searchtype  = 'news';
+            $item->searchlabel = 'NEWS';
         }
-        foreach ($eventphoto as $key => $value) {
-            $value->searchtype = "eventphoto";
-            $value->searchlabel = "Gallery";
+        foreach ($eventphoto as $item) {
+            $item->searchtype  = 'eventphoto';
+            $item->searchlabel = 'Gallery';
         }
-        foreach ($playlist as $key => $value) {
-            $value->searchtype = "playlist";
-            $value->searchlabel = "Playlist";
+        foreach ($playlist as $item) {
+            $item->searchtype  = 'playlist';
+            $item->searchlabel = 'Playlist';
         }
-        $result = collect(); //Create empty collection which we know has the merge() method
-        if ($searchtype == 'content') {
+
+        $result = collect();
+        if ($searchtype === 'content') {
             $result = $content;
-        } else if ($searchtype == 'news') {
+        } elseif ($searchtype === 'news') {
             $result = $news;
-        } else if ($searchtype == 'eventphoto') {
+        } elseif ($searchtype === 'eventphoto') {
             $result = $eventphoto;
-        } else if ($searchtype == 'playlist') {
+        } elseif ($searchtype === 'playlist') {
             $result = $playlist;
-        } else if ($searchtype == 'all') {
-            $result = $result->concat($content);
-            $result = $result->concat($news);
-            $result = $result->concat($eventphoto)->sortByDesc('created_at');
-            $result = $result->concat($playlist)->sortByDesc('created_at');
+        } elseif ($searchtype === 'all') {
+            $result = $result
+                ->concat($content)
+                ->concat($news)
+                ->concat($eventphoto)
+                ->concat($playlist)
+                ->sortByDesc('created_at');
         }
-        // return $result;
+
         return view('user.search.index', [
-            "result" => $result,
-            "totalcontent" => $content->count(),
-            "totalnews" => $news->count(),
-            "totaleventphoto" => $eventphoto->count(),
-            "totalplaylist" => $playlist->count()
+            'result'          => $result,
+            'keyword'         => $keyword,
+            'searchtype'      => $searchtype,
+            'totalcontent'    => $content->count(),
+            'totalnews'       => $news->count(),
+            'totaleventphoto' => $eventphoto->count(),
+            'totalplaylist'   => $playlist->count(),
         ]);
     }
 }

@@ -1,4 +1,4 @@
-@extends('layouts.master')
+@extends('layouts.sidebar-master')
 @section('content')
 
 {{-- <div class="page-header d-print-none">
@@ -128,7 +128,7 @@
 
                                 </td>
                                 <td><a href="{{ route('learning.manage.category', $list->content->classification->slug) }}" class="text-reset">{{ $list->content->classification->classification_name ?? '' }}</a></td>
-                                <td>{{ $list->content->duration }}</td>
+                                <td>{{ \App\Support\DurationFormatter::format($list->content->duration ?? null) }}</td>
                                 <td>{{ $list->content->date }}</td>
 
                                 <td>
@@ -175,20 +175,5 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 @endsection
 
-@section('script')
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script>
-    // let table = new DataTable('#MyTable');
-    $(function() {
-        $("#MyTable").DataTable({
-            "lengthMenu": [
-                [10, 25, 50, -1],
-                [10, 25, 50, 'All'],
-            ],
-            "pageLength": 25,
-            "autoWidth": false,
-        });
-    });
-</script>
-@endsection
+{{-- Legacy learning table implementation kept for reference only.
+     DataTable initialization is centralized in main.learning.components.learning-table-script. --}}

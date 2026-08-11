@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
     {
         // \App\Models\User::factory(10)->create();
         $this->call(PageSeeder::class);
+        // $this->call(UserSeeder::class);
+        $this->call(RoleAccessPermissionSeeder::class);
         $data = [
             ['classification_name' => 'Leadership'],
             ['classification_name' => 'Basic mindset'],

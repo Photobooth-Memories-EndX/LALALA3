@@ -13,3 +13,15 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+/docs
+
+# AI Agent
+.agents/*
+!.agents/.gitkeep
+
+# Temporary browser profiles
+.tmp-chrome-profile/*
+!.tmp-chrome-profile/.gitkeep
+
+.tmp-edge-profile/*
+!.tmp-edge-profile/.gitkeep

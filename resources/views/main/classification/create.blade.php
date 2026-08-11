@@ -1,58 +1,249 @@
-@extends('layouts.master')
+```blade
+@extends('layouts.sidebar-master')
+
 @section('content')
 
 <div class="page-header d-print-none">
     <div class="container-xl">
-      <div class="row g-2 align-items-center">
-        <div class="col">
-          <h2 class="page-title">
-            Manage Category
-          </h2>
+
+        <div class="row g-2 align-items-center">
+
+            <div class="col">
+                <h2 class="page-title">
+                    Create Category
+                </h2>
+
+                <div class="text-muted mt-1">
+                    Add a new category to organize content and learning modules in OWL LMS.
+                </div>
+            </div>
+
+            <div class="col-auto ms-auto d-print-none">
+
+                <ol class="breadcrumb breadcrumb-arrows">
+                    <li class="breadcrumb-item">
+                        <a href="#">Manage</a>
+                    </li>
+
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('classification.index') }}">
+                            Category
+                        </a>
+                    </li>
+
+                    <li class="breadcrumb-item active">
+                        Create
+                    </li>
+                </ol>
+
+            </div>
+
         </div>
-        <!-- Page title actions -->
-        <div class="col-auto ms-auto d-print-none">
-          <div class="d-flex">
-            <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-              <li class="breadcrumb-item"><a href="#">Manage</a></li>
-              <li class="breadcrumb-item"><a href="{{ route('classification.index') }}">Category</a></li>
-              <li class="breadcrumb-item active" aria-current="page"><a href="#">Create</a></li>
-            </ol>
-          </div>
-        </div>
-      </div>
+
     </div>
 </div>
 
-<!-- Page body -->
 <div class="page-body">
-    <!-- Container Page -->
-    <div class="page page-center">
-    <div class="container py-4">
+    <div class="container-xl">
 
-        <x-form class="card card-md" action="{{ route('classification.store') }}" method="post">
-        <div class="card-header">
-            <h3 class="card-title">Create Category</h3>
-          </div>
-          <div class="card-body">
-            <div class="mb-3 row">
-              <x-label class="col-3 col-form-label required">Name</x-label>
-              <div class="col">
-                <x-input type="text" name="classification_name" placeholder="Enter category name" value="{{ old('classification_name') }}" />
-              </div>
+        {{-- HERO --}}
+        <div class="card category-create-hero border-0 shadow-sm rounded-4 mb-4">
+
+            <div class="card-body p-4">
+
+                <div class="row align-items-center">
+
+                    <div class="col-lg-8">
+
+                        <div class="text-muted text-uppercase small fw-semibold mb-1">
+                            Category Management
+                        </div>
+
+                        <h1 class="mb-2">
+                            Create New Category
+                        </h1>
+
+                        <div class="text-muted">
+                            Categories are used to organize learning content, playlists, assessments, and reports for better organization.
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+
+                        <span class="avatar avatar-lg bg-primary-lt text-primary">
+                            <i class="ti ti-category fs-2"></i>
+                        </span>
+
+                    </div>
+
+                </div>
+
             </div>
 
-          </div>
-          <div class="card-footer text-end">
-            <x-button>Submit</x-button>
-          </div>
+        </div>
+
+        {{-- FORM --}}
+        <x-form
+            class="card border-0 shadow-sm rounded-4 overflow-hidden"
+            action="{{ route('classification.store') }}"
+            method="post">
+
+            <div class="card-header border-0">
+
+                <div>
+                    <h3 class="card-title mb-1">
+                        Category Information
+                    </h3>
+
+                    <div class="text-muted small">
+                        Enter the category information to be used in OWL LMS.
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="card-body p-4">
+
+                <div class="row">
+
+                    <div class="col-lg-8">
+
+                        <div class="mb-4">
+
+                            <label class="form-label required">
+                                Category Name
+                            </label>
+
+                            <div class="input-icon">
+
+                                <span class="input-icon-addon">
+                                    <i class="ti ti-category"></i>
+                                </span>
+
+                                <x-input
+                                    type="text"
+                                    name="classification_name"
+                                    placeholder="Example: Leadership Development"
+                                    value="{{ old('classification_name') }}"
+                                />
+
+                            </div>
+
+                            <small class="form-hint">
+                                Category names are used for content, playlists, assessments, and reporting.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-4">
+
+                        <div class="card bg-primary-lt border-0">
+
+                            <div class="card-body">
+
+                                <div class="fw-semibold mb-2">
+                                    Tips
+                                </div>
+
+                                <ul class="mb-0 small">
+
+                                    <li>
+                                        Use a clear and easy-to-understand category name.
+                                    </li>
+
+                                    <li>
+                                        Avoid using overly long category names.
+                                    </li>
+
+                                    <li>
+                                        Make sure the category name is unique.
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card-footer bg-transparent">
+
+                <div class="d-flex justify-content-between">
+
+                    <a href="{{ route('classification.index') }}"
+                       class="btn btn-outline-secondary rounded-pill px-4">
+
+                        <i class="ti ti-arrow-left me-1"></i>
+                        Back
+
+                    </a>
+
+                    <x-button class="btn btn-primary rounded-pill px-4">
+
+                        <i class="ti ti-device-floppy me-1"></i>
+                        Save Category
+
+                    </x-button>
+
+                </div>
+
+            </div>
+
         </x-form>
-    </div>
 
     </div>
-    <!-- Container Page -->
-  </div>
-  <!-- Page body -->
+</div>
 
 @endsection
 
+@section('style')
 
+<style>
+
+    .rounded-4{
+        border-radius:20px !important;
+    }
+
+    .category-create-hero{
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(32,107,196,.15),
+                transparent 35%
+            ),
+            linear-gradient(
+                135deg,
+                rgba(32,107,196,.05),
+                var(--tblr-bg-surface)
+            );
+
+        border:1px solid var(--tblr-border-color);
+    }
+
+    [data-bs-theme="dark"] .category-create-hero,
+    body.theme-dark .category-create-hero{
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(32,107,196,.25),
+                transparent 35%
+            ),
+            linear-gradient(
+                135deg,
+                rgba(32,107,196,.10),
+                var(--tblr-bg-surface)
+            );
+    }
+
+</style>
+
+@endsection
+```

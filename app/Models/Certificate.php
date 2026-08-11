@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Certificate extends Model
+{
+    protected $fillable = [
+        'user_id',
+        'certificate_setting_id',
+        'certificate_type',
+        'source_id',
+        'content_user_id',
+        'assessment_result_id',
+        'certificate_number',
+        'credential_id',
+        'credential_url',
+        'title',
+        'participant_name',
+        'score',
+        'issued_at',
+        'file_path',
+    ];
+
+    protected $casts = [
+        'issued_at' => 'date',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function certificateSetting()
+    {
+        return $this->belongsTo(CertificateSetting::class);
+    }
+
+    public function assessmentResult()
+    {
+        return $this->belongsTo(AssesmentResult::class);
+    }
+
+    public function getLinkedInUrlAttribute(): string
+    {
+        return 'https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME'
+            . '&name=' . urlencode($this->title)
+            . '&organizationName=' . urlencode($this->certificateSetting->issuer_name ?? 'OWL Training Management')
+            . '&issueYear=' . optional($this->issued_at)->format('Y')
+            . '&issueMonth=' . optional($this->issued_at)->format('m')
+            . '&certUrl=' . urlencode(route('certificate.verify', $this->credential_id))
+            . '&certId=' . urlencode($this->credential_id);
+    }
+}

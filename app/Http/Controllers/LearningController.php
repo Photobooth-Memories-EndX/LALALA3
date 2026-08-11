@@ -2,50 +2,104 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Assesment;
+use App\Models\Certificate;
 use App\Models\ContentUser;
-use Illuminate\Http\Request;
-use App\Models\AssesmentResult;
-use App\Models\Content;
+use App\Services\CertificateEligibilityService;
+use App\Services\Learning\CompletedPlaylistService;
+use App\Services\LearningAnalyticsService;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * My Learning — coordinator controller (entry point).
+ *
+ * Hanya menangani halaman dashboard (ringkasan ringan) dan routing tab.
+ * Seluruh business logic per-tab didelegasikan ke controller khusus:
+ *
+ *  - Learning On Going  -> LearningOngoingController
+ *  - Learning Record    -> LearningRecordController
+ *  - Assessment         -> LearningAssessmentController
+ *  - Monitoring         -> LearningMonitoringController
+ */
 class LearningController extends Controller
 {
-    public function ongoing()
+    /**
+     * Lightweight dashboard – only loads summary counts and profile data.
+     * Tab content is fetched on-demand via dashboardPartial().
+     */
+    public function dashboard(
+        LearningAnalyticsService $analyticsService,
+        CompletedPlaylistService $completedPlaylistService
+    )
     {
-        $content_user = ContentUser::with('content')
-            ->where('user_id', auth()->user()->id)
-            ->where('finish', '0')
-            ->orderBy('created_at', 'desc')->get();
+        $userId = Auth::id();
+        $user   = Auth::user();
 
-        return view('user.learning.ongoing', compact('content_user'));
+        $learningHours = $analyticsService->userLearningHours((int) $userId);
+
+        $totalLearning = ContentUser::where('user_id', $userId)->count();
+
+        $completedLearning = ContentUser::where('user_id', $userId)
+            ->where(function ($q) {
+                $q->where('progress', '>=', 100)->orWhere('finish', '1');
+            })
+            ->count();
+
+        $ongoingLearning = $analyticsService->ongoingLearningCount((int) $userId);
+
+        $completedContentLearning = ContentUser::query()
+            ->join('content', 'content.id', '=', 'content_users.content_id')
+            ->where('content_users.user_id', $userId)
+            ->where('content_users.finish', '1')
+            ->whereNull('content.deleted_at')
+            ->whereIn('content.type', ['Video', 'Document'])
+            ->count();
+
+        $completedPlaylistLearning = $completedPlaylistService->forUser((int) $userId)->count();
+
+        $certificates = Certificate::where('user_id', $userId)
+            ->get(['certificate_type']);
+
+        $certificateStats = [
+            'total' => $certificates->count(),
+            'playlist' => $certificates->where('certificate_type', 'playlist')->count(),
+            'content' => $certificates->where('certificate_type', 'content')->count(),
+        ];
+
+        $averageProgress = (int) round(ContentUser::where('user_id', $userId)->avg('progress') ?? 0);
+
+        return view('user.learning.dashboard', compact(
+            'user',
+            'learningHours',
+            'totalLearning',
+            'completedLearning',
+            'ongoingLearning',
+            'completedContentLearning',
+            'completedPlaylistLearning',
+            'certificateStats',
+            'averageProgress'
+        ));
     }
 
-    public function record()
+    /**
+     * Returns HTML fragment for a single tab.
+     * Called via AJAX from dashboard-script.blade.php — routing only,
+     * business logic tiap tab ada di controller masing-masing.
+     */
+    public function dashboardPartial(string $tab, CertificateEligibilityService $eligibilityService)
     {
-        $content_user = ContentUser::with('content.classification', 'assesment.scores')->where('user_id', auth()->user()->id)->where('finish', '1')->latest()->get();
-
-        return view('user.learning.finish', compact('content_user'));
-    }
-
-    public function assesment()
-    {
-        $assessments = Assesment::with('assesments_assigned', 'contents', 'scores')
-            ->whereHas('assesments_assigned', function($query) {
-                return $query->where('assigned_id', Auth::user()->id_emp)
-                    ->orWhere('assigned_id', Auth::user()->id_tean)
-                    ->orWhere('assigned_id', Auth::user()->id_department);
-            })->orwhereHas('contents', function ($query) {
-                return $query->with('contentuser')
-                    ->whereHas('contentuser', function ($query) {
-                        return $query->where('progress', '>=' , 100)
-                            ->where('user_id', Auth::user()->id);
-                    });
-            })->orWhereHas('scores', function($query) {
-                return $query->where('user_id', Auth::user()->id);
-            })->latest()->get();
-        $result      = AssesmentResult::with(['assesment'])->where('user_id', auth()->user()->id)->whereFinal(1)->latest()->get();
-
-        return view('user.learning.result', compact('result', 'assessments'));
+        return match ($tab) {
+            // Tab ongoing: Content (default), Playlist, dan placeholder MOOC.
+            'ongoing' => match (request('ongoing_mode')) {
+                'playlist' => app(LearningOngoingController::class)->playlist(),
+                'mooc'     => view('components.learning.ongoing-mooc-section'),
+                default    => app(LearningOngoingController::class)->content(),
+            },
+            'record'      => app(LearningRecordController::class)->partial($eligibilityService),
+            'assessment'  => app(LearningAssessmentController::class)->partial(request()),
+            'claim'       => view('user.learning.dashboard-partials.claim'),
+            'certificate' => app(LearningRecordController::class)->certificate(),
+            'monitoring'  => app(LearningMonitoringController::class)->partial(),
+            default       => abort(404),
+        };
     }
 }
