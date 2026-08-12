@@ -53,11 +53,11 @@
                             <td class="text-center text-muted">{{ $attemptVal }}</td>
                             <td class="text-center">
                                 @if ($isPassed)
-                                    <span class="badge bg-green-lt text-green px-2 py-1">Passed</span>
+                                    <span class="badge bg-green-lt text-green px-2 py-1 assessment-status-passed">Passed</span>
                                 @elseif ($isFinal)
-                                    <span class="badge bg-red-lt text-red px-2 py-1">Failed</span>
+                                    <span class="badge bg-red-lt text-red px-2 py-1 assessment-status-failed">Failed</span>
                                 @else
-                                    <span class="badge bg-orange-lt text-orange px-2 py-1">Pending</span>
+                                    <span class="badge bg-orange-lt text-orange px-2 py-1 assessment-status-pending">Pending</span>
                                 @endif
                             </td>
                         </tr>
