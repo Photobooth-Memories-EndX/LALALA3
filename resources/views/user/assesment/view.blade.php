@@ -188,8 +188,10 @@
                             </div>
 
                             <button type="submit"
-                                    class="btn btn-success"
-                                    id="submitAssesment">
+                                    class="btn btn-success text-white fw-semibold rounded-3 opacity-50 pe-none"
+                                    style="background-color: #0ab721 !important; border-color: #198754 !important; opacity: 0.45; cursor: not-allowed;"
+                                    id="submitAssesment"
+                                    disabled>
                                 Finish & Submit Answers
                             </button>
                         </div>
@@ -274,6 +276,38 @@
     <script>
         $(function () {
             let assessmentSubmitting = false;
+
+            function checkAssessmentCompletion() {
+                const totalQuestions = {{ count($assesment_question ?? []) }};
+                const answeredQuestions = $('#formAssesment input[type="radio"]:checked').length;
+                const finishBtn = $('#submitAssesment');
+
+                if (!finishBtn.length) return;
+
+                if (answeredQuestions >= totalQuestions && totalQuestions > 0) {
+                    finishBtn.prop('disabled', false)
+                             .removeClass('opacity-50 pe-none')
+                             .css({
+                                 'opacity': '1',
+                                 'cursor': 'pointer',
+                                 'pointer-events': 'auto'
+                             });
+                } else {
+                    finishBtn.prop('disabled', true)
+                             .addClass('opacity-50 pe-none')
+                             .css({
+                                 'opacity': '0.45',
+                                 'cursor': 'not-allowed',
+                                 'pointer-events': 'none'
+                             });
+                }
+            }
+
+            $(document).on('change', '#formAssesment input[type="radio"]', function () {
+                checkAssessmentCompletion();
+            });
+
+            checkAssessmentCompletion();
 
             $('#formAssesment').on('submit', function (e) {
                 if (assessmentSubmitting) {
