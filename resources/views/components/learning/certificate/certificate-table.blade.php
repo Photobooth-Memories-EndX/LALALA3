@@ -39,7 +39,7 @@
                             <i class="ti certificate-sort-icon {{ $noSortDirection === 'asc' ? 'ti-arrow-up' : ($noSortDirection === 'desc' ? 'ti-arrow-down' : 'ti-arrows-sort') }}" aria-hidden="true"></i>
                         </button>
                     </th>
-                    <th class="certificate-col-main">
+                    <th class="certificate-col-main text-start">
                         <button type="button" class="certificate-sort-heading {{ in_array($activeSort, $sortColumns['certificate'], true) ? 'is-sorted' : '' }}" data-sort="{{ $activeSort === 'target_asc' ? 'target_desc' : 'target_asc' }}">
                             CERTIFICATE
                             <i class="ti certificate-sort-icon {{ $certificateSortDirection === 'asc' ? 'ti-arrow-up' : ($certificateSortDirection === 'desc' ? 'ti-arrow-down' : 'ti-arrows-sort') }}" aria-hidden="true"></i>
@@ -51,13 +51,13 @@
                             <i class="ti certificate-sort-icon {{ $typeSortDirection === 'asc' ? 'ti-arrow-up' : ($typeSortDirection === 'desc' ? 'ti-arrow-down' : 'ti-arrows-sort') }}" aria-hidden="true"></i>
                         </button>
                     </th>
-                    <th class="certificate-col-number">
+                    <th class="certificate-col-number text-start">
                         <button type="button" class="certificate-sort-heading {{ in_array($activeSort, $sortColumns['number'], true) ? 'is-sorted' : '' }}" data-sort="{{ $activeSort === 'number_asc' ? 'number_desc' : 'number_asc' }}">
                             CERTIFICATE NUMBER
                             <i class="ti certificate-sort-icon {{ $numberSortDirection === 'asc' ? 'ti-arrow-up' : ($numberSortDirection === 'desc' ? 'ti-arrow-down' : 'ti-arrows-sort') }}" aria-hidden="true"></i>
                         </button>
                     </th>
-                    <th class="certificate-col-credential">CREDENTIAL ID</th>
+                    <th class="certificate-col-credential text-start">CREDENTIAL ID</th>
                     <th class="certificate-col-issued text-center">
                         <button type="button" class="certificate-sort-heading {{ in_array($activeSort, $sortColumns['issued'], true) ? 'is-sorted' : '' }}" data-sort="{{ $activeSort === 'issued_asc' ? 'issued_desc' : 'issued_asc' }}">
                             ISSUED DATE

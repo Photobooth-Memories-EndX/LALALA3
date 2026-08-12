@@ -31,7 +31,7 @@
 
 <tr class="certificate-row" data-certificate-id="{{ $certificate->id }}">
     <td class="certificate-col-no text-center text-muted">{{ $index }}</td>
-    <td class="certificate-col-main">
+    <td class="certificate-col-main text-start">
         <a href="{{ route('certificate.show', $certificate->credential_id) }}"
            class="certificate-title certificate-title-link"
            title="View {{ $certificate->title }}">
@@ -44,25 +44,15 @@
             {{ ucfirst($type) }}
         </span>
     </td>
-    <td class="certificate-col-number">
-        <div class="certificate-identifier">
-            <a href="{{ route('certificate.show', $certificate->credential_id) }}" class="certificate-identifier-value" title="View Certificate Detail">
-                {{ $certificate->certificate_number }}
-            </a>
-            <button type="button" class="btn btn-link certificate-identifier-copy certificate-copy-btn" data-copy="{{ $certificate->certificate_number }}" title="Copy Certificate Number" aria-label="Copy Certificate Number">
-                <i class="ti ti-copy" aria-hidden="true"></i>
-            </button>
-        </div>
+    <td class="certificate-col-number text-start">
+        <span class="certificate-number-text text-body fw-normal text-truncate d-block" title="{{ $certificate->certificate_number }}">
+            {{ $certificate->certificate_number }}
+        </span>
     </td>
-    <td class="certificate-col-credential">
-        <div class="certificate-identifier">
-            <button type="button" class="btn btn-link certificate-identifier-value certificate-copy-btn" data-copy="{{ $certificate->credential_id }}" title="Copy Credential ID">
-                {{ $certificate->credential_id }}
-            </button>
-            <button type="button" class="btn btn-link certificate-identifier-copy certificate-copy-btn" data-copy="{{ $certificate->credential_id }}" title="Copy Credential ID" aria-label="Copy Credential ID">
-                <i class="ti ti-copy" aria-hidden="true"></i>
-            </button>
-        </div>
+    <td class="certificate-col-credential text-start">
+        <span class="certificate-credential-text text-body fw-normal text-truncate d-block" title="{{ $certificate->credential_id }}">
+            {{ $certificate->credential_id }}
+        </span>
     </td>
     <td class="certificate-col-issued text-center" data-order="{{ optional($certificate->issued_at)->format('Y-m-d') }}">
         @if ($certificate->issued_at)

@@ -50,21 +50,41 @@
 @endphp
 
 <style>
-/* Classification Badges */
+/* Standardized Learning Record Badges */
+.learning-record-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    min-height: 26px !important;
+    min-width: 44px !important;
+    padding: 4px 10px !important;
+    border-radius: 999px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+}
 .learning-classification-badge {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    white-space: normal !important;
-    word-break: break-word !important;
-    line-height: 1.15 !important;
-    padding: 6px 12px !important;
-    min-height: 28px !important;
-    max-width: 140px !important;
-    border-radius: 999px !important;
     vertical-align: middle !important;
-    font-weight: 500 !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    word-break: normal !important;
+    max-width: 120px !important;
+    min-height: 26px !important;
+    padding: 4px 8px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.18 !important;
+    border-radius: 999px !important;
+    box-sizing: border-box !important;
 }
 
 /* Certificate Action Buttons */
