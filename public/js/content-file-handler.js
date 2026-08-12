@@ -101,7 +101,9 @@ class ContentFileHandler {
                 init: function () {
                     this.on("error", function (file, message) {
                         if (typeof message === 'string' && message.length > 0) {
-                            self.showError(message);
+                            if (!message.includes('code 0') && !message.includes('responded with 0')) {
+                                self.showError(message);
+                            }
                         }
                         self.clearSelection(this, file);
                     });
@@ -165,7 +167,9 @@ class ContentFileHandler {
                 init: function () {
                     this.on("error", function (file, message) {
                         if (typeof message === 'string' && message.length > 0) {
-                            self.showError(message);
+                            if (!message.includes('code 0') && !message.includes('responded with 0')) {
+                                self.showError(message);
+                            }
                         }
                         self.clearSelection(this, file);
                     });
@@ -176,6 +180,10 @@ class ContentFileHandler {
                             $(formElement).append('<input type="hidden" name="thumbnail[]" value="' + val + '" required>');
                             self.uploadedThumbnailMap[data[key].name] = val;
                         });
+                        const removeThumbInput = document.getElementById('remove_thumbnail');
+                        if (removeThumbInput) {
+                            removeThumbInput.value = '0';
+                        }
                     }
                 },
                 removedfile: function (file) {

@@ -282,6 +282,7 @@ body.theme-dark .content-preview-icon span { color: #9ca3af; }
         setServerThumb: function (url) {
             _fbThumb = url || null;
             if (url) thumbSet(url);
+            else thumbReset();
         },
         /** Set existing server video file (called from edit page). */
         setServerVideoFile: function (url, name) {

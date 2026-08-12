@@ -55,7 +55,7 @@
         $thumbLocalPath = public_path('storage/files/content/' . $content->id . '/thumb.jpg');
         if (file_exists($thumbLocalPath)) {
             $hasExistingThumb = true;
-            $existingThumbName = 'thumb.jpg';
+            $existingThumbName = ($content->type === 'YouTube') ? 'YouTube Thumbnail' : 'thumb.jpg';
             $existingThumbUrl = asset('storage/files/content/' . $content->id . '/thumb.jpg');
             $bytes = filesize($thumbLocalPath);
             if ($bytes >= 1048576) {
@@ -65,11 +65,6 @@
             } else {
                 $existingThumbSizeFormatted = $bytes . ' B';
             }
-        } elseif ($content->type === 'YouTube' && !empty($content->link)) {
-            $hasExistingThumb = true;
-            $existingThumbName = 'YouTube Thumbnail';
-            $existingThumbUrl = 'https://img.youtube.com/vi/' . $content->link . '/mqdefault.jpg';
-            $existingThumbSizeFormatted = 'YouTube Image';
         }
     }
 @endphp
@@ -268,8 +263,9 @@ body.dark-mode .compact-dropzone .dz-preview {
 
             {{-- Thumbnail File Column --}}
             <div class="col-md-6 col-12 d-flex flex-column">
+                <input type="hidden" name="remove_thumbnail" id="remove_thumbnail" value="0">
                 @if ($mode === 'edit' && $hasExistingThumb)
-                    <div class="mb-2 flex-grow-1 d-flex flex-column">
+                    <div class="mb-2 flex-grow-1 d-flex flex-column" id="current-thumbnail-wrapper">
                         <label class="form-label fw-semibold mb-1 text-muted small text-uppercase" style="letter-spacing: 0.04em;">Current Thumbnail</label>
                         <div class="card card-sm border bg-surface-secondary flex-fill" style="border-radius: var(--tblr-border-radius, .375rem);">
                             <div class="card-body p-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2 h-100">
@@ -299,7 +295,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                                         </svg>
                                         <span class="d-none d-sm-inline ms-1">Download</span>
                                     </a>
-                                    <a href="#" class="btn btn-outline-danger btn-sm px-2 py-1 btn-remove-thumb" data-url="" title="Remove Thumbnail">
+                                    <a href="#" class="btn btn-outline-danger btn-sm px-2 py-1 btn-remove-thumb" data-url="{{ (isset($content) && !empty($content->slug)) ? route('contentdelete.deletethumbajax', $content->slug) : '' }}" title="Remove Thumbnail">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                             <path d="M4 7l16 0" />
@@ -316,7 +312,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                     </div>
                 @endif
 
-                <label class="form-label fw-semibold mb-1">
+                <label class="form-label fw-semibold mb-1" id="label-thumbnail-file">
                     {{ ($mode === 'edit' && $hasExistingThumb) ? 'Replace Thumbnail' : 'Thumbnail' }}
                 </label>
                 <div class="dropzone compact-dropzone" id="thumbnail-dropzone">

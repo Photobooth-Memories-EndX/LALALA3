@@ -164,10 +164,16 @@
 
         $(document).on('click', '.btn-remove-content', function(e) {
             e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             if (confirm("Are you sure want to delete this media content?")) {
                 $.ajax({
                     type: "PUT",
                     url: $(this).data('url'),
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     data: { '_token': '{{ csrf_token() }}' },
                     success: function(data) {
                         console.log(data);
@@ -176,6 +182,45 @@
                         }
                     }
                 });
+            }
+        });
+
+        $(document).on('click', '.btn-remove-thumb', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            var $btn = $(this);
+            var url = $btn.data('url');
+            if (confirm("Are you sure want to delete this thumbnail?")) {
+                var performDomRemove = function() {
+                    $('#current-thumbnail-wrapper').remove();
+                    $('#label-thumbnail-file').text('Thumbnail');
+                    $('#remove_thumbnail').val('1');
+                    if (window.OwlPreview && typeof window.OwlPreview.setServerThumb === 'function') {
+                        window.OwlPreview.setServerThumb(null);
+                    }
+                };
+
+                if (url) {
+                    $.ajax({
+                        type: "PUT",
+                        url: url,
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        data: { '_token': '{{ csrf_token() }}' },
+                        success: function(data) {
+                            performDomRemove();
+                        },
+                        error: function(xhr, status, error) {
+                            console.warn('Remove thumbnail AJAX error status:', xhr.status, error);
+                            performDomRemove();
+                        }
+                    });
+                } else {
+                    performDomRemove();
+                }
             }
         });
 
