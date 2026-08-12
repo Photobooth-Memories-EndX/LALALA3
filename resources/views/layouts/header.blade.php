@@ -105,134 +105,249 @@
 <header class="navbar navbar-expand-md d-print-none app-topbar">
     <div class="container-fluid">
 
-        {{-- SEARCH DESKTOP ONLY --}}
-        <div class="topbar-search d-none d-md-flex flex-grow-1">
-            <form action="{{ route('search', ['searchtype' => 'all']) }}"
-                  method="get"
-                  autocomplete="off"
-                  novalidate
-                  class="w-100">
+        {{-- ========================================================
+             DESKTOP HEADER LAYOUT (>= 992px)
+             ======================================================== --}}
+        <div class="d-none d-lg-flex align-items-center w-100 py-1">
 
-                <div class="input-icon w-100">
-                    <span class="input-icon-addon">
-                        <i class="ti ti-search"></i>
-                    </span>
+            {{-- SEARCH DESKTOP --}}
+            <div class="topbar-search flex-grow-1 me-3">
+                <form action="{{ route('search', ['searchtype' => 'all']) }}"
+                      method="get"
+                      autocomplete="off"
+                      novalidate
+                      class="w-100">
 
-                    <input type="text"
-                           name="s"
-                           class="form-control"
-                           placeholder="Search learning, content, news..."
-                           aria-label="Search in website">
+                    <div class="input-icon w-100">
+                        <span class="input-icon-addon">
+                            <i class="ti ti-search"></i>
+                        </span>
+
+                        <input type="text"
+                               name="s"
+                               class="form-control"
+                               placeholder="Search learning, content, news..."
+                               aria-label="Search in website">
+                    </div>
+                </form>
+            </div>
+
+            {{-- RIGHT MENU DESKTOP --}}
+            <div class="navbar-nav flex-row align-items-center ms-auto">
+
+                {{-- DARK MODE --}}
+                <div class="nav-item me-3">
+                    <a href="{{ $darkThemeUrl }}"
+                       class="nav-link px-0 hide-theme-dark"
+                       title="Enable dark mode"
+                       data-bs-toggle="tooltip"
+                       data-bs-placement="bottom">
+                        <i class="ti ti-moon fs-2"></i>
+                    </a>
+
+                    <a href="{{ $lightThemeUrl }}"
+                       class="nav-link px-0 hide-theme-light"
+                       title="Enable light mode"
+                       data-bs-toggle="tooltip"
+                       data-bs-placement="bottom">
+                        <i class="ti ti-sun fs-2"></i>
+                    </a>
                 </div>
-            </form>
+
+                {{-- NOTIFICATION BELL DESKTOP --}}
+                <div class="nav-item dropdown me-3">
+                    <a href="#"
+                       class="nav-link px-0 position-relative"
+                       data-bs-toggle="dropdown"
+                       role="button"
+                       aria-expanded="false"
+                       aria-label="Open notifications">
+
+                        <i class="ti ti-bell fs-2"></i>
+
+                        @if (($mylearningongoing ?? 0) >= 1)
+                            <span class="badge bg-red badge-notification">
+                                {{ $mylearningongoing }}
+                            </span>
+                        @endif
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <div class="dropdown-header">
+                            Notifications
+                        </div>
+
+                        @if (($mylearningongoing ?? 0) >= 1)
+                            <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
+                                <i class="ti ti-book-2 me-2"></i>
+                                You have {{ $mylearningongoing }} ongoing learning
+                            </a>
+                        @else
+                            <span class="dropdown-item text-muted">
+                                <i class="ti ti-bell-off me-2"></i>
+                                No notifications
+                            </span>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- PROFILE DESKTOP --}}
+                <div class="nav-item dropdown">
+                    <a href="#"
+                       class="nav-link d-flex lh-1 text-reset p-0"
+                       data-bs-toggle="dropdown"
+                       data-bs-auto-close="outside"
+                       role="button"
+                       aria-expanded="false"
+                       aria-label="Open user menu">
+
+                        @if (!empty(auth()->user()->avatar))
+                            <span class="avatar avatar-sm"
+                                style="background-image: url('{{ asset('storage/profile/' . auth()->user()->avatar) }}')">
+                            </span>
+                        @else
+                            <span class="avatar avatar-sm avatar-default-icon">
+                                <i class="ti ti-user"></i>
+                            </span>
+                        @endif
+
+                        <div class="user-header-details ps-2">
+                            <div class="user-header-name">
+                                {{ ucwords(strtolower(auth()->user()->name ?? '')) . " (" . auth()->user()->id_emp . ")" }}
+                            </div>
+                            <div class="user-header-team mt-1 small text-muted">
+                                {{ auth()->user()->team ?? '' }}
+                            </div>
+                        </div>
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <a href="{{ route('user.profile') }}" class="dropdown-item">
+                            <i class="ti ti-user me-2"></i>
+                            Profile
+                        </a>
+
+                        <form action="{{ route('logoutpage') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="dropdown-item">
+                                <i class="ti ti-logout me-2"></i>
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
-        {{-- RIGHT MENU --}}
-        <div class="navbar-nav flex-row align-items-center ms-auto">
+        {{-- ========================================================
+             MOBILE HEADER LAYOUT (< 992px)
+             Row 1: Hamburger + Logo (in <aside>)
+             Row 2: User Profile Strip (Avatar + Username + Team)
+             Row 3: Search Bar (left) + Notification Bell (right)
+             ======================================================== --}}
+        <div class="d-lg-none w-100 py-1">
 
-            {{-- DARK MODE --}}
-            <div class="nav-item d-none d-md-flex me-3">
-                <a href="{{ $darkThemeUrl }}"
-                   class="nav-link px-0 hide-theme-dark"
-                   title="Enable dark mode"
-                   data-bs-toggle="tooltip"
-                   data-bs-placement="bottom">
-                    <i class="ti ti-moon fs-2"></i>
-                </a>
-
-                <a href="{{ $lightThemeUrl }}"
-                   class="nav-link px-0 hide-theme-light"
-                   title="Enable light mode"
-                   data-bs-toggle="tooltip"
-                   data-bs-placement="bottom">
-                    <i class="ti ti-sun fs-2"></i>
-                </a>
-            </div>
-
-            {{-- NOTIFICATION BELL --}}
-            <div class="nav-item dropdown me-3">
-                <a href="#"
-                   class="nav-link px-0 position-relative"
-                   data-bs-toggle="dropdown"
-                   role="button"
-                   aria-expanded="false"
-                   aria-label="Open notifications">
-
-                    <i class="ti ti-bell fs-2"></i>
-
-                    @if (($mylearningongoing ?? 0) >= 1)
-                        <span class="badge bg-red badge-notification">
-                            {{ $mylearningongoing }}
-                        </span>
-                    @endif
-                </a>
-
-                <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <div class="dropdown-header">
-                        Notifications
-                    </div>
-
-                    @if (($mylearningongoing ?? 0) >= 1)
-                        <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
-                            <i class="ti ti-book-2 me-2"></i>
-                            You have {{ $mylearningongoing }} ongoing learning
-                        </a>
-                    @else
-                        <span class="dropdown-item text-muted">
-                            <i class="ti ti-bell-off me-2"></i>
-                            No notifications
-                        </span>
-                    @endif
-                </div>
-            </div>
-
-            {{-- PROFILE --}}
-
-            <div class="nav-item dropdown">
-                <a href="#"
-                   class="nav-link d-flex lh-1 text-reset p-0"
-                   data-bs-toggle="dropdown"
-                   data-bs-auto-close="outside"
-                   role="button"
-                   aria-expanded="false"
-                   aria-label="Open user menu">
-
+            {{-- ROW 2: USER PROFILE --}}
+            <div class="owl-mobile-user-row d-flex align-items-center justify-content-between py-1 border-bottom mb-2">
+                <a href="{{ route('user.profile') }}" class="d-flex align-items-center text-decoration-none text-reset min-w-0 flex-grow-1 me-2">
                     @if (!empty(auth()->user()->avatar))
-                        <span class="avatar avatar-sm"
-                            style="background-image: url('{{ asset('storage/profile/' . auth()->user()->avatar) }}')">
+                        <span class="avatar owl-mobile-avatar rounded-circle flex-shrink-0"
+                              style="background-image: url('{{ asset('storage/profile/' . auth()->user()->avatar) }}')">
                         </span>
                     @else
-                        <span class="avatar avatar-sm avatar-default-icon">
+                        <span class="avatar owl-mobile-avatar rounded-circle avatar-default-icon flex-shrink-0">
                             <i class="ti ti-user"></i>
                         </span>
                     @endif
 
-                    <div class="d-none d-xl-block ps-2">
-                        <div>
-                            {{ ucwords(strtolower(auth()->user()->name ?? '')) . " (" . auth()->user()->id_emp . ")" }}
+                    <div class="ps-2 ms-1 min-w-0 flex-grow-1">
+                        <div class="fw-bold text-truncate owl-mobile-user-name" style="font-size: 0.9rem; line-height: 1.2;">
+                            {{ ucwords(strtolower(auth()->user()->name ?? '')) }}
                         </div>
-                        <div class="mt-1 small text-muted" style="font-size: 7pt">
-                            {{ auth()->user()->team ?? '' }}
+                        <div class="text-muted text-truncate owl-mobile-user-team" style="font-size: 0.775rem; line-height: 1.2;">
+                            {{ auth()->user()->team ?? (auth()->user()->division ?? 'Training Team') }}
                         </div>
                     </div>
                 </a>
 
-                <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <a href="{{ route('user.profile') }}" class="dropdown-item">
-                        <i class="ti ti-user me-2"></i>
-                        Profile
+                {{-- Dark Mode Toggle --}}
+                <div class="nav-item flex-shrink-0 ms-auto">
+                    <a href="{{ $darkThemeUrl }}"
+                       class="nav-link px-2 hide-theme-dark text-muted"
+                       title="Enable dark mode">
+                        <i class="ti ti-moon fs-2"></i>
                     </a>
 
-                    <form action="{{ route('logoutpage') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="dropdown-item">
-                            <i class="ti ti-logout me-2"></i>
-                            Logout
-                        </button>
-                    </form>
+                    <a href="{{ $lightThemeUrl }}"
+                       class="nav-link px-2 hide-theme-light text-muted"
+                       title="Enable light mode">
+                        <i class="ti ti-sun fs-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            {{-- ROW 3: SEARCH BAR (LEFT) + NOTIFICATION BELL (RIGHT) --}}
+            <div class="owl-mobile-action-row d-flex align-items-center gap-2 pb-1">
+                {{-- Search Bar (left, flexible) --}}
+                <form action="{{ route('search', ['searchtype' => 'all']) }}"
+                      method="get"
+                      autocomplete="off"
+                      novalidate
+                      class="flex-grow-1 min-w-0">
+
+                    <div class="input-icon w-100">
+                        <span class="input-icon-addon">
+                            <i class="ti ti-search"></i>
+                        </span>
+
+                        <input type="text"
+                               name="s"
+                               class="form-control"
+                               placeholder="Search learning, content, news..."
+                               aria-label="Search in website">
+                    </div>
+                </form>
+
+                {{-- Notification Bell (right, fixed) --}}
+                <div class="nav-item dropdown flex-shrink-0">
+                    <a href="#"
+                       class="nav-link px-2 position-relative"
+                       data-bs-toggle="dropdown"
+                       role="button"
+                       aria-expanded="false"
+                       aria-label="Open notifications">
+
+                        <i class="ti ti-bell fs-2"></i>
+
+                        @if (($mylearningongoing ?? 0) >= 1)
+                            <span class="badge bg-red badge-notification">
+                                {{ $mylearningongoing }}
+                            </span>
+                        @endif
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <div class="dropdown-header">
+                            Notifications
+                        </div>
+
+                        @if (($mylearningongoing ?? 0) >= 1)
+                            <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
+                                <i class="ti ti-book-2 me-2"></i>
+                                You have {{ $mylearningongoing }} ongoing learning
+                            </a>
+                        @else
+                            <span class="dropdown-item text-muted">
+                                <i class="ti ti-bell-off me-2"></i>
+                                No notifications
+                            </span>
+                        @endif
+                    </div>
                 </div>
             </div>
 
         </div>
+
     </div>
 </header>

@@ -150,16 +150,16 @@
         {{-- TOP NAVBAR --}}
         <header class="navbar navbar-expand-md d-print-none app-topbar">
             <div class="container-xl">
-                <div class="navbar-nav flex-row ms-auto">
-
+                {{-- DESKTOP (>= 992px) --}}
+                <div class="d-none d-lg-flex align-items-center justify-content-end w-100 py-1">
                     {{-- DARK MODE --}}
-                    <div class="d-none d-md-flex me-3">
+                    <div class="me-3">
                         <a href="?theme=dark" class="nav-link px-0 hide-theme-dark" title="Enable dark mode">
-                            <i class="ti ti-moon"></i>
+                            <i class="ti ti-moon fs-2"></i>
                         </a>
 
                         <a href="?theme=light" class="nav-link px-0 hide-theme-light" title="Enable light mode">
-                            <i class="ti ti-sun"></i>
+                            <i class="ti ti-sun fs-2"></i>
                         </a>
                     </div>
 
@@ -183,11 +183,11 @@
                                 </span>
                             @endif
 
-                            <div class="ps-2">
-                                <div>
+                            <div class="user-header-details ps-2">
+                                <div class="user-header-name">
                                     {{ ucwords(strtolower(auth()->user()->name ?? '')) . " (" . auth()->user()->id_emp . ")" }}
                                 </div>
-                                <div class="mt-1 small text-muted" style="font-size: 7pt">
+                                <div class="user-header-team mt-1 small text-muted">
                                     {{ auth()->user()->team ?? '' }}
                                 </div>
                             </div>
@@ -206,7 +206,42 @@
                             </form>
                         </div>
                     </div>
+                </div>
 
+                {{-- MOBILE (< 992px) USER ROW --}}
+                <div class="d-lg-none w-100 py-1">
+                    <div class="owl-mobile-user-row d-flex align-items-center justify-content-between py-1 border-bottom mb-2">
+                        <a href="{{ route('user.profile') }}" class="d-flex align-items-center text-decoration-none text-reset min-w-0 flex-grow-1 me-2">
+                            @if (!empty(auth()->user()->avatar))
+                                <span class="avatar owl-mobile-avatar rounded-circle flex-shrink-0"
+                                      style="background-image: url({{ asset('storage/profile') }}/{{ auth()->user()->avatar }})">
+                                </span>
+                            @else
+                                <span class="avatar owl-mobile-avatar rounded-circle avatar-default-icon flex-shrink-0">
+                                    <i class="ti ti-user"></i>
+                                </span>
+                            @endif
+
+                            <div class="ps-2 ms-1 min-w-0 flex-grow-1">
+                                <div class="fw-bold text-truncate owl-mobile-user-name" style="font-size: 0.9rem; line-height: 1.2;">
+                                    {{ ucwords(strtolower(auth()->user()->name ?? '')) }}
+                                </div>
+                                <div class="text-muted text-truncate owl-mobile-user-team" style="font-size: 0.775rem; line-height: 1.2;">
+                                    {{ auth()->user()->team ?? (auth()->user()->division ?? 'Training Team') }}
+                                </div>
+                            </div>
+                        </a>
+
+                        {{-- Dark Mode Toggle --}}
+                        <div class="nav-item flex-shrink-0 ms-auto">
+                            <a href="?theme=dark" class="nav-link px-2 hide-theme-dark text-muted" title="Enable dark mode">
+                                <i class="ti ti-moon fs-2"></i>
+                            </a>
+                            <a href="?theme=light" class="nav-link px-2 hide-theme-light text-muted" title="Enable light mode">
+                                <i class="ti ti-sun fs-2"></i>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
