@@ -2,13 +2,23 @@
     // Filter options are derived only from the paginated TrainingPlan data already
     // loaded by PlaylistUserController. No query is executed from this view.
     $playlistFilterItems = collect($trainingplan->items());
-    $playlistMonths = $playlistFilterItems
-        ->mapWithKeys(fn ($playlist) => [
-            (int) $playlist->created_at->format('n') => $playlist->created_at->format('F'),
-        ])
-        ->sortKeys();
+    $playlistMonths = [
+        '01' => 'January',
+        '02' => 'February',
+        '03' => 'March',
+        '04' => 'April',
+        '05' => 'May',
+        '06' => 'June',
+        '07' => 'July',
+        '08' => 'August',
+        '09' => 'September',
+        '10' => 'October',
+        '11' => 'November',
+        '12' => 'December',
+    ];
     $playlistYears = $playlistFilterItems
         ->map(fn ($playlist) => (int) $playlist->created_at->format('Y'))
+        ->push((int) date('Y'))
         ->unique()
         ->sortDesc()
         ->values();

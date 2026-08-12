@@ -139,8 +139,8 @@
 
                 const matchesKeyword = !keyword || title.includes(keyword) || content.includes(keyword);
                 const matchesStatus = !status || status === 'all' || itemFilters.status === status;
-                const matchesMonth = !month || month === 'all' || String(itemFilters.month) === month;
-                const matchesYear = !year || year === 'all' || String(itemFilters.year) === year;
+                const matchesMonth = !month || month === 'all' || parseInt(itemFilters.month, 10) === parseInt(month, 10);
+                const matchesYear = !year || year === 'all' || parseInt(itemFilters.year, 10) === parseInt(year, 10);
 
                 // Author
                 const matchesAuthor = !author || (itemFilters.authors || []).includes(author);
@@ -222,6 +222,15 @@
             });
 
             $('#playlistGrid').append(visibleItems);
+
+            if (visibleItems.length === 0) {
+                $('#playlistFilterEmpty').removeClass('d-none');
+                $('.playlist-pagination').addClass('d-none');
+            } else {
+                $('#playlistFilterEmpty').addClass('d-none');
+                $('.playlist-pagination').removeClass('d-none');
+            }
+
             updateFilterState();
         }
 
