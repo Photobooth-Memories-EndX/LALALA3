@@ -354,4 +354,6 @@
             </div>
         </div>
     </div>
+
+    <x-shared.assessment-confirmation-modal />
 </div>
