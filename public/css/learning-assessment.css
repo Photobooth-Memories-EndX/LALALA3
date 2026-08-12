@@ -1082,8 +1082,8 @@ body.dark-mode .assessment-score-popover-empty {
     align-items: center;
     justify-content: center;
     font-size: 1.35rem;
-    background-color: rgba(32, 107, 196, 0.1);
-    color: #206bc4;
+    background-color: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
     transition: all 0.2s ease;
 }
 
@@ -1144,10 +1144,43 @@ body.dark-mode .assessment-score-popover-empty {
     line-height: 1.45;
 }
 
+#assessmentConfirmationModal .assessment-datetime-refined {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 4px;
+}
+
+#assessmentConfirmationModal .assessment-datetime-row {
+    display: flex;
+    align-items: center;
+}
+
+#assessmentConfirmationModal .assessment-datetime-val {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--tblr-body-color, #1e293b);
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+#assessmentConfirmationModal .assessment-datetime-arrow {
+    font-size: 0.725rem;
+    line-height: 1;
+    color: var(--tblr-muted, #94a3b8);
+    padding-left: 2px;
+    margin: 1px 0;
+}
+
 #assessmentConfirmationModal .assessment-detail-meta-value {
     font-size: 0.925rem;
     font-weight: 700;
     color: var(--tblr-body-color, #0f172a);
+}
+
+#assessmentConfirmationModal .assessment-detail-divider {
+    border-top: 1px solid var(--tblr-border-color-light, #e2e8f0);
+    margin: 0.85rem 0;
 }
 
 #assessmentConfirmationModal .assessment-confirm-question {
@@ -1178,29 +1211,29 @@ body.dark-mode .assessment-score-popover-empty {
 }
 
 #assessmentConfirmationModal .btn-assessment-start-confirm {
-    background-color: #206bc4;
-    border-color: #206bc4;
-    color: #ffffff;
+    background-color: #22c55e !important;
+    border-color: #22c55e !important;
+    color: #ffffff !important;
 }
 
 #assessmentConfirmationModal .btn-assessment-start-confirm:hover,
 #assessmentConfirmationModal .btn-assessment-start-confirm:focus {
-    background-color: #1a569d;
-    border-color: #1a569d;
-    color: #ffffff;
+    background-color: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #ffffff !important;
 }
 
 #assessmentConfirmationModal .btn-assessment-remedial-confirm {
-    background-color: #f59f00;
-    border-color: #f59f00;
-    color: #ffffff;
+    background-color: #f59f00 !important;
+    border-color: #f59f00 !important;
+    color: #ffffff !important;
 }
 
 #assessmentConfirmationModal .btn-assessment-remedial-confirm:hover,
 #assessmentConfirmationModal .btn-assessment-remedial-confirm:focus {
-    background-color: #d98c00;
-    border-color: #d98c00;
-    color: #ffffff;
+    background-color: #d98c00 !important;
+    border-color: #d98c00 !important;
+    color: #ffffff !important;
 }
 
 /* Dark Mode Modal Styles */
@@ -1217,8 +1250,24 @@ body.dark-mode #assessmentConfirmationModal .assessment-detail-card {
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
+[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-detail-divider,
+body.dark-mode #assessmentConfirmationModal .assessment-detail-divider {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-detail-title,
 body.dark-mode #assessmentConfirmationModal .assessment-detail-title {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-datetime-tag,
+body.dark-mode #assessmentConfirmationModal .assessment-datetime-tag {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-datetime-val,
+body.dark-mode #assessmentConfirmationModal .assessment-datetime-val {
     color: #f8fafc !important;
 }
 

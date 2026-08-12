@@ -9,6 +9,8 @@
     'assessmentId' => null,
     'assessmentTitle' => null,
     'assessmentBatch' => null,
+    'assessmentType' => null,
+    'typeLabel' => null,
     'passingGrade' => null,
     'fromDate' => null,
     'toDate' => null,
@@ -42,6 +44,8 @@
                class="btn btn-sm assessment-action-btn btn-assessment-remedial btn-remedial"
                data-assessment-id="{{ $assessmentId }}"
                data-assessment-title="{{ $assessmentTitle }}"
+               data-assessment-type="{{ $assessmentType ?? '' }}"
+               data-assessment-type-label="{{ $typeLabel ?? '-' }}"
                data-assessment-batch="{{ $assessmentBatch }}"
                data-assessment-passing-grade="{{ $passingGrade ?? '-' }}"
                data-assessment-from-date="{{ $fromDate ?? '-' }}"
@@ -64,6 +68,8 @@
            class="btn btn-sm assessment-action-btn btn-assessment-start btn-start-test"
            data-assessment-id="{{ $assessmentId }}"
            data-assessment-title="{{ $assessmentTitle }}"
+           data-assessment-type="{{ $assessmentType ?? '' }}"
+           data-assessment-type-label="{{ $typeLabel ?? '-' }}"
            data-assessment-batch="{{ $assessmentBatch }}"
            data-assessment-passing-grade="{{ $passingGrade ?? '-' }}"
            data-assessment-from-date="{{ $fromDate ?? '-' }}"

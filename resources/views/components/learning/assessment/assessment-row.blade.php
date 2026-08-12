@@ -95,17 +95,18 @@
     $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
 
     $fromDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->fromdate))
-        ? date('d/m/y H:i', strtotime($assessment->fromdate))
+        ? date('d M Y, H:i', strtotime($assessment->fromdate))
         : '-';
     $toDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->todate))
-        ? date('d/m/y H:i', strtotime($assessment->todate))
+        ? date('d M Y, H:i', strtotime($assessment->todate))
         : '-';
 @endphp
 
 <tr class="assessment-row"
     data-assessment-id="{{ $assessment->id }}"
     data-assessment-title="{{ $assessment->title ?? '' }}"
-    data-assessment-type="{{ $filterType }}"
+    data-assessment-type="{{ $assessment->type ?? '' }}"
+    data-assessment-type-label="{{ $typeLabel }}"
     data-assessment-status="{{ $filterStatus }}"
     data-assessment-year="{{ $filterYear }}"
     data-assessment-month="{{ $filterMonth }}"
@@ -123,11 +124,14 @@
 
     <td class="text-start align-middle" data-order="{{ mb_strtolower($assessment->title ?? '') }}" data-search="{{ $searchText }}">
         @if ($assessmentUrl)
-            <a href="{{ $assessmentUrl }}"
+            <a href="javascript:void(0);"
+               role="button"
                class="fw-semibold text-primary assessment-title assessment-title-link assessment-name"
                data-assessment-id="{{ $assessment->id }}"
                data-assessment-title="{{ $assessment->title ?? '' }}"
                data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
+               data-assessment-type="{{ $assessment->type ?? '' }}"
+               data-assessment-type-label="{{ $typeLabel }}"
                data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
                data-assessment-from-date="{{ $fromDateDisplay }}"
                data-assessment-to-date="{{ $toDateDisplay }}"
@@ -140,6 +144,8 @@
                  data-assessment-id="{{ $assessment->id }}"
                  data-assessment-title="{{ $assessment->title ?? '' }}"
                  data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
+                 data-assessment-type="{{ $assessment->type ?? '' }}"
+                 data-assessment-type-label="{{ $typeLabel }}"
                  data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
                  data-assessment-from-date="{{ $fromDateDisplay }}"
                  data-assessment-to-date="{{ $toDateDisplay }}"
@@ -222,6 +228,8 @@
             :assessment-id="$assessment->id"
             :assessment-title="$assessment->title ?? ''"
             :assessment-batch="$finalResult->batch ?? ($assessment->batch ?? '-')"
+            :assessment-type="$assessment->type ?? ''"
+            :type-label="$typeLabel"
             :passing-grade="$assessment->passing_grade ?? '-'"
             :from-date="$fromDateDisplay"
             :to-date="$toDateDisplay"
