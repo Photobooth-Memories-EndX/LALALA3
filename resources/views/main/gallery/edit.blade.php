@@ -238,7 +238,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
-                        <div class="col-lg-8">
+                        <div class="col-lg-5">
                             <label class="form-label required">Event Title</label>
                             <input type="text"
                                    name="title"
@@ -251,7 +251,30 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
+                            <label class="form-label">Category</label>
+                            <input type="text"
+                                   name="category"
+                                   id="category"
+                                   class="form-control @error('category') is-invalid @enderror"
+                                   placeholder="Enter category"
+                                   value="{{ old('category', $eventphoto->category) }}">
+                            @error('category')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-lg-2">
+                            <label class="form-label required">Status</label>
+                            <select name="status" class="form-select @error('status') is-invalid @enderror" required>
+                                <option value="approved" {{ old('status', $eventphoto->status ?? 'approved') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                <option value="reject" {{ old('status', $eventphoto->status) == 'reject' ? 'selected' : '' }}>Reject</option>
+                                <option value="pending" {{ old('status', $eventphoto->status) == 'pending' ? 'selected' : '' }}>Pending</option>
+                            </select>
+                            @error('status')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-lg-2">
                             <label class="form-label required">Event Date</label>
                             <div class="input-icon">
                                 <span class="input-icon-addon">

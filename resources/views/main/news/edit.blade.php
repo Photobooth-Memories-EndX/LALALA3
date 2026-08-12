@@ -88,6 +88,31 @@
                                 @enderror
                             </div>
 
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Category</label>
+                                    <input type="text"
+                                           name="category"
+                                           class="form-control @error('category') is-invalid @enderror"
+                                           placeholder="Enter category"
+                                           value="{{ old('category', $news->category) }}">
+                                    @error('category')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label required">Status</label>
+                                    <select name="status" class="form-select @error('status') is-invalid @enderror" required>
+                                        <option value="approved" {{ old('status', $news->status ?? 'approved') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                        <option value="reject" {{ old('status', $news->status) == 'reject' ? 'selected' : '' }}>Reject</option>
+                                        <option value="pending" {{ old('status', $news->status) == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    </select>
+                                    @error('status')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
                             <div class="mb-3">
                                 <label class="form-label required">Description</label>
                                 <textarea name="description"
