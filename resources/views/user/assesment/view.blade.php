@@ -22,9 +22,9 @@
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-body">
                         <div class="d-flex align-items-start gap-3">
-                            <span class="avatar avatar-lg bg-primary-lt text-primary rounded-circle">
+                            {{-- <span class="avatar avatar-lg bg-primary-lt text-primary rounded-circle">
                                 {{ strtoupper(substr($assesment->title ?? 'A', 0, 1)) }}
-                            </span>
+                            </span> --}}
 
                             <div class="flex-fill">
                                 <div class="text-muted small mb-1">Assessment</div>
