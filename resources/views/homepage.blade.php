@@ -2,6 +2,7 @@
 
 @section('style')
     <link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}">
     @include('components.Home.styles')
 @endsection
 
