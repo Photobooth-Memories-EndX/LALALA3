@@ -76,11 +76,13 @@
                     </div>
                 </div>
 
-                <a href="#contentContainer" class="view-hero-continue">
-                    <span class="view-hero-continue-thumb" style="background-image: url('{{ $lastWatchedThumb }}')">
-                        <i class="fas fa-play"></i>
-                    </span>
-                    <strong>Continue Learning</strong>
+                <a href="#contentContainer" class="view-hero-continue continue-learning-card rounded-4 p-3 shadow-sm border-0" style="background-color: #002b66 !important; border-color: rgba(255, 255, 255, 0.15) !important;">
+                    <span class="view-hero-continue-thumb ratio ratio-16x9 rounded-3 overflow-hidden" style="background-image: url('{{ $lastWatchedThumb }}')"></span>
+                    <div class="text-center mt-2">
+                        <span class="text-white fw-bold small text-uppercase" style="letter-spacing: 0.5px; color: #ffffff !important;">
+                            Continue Learning
+                        </span>
+                    </div>
                 </a>
 
             </div>
