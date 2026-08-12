@@ -23,21 +23,18 @@
             <div class="col-12">
 
                 {{-- 1. BANNER / HERO IMAGE DI PALING ATAS --}}
-                <div class="owl-article-hero-wrapper rounded-4 overflow-hidden mb-4 shadow-sm">
-                    <div class="news-img-placeholder news-article-hero-placeholder">
-                        <i class="ti ti-news"></i>
-                    </div>
-
-                    @if(!empty($news->image))
+                @if(!empty($news->image))
+                    <div class="my-3 text-center">
                         <img
                             src="{{ asset('storage/news/' . $news->image) }}"
-                            class="news-cover-img"
+                            class="img-fluid rounded-4 shadow-sm d-block mx-auto w-100 h-auto"
                             alt="{{ $news->title ?? '' }}"
                             loading="lazy"
                             onerror="this.style.display='none'"
+                            style="max-width: 100%; height: auto !important; object-fit: contain;"
                         >
-                    @endif
-                </div>
+                    </div>
+                @endif
 
                 {{-- MAIN CONTENT CARD (PLAYLIST STYLE) --}}
                 <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white p-4 p-md-5">

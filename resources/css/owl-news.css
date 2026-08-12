@@ -557,17 +557,32 @@ button, input, select, textarea {
     border: 1px solid rgba(226, 232, 240, 0.9);
 }
 
-.owl-article-hero-wrapper {
-    border-radius: var(--owl-radius-lg);
-    overflow: hidden;
-    box-shadow: var(--owl-shadow-lg);
-    min-height: 420px;
+.owl-article-hero-wrapper,
+.news-image-wrapper {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    max-width: 580px !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    height: auto !important;
+    min-height: auto !important;
 }
 
-.owl-article-hero-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.owl-article-hero-wrapper img,
+.news-cover-img {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 580px !important;
+    max-height: 420px !important;
+    object-fit: contain !important;
+    display: block;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    border: none !important;
+    background: transparent !important;
 }
 
 .owl-article-title {
