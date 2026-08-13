@@ -189,6 +189,7 @@
                                 <th style="width:50px">NO</th>
                                 <th style="width:90px">IMAGE</th>
                                 <th>TITLE</th>
+                                <th style="width:130px">CATEGORY</th>
                                 <th style="width:110px" class="text-center">STATUS</th>
                                 <th style="width:80px" class="text-center">PHOTOS</th>
                                 <th style="width:120px" class="text-center">DATE</th>
@@ -222,9 +223,25 @@
                                         {{ $list->title }}
                                     </div>
                                 </td>
+                                <td>
+                                    @if($list->category)
+                                        <span class="badge bg-blue-lt text-blue">{{ $list->category }}</span>
+                                    @else
+                                        <span class="text-muted small">&mdash;</span>
+                                    @endif
+                                </td>
                                 <td class="text-center">
-                                    <span class="badge bg-{{ $list->active == 'Active' ? 'success' : 'warning' }}-lt text-{{ $list->active == 'Active' ? 'success' : 'warning' }}">
-                                        {{ $list->active }}
+                                    @php
+                                        $statusVal = strtolower($list->status ?? 'approved');
+                                        $statusBadge = match($statusVal) {
+                                            'approved' => 'bg-success-lt text-success',
+                                            'pending'  => 'bg-warning-lt text-warning',
+                                            'reject'   => 'bg-danger-lt text-danger',
+                                            default    => 'bg-secondary-lt text-secondary'
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $statusBadge }}">
+                                        {{ ucfirst($statusVal) }}
                                     </span>
                                 </td>
                                 <td class="text-center">
@@ -259,7 +276,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7">
+                                <td colspan="8">
                                     <div class="empty py-5">
                                         <div class="empty-icon">
                                             <i class="ti ti-photo-off" style="font-size:3rem;opacity:.4;"></i>

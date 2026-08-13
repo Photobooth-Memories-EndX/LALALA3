@@ -435,9 +435,45 @@ class HomeUserController extends Controller
         )->first();
 
         if ($assessment) {
+            $currentUserId = auth()->id();
+            $userScores = collect($assessment->scores ?? [])->filter(function ($scoreItem) use ($currentUserId) {
+                return (string) ($scoreItem->user_id ?? '') === (string) $currentUserId;
+            });
+
+            $userAttempts = $userScores->where('final', 1)->count();
+            if ($userAttempts === 0 && $userScores->count() > 0) {
+                $userAttempts = $userScores->count();
+            }
+
+            $totalRemedials = (int) ($assessment->total_remedials ?? 0);
+            $maxAttempts = 1 + $totalRemedials;
+
+            $fromDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->fromdate))
+                ? date('d M Y, H:i', strtotime($assessment->fromdate))
+                : '-';
+            $toDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->todate))
+                ? date('d M Y, H:i', strtotime($assessment->todate))
+                : '-';
+
+            $typeLabel = match (strtolower((string) ($assessment->type ?? ''))) {
+                'trainingplan', 'playlist' => 'Playlist',
+                'youtube'                  => 'MOOC',
+                default                    => ucwords(str_replace('_', ' ', $assessment->type ?? '-')),
+            };
 
             return response()->json([
+                'assessment_id' => $assessment->id,
                 'assessment_slug' => $assessment->slug,
+                'assessment_title' => $assessment->title ?? '-',
+                'assessment_type' => $assessment->type ?? 'content',
+                'assessment_type_label' => $typeLabel,
+                'assessment_batch' => $assessment->batch ?? '-',
+                'assessment_from_date' => $fromDateDisplay,
+                'assessment_to_date' => $toDateDisplay,
+                'assessment_passing_grade' => $assessment->passing_grade ?? '-',
+                'assessment_user_attempts' => $userAttempts,
+                'assessment_max_attempts' => $maxAttempts,
+                'assessment_url' => route('assesment.user.view', $assessment->slug),
             ], 200);
 
         } else {

@@ -117,8 +117,10 @@
         </div>
 
         <div class="col-lg-5 mt-3 mt-lg-0">
-            <a href="{{ url('/my-learning?learning_tab=record') }}" class="text-decoration-none text-white d-block position-relative rounded-4 overflow-hidden card-learning-summary-link" style="transition: transform 0.2s ease;">
-                <div class="shared-hero-summary">
+            <div class="shared-hero-summary position-relative rounded-4 overflow-hidden" style="cursor: default;">
+                <a href="{{ url('/my-learning?learning_tab=record') }}"
+                   class="text-decoration-none text-white d-block shared-hero-donut-link"
+                   style="cursor: pointer;">
                     <div class="shared-hero-donut"
                          style="background: conic-gradient(rgb(var(--kp-hero-completed-rgb)) 0%, rgb(var(--kp-hero-completed-rgb)) {{ $donutBlendStart }}%, #00a8ff {{ $donutBlendEnd }}%, #00a8ff 100%);">
                         <div class="shared-hero-donut-inner">
@@ -126,35 +128,37 @@
                             <small>Total Learning Hours</small>
                         </div>
                     </div>
+                </a>
 
-                    <div class="shared-hero-summary-detail">
-                        <div class="shared-hero-summary-title">Your Learning Summary</div>
-                        <div class="shared-hero-summary-list">
-                            <div class="shared-hero-summary-row">
-                                <div class="shared-hero-summary-meta">
-                                    <span class="shared-hero-stat-dot total"></span>
-                                    <span class="shared-hero-summary-label">Total Course</span>
-                                </div>
-                                <div class="shared-hero-summary-value">{{ $totalCourseVal }}</div>
+                <div class="shared-hero-summary-detail" style="cursor: default;">
+                    <div class="shared-hero-summary-title">Your Learning Summary</div>
+                    <div class="shared-hero-summary-list">
+                        <div class="shared-hero-summary-row" style="cursor: default;">
+                            <div class="shared-hero-summary-meta">
+                                <span class="shared-hero-stat-dot total"></span>
+                                <span class="shared-hero-summary-label" style="cursor: default;">Total Course</span>
                             </div>
-                            <div class="shared-hero-summary-row">
-                                <div class="shared-hero-summary-meta">
-                                    <span class="shared-hero-stat-dot completed"></span>
-                                    <span class="shared-hero-summary-label">Completed</span>
-                                </div>
-                                <div class="shared-hero-summary-value">{{ $completedCourseVal }}</div>
-                            </div>
-                            <div class="shared-hero-summary-row">
-                                <div class="shared-hero-summary-meta">
-                                    <span class="shared-hero-stat-dot ongoing"></span>
-                                    <span class="shared-hero-summary-label">On Going</span>
-                                </div>
-                                <div class="shared-hero-summary-value">{{ $ongoingCourseVal }}</div>
-                            </div>
+                            <div class="shared-hero-summary-value">{{ $totalCourseVal }}</div>
                         </div>
+                        <div class="shared-hero-summary-row" style="cursor: default;">
+                            <div class="shared-hero-summary-meta">
+                                <span class="shared-hero-stat-dot completed"></span>
+                                <span class="shared-hero-summary-label" style="cursor: default;">Completed</span>
+                            </div>
+                            <div class="shared-hero-summary-value">{{ $completedCourseVal }}</div>
+                        </div>
+                        <a href="{{ url('/my-learning') }}"
+                           class="shared-hero-summary-row text-decoration-none d-flex align-items-center justify-content-between w-100"
+                           style="cursor: pointer;">
+                            <div class="shared-hero-summary-meta">
+                                <span class="shared-hero-stat-dot ongoing"></span>
+                                <span class="shared-hero-summary-label" style="cursor: pointer;">On Going</span>
+                            </div>
+                            <div class="shared-hero-summary-value">{{ $ongoingCourseVal }}</div>
+                        </a>
                     </div>
                 </div>
-            </a>
+            </div>
         </div>
     </div>
 </div>

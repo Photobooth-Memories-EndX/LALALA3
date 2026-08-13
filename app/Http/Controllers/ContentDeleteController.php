@@ -24,4 +24,18 @@ class ContentDeleteController extends Controller
 
         return response()->json(['success' => 'Content deleted successfully', 'status' => 200]);
     }
+
+    public function deletethumbajax($slug)
+    {
+        $content = Content::findBySlug($slug);
+
+        if ($content) {
+            $src = 'storage/files/content/' . $content->id . '/thumb.jpg';
+            if (File::exists(public_path($src)) && !is_dir(public_path($src))) {
+                File::delete(public_path($src));
+            }
+        }
+
+        return response()->json(['success' => 'Thumbnail deleted successfully', 'status' => 200]);
+    }
 }

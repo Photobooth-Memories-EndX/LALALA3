@@ -257,6 +257,82 @@
         color: var(--tblr-body-color);
     }
 
+    .user-header-details {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-width: 140px;
+        line-height: 1.2;
+    }
+
+    .user-header-details .user-header-name {
+        font-size: 0.825rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--tblr-body-color);
+    }
+
+    .user-header-details .user-header-team {
+        font-size: 7pt;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    @media (min-width: 576px) {
+        .user-header-details {
+            max-width: 220px;
+        }
+        .user-header-details .user-header-name {
+            font-size: 0.875rem;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .user-header-details {
+            max-width: 320px;
+        }
+    }
+
+    /* Mobile Header 3-Row Layout Custom Styles */
+    .owl-mobile-user-row {
+        border-color: var(--tblr-border-color, #e6e7e9) !important;
+        padding-top: 4px !important;
+        padding-bottom: 6px !important;
+    }
+
+    .owl-mobile-avatar {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        font-size: 19px !important;
+    }
+
+    .owl-mobile-user-name {
+        color: var(--tblr-body-color, #1e293b);
+    }
+
+    .owl-mobile-user-team {
+        color: var(--tblr-muted, #64748b);
+    }
+
+    [data-bs-theme="dark"] .owl-mobile-user-row,
+    body.dark-mode .owl-mobile-user-row {
+        border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    [data-bs-theme="dark"] .owl-mobile-user-name,
+    body.dark-mode .owl-mobile-user-name {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .owl-mobile-user-team,
+    body.dark-mode .owl-mobile-user-team {
+        color: #94a3b8 !important;
+    }
+
     .topbar-search {
         max-width: 520px;
         min-width: 260px;

@@ -5,14 +5,26 @@
 <div class="page-body">
     <div class="container-xl">
 
+        <div class="mb-3">
+            <a href="#" 
+               id="btnBackAssessment" 
+               class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1" 
+               data-bs-toggle="modal" 
+               data-bs-target="#leaveAssessmentModal"
+               data-toggle="modal"
+               data-target="#leaveAssessmentModal">
+                <i class="ti ti-arrow-left fs-5"></i> Back
+            </a>
+        </div>
+
         <div class="row g-3 align-items-start mb-3">
             <div class="col">
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-body">
                         <div class="d-flex align-items-start gap-3">
-                            <span class="avatar avatar-lg bg-primary-lt text-primary rounded-circle">
+                            {{-- <span class="avatar avatar-lg bg-primary-lt text-primary rounded-circle">
                                 {{ strtoupper(substr($assesment->title ?? 'A', 0, 1)) }}
-                            </span>
+                            </span> --}}
 
                             <div class="flex-fill">
                                 <div class="text-muted small mb-1">Assessment</div>
@@ -188,8 +200,10 @@
                             </div>
 
                             <button type="submit"
-                                    class="btn btn-success"
-                                    id="submitAssesment">
+                                    class="btn btn-success text-white fw-semibold rounded-3 opacity-50 pe-none"
+                                    style="background-color: #0ab721 !important; border-color: #198754 !important; opacity: 0.45; cursor: not-allowed;"
+                                    id="submitAssesment"
+                                    disabled>
                                 Finish & Submit Answers
                             </button>
                         </div>
@@ -206,6 +220,33 @@
             </div>
         </div>
 
+    </div>
+</div>
+
+<div class="modal fade" id="leaveAssessmentModal" tabindex="-1" aria-labelledby="leaveAssessmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger" id="leaveAssessmentModalLabel">
+                    <i class="ti ti-alert-triangle me-1"></i> Leave Assessment?
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="mb-0 text-secondary">
+                    Are you sure you want to leave this test? Your current progress might not be saved, and the timer will continue running.
+                </p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-3 px-3" data-bs-dismiss="modal" data-dismiss="modal">
+                    Cancel
+                </button>
+                <a href="{{ url('/my-learning?learning_tab=assessment') }}" 
+                   class="btn btn-danger rounded-3 px-3 fw-semibold">
+                    Yes, Leave Test
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -274,6 +315,44 @@
     <script>
         $(function () {
             let assessmentSubmitting = false;
+
+            function checkAssessmentCompletion() {
+                const totalQuestions = {{ count($assesment_question ?? []) }};
+                const answeredQuestions = $('#formAssesment input[type="radio"]:checked').length;
+                const finishBtn = $('#submitAssesment');
+
+                if (!finishBtn.length) return;
+
+                if (answeredQuestions >= totalQuestions && totalQuestions > 0) {
+                    finishBtn.prop('disabled', false)
+                             .removeClass('opacity-50 pe-none')
+                             .css({
+                                 'opacity': '1',
+                                 'cursor': 'pointer',
+                                 'pointer-events': 'auto'
+                             });
+                } else {
+                    finishBtn.prop('disabled', true)
+                             .addClass('opacity-50 pe-none')
+                             .css({
+                                 'opacity': '0.45',
+                                 'cursor': 'not-allowed',
+                                 'pointer-events': 'none'
+                             });
+                }
+            }
+
+            $(document).on('change', '#formAssesment input[type="radio"]', function () {
+                checkAssessmentCompletion();
+            });
+
+            checkAssessmentCompletion();
+
+            window.addEventListener('beforeunload', function (e) {
+                if (assessmentSubmitting || window.assessmentAutoSubmit) return;
+                e.preventDefault();
+                e.returnValue = 'Are you sure you want to leave this test?';
+            });
 
             $('#formAssesment').on('submit', function (e) {
                 if (assessmentSubmitting) {

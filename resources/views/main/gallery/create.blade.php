@@ -130,7 +130,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
-                        <div class="col-lg-8">
+                        <div class="col-lg-5">
                             <label class="form-label required">Event Title</label>
                             <input type="text"
                                    name="title"
@@ -144,6 +144,18 @@
                             @enderror
                         </div>
                         <div class="col-lg-4">
+                            <label class="form-label">Category</label>
+                            <input type="text"
+                                   name="category"
+                                   id="category"
+                                   class="form-control @error('category') is-invalid @enderror"
+                                   placeholder="Enter category"
+                                   value="{{ old('category') }}">
+                            @error('category')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-lg-3">
                             <label class="form-label required">Event Date</label>
                             <div class="input-icon">
                                 <span class="input-icon-addon">

@@ -1,5 +1,18 @@
 @extends('layouts.sidebar-master')
 
+@php
+    $playlistAdvancedFilterCount = $playlistAdvancedFilterCount ?? collect([
+        filled(request('author')) && request('author') !== 'all',
+        filled(request('date_from')),
+        filled(request('date_to')),
+        filled(request('period_from')),
+        filled(request('period_to')),
+        request('sort') && !in_array(request('sort'), ['default', 'latest', 'all']),
+        request('sort_views') && !in_array(request('sort_views'), ['default', 'all']),
+        request('duration') && request('duration') !== 'all',
+    ])->filter()->count();
+@endphp
+
 @section('content')
 <div class="page-body">
     <div class="container-xl">

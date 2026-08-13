@@ -16,7 +16,7 @@
     $yearLabel = count($filters['year']) === 1
         ? (string) $filters['year'][0]
         : (count($filters['year']) > 1 ? count($filters['year']) . ' selected' : 'All');
-    $viewsLabel = $filters['views'] ? ($sortOptions[$filters['views']] ?? 'All Views') : 'All Views';
+    $viewsLabel = $filters['views'] ? ($sortOptions[$filters['views']] ?? 'All') : 'All';
     $advancedCount = count($filters['category'])
         + (int) !empty($filters['uploader'])
         + (int) !empty($filters['date_from'])

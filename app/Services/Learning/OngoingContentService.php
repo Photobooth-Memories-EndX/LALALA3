@@ -33,6 +33,16 @@ class OngoingContentService
             ->where('user_id', $userId)
             ->withAvailableContent();
 
+        // Base Eligibility Learning Ongoing Content:
+        // 1. Progress minimum >= 5%
+        $query->where('progress', '>=', 5);
+
+        // 2. Exclude content yang merupakan child/member dari Playlist (terdaftar di trainingplandetail)
+        $query->whereNotExists(function ($q) {
+            $q->from('trainingplandetail')
+                ->whereColumn('trainingplandetail.content_id', 'content_users.content_id');
+        });
+
         $this->applyStatusScope($query, $filters);
         $this->applyFilters($query, $filters);
 

@@ -2,6 +2,7 @@
 
 @section('style')
     <link href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ asset('css/learning-assessment.css') }}">
     @include('components.Home.styles')
 @endsection
 
@@ -16,7 +17,7 @@
         <div class="container-xl py-4">
 
             {{-- ── Dashboard Header ── --}}
-            @include('components.Home.page-header')
+            @include('components.Home.page-header', ['showProfileCard' => false])
             
             {{-- ── Main 2-Column Layout ── --}}
             <div class="row g-4">

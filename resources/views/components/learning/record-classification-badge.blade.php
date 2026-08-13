@@ -18,7 +18,20 @@
         ];
 
         $classification = $row['classification'] ?? '';
+        $badgeColor = $colors[$classification] ?? null;
+
+        if (! $badgeColor) {
+            foreach ($colors as $key => $color) {
+                if (strcasecmp($key, $classification) === 0) {
+                    $badgeColor = $color;
+                    break;
+                }
+            }
+        }
+
+        $badgeColor = $badgeColor ?? 'bg-secondary-lt text-secondary';
     @endphp
 
-    <span class="badge {{ $colors[$classification] ?? 'bg-secondary-lt text-secondary' }} learning-record-badge learning-classification-badge">{{ $classification }}</span>
+    <span class="badge {{ $badgeColor }} learning-record-badge learning-classification-badge">{{ $classification }}</span>
 @endif
+

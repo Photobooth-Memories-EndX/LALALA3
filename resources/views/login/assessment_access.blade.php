@@ -23,29 +23,58 @@
             --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
         }
 
-        body {
+        body, .page, .page-center {
             font-feature-settings: "cv03", "cv04", "cv11";
+            background: linear-gradient(135deg, #eef2f7 0%, #f8fafc 50%, #fff7ed 100%) !important;
+            border: none !important;
+            min-height: 100vh;
+        }
+
+        body::before, body::after,
+        .page::before, .page::after,
+        .page-center::before, .page-center::after {
+            display: none !important;
+            content: none !important;
+            border: none !important;
+            background: transparent !important;
+        }
+
+        .login-card {
+            border: none !important;
+            box-shadow: 0 20px 27px rgba(0, 0, 0, 0.05) !important;
+            border-radius: 16px !important;
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
     </style>
 
     <script src="{{ asset('js/jquery.min.js') }}"></script>
-    {{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> --}}
 </head>
 
-<body class=" d-flex flex-column">
+<body class="d-flex flex-column justify-content-center">
     <script src="Tabler/dist/js/demo-theme.min.js?1684106062"></script>
     <div class="page page-center">
         <div class="container container-tight py-4">
             <div class="text-center mb-4">
-                <a href="." class="navbar-brand navbar-brand-autodark"><img src="owl.png" height="150" alt=""></a>
+                <a href="." class="navbar-brand navbar-brand-autodark"><img src="owl.png" height="250" alt="OWL Learning Hub"></a>
             </div>
-            <div class="card card-md">
-                <div class="card-body">
+            <div class="card card-md login-card">
+                <div class="card-body p-4 p-md-5">
 
                     <x-alert type='success' />
                     <x-alert type='warning' />
 
-                    <h2 class="h2 text-center mb-4">Online Knowledge Learning</h2>
+                    <h2 class="h2 text-center mb-2 fw-bold text-dark" style="letter-spacing: -0.5px;">Corporate Learning Hub</h2>
+                    
+                    <!-- Tagline tambahan -->
+                    <div class="tagline-subtext fs-5 fw-semibold text-center mb-3" style="font-size: 0.95rem !important;">
+                        <span style="color: #0b2545 !important;">Open Mind</span>
+                        <span style="color: #0d6efd !important;" class="mx-1">•</span>
+                        <span style="color: #0d6efd !important;">Wide Growth</span>
+                        <span style="color: #fd7e14 !important;" class="mx-1">•</span>
+                        <span style="color: #fd7e14 !important;">Lead Impact</span>
+                    </div>
                     <form action="{{ route('authuser') }}" id="form-authentication" method="post" autocomplete="off" novalidate>
                         @csrf
                         <input type="hidden" name="submit_type" id="submit-type" value="assessment">

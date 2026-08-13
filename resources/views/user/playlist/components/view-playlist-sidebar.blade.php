@@ -15,9 +15,9 @@
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 sticky-top view-playlist-card" style="top: 1rem;">
-    <div class="card-body p-3">
+    <div class="card-body p-3 d-flex flex-column">
 
-        <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-shrink-0">
             <h3 class="mb-0 fs-4 fw-bold">Content List</h3>
             <div class="d-flex align-items-center gap-2">
                 <button type="button"
@@ -36,7 +36,7 @@
             </div>
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3 flex-shrink-0">
             <div class="d-flex align-items-center justify-content-between text-muted small mb-1">
                 <span class="fw-semibold text-body">{{ $playlistProgress }}% Progress</span>
                 <span class="text-muted">({{ $completedVideos }} of {{ $totalVideos }} finished)</span>
@@ -46,7 +46,7 @@
             </div>
         </div>
 
-        <div class="mb-3 d-none" id="playlistSearchBox">
+        <div class="mb-3 d-none flex-shrink-0" id="playlistSearchBox">
             <div class="input-icon">
                 <span class="input-icon-addon">
                     <i class="ti ti-search" aria-hidden="true"></i>
@@ -58,7 +58,7 @@
             </div>
         </div>
 
-        <div class="playlist-scroll-area" id="playlistLessonList">
+        <div class="playlist-scroll-area flex-grow-1" id="playlistLessonList">
             @foreach ($content_all as $index => $list)
                 @php
                     $lesson = $list->content;

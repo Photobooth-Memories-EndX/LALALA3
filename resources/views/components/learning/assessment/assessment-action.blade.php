@@ -6,6 +6,14 @@
     'userAttempts' => 0,
     'maxAttempts' => 0,
     'totalRemedials' => 0,
+    'assessmentId' => null,
+    'assessmentTitle' => null,
+    'assessmentBatch' => null,
+    'assessmentType' => null,
+    'typeLabel' => null,
+    'passingGrade' => null,
+    'fromDate' => null,
+    'toDate' => null,
 ])
 
 @php
@@ -33,7 +41,19 @@
             </button>
         @elseif ($url)
             <a href="{{ $url }}"
-               class="btn btn-sm assessment-action-btn btn-assessment-remedial">
+               class="btn btn-sm assessment-action-btn btn-assessment-remedial btn-remedial"
+               data-assessment-id="{{ $assessmentId }}"
+               data-assessment-title="{{ $assessmentTitle }}"
+               data-assessment-type="{{ $assessmentType ?? '' }}"
+               data-assessment-type-label="{{ $typeLabel ?? '-' }}"
+               data-assessment-batch="{{ $assessmentBatch }}"
+               data-assessment-passing-grade="{{ $passingGrade ?? '-' }}"
+               data-assessment-from-date="{{ $fromDate ?? '-' }}"
+               data-assessment-to-date="{{ $toDate ?? '-' }}"
+               data-assessment-user-attempts="{{ $userAttempts }}"
+               data-assessment-max-attempts="{{ $maxAttemptsDisplay }}"
+               data-assessment-total-remedials="{{ $totalRemedials }}"
+               data-assessment-action-type="remedial">
                 <i class="ti ti-refresh"></i>
                 <span>Remedial</span>
             </a>
@@ -45,7 +65,19 @@
         @endif
     @elseif ($url)
         <a href="{{ $url }}"
-           class="btn btn-sm assessment-action-btn btn-assessment-start">
+           class="btn btn-sm assessment-action-btn btn-assessment-start btn-start-test"
+           data-assessment-id="{{ $assessmentId }}"
+           data-assessment-title="{{ $assessmentTitle }}"
+           data-assessment-type="{{ $assessmentType ?? '' }}"
+           data-assessment-type-label="{{ $typeLabel ?? '-' }}"
+           data-assessment-batch="{{ $assessmentBatch }}"
+           data-assessment-passing-grade="{{ $passingGrade ?? '-' }}"
+           data-assessment-from-date="{{ $fromDate ?? '-' }}"
+           data-assessment-to-date="{{ $toDate ?? '-' }}"
+           data-assessment-user-attempts="{{ $userAttempts }}"
+           data-assessment-max-attempts="{{ $maxAttemptsDisplay }}"
+           data-assessment-total-remedials="{{ $totalRemedials }}"
+           data-assessment-action-type="start">
             <i class="ti ti-player-play"></i>
             <span>Start Test</span>
         </a>

@@ -41,11 +41,11 @@
     }
 
         .front-page {
-            background-image: url('{{ public_path("uploads/template/Front.png") }}');
+            background-image: url('{{ public_path("uploads/template/front.png") }}');
         }
 
         .back-page {
-            background-image: url('{{ public_path("uploads/template/Bhind.png") }}');
+            background-image: url('{{ public_path("uploads/template/bhind.png") }}');
         }
 
         .certificate-number {

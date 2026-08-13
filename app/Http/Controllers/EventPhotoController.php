@@ -104,14 +104,15 @@ return view(
      */
     public function store(Request $request)
     {
-       $request->validate([
-    'title' => 'required',
-    'category' => 'nullable'
-]);
+        $request->validate([
+            'title' => 'required',
+            'category' => 'nullable|string|max:255',
+        ]);
         $eventphoto = new EventPhoto();
 
         $eventphoto->title = $request->input('title');
         $eventphoto->category = $request->input('category');
+        $eventphoto->status = 'approved';
         $eventphoto->eventdate = $request->input('eventdate');
 
         $eventphoto->likes = '0';
@@ -181,24 +182,25 @@ return view(
     public function update(Request $request, EventPhoto $eventPhoto)
     {
         $request->validate([
-    'title' => 'required',
-    'category' => 'nullable'
-]);
+            'title' => 'required',
+            'category' => 'nullable|string|max:255',
+            'status' => 'required|in:approved,reject,pending',
+        ]);
         //
         $eventphoto = EventPhoto::find($request->id);
+        $updateData = [
+            'title' => $request->title,
+            'category' => $request->category,
+            'status' => $request->status,
+            'eventdate' => $request->eventdate,
+            'thumbnail' => $request->thumbnail
+        ];
         if ($request->action == 'unpublish') {
             EventPhoto::where('id', $request->id)
-                ->update([
-                    'active' => 'Inactive'
-                ]);
+                ->update(array_merge(['active' => 'Inactive'], $updateData));
         } else {
            EventPhoto::where('id', $request->id)
-        ->update([
-        'title' => $request->title,
-        'category' => $request->category,
-        'eventdate' => $request->eventdate,
-        'thumbnail' => $request->thumbnail
-    ]);
+        ->update($updateData);
             if ($request->has('documents')) {
                 $arraydoc = [];
 

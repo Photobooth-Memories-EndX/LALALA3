@@ -7,8 +7,10 @@
     $userDivision = $user?->division ?? $user?->team ?? 'Training Team';
     $userAvatar = !empty($user?->avatar) ? asset('storage/profile/' . $user->avatar) : null;
     $mylearningongoing = $mylearningongoing ?? 0;
+    $showProfileCard = $showProfileCard ?? false;
 @endphp
 
+@if ($showProfileCard)
 {{-- Mobile Header (< 768px) --}}
 <div class="home-modern-mobile-header d-md-none mb-3">
     {{-- KIRI: User Info (Avatar Icon Kecil + Nama & Team) --}}
@@ -61,6 +63,7 @@
         </div>
     </div>
 </div>
+@endif
 
 {{-- Desktop Header (>= 768px) --}}
 <div class="home-modern-db-header d-none d-md-flex">

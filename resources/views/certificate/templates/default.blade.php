@@ -35,11 +35,11 @@
         }
 
         .front-page {
-            background-image: url('{{ asset("uploads/template/Front.png") }}');
+            background-image: url('{{ asset("uploads/template/front.png") }}');
         }
 
         .back-page {
-            background-image: url('{{ asset("uploads/template/Bhind.png") }}');
+            background-image: url('{{ asset("uploads/template/bhind.png") }}');
         }
 
         .certificate-number {

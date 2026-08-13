@@ -20,6 +20,9 @@
         this.changingLayout = false;
         this.documentReady = false;
         this.modeTransitionTimer = null;
+        this.pdfOrientation = null;
+        this.userOverrodeReadingMode = false;
+        this.userZoomOverridden = false;
         this.pageTimingEnabled = Boolean(this.config.pageTimingEnabled);
         this.pageDuration = Math.max(1, parseInt(this.config.pageDuration, 10) || 30);
         this.completedPages = Math.max(0, parseInt(this.config.completedPages, 10) || 0);
@@ -41,6 +44,136 @@
         return document.querySelector(this.config.viewerSelector);
     };
 
+    OwlPdfReader.prototype.detectFirstPageOrientation = function (viewer) {
+        viewer = viewer || this.viewer;
+        if (!viewer) return 'portrait';
+
+        if (this.pdfOrientation) {
+            return this.pdfOrientation;
+        }
+
+        var orientation = 'portrait';
+
+        try {
+            if (viewer.pages && viewer.pages[1]) {
+                var p1 = viewer.pages[1];
+                var w = parseFloat(p1.width) || 0;
+                var h = parseFloat(p1.height) || 0;
+
+                if (w > 0 && h > 0) {
+                    orientation = w > h ? 'landscape' : 'portrait';
+                }
+            }
+        } catch (e) {
+            console.warn('First page orientation detection fallback to portrait:', e);
+        }
+
+        this.pdfOrientation = orientation;
+        this.applyOrientationState(orientation, true);
+        this.scheduleAutoFit(true);
+        return orientation;
+    };
+
+    OwlPdfReader.prototype.applyOrientationState = function (orientation, isInitial) {
+        var shell = this.getShell();
+        if (!shell) return;
+
+        var isLandscape = orientation === 'landscape';
+
+        shell.dataset.pdfOrientation = orientation;
+        shell.classList.toggle('is-landscape', isLandscape);
+        shell.classList.toggle('is-portrait', !isLandscape);
+        shell.classList.toggle('owl-pdf-is-landscape', isLandscape);
+        shell.classList.toggle('owl-pdf-is-portrait', !isLandscape);
+
+        if (!this.userOverrodeReadingMode) {
+            this.setReadingMode(orientation, isInitial);
+        }
+    };
+
+    OwlPdfReader.prototype.calculateAutoFitScale = function () {
+        if (!this.viewer) return null;
+
+        var container = this.getViewerElement();
+        if (!container || !container.clientWidth || !container.clientHeight) return null;
+
+        var containerWidth = container.clientWidth;
+        var containerHeight = container.clientHeight;
+
+        if (containerWidth <= 0 || containerHeight <= 0) return null;
+
+        var pageWidth = 0;
+        var pageHeight = 0;
+
+        if (typeof this.viewer.getActivePage === 'function') {
+            var activePage = this.viewer.getActivePage();
+            if (activePage && activePage.length) {
+                pageWidth = parseFloat(activePage.data('width')) || 0;
+                pageHeight = parseFloat(activePage.data('height')) || 0;
+            }
+        }
+
+        if (!pageWidth || !pageHeight) {
+            if (this.viewer.pages && this.viewer.pages[1]) {
+                pageWidth = parseFloat(this.viewer.pages[1].width) || 0;
+                pageHeight = parseFloat(this.viewer.pages[1].height) || 0;
+            }
+        }
+
+        if (pageWidth <= 0 || pageHeight <= 0) return null;
+
+        // In owl-pdf-reader.css, .pdfpage has margin: 12px auto (top 12px, bottom 12px = 24px total)
+        // Deduct 24px vertical margin and safety padding (4px) to fit container without unnecessary vertical scrollbars:
+        var availWidth = Math.max(10, containerWidth - 4);
+        var availHeight = Math.max(10, containerHeight - 28);
+
+        var scaleX = availWidth / pageWidth;
+        var scaleY = availHeight / pageHeight;
+
+        // Standard fit-to-container for landscape: Math.min(scaleX, scaleY)
+        var scale = Math.min(scaleX, scaleY);
+        return Math.max(0.1, Math.min(scale, 5.0));
+    };
+
+    OwlPdfReader.prototype.autoFit = function (force) {
+        if (!this.viewer) return;
+
+        var orientation = this.pdfOrientation || 'portrait';
+
+        if (orientation === 'landscape') {
+            if (!force && this.userZoomOverridden) {
+                return;
+            }
+
+            var scale = this.calculateAutoFitScale();
+            if (scale && typeof this.viewer.setZoom === 'function') {
+                this.viewer.setZoom(scale);
+            } else if (typeof this.viewer.setZoom === 'function') {
+                this.viewer.setZoom('fit');
+            }
+        } else {
+            if (!force && this.userZoomOverridden) {
+                return;
+            }
+            if (typeof this.viewer.setZoom === 'function') {
+                this.viewer.setZoom('width');
+            }
+        }
+    };
+
+    OwlPdfReader.prototype.scheduleAutoFit = function (force) {
+        var reader = this;
+        reader.autoFit(force);
+
+        [50, 150, 360].forEach(function (delay) {
+            setTimeout(function () {
+                if (reader.viewer && (!reader.userZoomOverridden || force)) {
+                    reader.autoFit(force);
+                }
+            }, delay);
+        });
+    };
+
     OwlPdfReader.prototype.getViewerOptions = function (callbacks) {
         var reader = this;
         var handlers = callbacks || {};
@@ -58,6 +191,9 @@
 
             onDocumentReady: function () {
                 try {
+                    reader.detectFirstPageOrientation(this);
+                    reader.scheduleAutoFit(true);
+
                     if (typeof handlers.onDocumentReady === 'function') {
                         handlers.onDocumentReady.call(this);
                     }
@@ -102,6 +238,7 @@
     OwlPdfReader.prototype.attach = function (viewer, pdfUrl) {
         this.viewer = viewer;
         this.pdfUrl = pdfUrl || '';
+        this.userZoomOverridden = false;
 
         this.patchVisibleAreaMeasurement();
         this.bindControls();
@@ -420,7 +557,7 @@
         });
     };
 
-    OwlPdfReader.prototype.setReadingMode = function (mode) {
+    OwlPdfReader.prototype.setReadingMode = function (mode, immediate) {
         var reader = this;
         var shell = this.getShell();
 
@@ -462,9 +599,10 @@
 
         if (this.modeTransitionTimer) {
             clearTimeout(this.modeTransitionTimer);
+            this.modeTransitionTimer = null;
         }
 
-        this.modeTransitionTimer = setTimeout(function () {
+        var updateLayout = function () {
             if (typeof reader.viewer.refreshAll === 'function') {
                 reader.viewer.refreshAll();
             }
@@ -482,14 +620,25 @@
             }
 
             reader.changingLayout = false;
-            reader.modeTransitionTimer = null;
-        }, 340);
+        };
+
+        if (immediate) {
+            updateLayout();
+            reader.scheduleAutoFit();
+        } else {
+            this.modeTransitionTimer = setTimeout(function () {
+                updateLayout();
+                reader.scheduleAutoFit();
+                reader.modeTransitionTimer = null;
+            }, 340);
+        }
     };
 
     OwlPdfReader.prototype.toggleReadingMode = function () {
         var shell = this.getShell();
         if (!shell) return;
 
+        this.userOverrodeReadingMode = true;
         this.setReadingMode(
             shell.classList.contains('owl-pdf-mode-landscape')
                 ? 'portrait'
@@ -597,11 +746,37 @@
 
         shell.dataset.owlPdfReaderBound = 'true';
 
+        var resizeTimer = null;
+        var scheduleRefresh = function () {
+            if (!reader.viewer || !reader.documentReady || reader.changingLayout) return;
+
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () {
+                var orientation = reader.pdfOrientation || 'portrait';
+                if (orientation === 'landscape' && !reader.userZoomOverridden) {
+                    reader.autoFit();
+                } else if (typeof reader.viewer.refreshAll === 'function') {
+                    reader.viewer.refreshAll();
+                }
+            }, 150);
+        };
+
+        window.addEventListener('resize', scheduleRefresh);
+
+        if (typeof ResizeObserver !== 'undefined' && viewerElement) {
+            var ro = new ResizeObserver(function () {
+                scheduleRefresh();
+            });
+            ro.observe(viewerElement);
+        }
+
         document.addEventListener('fullscreenchange', function () {
             reader.syncFullscreenButton();
+            reader.scheduleAutoFit();
         });
         document.addEventListener('webkitfullscreenchange', function () {
             reader.syncFullscreenButton();
+            reader.scheduleAutoFit();
         });
 
         if (typeof window.matchMedia === 'function') {
@@ -627,11 +802,13 @@
                 if (!event.ctrlKey || !reader.viewer) return;
 
                 event.preventDefault();
+                reader.userZoomOverridden = true;
                 reader.viewer.setZoom(event.deltaY < 0 ? 'in' : 'out');
             }, { passive: false });
 
             viewerElement.addEventListener('dblclick', function () {
                 if (reader.viewer) {
+                    reader.userZoomOverridden = true;
                     reader.viewer.setZoom('width');
                 }
             });
@@ -650,14 +827,17 @@
                     case '+':
                     case '=':
                         event.preventDefault();
+                        reader.userZoomOverridden = true;
                         reader.viewer.setZoom('in');
                         break;
                     case '-':
                         event.preventDefault();
+                        reader.userZoomOverridden = true;
                         reader.viewer.setZoom('out');
                         break;
                     case '0':
                         event.preventDefault();
+                        reader.userZoomOverridden = true;
                         reader.viewer.setZoom('fit');
                         break;
                 }
@@ -694,6 +874,7 @@
                 case 'f':
                 case 'F':
                     event.preventDefault();
+                    reader.userZoomOverridden = true;
                     reader.viewer.setZoom('width');
                     break;
             }

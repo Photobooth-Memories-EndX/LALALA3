@@ -41,7 +41,7 @@
         }
 
         .back-page {
-            background-image: url('{{ public_path("uploads/template/Bhind.png") }}');
+            background-image: url('{{ public_path("uploads/template/bhind.png") }}');
         }
 
         .certificate-number {
@@ -226,9 +226,9 @@
     }
     $hasCustomBg = $customBgPath && file_exists($customBgPath);
     if (!$hasCustomBg) {
-        $customBgPath = public_path('uploads/template/Front.png');
+        $customBgPath = public_path('uploads/template/front.png');
     }
-    $attachBgPath = $hasCustomBg ? $customBgPath : public_path('uploads/template/Bhind.png');
+    $attachBgPath = $hasCustomBg ? $customBgPath : public_path('uploads/template/bhind.png');
 
     $playlistContents = $certificate->certificate_type === 'playlist'
         ? $setting->playlistContents()->values()

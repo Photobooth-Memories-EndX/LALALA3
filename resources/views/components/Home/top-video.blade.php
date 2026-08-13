@@ -18,7 +18,7 @@
                 <div class="home-modern-slide-track">
             @foreach($top_video->take(6) as $item)
             <div class="home-modern-slide-item">
-                <a href="{{ route('content.user.view', $item->slug) }}" class="home-modern-video-card home-video-card">
+                <a href="{{ route('content.user.view', $item->slug) }}" class="home-modern-video-card home-video-card" title="{{ $item->title }}">
 
                     <div class="home-modern-video-thumb home-video-thumbnail">
                         @if($item->type === 'YouTube')
@@ -50,7 +50,7 @@
                         <span class="home-modern-category-badge">
                             {{ \App\Support\ContentTypeHelper::label($item->type) }}
                         </span>
-                        <h4 class="home-modern-video-title">{{ Str::limit($item->title, 55) }}</h4>
+                        <h4 class="home-modern-video-title" title="{{ $item->title }}">{{ Str::limit($item->title, 55) }}</h4>
                     </div>
 
                 </a>

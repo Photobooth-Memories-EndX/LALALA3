@@ -42,7 +42,7 @@
         }
 
         .back-page {
-            background-image: url('{{ asset("uploads/template/Bhind.png") }}');
+            background-image: url('{{ asset("uploads/template/bhind.png") }}');
         }
 
         .certificate-number {
@@ -244,7 +244,7 @@
 
     $customBgUrl = $setting->custom_background
         ? asset($setting->custom_background)
-        : asset('uploads/template/Front.png');
+        : asset('uploads/template/front.png');
 
     $periodTarget = $setting->certificate_type === 'content'
         ? $setting->content

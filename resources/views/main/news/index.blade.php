@@ -209,6 +209,8 @@
                                 <th style="width:50px">NO</th>
                                 <th style="width:90px">IMAGE</th>
                                 <th>TITLE</th>
+                                <th style="width:130px">CATEGORY</th>
+                                <th style="width:110px" class="text-center">STATUS</th>
                                 <th style="width:140px">AUTHOR</th>
                                 <th style="width:120px" class="text-center">DATE</th>
                                 <th style="width:100px" class="text-center">ACTION</th>
@@ -241,6 +243,27 @@
                                         {{ Str::limit(strip_tags($item->description), 60) }}
                                     </div>
                                     @endif
+                                </td>
+                                <td>
+                                    @if($item->category)
+                                        <span class="badge bg-blue-lt text-blue">{{ $item->category }}</span>
+                                    @else
+                                        <span class="text-muted small">&mdash;</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @php
+                                        $statusVal = strtolower($item->status ?? 'approved');
+                                        $statusBadge = match($statusVal) {
+                                            'approved' => 'bg-success-lt text-success',
+                                            'pending'  => 'bg-warning-lt text-warning',
+                                            'reject'   => 'bg-danger-lt text-danger',
+                                            default    => 'bg-secondary-lt text-secondary'
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $statusBadge }}">
+                                        {{ ucfirst($statusVal) }}
+                                    </span>
                                 </td>
                                 <td>
                                     @if($item->user)
@@ -279,7 +302,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6">
+                                <td colspan="8">
                                     <div class="empty py-5">
                                         <div class="empty-icon">
                                             <i class="ti ti-news-off" style="font-size:3rem;opacity:.4;"></i>

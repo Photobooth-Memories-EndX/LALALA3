@@ -892,7 +892,7 @@
 
             if (fileName) {
                 pdfViewer.loadDocument(pdfFile).then(function () {
-                    pdfViewer.setZoom("width");
+                    contentPdfReader.scheduleAutoFit(true);
                     hideContentPlayerSkeleton();
                 });
             }

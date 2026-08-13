@@ -133,6 +133,8 @@ class NewsController extends Controller
 
             'title'       => 'required',
 
+            'category'    => 'nullable|string|max:255',
+
             'description' => 'required',
 
             'image'       =>
@@ -145,6 +147,10 @@ class NewsController extends Controller
         $news->user_id = auth()->id();
 
         $news->title = $request->title;
+
+        $news->category = $request->category;
+
+        $news->status = 'approved';
 
         $news->description = $request->description;
 
@@ -207,6 +213,10 @@ class NewsController extends Controller
 
             'title'       => 'required',
 
+            'category'    => 'nullable|string|max:255',
+
+            'status'      => 'required|in:approved,reject,pending',
+
             'description' => 'required',
 
             'image'       =>
@@ -215,6 +225,10 @@ class NewsController extends Controller
         ]);
 
         $news->title = $request->title;
+
+        $news->category = $request->category;
+
+        $news->status = $request->status;
 
         $news->description = $request->description;
 

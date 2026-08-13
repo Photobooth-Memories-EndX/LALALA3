@@ -10,3 +10,7 @@
     @endforeach
 
 </div>
+
+<div id="playlistFilterEmpty" class="d-none mt-3">
+    @include('user.playlist.components.playlist-empty')
+</div>

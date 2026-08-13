@@ -440,6 +440,13 @@ class ContentController extends Controller
                     ->update(['file' => json_encode($arraydoc)]);
             }
 
+            if ($request->boolean('remove_thumbnail')) {
+                $targetThumb = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
+                if (File::exists($targetThumb) && !is_dir($targetThumb)) {
+                    File::delete($targetThumb);
+                }
+            }
+
             if ($request->has('thumbnail')) {
                 if (!File::isDirectory($targetDir)) {
                     File::makeDirectory($targetDir, 0755, true);

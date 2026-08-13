@@ -12,6 +12,8 @@ class News extends Model
     use HasFactory;
     use HasSlug;
 
+    protected $guarded = ['id'];
+
     public function getSlugOptions() : SlugOptions
     {
         return SlugOptions::create()

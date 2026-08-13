@@ -124,15 +124,15 @@
                         <h3 class="mb-3">Next Action</h3>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <a href="{{ route('user.learning.dashboard') }}" class="btn btn-primary">
-                                Back to Assessment
+                            <a href="{{ url('/my-learning?learning_tab=assessment') }}" class="btn btn-primary rounded-3 px-3">
+                                Back to Learning Assessment
                             </a>
 
-                            <a href="{{ route('user.learning.dashboard') }}" class="btn btn-white">
+                            <a href="{{ url('/') }}" class="btn btn-outline-secondary rounded-3 px-3">
                                 Learning Dashboard
                             </a>
 
-                            <a href="{{ route('user.learning.dashboard') }}" class="btn btn-white">
+                            <a href="{{ url('/my-learning?learning_tab=record') }}" class="btn btn-outline-secondary rounded-3 px-3">
                                 Learning Record
                             </a>
                         </div>
