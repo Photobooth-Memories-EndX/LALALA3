@@ -280,4 +280,32 @@ $(document).on('click', '#btnStartAssessmentAccess', function (e) {
 
     window.location.href = targetUrl;
 });
+
+function submitAssessmentAccessWithCode(code) {
+    if ($('#unique-code').length) {
+        $('#unique-code').val(code);
+        submitAssessmentAccess();
+    } else {
+        $.ajax({
+            url: "{{ route('home.user.access.assessment.by.unique.code') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                unique_code: code,
+            },
+            success: function (response) {
+                var targetUrl = response.assessment_url || ("{{ url('/assesment') }}/" + response.assessment_slug);
+                window.location.href = targetUrl;
+            }
+        });
+    }
+}
+
+@if(session()->has('open_assessment_code'))
+document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+        submitAssessmentAccessWithCode("{{ session('open_assessment_code') }}");
+    }, 250);
+});
+@endif
 </script>
