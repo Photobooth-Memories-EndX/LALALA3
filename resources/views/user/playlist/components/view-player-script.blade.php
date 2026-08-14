@@ -271,4 +271,79 @@
         }
     }
 
+    /* =====================================================
+       PLAYLIST ASSESSMENT ACCESS MODAL HANDLER
+    ===================================================== */
+    $(document).on('click', '[data-assessment-trigger="true"]', function (e) {
+        e.preventDefault();
+
+        var $btn = $(this);
+        var $modal = $('#assessmentAccessModal');
+
+        var targetUrl = $btn.data('target-url') || $btn.attr('data-target-url');
+
+        if (!$modal.length) {
+            if (targetUrl) {
+                window.location.href = targetUrl;
+            }
+            return;
+        }
+
+        var title = $btn.data('assessment-title') || '-';
+        var typeBadge = $btn.data('assessment-type') || 'ASSESSMENT CONTENT';
+        var batch = $btn.data('assessment-batch') || '-';
+        var fromDate = $btn.data('assessment-from-date') || '-';
+        var toDate = $btn.data('assessment-to-date') || '-';
+        var passingGrade = $btn.data('assessment-passing-grade') || '-';
+        var attempts = $btn.data('assessment-attempts') || '-';
+
+        var batchDisplay = (batch && batch !== '-')
+            ? (String(batch).toLowerCase().indexOf('batch') !== -1 ? batch : 'Batch ' + batch)
+            : '-';
+
+        $modal.find('#assessmentAccessModalTypeBadge').text(typeBadge);
+        $modal.find('#assessmentAccessModalName').text(title);
+        $modal.find('#assessmentAccessModalSubText').text(batchDisplay);
+        $modal.find('#assessmentAccessModalBatch').text(batchDisplay);
+        $modal.find('#assessmentAccessModalFromDate').text(fromDate);
+        $modal.find('#assessmentAccessModalToDate').text(toDate);
+        $modal.find('#assessmentAccessModalPassingGrade').text(passingGrade);
+        $modal.find('#assessmentAccessModalAttempt').text(attempts);
+
+        $('#btnStartAssessmentAccess')
+            .data('target-url', targetUrl)
+            .attr('data-target-url', targetUrl);
+
+        $modal
+            .data('target-url', targetUrl)
+            .attr('data-target-url', targetUrl);
+
+        if (typeof $.fn.modal === 'function') {
+            $modal.modal('show');
+        } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var bsModal = bootstrap.Modal.getOrCreateInstance($modal[0]);
+            bsModal.show();
+        } else {
+            $modal.addClass('show').css('display', 'block');
+        }
+    });
+
+    $(document).off('click', '#btnStartAssessmentAccess').on('click', '#btnStartAssessmentAccess', function (e) {
+        e.preventDefault();
+
+        var $btn = $(this);
+        var $modal = $('#assessmentAccessModal');
+
+        var targetUrl = $btn.data('target-url') ||
+                        $btn.attr('data-target-url') ||
+                        $modal.data('target-url') ||
+                        $modal.attr('data-target-url');
+
+        if (!targetUrl) {
+            return;
+        }
+
+        window.location.href = targetUrl;
+    });
+
 </script>

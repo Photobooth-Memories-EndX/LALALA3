@@ -101,7 +101,7 @@ class CertificateEligibilityService
         }
 
         $assessments = Assesment::query()
-            ->select(['id', 'content_id', 'slug', 'passing_grade'])
+            ->select(['id', 'content_id', 'title', 'type', 'slug', 'batch', 'fromdate', 'todate', 'passing_grade', 'total_remedials', 'unique_code'])
             ->where('type', 'content')
             ->where('status', '!=', 'NOT')
             ->whereIn('content_id', $contentIds)

@@ -125,6 +125,8 @@
             </div>
         </div>
     </div>
+
+    <x-shared.assessment-access-modal />
 @endsection
 
 @section('style')
@@ -136,6 +138,7 @@
     @endif
 
     @include('user.playlist.components.view-style')
+    <link rel="stylesheet" href="{{ asset('css/playlist.css') }}">
 
     <style>
         .playlist-comment-modal .modal-dialog {

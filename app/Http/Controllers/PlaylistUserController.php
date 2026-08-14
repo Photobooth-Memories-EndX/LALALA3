@@ -252,6 +252,20 @@ class PlaylistUserController extends Controller
         $assessmentContentCount        = $queryAssessmentContentResult->count();
         $assessmentContentLatestScores = (clone $queryAssessmentContentResult)->latest()->first()?->score ?? 0;
 
+        $allAssessmentIds = collect([$assesment?->id])
+            ->concat($assessmentsByContent->pluck('id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $assessmentAttemptCounts = $allAssessmentIds->isNotEmpty()
+            ? AssesmentResult::where('user_id', $userId)
+                ->whereIn('assesment_id', $allAssessmentIds)
+                ->groupBy('assesment_id')
+                ->selectRaw('assesment_id, count(*) as total')
+                ->pluck('total', 'assesment_id')
+            : collect();
+
         // Comments: paginated root comments + 2 reply levels (was 4)
         $comment = Comment::with([
                 'user',
@@ -310,6 +324,7 @@ class PlaylistUserController extends Controller
             'playlistAssessmentDone'         => $playlistAssessmentDone,
             'playlistCertificateSetting'     => $playlistCertificateSetting,
             'playlistCertificateEligibility' => $playlistCertificateEligibility,
+            'assessmentAttemptCounts'        => $assessmentAttemptCounts,
         ]);
     }
 
