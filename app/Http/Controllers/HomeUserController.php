@@ -473,7 +473,7 @@ class HomeUserController extends Controller
                 'assessment_passing_grade' => $assessment->passing_grade ?? '-',
                 'assessment_user_attempts' => $userAttempts,
                 'assessment_max_attempts' => $maxAttempts,
-                'assessment_url' => route('assesment.user.view', $assessment->slug),
+                'assessment_url' => route('assesment.user.view', $assessment->slug, false),
             ], 200);
 
         } else {

@@ -45,3 +45,4 @@
 </div>
 
 <x-shared.assessment-confirmation-modal />
+<x-shared.assessment-access-modal />

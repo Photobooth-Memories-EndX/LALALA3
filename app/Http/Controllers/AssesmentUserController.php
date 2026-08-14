@@ -59,14 +59,8 @@
                 'is_admin'        => auth()->user()->isAdmin(),
             ]);
 
-            $denialReason = $assessmentAccess->denialReason($assesment, auth()->user());
-            if ($denialReason !== null) {
-                return $this->assessmentAccessDeniedResponse(
-                    $assesment,
-                    $denialReason,
-                    $assessmentAccess
-                );
-            }
+            // Page access is open to render the assessment view page.
+            // Access control for submitting/saving attempts remains protected in store() and autosave().
 
             //jika bukan ADMIN
             if (!auth()->user()->isAdmin())
