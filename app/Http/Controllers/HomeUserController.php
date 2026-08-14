@@ -94,7 +94,8 @@ class HomeUserController extends Controller
         $heroSummary = $analyticsService->heroSummary((int) auth()->id());
         $content_user = $heroSummary['content_user'];
 
-        $upcomingDeadlines = Assesment::whereNotNull('todate')
+        $upcomingDeadlines = Assesment::where('status', 'OK')
+            ->whereNotNull('todate')
             ->whereDate('todate', '>=', now())
             ->orderBy('todate')
             ->take(2)
@@ -405,7 +406,8 @@ class HomeUserController extends Controller
         ->pluck('content_id')
         ->toArray();
 
-    return Assesment::whereNotNull('todate')
+    return Assesment::where('status', 'OK')
+        ->whereNotNull('todate')
         ->whereDate('todate', '>=', now())
         ->whereIn('content_id', $currentContentIds)
         ->orderBy('todate', 'asc')
@@ -473,7 +475,7 @@ class HomeUserController extends Controller
                 'assessment_passing_grade' => $assessment->passing_grade ?? '-',
                 'assessment_user_attempts' => $userAttempts,
                 'assessment_max_attempts' => $maxAttempts,
-                'assessment_url' => route('assesment.user.view', $assessment->slug),
+                'assessment_url' => route('assesment.user.view', $assessment->slug, false),
             ], 200);
 
         } else {

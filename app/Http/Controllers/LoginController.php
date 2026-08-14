@@ -57,7 +57,7 @@ class LoginController extends Controller
                 $assessment = Assesment::where('unique_code', $request->unique_code)->first();
 
                 if ($assessment) {
-                    return redirect()->route('assesment.user.view', ['slug' => $assessment->slug]);
+                    return redirect()->route('home.user.index')->with('open_assessment_code', $assessment->unique_code);
                 } else {
                     Auth::logout();
 

@@ -21,11 +21,30 @@ final class AssessmentAccessService
 
     public function denialReason(Assesment $assessment, User $user, ?Carbon $now = null): ?string
     {
-        // Preserve the existing administrator bypass used by the assessment controller.
+        // 1. Admin Bypass
         if ($user->isAdmin()) {
             return null;
         }
 
+        // 2. Database Status: status = NOT means assessment is inactive for non-admins
+        if (strtoupper(trim((string) ($assessment->status ?? ''))) === 'NOT') {
+            return self::REASON_INACTIVE;
+        }
+
+        // 3. Datetime schedule evaluation (evaluated when status = OK)
+        if ($assessment->fromdate && $assessment->todate) {
+            $nowValue = ($now ?? now())->format('Y-m-d H:i:s');
+
+            if ($nowValue < $assessment->fromdate) {
+                return self::REASON_BEFORE_START;
+            }
+
+            if ($nowValue > $assessment->todate) {
+                return self::REASON_EXPIRED;
+            }
+        }
+
+        // 4. Assignment check
         $assignedDescriptions = $assessment->assesments_assigned
             ->pluck('assigned_description');
 
@@ -42,24 +61,7 @@ final class AssessmentAccessService
             }
         }
 
-        if ($assessment->status === 'NOT') {
-            return self::REASON_INACTIVE;
-        }
-
-        // Keep the existing schedule convention: enforce dates only when both
-        // boundaries are configured.
-        if ($assessment->fromdate && $assessment->todate) {
-            $nowValue = ($now ?? now())->format('Y-m-d H:i:s');
-
-            if ($nowValue < $assessment->fromdate) {
-                return self::REASON_BEFORE_START;
-            }
-
-            if ($nowValue > $assessment->todate) {
-                return self::REASON_EXPIRED;
-            }
-        }
-
+        // 5. Content progress check
         if ($assessment->type === 'content' && $assessment->content_id) {
             $learning = ContentUser::where('user_id', $user->id)
                 ->where('content_id', $assessment->content_id)
@@ -70,6 +72,7 @@ final class AssessmentAccessService
             }
         }
 
+        // 6. Passed check
         $userResults = AssesmentResult::where('user_id', $user->id)
             ->where('assesment_id', $assessment->id)
             ->where('batch', $assessment->batch)
@@ -80,6 +83,7 @@ final class AssessmentAccessService
             return self::REASON_PASSED;
         }
 
+        // 7. Max attempts check
         $maxAttempts = 1 + (int) ($assessment->total_remedials ?? 0);
         $userAttempts = $userResults->count();
 
@@ -105,6 +109,10 @@ final class AssessmentAccessService
             return null;
         }
 
+        if (strtoupper(trim((string) ($assessment->status ?? ''))) === 'NOT') {
+            return self::REASON_INACTIVE;
+        }
+
         $assignedDescriptions = $assessment->assesments_assigned
             ->pluck('assigned_description');
 
@@ -119,10 +127,6 @@ final class AssessmentAccessService
             if (!$assignedDescriptions->intersect($userAssignments)->isNotEmpty()) {
                 return self::REASON_ASSIGNED;
             }
-        }
-
-        if ($assessment->status === 'NOT') {
-            return self::REASON_INACTIVE;
         }
 
         return null;

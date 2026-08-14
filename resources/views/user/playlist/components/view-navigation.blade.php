@@ -24,11 +24,29 @@
                     Assessment Playlist
                 </button>
             @elseif ($hasPlaylistAssessment)
-                <a href="{{ route('assesment.user.view', $assesment->slug) }}"
-                   class="btn btn-primary flex-fill">
+                @php
+                    $playlistBatchDisplay = !empty($assesment->batch) && $assesment->batch !== '-'
+                        ? (str_contains(strtolower((string)$assesment->batch), 'batch') ? $assesment->batch : 'Batch ' . $assesment->batch)
+                        : '-';
+                    $playlistFromDateVal = !empty($assesment->fromdate) ? date('d M Y, H:i', strtotime($assesment->fromdate)) : '-';
+                    $playlistToDateVal = !empty($assesment->todate) ? date('d M Y, H:i', strtotime($assesment->todate)) : '-';
+                    $playlistPassingGradeVal = $assesment->passing_grade !== null && $assesment->passing_grade !== '' ? $assesment->passing_grade : '-';
+                    $playlistAttemptsVal = (($assessmentAttemptCounts[$assesment->id] ?? $assessmentCount ?? 0)) . ' / ' . (1 + (int)($assesment->total_remedials ?? 0)) . ' Attempts';
+                @endphp
+                <button type="button"
+                        class="btn btn-primary flex-fill"
+                        data-assessment-trigger="true"
+                        data-assessment-title="{{ $assesment->title }}"
+                        data-assessment-type="ASSESSMENT PLAYLIST"
+                        data-assessment-batch="{{ $playlistBatchDisplay }}"
+                        data-assessment-from-date="{{ $playlistFromDateVal }}"
+                        data-assessment-to-date="{{ $playlistToDateVal }}"
+                        data-assessment-passing-grade="{{ $playlistPassingGradeVal }}"
+                        data-assessment-attempts="{{ $playlistAttemptsVal }}"
+                        data-target-url="{{ route('assesment.user.view', $assesment->slug) }}">
                     <i class="ti ti-clipboard-check me-2" aria-hidden="true"></i>
                     Assessment Playlist
-                </a>
+                </button>
             @else
                 <span class="d-block flex-fill"
                       title="No active playlist assessment is available.">

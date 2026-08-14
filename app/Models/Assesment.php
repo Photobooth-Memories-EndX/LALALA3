@@ -65,7 +65,8 @@ class Assesment extends Model
         ->pluck('content_id')
         ->toArray();
 
-    return self::whereNotNull('todate')
+    return self::where('status', 'OK')
+        ->whereNotNull('todate')
         ->whereDate('todate', '>=', now())
         ->whereIn('content_id', $contentIds)
         ->orderBy('todate')

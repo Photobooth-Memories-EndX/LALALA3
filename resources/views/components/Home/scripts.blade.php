@@ -146,10 +146,10 @@ function submitAssessmentAccess() {
             // Hide input modal
             $('#modal-assessment-access').modal('hide');
 
-            var $modal = $('#assessmentConfirmationModal');
+            var $modal = $('#assessmentAccessModal');
             if (!$modal.length) {
                 var fallbackRoute = response.assessment_url || "{{ route('assesment.user.view', ':slug') }}".replace(':slug', response.assessment_slug);
-                window.location.replace(fallbackRoute);
+                window.location.href = fallbackRoute;
                 return;
             }
 
@@ -171,48 +171,46 @@ function submitAssessmentAccess() {
                 }
             }
 
-            // Complete Reset Modal State for Start Test mode
-            $modal.removeClass('is-remedial-modal');
-            $modal.find('#assessmentModalTypeHeader').text('ASSESSMENT CONTENT');
-            $modal.find('#assessmentModalName').text('-');
-            $modal.find('#assessmentModalBatch').text('-');
-            $modal.find('#assessmentModalFromDate').text('-');
-            $modal.find('#assessmentModalToDate').text('-');
-            $modal.find('#assessmentModalPassingGrade').text('-');
-            $modal.find('#assessmentModalAttempt').text('-');
-            $modal.find('#assessmentConfirmationModalTitle').text('Start Assessment');
-            $modal.find('#assessmentModalSubtitle').text('Confirmation');
-            $modal.find('#assessmentModalQuestion').text('Apakah Anda yakin ingin memulai assessment ini?');
-            $modal.find('#assessmentModalHeaderIconInner').attr('class', 'ti ti-player-play');
-            $modal.find('#btnConfirmAssessmentAction')
-                .removeClass('btn-warning text-white btn-assessment-remedial-confirm')
-                .addClass('btn-success text-white btn-assessment-start-confirm')
-                .html('<i class="ti ti-player-play me-1"></i> <span>Start Test</span>');
-            $modal.removeData('target-url').removeData('assessment-id').removeData('action-type');
-
             // Format Attempt display
             var userAttempts = response.assessment_user_attempts !== undefined ? response.assessment_user_attempts : 0;
             var maxAttempts = response.assessment_max_attempts !== undefined ? response.assessment_max_attempts : 1;
             var attemptDisplay = userAttempts + ' / ' + maxAttempts + ' Attempts';
 
             // Populate Modal Data
-            $modal.find('#assessmentModalTypeHeader').text(headerLabel);
-            $modal.find('#assessmentModalName').text(response.assessment_title || '-');
-            $modal.find('#assessmentModalBatch').text(response.assessment_batch && response.assessment_batch !== '-' ? (String(response.assessment_batch).toLowerCase().indexOf('batch') !== -1 ? response.assessment_batch : 'Batch ' + response.assessment_batch) : '-');
+            $modal.find('#assessmentAccessModalTypeBadge').text(headerLabel);
+            $modal.find('#assessmentAccessModalName').text(response.assessment_title || '-');
+
+            var batchDisplay = response.assessment_batch && response.assessment_batch !== '-' 
+                ? (String(response.assessment_batch).toLowerCase().indexOf('batch') !== -1 ? response.assessment_batch : 'Batch ' + response.assessment_batch) 
+                : '-';
+            $modal.find('#assessmentAccessModalSubText').text(batchDisplay);
+            $modal.find('#assessmentAccessModalBatch').text(batchDisplay);
+
             var fromDateVal = (typeof formatAssessmentDate === 'function') ? formatAssessmentDate(response.assessment_from_date) : (response.assessment_from_date || '-');
             var toDateVal = (typeof formatAssessmentDate === 'function') ? formatAssessmentDate(response.assessment_to_date) : (response.assessment_to_date || '-');
-            $modal.find('#assessmentModalFromDate').text(fromDateVal);
-            $modal.find('#assessmentModalToDate').text(toDateVal);
-            $modal.find('#assessmentModalPassingGrade').text(response.assessment_passing_grade !== undefined && response.assessment_passing_grade !== '' ? response.assessment_passing_grade : '-');
-            $modal.find('#assessmentModalAttempt').text(attemptDisplay);
+            $modal.find('#assessmentAccessModalFromDate').text(fromDateVal);
+            $modal.find('#assessmentAccessModalToDate').text(toDateVal);
 
-            var targetUrl = response.assessment_url || "{{ route('assesment.user.view', ':slug') }}".replace(':slug', response.assessment_slug);
-            $modal.data('assessment-id', response.assessment_id);
-            $modal.data('target-url', targetUrl);
-            $modal.data('action-type', 'start');
+            $modal.find('#assessmentAccessModalPassingGrade').text(response.assessment_passing_grade !== undefined && response.assessment_passing_grade !== '' ? response.assessment_passing_grade : '-');
+            $modal.find('#assessmentAccessModalAttempt').text(attemptDisplay);
 
-            // Open Shared Assessment Confirmation Modal
-            setTimeout(function () {
+            var targetUrl = response.assessment_url;
+            if (response.assessment_slug) {
+                targetUrl = "{{ url('/assesment') }}/" + response.assessment_slug;
+            } else if (!targetUrl) {
+                targetUrl = "{{ route('assesment.user.view', ':slug') }}".replace(':slug', response.assessment_slug);
+            }
+
+            $('#btnStartAssessmentAccess')
+                .data('target-url', targetUrl)
+                .attr('data-target-url', targetUrl);
+
+            $modal
+                .data('target-url', targetUrl)
+                .attr('data-target-url', targetUrl);
+
+            // Open #assessmentAccessModal safely using event-driven transition
+            function showAccessModal() {
                 if (typeof $.fn.modal === 'function') {
                     $modal.modal('show');
                 } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
@@ -221,7 +219,24 @@ function submitAssessmentAccess() {
                 } else {
                     $modal.addClass('show').css('display', 'block');
                 }
-            }, 150);
+            }
+
+            var $inputModal = $('#modal-assessment-access');
+            if ($inputModal.length && ($inputModal.hasClass('show') || $inputModal.is(':visible'))) {
+                var opened = false;
+                var safeOpen = function () {
+                    if (!opened) {
+                        opened = true;
+                        $inputModal.off('hidden.bs.modal', safeOpen);
+                        showAccessModal();
+                    }
+                };
+                $inputModal.one('hidden.bs.modal', safeOpen);
+                $inputModal.modal('hide');
+                setTimeout(safeOpen, 350);
+            } else {
+                showAccessModal();
+            }
         },
         error: function (error) {
             var msg = 'An error occurred. Please try again.';
@@ -239,4 +254,58 @@ function submitAssessmentAccess() {
         }
     });
 }
+
+$(document).on('click', '#btnStartAssessmentAccess', function (e) {
+    e.preventDefault();
+
+    console.log('[ASSESSMENT DEBUG] Start Test clicked');
+
+    var $btn = $(this);
+    var $modal = $('#assessmentAccessModal');
+
+    var targetUrl = $btn.data('target-url') ||
+                    $btn.attr('data-target-url') ||
+                    $modal.data('target-url') ||
+                    $modal.attr('data-target-url');
+
+    console.log('[ASSESSMENT DEBUG] targetUrl:', targetUrl);
+
+    if (!targetUrl) {
+        console.error('[ASSESSMENT DEBUG] Assessment target URL is missing.');
+        return;
+    }
+
+    console.log('[ASSESSMENT DEBUG] Before navigation:', window.location.href);
+    console.log('[ASSESSMENT DEBUG] Target:', targetUrl);
+
+    window.location.href = targetUrl;
+});
+
+function submitAssessmentAccessWithCode(code) {
+    if ($('#unique-code').length) {
+        $('#unique-code').val(code);
+        submitAssessmentAccess();
+    } else {
+        $.ajax({
+            url: "{{ route('home.user.access.assessment.by.unique.code') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                unique_code: code,
+            },
+            success: function (response) {
+                var targetUrl = response.assessment_url || ("{{ url('/assesment') }}/" + response.assessment_slug);
+                window.location.href = targetUrl;
+            }
+        });
+    }
+}
+
+@if(session()->has('open_assessment_code'))
+document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+        submitAssessmentAccessWithCode("{{ session('open_assessment_code') }}");
+    }, 250);
+});
+@endif
 </script>

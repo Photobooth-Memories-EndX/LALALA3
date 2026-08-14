@@ -43,29 +43,9 @@
                 abort(404);
             }
 
-            \Log::info('[ASSESSMENT DEBUG] view() called', [
-                'slug'            => $slug,
-                'assessment_id'   => $assesment ? $assesment->id : null,
-                'assessment_type' => $assesment ? $assesment->type : null,
-                'assessment_status' => $assesment ? $assesment->status : null,
-                'trainingplan_id' => $assesment ? $assesment->trainingplan_id : null,
-                'fromdate'        => $assesment ? $assesment->fromdate : null,
-                'todate'          => $assesment ? $assesment->todate : null,
-                'today'           => $today,
-                'user_id'         => auth()->user()->id,
-                'user_name'       => auth()->user()->name,
-                'user_team'       => auth()->user()->team ?? null,
-                'user_department' => auth()->user()->department ?? null,
-                'is_admin'        => auth()->user()->isAdmin(),
-            ]);
-
-            $denialReason = $assessmentAccess->denialReason($assesment, auth()->user());
-            if ($denialReason !== null) {
-                return $this->assessmentAccessDeniedResponse(
-                    $assesment,
-                    $denialReason,
-                    $assessmentAccess
-                );
+            $reason = $assessmentAccess->denialReason($assesment, auth()->user());
+            if ($reason !== null) {
+                return $this->assessmentAccessDeniedResponse($assesment, $reason, $assessmentAccess);
             }
 
             //jika bukan ADMIN
@@ -147,7 +127,10 @@
                 abort(404);
             }
 
-            $assessmentAccess->authorize($assesment, auth()->user());
+            $reason = $assessmentAccess->denialReason($assesment, auth()->user());
+            if ($reason !== null) {
+                return $this->assessmentAccessDeniedResponse($assesment, $reason, $assessmentAccess);
+            }
 
             // counting total questions from total of questions amount of assessment qyuestion bank.
             $assessmentQuestionBank      = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
@@ -228,7 +211,10 @@
             if ($assesment === null) {
                 abort(404);
             }
-            $assessmentAccess->authorizeForViewingResult($assesment, auth()->user());
+            $reason = $assessmentAccess->denialReasonForViewingResult($assesment, auth()->user());
+            if ($reason !== null) {
+                return $this->assessmentAccessDeniedResponse($assesment, $reason, $assessmentAccess);
+            }
 
             $assesmentResultId = session('assesmentResultId');
             $assesment_result = null;
@@ -262,7 +248,17 @@
                 abort(404);
             }
 
-            $assessmentAccess->authorize($assesment, auth()->user());
+            $reason = $assessmentAccess->denialReason($assesment, auth()->user());
+            if ($reason !== null) {
+                if (request()->wantsJson() || request()->ajax()) {
+                    return response()->json([
+                        'status' => 403,
+                        'message' => $assessmentAccess->message($reason),
+                        'reason' => $reason,
+                    ], 403);
+                }
+                return $this->assessmentAccessDeniedResponse($assesment, $reason, $assessmentAccess);
+            }
 
             // counting total questions from total of questions amount of assessment qyuestion bank.
             $assessmentQuestionBank      = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');

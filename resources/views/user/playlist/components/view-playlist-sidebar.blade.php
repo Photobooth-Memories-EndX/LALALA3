@@ -138,23 +138,42 @@
                         </a>
 
                         @if ($lessonAssessment)
+                            @php
+                                $contentBatchDisplay = !empty($lessonAssessment->batch) && $lessonAssessment->batch !== '-'
+                                    ? (str_contains(strtolower((string)$lessonAssessment->batch), 'batch') ? $lessonAssessment->batch : 'Batch ' . $lessonAssessment->batch)
+                                    : '-';
+                                $contentFromDateVal = !empty($lessonAssessment->fromdate) ? date('d M Y, H:i', strtotime($lessonAssessment->fromdate)) : '-';
+                                $contentToDateVal = !empty($lessonAssessment->todate) ? date('d M Y, H:i', strtotime($lessonAssessment->todate)) : '-';
+                                $contentPassingGradeVal = $lessonAssessment->passing_grade !== null && $lessonAssessment->passing_grade !== '' ? $lessonAssessment->passing_grade : '-';
+                                $contentAttemptsVal = (($assessmentAttemptCounts[$lessonAssessment->id] ?? 0)) . ' / ' . (1 + (int)($lessonAssessment->total_remedials ?? 0)) . ' Attempts';
+                            @endphp
                             <div class="lesson-assessment-action">
-                                <a @if ($isAssessmentUnlocked) href="{{ route('assesment.user.view', $lessonAssessment->slug) }}" @endif
-                                   data-assessment-url="{{ route('assesment.user.view', $lessonAssessment->slug) }}"
-                                   data-required-progress="{{ $requiredAssessmentProgress }}"
-                                   data-assessment-locked-title="Complete this content to unlock the assessment."
-                                   class="btn btn-outline-primary lesson-assessment-button {{ $isAssessmentUnlocked ? '' : 'disabled' }}"
-                                   data-assessment-action
-                                   aria-disabled="{{ $isAssessmentUnlocked ? 'false' : 'true' }}"
-                                   @unless ($isAssessmentUnlocked)
-                                       tabindex="-1"
-                                       data-bs-toggle="tooltip"
-                                       data-bs-placement="top"
-                                       title="Complete this content to unlock the assessment."
-                                   @endunless>
+                                <button type="button"
+                                        class="btn btn-outline-primary lesson-assessment-button {{ $isAssessmentUnlocked ? '' : 'disabled' }}"
+                                        @if ($isAssessmentUnlocked)
+                                            data-assessment-trigger="true"
+                                            data-assessment-title="{{ $lessonAssessment->title }}"
+                                            data-assessment-type="ASSESSMENT CONTENT"
+                                            data-assessment-batch="{{ $contentBatchDisplay }}"
+                                            data-assessment-from-date="{{ $contentFromDateVal }}"
+                                            data-assessment-to-date="{{ $contentToDateVal }}"
+                                            data-assessment-passing-grade="{{ $contentPassingGradeVal }}"
+                                            data-assessment-attempts="{{ $contentAttemptsVal }}"
+                                            data-target-url="{{ route('assesment.user.view', $lessonAssessment->slug) }}"
+                                        @else
+                                            disabled
+                                            tabindex="-1"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="Complete this content to unlock the assessment."
+                                        @endif
+                                        data-assessment-url="{{ route('assesment.user.view', $lessonAssessment->slug) }}"
+                                        data-required-progress="{{ $requiredAssessmentProgress }}"
+                                        data-assessment-action
+                                        aria-disabled="{{ $isAssessmentUnlocked ? 'false' : 'true' }}">
                                     <i class="ti ti-clipboard-check me-1" aria-hidden="true"></i>
                                     Assessment Content
-                                </a>
+                                </button>
                             </div>
                         @endif
                     </div>
