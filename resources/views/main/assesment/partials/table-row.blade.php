@@ -66,7 +66,7 @@
     </td>
 
     <td style="min-width: 185px;">
-        @if ($list->timer == 'y')
+        @if ($list->hasAccessPeriod() && $list->fromdate && $list->todate)
             <div class="small">
                 <div>
                     <i class="far fa-calendar-alt mr-1 text-primary"></i>
@@ -78,9 +78,16 @@
                     {{ date('d M Y H:i', strtotime($list->todate)) }}
                 </div>
             </div>
-        @else
+        @endif
+
+        @if ($list->hasTimeLimit())
+            <div class="small fw-semibold text-primary {{ $list->hasAccessPeriod() ? 'mt-1' : '' }}">
+                <i class="fas fa-stopwatch mr-1"></i>
+                {{ $list->time_limit_minutes }} Mins Time Limit
+            </div>
+        @elseif (!$list->hasAccessPeriod())
             <span class="text-muted small">
-                No time limit
+                No Deadline
             </span>
         @endif
     </td>

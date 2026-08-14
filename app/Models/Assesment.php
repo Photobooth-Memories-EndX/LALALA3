@@ -55,9 +55,28 @@ class Assesment extends Model
         return $this->belongsTo(TrainingPlan::class, 'trainingplan_id', 'id')->withTrashed()->withDefault();
     }
 
+    protected $guarded = ['id'];
+
+    protected $casts = [
+        'has_access_period' => 'boolean',
+    ];
+
+    public function hasAccessPeriod(): bool
+    {
+        if ($this->has_access_period !== null) {
+            return (bool) $this->has_access_period;
+        }
+        return !empty($this->fromdate) && !empty($this->todate);
+    }
+
+    public function hasTimeLimit(): bool
+    {
+        return ($this->timer === 'y') && !empty($this->time_limit_minutes) && (int) $this->time_limit_minutes > 0;
+    }
+
     public static function getUpcomingDeadlineByUser($userId)
     {
-    $contentIds = ContentUser::where(
+        $contentIds = ContentUser::where(
             'user_id',
             $userId
         )
@@ -65,13 +84,13 @@ class Assesment extends Model
         ->pluck('content_id')
         ->toArray();
 
-    return self::where('status', 'OK')
-        ->whereNotNull('todate')
-        ->whereDate('todate', '>=', now())
-        ->whereIn('content_id', $contentIds)
-        ->orderBy('todate')
-        ->take(5)
-        ->get();
+        return self::where('status', 'OK')
+            ->where('has_access_period', true)
+            ->whereNotNull('todate')
+            ->whereDate('todate', '>=', now())
+            ->whereIn('content_id', $contentIds)
+            ->orderBy('todate')
+            ->take(5)
+            ->get();
     }
-
 }

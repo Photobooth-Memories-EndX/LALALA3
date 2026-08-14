@@ -39,13 +39,19 @@
                                         Batch: {{ $assesment->batch ?? '-' }}
                                     </span>
 
-                                    @if (($assesment->timer ?? 'n') == 'y')
+                                    @if ($assesment->hasAccessPeriod() && $assesment->fromdate && $assesment->todate)
                                         <span class="badge bg-orange-lt text-orange">
-                                            Timed Assessment
+                                            Period: {{ date('d M H:i', strtotime($assesment->fromdate)) }} – {{ date('d M H:i', strtotime($assesment->todate)) }}
                                         </span>
-                                    @else
+                                    @endif
+
+                                    @if ($assesment->hasTimeLimit())
+                                        <span class="badge bg-blue-lt text-blue">
+                                            Time Limit: {{ $assesment->time_limit_minutes }} mins
+                                        </span>
+                                    @elseif (!$assesment->hasAccessPeriod())
                                         <span class="badge bg-green-lt text-green">
-                                            No Timer
+                                            No Deadline
                                         </span>
                                     @endif
                                 </div>
@@ -55,7 +61,7 @@
                 </div>
             </div>
 
-            @if (($assesment->timer ?? 'n') == 'y')
+            @if (!empty($countDownDate))
                 <div class="col-lg-3">
                     <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 1rem; z-index: 10;">
                         <div class="card-body text-center">
@@ -417,9 +423,9 @@
         });
     </script>
 
-    @if (($assesment->timer ?? 'n') == 'y')
+    @if (!empty($countDownDate))
         <script>
-            var countDownDate = new Date("{{ $assesment->todate }}").getTime();
+            var countDownDate = new Date("{{ $countDownDate }}").getTime();
 
             var x = setInterval(function () {
                 var now = new Date().getTime();
@@ -429,7 +435,8 @@
                 var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 var seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-                document.getElementById("timer").innerHTML = hours + "h " + minutes + "m " + seconds + "s ";
+                var displayHours = hours > 0 ? hours + "h " : "";
+                document.getElementById("timer").innerHTML = displayHours + minutes + "m " + seconds + "s ";
 
                 if (distance < 0) {
                     clearInterval(x);

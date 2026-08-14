@@ -70,14 +70,39 @@
                 }
             }
 
-            //cek jawaban draft (autosave) jika pengisian sebelumnya ada kendala (untuk di load ke option, jawaban sebelumnya ke ceklis)
-            $assesment_result_draft = AssesmentResult::select('user_answer')
-                ->where('user_id', auth()->user()->id)
+            // Cek jawaban draft (autosave) / record attempt start
+            $assesment_result_draft = AssesmentResult::where('user_id', auth()->user()->id)
                 ->where('assesment_id', $assesment->id)
                 ->where('batch', $assesment->batch)
                 ->whereFinal(0)
                 ->latest('id')
                 ->first();
+
+            $countDownDate = null;
+
+            if ($assesment->hasTimeLimit()) {
+                if (!$assesment_result_draft && !auth()->user()->isAdmin()) {
+                    $assesment_result_draft = AssesmentResult::create([
+                        'user_id'      => auth()->user()->id,
+                        'assesment_id' => $assesment->id,
+                        'batch'        => $assesment->batch,
+                        'final'        => 0,
+                        'user_answer'  => null,
+                        'score'        => 0,
+                        'pass'         => 0,
+                    ]);
+                }
+
+                if ($assesment_result_draft) {
+                    $startedAt = $assesment_result_draft->created_at;
+                    $expiresAt = $startedAt->copy()->addMinutes((int) $assesment->time_limit_minutes);
+                    $countDownDate = $expiresAt->format('Y-m-d H:i:s');
+                } else {
+                    $countDownDate = now()->addMinutes((int) $assesment->time_limit_minutes)->format('Y-m-d H:i:s');
+                }
+            } elseif ($assesment->hasAccessPeriod() && $assesment->todate) {
+                $countDownDate = $assesment->todate;
+            }
 
             $submissionSessionKey = "assessment_submission_token.{$assesment->id}.{$assesment->batch}";
             $assessmentSubmissionToken = session($submissionSessionKey);
@@ -111,7 +136,8 @@
                 'assesment',
                 'assesment_question',
                 'assesment_result_draft',
-                'assessmentSubmissionToken'
+                'assessmentSubmissionToken',
+                'countDownDate'
             ));
         }
 

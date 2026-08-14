@@ -81,25 +81,32 @@
         $assessment->trainingplan->title ?? null,
     ])->merge($contentTitles)->filter()->implode(' ');
     $now = time();
-    $fromDateRaw = !empty($assessment->fromdate) ? (strlen(trim((string) $assessment->fromdate)) === 10 ? trim((string) $assessment->fromdate) . ' 23:59:59' : (string) $assessment->fromdate) : null;
-    $toDateRaw = !empty($assessment->todate) ? (strlen(trim((string) $assessment->todate)) === 10 ? trim((string) $assessment->todate) . ' 23:59:59' : (string) $assessment->todate) : null;
-    $fromDate = $fromDateRaw ? strtotime($fromDateRaw) : null;
-    $toDate = $toDateRaw ? strtotime($toDateRaw) : null;
+    $hasAccessPeriod = $assessment->hasAccessPeriod();
+    $hasTimeLimit = $assessment->hasTimeLimit();
 
-    $isExpired = $toDate ? ($now > $toDate) : false;
-    $isUpcoming = $fromDate ? ($now < $fromDate) : false;
-    $availability = $isUpcoming ? 'upcoming' : ($isExpired ? 'expired' : 'available');
+    if ($hasAccessPeriod && !empty($assessment->fromdate) && !empty($assessment->todate)) {
+        $fromDateRaw = (strlen(trim((string) $assessment->fromdate)) === 10 ? trim((string) $assessment->fromdate) . ' 23:59:59' : (string) $assessment->fromdate);
+        $toDateRaw = (strlen(trim((string) $assessment->todate)) === 10 ? trim((string) $assessment->todate) . ' 23:59:59' : (string) $assessment->todate);
+        $fromDate = strtotime($fromDateRaw);
+        $toDate = strtotime($toDateRaw);
+
+        $isExpired = $toDate ? ($now > $toDate) : false;
+        $isUpcoming = $fromDate ? ($now < $fromDate) : false;
+        $availability = $isUpcoming ? 'upcoming' : ($isExpired ? 'expired' : 'available');
+
+        $fromDateDisplay = date('d M Y, H:i', strtotime($assessment->fromdate));
+        $toDateDisplay = date('d M Y, H:i', strtotime($assessment->todate));
+    } else {
+        $isExpired = false;
+        $isUpcoming = false;
+        $availability = 'available';
+        $fromDateDisplay = '-';
+        $toDateDisplay = $hasTimeLimit ? ('Time Limit: ' . $assessment->time_limit_minutes . ' mins') : 'No Deadline';
+    }
 
     $totalRemedials = (int) ($assessment->total_remedials ?? 0);
     $maxAttempts = 1 + $totalRemedials;
     $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
-
-    $fromDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->fromdate))
-        ? date('d M Y, H:i', strtotime($assessment->fromdate))
-        : '-';
-    $toDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->todate))
-        ? date('d M Y, H:i', strtotime($assessment->todate))
-        : '-';
 @endphp
 
 <tr class="assessment-row"
@@ -161,15 +168,21 @@
     </td>
 
     <td class="text-start align-middle small lh-sm" data-order="{{ $assessment->fromdate ? strtotime($assessment->fromdate) : 0 }}">
-        @if (($assessment->timer ?? 'n') == 'y')
+        @if ($hasAccessPeriod && !empty($assessment->fromdate) && !empty($assessment->todate))
             <div>
-                <span class="text-muted fw-medium">From:</span> {{ $assessment->fromdate ? date('d/m/y H:i', strtotime($assessment->fromdate)) : '-' }}
+                <span class="text-muted fw-medium">From:</span> {{ date('d/m/y H:i', strtotime($assessment->fromdate)) }}
             </div>
             <div>
-                <span class="text-muted fw-medium">To:</span> {{ $assessment->todate ? date('d/m/y H:i', strtotime($assessment->todate)) : '-' }}
+                <span class="text-muted fw-medium">To:</span> {{ date('d/m/y H:i', strtotime($assessment->todate)) }}
             </div>
-        @else
-            -
+        @endif
+
+        @if ($hasTimeLimit)
+            <div class="{{ $hasAccessPeriod ? 'mt-1' : '' }}">
+                <span class="badge bg-blue-lt text-blue"><i class="ti ti-clock me-1"></i>{{ $assessment->time_limit_minutes }} mins</span>
+            </div>
+        @elseif (!$hasAccessPeriod)
+            <span class="text-muted">No Deadline</span>
         @endif
     </td>
 

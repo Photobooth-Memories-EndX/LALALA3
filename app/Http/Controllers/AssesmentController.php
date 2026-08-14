@@ -126,27 +126,45 @@ class AssesmentController extends Controller
 
     public function store(Request $request)
     {
+        $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
+        $hasTimeLimit    = in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
+
         $request->validate([
-            'title'           => 'required',
-            'unique_code'     => 'nullable|max:8|alpha_dash|unique:assesments,unique_code',
-            'type'            => 'required',
-            'timer'           => 'required',
-            'fromdate'        => 'required_if:timer,y',
-            'todate'          => 'required_if:timer,y',
-            'passing_grade'   => 'required',
-            'total_remedials' => 'required',
+            'title'              => 'required',
+            'unique_code'        => 'nullable|max:8|alpha_dash|unique:assesments,unique_code',
+            'type'               => 'required',
+            'fromdate'           => $hasAccessPeriod ? 'required' : 'nullable',
+            'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
+            'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
+            'passing_grade'      => 'required',
+            'total_remedials'    => 'required',
         ]);
 
         $assesment = new Assesment();
-        $assesment->type            = $request->input('type');
-        $assesment->content_id      = $request->input('content_id');
-        $assesment->trainingplan_id = $request->input('trainingplan_id');
-        $assesment->title           = $request->input('title');
-        $assesment->unique_code     = $request->input('unique_code');
-        $assesment->passing_grade   = $request->input('passing_grade');
-        $assesment->timer           = $request->input('timer');
-        $assesment->fromdate        = $request->input('fromdate');
-        $assesment->todate          = $request->input('todate');
+        $assesment->type               = $request->input('type');
+        $assesment->content_id         = $request->input('content_id');
+        $assesment->trainingplan_id    = $request->input('trainingplan_id');
+        $assesment->title              = $request->input('title');
+        $assesment->unique_code        = $request->input('unique_code');
+        $assesment->passing_grade      = $request->input('passing_grade');
+
+        $assesment->has_access_period  = $hasAccessPeriod;
+        $assesment->fromdate           = $hasAccessPeriod ? $request->input('fromdate') : null;
+        $assesment->todate             = $hasAccessPeriod ? $request->input('todate') : null;
+
+        $assesment->timer              = $hasTimeLimit ? 'y' : 'n';
+        $assesment->time_limit_minutes = $hasTimeLimit ? $request->input('time_limit_minutes') : null;
+
+        if ($hasAccessPeriod && $hasTimeLimit) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasAccessPeriod) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasTimeLimit) {
+            $assesment->deadline_type = 'time_limit';
+        } else {
+            $assesment->deadline_type = 'none';
+        }
+
         $assesment->total_remedials = $request->input('total_remedials');
         $assesment->save();
 
@@ -168,26 +186,44 @@ class AssesmentController extends Controller
 
     public function update(Request $request, Assesment $assesment)
     {
+        $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
+        $hasTimeLimit    = in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
+
         $request->validate([
-            'title'           => 'required',
-            'unique_code'     => 'nullable|max:8|alpha_dash|unique:assesments,unique_code,' . $assesment->id,
-            'type'            => 'required',
-            'timer'           => 'required',
-            'fromdate'        => 'required_if:timer,y',
-            'todate'          => 'required_if:timer,y',
-            'passing_grade'   => 'required',
-            'total_remedials' => 'required',
+            'title'              => 'required',
+            'unique_code'        => 'nullable|max:8|alpha_dash|unique:assesments,unique_code,' . $assesment->id,
+            'type'               => 'required',
+            'fromdate'           => $hasAccessPeriod ? 'required' : 'nullable',
+            'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
+            'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
+            'passing_grade'      => 'required',
+            'total_remedials'    => 'required',
         ]);
 
-        $assesment->type            = $request->input('type');
-        $assesment->content_id      = $request->input('content_id');
-        $assesment->trainingplan_id = $request->input('trainingplan_id');
-        $assesment->title           = $request->input('title');
-        $assesment->unique_code     = $request->input('unique_code');
-        $assesment->passing_grade   = $request->input('passing_grade');
-        $assesment->timer           = $request->input('timer');
-        $assesment->fromdate        = $request->input('fromdate');
-        $assesment->todate          = $request->input('todate');
+        $assesment->type               = $request->input('type');
+        $assesment->content_id         = $request->input('content_id');
+        $assesment->trainingplan_id    = $request->input('trainingplan_id');
+        $assesment->title              = $request->input('title');
+        $assesment->unique_code        = $request->input('unique_code');
+        $assesment->passing_grade      = $request->input('passing_grade');
+
+        $assesment->has_access_period  = $hasAccessPeriod;
+        $assesment->fromdate           = $hasAccessPeriod ? $request->input('fromdate') : null;
+        $assesment->todate             = $hasAccessPeriod ? $request->input('todate') : null;
+
+        $assesment->timer              = $hasTimeLimit ? 'y' : 'n';
+        $assesment->time_limit_minutes = $hasTimeLimit ? $request->input('time_limit_minutes') : null;
+
+        if ($hasAccessPeriod && $hasTimeLimit) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasAccessPeriod) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasTimeLimit) {
+            $assesment->deadline_type = 'time_limit';
+        } else {
+            $assesment->deadline_type = 'none';
+        }
+
         $assesment->total_remedials = $request->input('total_remedials');
         $assesment->save();
 
@@ -216,20 +252,35 @@ class AssesmentController extends Controller
 
     public function updatelink(Request $request, Assesment $assesment)
     {
+        $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
+        $hasTimeLimit    = in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
+
         $request->validate([
-            //'slug' => 'required|unique:assesments,slug',
-            'slug' => 'required',
-            'batch' => 'required',
-            'timer' => 'required',
-            'fromdate' => 'required_if:timer,y',
-            'todate' => 'required_if:timer,y',
+            'slug'               => 'required',
+            'batch'              => 'required',
+            'fromdate'           => $hasAccessPeriod ? 'required' : 'nullable',
+            'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
+            'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
         ]);
 
+        $assesment->batch              = $request->input('batch');
+        $assesment->has_access_period  = $hasAccessPeriod;
+        $assesment->fromdate           = $hasAccessPeriod ? $request->input('fromdate') : null;
+        $assesment->todate             = $hasAccessPeriod ? $request->input('todate') : null;
 
-        $assesment->timer = $request->input('timer');
-        $assesment->fromdate = $request->input('fromdate');
-        $assesment->todate = $request->input('todate');
-        $assesment->batch = $request->input('batch');
+        $assesment->timer              = $hasTimeLimit ? 'y' : 'n';
+        $assesment->time_limit_minutes = $hasTimeLimit ? $request->input('time_limit_minutes') : null;
+
+        if ($hasAccessPeriod && $hasTimeLimit) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasAccessPeriod) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasTimeLimit) {
+            $assesment->deadline_type = 'time_limit';
+        } else {
+            $assesment->deadline_type = 'none';
+        }
+
         $assesment->save();
         $assesment->slug = $request->input('slug');
         $assesment->update();

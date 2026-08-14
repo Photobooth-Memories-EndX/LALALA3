@@ -31,16 +31,40 @@ final class AssessmentAccessService
             return self::REASON_INACTIVE;
         }
 
-        // 3. Datetime schedule evaluation (evaluated when status = OK)
-        if ($assessment->fromdate && $assessment->todate) {
-            $nowValue = ($now ?? now())->format('Y-m-d H:i:s');
+        // 3. Datetime schedule & time limit evaluation
+        $nowValue = ($now ?? now())->format('Y-m-d H:i:s');
 
-            if ($nowValue < $assessment->fromdate) {
-                return self::REASON_BEFORE_START;
+        // Check if user already has an active draft (already started)
+        $activeDraft = AssesmentResult::where('user_id', $user->id)
+            ->where('assesment_id', $assessment->id)
+            ->where('batch', $assessment->batch)
+            ->where('final', 0)
+            ->latest('id')
+            ->first();
+
+        if ($activeDraft) {
+            // User has ALREADY STARTED the assessment
+            if ($assessment->timer === 'y' && !empty($assessment->time_limit_minutes) && (int) $assessment->time_limit_minutes > 0) {
+                $startedAt = $activeDraft->created_at;
+                $expiresAt = $startedAt->copy()->addMinutes((int) $assessment->time_limit_minutes);
+                if ($nowValue > $expiresAt->format('Y-m-d H:i:s')) {
+                    return self::REASON_EXPIRED;
+                }
+            } elseif ($assessment->hasAccessPeriod() && $assessment->todate) {
+                if ($nowValue > $assessment->todate) {
+                    return self::REASON_EXPIRED;
+                }
             }
+        } else {
+            // User has NOT STARTED yet. Check Access Period if enabled.
+            if ($assessment->hasAccessPeriod() && $assessment->fromdate && $assessment->todate) {
+                if ($nowValue < $assessment->fromdate) {
+                    return self::REASON_BEFORE_START;
+                }
 
-            if ($nowValue > $assessment->todate) {
-                return self::REASON_EXPIRED;
+                if ($nowValue > $assessment->todate) {
+                    return self::REASON_EXPIRED;
+                }
             }
         }
 
