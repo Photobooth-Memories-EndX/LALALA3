@@ -42,8 +42,11 @@
         <div class="col-lg-3">
             <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 1rem; z-index: 10;">
                 <div class="card-body text-center">
-                    <div class="text-muted small mb-1">Sisa Waktu</div>
-                    <div class="h2 mb-0 text-danger fw-bold" id="timer">Loading...</div>
+                    <div class="text-muted small mb-1">Time Remaining</div>
+                    <div id="timer" class="text-danger fw-bold">
+                        <div class="small text-uppercase text-muted fw-semibold mb-1" id="timer-days">-- DAYS</div>
+                        <div class="h2 mb-0 font-monospace text-danger fw-bold" id="timer-clock">--:--:--</div>
+                    </div>
                 </div>
             </div>
         </div>

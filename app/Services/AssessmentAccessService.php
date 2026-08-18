@@ -46,17 +46,23 @@ final class AssessmentAccessService
             ->first();
 
         if ($activeDraft) {
-            // User has ALREADY STARTED the assessment
-            if ($assessment->timer === 'y' && !empty($assessment->time_limit_minutes) && (int) $assessment->time_limit_minutes > 0) {
-                $startedAt = $activeDraft->created_at;
-                $expiresAt = $startedAt->copy()->addMinutes((int) $assessment->time_limit_minutes);
-                if ($nowValue > $expiresAt->format('Y-m-d H:i:s')) {
-                    return self::REASON_EXPIRED;
-                }
-            } elseif ($assessment->hasAccessPeriod() && $assessment->todate) {
-                if ($nowValue > $assessment->todate) {
-                    return self::REASON_EXPIRED;
-                }
+            // User has ALREADY STARTED the assessment. Evaluate effective deadline.
+            $hasAccessPeriod = $assessment->hasAccessPeriod() && !empty($assessment->todate);
+            $hasTimeLimit    = $assessment->timer === 'y' && !empty($assessment->time_limit_minutes) && (int) $assessment->time_limit_minutes > 0;
+
+            $effectiveDeadline = null;
+            if ($hasAccessPeriod && $hasTimeLimit) {
+                $periodDeadline    = Carbon::parse($assessment->todate);
+                $timeLimitDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assessment->time_limit_minutes);
+                $effectiveDeadline = $periodDeadline->min($timeLimitDeadline);
+            } elseif ($hasAccessPeriod) {
+                $effectiveDeadline = Carbon::parse($assessment->todate);
+            } elseif ($hasTimeLimit) {
+                $effectiveDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assessment->time_limit_minutes);
+            }
+
+            if ($effectiveDeadline !== null && $nowValue > $effectiveDeadline->format('Y-m-d H:i:s')) {
+                return self::REASON_EXPIRED;
             }
         } else {
             // User has NOT STARTED yet. Check Access Period if enabled.

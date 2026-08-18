@@ -80,23 +80,36 @@
             $countDownDate = null;
             $expiresAtIso = null;
 
-            if ($assesment->hasTimeLimit()) {
-                if (!$assesment_result_draft) {
-                    $assesment_result_draft = AssesmentResult::create([
-                        'user_id'      => auth()->user()->id,
-                        'assesment_id' => $assesment->id,
-                        'batch'        => $assesment->batch,
-                        'final'        => 0,
-                        'user_answer'  => [],
-                        'score'        => 0,
-                        'pass'         => 0,
-                    ]);
-                }
+            $hasAccessPeriod = $assesment->hasAccessPeriod() && !empty($assesment->todate);
+            $hasTimeLimit    = $assesment->hasTimeLimit();
 
-                $startedAt = $assesment_result_draft->created_at;
-                $expiresAt = $startedAt->copy()->addMinutes((int) $assesment->time_limit_minutes);
-                $countDownDate = $expiresAt->format('Y-m-d H:i:s');
-                $expiresAtIso  = $expiresAt->toIso8601String();
+            if ($hasTimeLimit && !$assesment_result_draft) {
+                $assesment_result_draft = AssesmentResult::create([
+                    'user_id'      => auth()->user()->id,
+                    'assesment_id' => $assesment->id,
+                    'batch'        => $assesment->batch,
+                    'final'        => 0,
+                    'user_answer'  => [],
+                    'score'        => 0,
+                    'pass'         => 0,
+                ]);
+            }
+
+            $effectiveDeadline = null;
+
+            if ($hasAccessPeriod && $hasTimeLimit && $assesment_result_draft) {
+                $periodDeadline    = \Illuminate\Support\Carbon::parse($assesment->todate);
+                $timeLimitDeadline = $assesment_result_draft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
+                $effectiveDeadline = $periodDeadline->min($timeLimitDeadline);
+            } elseif ($hasAccessPeriod) {
+                $effectiveDeadline = \Illuminate\Support\Carbon::parse($assesment->todate);
+            } elseif ($hasTimeLimit && $assesment_result_draft) {
+                $effectiveDeadline = $assesment_result_draft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
+            }
+
+            if ($effectiveDeadline !== null) {
+                $countDownDate = $effectiveDeadline->format('Y-m-d H:i:s');
+                $expiresAtIso  = $effectiveDeadline->toIso8601String();
             }
 
             $submissionSessionKey = "assessment_submission_token.{$assesment->id}.{$assesment->batch}";

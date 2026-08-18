@@ -115,23 +115,12 @@
                 var now = new Date().getTime();
                 var distance = countDownDate - now;
 
-                var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-                var displayHours = hours > 0 ? hours + "h " : "";
-                var displayMinutes = minutes < 10 ? "0" + minutes : minutes;
-                var displaySeconds = seconds < 10 ? "0" + seconds : seconds;
-
                 var timerEl = document.getElementById("timer");
-                if (timerEl) {
-                    timerEl.innerHTML = displayHours + displayMinutes + "m " + displaySeconds + "s";
-                }
 
                 if (distance <= 0) {
                     clearInterval(x);
                     if (timerEl) {
-                        timerEl.innerHTML = "EXPIRED";
+                        timerEl.innerHTML = '<div class="h2 mb-0 text-danger fw-bold">EXPIRED</div>';
                     }
 
                     @if(!in_array((int) (auth()->user()->role ?? auth()->user()->role_id), [2, 3], true))
@@ -141,6 +130,26 @@
                             formEl.requestSubmit();
                         }
                     @endif
+                    return;
+                }
+
+                var totalSeconds = Math.floor(distance / 1000);
+                var days = Math.floor(totalSeconds / 86400);
+                var remainingSeconds = totalSeconds % 86400;
+                var hours = Math.floor(remainingSeconds / 3600);
+                var minutes = Math.floor((remainingSeconds % 3600) / 60);
+                var seconds = remainingSeconds % 60;
+
+                var pad = function (num) {
+                    return num < 10 ? '0' + num : num;
+                };
+
+                var daysLabel = (days === 1) ? '1 DAY' : (days + ' DAYS');
+                var clockString = pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+
+                if (timerEl) {
+                    timerEl.innerHTML = '<div class="small text-uppercase text-muted fw-semibold mb-1">' + daysLabel + '</div>' +
+                                        '<div class="h1 mb-0 font-monospace text-danger fw-bold">' + clockString + '</div>';
                 }
             }, 1000);
         })();
