@@ -247,15 +247,26 @@
                     ->first();
             }
 
-            if (!$assesment_result) {
-                $assesment_result = AssesmentResult::where('assesment_id', $assesment->id)
-                    ->where('user_id', auth()->id())
+            $currentAttempt = null;
+            $maxAttempts = null;
+
+            if (($assesment->type ?? '') !== 'global' && $assesment_result) {
+                $batch = $assesment_result->batch ?? $assesment->batch;
+                $currentAttempt = AssesmentResult::where('user_id', auth()->id())
+                    ->where('assesment_id', $assesment->id)
+                    ->where('batch', $batch)
                     ->where('final', 1)
-                    ->latest('id')
-                    ->firstOrFail();
+                    ->where('id', '<=', $assesment_result->id)
+                    ->count();
+
+                if ($currentAttempt === 0) {
+                    $currentAttempt = 1;
+                }
+
+                $maxAttempts = 1 + (int) ($assesment->total_remedials ?? 0);
             }
 
-            return view('user.assesment.result', compact('assesment', 'assesment_result'));
+            return view('user.assesment.result', compact('assesment', 'assesment_result', 'currentAttempt', 'maxAttempts'));
         }
 
         public function autosave(Request $request, $slug, AssessmentAccessService $assessmentAccess)
