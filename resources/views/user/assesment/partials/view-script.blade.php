@@ -144,12 +144,35 @@
             }
         }, true); // Gunakan parameter true (capturing phase) agar diproses lebih dulu
 
-        // Eksekusi pindah halaman jika user klik "Yes, Leave Test"
+        // Ketika user menekan tombol "Yes, Leave Test" di modal
         var confirmBtn = document.getElementById('btnConfirmLeaveTest');
         if (confirmBtn) {
-            confirmBtn.addEventListener('click', function() {
-                if (pendingTargetUrl) {
-                    window.location.href = pendingTargetUrl;
+            confirmBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                window.assessmentAutoSubmit = true;
+                this.disabled = true;
+                this.innerText = 'Submitting...';
+
+                var assessmentForm = document.getElementById('formAssesment') || document.getElementById('assessmentForm') || document.querySelector('form[action*="assesment"]') || document.querySelector('form');
+
+                if (assessmentForm) {
+                    // Hapus validasi HTML5 jika ada agar form tetap bisa ter-submit meskipun belum semua soal diisi
+                    assessmentForm.removeAttribute('novalidate');
+                    
+                    // Trigger pemicu submit form assessment secara resmi
+                    if (typeof assessmentForm.requestSubmit === 'function') {
+                        assessmentForm.requestSubmit();
+                    } else {
+                        assessmentForm.submit();
+                    }
+                } else {
+                    // Fallback submit jika tombol Finish & Submit Answers diklik secara terprogram
+                    var finishBtn = document.getElementById('submitAssesment') || document.getElementById('btnFinishSubmit') || document.querySelector('button[type="submit"]');
+                    if (finishBtn) {
+                        finishBtn.disabled = false; // Aktifkan bypass
+                        finishBtn.click();
+                    }
                 }
             });
         }
