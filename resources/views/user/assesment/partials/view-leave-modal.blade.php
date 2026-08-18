@@ -7,7 +7,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body py-3 text-secondary">
+            <div class="modal-body py-3 text-dark fw-normal" style="color: #212529 !important;">
                 Are you sure you want to leave this test?
             </div>
             <div class="modal-footer border-0 pt-0">

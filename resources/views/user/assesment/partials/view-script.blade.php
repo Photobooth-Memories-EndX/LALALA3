@@ -103,19 +103,38 @@
         var leaveModal = leaveModalEl && window.bootstrap ? new bootstrap.Modal(leaveModalEl) : null;
         var pendingTargetUrl = null;
 
-        // Tangkap semua klik tautan internal aplikasi
+        // Cegat tombol Back bawaan browser (Chrome Back Button)
+        history.pushState(null, null, location.href);
+
+        window.addEventListener('popstate', function (event) {
+            history.pushState(null, null, location.href);
+            pendingTargetUrl = "{{ url('/my-learning?learning_tab=assessment') }}";
+
+            if (leaveModal) {
+                leaveModal.show();
+            } else if (window.jQuery && $(leaveModalEl).modal) {
+                $(leaveModalEl).modal('show');
+            }
+        });
+
+        // Tangkap semua klik tautan internal aplikasi (termasuk Home & Logo)
         document.addEventListener('click', function(e) {
             var anchor = e.target.closest('a[href]');
             if (!anchor) return;
 
-            var href = anchor.getAttribute('href');
-            if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+            var rawHref = anchor.getAttribute('href');
+            if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
+
+            var currentPath = window.location.pathname;
+            var currentHref = window.location.href.split('#')[0];
+            var targetHref = anchor.href;
+            var targetHrefClean = targetHref ? targetHref.split('#')[0] : '';
 
             // Jika URL mengarah keluar dari lembar ujian saat ini
-            if (!window.location.href.includes(href)) {
+            if (rawHref !== currentPath && targetHrefClean !== currentHref) {
                 e.preventDefault();
                 e.stopPropagation();
-                pendingTargetUrl = href;
+                pendingTargetUrl = targetHref;
 
                 if (leaveModal) {
                     leaveModal.show();
