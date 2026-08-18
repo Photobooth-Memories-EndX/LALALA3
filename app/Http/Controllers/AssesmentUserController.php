@@ -86,7 +86,7 @@
                         'assesment_id' => $assesment->id,
                         'batch'        => $assesment->batch,
                         'final'        => 0,
-                        'user_answer'  => null,
+                        'user_answer'  => [],
                         'score'        => 0,
                         'pass'         => 0,
                     ]);
