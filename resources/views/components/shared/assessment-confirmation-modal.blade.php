@@ -267,18 +267,18 @@
                     $modal.find('#assessmentModalHeaderIconInner').attr('class', 'ti ti-refresh');
                     $modal.find('#assessmentConfirmationModalTitle').text('Assessment Remedial');
                     $modal.find('#assessmentModalSubtitle').text('Remedial Confirmation');
-                    $modal.find('#assessmentModalQuestion').text('Apakah Anda yakin ingin mengerjakan remedial assessment ini?');
+                    $modal.find('#assessmentModalQuestion').text('Are you sure you want to take this remedial assessment?');
                     
                     $modal.find('#btnConfirmAssessmentAction')
                         .removeClass('btn-success btn-assessment-start-confirm')
                         .addClass('btn-warning text-white btn-assessment-remedial-confirm')
-                        .html('<i class="ti ti-refresh me-1"></i> <span>Remedial</span>');
+                        .html('<i class="ti ti-refresh me-1"></i> <span>Start Remedial</span>');
                 } else {
                     $modal.removeClass('is-remedial-modal');
                     $modal.find('#assessmentModalHeaderIconInner').attr('class', 'ti ti-player-play');
                     $modal.find('#assessmentConfirmationModalTitle').text('Start Assessment');
                     $modal.find('#assessmentModalSubtitle').text('Confirmation');
-                    $modal.find('#assessmentModalQuestion').text('Apakah Anda yakin ingin memulai assessment ini?');
+                    $modal.find('#assessmentModalQuestion').text('Are you sure you want to start this assessment?');
                     
                     $modal.find('#btnConfirmAssessmentAction')
                         .removeClass('btn-warning btn-assessment-remedial-confirm')
