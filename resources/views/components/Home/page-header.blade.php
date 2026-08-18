@@ -65,16 +65,18 @@
 </div>
 @endif
 
-{{-- Desktop Header (>= 768px) --}}
-<div class="home-modern-db-header d-none d-md-flex">
-    <div>
+{{-- Main Page Header --}}
+<div class="home-modern-db-header mb-md-4">
+    <div class="d-none d-md-block">
         <h1 class="fw-bold home-modern-db-title home-header-title text-dark dark:text-white mb-1">{{ $heroPageTitle }}</h1>
         <p class="fw-medium home-modern-db-subtitle home-header-subtitle text-dark dark:text-white-50">{{ $heroPageSubtitle }}</p>
     </div>
-    <button type="button"
-            class="home-modern-assessment-btn bg-[#ff5700] hover:bg-[#e04d00] text-white font-semibold rounded-lg shadow-md shadow-orange-500/40"
-            id="btn-assessment-access">
-        <i class="ti ti-clipboard-list"></i>
-        Assessment Access
-    </button>
+    <div class="home-assessment-btn-wrapper">
+        <button type="button"
+                class="home-modern-assessment-btn bg-[#ff5700] hover:bg-[#e04d00] text-white font-semibold rounded-lg shadow-md shadow-orange-500/40"
+                id="btn-assessment-access">
+            <i class="ti ti-clipboard-list"></i>
+            <span>Assessment Access</span>
+        </button>
+    </div>
 </div>

@@ -157,8 +157,84 @@
     .navbar-vertical .nav-item.active > .nav-link .nav-link-title {
         /* color: #206bc4 !important; */
         color: var(--tblr-primary) !important;
+    }
 
+    /* =====================================================
+       DESKTOP SIDEBAR FIXED FOOTER LOGOUT & SCROLLABLE MENU (>= 992px)
+       ===================================================== */
+    @media (min-width: 992px) {
+        .navbar-vertical .container-fluid {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            padding-bottom: 0 !important;
+            overflow: hidden !important;
+        }
 
+        .navbar-vertical #sidebar-menu {
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            overflow: hidden !important;
+            min-height: 0 !important;
+        }
+
+        .navbar-vertical .owl-sidebar-nav {
+            flex: 1 1 auto !important;
+            overflow-y: auto !important;
+            padding-top: 4px;
+            padding-bottom: 12px;
+        }
+
+        .navbar-vertical .owl-sidebar-footer {
+            flex: 0 0 auto !important;
+            margin-top: auto !important;
+            padding-top: 10px !important;
+            padding-bottom: 16px !important;
+            border-top: 1px solid var(--owl-border, #e6e7e9) !important;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .navbar-vertical .owl-sidebar-footer {
+            margin-top: 12px !important;
+            padding-top: 10px !important;
+            padding-bottom: 8px !important;
+            border-top: 1px solid var(--owl-border, #e6e7e9) !important;
+        }
+    }
+
+    .navbar-vertical .owl-sidebar-logout-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.5rem 0.75rem;
+        border-radius: 12px;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        font-weight: 600;
+        text-align: left;
+        color: var(--owl-body-color) !important;
+        transition: all .2s ease;
+    }
+
+    .navbar-vertical .owl-sidebar-logout-btn .ti,
+    .navbar-vertical .owl-sidebar-logout-btn .nav-link-title {
+        color: var(--owl-body-color) !important;
+        transition: color .2s ease;
+    }
+
+    .navbar-vertical .owl-sidebar-logout-btn:hover {
+        background: rgba(var(--tblr-danger-rgb, 239, 51, 64), .12) !important;
+    }
+
+    .navbar-vertical .owl-sidebar-logout-btn:hover .ti,
+    .navbar-vertical .owl-sidebar-logout-btn:hover .nav-link-title {
+        color: var(--tblr-danger, #EF3340) !important;
     }
 
     .navbar-vertical .badge {
