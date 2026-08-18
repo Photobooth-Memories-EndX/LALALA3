@@ -2096,4 +2096,156 @@ body.dark-mode #modal-assessment-access .btn-primary:focus {
     }
 }
 
+/* =====================================================
+   DESKTOP HEADER DEFAULT STYLE (>= 768px)
+===================================================== */
+@media (min-width: 768px) {
+    .home-modern-db-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+}
+
+/* =====================================================
+   SHARED CONTAINER & BUTTON ALIGNMENT FOR ACTION BUTTONS
+   (Assessment Access & Training Schedule)
+===================================================== */
+@media (max-width: 767.98px) {
+    .home-modern-page .container-xl {
+        display: flex !important;
+        flex-direction: column !important;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    .home-modern-db-header,
+    .home-modern-main-row,
+    .home-main-left-col,
+    .home-main-right-col {
+        display: contents !important;
+    }
+
+    /* 1. HERO */
+    .home-hero-wrapper {
+        order: 1 !important;
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+
+    .home-hero-wrapper .shared-learning-hero {
+        margin-bottom: 0 !important;
+    }
+
+    /* 2. ASSESSMENT ACCESS CONTAINER & BUTTON */
+    .home-assessment-btn-wrapper {
+        order: 2 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-top: 14px !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .home-assessment-btn-wrapper #btn-assessment-access {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 46px !important;
+        height: 46px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        padding: 10px 16px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 4px 10px rgba(255, 87, 0, 0.25) !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    /* 3. TRAINING SCHEDULE CONTAINER & BUTTON */
+    .home-sidebar-profile-wrapper {
+        order: 3 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-top: 10px !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .home-sidebar-profile-wrapper .home-modern-sidebar-profile-card,
+    .home-sidebar-profile-wrapper .home-modern-trainingplan-card-body {
+        display: block !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        border-radius: 12px !important;
+    }
+
+    .home-sidebar-profile-wrapper .home-modern-btn-training-plan {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 46px !important;
+        height: 46px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        padding: 10px 16px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 4px 10px rgba(255, 87, 0, 0.25) !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    /* 4. CONTINUE LEARNING */
+    .home-continue-learning-wrapper {
+        order: 4 !important;
+        margin-top: 22px !important;
+    }
+
+    /* 5. UPCOMING DEADLINE ASSESSMENT */
+    .home-upcoming-deadline-wrapper {
+        order: 5 !important;
+        margin-top: 16px !important;
+    }
+
+    /* 6. TOP VIDEO */
+    .home-top-video-wrapper {
+        order: 6 !important;
+        margin-top: 16px !important;
+    }
+
+    /* 7. TRAINING MODULES */
+    .home-training-modules-wrapper {
+        order: 7 !important;
+        margin-top: 16px !important;
+    }
+
+    /* 8. LATEST GALLERY */
+    .home-latest-gallery-wrapper {
+        order: 8 !important;
+        margin-top: 16px !important;
+    }
+
+    /* 9. LATEST NEWS */
+    .home-latest-news-wrapper {
+        order: 9 !important;
+        margin-top: 16px !important;
+    }
+}
+
 </style>
