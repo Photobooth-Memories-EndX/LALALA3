@@ -198,9 +198,9 @@
                                 <i class="ti ti-user me-2"></i> Profile
                             </a>
 
-                            <form action="{{ route('logoutpage') }}" method="POST">
+                            <form action="{{ route('logoutpage') }}" method="POST" class="m-0 p-0">
                                 @csrf
-                                <button type="submit" class="dropdown-item">
+                                <button type="submit" class="dropdown-item" data-logout-trigger="true">
                                     <i class="ti ti-logout me-2"></i> Logout
                                 </button>
                             </form>
@@ -269,3 +269,5 @@
 
     </div>
 </div>
+
+@include('partials.logout-modal')
