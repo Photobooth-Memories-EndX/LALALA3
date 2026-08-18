@@ -62,7 +62,8 @@
                 $assesment_result      = $queryAssessmentResult->orderBy('score', 'desc')->first();
 
                 if ($assesment_result) {
-                    if($assessmentResultCount >= 1 + $assesment->total_remedials || $assesment_result->score >= $assesment->passing_grade  ){
+                    $maxAttempts = (string) ($assesment->type ?? '') === 'global' ? 1 : (1 + (int) ($assesment->total_remedials ?? 0));
+                    if ($assessmentResultCount >= $maxAttempts || $assesment_result->score >= $assesment->passing_grade) {
                         return view('user.assesment.done', compact('assesment', 'assesment_result'));
                     }
                 }

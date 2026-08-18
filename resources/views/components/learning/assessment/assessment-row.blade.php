@@ -105,7 +105,7 @@
     }
 
     $totalRemedials = (int) ($assessment->total_remedials ?? 0);
-    $maxAttempts = 1 + $totalRemedials;
+    $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
     $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
 @endphp
 

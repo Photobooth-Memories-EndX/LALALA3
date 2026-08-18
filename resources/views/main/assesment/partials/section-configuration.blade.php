@@ -22,7 +22,7 @@
     <div class="row g-3 mb-3">
         <div class="col-md-6">
             <label class="form-label required">Assessment Type</label>
-            <x-select name="type" onchange="setRequired(this);">
+            <x-select name="type" id="assessment_type" onchange="setRequired(this);">
                 <option value="">-choose-</option>
                 <option value="content" {{ ($type == 'content') ? 'selected' : '' }}>Assesment for content</option>
                 <option value="trainingplan" {{ ($type == 'trainingplan') ? 'selected' : '' }}>Assesment for playlist</option>

@@ -12,34 +12,91 @@
         }
     }
 
-    function setRequired(that) {
-        if (!that) return;
-        if (that.value == "content") {
-            var elContent = document.getElementById("content_id");
-            var elTp = document.getElementById("trainingplan_id");
-            if (elContent) elContent.setAttribute('required', 'required');
-            if (elTp) elTp.removeAttribute('required');
-            $("#trainingplan_id_wrapper").addClass('d-none');
-            $("#content_id_wrapper").removeClass('d-none');
-            $("#trainingplan_id").val('').change();
-        } else if (that.value == "trainingplan") {
-            var elContent = document.getElementById("content_id");
-            var elTp = document.getElementById("trainingplan_id");
-            if (elTp) elTp.setAttribute('required', 'required');
-            if (elContent) elContent.removeAttribute('required');
-            $("#content_id_wrapper").addClass('d-none');
-            $("#trainingplan_id_wrapper").removeClass('d-none');
-            $("#content_id").val('').change();
+    function updateAssessmentTypeConfiguration() {
+        const typeEl = document.getElementById('assessment_type') || document.querySelector('select[name="type"]');
+        if (!typeEl) return;
+
+        const type = typeEl.value;
+
+        const contentWrapper  = $('#content_id_wrapper');
+        const tpWrapper       = $('#trainingplan_id_wrapper');
+        const contentSelect   = $('#content_id');
+        const tpSelect        = $('#trainingplan_id');
+
+        const timeLimitSecWrapper = $('#time_limit_section_wrapper');
+        const remedialSecWrapper  = $('#remedial_section_wrapper');
+        const remedialInput       = $('#total-remedials');
+        const sectionTitle        = $('#period-timer-section-title');
+        const sectionSubtitle     = $('#period-timer-section-subtitle');
+
+        if (type === 'content') {
+            contentWrapper.removeClass('d-none');
+            tpWrapper.addClass('d-none');
+            if (contentSelect.length) contentSelect.attr('required', 'required');
+            if (tpSelect.length) {
+                tpSelect.removeAttr('required');
+                tpSelect.val('').change();
+            }
+
+            timeLimitSecWrapper.removeClass('d-none');
+            remedialSecWrapper.removeClass('d-none');
+            if (remedialInput.length) {
+                remedialInput.prop('disabled', false).attr('required', 'required');
+            }
+            if (sectionTitle.length) sectionTitle.text('Access Period & Time Limit');
+            if (sectionSubtitle.length) sectionSubtitle.text('Schedule window, duration limits, and remedial attempt configuration.');
+
+            toggleTimeLimit(document.getElementById('timer'));
+        } else if (type === 'trainingplan') {
+            contentWrapper.addClass('d-none');
+            tpWrapper.removeClass('d-none');
+            if (contentSelect.length) {
+                contentSelect.removeAttr('required');
+                contentSelect.val('').change();
+            }
+            if (tpSelect.length) tpSelect.attr('required', 'required');
+
+            timeLimitSecWrapper.removeClass('d-none');
+            remedialSecWrapper.removeClass('d-none');
+            if (remedialInput.length) {
+                remedialInput.prop('disabled', false).attr('required', 'required');
+            }
+            if (sectionTitle.length) sectionTitle.text('Access Period & Time Limit');
+            if (sectionSubtitle.length) sectionSubtitle.text('Schedule window, duration limits, and remedial attempt configuration.');
+
+            toggleTimeLimit(document.getElementById('timer'));
+        } else if (type === 'global') {
+            contentWrapper.addClass('d-none');
+            tpWrapper.addClass('d-none');
+            if (contentSelect.length) {
+                contentSelect.removeAttr('required');
+                contentSelect.val('').change();
+            }
+            if (tpSelect.length) {
+                tpSelect.removeAttr('required');
+                tpSelect.val('').change();
+            }
+
+            timeLimitSecWrapper.addClass('d-none');
+            remedialSecWrapper.addClass('d-none');
+            if (remedialInput.length) {
+                remedialInput.removeAttr('required').prop('disabled', true);
+            }
+            if (sectionTitle.length) sectionTitle.text('Access Period');
+            if (sectionSubtitle.length) sectionSubtitle.text('Schedule window configuration.');
         } else {
-            var elContent = document.getElementById("content_id");
-            var elTp = document.getElementById("trainingplan_id");
-            if (elContent) elContent.removeAttribute('required');
-            if (elTp) elTp.removeAttribute('required');
-            $("#content_id_wrapper").addClass('d-none');
-            $("#trainingplan_id_wrapper").addClass('d-none');
-            $("#content_id").val('').change();
-            $("#trainingplan_id").val('').change();
+            contentWrapper.addClass('d-none');
+            tpWrapper.addClass('d-none');
+            if (contentSelect.length) contentSelect.removeAttr('required');
+            if (tpSelect.length) tpSelect.removeAttr('required');
+            timeLimitSecWrapper.removeClass('d-none');
+            remedialSecWrapper.removeClass('d-none');
+            if (remedialInput.length) remedialInput.prop('disabled', false);
         }
+    }
+
+    function setRequired(that) {
+        updateAssessmentTypeConfiguration();
     }
 
     function toggleAccessPeriod(element) {
@@ -67,7 +124,7 @@
     }
 
     $(document).ready(function() {
+        updateAssessmentTypeConfiguration();
         toggleAccessPeriod(document.getElementById('has_access_period'));
-        toggleTimeLimit(document.getElementById('timer'));
     });
 </script>

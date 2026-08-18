@@ -448,7 +448,7 @@ class HomeUserController extends Controller
             }
 
             $totalRemedials = (int) ($assessment->total_remedials ?? 0);
-            $maxAttempts = 1 + $totalRemedials;
+            $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
 
             $fromDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->fromdate))
                 ? date('d M Y, H:i', strtotime($assessment->fromdate))

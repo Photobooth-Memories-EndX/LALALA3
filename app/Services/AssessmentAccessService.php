@@ -111,7 +111,7 @@ final class AssessmentAccessService
         }
 
         // 7. Max attempts check
-        $maxAttempts = 1 + (int) ($assessment->total_remedials ?? 0);
+        $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + (int) ($assessment->total_remedials ?? 0));
         $userAttempts = $userResults->count();
 
         if ($userAttempts >= $maxAttempts) {

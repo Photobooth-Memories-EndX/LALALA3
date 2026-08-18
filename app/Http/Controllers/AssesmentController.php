@@ -126,8 +126,9 @@ class AssesmentController extends Controller
 
     public function store(Request $request)
     {
+        $isGlobal        = $request->input('type') === 'global';
         $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
-        $hasTimeLimit    = in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
+        $hasTimeLimit    = !$isGlobal && in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
 
         $request->validate([
             'title'              => 'required',
@@ -137,13 +138,13 @@ class AssesmentController extends Controller
             'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
             'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
             'passing_grade'      => 'required',
-            'total_remedials'    => 'required',
+            'total_remedials'    => $isGlobal ? 'nullable' : 'required',
         ]);
 
         $assesment = new Assesment();
         $assesment->type               = $request->input('type');
-        $assesment->content_id         = $request->input('content_id');
-        $assesment->trainingplan_id    = $request->input('trainingplan_id');
+        $assesment->content_id         = $request->input('type') === 'content' ? $request->input('content_id') : null;
+        $assesment->trainingplan_id    = $request->input('type') === 'trainingplan' ? $request->input('trainingplan_id') : null;
         $assesment->title              = $request->input('title');
         $assesment->unique_code        = $request->input('unique_code');
         $assesment->passing_grade      = $request->input('passing_grade');
@@ -165,7 +166,7 @@ class AssesmentController extends Controller
             $assesment->deadline_type = 'none';
         }
 
-        $assesment->total_remedials = $request->input('total_remedials');
+        $assesment->total_remedials = $isGlobal ? 1 : ($request->input('total_remedials') ?? 0);
         $assesment->save();
 
         return redirect()->route('assesment.edit', $assesment->slug)->with('success','Assesment created successfully.');
@@ -186,8 +187,9 @@ class AssesmentController extends Controller
 
     public function update(Request $request, Assesment $assesment)
     {
+        $isGlobal        = $request->input('type') === 'global';
         $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
-        $hasTimeLimit    = in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
+        $hasTimeLimit    = !$isGlobal && in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
 
         $request->validate([
             'title'              => 'required',
@@ -197,12 +199,12 @@ class AssesmentController extends Controller
             'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
             'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
             'passing_grade'      => 'required',
-            'total_remedials'    => 'required',
+            'total_remedials'    => $isGlobal ? 'nullable' : 'required',
         ]);
 
         $assesment->type               = $request->input('type');
-        $assesment->content_id         = $request->input('content_id');
-        $assesment->trainingplan_id    = $request->input('trainingplan_id');
+        $assesment->content_id         = $request->input('type') === 'content' ? $request->input('content_id') : null;
+        $assesment->trainingplan_id    = $request->input('type') === 'trainingplan' ? $request->input('trainingplan_id') : null;
         $assesment->title              = $request->input('title');
         $assesment->unique_code        = $request->input('unique_code');
         $assesment->passing_grade      = $request->input('passing_grade');
@@ -224,7 +226,7 @@ class AssesmentController extends Controller
             $assesment->deadline_type = 'none';
         }
 
-        $assesment->total_remedials = $request->input('total_remedials');
+        $assesment->total_remedials = $isGlobal ? 1 : ($request->input('total_remedials') ?? 0);
         $assesment->save();
 
         return to_route('assesment.index')->with('success','Assesment updated successfully');
