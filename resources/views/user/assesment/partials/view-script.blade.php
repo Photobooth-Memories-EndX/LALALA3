@@ -36,12 +36,6 @@
 
         checkAssessmentCompletion();
 
-        window.addEventListener('beforeunload', function (e) {
-            if (assessmentSubmitting || window.assessmentAutoSubmit) return;
-            e.preventDefault();
-            e.returnValue = 'Are you sure you want to leave this test?';
-        });
-
         $('#formAssesment').on('submit', function (e) {
             if (assessmentSubmitting) {
                 e.preventDefault();
@@ -102,6 +96,44 @@
                 });
             });
         @endif
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var leaveModalEl = document.getElementById('leaveAssessmentModal');
+        var leaveModal = leaveModalEl && window.bootstrap ? new bootstrap.Modal(leaveModalEl) : null;
+        var pendingTargetUrl = null;
+
+        // Tangkap semua klik tautan internal aplikasi
+        document.addEventListener('click', function(e) {
+            var anchor = e.target.closest('a[href]');
+            if (!anchor) return;
+
+            var href = anchor.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+            // Jika URL mengarah keluar dari lembar ujian saat ini
+            if (!window.location.href.includes(href)) {
+                e.preventDefault();
+                e.stopPropagation();
+                pendingTargetUrl = href;
+
+                if (leaveModal) {
+                    leaveModal.show();
+                } else if (window.jQuery && $(leaveModalEl).modal) {
+                    $(leaveModalEl).modal('show');
+                }
+            }
+        }, true); // Gunakan parameter true (capturing phase) agar diproses lebih dulu
+
+        // Eksekusi pindah halaman jika user klik "Yes, Leave Test"
+        var confirmBtn = document.getElementById('btnConfirmLeaveTest');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function() {
+                if (pendingTargetUrl) {
+                    window.location.href = pendingTargetUrl;
+                }
+            });
+        }
     });
 </script>
 
