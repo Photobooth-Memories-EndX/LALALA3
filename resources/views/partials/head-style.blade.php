@@ -157,8 +157,25 @@
     .navbar-vertical .nav-item.active > .nav-link .nav-link-title {
         /* color: #206bc4 !important; */
         color: var(--tblr-primary) !important;
+    }
 
+    .navbar-vertical .owl-mobile-logout-btn {
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+    }
 
+    .navbar-vertical .owl-mobile-logout-btn:hover {
+        background: rgba(var(--tblr-danger-rgb, 239, 51, 64), .12) !important;
+        color: var(--tblr-danger, #EF3340) !important;
+    }
+
+    .navbar-vertical .owl-mobile-logout-btn:hover .ti,
+    .navbar-vertical .owl-mobile-logout-btn:hover .nav-link-title {
+        color: var(--tblr-danger, #EF3340) !important;
     }
 
     .navbar-vertical .badge {

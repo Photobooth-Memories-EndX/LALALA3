@@ -97,6 +97,16 @@
                     </li>
                 @endif
 
+                {{-- Mobile Sidebar Logout (Only visible in mobile navigation drawer < 992px) --}}
+                <li class="nav-item d-lg-none mt-2 pt-2 border-top">
+                    <form action="{{ route('logoutpage') }}" method="POST" id="mobile-sidebar-logout-form" class="m-0 p-0">
+                        @csrf
+                        <button type="submit" class="nav-link owl-mobile-logout-btn">
+                            <span class="nav-link-icon"><i class="ti ti-logout"></i></span>
+                            <span class="nav-link-title">Logout</span>
+                        </button>
+                    </form>
+                </li>
             </ul>
         </div>
     </div>
