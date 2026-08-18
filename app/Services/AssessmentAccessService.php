@@ -21,8 +21,11 @@ final class AssessmentAccessService
 
     public function denialReason(Assesment $assessment, User $user, ?Carbon $now = null): ?string
     {
-        // 1. Admin Bypass
-        if ($user->isAdmin()) {
+        // DEBUG ONLY:
+        // Role 2 = Admin
+        // Role 3 = Super Admin
+        // These roles bypass Assessment access restrictions for debugging/testing purposes only.
+        if ($this->isAssessmentDebugBypass($user)) {
             return null;
         }
 
@@ -129,7 +132,7 @@ final class AssessmentAccessService
 
     public function denialReasonForViewingResult(Assesment $assessment, User $user): ?string
     {
-        if ($user->isAdmin()) {
+        if ($this->isAssessmentDebugBypass($user)) {
             return null;
         }
 
@@ -177,5 +180,22 @@ final class AssessmentAccessService
             self::REASON_MAX_ATTEMPTS => 'Maximum assessment attempts reached.',
             default => 'You cannot access this assessment.',
         };
+    }
+
+    /**
+     * DEBUG ONLY
+     *
+     * Role 2 = Admin
+     * Role 3 = Super Admin
+     *
+     * These roles bypass Assessment access restrictions
+     * for debugging/testing purposes only.
+     *
+     * All other roles must follow the normal Assessment rules.
+     */
+    private function isAssessmentDebugBypass(User $user): bool
+    {
+        $roleId = (int) ($user->role ?? $user->role_id ?? 0);
+        return in_array($roleId, [2, 3], true);
     }
 }

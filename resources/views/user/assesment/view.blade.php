@@ -398,7 +398,7 @@
                             timerEl.innerHTML = "EXPIRED";
                         }
 
-                        @if(!auth()->user()->isAdmin())
+                        @if(!in_array((int) (auth()->user()->role ?? auth()->user()->role_id), [2, 3], true))
                             window.assessmentAutoSubmit = true;
                             var formEl = document.getElementById("formAssesment");
                             if (formEl) {

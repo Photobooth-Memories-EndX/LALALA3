@@ -48,14 +48,12 @@
                 return $this->assessmentAccessDeniedResponse($assesment, $reason, $assessmentAccess);
             }
 
-            //jika bukan ADMIN
-            if (!auth()->user()->isAdmin())
+            $isBypassUser = in_array((int) (auth()->user()->role ?? auth()->user()->role_id), [2, 3], true);
+
+            // Jika bukan Role 2 (Admin) atau Role 3 (Super Admin)
+            if (!$isBypassUser)
             {
-                //cek apakah user sebelumnya sudah mengikuti ujian di batch berjalan, juga apakah sudah pernah mengisi jawaban dan jawaban tsb sudah disubmit
-                // $assesment_result = AssesmentResult::where('user_id', auth()->user()->id)
-                //     ->where('assesment_id', $assesment->id)
-                //     ->where('batch', $assesment->batch)
-                //     ->whereFinal(1)->first();
+                // cek apakah user sebelumnya sudah mengikuti ujian di batch berjalan dan sudah disubmit (final = 1)
                 $queryAssessmentResult = AssesmentResult::where('user_id', auth()->user()->id)
                     ->where('assesment_id', $assesment->id)
                     ->where('batch', $assesment->batch)
@@ -82,7 +80,7 @@
             $expiresAtIso = null;
 
             if ($assesment->hasTimeLimit()) {
-                if (!$assesment_result_draft && !auth()->user()->isAdmin()) {
+                if (!$assesment_result_draft) {
                     $assesment_result_draft = AssesmentResult::create([
                         'user_id'      => auth()->user()->id,
                         'assesment_id' => $assesment->id,
@@ -94,19 +92,10 @@
                     ]);
                 }
 
-                if ($assesment_result_draft) {
-                    $startedAt = $assesment_result_draft->created_at;
-                    $expiresAt = $startedAt->copy()->addMinutes((int) $assesment->time_limit_minutes);
-                    $countDownDate = $expiresAt->format('Y-m-d H:i:s');
-                    $expiresAtIso  = $expiresAt->toIso8601String();
-                } else {
-                    $expiresAt = now()->addMinutes((int) $assesment->time_limit_minutes);
-                    $countDownDate = $expiresAt->format('Y-m-d H:i:s');
-                    $expiresAtIso  = $expiresAt->toIso8601String();
-                }
-            } elseif ($assesment->hasAccessPeriod() && $assesment->todate) {
-                $countDownDate = $assesment->todate;
-                $expiresAtIso  = \Carbon\Carbon::parse($assesment->todate)->toIso8601String();
+                $startedAt = $assesment_result_draft->created_at;
+                $expiresAt = $startedAt->copy()->addMinutes((int) $assesment->time_limit_minutes);
+                $countDownDate = $expiresAt->format('Y-m-d H:i:s');
+                $expiresAtIso  = $expiresAt->toIso8601String();
             }
 
             $submissionSessionKey = "assessment_submission_token.{$assesment->id}.{$assesment->batch}";
