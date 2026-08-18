@@ -79,6 +79,7 @@
                 ->first();
 
             $countDownDate = null;
+            $expiresAtIso = null;
 
             if ($assesment->hasTimeLimit()) {
                 if (!$assesment_result_draft && !auth()->user()->isAdmin()) {
@@ -97,11 +98,15 @@
                     $startedAt = $assesment_result_draft->created_at;
                     $expiresAt = $startedAt->copy()->addMinutes((int) $assesment->time_limit_minutes);
                     $countDownDate = $expiresAt->format('Y-m-d H:i:s');
+                    $expiresAtIso  = $expiresAt->toIso8601String();
                 } else {
-                    $countDownDate = now()->addMinutes((int) $assesment->time_limit_minutes)->format('Y-m-d H:i:s');
+                    $expiresAt = now()->addMinutes((int) $assesment->time_limit_minutes);
+                    $countDownDate = $expiresAt->format('Y-m-d H:i:s');
+                    $expiresAtIso  = $expiresAt->toIso8601String();
                 }
             } elseif ($assesment->hasAccessPeriod() && $assesment->todate) {
                 $countDownDate = $assesment->todate;
+                $expiresAtIso  = \Carbon\Carbon::parse($assesment->todate)->toIso8601String();
             }
 
             $submissionSessionKey = "assessment_submission_token.{$assesment->id}.{$assesment->batch}";
@@ -137,7 +142,8 @@
                 'assesment_question',
                 'assesment_result_draft',
                 'assessmentSubmissionToken',
-                'countDownDate'
+                'countDownDate',
+                'expiresAtIso'
             ));
         }
 

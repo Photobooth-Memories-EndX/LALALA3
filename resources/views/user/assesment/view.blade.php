@@ -17,61 +17,7 @@
             </a>
         </div>
 
-        <div class="row g-3 align-items-start mb-3">
-            <div class="col">
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-body">
-                        <div class="d-flex align-items-start gap-3">
-                            {{-- <span class="avatar avatar-lg bg-primary-lt text-primary rounded-circle">
-                                {{ strtoupper(substr($assesment->title ?? 'A', 0, 1)) }}
-                            </span> --}}
-
-                            <div class="flex-fill">
-                                <div class="text-muted small mb-1">Assessment</div>
-                                <h2 class="mb-1">{{ $assesment->title ?? '-' }}</h2>
-
-                                <div class="d-flex flex-wrap gap-2">
-                                    <span class="badge bg-blue-lt text-blue">
-                                        Passing Grade: {{ $assesment->passing_grade ?? '-' }}
-                                    </span>
-
-                                    <span class="badge bg-purple-lt text-purple">
-                                        Batch: {{ $assesment->batch ?? '-' }}
-                                    </span>
-
-                                    @if ($assesment->hasAccessPeriod() && $assesment->fromdate && $assesment->todate)
-                                        <span class="badge bg-orange-lt text-orange">
-                                            Period: {{ date('d M H:i', strtotime($assesment->fromdate)) }} – {{ date('d M H:i', strtotime($assesment->todate)) }}
-                                        </span>
-                                    @endif
-
-                                    @if ($assesment->hasTimeLimit())
-                                        <span class="badge bg-blue-lt text-blue">
-                                            Time Limit: {{ $assesment->time_limit_minutes }} mins
-                                        </span>
-                                    @elseif (!$assesment->hasAccessPeriod())
-                                        <span class="badge bg-green-lt text-green">
-                                            No Deadline
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            @if (!empty($countDownDate))
-                <div class="col-lg-3">
-                    <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 1rem; z-index: 10;">
-                        <div class="card-body text-center">
-                            <div class="text-muted small mb-1">Sisa Waktu</div>
-                            <div class="h2 mb-0 text-danger" id="timer">Loading...</div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
+        @include('user.assesment.partials.timing')
 
         <div class="card border-0 shadow-sm rounded-4 mb-3">
             <div class="card-body">
@@ -423,31 +369,45 @@
         });
     </script>
 
-    @if (!empty($countDownDate))
+    @if (!empty($countDownDate) || !empty($expiresAtIso))
         <script>
-            var countDownDate = new Date("{{ $countDownDate }}").getTime();
+            (function() {
+                var targetTimeString = "{{ $expiresAtIso ?? $countDownDate }}";
+                var countDownDate = new Date(targetTimeString).getTime();
 
-            var x = setInterval(function () {
-                var now = new Date().getTime();
-                var distance = countDownDate - now;
+                var x = setInterval(function () {
+                    var now = new Date().getTime();
+                    var distance = countDownDate - now;
 
-                var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-                var displayHours = hours > 0 ? hours + "h " : "";
-                document.getElementById("timer").innerHTML = displayHours + minutes + "m " + seconds + "s ";
+                    var displayHours = hours > 0 ? hours + "h " : "";
+                    var displayMinutes = minutes < 10 ? "0" + minutes : minutes;
+                    var displaySeconds = seconds < 10 ? "0" + seconds : seconds;
 
-                if (distance < 0) {
-                    clearInterval(x);
-                    document.getElementById("timer").innerHTML = "EXPIRED";
+                    var timerEl = document.getElementById("timer");
+                    if (timerEl) {
+                        timerEl.innerHTML = displayHours + displayMinutes + "m " + displaySeconds + "s";
+                    }
 
-                    @if(!auth()->user()->isAdmin())
-                        window.assessmentAutoSubmit = true;
-                        document.getElementById("formAssesment").requestSubmit();
-                    @endif
-                }
-            }, 1000);
+                    if (distance <= 0) {
+                        clearInterval(x);
+                        if (timerEl) {
+                            timerEl.innerHTML = "EXPIRED";
+                        }
+
+                        @if(!auth()->user()->isAdmin())
+                            window.assessmentAutoSubmit = true;
+                            var formEl = document.getElementById("formAssesment");
+                            if (formEl) {
+                                formEl.requestSubmit();
+                            }
+                        @endif
+                    }
+                }, 1000);
+            })();
         </script>
     @endif
 @endsection
