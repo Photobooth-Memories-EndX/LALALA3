@@ -140,13 +140,29 @@
                 $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
             }
 
+            $currentAttempt = null;
+            $maxAttempts = null;
+
+            if (($assesment->type ?? '') !== 'global') {
+                $completedCount = AssesmentResult::where('user_id', auth()->id())
+                    ->where('assesment_id', $assesment->id)
+                    ->where('batch', $assesment->batch)
+                    ->where('final', 1)
+                    ->count();
+
+                $currentAttempt = $completedCount + 1;
+                $maxAttempts = 1 + (int) ($assesment->total_remedials ?? 0);
+            }
+
             return view('user.assesment.view', compact(
                 'assesment',
                 'assesment_question',
                 'assesment_result_draft',
                 'assessmentSubmissionToken',
                 'countDownDate',
-                'expiresAtIso'
+                'expiresAtIso',
+                'currentAttempt',
+                'maxAttempts'
             ));
         }
 
