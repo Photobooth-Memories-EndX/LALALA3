@@ -64,8 +64,8 @@
                             {{-- 1. Link Configuration --}}
                             @include('main.assesment.partials.section-link-configuration', ['assesment' => $assesment])
 
-                            {{-- 2. Access Period & Time Limit --}}
-                            @include('main.assesment.partials.section-period-timer', ['assesment' => $assesment, 'hideRemedials' => true])
+                            {{-- 2. Access Period --}}
+                            @include('main.assesment.partials.section-period-newlink', ['assesment' => $assesment])
 
                             {{-- 3. Assessment Actions --}}
                             <div class="owl-section-block pt-3 border-top">

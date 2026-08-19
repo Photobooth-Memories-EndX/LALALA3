@@ -18,7 +18,7 @@
     <div class="owl-section-header mb-3 pb-2 border-bottom">
         <div class="d-flex align-items-center">
             <span class="owl-section-number me-2">2</span>
-            <h3 class="owl-section-title mb-0 fw-bold" id="period-timer-section-title">{{ $isGlobal ? 'Access Period' : 'Access Period & Time Limit' }}</h3>
+            <h3 class="owl-section-title mb-0 fw-bold" id="period-timer-section-title">{{ $isGlobal ? 'Access Period' : 'Access Period & Test Duration' }}</h3>
         </div>
         <div class="text-muted small ms-4 ps-1" id="period-timer-section-subtitle">
             {{ $isGlobal ? 'Schedule window configuration.' : 'Schedule window, duration limits, and remedial attempt configuration.' }}
@@ -71,7 +71,7 @@
     {{-- Time Limit Control & Section Container --}}
     <div id="time_limit_section_wrapper" class="{{ $isGlobal ? 'd-none' : '' }}">
         <div class="mb-3">
-            <label class="form-label required">Time Limit?</label>
+            <label class="form-label required">Test Duration?</label>
             <x-select name="timer" id="timer" onchange="toggleTimeLimit(this);">
                 <option value="y" {{ $showTimer ? 'selected' : '' }}>Yes</option>
                 <option value="n" {{ !$showTimer ? 'selected' : '' }}>No</option>
@@ -82,7 +82,7 @@
             <div class="card card-sm border owl-sub-card">
                 <div class="card-header bg-transparent py-2 border-bottom-0">
                     <h4 class="card-title text-uppercase text-primary fw-bold small mb-0">
-                        <i class="fas fa-clock me-2"></i> TIME LIMIT
+                        <i class="fas fa-clock me-2"></i> TEST DURATION
                     </h4>
                 </div>
                 <div class="card-body pt-1 pb-3">
