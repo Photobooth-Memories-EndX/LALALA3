@@ -41,8 +41,8 @@
     <div class="page-body learning-view-page">
         <div class="container-xl">
 
-            <a href="{{ url()->previous() }}" class="btn btn-link px-0 mb-3">
-                <i class="fas fa-arrow-left me-2"></i> Back
+            <a href="{{ route('playlist.user.index') }}" class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1 mb-3">
+                <i class="ti ti-arrow-left"></i> Back
             </a>
 
             @include('user.playlist.components.view-hero')

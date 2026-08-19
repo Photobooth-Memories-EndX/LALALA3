@@ -78,8 +78,10 @@
                                                 <span class="trainingplan-item-badge">{{ $list->content_order + 1 }}</span>
                                                 <span class="trainingplan-item-type badge bg-blue-lt me-2">{{ $list->content->type }}</span>
                                                 <span class="trainingplan-item-title">{{ $list->content->title }}</span>
-                                                @if ($list->content && $list->content->active !== 'Active')
-                                                    <span class="badge bg-secondary text-white ms-2">Inactive</span>
+                                                @if ($list->content && $list->content->active === 'Active')
+                                                    <span class="badge rounded-pill text-white fw-semibold px-2.5 py-1 ms-2" style="background-color: #28a745 !important; font-size: 0.75rem;">Active</span>
+                                                @else
+                                                    <span class="badge rounded-pill text-white fw-semibold px-2.5 py-1 ms-2" style="background-color: #f59e0b !important; font-size: 0.75rem;">Inactive</span>
                                                 @endif
                                             </li>
                                         @endforeach

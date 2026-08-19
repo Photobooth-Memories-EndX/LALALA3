@@ -248,21 +248,29 @@
                         item: function (data, escape) {
                             var status = data.status || (data.$option ? data.$option.getAttribute('data-status') : null);
                             var isInactive = status && (status === 'Inactive' || status === 'unpublish' || status === 'draft');
-                            var inactiveBadge = isInactive ? '<span class="badge bg-secondary text-white ms-2" style="font-size:10px; padding: 2px 6px; flex-shrink: 0;">Inactive</span>' : '';
+                            var statusBadge = isInactive
+                                ? '<span class="badge rounded-pill text-white fw-semibold px-2.5 py-1 ms-2" style="background-color: #f59e0b !important; font-size: 0.75rem; flex-shrink: 0;">Inactive</span>'
+                                : '<span class="badge rounded-pill text-white fw-semibold px-2.5 py-1 ms-2" style="background-color: #28a745 !important; font-size: 0.75rem; flex-shrink: 0;">Active</span>';
 
-                            return '<div class="playlist-section-item-inner">' +
+                            return '<div class="playlist-section-item-inner d-flex align-items-center justify-content-between w-100">' +
+                                '<div class="d-flex align-items-center gap-2 text-truncate me-2 min-w-0 flex-grow-1">' +
                                 '<span class="playlist-drag-handle" title="Tarik untuk mengubah urutan">&#9776;</span>' +
                                 '<span class="playlist-section-badge"></span>' +
-                                '<span class="playlist-section-title">' + escape(data.text) + '</span>' +
-                                inactiveBadge +
+                                '<span class="playlist-section-title fw-semibold text-truncate" title="' + escape(data.text) + '">' + escape(data.text) + '</span>' +
+                                '</div>' +
+                                '<div class="d-flex align-items-center gap-2 flex-shrink-0">' +
+                                statusBadge +
+                                '</div>' +
                                 '</div>';
                         },
                         option: function (data, escape) {
                             var status = data.status || (data.$option ? data.$option.getAttribute('data-status') : null);
                             var isInactive = status && (status === 'Inactive' || status === 'unpublish' || status === 'draft');
-                            var inactiveBadge = isInactive ? '<span class="badge bg-secondary text-white ms-2" style="font-size:10px; padding: 2px 6px; flex-shrink: 0;">Inactive</span>' : '';
+                            var statusBadge = isInactive
+                                ? '<span class="badge rounded-pill text-white fw-semibold px-2.5 py-1" style="background-color: #f59e0b !important; font-size: 0.75rem;">Inactive</span>'
+                                : '<span class="badge rounded-pill text-white fw-semibold px-2.5 py-1" style="background-color: #28a745 !important; font-size: 0.75rem;">Active</span>';
 
-                            return '<div class="playlist-option-item d-flex align-items-center justify-content-between"><span>' + escape(data.text) + '</span>' + inactiveBadge + '</div>';
+                            return '<div class="playlist-option-item d-flex align-items-center justify-content-between"><span>' + escape(data.text) + '</span>' + statusBadge + '</div>';
                         },
                         no_results: function () {
                             return '<div class="p-2 text-muted" style="font-size:13px;">Konten tidak ditemukan</div>';

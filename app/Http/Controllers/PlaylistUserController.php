@@ -190,12 +190,7 @@ class PlaylistUserController extends Controller
         }
 
         $content_all = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)
-            ->whereHas('content', function ($q) {
-                $q->where('active', 'Active');
-            })
-            ->with(['content' => function ($q) {
-                $q->where('active', 'Active');
-            }])
+            ->with('content')
             ->orderByRaw('CAST(content_order AS UNSIGNED) ASC')
             ->get();
 
@@ -209,7 +204,7 @@ class PlaylistUserController extends Controller
         ]);
 
         // Recompute in-memory active duration and learning hours for the view
-        $activeDurationSeconds = $content_all->sum(function ($item) {
+        $activeDurationSeconds = $content_all->filter(fn ($item) => $item->content?->active === 'Active')->sum(function ($item) {
             return \App\Support\DurationFormatter::toSeconds($item->content?->duration) ?? 0;
         });
         $activeLearningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convertFromSeconds($activeDurationSeconds);

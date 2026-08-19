@@ -73,18 +73,25 @@ class PlaylistAndContentStatusFilterTest extends TestCase
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c2->id, 'content_order' => 1]);
 
-        // User Playlist Index
+        // User Playlist Index: Cards only show active content
         $indexResponse = $this->get(route('playlist.user.index'));
         $indexResponse->assertOk();
         $indexResponse->assertSee('Active Playlist Mixed Content');
         $indexResponse->assertSee('Active Chapter 1');
         $indexResponse->assertDontSee('Inactive Chapter 2');
 
-        // User Playlist Detail View
+        // User Playlist Detail View: Shows Back button, #1 and #2 numbering, and Inactive badge on #2
         $viewResponse = $this->get(route('playlist.user.view', [$plan->slug, $c1->slug]));
         $viewResponse->assertOk();
+        $viewResponse->assertSee(route('playlist.user.index'), false);
+        $viewResponse->assertSee('#1');
+        $viewResponse->assertSee('#2');
         $viewResponse->assertSee('Active Chapter 1');
-        $viewResponse->assertDontSee('Inactive Chapter 2');
+        $viewResponse->assertSee('Inactive Chapter 2');
+        $viewResponse->assertSee('Inactive');
+        $viewResponse->assertSee('content-title-two-lines');
+        $viewResponse->assertSee('title="Active Chapter 1"', false);
+        $viewResponse->assertSee('title="Inactive Chapter 2"', false);
 
         // Accessing Inactive Content inside Playlist should 404
         $inactiveContentResponse = $this->get(route('playlist.user.view', [$plan->slug, $c2->slug]));
