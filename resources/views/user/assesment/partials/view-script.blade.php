@@ -30,10 +30,24 @@
             }
         }
 
+        function updateNavAnswerStatus() {
+            $('#formAssesment input[type="radio"]:checked').each(function () {
+                let questionId = $(this).attr('name');
+                if (questionId) {
+                    $('.assessment-wizard .nav a[href="#step-' + questionId + '"]').addClass('done');
+                }
+            });
+        }
+
         $(document).on('change', '#formAssesment input[type="radio"]', function () {
+            let questionId = $(this).attr('name');
+            if ($(this).is(':checked') && questionId) {
+                $('.assessment-wizard .nav a[href="#step-' + questionId + '"]').addClass('done');
+            }
             checkAssessmentCompletion();
         });
 
+        updateNavAnswerStatus();
         checkAssessmentCompletion();
 
         window.addEventListener('beforeunload', function (e) {
@@ -64,6 +78,14 @@
             anchor: {
                 enableNavigationAlways: true
             }
+        });
+
+        // Hydrate and sync answered navigation dots immediately after SmartWizard initialization
+        updateNavAnswerStatus();
+
+        // Re-sync answered navigation dots whenever active step changes
+        $("#smartwizard").on("showStep", function (e, anchorObject, stepIndex, stepDirection, stepPosition) {
+            updateNavAnswerStatus();
         });
 
         // Leave step event is used for validating the forms

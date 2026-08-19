@@ -1,8 +1,16 @@
 <div id="smartwizard" class="assessment-wizard">
+    @php
+        $userAnswers = optional($assesment_result_draft)->user_answer ?? [];
+    @endphp
+
     <ul class="nav">
         @foreach ($assesment_question as $step)
+            @php
+                $qId = (string) $step->id;
+                $isAnswered = array_key_exists($qId, $userAnswers) && $userAnswers[$qId] !== null && $userAnswers[$qId] !== '';
+            @endphp
             <li class="nav-item">
-                <a class="nav-link" href="#step-{{ $step->id }}">
+                <a class="nav-link {{ $isAnswered ? 'done' : '' }}" href="#step-{{ $step->id }}">
                     <div class="num">{{ $loop->index + 1 }}</div>
                 </a>
             </li>
