@@ -127,66 +127,7 @@
                 session([$submissionSessionKey => $assessmentSubmissionToken]);
             }
 
-            if (!empty($assesment_result_draft->question_snapshot)) {
-                $snapshot = $assesment_result_draft->question_snapshot;
-                $questionIds = array_column($snapshot, 'question_id');
-
-                $questionsMap = AssesmentQuestion::whereIn('id', $questionIds)->get()->keyBy('id');
-                $assesment_question = new Collection();
-
-                foreach ($questionIds as $qid) {
-                    if (isset($questionsMap[$qid])) {
-                        $assesment_question->push($questionsMap[$qid]);
-                    }
-                }
-            } else {
-                $snapshotLockKey = 'assessment-snapshot-lock:' . auth()->id() . ':' . $assesment_result_draft->id;
-                $assesment_question = Cache::lock($snapshotLockKey, 10)->block(5, function () use ($assesment, $assesment_result_draft) {
-                    $assesment_result_draft->refresh();
-                    if (!empty($assesment_result_draft->question_snapshot)) {
-                        $snapshot = $assesment_result_draft->question_snapshot;
-                        $questionIds = array_column($snapshot, 'question_id');
-                        $questionsMap = AssesmentQuestion::whereIn('id', $questionIds)->get()->keyBy('id');
-                        $cols = new Collection();
-                        foreach ($questionIds as $qid) {
-                            if (isset($questionsMap[$qid])) {
-                                $cols->push($questionsMap[$qid]);
-                            }
-                        }
-                        return $cols;
-                    }
-
-                    $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
-
-                    if ($checkAssesmentQuestionBanks) {
-                        $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get();
-                        $assesment_question = new Collection();
-
-                        foreach ($assessmentQuestionBanks as $aqb) {
-                            $assessmentQuestions = AssesmentQuestion::where('assesment_id', $assesment->id)
-                                ->where('question_bank_id', $aqb->question_bank_id)
-                                ->where('is_used', true)
-                                ->inRandomOrder()->limit($aqb->questions_amount)->get();
-
-                            $assesment_question = $assesment_question->merge($assessmentQuestions)->shuffle();
-                        }
-                    } else {
-                        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
-                    }
-
-                    $snapshotData = $assesment_question->values()->map(function ($q, $index) {
-                        return [
-                            'question_id' => $q->id,
-                            'order'       => $index + 1,
-                        ];
-                    })->toArray();
-
-                    $assesment_result_draft->question_snapshot = $snapshotData;
-                    $assesment_result_draft->save();
-
-                    return $assesment_question;
-                });
-            }
+            $assesment_question = $this->ensureQuestionSnapshot($assesment_result_draft, $assesment);
 
             $currentAttempt = null;
             $maxAttempts = null;
@@ -267,12 +208,10 @@
             /**
              * Last Step is counting the score.
              */
-            $score = $amountOfRightAnswer * $formulaScorePerQuestion;
+            $lockKey = 'assessment-store-lock:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
+            $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
 
-            $lockKey = 'assessment-submission-lock:' . auth()->id() . ':' . $request->submission_token;
-            $completedKey = 'assessment-submission-completed:' . auth()->id() . ':' . $request->submission_token;
-
-            $assesment_result = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $score, $completedKey) {
+            $assesment_result = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $completedKey) {
                 $completedResultId = Cache::get($completedKey);
                 if ($completedResultId) {
                     return AssesmentResult::findOrFail($completedResultId);
@@ -284,7 +223,33 @@
                     'batch' => $assesment->batch,
                     'final' => 0,
                 ]);
-                $result->user_answer = $request->except(['_token', '_method', 'submission_token']);
+
+                // Safety check: ensure question_snapshot exists on the draft without modifying existing snapshots
+                $this->ensureQuestionSnapshot($result, $assesment);
+
+                $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
+                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token']))
+                    ->filter(function ($val) {
+                        return $val !== null && $val !== '';
+                    })
+                    ->toArray();
+                $mergedUserAnswers = array_replace($existingUserAnswers, $submittedAnswers);
+
+                // Recalculate score based on merged answers
+                $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
+                $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
+                $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
+                $assesment_question_count = $checkAssesmentQuestionBanks ? $assessmentQuestionBank : count($assesment_question);
+
+                $formulaScorePerQuestion = $assesment_question_count > 0 ? (100 / $assesment_question_count) : 0;
+                $user_answers = collect($mergedUserAnswers)->sortKeys()->toArray();
+                $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
+                $wrong_answer_count = count($wrong_answer);
+                $right_answer_count = count($assesment_question) - $wrong_answer_count;
+                $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
+                $score = $amountOfRightAnswer * $formulaScorePerQuestion;
+
+                $result->user_answer = $mergedUserAnswers;
                 $result->score = $score >= 100 ? 100 : $score;
                 $result->batch = $assesment->batch;
                 $result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
@@ -406,12 +371,10 @@
             /**
              * Last Step is counting the score.
              */
-            $score = $amountOfRightAnswer * $formulaScorePerQuestion;
+            $lockKey = 'assessment-autosave-lock:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
+            $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
 
-            $lockKey = 'assessment-submission-lock:' . auth()->id() . ':' . $request->submission_token;
-            $completedKey = 'assessment-submission-completed:' . auth()->id() . ':' . $request->submission_token;
-
-            $saved = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $score, $completedKey) {
+            $saved = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $completedKey) {
                 if (Cache::has($completedKey)) {
                     return false;
                 }
@@ -422,7 +385,33 @@
                     'batch' => $assesment->batch,
                     'final' => 0,
                 ]);
-                $result->user_answer = $request->except(['_token', '_method', 'submission_token']);
+
+                // Safety check: ensure question_snapshot exists on the draft without modifying existing snapshots
+                $this->ensureQuestionSnapshot($result, $assesment);
+
+                $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
+                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token']))
+                    ->filter(function ($val) {
+                        return $val !== null && $val !== '';
+                    })
+                    ->toArray();
+                $mergedUserAnswers = array_replace($existingUserAnswers, $submittedAnswers);
+
+                // Recalculate score based on merged answers
+                $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
+                $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
+                $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
+                $assesment_question_count = $checkAssesmentQuestionBanks ? $assessmentQuestionBank : count($assesment_question);
+
+                $formulaScorePerQuestion = $assesment_question_count > 0 ? (100 / $assesment_question_count) : 0;
+                $user_answers = collect($mergedUserAnswers)->sortKeys()->toArray();
+                $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
+                $wrong_answer_count = count($wrong_answer);
+                $right_answer_count = count($assesment_question) - $wrong_answer_count;
+                $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
+                $score = $amountOfRightAnswer * $formulaScorePerQuestion;
+
+                $result->user_answer = $mergedUserAnswers;
                 $result->score = $score >= 100 ? 100 : $score;
                 $result->batch = $assesment->batch;
                 $result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
@@ -463,5 +452,78 @@
                 'fromdate'  => $assesment->fromdate,
                 'todate'    => $assesment->todate,
             ], 403);
+        }
+
+        /**
+         * Ensures that a question snapshot exists on the given draft AssesmentResult.
+         * 
+         * - If question_snapshot EXISTS: Returns existing questions without randomization or overwrite.
+         * - If question_snapshot is EMPTY: Generates snapshot 1x under lock, saves it, and returns the questions.
+         */
+        private function ensureQuestionSnapshot(AssesmentResult $resultDraft, Assesment $assesment): Collection
+        {
+            if (!empty($resultDraft->question_snapshot)) {
+                $snapshot = $resultDraft->question_snapshot;
+                $questionIds = array_column($snapshot, 'question_id');
+
+                $questionsMap = AssesmentQuestion::whereIn('id', $questionIds)->get()->keyBy('id');
+                $assesment_question = new Collection();
+
+                foreach ($questionIds as $qid) {
+                    if (isset($questionsMap[$qid])) {
+                        $assesment_question->push($questionsMap[$qid]);
+                    }
+                }
+
+                return $assesment_question;
+            }
+
+            $snapshotLockKey = 'assessment-snapshot-lock:' . auth()->id() . ':' . $resultDraft->id;
+
+            return Cache::lock($snapshotLockKey, 10)->block(5, function () use ($assesment, $resultDraft) {
+                $resultDraft->refresh();
+                if (!empty($resultDraft->question_snapshot)) {
+                    $snapshot = $resultDraft->question_snapshot;
+                    $questionIds = array_column($snapshot, 'question_id');
+                    $questionsMap = AssesmentQuestion::whereIn('id', $questionIds)->get()->keyBy('id');
+                    $cols = new Collection();
+                    foreach ($questionIds as $qid) {
+                        if (isset($questionsMap[$qid])) {
+                            $cols->push($questionsMap[$qid]);
+                        }
+                    }
+                    return $cols;
+                }
+
+                $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
+
+                if ($checkAssesmentQuestionBanks) {
+                    $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get();
+                    $assesment_question = new Collection();
+
+                    foreach ($assessmentQuestionBanks as $aqb) {
+                        $assessmentQuestions = AssesmentQuestion::where('assesment_id', $assesment->id)
+                            ->where('question_bank_id', $aqb->question_bank_id)
+                            ->where('is_used', true)
+                            ->inRandomOrder()->limit($aqb->questions_amount)->get();
+
+                        $assesment_question = $assesment_question->merge($assessmentQuestions)->shuffle();
+                    }
+                } else {
+                    $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
+                }
+
+                $snapshotData = $assesment_question->values()->map(function ($q, $index) {
+                    return [
+                        'question_id' => $q->id,
+                        'order'       => $index + 1,
+                    ];
+                })->toArray();
+
+                $resultDraft->question_snapshot = $snapshotData;
+                $resultDraft->save();
+
+                return $assesment_question;
+            });
         }
     }

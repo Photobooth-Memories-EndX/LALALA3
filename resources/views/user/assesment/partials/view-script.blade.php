@@ -3,6 +3,45 @@
 <script>
     $(function () {
         let assessmentSubmitting = false;
+        let isSaving = false;
+        let hasPendingSave = false;
+
+        function doAutosave() {
+            if (assessmentSubmitting) return;
+            if (isSaving) {
+                hasPendingSave = true;
+                return;
+            }
+
+            isSaving = true;
+            hasPendingSave = false;
+
+            let formData = new FormData($('#formAssesment')[0]);
+
+            $.ajax({
+                type: "POST",
+                url: "{{ route('assesment.user.autosave', $assesment->slug) }}",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    if (response.status == 200) {
+                        console.log(response.message);
+                    } else {
+                        console.log('Gagal Autosave');
+                    }
+                },
+                error: function() {
+                    console.log('Error Autosave');
+                },
+                complete: function () {
+                    isSaving = false;
+                    if (hasPendingSave) {
+                        doAutosave();
+                    }
+                }
+            });
+        }
 
         function checkAssessmentCompletion() {
             const totalQuestions = {{ count($assesment_question ?? []) }};
@@ -45,6 +84,9 @@
                 $('.assessment-wizard .nav a[href="#step-' + questionId + '"]').addClass('done');
             }
             checkAssessmentCompletion();
+            @if (!auth()->user()->isAdmin())
+                doAutosave();
+            @endif
         });
 
         updateNavAnswerStatus();
@@ -52,8 +94,29 @@
 
         window.addEventListener('beforeunload', function (e) {
             if (assessmentSubmitting || window.assessmentAutoSubmit) return;
+            @if (!auth()->user()->isAdmin())
+                if (hasPendingSave || isSaving) {
+                    let formElement = document.getElementById('formAssesment');
+                    if (formElement && window.FormData && window.fetch) {
+                        let formData = new FormData(formElement);
+                        fetch("{{ route('assesment.user.autosave', $assesment->slug) }}", {
+                            method: "POST",
+                            body: formData,
+                            keepalive: true
+                        }).catch(function() {});
+                    }
+                }
+            @endif
             e.preventDefault();
             e.returnValue = 'Are you sure you want to leave this test?';
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden' && !assessmentSubmitting && !window.assessmentAutoSubmit) {
+                @if (!auth()->user()->isAdmin())
+                    doAutosave();
+                @endif
+            }
         });
 
         $('#formAssesment').on('submit', function (e) {
@@ -102,26 +165,15 @@
             if (!checked) {
                 $('#smartwizard').smartWizard("setState", [currentStepIdx], 'error');
             }
+
+            @if (!auth()->user()->isAdmin())
+                doAutosave();
+            @endif
         });
 
         @if (!auth()->user()->isAdmin())
-            $(document).on('click', '.sw-btn', function () {
-                let formData = new FormData($('#formAssesment')[0]);
-
-                $.ajax({
-                    type: "POST",
-                    url: "{{ route('assesment.user.autosave', $assesment->slug) }}",
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function (response) {
-                        if (response.status == 200) {
-                            console.log(response.message);
-                        } else {
-                            console.log('Gagal Autosave');
-                        }
-                    }
-                });
+            $(document).on('click', '.sw-btn, .assessment-wizard .nav a', function () {
+                doAutosave();
             });
         @endif
     });
