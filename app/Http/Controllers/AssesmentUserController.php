@@ -83,16 +83,23 @@
             $hasAccessPeriod = $assesment->hasAccessPeriod() && !empty($assesment->todate);
             $hasTimeLimit    = $assesment->hasTimeLimit();
 
-            if ($hasTimeLimit && !$assesment_result_draft) {
-                $assesment_result_draft = AssesmentResult::create([
-                    'user_id'      => auth()->user()->id,
-                    'assesment_id' => $assesment->id,
-                    'batch'        => $assesment->batch,
-                    'final'        => 0,
-                    'user_answer'  => [],
-                    'score'        => 0,
-                    'pass'         => 0,
-                ]);
+            if (!$assesment_result_draft) {
+                $draftLockKey = 'assessment-draft-lock:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
+                $assesment_result_draft = Cache::lock($draftLockKey, 10)->block(5, function () use ($assesment) {
+                    return AssesmentResult::firstOrCreate(
+                        [
+                            'user_id'      => auth()->id(),
+                            'assesment_id' => $assesment->id,
+                            'batch'        => $assesment->batch,
+                            'final'        => 0,
+                        ],
+                        [
+                            'user_answer'  => [],
+                            'score'        => 0,
+                            'pass'         => 0,
+                        ]
+                    );
+                });
             }
 
             $effectiveDeadline = null;
@@ -120,24 +127,65 @@
                 session([$submissionSessionKey => $assessmentSubmissionToken]);
             }
 
-            $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
+            if (!empty($assesment_result_draft->question_snapshot)) {
+                $snapshot = $assesment_result_draft->question_snapshot;
+                $questionIds = array_column($snapshot, 'question_id');
 
-            if ($checkAssesmentQuestionBanks) {
-                $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get();
-                $sumOfquestionsAmount    = $assessmentQuestionBanks->sum('questions_amount');
-
+                $questionsMap = AssesmentQuestion::whereIn('id', $questionIds)->get()->keyBy('id');
                 $assesment_question = new Collection();
 
-                foreach ($assessmentQuestionBanks as $aqb) {
-                    $assessmentQuestions = AssesmentQuestion::where('assesment_id', $assesment->id)
-                        ->where('question_bank_id', $aqb->question_bank_id)
-                        ->where('is_used', true)
-                        ->inRandomOrder()->limit($aqb->questions_amount)->get();
-
-                    $assesment_question = $assesment_question->merge($assessmentQuestions)->shuffle();
+                foreach ($questionIds as $qid) {
+                    if (isset($questionsMap[$qid])) {
+                        $assesment_question->push($questionsMap[$qid]);
+                    }
                 }
             } else {
-                $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
+                $snapshotLockKey = 'assessment-snapshot-lock:' . auth()->id() . ':' . $assesment_result_draft->id;
+                $assesment_question = Cache::lock($snapshotLockKey, 10)->block(5, function () use ($assesment, $assesment_result_draft) {
+                    $assesment_result_draft->refresh();
+                    if (!empty($assesment_result_draft->question_snapshot)) {
+                        $snapshot = $assesment_result_draft->question_snapshot;
+                        $questionIds = array_column($snapshot, 'question_id');
+                        $questionsMap = AssesmentQuestion::whereIn('id', $questionIds)->get()->keyBy('id');
+                        $cols = new Collection();
+                        foreach ($questionIds as $qid) {
+                            if (isset($questionsMap[$qid])) {
+                                $cols->push($questionsMap[$qid]);
+                            }
+                        }
+                        return $cols;
+                    }
+
+                    $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
+
+                    if ($checkAssesmentQuestionBanks) {
+                        $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get();
+                        $assesment_question = new Collection();
+
+                        foreach ($assessmentQuestionBanks as $aqb) {
+                            $assessmentQuestions = AssesmentQuestion::where('assesment_id', $assesment->id)
+                                ->where('question_bank_id', $aqb->question_bank_id)
+                                ->where('is_used', true)
+                                ->inRandomOrder()->limit($aqb->questions_amount)->get();
+
+                            $assesment_question = $assesment_question->merge($assessmentQuestions)->shuffle();
+                        }
+                    } else {
+                        $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
+                    }
+
+                    $snapshotData = $assesment_question->values()->map(function ($q, $index) {
+                        return [
+                            'question_id' => $q->id,
+                            'order'       => $index + 1,
+                        ];
+                    })->toArray();
+
+                    $assesment_result_draft->question_snapshot = $snapshotData;
+                    $assesment_result_draft->save();
+
+                    return $assesment_question;
+                });
             }
 
             $currentAttempt = null;

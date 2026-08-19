@@ -10,7 +10,8 @@ class AssesmentResult extends Model
     use HasFactory;
     protected $guarded = ['id'];
     protected $casts = [
-        'user_answer' => 'array'
+        'user_answer' => 'array',
+        'question_snapshot' => 'array',
     ];
     public function user()
     {
