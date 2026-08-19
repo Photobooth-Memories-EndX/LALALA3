@@ -113,7 +113,7 @@
                                     <select class="form-select js-content-select" id="select-content" name="content[]" multiple>
                                         @unless (count($content) == 0)
                                             @foreach ($content as $list)
-                                                <option value="{{ $list->id }}">{{ $list->title }}</option>
+                                                <option value="{{ $list->id }}" data-status="{{ $list->active }}">{{ $list->title }}</option>
                                             @endforeach
                                         @else
                                             <option value="" disabled>No content available</option>
@@ -121,7 +121,7 @@
                                     </select>
                                 </div>
                                 <div class="d-flex justify-content-between mt-2">
-                                    <small class="form-hint">Only published content is available. Type to search.</small>
+                                    <small class="form-hint">Type to search content. Drag items to reorder sections.</small>
                                     <small class="content-select-count" id="content-count-label"></small>
                                 </div>
                                 <div class="mt-3">
@@ -246,14 +246,23 @@
                     maxOptions: 80,
                     render: {
                         item: function (data, escape) {
+                            var status = data.status || (data.$option ? data.$option.getAttribute('data-status') : null);
+                            var isInactive = status && (status === 'Inactive' || status === 'unpublish' || status === 'draft');
+                            var inactiveBadge = isInactive ? '<span class="badge bg-secondary text-white ms-2" style="font-size:10px; padding: 2px 6px; flex-shrink: 0;">Inactive</span>' : '';
+
                             return '<div class="playlist-section-item-inner">' +
                                 '<span class="playlist-drag-handle" title="Tarik untuk mengubah urutan">&#9776;</span>' +
                                 '<span class="playlist-section-badge"></span>' +
                                 '<span class="playlist-section-title">' + escape(data.text) + '</span>' +
+                                inactiveBadge +
                                 '</div>';
                         },
                         option: function (data, escape) {
-                            return '<div class="playlist-option-item"><span>' + escape(data.text) + '</span></div>';
+                            var status = data.status || (data.$option ? data.$option.getAttribute('data-status') : null);
+                            var isInactive = status && (status === 'Inactive' || status === 'unpublish' || status === 'draft');
+                            var inactiveBadge = isInactive ? '<span class="badge bg-secondary text-white ms-2" style="font-size:10px; padding: 2px 6px; flex-shrink: 0;">Inactive</span>' : '';
+
+                            return '<div class="playlist-option-item d-flex align-items-center justify-content-between"><span>' + escape(data.text) + '</span>' + inactiveBadge + '</div>';
                         },
                         no_results: function () {
                             return '<div class="p-2 text-muted" style="font-size:13px;">Konten tidak ditemukan</div>';
