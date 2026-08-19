@@ -47,8 +47,59 @@
         padding-bottom: 90px !important;
     }
 
-    /* Generous spacing under step navigator */
+    /* Generous spacing & flex layout under step navigator */
     .assessment-wizard .nav {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        padding-left: 0 !important;
+        margin-top: 0 !important;
         margin-bottom: 2.25rem !important;
+        gap: 0px !important;
+    }
+
+    .assessment-wizard .nav .nav-item {
+        flex: 0 0 auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .assessment-wizard .nav .nav-link {
+        display: block !important;
+        position: relative !important;
+        width: 36px !important;
+        min-width: 36px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin-top: 40px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .assessment-wizard .nav .nav-link::after {
+        width: 35px !important;
+        height: 35px !important;
+        border-width: 3px !important;
+        top: -40px !important;
+        left: 0 !important;
+        right: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    .assessment-wizard .nav .nav-link > .num {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        font-size: 0.725rem !important;
+        font-weight: 700 !important;
+        line-height: 1 !important;
+        top: -40px !important;
+        height: 35px !important;
+        left: 0 !important;
+        right: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        width: 100% !important;
+        text-align: center !important;
     }
 </style>
