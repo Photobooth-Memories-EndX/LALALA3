@@ -84,9 +84,7 @@
                 $('.assessment-wizard .nav a[href="#step-' + questionId + '"]').addClass('done');
             }
             checkAssessmentCompletion();
-            @if (!auth()->user()->isAdmin())
-                doAutosave();
-            @endif
+            doAutosave();
         });
 
         updateNavAnswerStatus();
@@ -139,16 +137,12 @@
                 $('#smartwizard').smartWizard("setState", [currentStepIdx], 'error');
             }
 
-            @if (!auth()->user()->isAdmin())
-                doAutosave();
-            @endif
+            doAutosave();
         });
 
-        @if (!auth()->user()->isAdmin())
-            $(document).on('click', '.sw-btn, .assessment-wizard .nav a', function () {
-                doAutosave();
-            });
-        @endif
+        $(document).on('click', '.sw-btn, .assessment-wizard .nav a', function () {
+            doAutosave();
+        });
     });
 
     document.addEventListener('DOMContentLoaded', function() {

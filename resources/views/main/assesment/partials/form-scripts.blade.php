@@ -26,6 +26,7 @@
         const timeLimitSecWrapper = $('#time_limit_section_wrapper');
         const remedialSecWrapper  = $('#remedial_section_wrapper');
         const remedialInput       = $('#total-remedials');
+        const remedialHint        = $('#total-remedials-hint');
         const sectionTitle        = $('#period-timer-section-title');
         const sectionSubtitle     = $('#period-timer-section-subtitle');
 
@@ -42,6 +43,12 @@
             remedialSecWrapper.removeClass('d-none');
             if (remedialInput.length) {
                 remedialInput.prop('disabled', false).attr('required', 'required');
+                if (remedialInput.val() === '' || remedialInput.val() === null) {
+                    remedialInput.val(0);
+                }
+            }
+            if (remedialHint.length) {
+                remedialHint.text('Number of additional remedial attempts after the initial assessment.');
             }
             if (sectionTitle.length) sectionTitle.text('Access Period & Time Limit');
             if (sectionSubtitle.length) sectionSubtitle.text('Schedule window, duration limits, and remedial attempt configuration.');
@@ -60,6 +67,12 @@
             remedialSecWrapper.removeClass('d-none');
             if (remedialInput.length) {
                 remedialInput.prop('disabled', false).attr('required', 'required');
+                if (remedialInput.val() === '' || remedialInput.val() === null) {
+                    remedialInput.val(0);
+                }
+            }
+            if (remedialHint.length) {
+                remedialHint.text('Number of additional remedial attempts after the initial assessment.');
             }
             if (sectionTitle.length) sectionTitle.text('Access Period & Time Limit');
             if (sectionSubtitle.length) sectionSubtitle.text('Schedule window, duration limits, and remedial attempt configuration.');
@@ -80,7 +93,10 @@
             timeLimitSecWrapper.addClass('d-none');
             remedialSecWrapper.addClass('d-none');
             if (remedialInput.length) {
-                remedialInput.removeAttr('required').prop('disabled', true);
+                remedialInput.removeAttr('required').prop('disabled', true).val(0);
+            }
+            if (remedialHint.length) {
+                remedialHint.text('Global Assessment allows 1 attempt per batch.');
             }
             if (sectionTitle.length) sectionTitle.text('Access Period');
             if (sectionSubtitle.length) sectionSubtitle.text('Schedule window configuration.');

@@ -166,7 +166,7 @@ class AssesmentController extends Controller
             $assesment->deadline_type = 'none';
         }
 
-        $assesment->total_remedials = $isGlobal ? 1 : ($request->input('total_remedials') ?? 0);
+        $assesment->total_remedials = $isGlobal ? 0 : ($request->input('total_remedials') ?? 0);
         $assesment->save();
 
         return redirect()->route('assesment.edit', $assesment->slug)->with('success','Assesment created successfully.');
@@ -226,7 +226,7 @@ class AssesmentController extends Controller
             $assesment->deadline_type = 'none';
         }
 
-        $assesment->total_remedials = $isGlobal ? 1 : ($request->input('total_remedials') ?? 0);
+        $assesment->total_remedials = $isGlobal ? 0 : ($request->input('total_remedials') ?? 0);
         $assesment->save();
 
         return to_route('assesment.index')->with('success','Assesment updated successfully');

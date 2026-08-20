@@ -11,7 +11,7 @@
     $fromdate = old('fromdate', $isEdit ? $assesment->fromdate : '');
     $todate = old('todate', $isEdit ? $assesment->todate : '');
     $timeLimitMinutes = old('time_limit_minutes', $isEdit ? ($assesment->time_limit_minutes ?? 60) : 60);
-    $totalRemedials = old('total_remedials', $isEdit ? $assesment->total_remedials : '');
+    $totalRemedials = old('total_remedials', $isEdit ? (($type === 'global') ? 0 : ($assesment->total_remedials ?? 0)) : 0);
 @endphp
 
 <div class="card mb-4 border-0 shadow-sm">
@@ -154,7 +154,10 @@
         <div class="row g-3">
             <div class="col-md-12">
                 <label class="form-label required">Total Remedials</label>
-                <input type="number" name="total_remedials" id="total-remedials" class="form-control @error('total_remedials') is-invalid @enderror" placeholder="0" value="{{ $totalRemedials }}">
+                <input type="number" name="total_remedials" id="total-remedials" class="form-control @error('total_remedials') is-invalid @enderror" placeholder="0" min="0" value="{{ $totalRemedials }}">
+                <small class="form-hint text-muted" id="total-remedials-hint">
+                    {{ ($type === 'global') ? 'Global Assessment allows 1 attempt per batch.' : 'Number of additional remedial attempts after the initial assessment.' }}
+                </small>
                 @error('total_remedials')
                     <div class="invalid-feedback d-block">
                         {{ $message }}
