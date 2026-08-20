@@ -1,3 +1,5 @@
+<script src="{{ asset('js/bootstrap-toggle.min.js') }}"></script>
+
 <script>
     $(document).ready(function () {
 
@@ -28,7 +30,11 @@
                     showToast('Status assessment berhasil diperbarui.', 'success');
                 },
                 error: function () {
-                    checkbox.prop('checked', !checkbox.prop('checked')).change();
+                    if (typeof checkbox.bootstrapToggle === 'function') {
+                        checkbox.bootstrapToggle(status === 'OK' ? 'off' : 'on', true);
+                    } else {
+                        checkbox.prop('checked', status !== 'OK');
+                    }
                     showToast('Gagal memperbarui status assessment.', 'danger');
                 }
             });

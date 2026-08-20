@@ -100,16 +100,18 @@
     </td>
 
     <td class="text-center">
-        <label class="owl-toggle-switch" title="{{ $list->status == 'OK' ? 'Active' : 'Inactive' }}">
-            <input
-                data-id="{{ $list->id }}"
-                class="toggle-class"
-                type="checkbox"
-                role="switch"
-                aria-label="Toggle assessment status"
-                {{ $list->status == 'OK' ? 'checked' : '' }}>
-            <span class="owl-toggle-slider"></span>
-        </label>
+        <input
+            data-id="{{ $list->id }}"
+            data-toggle="toggle"
+            class="toggle-class"
+            type="checkbox"
+            data-onstyle="success"
+            data-offstyle="secondary"
+            data-on="ON"
+            data-off="OFF"
+            data-size="small"
+            data-width="48"
+            {{ $list->status == 'OK' ? 'checked' : '' }}>
     </td>
 
     <td class="text-center">
