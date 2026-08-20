@@ -431,6 +431,101 @@
         color: #ffffff !important;
     }
 
-    
+    /* ==========================
+       ASSESSMENT STATUS TOGGLE SWITCH
+    ========================== */
+
+    .owl-toggle-switch {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 22px;
+        margin: 0;
+        cursor: pointer;
+        user-select: none;
+        vertical-align: middle;
+    }
+
+    .owl-toggle-switch input.toggle-class {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+        margin: 0;
+        padding: 0;
+        pointer-events: none;
+    }
+
+    .owl-toggle-slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        border-radius: 22px;
+        transition: background-color .2s ease, border-color .2s ease;
+        display: block;
+    }
+
+    .owl-toggle-slider::before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        top: 3px;
+        background-color: #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        transition: transform .2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .owl-toggle-switch:hover .owl-toggle-slider {
+        opacity: 0.92;
+    }
+
+    .owl-toggle-switch input.toggle-class:checked + .owl-toggle-slider {
+        background-color: #2fb344;
+    }
+
+    .owl-toggle-switch input.toggle-class:checked + .owl-toggle-slider::before {
+        transform: translateX(20px);
+    }
+
+    .owl-toggle-switch input.toggle-class:focus + .owl-toggle-slider,
+    .owl-toggle-switch input.toggle-class:focus-visible + .owl-toggle-slider {
+        box-shadow: 0 0 0 3px rgba(47, 179, 68, 0.25);
+    }
+
+    .owl-toggle-switch input.toggle-class:not(:checked):focus + .owl-toggle-slider,
+    .owl-toggle-switch input.toggle-class:not(:checked):focus-visible + .owl-toggle-slider {
+        box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.6);
+    }
+
+    /* Dark Mode Toggle Switch */
+    [data-bs-theme="dark"] .owl-toggle-slider,
+    [data-theme="dark"] .owl-toggle-slider,
+    body.theme-dark .owl-toggle-slider,
+    body.dark-mode .owl-toggle-slider {
+        background-color: #475569;
+    }
+
+    [data-bs-theme="dark"] .owl-toggle-slider::before,
+    [data-theme="dark"] .owl-toggle-slider::before,
+    body.theme-dark .owl-toggle-slider::before,
+    body.dark-mode .owl-toggle-slider::before {
+        background-color: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    [data-bs-theme="dark"] .owl-toggle-switch input.toggle-class:checked + .owl-toggle-slider,
+    [data-theme="dark"] .owl-toggle-switch input.toggle-class:checked + .owl-toggle-slider,
+    body.theme-dark .owl-toggle-switch input.toggle-class:checked + .owl-toggle-slider,
+    body.dark-mode .owl-toggle-switch input.toggle-class:checked + .owl-toggle-slider {
+        background-color: #2fb344;
+    }
 
 </style>

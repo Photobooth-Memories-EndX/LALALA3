@@ -9,6 +9,13 @@
         $typeClass = 'badge-secondary';
     }
 
+    $typeLabels = [
+        'trainingplan' => 'Playlist',
+        'content' => 'Content',
+        'global' => 'Global',
+    ];
+    $typeLabel = $typeLabels[$list->type] ?? ucwords($list->type ?? '');
+
     $totalQuestions = count($list->assessment_question_banks) > 0
         ? $list->assessment_question_banks->sum('questions_amount')
         : count($list->questions);
@@ -51,7 +58,7 @@
 
     <td class="text-center">
         <span class="owl-badge {{ $typeClass }}">
-            {{ ucwords($list->type) }}
+            {{ $typeLabel }}
         </span>
     </td>
 
@@ -93,18 +100,16 @@
     </td>
 
     <td class="text-center">
-        <input
-            data-id="{{ $list->id }}"
-            data-toggle="toggle"
-            class="toggle-class"
-            type="checkbox"
-            data-onstyle="success"
-            data-offstyle="secondary"
-            data-on="ON"
-            data-off="OFF"
-            data-size="small"
-            data-width="45"
-            {{ $list->status == 'OK' ? 'checked' : '' }}>
+        <label class="owl-toggle-switch" title="{{ $list->status == 'OK' ? 'Active' : 'Inactive' }}">
+            <input
+                data-id="{{ $list->id }}"
+                class="toggle-class"
+                type="checkbox"
+                role="switch"
+                aria-label="Toggle assessment status"
+                {{ $list->status == 'OK' ? 'checked' : '' }}>
+            <span class="owl-toggle-slider"></span>
+        </label>
     </td>
 
     <td class="text-center">

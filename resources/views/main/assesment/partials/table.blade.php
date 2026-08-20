@@ -42,7 +42,7 @@
 
                         @foreach ($types as $type)
                             <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
-                                {{ ucwords($type) }}
+                                {{ $type === 'trainingplan' ? 'Playlist' : ucwords($type) }}
                             </option>
                         @endforeach
                     </select>
