@@ -201,6 +201,22 @@ function submitAssessmentAccess() {
                 targetUrl = "{{ route('assesment.user.view', ':slug') }}".replace(':slug', response.assessment_slug);
             }
 
+            var actionType = response.action_type || 'start';
+            var $startBtn = $('#btnStartAssessmentAccess');
+            if (actionType === 'continue') {
+                $modal.find('#assessmentAccessModalTitle').text('Continue Assessment');
+                $startBtn.attr('style', 'background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;')
+                         .html('<i class="ti ti-player-play"></i> <span>Continue Assessment</span>');
+            } else if (actionType === 'remedial') {
+                $modal.find('#assessmentAccessModalTitle').text('REMEDIAL');
+                $startBtn.attr('style', 'background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;')
+                         .html('<i class="ti ti-refresh"></i> <span>Start Remedial</span>');
+            } else {
+                $modal.find('#assessmentAccessModalTitle').text('Start Assessment');
+                $startBtn.attr('style', 'background-color: #28be58 !important; border-color: #28be58 !important; color: #ffffff !important;')
+                         .html('<i class="ti ti-player-play"></i> <span>Start Test</span>');
+            }
+
             $('#btnStartAssessmentAccess')
                 .data('target-url', targetUrl)
                 .attr('data-target-url', targetUrl);

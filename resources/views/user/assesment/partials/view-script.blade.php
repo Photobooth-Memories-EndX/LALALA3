@@ -79,6 +79,29 @@
         if (totalEl) totalEl.textContent = getTotalQuestionsCount();
     }
 
+    function checkFinishButtonState() {
+        const answeredCount = getAnsweredQuestionsCount();
+        const totalCount = getTotalQuestionsCount();
+        const finishBtn = document.getElementById('btnFinishSubmit') || document.querySelector('.btn-submit-assessment');
+
+        if (!finishBtn) return;
+
+        // HANYA aktifkan jika soal terjawab SUDAH SAMA DENGAN total soal
+        if (answeredCount >= totalCount && totalCount > 0) {
+            finishBtn.disabled = false;
+            finishBtn.classList.remove('opacity-50', 'pe-none');
+            finishBtn.style.opacity = '1';
+            finishBtn.style.cursor = 'pointer';
+            finishBtn.style.pointerEvents = 'auto';
+        } else {
+            finishBtn.disabled = true;
+            finishBtn.classList.add('opacity-50', 'pe-none');
+            finishBtn.style.opacity = '0.5';
+            finishBtn.style.cursor = 'not-allowed';
+            finishBtn.style.pointerEvents = 'none';
+        }
+    }
+
     function submitAssessmentForm() {
         window.assessmentAutoSubmit = true;
         var form = document.getElementById('formAssesment') || document.getElementById('assessmentForm') || document.querySelector('form[action*="assesment"]') || document.querySelector('form');
@@ -152,6 +175,7 @@
                 $('.assessment-wizard .nav a[href="#step-' + questionId + '"]').addClass('done');
             }
             updateLeaveModalText();
+            checkFinishButtonState();
             @if (!auth()->user()->isAdmin())
                 doAutosave();
             @endif
@@ -159,6 +183,7 @@
 
         updateNavAnswerStatus();
         updateLeaveModalText();
+        checkFinishButtonState();
 
         $('#formAssesment').on('submit', function (e) {
             if (assessmentSubmitting) {
@@ -168,6 +193,12 @@
 
             if (!window.assessmentAutoSubmit) {
                 e.preventDefault();
+                const answered = getAnsweredQuestionsCount();
+                const total = getTotalQuestionsCount();
+                if (answered < total || total === 0) {
+                    checkFinishButtonState();
+                    return;
+                }
                 openAssessmentModal('finishAssessmentModal');
                 return;
             }
@@ -191,6 +222,7 @@
         // Re-sync answered navigation dots whenever active step changes
         $("#smartwizard").on("showStep", function (e, anchorObject, stepIndex, stepDirection, stepPosition) {
             updateNavAnswerStatus();
+            checkFinishButtonState();
         });
 
         // Leave step event is used for validating the forms
@@ -208,6 +240,8 @@
                 $('#smartwizard').smartWizard("setState", [currentStepIdx], 'error');
             }
 
+            checkFinishButtonState();
+
             @if (!auth()->user()->isAdmin())
                 doAutosave();
             @endif
@@ -219,10 +253,19 @@
             });
         @endif
 
-        // Trigger finish modal on button click
+        // Trigger finish modal on button click with Strict Guard Clause
         $(document).on('click', '#btnFinishSubmit, .btn-submit-assessment', function (e) {
             e.preventDefault();
             e.stopPropagation();
+
+            const answered = getAnsweredQuestionsCount();
+            const total = getTotalQuestionsCount();
+
+            if (answered < total || total === 0) {
+                checkFinishButtonState();
+                return false;
+            }
+
             openAssessmentModal('finishAssessmentModal');
         });
 
@@ -250,6 +293,9 @@
     });
 
     document.addEventListener('DOMContentLoaded', function() {
+        updateLeaveModalText();
+        checkFinishButtonState();
+
         function showLeaveModal() {
             updateLeaveModalText();
             openAssessmentModal('leaveAssessmentModal');

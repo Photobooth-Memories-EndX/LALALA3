@@ -438,6 +438,25 @@ class HomeUserController extends Controller
 
         if ($assessment) {
             $currentUserId = auth()->id();
+            
+            // Check for active unsubmitted draft (Snapshot detection)
+            $activeResult = \App\Models\AssesmentResult::where('user_id', $currentUserId)
+                ->where('assesment_id', $assessment->id)
+                ->where('batch', $assessment->batch)
+                ->where('final', 0)
+                ->latest('id')
+                ->first();
+
+            $hasSnapshot = $activeResult && (!empty($activeResult->user_answer) || !empty($activeResult->question_snapshot));
+
+            $answeredCount = ($activeResult && is_array($activeResult->user_answer))
+                ? count(array_filter($activeResult->user_answer, fn($v) => $v !== null && $v !== ''))
+                : 0;
+
+            $totalCount = ($activeResult && is_array($activeResult->question_snapshot) && count($activeResult->question_snapshot) > 0)
+                ? count($activeResult->question_snapshot)
+                : ($assessment->questions()->count() ?: 10);
+
             $userScores = collect($assessment->scores ?? [])->filter(function ($scoreItem) use ($currentUserId) {
                 return (string) ($scoreItem->user_id ?? '') === (string) $currentUserId;
             });
@@ -449,6 +468,18 @@ class HomeUserController extends Controller
 
             $totalRemedials = (int) ($assessment->total_remedials ?? 0);
             $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
+
+            $isPassed = $userScores->where('final', 1)->where('pass', 1)->count() > 0;
+            $isCompleted = $userAttempts > 0;
+            $isRemedial = (string) ($assessment->type ?? '') !== 'global' && $isCompleted && !$isPassed && ($userAttempts < $maxAttempts);
+
+            if ($hasSnapshot) {
+                $actionType = 'continue';
+            } elseif ($isRemedial) {
+                $actionType = 'remedial';
+            } else {
+                $actionType = 'start';
+            }
 
             $fromDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->fromdate))
                 ? date('d M Y, H:i', strtotime($assessment->fromdate))
@@ -473,8 +504,13 @@ class HomeUserController extends Controller
                 'assessment_from_date' => $fromDateDisplay,
                 'assessment_to_date' => $toDateDisplay,
                 'assessment_passing_grade' => $assessment->passing_grade ?? '-',
+                'assessment_duration' => $assessment->duration ?? ($assessment->time_limit_minutes ?? 60),
                 'assessment_user_attempts' => $userAttempts,
                 'assessment_max_attempts' => $maxAttempts,
+                'has_snapshot' => $hasSnapshot,
+                'action_type' => $actionType,
+                'answered_count' => $answeredCount,
+                'total_count' => $totalCount,
                 'assessment_url' => route('assesment.user.view', $assessment->slug, false),
             ], 200);
 
