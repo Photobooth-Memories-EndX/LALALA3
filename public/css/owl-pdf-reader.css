@@ -111,19 +111,26 @@
     align-items: center;
     gap: 6px;
     padding: 4px 8px;
-    color: #53565A;
+    color: #0f5132;
     font-size: 12px;
     white-space: nowrap;
-    background: rgba(138, 141, 143, .15);
+    background: rgba(47, 179, 68, .16);
+    border: 1px solid rgba(47, 179, 68, .35);
     border-radius: 6px;
+    transition: background-color .25s ease, border-color .25s ease, color .25s ease, box-shadow .25s ease;
 }
 
 .pdf-page-navigation .pdf-tb-stat-label {
-    color: #73767a;
+    color: #146c43;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: .02em;
     text-transform: uppercase;
+    transition: color .25s ease;
+}
+
+.pdf-page-navigation .pdf-tb-reading-stat strong {
+    color: #0a3622;
 }
 
 .pdf-page-navigation .pdf-tb-pageno {
@@ -135,9 +142,44 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* Active Countdown (Timer running, not complete): NEXT PAGE IN has subtle pulse */
+.pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-stat-countdown,
+.pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-reading-stat:last-child {
+    animation: owl-pdf-countdown-pulse 2s ease-in-out infinite;
+}
+
+/* Completed Countdown (Timer reached 0 / is-complete): NEXT PAGE IN returns to neutral inactive gray */
+.pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-stat-countdown,
 .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-reading-stat:last-child {
-    color: #0f5132;
-    background: rgba(47, 179, 68, .12);
+    color: #73767a;
+    background: rgba(138, 141, 143, .15);
+    border-color: transparent;
+    box-shadow: none;
+    animation: none;
+}
+
+.pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-stat-countdown .pdf-tb-stat-label,
+.pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-reading-stat:last-child .pdf-tb-stat-label {
+    color: #73767a;
+    font-weight: 600;
+}
+
+.pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-stat-countdown strong,
+.pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-reading-stat:last-child strong {
+    color: #73767a;
+}
+
+@keyframes owl-pdf-countdown-pulse {
+    0%, 100% {
+        background-color: rgba(47, 179, 68, .14);
+        border-color: rgba(47, 179, 68, .30);
+        box-shadow: 0 0 0 0 rgba(47, 179, 68, 0.25);
+    }
+    50% {
+        background-color: rgba(47, 179, 68, .25);
+        border-color: rgba(47, 179, 68, .60);
+        box-shadow: 0 0 8px 1px rgba(47, 179, 68, 0.22);
+    }
 }
 
 .pdf-page-navigation-btn {
@@ -286,19 +328,68 @@ body.dark-mode .pdf-page-navigation {
 
 body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-stat,
 body.dark-mode .pdf-page-navigation .pdf-tb-reading-stat {
-    color: #D9D9D6;
-    background: rgba(255, 255, 255, .1);
+    color: #86efac;
+    background: rgba(34, 197, 94, .18);
+    border: 1px solid rgba(74, 222, 128, .40);
 }
 
 body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-stat-label,
 body.dark-mode .pdf-page-navigation .pdf-tb-stat-label {
-    color: #b8c2cc;
+    color: #a7f3d0;
+    font-weight: 700;
 }
 
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-stat strong,
+body.dark-mode .pdf-page-navigation .pdf-tb-reading-stat strong {
+    color: #ecfdf5;
+}
+
+/* Dark Mode - Active Countdown (Pulse only on NEXT PAGE IN) */
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-stat-countdown,
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-reading-stat:last-child,
+body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-stat-countdown,
+body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-reading-stat:last-child {
+    animation: owl-pdf-countdown-pulse-dark 2s ease-in-out infinite;
+}
+
+/* Dark Mode - Completed Countdown (NEXT PAGE IN returns to inactive gray) */
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-stat-countdown,
 body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-reading-stat:last-child,
+body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-stat-countdown,
 body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-reading-stat:last-child {
-    color: #86efac;
-    background: rgba(47, 179, 68, .16);
+    color: #8A8D8F;
+    background: rgba(255, 255, 255, .08);
+    border-color: transparent;
+    box-shadow: none;
+    animation: none;
+}
+
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-stat-countdown .pdf-tb-stat-label,
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-reading-stat:last-child .pdf-tb-stat-label,
+body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-stat-countdown .pdf-tb-stat-label,
+body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-reading-stat:last-child .pdf-tb-stat-label {
+    color: #8A8D8F;
+    font-weight: 600;
+}
+
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-stat-countdown strong,
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-reading-stat:last-child strong,
+body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-stat-countdown strong,
+body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing.is-complete .pdf-tb-reading-stat:last-child strong {
+    color: #8A8D8F;
+}
+
+@keyframes owl-pdf-countdown-pulse-dark {
+    0%, 100% {
+        background-color: rgba(34, 197, 94, .16);
+        border-color: rgba(74, 222, 128, .35);
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, .25);
+    }
+    50% {
+        background-color: rgba(34, 197, 94, .28);
+        border-color: rgba(74, 222, 128, .65);
+        box-shadow: 0 0 8px 1px rgba(74, 222, 128, .25);
+    }
 }
 
 body[data-bs-theme="dark"] .pdf-page-navigation-btn:disabled,
@@ -403,6 +494,22 @@ body.dark-mode .owl-pdf-viewer {
         padding: 10px;
     }
 
+    .pdf-page-navigation-status,
+    .pdf-page-navigation .pdf-tb-reading-timing {
+        gap: 6px;
+    }
+
+    .pdf-page-navigation .pdf-tb-reading-stat {
+        min-height: 28px;
+        padding: 3px 7px;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    .pdf-page-navigation .pdf-tb-stat-label {
+        font-size: 9.5px;
+    }
+
     .pdf-page-navigation-status {
         grid-column: 1 / -1;
         grid-row: 1;
@@ -417,5 +524,33 @@ body.dark-mode .owl-pdf-viewer {
     .owl-pdf-viewer {
         height: 600px;
         border-radius: 6px;
+    }
+}
+
+@media (max-width: 380px) {
+    .pdf-page-navigation-status,
+    .pdf-page-navigation .pdf-tb-reading-timing {
+        gap: 4px;
+    }
+
+    .pdf-page-navigation .pdf-tb-reading-stat {
+        padding: 2px 5px;
+        font-size: 10px;
+        gap: 3px;
+    }
+
+    .pdf-page-navigation .pdf-tb-stat-label {
+        font-size: 9px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-stat-countdown,
+    .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-reading-stat:last-child,
+    body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-stat-countdown,
+    body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-reading-stat:last-child,
+    body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-stat-countdown,
+    body.dark-mode .pdf-page-navigation .pdf-tb-reading-timing:not(.is-complete) .pdf-tb-reading-stat:last-child {
+        animation: none;
     }
 }
