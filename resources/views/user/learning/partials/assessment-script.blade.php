@@ -108,12 +108,12 @@
                 },
                 columnDefs: [
                     {
-                        targets: [0, 1, 2, 3, 4, 5, 6],
+                        targets: [0, 1, 2, 3, 4, 5],
                         orderable: true,
                         orderSequence: ['asc', 'desc', '']
                     },
                     {
-                        targets: 7,
+                        targets: 6,
                         orderable: false
                     }
                 ]

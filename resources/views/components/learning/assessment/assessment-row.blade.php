@@ -193,12 +193,6 @@
         />
     </td>
 
-    <td class="text-center align-middle">
-        <div class="d-flex justify-content-center align-items-center h-100">
-            {{ $finalResult->batch ?? '-' }}
-        </div>
-    </td>
-
     <td class="text-center align-middle score-column">
         <div class="d-flex justify-content-center align-items-center h-100">
             <div class="d-inline-flex align-items-center justify-content-center assessment-score-trigger score-box position-relative"
@@ -214,6 +208,9 @@
                     <x-learning.assessment.assessment-score-popover
                         :latest-scores="$latestScores"
                         :total-history-count="$totalHistoryCount"
+                        :assessment-type="$assessment->type"
+                        :assessment-batch="$finalResult->batch ?? ($assessment->batch ?? null)"
+                        :passing-grade="$assessment->passing_grade"
                     />
                 </div>
             </div>
