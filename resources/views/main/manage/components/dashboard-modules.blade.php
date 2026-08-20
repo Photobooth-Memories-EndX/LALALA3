@@ -10,14 +10,84 @@
     </div>
 
     <div class="row g-3">
-
-            @if(auth()->user()->canAccessManageModule('learning_management'))
+        
+        @if(auth()->user()->canAccessManageModule('learning_management'))
+        @include('main.manage.components.admin-menu-card', [
+            'title' => 'Learning Management',
+            'description' => 'Monitor employee learning activities, track learning progress, review learning history, and oversee training performance.',
+            'url' => url('manage/learning'),
+            'button' => 'Manage Learning',
+            'icon' => 'ti ti-school'
+            ])
+            @endif
+            
+            @if(auth()->user()->canAccessManageModule('assessment_management'))
                 @include('main.manage.components.admin-menu-card', [
-                    'title' => 'Learning Management',
-                    'description' => 'Monitor employee learning activities, track learning progress, review learning history, and oversee training performance.',
-                    'url' => url('manage/learning'),
-                    'button' => 'Manage Learning',
-                    'icon' => 'ti ti-school'
+                    'title' => 'Assessment Management',
+                    'description' => 'Manage quizzes, assessments, passing scores, remedial tests, user assignments, assessment links, and assessment results.',
+                    'url' => url('manage/assesment'),
+                    'button' => 'Manage Assessments',
+                    'icon' => 'ti ti-clipboard-check'
+                ])
+            @endif
+
+            @if(auth()->user()->canAccessManageModule('content_repository'))
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => 'Content Repository',
+                    'description' => 'Manage learning materials, including videos, MOOC content, documents, SOPs, thumbnails, authors, and publication status.',
+                    'url' => url('manage/content'),
+                    'button' => 'Manage Content',
+                    'icon' => 'ti ti-book-2'
+                ])
+            @endif
+
+            @if(auth()->user()->canAccessManageModule('playlist_learning_path'))
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => 'Playlist & Learning Path',
+                    'description' => 'Create learning paths, training playlists, course sequences, and structured learning programs.',
+                    'url' => url('manage/playlist'),
+                    'button' => 'Manage Playlists',
+                    'icon' => 'ti ti-route'
+                    ])
+            @endif
+            
+            @if(auth()->user()->canAccessManageModule('question_bank'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Question Bank',
+                'description' => 'Manage question banks, answer choices, question images, question cloning, synchronization, and reusable question sets.',
+                'url' => url('manage/question-bank'),
+                'button' => 'Manage Question Bank',
+                'icon' => 'ti ti-help-circle'
+                ])
+            @endif
+            
+            @if(auth()->user()->canAccessManageModule('news_announcement'))
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => 'News & Announcements',
+                    'description' => 'Create and manage news, announcements, training updates, and internal company communications.',
+                    'url' => url('manage/news'),
+                    'button' => 'Manage News',
+                    'icon' => 'ti ti-news'
+                ])
+            @endif
+            
+            @if(auth()->user()->canAccessManageModule('event_documentation'))
+                @include('main.manage.components.admin-menu-card', [
+                        'title' => 'Event Documentation',
+                        'description' => 'Manage training event galleries, company event photos, and learning documentation archives.',
+                        'url' => url('manage/eventphoto'),
+                        'button' => 'Manage Gallery',
+                        'icon' => 'ti ti-photo'
+                    ])
+            @endif
+
+            @if(auth()->user()->canAccessManageModule('category_classification'))
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => 'Category & Classification',
+                    'description' => 'Organize learning categories, content classifications, content grouping, and search structure.',
+                    'url' => url('manage/classification'),
+                    'button' => 'Manage Categories',
+                    'icon' => 'ti ti-category'
                 ])
             @endif
 
@@ -51,75 +121,6 @@
                 ])
             @endif
 
-            @if(auth()->user()->canAccessManageModule('news_announcement'))
-                @include('main.manage.components.admin-menu-card', [
-                    'title' => 'News & Announcements',
-                    'description' => 'Create and manage news, announcements, training updates, and internal company communications.',
-                    'url' => url('manage/news'),
-                    'button' => 'Manage News',
-                    'icon' => 'ti ti-news'
-                ])
-            @endif
-
-            @if(auth()->user()->canAccessManageModule('content_repository'))
-                @include('main.manage.components.admin-menu-card', [
-                    'title' => 'Content Repository',
-                    'description' => 'Manage learning materials, including videos, MOOC content, documents, SOPs, thumbnails, authors, and publication status.',
-                    'url' => url('manage/content'),
-                    'button' => 'Manage Content',
-                    'icon' => 'ti ti-book-2'
-                ])
-            @endif
-
-            @if(auth()->user()->canAccessManageModule('category_classification'))
-                @include('main.manage.components.admin-menu-card', [
-                    'title' => 'Category & Classification',
-                    'description' => 'Organize learning categories, content classifications, content grouping, and search structure.',
-                    'url' => url('manage/classification'),
-                    'button' => 'Manage Categories',
-                    'icon' => 'ti ti-category'
-                ])
-            @endif
-
-            @if(auth()->user()->canAccessManageModule('assessment_management'))
-                @include('main.manage.components.admin-menu-card', [
-                    'title' => 'Assessment Management',
-                    'description' => 'Manage quizzes, assessments, passing scores, remedial tests, user assignments, assessment links, and assessment results.',
-                    'url' => url('manage/assesment'),
-                    'button' => 'Manage Assessments',
-                    'icon' => 'ti ti-clipboard-check'
-                ])
-            @endif
-
-            @if(auth()->user()->canAccessManageModule('question_bank'))
-                @include('main.manage.components.admin-menu-card', [
-                    'title' => 'Question Bank',
-                    'description' => 'Manage question banks, answer choices, question images, question cloning, synchronization, and reusable question sets.',
-                    'url' => url('manage/question-bank'),
-                    'button' => 'Manage Question Bank',
-                    'icon' => 'ti ti-help-circle'
-                ])
-            @endif
-
-            @if(auth()->user()->canAccessManageModule('playlist_learning_path'))
-                @include('main.manage.components.admin-menu-card', [
-                    'title' => 'Playlist & Learning Path',
-                    'description' => 'Create learning paths, training playlists, course sequences, and structured learning programs.',
-                    'url' => url('manage/playlist'),
-                    'button' => 'Manage Playlists',
-                    'icon' => 'ti ti-route'
-                ])
-            @endif
-
-            @if(auth()->user()->canAccessManageModule('event_documentation'))
-                @include('main.manage.components.admin-menu-card', [
-                    'title' => 'Event Documentation',
-                    'description' => 'Manage training event galleries, company event photos, and learning documentation archives.',
-                    'url' => url('manage/eventphoto'),
-                    'button' => 'Manage Gallery',
-                    'icon' => 'ti ti-photo'
-                ])
-            @endif
 
             @if(auth()->user()->canAccessManageModule('certificate_setting'))
                 @include('main.manage.components.admin-menu-card', [

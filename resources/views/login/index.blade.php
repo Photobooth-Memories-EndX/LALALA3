@@ -180,6 +180,9 @@
         </div>
     </div>
 
+    <x-shared.assessment-access-modal />
+    @include('components.shared.assessment-result-modal')
+
     <script src="Tabler/dist/js/tabler.min.js?1684106062" defer></script>
     <script src="Tabler/dist/js/demo.min.js?1684106062" defer></script>
     <script>
@@ -192,8 +195,102 @@
                 passwordInput.attr('type', 'password');
             }
         });
-    </script>
-    <script>
+
+        function populateAndShowResultModal(response) {
+            var $resModal = $('#assessmentResultModal');
+            if (!$resModal.length) return false;
+
+            var isPassed = !!response.assessment_is_passed;
+            var scoreVal = response.assessment_score !== undefined ? response.assessment_score : 0;
+            var passingGradeVal = response.assessment_passing_grade !== undefined ? response.assessment_passing_grade : '-';
+            var typeStr = response.assessment_type_label || response.assessment_type || 'content';
+            var isGlobal = String(typeStr).trim().toLowerCase().indexOf('global') !== -1 || String(response.assessment_type).trim().toLowerCase() === 'global';
+
+            $resModal.find('#assessmentResultModalName').text(response.assessment_title || '-');
+            $resModal.find('#assessmentResultModalScore').text(scoreVal);
+            $resModal.find('#assessmentResultModalScore').attr('class', isPassed ? 'text-success display-4 fw-extrabold mb-1' : 'text-danger display-4 fw-extrabold mb-1');
+            $resModal.find('#assessmentResultModalPassingGrade').text(passingGradeVal);
+
+            // Single Status Badge
+            var badgeHtml = isPassed 
+                ? '<span class="badge bg-success-subtle text-success px-3 py-2 fs-6 rounded-pill fw-bold"><i class="ti ti-check me-1"></i>Passed</span>'
+                : '<span class="badge bg-danger-subtle text-danger px-3 py-2 fs-6 rounded-pill fw-bold"><i class="ti ti-x me-1"></i>Failed</span>';
+            $resModal.find('#assessmentResultModalBadgeContainer').html(badgeHtml);
+
+            // Header Icon Box & Icon
+            $resModal.find('#assessmentResultModalIconBox').attr('class', isPassed ? 'p-2 rounded-3 bg-success-subtle text-success d-flex align-items-center justify-content-center' : 'p-2 rounded-3 bg-danger-subtle text-danger d-flex align-items-center justify-content-center');
+            $resModal.find('#assessmentResultModalIcon').attr('class', isPassed ? 'ti ti-trophy fs-2' : 'ti ti-alert-circle fs-2');
+
+            // Type Display
+            var headerLabel = 'Content Assessment';
+            var lowerType = String(typeStr).trim().toLowerCase();
+            if (lowerType === 'trainingplan' || lowerType === 'playlist') {
+                headerLabel = 'Playlist Assessment';
+            } else if (lowerType.indexOf('global') !== -1) {
+                headerLabel = 'Global Assessment';
+            } else if (lowerType === 'youtube') {
+                headerLabel = 'MOOC Assessment';
+            } else if (typeStr && typeStr !== '-') {
+                headerLabel = typeStr.indexOf('Assessment') !== -1 ? typeStr : typeStr + ' Assessment';
+            }
+            $resModal.find('#assessmentResultModalType').text(headerLabel);
+
+            // Batch vs Attempt Visibility
+            if (isGlobal) {
+                $resModal.find('#assessmentResultModalBatchRow').removeClass('d-none');
+                $resModal.find('#assessmentResultModalAttemptRow').addClass('d-none');
+                var batchDisplay = response.assessment_batch && response.assessment_batch !== '-' 
+                    ? (String(response.assessment_batch).toLowerCase().indexOf('batch') !== -1 ? response.assessment_batch : 'Batch ' + response.assessment_batch) 
+                    : '-';
+                $resModal.find('#assessmentResultModalBatch').text(batchDisplay);
+            } else {
+                $resModal.find('#assessmentResultModalBatchRow').addClass('d-none');
+                $resModal.find('#assessmentResultModalAttemptRow').removeClass('d-none');
+                var currAtt = response.assessment_current_attempt || response.assessment_user_attempts || 1;
+                var maxAtt = response.assessment_max_attempts || 1;
+                $resModal.find('#assessmentResultModalAttempt').text(currAtt + ' / ' + maxAtt);
+            }
+
+            // Assessment Period
+            var periodVal = response.assessment_period || '-';
+            if (periodVal === '-' && (response.assessment_from_date || response.assessment_to_date)) {
+                var f = (response.assessment_from_date && response.assessment_from_date !== '-') ? response.assessment_from_date : '';
+                var t = (response.assessment_to_date && response.assessment_to_date !== '-') ? response.assessment_to_date : '';
+                periodVal = (f && t) ? f + ' - ' + t : (f ? 'From ' + f : 'Until ' + t);
+            }
+            $resModal.find('#assessmentResultModalPeriod').text(periodVal);
+
+            // Status Message Row
+            $resModal.find('#assessmentResultModalStatusRow').attr('class', isPassed ? 'p-3 rounded-3 bg-success-subtle text-success' : 'p-3 rounded-3 bg-danger-subtle text-danger');
+            $resModal.find('#assessmentResultModalStatusMessage').text(isPassed ? 'Congratulations, you have passed this test.' : 'Sorry, you have not passed this test.');
+
+            // Notice
+            if (response.is_expired) {
+                $resModal.find('#assessmentResultModalExpiredNotice').removeClass('d-none').addClass('d-flex');
+            } else {
+                $resModal.find('#assessmentResultModalExpiredNotice').addClass('d-none').removeClass('d-flex');
+            }
+
+            if (typeof $.fn.modal === 'function') {
+                $resModal.modal('show');
+            } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                var bsModal = bootstrap.Modal.getOrCreateInstance($resModal[0]);
+                bsModal.show();
+            }
+            return true;
+        }
+
+        $(document).on('click', '#btnStartAssessmentAccess', function (e) {
+            e.preventDefault();
+            var targetUrl = $(this).data('target-url') || $(this).attr('data-target-url');
+            if (!targetUrl) {
+                targetUrl = $('#assessmentAccessModal').data('target-url') || $('#assessmentAccessModal').attr('data-target-url');
+            }
+            if (targetUrl) {
+                window.location.href = targetUrl;
+            }
+        });
+
         let submitFormAuthentication = (type) => {
             if (type == 'login') {
                 $('#submit-type').val('login');
