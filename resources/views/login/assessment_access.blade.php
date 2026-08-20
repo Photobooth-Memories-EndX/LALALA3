@@ -261,6 +261,71 @@
             }
         });
 
+        function showAssessmentStatusModal(status, response) {
+            var $modal = $('#assessmentAccessModal');
+            if (!$modal.length) return false;
+
+            var typeToMap = response.assessment_type_label || response.assessment_type || 'content';
+            var headerLabel = 'ASSESSMENT CONTENT';
+            if (typeToMap && typeToMap !== '-') {
+                var lowerType = String(typeToMap).trim().toLowerCase();
+                if (lowerType === 'trainingplan' || lowerType === 'playlist') {
+                    headerLabel = 'ASSESSMENT PLAYLIST';
+                } else if (lowerType === 'global') {
+                    headerLabel = 'ASSESSMENT GLOBAL';
+                } else if (lowerType === 'content') {
+                    headerLabel = 'ASSESSMENT CONTENT';
+                } else if (lowerType === 'youtube') {
+                    headerLabel = 'ASSESSMENT MOOC';
+                } else {
+                    headerLabel = 'ASSESSMENT ' + String(typeToMap).toUpperCase();
+                }
+            }
+
+            $modal.find('#assessmentAccessModalTypeBadge').text(headerLabel);
+            $modal.find('#assessmentAccessModalName').text(response.assessment_title || '-');
+
+            $modal.find('#assessmentAccessModalDetailsGrid').hide();
+            $modal.find('#assessmentAccessModalNoticeSection').hide();
+
+            $modal.find('#assessmentAccessModalStatusBox').show();
+            $modal.find('#assessmentAccessModalActiveFooter').attr('style', 'display: none !important;');
+            $modal.find('#assessmentAccessModalStatusFooter').show().attr('style', '');
+
+            if (status === 'inactive') {
+                $modal.find('#assessmentAccessModalTitle').text('Assessment Unavailable').attr('style', 'color: #dc3545 !important;');
+                $modal.find('#assessmentAccessModalSubtitle').text('Inactive');
+                $modal.find('#assessmentAccessModalIconBox').attr('style', 'width: 40px; height: 40px; background-color: rgba(220, 53, 69, 0.12); color: #dc3545;');
+                $modal.find('#assessmentAccessModalIconInner').attr('class', 'ti ti-circle-x fs-2');
+
+                $modal.find('#assessmentAccessModalStatusAlert').attr('class', 'alert alert-danger border-0 rounded-3 p-3 mb-0 d-flex align-items-start gap-2');
+                $modal.find('#assessmentAccessModalStatusAlertIcon').attr('class', 'ti ti-alert-triangle fs-2 flex-shrink-0 mt-1');
+                $modal.find('#assessmentAccessModalStatusAlertTitle').text('Assessment Inactive');
+                $modal.find('#assessmentAccessModalStatusText').text(response.status_message || 'This assessment is currently inactive and cannot be started.');
+            } else if (status === 'expired') {
+                $modal.find('#assessmentAccessModalTitle').text('Assessment Expired').attr('style', 'color: #fd7e14 !important;');
+                $modal.find('#assessmentAccessModalSubtitle').text('Expired');
+                $modal.find('#assessmentAccessModalIconBox').attr('style', 'width: 40px; height: 40px; background-color: rgba(253, 126, 20, 0.12); color: #fd7e14;');
+                $modal.find('#assessmentAccessModalIconInner').attr('class', 'ti ti-calendar-x fs-2');
+
+                $modal.find('#assessmentAccessModalStatusAlert').attr('class', 'alert alert-warning border-0 rounded-3 p-3 mb-0 d-flex align-items-start gap-2');
+                $modal.find('#assessmentAccessModalStatusAlertIcon').attr('class', 'ti ti-clock-off fs-2 flex-shrink-0 mt-1');
+                $modal.find('#assessmentAccessModalStatusAlertTitle').text('Assessment Expired');
+                $modal.find('#assessmentAccessModalStatusText').text(response.status_message || 'This assessment has expired and can no longer be started.');
+            }
+
+            if (typeof $.fn.modal === 'function') {
+                $modal.modal('show');
+            } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                var bsModal = bootstrap.Modal.getOrCreateInstance($modal[0]);
+                bsModal.show();
+            } else {
+                $modal.addClass('show').css('display', 'block');
+            }
+
+            return true;
+        }
+
         @if(session()->has('open_assessment_code'))
         document.addEventListener("DOMContentLoaded", function () {
             setTimeout(function () {
@@ -273,6 +338,19 @@
                         unique_code: code,
                     },
                     success: function (response) {
+                        // PRIORITY 1: INACTIVE MODAL
+                        if (response.assessment_status === 'inactive' || response.is_inactive || response.denial_reason === 'inactive') {
+                            showAssessmentStatusModal('inactive', response);
+                            return;
+                        }
+
+                        // PRIORITY 2: EXPIRED MODAL
+                        if (response.assessment_status === 'expired' || response.is_expired || response.denial_reason === 'expired') {
+                            showAssessmentStatusModal('expired', response);
+                            return;
+                        }
+
+                        // PRIORITY 3: RESULT MODAL
                         if (response.show_result) {
                             if (populateAndShowResultModal(response)) {
                                 return;
@@ -286,7 +364,7 @@
                             var lowerType = String(typeToMap).trim().toLowerCase();
                             if (lowerType === 'trainingplan' || lowerType === 'playlist') {
                                 headerLabel = 'ASSESSMENT PLAYLIST';
-                            } else if (lowerType.indexOf('global') !== -1) {
+                            } else if (lowerType === 'global') {
                                 headerLabel = 'ASSESSMENT GLOBAL';
                             } else if (lowerType === 'youtube') {
                                 headerLabel = 'ASSESSMENT MOOC';
@@ -296,6 +374,12 @@
 
                             var userAttempts = response.assessment_user_attempts !== undefined ? response.assessment_user_attempts : 0;
                             var maxAttempts = response.assessment_max_attempts !== undefined ? response.assessment_max_attempts : 1;
+
+                            $modal.find('#assessmentAccessModalStatusBox').hide();
+                            $modal.find('#assessmentAccessModalStatusFooter').attr('style', 'display: none !important;');
+                            $modal.find('#assessmentAccessModalActiveFooter').show().attr('style', '');
+                            $modal.find('#assessmentAccessModalDetailsGrid').show();
+                            $modal.find('#assessmentAccessModalNoticeSection').show();
 
                             $modal.find('#assessmentAccessModalTypeBadge').text(headerLabel);
                             $modal.find('#assessmentAccessModalName').text(response.assessment_title || '-');

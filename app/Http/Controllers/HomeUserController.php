@@ -481,9 +481,22 @@ class HomeUserController extends Controller
             $showResult = false;
             $canStart = false;
             $actionType = 'start';
-            $reason = null;
+            $reason = $assessmentAccess->denialReason($assessment, $user);
 
-            if ($hasSnapshot) {
+            $assessmentStatus = 'active';
+            $statusMessage = null;
+
+            if ($reason === AssessmentAccessService::REASON_INACTIVE) {
+                $assessmentStatus = 'inactive';
+                $statusMessage = 'This assessment is currently inactive and cannot be started.';
+                $canStart = false;
+                $showResult = false;
+            } elseif ($reason === AssessmentAccessService::REASON_EXPIRED) {
+                $assessmentStatus = 'expired';
+                $statusMessage = 'This assessment has expired and can no longer be started.';
+                $canStart = false;
+                $showResult = false;
+            } elseif ($hasSnapshot) {
                 // User has active unsubmitted draft -> Continue test
                 $canStart = true;
                 $showResult = false;
@@ -498,13 +511,11 @@ class HomeUserController extends Controller
                 $canStart = false;
             } elseif (!$isGlobal && $completedResults->isNotEmpty() && !$resultIsPassed && $userAttempts < $maxAttempts) {
                 // Content/Playlist: Failed previous attempt but has remedial available
-                $reason = $assessmentAccess->denialReason($assessment, $user);
                 $canStart = ($reason === null);
                 $showResult = false;
                 $actionType = 'remedial';
             } else {
                 // First attempt / not started yet
-                $reason = $assessmentAccess->denialReason($assessment, $user);
                 $canStart = ($reason === null);
                 $showResult = false;
                 $actionType = 'start';
@@ -534,6 +545,12 @@ class HomeUserController extends Controller
             };
 
             return response()->json([
+                'status' => $assessmentStatus,
+                'assessment_status' => $assessmentStatus,
+                'is_active' => $assessmentStatus === 'active',
+                'is_inactive' => $assessmentStatus === 'inactive',
+                'is_expired' => $assessmentStatus === 'expired',
+                'status_message' => $statusMessage,
                 'can_start' => $canStart,
                 'show_result' => $showResult,
                 'denial_reason' => $reason,
