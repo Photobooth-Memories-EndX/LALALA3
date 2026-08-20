@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assesment;
+use App\Models\AssesmentResult;
 use App\Models\News;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\EventPhoto;
 use App\Models\TrainingPlan;
 use App\Services\LearningAnalyticsService;
+use App\Services\AssessmentAccessService;
 use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -415,7 +417,7 @@ class HomeUserController extends Controller
         ->get();
 }
 
-    public function accessAssessmentByUniqueCode(Request $request)
+    public function accessAssessmentByUniqueCode(Request $request, AssessmentAccessService $assessmentAccess)
     {
         $validator = Validator::make(
             $request->all(),
@@ -437,49 +439,94 @@ class HomeUserController extends Controller
         )->first();
 
         if ($assessment) {
-            $currentUserId = auth()->id();
-            $userScores = collect($assessment->scores ?? [])->filter(function ($scoreItem) use ($currentUserId) {
-                return (string) ($scoreItem->user_id ?? '') === (string) $currentUserId;
-            });
+            $user = auth()->user();
+            $currentUserId = $user->id;
 
-            $userAttempts = $userScores->where('final', 1)->count();
-            if ($userAttempts === 0 && $userScores->count() > 0) {
-                $userAttempts = $userScores->count();
-            }
+            // Check if user has an active draft (already started)
+            $activeDraft = AssesmentResult::where('user_id', $currentUserId)
+                ->where('assesment_id', $assessment->id)
+                ->where('batch', $assessment->batch)
+                ->where('final', 0)
+                ->latest('id')
+                ->first();
 
+            // Evaluate access denial reason
+            $reason = $assessmentAccess->denialReason($assessment, $user);
+
+            // User CAN START / CONTINUE if no denial reason OR if an active draft exists
+            $canStart = ($reason === null) || ($activeDraft !== null);
+
+            $completedResults = AssesmentResult::where('user_id', $currentUserId)
+                ->where('assesment_id', $assessment->id)
+                ->where('batch', $assessment->batch)
+                ->where('final', 1)
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $userAttempts = $completedResults->count();
             $totalRemedials = (int) ($assessment->total_remedials ?? 0);
             $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
 
-            $fromDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->fromdate))
+            $showResult = false;
+            $resultScore = 0;
+            $resultIsPassed = false;
+            $resultCurrentAttempt = 1;
+
+            if (!$canStart && $completedResults->isNotEmpty()) {
+                $showResult = true;
+                $highestResult = $completedResults->sortByDesc('score')->first();
+                $resultScore = (int) ($highestResult->score ?? 0);
+                $passingGrade = (int) ($assessment->passing_grade ?? 0);
+                $resultIsPassed = (bool) ($highestResult->pass ?? ($resultScore >= $passingGrade));
+                $resultCurrentAttempt = $completedResults->count();
+            }
+
+            $fromDateDisplay = !empty($assessment->fromdate)
                 ? date('d M Y, H:i', strtotime($assessment->fromdate))
-                : '-';
-            $toDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->todate))
+                : null;
+            $toDateDisplay = !empty($assessment->todate)
                 ? date('d M Y, H:i', strtotime($assessment->todate))
-                : '-';
+                : null;
+
+            $periodDisplay = '-';
+            if ($fromDateDisplay && $toDateDisplay) {
+                $periodDisplay = $fromDateDisplay . ' - ' . $toDateDisplay;
+            } elseif ($fromDateDisplay) {
+                $periodDisplay = 'From ' . $fromDateDisplay;
+            } elseif ($toDateDisplay) {
+                $periodDisplay = 'Until ' . $toDateDisplay;
+            }
 
             $typeLabel = match (strtolower((string) ($assessment->type ?? ''))) {
-                'trainingplan', 'playlist' => 'Playlist',
-                'youtube'                  => 'MOOC',
-                default                    => ucwords(str_replace('_', ' ', $assessment->type ?? '-')),
+                'trainingplan', 'playlist' => 'Playlist Assessment',
+                'youtube'                  => 'MOOC Assessment',
+                'global'                   => 'Global Assessment',
+                default                    => ucwords(str_replace('_', ' ', $assessment->type ?? '-')) . ' Assessment',
             };
 
             return response()->json([
+                'can_start' => $canStart,
+                'show_result' => $showResult,
+                'denial_reason' => $reason,
                 'assessment_id' => $assessment->id,
                 'assessment_slug' => $assessment->slug,
                 'assessment_title' => $assessment->title ?? '-',
                 'assessment_type' => $assessment->type ?? 'content',
                 'assessment_type_label' => $typeLabel,
                 'assessment_batch' => $assessment->batch ?? '-',
-                'assessment_from_date' => $fromDateDisplay,
-                'assessment_to_date' => $toDateDisplay,
+                'assessment_from_date' => $fromDateDisplay ?? '-',
+                'assessment_to_date' => $toDateDisplay ?? '-',
+                'assessment_period' => $periodDisplay,
                 'assessment_passing_grade' => $assessment->passing_grade ?? '-',
                 'assessment_user_attempts' => $userAttempts,
                 'assessment_max_attempts' => $maxAttempts,
+                'assessment_score' => $resultScore,
+                'assessment_is_passed' => $resultIsPassed,
+                'assessment_current_attempt' => $resultCurrentAttempt,
                 'assessment_url' => route('assesment.user.view', $assessment->slug, false),
             ], 200);
 
         } else {
-
             return response()->json([
                 'error_message' =>
                     'The assessment with unique code '

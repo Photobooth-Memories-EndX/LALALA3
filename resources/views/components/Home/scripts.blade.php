@@ -143,74 +143,80 @@ function submitAssessmentAccess() {
             unique_code: unique_code,
         },
         success: function (response) {
-            // Hide input modal
-            $('#modal-assessment-access').modal('hide');
+            var $inputModal = $('#modal-assessment-access');
 
-            var $modal = $('#assessmentAccessModal');
-            if (!$modal.length) {
-                var fallbackRoute = response.assessment_url || "{{ route('assesment.user.view', ':slug') }}".replace(':slug', response.assessment_slug);
-                window.location.href = fallbackRoute;
-                return;
-            }
-
-            // Determine Header Label (trainingplan -> ASSESSMENT PLAYLIST)
-            var typeToMap = response.assessment_type_label || response.assessment_type || 'content';
-            var headerLabel = 'ASSESSMENT CONTENT';
-            if (typeToMap && typeToMap !== '-') {
-                var lowerType = String(typeToMap).trim().toLowerCase();
-                if (lowerType === 'trainingplan' || lowerType === 'playlist') {
-                    headerLabel = 'ASSESSMENT PLAYLIST';
-                } else if (lowerType === 'global') {
-                    headerLabel = 'ASSESSMENT GLOBAL';
-                } else if (lowerType === 'content') {
-                    headerLabel = 'ASSESSMENT CONTENT';
-                } else if (lowerType === 'youtube') {
-                    headerLabel = 'ASSESSMENT MOOC';
-                } else {
-                    headerLabel = 'ASSESSMENT ' + String(typeToMap).toUpperCase();
+            function openTargetModal() {
+                // DECISION 1: SHOW RESULT MODAL (User completed batch or reached max attempts)
+                if (response.show_result) {
+                    if (populateAndShowResultModal(response)) {
+                        return;
+                    }
                 }
-            }
 
-            // Format Attempt display
-            var userAttempts = response.assessment_user_attempts !== undefined ? response.assessment_user_attempts : 0;
-            var maxAttempts = response.assessment_max_attempts !== undefined ? response.assessment_max_attempts : 1;
-            var attemptDisplay = userAttempts + ' / ' + maxAttempts + ' Attempts';
+                // DECISION 2: SHOW ACCESS MODAL (User can start or continue test)
+                var $modal = $('#assessmentAccessModal');
+                if (!$modal.length) {
+                    var fallbackRoute = response.assessment_url || "{{ route('assesment.user.view', ':slug') }}".replace(':slug', response.assessment_slug);
+                    window.location.href = fallbackRoute;
+                    return;
+                }
 
-            // Populate Modal Data
-            $modal.find('#assessmentAccessModalTypeBadge').text(headerLabel);
-            $modal.find('#assessmentAccessModalName').text(response.assessment_title || '-');
+                // Determine Header Label (trainingplan -> ASSESSMENT PLAYLIST)
+                var typeToMap = response.assessment_type_label || response.assessment_type || 'content';
+                var headerLabel = 'ASSESSMENT CONTENT';
+                if (typeToMap && typeToMap !== '-') {
+                    var lowerType = String(typeToMap).trim().toLowerCase();
+                    if (lowerType === 'trainingplan' || lowerType === 'playlist') {
+                        headerLabel = 'ASSESSMENT PLAYLIST';
+                    } else if (lowerType === 'global') {
+                        headerLabel = 'ASSESSMENT GLOBAL';
+                    } else if (lowerType === 'content') {
+                        headerLabel = 'ASSESSMENT CONTENT';
+                    } else if (lowerType === 'youtube') {
+                        headerLabel = 'ASSESSMENT MOOC';
+                    } else {
+                        headerLabel = 'ASSESSMENT ' + String(typeToMap).toUpperCase();
+                    }
+                }
 
-            var batchDisplay = response.assessment_batch && response.assessment_batch !== '-' 
-                ? (String(response.assessment_batch).toLowerCase().indexOf('batch') !== -1 ? response.assessment_batch : 'Batch ' + response.assessment_batch) 
-                : '-';
-            $modal.find('#assessmentAccessModalSubText').text(batchDisplay);
-            $modal.find('#assessmentAccessModalBatch').text(batchDisplay);
+                // Format Attempt display
+                var userAttempts = response.assessment_user_attempts !== undefined ? response.assessment_user_attempts : 0;
+                var maxAttempts = response.assessment_max_attempts !== undefined ? response.assessment_max_attempts : 1;
+                var attemptDisplay = userAttempts + ' / ' + maxAttempts + ' Attempts';
 
-            var fromDateVal = (typeof formatAssessmentDate === 'function') ? formatAssessmentDate(response.assessment_from_date) : (response.assessment_from_date || '-');
-            var toDateVal = (typeof formatAssessmentDate === 'function') ? formatAssessmentDate(response.assessment_to_date) : (response.assessment_to_date || '-');
-            $modal.find('#assessmentAccessModalFromDate').text(fromDateVal);
-            $modal.find('#assessmentAccessModalToDate').text(toDateVal);
+                // Populate Modal Data
+                $modal.find('#assessmentAccessModalTypeBadge').text(headerLabel);
+                $modal.find('#assessmentAccessModalName').text(response.assessment_title || '-');
 
-            $modal.find('#assessmentAccessModalPassingGrade').text(response.assessment_passing_grade !== undefined && response.assessment_passing_grade !== '' ? response.assessment_passing_grade : '-');
-            $modal.find('#assessmentAccessModalAttempt').text(attemptDisplay);
+                var batchDisplay = response.assessment_batch && response.assessment_batch !== '-' 
+                    ? (String(response.assessment_batch).toLowerCase().indexOf('batch') !== -1 ? response.assessment_batch : 'Batch ' + response.assessment_batch) 
+                    : '-';
+                $modal.find('#assessmentAccessModalSubText').text(batchDisplay);
+                $modal.find('#assessmentAccessModalBatch').text(batchDisplay);
 
-            var targetUrl = response.assessment_url;
-            if (response.assessment_slug) {
-                targetUrl = "{{ url('/assesment') }}/" + response.assessment_slug;
-            } else if (!targetUrl) {
-                targetUrl = "{{ route('assesment.user.view', ':slug') }}".replace(':slug', response.assessment_slug);
-            }
+                var fromDateVal = (typeof formatAssessmentDate === 'function') ? formatAssessmentDate(response.assessment_from_date) : (response.assessment_from_date || '-');
+                var toDateVal = (typeof formatAssessmentDate === 'function') ? formatAssessmentDate(response.assessment_to_date) : (response.assessment_to_date || '-');
+                $modal.find('#assessmentAccessModalFromDate').text(fromDateVal);
+                $modal.find('#assessmentAccessModalToDate').text(toDateVal);
 
-            $('#btnStartAssessmentAccess')
-                .data('target-url', targetUrl)
-                .attr('data-target-url', targetUrl);
+                $modal.find('#assessmentAccessModalPassingGrade').text(response.assessment_passing_grade !== undefined && response.assessment_passing_grade !== '' ? response.assessment_passing_grade : '-');
+                $modal.find('#assessmentAccessModalAttempt').text(attemptDisplay);
 
-            $modal
-                .data('target-url', targetUrl)
-                .attr('data-target-url', targetUrl);
+                var targetUrl = response.assessment_url;
+                if (response.assessment_slug) {
+                    targetUrl = "{{ url('/assesment') }}/" + response.assessment_slug;
+                } else if (!targetUrl) {
+                    targetUrl = "{{ route('assesment.user.view', ':slug') }}".replace(':slug', response.assessment_slug);
+                }
 
-            // Open #assessmentAccessModal safely using event-driven transition
-            function showAccessModal() {
+                $('#btnStartAssessmentAccess')
+                    .data('target-url', targetUrl)
+                    .attr('data-target-url', targetUrl);
+
+                $modal
+                    .data('target-url', targetUrl)
+                    .attr('data-target-url', targetUrl);
+
                 if (typeof $.fn.modal === 'function') {
                     $modal.modal('show');
                 } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
@@ -221,21 +227,20 @@ function submitAssessmentAccess() {
                 }
             }
 
-            var $inputModal = $('#modal-assessment-access');
             if ($inputModal.length && ($inputModal.hasClass('show') || $inputModal.is(':visible'))) {
                 var opened = false;
                 var safeOpen = function () {
                     if (!opened) {
                         opened = true;
                         $inputModal.off('hidden.bs.modal', safeOpen);
-                        showAccessModal();
+                        openTargetModal();
                     }
                 };
                 $inputModal.one('hidden.bs.modal', safeOpen);
                 $inputModal.modal('hide');
                 setTimeout(safeOpen, 350);
             } else {
-                showAccessModal();
+                openTargetModal();
             }
         },
         error: function (error) {
@@ -281,6 +286,90 @@ $(document).on('click', '#btnStartAssessmentAccess', function (e) {
     window.location.href = targetUrl;
 });
 
+function populateAndShowResultModal(response) {
+    var $resModal = $('#assessmentResultModal');
+    if (!$resModal.length) return false;
+
+    var isPassed = !!response.assessment_is_passed;
+    var scoreVal = response.assessment_score !== undefined ? response.assessment_score : 0;
+    var passingGradeVal = response.assessment_passing_grade !== undefined ? response.assessment_passing_grade : '-';
+    var typeStr = response.assessment_type_label || response.assessment_type || 'content';
+    var isGlobal = String(typeStr).trim().toLowerCase().indexOf('global') !== -1 || String(response.assessment_type).trim().toLowerCase() === 'global';
+
+    $resModal.find('#assessmentResultModalName').text(response.assessment_title || '-');
+    $resModal.find('#assessmentResultModalScore').text(scoreVal);
+    $resModal.find('#assessmentResultModalScore').attr('class', isPassed ? 'text-success display-4 fw-extrabold mb-1' : 'text-danger display-4 fw-extrabold mb-1');
+    $resModal.find('#assessmentResultModalPassingGrade').text(passingGradeVal);
+
+    // Single Status Badge!
+    var badgeHtml = isPassed 
+        ? '<span class="badge bg-success-subtle text-success px-3 py-2 fs-6 rounded-pill fw-bold"><i class="ti ti-check me-1"></i>Passed</span>'
+        : '<span class="badge bg-danger-subtle text-danger px-3 py-2 fs-6 rounded-pill fw-bold"><i class="ti ti-x me-1"></i>Failed</span>';
+    $resModal.find('#assessmentResultModalBadgeContainer').html(badgeHtml);
+
+    // Header Icon Box & Icon
+    $resModal.find('#assessmentResultModalIconBox').attr('class', isPassed ? 'p-2 rounded-3 bg-success-subtle text-success d-flex align-items-center justify-content-center' : 'p-2 rounded-3 bg-danger-subtle text-danger d-flex align-items-center justify-content-center');
+    $resModal.find('#assessmentResultModalIcon').attr('class', isPassed ? 'ti ti-trophy fs-2' : 'ti ti-alert-circle fs-2');
+
+    // Type Display
+    var headerLabel = 'Content Assessment';
+    var lowerType = String(typeStr).trim().toLowerCase();
+    if (lowerType === 'trainingplan' || lowerType === 'playlist') {
+        headerLabel = 'Playlist Assessment';
+    } else if (lowerType.indexOf('global') !== -1) {
+        headerLabel = 'Global Assessment';
+    } else if (lowerType === 'youtube') {
+        headerLabel = 'MOOC Assessment';
+    } else if (typeStr && typeStr !== '-') {
+        headerLabel = typeStr.indexOf('Assessment') !== -1 ? typeStr : typeStr + ' Assessment';
+    }
+    $resModal.find('#assessmentResultModalType').text(headerLabel);
+
+    // Batch vs Attempt Visibility
+    if (isGlobal) {
+        $resModal.find('#assessmentResultModalBatchRow').removeClass('d-none');
+        $resModal.find('#assessmentResultModalAttemptRow').addClass('d-none');
+        var batchDisplay = response.assessment_batch && response.assessment_batch !== '-' 
+            ? (String(response.assessment_batch).toLowerCase().indexOf('batch') !== -1 ? response.assessment_batch : 'Batch ' + response.assessment_batch) 
+            : '-';
+        $resModal.find('#assessmentResultModalBatch').text(batchDisplay);
+    } else {
+        $resModal.find('#assessmentResultModalBatchRow').addClass('d-none');
+        $resModal.find('#assessmentResultModalAttemptRow').removeClass('d-none');
+        var currAtt = response.assessment_current_attempt || response.assessment_user_attempts || 1;
+        var maxAtt = response.assessment_max_attempts || 1;
+        $resModal.find('#assessmentResultModalAttempt').text(currAtt + ' / ' + maxAtt);
+    }
+
+    // Assessment Period
+    var periodVal = response.assessment_period || '-';
+    if (periodVal === '-' && (response.assessment_from_date || response.assessment_to_date)) {
+        var f = (response.assessment_from_date && response.assessment_from_date !== '-') ? response.assessment_from_date : '';
+        var t = (response.assessment_to_date && response.assessment_to_date !== '-') ? response.assessment_to_date : '';
+        periodVal = (f && t) ? f + ' - ' + t : (f ? 'From ' + f : 'Until ' + t);
+    }
+    $resModal.find('#assessmentResultModalPeriod').text(periodVal);
+
+    // Status Message Row
+    $resModal.find('#assessmentResultModalStatusRow').attr('class', isPassed ? 'p-3 rounded-3 bg-success-subtle text-success' : 'p-3 rounded-3 bg-danger-subtle text-danger');
+    $resModal.find('#assessmentResultModalStatusMessage').text(isPassed ? 'Congratulations, you have passed this test.' : 'Sorry, you have not passed this test.');
+
+    // Notice
+    if (response.is_expired) {
+        $resModal.find('#assessmentResultModalExpiredNotice').removeClass('d-none').addClass('d-flex');
+    } else {
+        $resModal.find('#assessmentResultModalExpiredNotice').addClass('d-none').removeClass('d-flex');
+    }
+
+    if (typeof $.fn.modal === 'function') {
+        $resModal.modal('show');
+    } else if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        var bsModal = bootstrap.Modal.getOrCreateInstance($resModal[0]);
+        bsModal.show();
+    }
+    return true;
+}
+
 function submitAssessmentAccessWithCode(code) {
     if ($('#unique-code').length) {
         $('#unique-code').val(code);
@@ -294,6 +383,12 @@ function submitAssessmentAccessWithCode(code) {
                 unique_code: code,
             },
             success: function (response) {
+                if (response.show_result) {
+                    if (populateAndShowResultModal(response)) {
+                        return;
+                    }
+                }
+
                 var targetUrl = response.assessment_url || ("{{ url('/assesment') }}/" + response.assessment_slug);
                 window.location.href = targetUrl;
             }
