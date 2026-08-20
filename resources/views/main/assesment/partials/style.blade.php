@@ -433,4 +433,88 @@
         color: #ffffff !important;
     }
 
+    /* ==========================
+       ASSESSMENT STATUS TOGGLE
+    ========================== */
+
+    .toggle.btn-success,
+    .toggle.btn-success:hover,
+    .toggle.btn-success:focus,
+    .toggle.btn-success:active,
+    .toggle.btn-success.active,
+    .toggle-on.btn-success,
+    .toggle-on.btn-success:hover,
+    .toggle-on.btn-success:focus,
+    .toggle-on.btn-success:active {
+        background-color: #198754 !important;
+        border-color: #198754 !important;
+        color: #ffffff !important;
+        --tblr-btn-bg: #198754 !important;
+        --tblr-btn-color: #ffffff !important;
+        --tblr-btn-border-color: #198754 !important;
+    }
+
+    .toggle.btn-danger,
+    .toggle.btn-danger:hover,
+    .toggle.btn-danger:focus,
+    .toggle.btn-danger:active,
+    .toggle.btn-danger.active,
+    .toggle-off.btn-danger,
+    .toggle-off.btn-danger:hover,
+    .toggle-off.btn-danger:focus,
+    .toggle-off.btn-danger:active {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+        color: #ffffff !important;
+        --tblr-btn-bg: #dc3545 !important;
+        --tblr-btn-color: #ffffff !important;
+        --tblr-btn-border-color: #dc3545 !important;
+    }
+
+    .toggle-handle {
+        background-color: #ffffff !important;
+        border-color: rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] .toggle.btn-success,
+    [data-theme="dark"] .toggle.btn-success,
+    body.dark-mode .toggle.btn-success,
+    body.theme-dark .toggle.btn-success,
+    [data-bs-theme="dark"] .toggle-on.btn-success,
+    [data-theme="dark"] .toggle-on.btn-success,
+    body.dark-mode .toggle-on.btn-success,
+    body.theme-dark .toggle-on.btn-success {
+        background-color: #198754 !important;
+        border-color: #198754 !important;
+        color: #ffffff !important;
+        --tblr-btn-bg: #198754 !important;
+        --tblr-btn-color: #ffffff !important;
+        --tblr-btn-border-color: #198754 !important;
+    }
+
+    [data-bs-theme="dark"] .toggle.btn-danger,
+    [data-theme="dark"] .toggle.btn-danger,
+    body.dark-mode .toggle.btn-danger,
+    body.theme-dark .toggle.btn-danger,
+    [data-bs-theme="dark"] .toggle-off.btn-danger,
+    [data-theme="dark"] .toggle-off.btn-danger,
+    body.dark-mode .toggle-off.btn-danger,
+    body.theme-dark .toggle-off.btn-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+        color: #ffffff !important;
+        --tblr-btn-bg: #dc3545 !important;
+        --tblr-btn-color: #ffffff !important;
+        --tblr-btn-border-color: #dc3545 !important;
+    }
+
+    [data-bs-theme="dark"] .toggle-handle,
+    [data-theme="dark"] .toggle-handle,
+    body.dark-mode .toggle-handle,
+    body.theme-dark .toggle-handle {
+        background-color: #f8f9fa !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+
 </style>

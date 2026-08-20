@@ -106,7 +106,7 @@
             class="toggle-class"
             type="checkbox"
             data-onstyle="success"
-            data-offstyle="secondary"
+            data-offstyle="danger"
             data-on="ON"
             data-off="OFF"
             data-size="small"
