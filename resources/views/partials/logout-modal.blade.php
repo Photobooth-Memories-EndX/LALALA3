@@ -1,5 +1,5 @@
 {{-- Logout Confirmation Modal --}}
-<div class="modal modal-blur fade" id="modal-logout-confirm" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal modal-blur fade" id="modal-logout-confirm" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static" data-backdrop="static">
     <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 380px !important;">
         <div class="modal-content rounded-4 border-0 shadow text-center p-3">
             <div class="modal-body">
@@ -31,17 +31,25 @@
 
 <script>
     (function () {
-        let activeLogoutForm = null;
-
         function openLogoutModal() {
             const modalElement = document.getElementById('modal-logout-confirm');
             if (!modalElement) return;
 
-            if (typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+            if (typeof $ !== 'undefined' && $.fn && typeof $.fn.modal === 'function') {
                 $(modalElement).modal('show');
-            } else if (window.bootstrap && bootstrap.Modal) {
-                const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-                modal.show();
+            } else if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+                try {
+                    if (typeof window.bootstrap.Modal.getOrCreateInstance === 'function') {
+                        window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
+                    } else {
+                        const instance = window.bootstrap.Modal.getInstance ? window.bootstrap.Modal.getInstance(modalElement) : null;
+                        (instance || new window.bootstrap.Modal(modalElement)).show();
+                    }
+                } catch (err) {
+                    modalElement.style.display = 'block';
+                    modalElement.classList.add('show');
+                    document.body.classList.add('modal-open');
+                }
             } else {
                 modalElement.style.display = 'block';
                 modalElement.classList.add('show');
@@ -57,9 +65,22 @@
 
         function closeLogoutModal() {
             const modalElement = document.getElementById('modal-logout-confirm');
-            if (typeof $ !== 'undefined' && $.fn && $.fn.modal) {
+            if (!modalElement) return;
+
+            if (typeof $ !== 'undefined' && $.fn && typeof $.fn.modal === 'function') {
                 $(modalElement).modal('hide');
-            } else if (modalElement) {
+            } else if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+                try {
+                    if (typeof window.bootstrap.Modal.getInstance === 'function') {
+                        const instance = window.bootstrap.Modal.getInstance(modalElement);
+                        if (instance) instance.hide();
+                    }
+                } catch (err) {
+                    modalElement.style.display = 'none';
+                    modalElement.classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                }
+            } else {
                 modalElement.style.display = 'none';
                 modalElement.classList.remove('show');
                 document.body.classList.remove('modal-open');
@@ -70,78 +91,51 @@
             }
         }
 
-        // 1. Intercept ALL logout clicks during Capture Phase (before any navigation/submit can execute)
+        // 1. Global Click Interceptor: ONLY intercepts external logout trigger buttons
         document.addEventListener('click', function (e) {
-            const logoutBtn = e.target.closest('[data-logout-trigger="true"], .owl-sidebar-logout-btn, form[action*="logout"] button, a[href*="logout"]');
-            
-            // If click was on Cancel button or close modal button
-            if (e.target.closest('#btn-cancel-logout, [data-bs-dismiss="modal"], [data-dismiss="modal"]')) {
-                const isInsideLogoutModal = e.target.closest('#modal-logout-confirm');
-                if (isInsideLogoutModal) {
-                    closeLogoutModal();
-                    activeLogoutForm = null;
-                    return;
-                }
+            // PENTING: Jangan intercept event apa pun yang berasal dari dalam modal logout.
+            if (e.target.closest('#modal-logout-confirm')) {
+                return;
             }
 
-            if (logoutBtn) {
-                // STOP ORIGINAL ACTION IMMEDIATELY BEFORE ANY OTHER LISTENER RUNS
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.stopImmediatePropagation) {
-                    e.stopImmediatePropagation();
-                }
-
-                // Save reference to the parent logout form
-                activeLogoutForm = logoutBtn.closest('form') || document.getElementById('sidebar-logout-form');
-
-                // Show confirmation modal
-                openLogoutModal();
+            // Hanya proses trigger pembuka modal di luar modal.
+            const logoutBtn = e.target.closest(
+                '[data-logout-trigger="true"], .owl-sidebar-logout-btn, #sidebar-logout-form button, form[action*="logout"] button, a[href*="logout"]'
+            );
+            if (!logoutBtn) {
+                return;
             }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            openLogoutModal();
         }, true);
 
-        // 2. Intercept submit events as fallback
-        document.addEventListener('submit', function (e) {
-            const form = e.target;
-            if (form && form.action && (form.action.includes('logout') || form.id === 'sidebar-logout-form' || form.id === 'modal-logout-form')) {
-                if (!window.isExecutingLogoutSubmit) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    activeLogoutForm = form;
-                    openLogoutModal();
-                }
-            }
-        }, true);
+        // 2. Modal-internal Event Handling
+        const logoutForm = document.getElementById('modal-logout-form');
+        const confirmLogoutBtn = document.getElementById('btn-confirm-logout');
+        const cancelLogoutBtn = document.getElementById('btn-cancel-logout');
 
-        // 3. Confirm Log Out button handler
-        document.addEventListener('DOMContentLoaded', function () {
-            const confirmLogoutBtn = document.getElementById('btn-confirm-logout');
-            const cancelLogoutBtn = document.getElementById('btn-cancel-logout');
-
-            if (cancelLogoutBtn) {
-                cancelLogoutBtn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    closeLogoutModal();
-                    activeLogoutForm = null;
-                });
-            }
-
-            if (confirmLogoutBtn) {
-                confirmLogoutBtn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    window.isExecutingLogoutSubmit = true;
-                    confirmLogoutBtn.disabled = true;
-                    confirmLogoutBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Logging out...';
-                    if (activeLogoutForm) {
-                        activeLogoutForm.submit();
-                    } else {
-                        const fallbackForm = document.getElementById('modal-logout-form') || document.getElementById('sidebar-logout-form');
-                        if (fallbackForm) {
-                            fallbackForm.submit();
-                        }
+        // Form submit: native submission + prevent double click & show loading state
+        if (logoutForm) {
+            logoutForm.addEventListener('submit', function () {
+                if (confirmLogoutBtn) {
+                    if (confirmLogoutBtn.dataset.submitting === 'true') {
+                        return;
                     }
-                });
-            }
-        });
+                    confirmLogoutBtn.dataset.submitting = 'true';
+                    confirmLogoutBtn.style.pointerEvents = 'none';
+                    confirmLogoutBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Logging out...';
+                }
+            });
+        }
+
+        // Cancel button fallback close handling
+        if (cancelLogoutBtn) {
+            cancelLogoutBtn.addEventListener('click', function () {
+                closeLogoutModal();
+            });
+        }
     })();
 </script>
