@@ -62,6 +62,9 @@
             @foreach ($content_all as $index => $list)
                 @php
                     $lesson = $list->content;
+                    if (!$lesson) continue;
+
+                    $isContentInactive = ($lesson->active !== 'Active');
                     $isActive = optional($lesson)->slug === $content->slug;
                     $lessonAssessment = $assessmentsByContent->get($list->content_id);
 
@@ -91,12 +94,13 @@
                     }
                 @endphp
 
-                @if (optional($lesson)->slug)
-                    <div class="playlist-lesson-item {{ $isActive ? 'is-active' : '' }}"
-                         data-title="{{ strtolower($lesson->title) }}">
-                        <a href="{{ route('playlist.user.view', [$playlist->slug, $lesson->slug]) }}"
-                           class="playlist-lesson-main">
-                            <div class="lesson-type-icon lesson-thumbnail"
+                @if ($isContentInactive)
+                    <!-- Item Inactive: Tampil Utuh, Non-clickable -->
+                    <div class="playlist-lesson-item is-inactive bg-light opacity-60 pe-none border-0 mb-2 rounded-3 p-2 position-relative"
+                         data-title="{{ strtolower($lesson->title) }}"
+                         style="cursor: not-allowed; opacity: 0.6;">
+                        <div class="playlist-lesson-main d-flex align-items-start gap-2">
+                            <div class="lesson-type-icon lesson-thumbnail flex-shrink-0"
                                  role="img"
                                  aria-label="{{ $isDocumentLesson ? 'Document content' : 'Video content' }}">
                                 @if ($isDocumentLesson)
@@ -114,10 +118,52 @@
                                 @endif
                             </div>
 
-                            <div class="lesson-info">
+                            <div class="lesson-info flex-grow-1 min-w-0">
                                 <div class="lesson-heading">
                                     <div class="lesson-title">
-                                        Ch. {{ $index + 1 }}: {{ $lesson->title }}
+                                        <span class="fw-bold text-muted d-inline me-1">#{{ $loop->iteration }}</span>
+                                        <span class="content-title-two-lines text-secondary fw-semibold small" title="{{ $lesson->title }}">
+                                            {{ $lesson->title }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mt-1">
+                                    <span class="badge rounded-pill text-white fw-semibold px-2 py-0.5" style="background-color: #f59e0b !important; font-size: 0.68rem;">Inactive</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @elseif (optional($lesson)->slug)
+                    <!-- Item Active: Link Clickable biasa -->
+                    <div class="playlist-lesson-item {{ $isActive ? 'is-active' : '' }}"
+                         data-title="{{ strtolower($lesson->title) }}">
+                        <a href="{{ route('playlist.user.view', [$playlist->slug, $lesson->slug]) }}"
+                           class="playlist-lesson-main">
+                            <div class="lesson-type-icon lesson-thumbnail flex-shrink-0"
+                                 role="img"
+                                 aria-label="{{ $isDocumentLesson ? 'Document content' : 'Video content' }}">
+                                @if ($isDocumentLesson)
+                                    <span class="lesson-thumbnail-fallback" aria-hidden="true">
+                                        <i class="ti ti-file-description" aria-hidden="true"></i>
+                                    </span>
+                                @else
+                                    <img src="{{ $defaultLessonThumbnail }}"
+                                         alt=""
+                                         class="lesson-thumbnail-image"
+                                         onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                                    <span class="lesson-thumbnail-fallback d-none" aria-hidden="true">
+                                        <i class="ti ti-video" aria-hidden="true"></i>
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="lesson-info flex-grow-1 min-w-0">
+                                <div class="lesson-heading">
+                                    <div class="lesson-title">
+                                        <span class="fw-bold d-inline me-1">#{{ $loop->iteration }}</span>
+                                        <span class="content-title-two-lines text-dark fw-semibold small" title="{{ $lesson->title }}">
+                                            {{ $lesson->title }}
+                                        </span>
                                     </div>
                                     <span class="lesson-status-icon {{ $lessonStatusClass }} {{ $lessonStatusTone }}"
                                           role="img"
@@ -127,7 +173,7 @@
                                     </span>
                                 </div>
 
-                                <div class="lesson-meta">
+                                <div class="lesson-meta mt-1">
                                     {{ $learningProgress }}%
                                 </div>
 
@@ -163,8 +209,6 @@
                                         @else
                                             disabled
                                             tabindex="-1"
-                                            data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
                                             title="Complete this content to unlock the assessment."
                                         @endif
                                         data-assessment-url="{{ route('assesment.user.view', $lessonAssessment->slug) }}"

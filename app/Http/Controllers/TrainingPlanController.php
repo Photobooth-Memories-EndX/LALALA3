@@ -105,9 +105,15 @@ class TrainingPlanController extends Controller
 
     public function order($slug)
     {
-        $content = Content::where('deleted_at', NULL)->where('active', 'Active')->get();
-        $trainingplan = TrainingPlan::with(['trainingplandetail', 'trainingplandetail.content'])->where('deleted_at', NULL)->firstWhere('slug', $slug);
-        $trainingplandetail = TrainingPlanDetail::with('content')->where('trainingplan_id', $trainingplan->id)->orderBy('content_order', 'ASC')->get();
+        $content = Content::whereNull('deleted_at')->orderBy('title')->get();
+        $trainingplan = TrainingPlan::with([
+            'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
+            'trainingplandetail.content'
+        ])->whereNull('deleted_at')->firstWhere('slug', $slug);
+        $trainingplandetail = TrainingPlanDetail::with('content')
+            ->where('trainingplan_id', $trainingplan->id)
+            ->orderByRaw('CAST(content_order AS UNSIGNED) ASC')
+            ->get();
 
         return view('main.trainingplan.order', [
             "title" =>  "Edit Playlist",
@@ -119,7 +125,7 @@ class TrainingPlanController extends Controller
 
     public function create()
     {
-        $content = Content::where('deleted_at', NULL)->where('active', 'Active')->get();
+        $content = Content::whereNull('deleted_at')->orderBy('title')->get();
 
         return view('main.trainingplan.create', [
             "title" =>  "Add Playlist",
@@ -174,13 +180,13 @@ class TrainingPlanController extends Controller
 
             $trainingplan->save();
 
-            $contentInput = $request->input('content');
+            $contentInput = array_values(array_filter((array) $request->input('content', [])));
             if ($contentInput) {
                 foreach ($contentInput as $key => $value) {
                     $trainingplanDetail = new TrainingPlanDetail([
-                        'content_order' => $key,
+                        'content_order'   => $key,
                         'trainingplan_id' => $trainingplan->id,
-                        'content_id' => $value,
+                        'content_id'      => $value,
                     ]);
                     $trainingplanDetail->save();
                 }
@@ -204,10 +210,23 @@ class TrainingPlanController extends Controller
         }
     }
 
-    public function edit(TrainingPlan $trainingplan)
+    public function edit(Request $request, mixed $trainingplan = null)
     {
-        $content = Content::where('deleted_at', NULL)->where('active', 'Active')->get();
-        $trainingplan = TrainingPlan::with(['trainingplandetail', 'trainingplandetail.content'])->where('deleted_at', NULL)->firstWhere('id', $trainingplan->id);
+        if (!$trainingplan instanceof TrainingPlan) {
+            $param = $trainingplan ?? $request->route('trainingplan');
+            if ($param instanceof TrainingPlan) {
+                $trainingplan = $param;
+            } else {
+                $trainingplan = TrainingPlan::where('slug', $param)->orWhere('id', $param)->firstOrFail();
+            }
+        }
+
+        $content = Content::whereNull('deleted_at')->orderBy('title')->get();
+        $trainingplan = TrainingPlan::with([
+            'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
+            'trainingplandetail.content'
+        ])->whereNull('deleted_at')->firstWhere('id', $trainingplan->id);
+
         $activecontent = array();
         foreach ($trainingplan->trainingplandetail as $contentlist) {
             $activecontent[] = $contentlist->content_id;
@@ -221,14 +240,23 @@ class TrainingPlanController extends Controller
         ]);
     }
 
-    public function update(Request $request, TrainingPlan $trainingplan)
+    public function update(Request $request, mixed $trainingplan = null)
     {
+        if (!$trainingplan instanceof TrainingPlan) {
+            $param = $trainingplan ?? $request->route('trainingplan');
+            if ($param instanceof TrainingPlan) {
+                $trainingplan = $param;
+            } else {
+                $trainingplan = TrainingPlan::where('slug', $param)->orWhere('id', $param)->firstOrFail();
+            }
+        }
+
         DB::beginTransaction();
 
         try {
             if ($request->savetype == "reorder") {
                 foreach ($request->order as $key => $value) {
-                    TrainingPlanDetail::firstWhere('id', $key)->update([
+                    TrainingPlanDetail::where('id', $key)->update([
                         'content_order' => $value
                     ]);
                 }
@@ -284,33 +312,23 @@ class TrainingPlanController extends Controller
 
                 $trainingplan->save();
 
-                $contentInput = $request->input('content');
+                $contentInput = array_values(array_filter((array) $request->input('content', [])));
 
-                // Remove Content
-                if ($contentInput) {
-                    $removecontent = TrainingPlanDetail::Where('trainingplan_id', $trainingplan->id)->get();
-                    foreach ($removecontent as $key => $value) {
-                        if (!in_array($value, $contentInput)) {
-                            TrainingPlanDetail::firstWhere([['trainingplan_id', $trainingplan->id], ['content_id', $value->content_id]])->delete();
-                        }
-                    }
-                } else {
-                    TrainingPlanDetail::Where('trainingplan_id', $trainingplan->id)->delete();
-                }
+                // Sync Content & Content Orders
+                TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)
+                    ->whereNotIn('content_id', $contentInput)
+                    ->delete();
 
-                // Add Content
-                if ($contentInput) {
-                    foreach ($contentInput as $key => $value) {
-                        $checkcontent = TrainingPlanDetail::firstWhere([['trainingplan_id', $trainingplan->id], ['content_id', $value]]);
-                        if (!$checkcontent) {
-                            $trainingplanDetail = new TrainingPlanDetail([
-                                'trainingplan_id' => $trainingplan->id,
-                                'content_id' => $value,
-                                'content_order' => $key
-                            ]);
-                            $trainingplanDetail->save();
-                        }
-                    }
+                foreach ($contentInput as $orderIndex => $contentId) {
+                    TrainingPlanDetail::updateOrCreate(
+                        [
+                            'trainingplan_id' => $trainingplan->id,
+                            'content_id'      => $contentId,
+                        ],
+                        [
+                            'content_order'   => $orderIndex,
+                        ]
+                    );
                 }
             }
 

@@ -25,11 +25,17 @@ class PlaylistUserController extends Controller
 
         // Global aggregate stats — safe to cache, no per-user data
         $totalPlaylists = Cache::remember('playlist_active_count', 300, function () {
-            return TrainingPlan::where('active', 'Active')->count();
+            return TrainingPlan::where('active', 'Active')
+                ->whereHas('trainingplandetail.content', function ($q) {
+                    $q->where('active', 'Active');
+                })
+                ->count();
         });
 
         $totalContents = Cache::remember('playlist_active_content_count', 300, function () {
             return TrainingPlanDetail::whereHas('trainingplan', function ($q) {
+                $q->where('active', 'Active');
+            })->whereHas('content', function ($q) {
                 $q->where('active', 'Active');
             })->count();
         });
@@ -37,14 +43,16 @@ class PlaylistUserController extends Controller
         // trainingplan columns used: id, slug, title, total_duration_seconds,
         //                            url_link, active, created_at, thumbnail,
         //                            has_deadline, from_date, to_date
-        // content columns:      id, title, slug, type, link, classification_id
+        // content columns:      id, title, slug, type, link, classification_id, duration, learning_hours
         // content_users columns: id, user_id, content_id, progress, finish
         $trainingplan = TrainingPlan::with([
                 'trainingplandetail' => fn ($q) => $q
-                    ->orderBy('content_order')
+                    ->whereHas('content', fn ($cq) => $cq->where('active', 'Active'))
+                    ->orderByRaw('CAST(content_order AS UNSIGNED) ASC')
                     ->select(['id', 'trainingplan_id', 'content_id', 'content_order']),
                 'trainingplandetail.content' => fn ($q) => $q
-                    ->select(['id', 'title', 'slug', 'type', 'link', 'classification_id', 'author', 'views']),
+                    ->where('active', 'Active')
+                    ->select(['id', 'title', 'slug', 'type', 'link', 'classification_id', 'author', 'views', 'duration', 'learning_hours', 'active']),
                 'trainingplandetail.content.classification' => fn ($q) => $q
                     ->select(['id', 'classification_name']),
                 'trainingplandetail.content.contentuser' => fn ($q) => $q
@@ -55,6 +63,7 @@ class PlaylistUserController extends Controller
                       'active', 'created_at', 'thumbnail', 'has_deadline',
                       'from_date', 'to_date'])
             ->where('active', 'Active')
+            ->whereHas('trainingplandetail.content', fn ($q) => $q->where('active', 'Active'))
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -62,7 +71,7 @@ class PlaylistUserController extends Controller
         // Also computes the thumbnail URL — moves File::exists() out of Blade.
         $playlistStats = [];
         foreach ($trainingplan as $tp) {
-            $details      = $tp->trainingplandetail->filter(fn ($d) => !empty($d->content));
+            $details      = $tp->trainingplandetail->filter(fn ($d) => !empty($d->content) && $d->content->exists && $d->content->active === 'Active');
             $totalContent = $details->count();
             $completedContent = 0;
 
@@ -74,16 +83,25 @@ class PlaylistUserController extends Controller
             }
 
             $firstContent = optional($details->first())->content;
+            $activeDurationSeconds = $details->sum(function ($d) {
+                return \App\Support\DurationFormatter::toSeconds($d->content->duration) ?? 0;
+            });
+            $activeLearningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convertFromSeconds($activeDurationSeconds);
+
+            $tp->total_duration_seconds = $activeDurationSeconds;
+            $tp->learning_hours = $activeLearningHours;
 
             $playlistStats[$tp->id] = [
-                'totalContent'     => $totalContent,
-                'completedContent' => $completedContent,
-                'progress'         => TrainingPlan::calculateProgressPercentage($completedContent, $totalContent),
-                'firstContent'     => $firstContent,
-                'thumbnail'        => $this->getPlaylistThumbnail($tp, $firstContent),
-                'has_deadline'     => $tp->has_deadline,
-                'from_date'        => $tp->from_date,
-                'to_date'          => $tp->to_date,
+                'totalContent'           => $totalContent,
+                'completedContent'       => $completedContent,
+                'progress'               => TrainingPlan::calculateProgressPercentage($completedContent, $totalContent),
+                'firstContent'           => $firstContent,
+                'thumbnail'              => $this->getPlaylistThumbnail($tp, $firstContent),
+                'has_deadline'           => $tp->has_deadline,
+                'from_date'              => $tp->from_date,
+                'to_date'                => $tp->to_date,
+                'total_duration_seconds' => $activeDurationSeconds,
+                'learning_hours'         => $activeLearningHours,
             ];
         }
 
@@ -93,7 +111,7 @@ class PlaylistUserController extends Controller
         $featuredPlaylist = $trainingplan->first();
 
         if ($featuredPlaylist) {
-            $details      = $featuredPlaylist->trainingplandetail->filter(fn ($d) => !empty($d->content));
+            $details      = $featuredPlaylist->trainingplandetail->filter(fn ($d) => !empty($d->content) && $d->content->exists && $d->content->active === 'Active');
             $totalContent = $details->count();
             $completedContent = 0;
             $nextContent      = null;
@@ -146,8 +164,8 @@ class PlaylistUserController extends Controller
     {
         $userId = Auth::id();
 
-        $trainingplan = TrainingPlan::findBySlug($slug);
-        $content      = Content::findBySlug($vidslug);
+        $trainingplan = TrainingPlan::where('active', 'Active')->where('slug', $slug)->first();
+        $content      = Content::where('active', 'Active')->where('slug', $vidslug)->first();
 
         abort_if(!$trainingplan || !$content, 404);
 
@@ -171,6 +189,13 @@ class PlaylistUserController extends Controller
             ], 403);
         }
 
+        $content_all = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)
+            ->with('content')
+            ->orderByRaw('CAST(content_order AS UNSIGNED) ASC')
+            ->get();
+
+        abort_if(!$content_all->contains('content_id', $content->id), 404);
+
         $content->increment('views');
 
         $content_user = ContentUser::firstOrCreate([
@@ -178,10 +203,13 @@ class PlaylistUserController extends Controller
             'content_id' => $content->id,
         ]);
 
-        $content_all = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)
-            ->with('content')
-            ->orderBy('content_order')
-            ->get();
+        // Recompute in-memory active duration and learning hours for the view
+        $activeDurationSeconds = $content_all->filter(fn ($item) => $item->content?->active === 'Active')->sum(function ($item) {
+            return \App\Support\DurationFormatter::toSeconds($item->content?->duration) ?? 0;
+        });
+        $activeLearningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convertFromSeconds($activeDurationSeconds);
+        $trainingplan->total_duration_seconds = $activeDurationSeconds;
+        $trainingplan->learning_hours = $activeLearningHours;
 
         $contentUsers = ContentUser::where('user_id', $userId)
             ->whereIn('content_id', $content_all->pluck('content_id'))
