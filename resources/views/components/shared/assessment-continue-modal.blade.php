@@ -1,4 +1,4 @@
-@props(['assessment' => null, 'type' => 'content', 'answeredCount' => 0, 'totalCount' => 0])
+@props(['assessment' => null, 'type' => 'content', 'answeredCount' => 0, 'totalCount' => 0, 'isContinue' => true])
 
 <div class="modal fade" id="continueAssessmentModal" tabindex="-1" role="dialog" aria-labelledby="continueAssessmentModalTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 480px !important; width: 100%;">
@@ -31,48 +31,71 @@
                     INFORMATION
                 </h6>
                 <div class="bg-light rounded-3 p-3 mb-3">
+                    <!-- ASSESSMENT TITLE / CONTENT HEADER -->
                     <div class="assessment-title-wrapper mb-3 pb-2 border-bottom">
                         <div class="text-dark small fw-bold text-uppercase mb-1" 
                              id="continueModalTypeHeader" 
-                             style="color: #212529 !important; font-size: 0.78rem; letter-spacing: 0.5px;">
+                             style="font-size: 0.75rem; color: #212529 !important; letter-spacing: 0.5px;">
                             {{ $type === 'global' ? 'ASSESSMENT GLOBAL' : 'ASSESSMENT CONTENT' }}
                         </div>
                         <h5 class="fw-bold text-dark mb-0 fs-5" 
                             id="continueModalName" 
-                            style="font-size: 1.1rem !important; line-height: 1.4 !important; letter-spacing: -0.2px !important; color: #1a1d20 !important;">
-                            {{ $assessment ? $assessment->title : '-' }}
+                            style="font-size: 1.1rem !important; line-height: 1.4; color: #1a1d20 !important;">
+                            {{ $assessment?->title ?? '-' }}
                         </h5>
                     </div>
-                    <div class="row g-2 small text-secondary">
+
+                    <!-- DETAILS GRID (MEMANFAATKAN VARIABEL ASLI) -->
+                    <div class="row g-3">
+                        <!-- Date & Time (Stacked) -->
                         <div class="col-6">
-                            <strong class="text-dark">Date & Time:</strong> 
-                            <div class="text-truncate" id="continueModalDateTime">
-                                @if($assessment)
-                                    {{ $assessment->formatted_start_date ?? ($assessment->fromdate ? date('d M Y, H:i', strtotime($assessment->fromdate)) : '-') }} – {{ $assessment->formatted_end_date ?? ($assessment->todate ? date('d M Y, H:i', strtotime($assessment->todate)) : '-') }}
-                                @else
-                                    -
-                                @endif
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DATE & TIME</strong>
+                            <div class="text-dark fw-normal" id="continueModalDateTime" style="color: #212529 !important; font-size: 0.82rem; line-height: 1.35;">
+                                <div>
+                                    {{ $assessment?->formatted_start_date ?? ($assessment?->fromdate ? date('d M Y, H:i', strtotime($assessment->fromdate)) : '-') }}
+                                </div>
+                                <div>
+                                    {{ $assessment?->formatted_end_date ?? ($assessment?->todate ? date('d M Y, H:i', strtotime($assessment->todate)) : '-') }}
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Passing Grade -->
                         <div class="col-6">
-                            <strong class="text-dark">Passing Grade:</strong> 
-                            <div><span id="continueModalPassingGrade" class="fw-semibold text-primary">{{ $assessment ? $assessment->passing_grade : '-' }}</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">PASSING GRADE</strong>
+                            <div class="text-dark fw-bold" id="continueModalPassingGrade" style="color: #212529 !important; font-size: 0.85rem;">
+                                {{ $assessment?->passing_grade ?? '-' }}
+                            </div>
                         </div>
+
+                        <!-- Duration -->
                         <div class="col-6">
-                            <strong class="text-dark">Duration:</strong> 
-                            <div><span id="continueModalDuration">{{ $assessment ? ($assessment->duration ?? ($assessment->time_limit_minutes ?? 60)) : '-' }} Minutes</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DURATION</strong>
+                            <div class="text-dark" id="continueModalDuration" style="color: #212529 !important; font-size: 0.82rem;">
+                                {{ $assessment ? ($assessment->duration ?? ($assessment->time_limit_minutes ?? 60)) : '-' }} Minutes
+                            </div>
                         </div>
+
+                        <!-- Batch (Global) atau Attempt (Content) -->
                         <div class="col-6" id="continueModalBatchContainer" style="{{ $type === 'global' ? '' : 'display: none;' }}">
-                            <strong class="text-dark">Batch:</strong> 
-                            <div><span id="continueModalBatch">{{ $assessment ? ($assessment->batch_name ?? ($assessment->batch ? (str_contains(strtolower($assessment->batch), 'batch') ? $assessment->batch : 'Batch ' . $assessment->batch) : 'Batch 1')) : '-' }}</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">BATCH</strong>
+                            <div class="text-dark" id="continueModalBatch" style="color: #212529 !important; font-size: 0.82rem;">
+                                {{ $assessment ? ($assessment->batch_name ?? ($assessment->batch ? (str_contains(strtolower($assessment->batch), 'batch') ? $assessment->batch : 'Batch ' . $assessment->batch) : 'Batch 1')) : '-' }}
+                            </div>
                         </div>
                         <div class="col-6" id="continueModalAttemptContainer" style="{{ $type !== 'global' ? '' : 'display: none;' }}">
-                            <strong class="text-dark">Attempt:</strong> 
-                            <div><span id="continueModalAttempt">{{ $assessment ? ($assessment->current_attempt ?? 1) . ' / ' . ($assessment->max_attempts ?? 1) : '-' }}</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">ATTEMPT</strong>
+                            <div class="text-dark" id="continueModalAttempt" style="color: #212529 !important; font-size: 0.82rem;">
+                                {{ $assessment ? ($assessment->current_attempt ?? 1) . ' / ' . ($assessment->max_attempts ?? 1) : '-' }}
+                            </div>
                         </div>
-                        <div class="col-12 mt-1">
-                            <strong class="text-dark">Progress:</strong> 
-                            <span id="continueModalProgress" class="fw-semibold" style="color: #0c5b9e;">{{ $answeredCount }} / {{ $totalCount }} answered</span>
+
+                        <!-- Progress (Khusus Continue Modal) -->
+                        <div class="col-12 border-top pt-2 mt-2" id="continueModalProgressContainer">
+                            <strong class="text-dark d-inline-block me-2" style="font-size: 0.78rem; color: #212529 !important;">PROGRESS:</strong>
+                            <span class="text-dark fw-bold" id="continueModalProgress" style="color: #212529 !important; font-size: 0.85rem;">
+                                {{ $answeredCount ?? 0 }} / {{ $totalCount ?? 10 }} answered
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -101,7 +124,7 @@
                 <button type="button" class="btn btn-light rounded-pill px-4 text-secondary" data-dismiss="modal" data-bs-dismiss="modal">
                     Cancel
                 </button>
-                <a href="{{ $assessment && !empty($assessment->slug) ? route('assesment.user.view', $assessment->slug) : '#' }}" 
+                <a href="{{ ($assessment && !empty($assessment->slug)) ? route('assesment.user.view', $assessment->slug) : '#' }}" 
                    id="btnConfirmContinueAssessment"
                    class="btn rounded-pill px-4 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1"
                    style="background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;">

@@ -193,13 +193,13 @@ function submitAssessmentAccess() {
 
             var dateTimeDisplay = '-';
             if (fromDateVal !== '-' && toDateVal !== '-') {
-                dateTimeDisplay = fromDateVal + ' – ' + toDateVal;
+                dateTimeDisplay = '<div>' + fromDateVal + '</div><div>' + toDateVal + '</div>';
             } else if (fromDateVal !== '-') {
-                dateTimeDisplay = fromDateVal;
+                dateTimeDisplay = '<div>' + fromDateVal + '</div>';
             } else if (toDateVal !== '-') {
-                dateTimeDisplay = toDateVal;
+                dateTimeDisplay = '<div>' + toDateVal + '</div>';
             }
-            $modal.find('#assessmentAccessModalDateTime').text(dateTimeDisplay);
+            $modal.find('#assessmentAccessModalDateTime').html(dateTimeDisplay);
 
             $modal.find('#assessmentAccessModalPassingGrade').text(response.assessment_passing_grade !== undefined && response.assessment_passing_grade !== '' ? response.assessment_passing_grade : '-');
             $modal.find('#assessmentAccessModalDuration').text((response.assessment_duration || '60') + ' Minutes');

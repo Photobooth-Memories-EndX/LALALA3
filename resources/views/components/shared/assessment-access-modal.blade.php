@@ -1,4 +1,4 @@
-@props(['assessment' => null, 'type' => 'global', 'answeredCount' => 0, 'totalCount' => 0, 'actionType' => 'start'])
+@props(['assessment' => null, 'type' => 'global', 'answeredCount' => 0, 'totalCount' => 0, 'actionType' => 'start', 'isContinue' => false])
 
 <div class="modal fade" id="assessmentAccessModal" tabindex="-1" role="dialog"
      aria-labelledby="assessmentAccessModalTitle" aria-hidden="true">
@@ -34,44 +34,68 @@
                     INFORMATION
                 </h6>
                 <div class="bg-light rounded-3 p-3 mb-3">
-                    <div class="assessment-title-wrapper mb-2 pb-2 border-bottom">
-                        <div class="text-dark small fw-bold text-uppercase mb-1" id="assessmentAccessModalTypeBadge" style="font-size: 0.78rem;">
+                    <!-- ASSESSMENT TITLE / CONTENT HEADER -->
+                    <div class="assessment-title-wrapper mb-3 pb-2 border-bottom">
+                        <div class="text-dark small fw-bold text-uppercase mb-1" id="assessmentAccessModalTypeBadge" style="font-size: 0.75rem; color: #212529 !important; letter-spacing: 0.5px;">
                             {{ $type === 'global' ? 'ASSESSMENT GLOBAL' : 'ASSESSMENT CONTENT' }}
                         </div>
-                        <h5 class="fw-bold text-dark mb-0 fs-5" id="assessmentAccessModalName" style="font-size: 1.1rem !important; line-height: 1.4;">
-                            {{ $assessment ? $assessment->title : '-' }}
+                        <h5 class="fw-bold text-dark mb-0 fs-5" id="assessmentAccessModalName" style="font-size: 1.1rem !important; line-height: 1.4; color: #1a1d20 !important;">
+                            {{ $assessment?->title ?? '-' }}
                         </h5>
                     </div>
-                    <div class="row g-2 small text-secondary">
+
+                    <!-- DETAILS GRID (MEMANFAATKAN VARIABEL ASLI) -->
+                    <div class="row g-3">
+                        <!-- Date & Time (Stacked) -->
                         <div class="col-6">
-                            <strong class="text-dark">Date & Time:</strong>
-                            <div class="text-truncate" id="assessmentAccessModalDateTime">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DATE & TIME</strong>
+                            <div class="text-dark fw-normal" id="assessmentAccessModalDateTime" style="color: #212529 !important; font-size: 0.82rem; line-height: 1.35;">
                                 @if($assessment)
-                                    {{ $assessment->formatted_start_date ?? ($assessment->fromdate ? date('d M Y, H:i', strtotime($assessment->fromdate)) : '-') }} – {{ $assessment->formatted_end_date ?? ($assessment->todate ? date('d M Y, H:i', strtotime($assessment->todate)) : '-') }}
+                                    <div>{{ $assessment?->formatted_start_date ?? ($assessment?->fromdate ? date('d M Y, H:i', strtotime($assessment->fromdate)) : '-') }}</div>
+                                    <div>{{ $assessment?->formatted_end_date ?? ($assessment?->todate ? date('d M Y, H:i', strtotime($assessment->todate)) : '-') }}</div>
                                 @else
-                                    <span id="assessmentAccessModalFromDate">-</span><span id="assessmentAccessModalToDate" class="d-none">-</span>
+                                    <div id="assessmentAccessModalFromDate">-</div>
+                                    <div id="assessmentAccessModalToDate" class="d-none">-</div>
                                 @endif
                             </div>
                         </div>
+
+                        <!-- Passing Grade -->
                         <div class="col-6">
-                            <strong class="text-dark">Passing Grade:</strong>
-                            <div><span class="fw-semibold text-primary" id="assessmentAccessModalPassingGrade">{{ $assessment ? $assessment->passing_grade : '-' }}</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">PASSING GRADE</strong>
+                            <div class="text-dark fw-bold" id="assessmentAccessModalPassingGrade" style="color: #212529 !important; font-size: 0.85rem;">
+                                {{ $assessment?->passing_grade ?? '-' }}
+                            </div>
                         </div>
+
+                        <!-- Duration -->
                         <div class="col-6">
-                            <strong class="text-dark">Duration:</strong>
-                            <div><span id="assessmentAccessModalDuration">{{ $assessment ? ($assessment->duration ?? ($assessment->time_limit_minutes ?? 60)) : '-' }} Minutes</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DURATION</strong>
+                            <div class="text-dark" id="assessmentAccessModalDuration" style="color: #212529 !important; font-size: 0.82rem;">
+                                {{ $assessment ? ($assessment->duration ?? ($assessment->time_limit_minutes ?? 60)) : '-' }} Minutes
+                            </div>
                         </div>
-                        <div class="col-6" id="assessmentAccessModalBatchContainer">
-                            <strong class="text-dark">Batch:</strong>
-                            <div><span id="assessmentAccessModalBatch">{{ $assessment ? ($assessment->batch_name ?? ($assessment->batch ? (str_contains(strtolower($assessment->batch), 'batch') ? $assessment->batch : 'Batch ' . $assessment->batch) : 'Batch 1')) : '-' }}</span></div>
+
+                        <!-- Batch (Global) atau Attempt (Content) -->
+                        <div class="col-6" id="assessmentAccessModalBatchContainer" style="{{ $type === 'global' ? '' : 'display: none;' }}">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">BATCH</strong>
+                            <div class="text-dark" id="assessmentAccessModalBatch" style="color: #212529 !important; font-size: 0.82rem;">
+                                {{ $assessment ? ($assessment->batch_name ?? ($assessment->batch ? (str_contains(strtolower($assessment->batch), 'batch') ? $assessment->batch : 'Batch ' . $assessment->batch) : 'Batch 1')) : '-' }}
+                            </div>
                         </div>
-                        <div class="col-6" id="assessmentAccessModalAttemptContainer" style="display: none;">
-                            <strong class="text-dark">Attempt:</strong>
-                            <div><span id="assessmentAccessModalAttempt">-</span></div>
+                        <div class="col-6" id="assessmentAccessModalAttemptContainer" style="{{ $type !== 'global' ? '' : 'display: none;' }}">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">ATTEMPT</strong>
+                            <div class="text-dark" id="assessmentAccessModalAttempt" style="color: #212529 !important; font-size: 0.82rem;">
+                                {{ $assessment ? ($assessment->current_attempt ?? 1) . ' / ' . ($assessment->max_attempts ?? 1) : '-' }}
+                            </div>
                         </div>
-                        <div class="col-12 mt-1" id="assessmentAccessModalProgressContainer" style="{{ $actionType === 'continue' ? '' : 'display: none;' }}">
-                            <strong class="text-dark">Progress:</strong>
-                            <span class="fw-semibold" id="assessmentAccessModalProgress" style="color: #0c5b9e;">{{ $answeredCount }} / {{ $totalCount }} answered</span>
+
+                        <!-- Progress (Khusus Continue Modal) -->
+                        <div class="col-12 border-top pt-2 mt-2" id="assessmentAccessModalProgressContainer" style="{{ ($actionType === 'continue' || (isset($isContinue) && $isContinue)) ? '' : 'display: none;' }}">
+                            <strong class="text-dark d-inline-block me-2" style="font-size: 0.78rem; color: #212529 !important;">PROGRESS:</strong>
+                            <span class="text-dark fw-bold" id="assessmentAccessModalProgress" style="color: #212529 !important; font-size: 0.85rem;">
+                                {{ $answeredCount ?? 0 }} / {{ $totalCount ?? 10 }} answered
+                            </span>
                         </div>
                     </div>
                 </div>

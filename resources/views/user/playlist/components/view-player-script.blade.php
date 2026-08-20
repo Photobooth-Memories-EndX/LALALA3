@@ -303,11 +303,11 @@
 
         var dateTimeDisplay = '-';
         if (fromDate !== '-' && toDate !== '-') {
-            dateTimeDisplay = fromDate + ' – ' + toDate;
+            dateTimeDisplay = '<div>' + fromDate + '</div><div>' + toDate + '</div>';
         } else if (fromDate !== '-') {
-            dateTimeDisplay = fromDate;
+            dateTimeDisplay = '<div>' + fromDate + '</div>';
         } else if (toDate !== '-') {
-            dateTimeDisplay = toDate;
+            dateTimeDisplay = '<div>' + toDate + '</div>';
         }
 
         var duration = $btn.data('assessment-duration') || '60';
@@ -318,7 +318,7 @@
         $modal.find('#assessmentAccessModalBatch').text(batchDisplay !== '-' ? batchDisplay : 'Batch 1');
         $modal.find('#assessmentAccessModalFromDate').text(fromDate);
         $modal.find('#assessmentAccessModalToDate').text(toDate);
-        $modal.find('#assessmentAccessModalDateTime').text(dateTimeDisplay);
+        $modal.find('#assessmentAccessModalDateTime').html(dateTimeDisplay);
         $modal.find('#assessmentAccessModalPassingGrade').text(passingGrade);
         $modal.find('#assessmentAccessModalDuration').text(duration + ' Minutes');
         $modal.find('#assessmentAccessModalAttempt').text(attempts);
