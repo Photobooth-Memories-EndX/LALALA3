@@ -203,42 +203,6 @@
                 return $this->assessmentAccessDeniedResponse($assesment, $reason, $assessmentAccess);
             }
 
-            // counting total questions from total of questions amount of assessment qyuestion bank.
-            $assessmentQuestionBank      = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
-            $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
-
-            $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
-            if ($checkAssesmentQuestionBanks) {
-                $assesment_question_count = $assessmentQuestionBank;
-            } else {
-                $assesment_question_count = count($assesment_question);
-            }
-            $user_answers = $request->collect()->except(['_token', '_method', 'submission_token'])->sortKeys()->toArray();
-
-            // Old Process of Score Calculation
-            // $wrong_answer       = array_diff_assoc($assesment_question, $user_answers);
-            // $wrong_answer_count = count($wrong_answer);
-            // $right_answer_count = $assesment_question_count - $wrong_answer_count;
-            // $score              = ((int)$right_answer_count / (int)$assesment_question_count) * 100;
-
-            // New Process of Score Calculation 
-            /**
-             * First Step is set up the value / score per question.
-             * Score formula per question and 100 is the perfect score.
-             */ 
-            $formulaScorePerQuestion = 100 / $assesment_question_count;
-
-            /**
-             * Second Step is counting right/correct answer.
-             */
-            $wrong_answer        = array_diff_assoc($assesment_question, $user_answers);
-            $wrong_answer_count  = count($wrong_answer);
-            $right_answer_count  = count($assesment_question) - $wrong_answer_count;
-            $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
-
-            /**
-             * Last Step is counting the score.
-             */
             $activeDraft = AssesmentResult::where('user_id', auth()->id())
                 ->where('assesment_id', $assesment->id)
                 ->where('batch', $assesment->batch)
@@ -291,31 +255,19 @@
                 $this->ensureQuestionSnapshot($result, $assesment);
 
                 $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
-                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token']))
+                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token', 'is_expired']))
                     ->filter(function ($val) {
                         return $val !== null && $val !== '';
                     })
                     ->toArray();
                 $mergedUserAnswers = array_replace($existingUserAnswers, $submittedAnswers);
 
-                // Recalculate score based on merged answers
-                $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
-                $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
-                $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
-                $assesment_question_count = $checkAssesmentQuestionBanks ? $assessmentQuestionBank : count($assesment_question);
-
-                $formulaScorePerQuestion = $assesment_question_count > 0 ? (100 / $assesment_question_count) : 0;
-                $user_answers = collect($mergedUserAnswers)->sortKeys()->toArray();
-                $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
-                $wrong_answer_count = count($wrong_answer);
-                $right_answer_count = count($assesment_question) - $wrong_answer_count;
-                $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
-                $score = $amountOfRightAnswer * $formulaScorePerQuestion;
+                $scoreData = $this->calculateAttemptScore($result, $assesment, $mergedUserAnswers);
 
                 $result->user_answer = $mergedUserAnswers;
-                $result->score = $score >= 100 ? 100 : $score;
+                $result->score = $scoreData['score'];
                 $result->batch = $assesment->batch;
-                $result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
+                $result->pass = $scoreData['pass'];
                 $result->final = 1;
                 $result->save();
 
@@ -424,42 +376,6 @@
                 return $this->assessmentAccessDeniedResponse($assesment, $reason, $assessmentAccess);
             }
 
-            // counting total questions from total of questions amount of assessment qyuestion bank.
-            $assessmentQuestionBank      = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
-            $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
-
-            $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
-            if ($checkAssesmentQuestionBanks) {
-                $assesment_question_count = $assessmentQuestionBank;
-            } else {
-                $assesment_question_count = count($assesment_question);
-            }
-            $user_answers = $request->collect()->except(['_token', '_method', 'submission_token'])->sortKeys()->toArray();
-
-            // Old Process of Score Calculation
-            // $wrong_answer       = array_diff_assoc($assesment_question, $user_answers);
-            // $wrong_answer_count = count($wrong_answer);
-            // $right_answer_count = $assesment_question_count - $wrong_answer_count;
-            // $score              = ((int)$right_answer_count / (int)$assesment_question_count) * 100;
-
-            // New Process of Score Calculation 
-            /**
-             * First Step is set up the value / score per question.
-             * Score formula per question and 100 is the perfect score.
-             */ 
-            $formulaScorePerQuestion = 100 / $assesment_question_count;
-
-            /**
-             * Second Step is counting right/correct answer.
-             */
-            $wrong_answer        = array_diff_assoc($assesment_question, $user_answers);
-            $wrong_answer_count  = count($wrong_answer);
-            $right_answer_count  = count($assesment_question) - $wrong_answer_count;
-            $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
-
-            /**
-             * Last Step is counting the score.
-             */
             $activeDraft = AssesmentResult::where('user_id', auth()->id())
                 ->where('assesment_id', $assesment->id)
                 ->where('batch', $assesment->batch)
@@ -488,31 +404,19 @@
                 $this->ensureQuestionSnapshot($result, $assesment);
 
                 $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
-                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token']))
+                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token', 'is_expired']))
                     ->filter(function ($val) {
                         return $val !== null && $val !== '';
                     })
                     ->toArray();
                 $mergedUserAnswers = array_replace($existingUserAnswers, $submittedAnswers);
 
-                // Recalculate score based on merged answers
-                $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
-                $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
-                $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
-                $assesment_question_count = $checkAssesmentQuestionBanks ? $assessmentQuestionBank : count($assesment_question);
-
-                $formulaScorePerQuestion = $assesment_question_count > 0 ? (100 / $assesment_question_count) : 0;
-                $user_answers = collect($mergedUserAnswers)->sortKeys()->toArray();
-                $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
-                $wrong_answer_count = count($wrong_answer);
-                $right_answer_count = count($assesment_question) - $wrong_answer_count;
-                $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
-                $score = $amountOfRightAnswer * $formulaScorePerQuestion;
+                $scoreData = $this->calculateAttemptScore($result, $assesment, $mergedUserAnswers);
 
                 $result->user_answer = $mergedUserAnswers;
-                $result->score = $score >= 100 ? 100 : $score;
+                $result->score = $scoreData['score'];
                 $result->batch = $assesment->batch;
-                $result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
+                $result->pass = $scoreData['pass'];
                 $result->final = 0;
                 $result->save();
 
@@ -605,11 +509,11 @@
                     foreach ($assessmentQuestionBanks as $aqb) {
                         $assessmentQuestions = AssesmentQuestion::where('assesment_id', $assesment->id)
                             ->where('question_bank_id', $aqb->question_bank_id)
-                            ->where('is_used', true)
                             ->inRandomOrder()->limit($aqb->questions_amount)->get();
 
-                        $assesment_question = $assesment_question->merge($assessmentQuestions)->shuffle();
+                        $assesment_question = $assesment_question->merge($assessmentQuestions);
                     }
+                    $assesment_question = $assesment_question->shuffle();
                 } else {
                     $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->inRandomOrder()->get();
                 }
@@ -636,6 +540,45 @@
         }
 
         /**
+         * Calculates the score and pass status for an assessment attempt strictly
+         * based on the questions present in the attempt's question_snapshot.
+         */
+        private function calculateAttemptScore(AssesmentResult $result, Assesment $assesment, array $userAnswers): array
+        {
+            $this->ensureQuestionSnapshot($result, $assesment);
+
+            $snapshot = is_array($result->question_snapshot) ? $result->question_snapshot : [];
+            $snapshotQuestionIds = array_column($snapshot, 'question_id');
+
+            $correctAnswers = !empty($snapshotQuestionIds)
+                ? AssesmentQuestion::whereIn('id', $snapshotQuestionIds)->pluck('answer', 'id')->toArray()
+                : [];
+            $totalQuestions = count($snapshotQuestionIds);
+
+            $correctCount = 0;
+            foreach ($snapshotQuestionIds as $qId) {
+                $expected = $correctAnswers[$qId] ?? null;
+                $actual = $userAnswers[$qId] ?? null;
+
+                if ($expected !== null && $actual !== null && (string) $actual === (string) $expected) {
+                    $correctCount++;
+                }
+            }
+
+            $formulaScorePerQuestion = $totalQuestions > 0 ? (100 / $totalQuestions) : 0;
+            $score = $correctCount * $formulaScorePerQuestion;
+            $score = $score >= 100 ? 100 : round($score, 2);
+            $pass = ($score < (float) ($assesment->passing_grade ?? 0)) ? 0 : 1;
+
+            return [
+                'score'           => $score,
+                'pass'            => $pass,
+                'correct_count'   => $correctCount,
+                'total_questions' => $totalQuestions,
+            ];
+        }
+
+        /**
          * Finalizes an active draft that has expired.
          */
         private function finalizeExpiredDraft(AssesmentResult $result, Assesment $assesment): void
@@ -644,23 +587,12 @@
                 return;
             }
 
-            $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
-            $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
-            $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
-            $assesment_question_count = $checkAssesmentQuestionBanks ? $assessmentQuestionBank : count($assesment_question);
-
-            $formulaScorePerQuestion = $assesment_question_count > 0 ? (100 / $assesment_question_count) : 0;
             $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
-            $user_answers = collect($existingUserAnswers)->sortKeys()->toArray();
-            $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
-            $wrong_answer_count = count($wrong_answer);
-            $right_answer_count = count($assesment_question) - $wrong_answer_count;
-            $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
-            $score = $amountOfRightAnswer * $formulaScorePerQuestion;
+            $scoreData = $this->calculateAttemptScore($result, $assesment, $existingUserAnswers);
 
-            $result->score = $score >= 100 ? 100 : $score;
+            $result->score = $scoreData['score'];
             $result->batch = $assesment->batch;
-            $result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
+            $result->pass = $scoreData['pass'];
             $result->final = 1;
             $result->save();
 
