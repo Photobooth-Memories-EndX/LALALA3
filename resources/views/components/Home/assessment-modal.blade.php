@@ -45,5 +45,6 @@
 </div>
 
 <x-shared.assessment-confirmation-modal />
+<x-shared.assessment-continue-modal />
 <x-shared.assessment-access-modal />
 @include('components.shared.assessment-result-modal')

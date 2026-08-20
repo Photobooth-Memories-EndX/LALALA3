@@ -30,10 +30,11 @@
                         @foreach (($assesment ?? collect()) as $assessment)
                             @php
                                 $finalResult = null;
+                                $currentUserId = Auth::id();
 
                                 if (($assessment->scores ?? null) != null) {
-                                    $userScores = collect($assessment->scores)->filter(function ($scoreItem) {
-                                        return (string) ($scoreItem->user_id ?? '') === (string) Auth::id();
+                                    $userScores = collect($assessment->scores)->filter(function ($scoreItem) use ($currentUserId) {
+                                        return (string) ($scoreItem->user_id ?? '') === (string) $currentUserId;
                                     });
 
                                     $finalResult = $userScores
@@ -47,7 +48,30 @@
                                             ->sortByDesc('score')
                                             ->first();
                                     }
+
+                                    $userAttempts = $userScores->where('final', 1)->count();
+                                    if ($userAttempts === 0 && $userScores->count() > 0) {
+                                        $userAttempts = $userScores->count();
+                                    }
+                                } else {
+                                    $userAttempts = 0;
                                 }
+
+                                $activeDraft = \App\Models\AssesmentResult::where('user_id', $currentUserId)
+                                    ->where('assesment_id', $assessment->id)
+                                    ->where('final', 0)
+                                    ->latest('id')
+                                    ->first();
+
+                                $hasSnapshot = $activeDraft && (!empty($activeDraft->user_answer) || !empty($activeDraft->question_snapshot));
+
+                                $answeredCount = ($activeDraft && is_array($activeDraft->user_answer))
+                                    ? count(array_filter($activeDraft->user_answer, fn($v) => $v !== null && $v !== ''))
+                                    : 0;
+
+                                $totalCount = ($activeDraft && is_array($activeDraft->question_snapshot) && count($activeDraft->question_snapshot) > 0)
+                                    ? count($activeDraft->question_snapshot)
+                                    : ($assessment->questions_count ?? (isset($assessment->questions) ? $assessment->questions->count() : 10));
 
                                 $isCompleted = $finalResult != null;
                                 $isPassed = $finalResult && $finalResult->pass;
@@ -61,9 +85,32 @@
                                     'youtube'                  => 'MOOC',
                                     default                    => ucwords(str_replace('_', ' ', $assessment->type ?? '-')),
                                 };
+
+                                $totalRemedials = (int) ($assessment->total_remedials ?? 0);
+                                $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
+                                $isRemedial = (string) ($assessment->type ?? '') !== 'global' && $isCompleted && !$isPassed && ($userAttempts < $maxAttempts);
+
+                                $fromDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->fromdate))
+                                    ? date('d M Y, H:i', strtotime($assessment->fromdate))
+                                    : '-';
+                                $toDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->todate))
+                                    ? date('d M Y, H:i', strtotime($assessment->todate))
+                                    : '-';
                             @endphp
 
-                            <tr>
+                            <tr data-assessment-id="{{ $assessment->id }}"
+                                data-assessment-title="{{ $assessment->title ?? '-' }}"
+                                data-assessment-type="{{ $assessment->type ?? 'content' }}"
+                                data-assessment-type-label="{{ $typeLabel }}"
+                                data-assessment-batch="{{ $assessment->batch ?? '-' }}"
+                                data-assessment-from-date="{{ $fromDateDisplay }}"
+                                data-assessment-to-date="{{ $toDateDisplay }}"
+                                data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
+                                data-assessment-duration="{{ $assessment->duration ?? ($assessment->time_limit_minutes ?? 60) }}"
+                                data-assessment-user-attempts="{{ $userAttempts }}"
+                                data-assessment-max-attempts="{{ $maxAttempts }}"
+                                data-assessment-answered-count="{{ $answeredCount }}"
+                                data-assessment-total-count="{{ $totalCount }}">
                                 <td>{{ $loop->iteration }}</td>
 
                                 <td>
@@ -122,11 +169,78 @@
                                         <button class="btn btn-sm btn-outline-secondary" disabled>
                                             Expired
                                         </button>
+                                    @elseif ($hasSnapshot)
+                                        @if (!empty($assessment->slug))
+                                            <a href="{{ route('assesment.user.view', $assessment->slug) }}"
+                                               class="btn btn-sm btn-primary text-white btn-continue-test btn-assessment-continue"
+                                               style="background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;"
+                                               data-assessment-id="{{ $assessment->id }}"
+                                               data-assessment-title="{{ $assessment->title ?? '-' }}"
+                                               data-assessment-type="{{ $assessment->type ?? 'content' }}"
+                                               data-assessment-type-label="{{ $typeLabel }}"
+                                               data-assessment-batch="{{ $assessment->batch ?? '-' }}"
+                                               data-assessment-from-date="{{ $fromDateDisplay }}"
+                                               data-assessment-to-date="{{ $toDateDisplay }}"
+                                               data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
+                                               data-assessment-duration="{{ $assessment->duration ?? ($assessment->time_limit_minutes ?? 60) }}"
+                                               data-assessment-user-attempts="{{ $userAttempts }}"
+                                               data-assessment-max-attempts="{{ $maxAttempts }}"
+                                               data-assessment-answered-count="{{ $answeredCount }}"
+                                               data-assessment-total-count="{{ $totalCount }}"
+                                               data-assessment-action-type="continue">
+                                                Continue
+                                            </a>
+                                        @else
+                                            <button class="btn btn-sm btn-secondary" disabled>
+                                                Unavailable
+                                            </button>
+                                        @endif
+                                    @elseif ($isRemedial)
+                                        @if (!empty($assessment->slug))
+                                            <a href="{{ route('assesment.user.view', $assessment->slug) }}"
+                                               class="btn btn-sm btn-warning text-white btn-remedial btn-assessment-remedial"
+                                               style="background-color: #f59e0b !important; border-color: #f59e0b !important;"
+                                               data-assessment-id="{{ $assessment->id }}"
+                                               data-assessment-title="{{ $assessment->title ?? '-' }}"
+                                               data-assessment-type="{{ $assessment->type ?? 'content' }}"
+                                               data-assessment-type-label="{{ $typeLabel }}"
+                                               data-assessment-batch="{{ $assessment->batch ?? '-' }}"
+                                               data-assessment-from-date="{{ $fromDateDisplay }}"
+                                               data-assessment-to-date="{{ $toDateDisplay }}"
+                                               data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
+                                               data-assessment-duration="{{ $assessment->duration ?? ($assessment->time_limit_minutes ?? 60) }}"
+                                               data-assessment-user-attempts="{{ $userAttempts }}"
+                                               data-assessment-max-attempts="{{ $maxAttempts }}"
+                                               data-assessment-action-type="remedial">
+                                                Remedial
+                                            </a>
+                                        @else
+                                            <button class="btn btn-sm btn-secondary" disabled>
+                                                Unavailable
+                                            </button>
+                                        @endif
+                                    @elseif ($isCompleted && !$isPassed && $userAttempts >= $maxAttempts)
+                                        <button class="btn btn-sm btn-outline-danger" disabled>
+                                            Failed
+                                        </button>
                                     @else
                                         @if (!empty($assessment->slug))
                                             <a href="{{ route('assesment.user.view', $assessment->slug) }}"
-                                               class="btn btn-sm btn-primary">
-                                                {{ $isCompleted ? 'Remedial' : 'Start Test' }}
+                                               class="btn btn-sm btn-success text-white btn-start-test btn-assessment-start"
+                                               style="background-color: #28be58 !important; border-color: #28be58 !important;"
+                                               data-assessment-id="{{ $assessment->id }}"
+                                               data-assessment-title="{{ $assessment->title ?? '-' }}"
+                                               data-assessment-type="{{ $assessment->type ?? 'content' }}"
+                                               data-assessment-type-label="{{ $typeLabel }}"
+                                               data-assessment-batch="{{ $assessment->batch ?? '-' }}"
+                                               data-assessment-from-date="{{ $fromDateDisplay }}"
+                                               data-assessment-to-date="{{ $toDateDisplay }}"
+                                               data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
+                                               data-assessment-duration="{{ $assessment->duration ?? ($assessment->time_limit_minutes ?? 60) }}"
+                                               data-assessment-user-attempts="{{ $userAttempts }}"
+                                               data-assessment-max-attempts="{{ $maxAttempts }}"
+                                               data-assessment-action-type="start">
+                                                Start Test
                                             </a>
                                         @else
                                             <button class="btn btn-sm btn-secondary" disabled>
@@ -196,6 +310,9 @@
 
     </div>
 </div>
+
+<x-shared.assessment-confirmation-modal />
+<x-shared.assessment-continue-modal />
 @endsection
 
 @section('style')

@@ -1,6 +1,123 @@
 <script src="{{ asset('js/jquery.smartWizard.min.js') }}" type="text/javascript"></script>
 
 <script>
+    // Universal Modal Opener / Closer compatible with Bootstrap 4 & 5
+    function openAssessmentModal(modalId) {
+        var modalElement = document.getElementById(modalId);
+        if (!modalElement) return;
+
+        if (typeof $ !== 'undefined' && $.fn && typeof $.fn.modal === 'function') {
+            $(modalElement).modal('show');
+        } else if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+            var modalInstance = window.bootstrap.Modal.getInstance ? window.bootstrap.Modal.getInstance(modalElement) : null;
+            if (!modalInstance) {
+                modalInstance = new window.bootstrap.Modal(modalElement);
+            }
+            modalInstance.show();
+        } else {
+            modalElement.style.display = 'block';
+            modalElement.classList.add('show');
+            document.body.classList.add('modal-open');
+            var backdrop = document.querySelector('.modal-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdrop);
+            }
+        }
+    }
+
+    function closeAssessmentModal(modalId) {
+        var modalElement = document.getElementById(modalId);
+        if (!modalElement) return;
+
+        if (typeof $ !== 'undefined' && $.fn && typeof $.fn.modal === 'function') {
+            $(modalElement).modal('hide');
+        } else if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+            var modalInstance = window.bootstrap.Modal.getInstance ? window.bootstrap.Modal.getInstance(modalElement) : null;
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        } else {
+            modalElement.style.display = 'none';
+            modalElement.classList.remove('show');
+            document.body.classList.remove('modal-open');
+            var backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+        }
+    }
+
+    function getAnsweredQuestionsCount() {
+        var checkedInputs = document.querySelectorAll('#formAssesment input[type="radio"]:checked, #formAssesment input[type="checkbox"]:checked, #formAssesment select, #formAssesment textarea');
+        var answeredGroupNames = new Set();
+        checkedInputs.forEach(function(input) {
+            if (input.value && input.value.trim() !== '') {
+                answeredGroupNames.add(input.name);
+            }
+        });
+        return answeredGroupNames.size;
+    }
+
+    function getTotalQuestionsCount() {
+        var questionItems = document.querySelectorAll('.question-item, [data-question-id], .assessment-wizard .tab-pane');
+        if (questionItems.length > 0) return questionItems.length;
+
+        var allInputs = document.querySelectorAll('#formAssesment input[type="radio"]');
+        var allNames = new Set();
+        allInputs.forEach(function(i) {
+            allNames.add(i.name);
+        });
+        return allNames.size || {{ count($assesment_question ?? []) }} || 10;
+    }
+
+    function updateLeaveModalText() {
+        var answeredEl = document.getElementById('answeredCount');
+        var totalEl = document.getElementById('totalQuestionsCount');
+        if (answeredEl) answeredEl.textContent = getAnsweredQuestionsCount();
+        if (totalEl) totalEl.textContent = getTotalQuestionsCount();
+    }
+
+    function checkFinishButtonState() {
+        const answeredCount = getAnsweredQuestionsCount();
+        const totalCount = getTotalQuestionsCount();
+        const finishBtn = document.getElementById('btnFinishSubmit') || document.querySelector('.btn-submit-assessment');
+
+        if (!finishBtn) return;
+
+        // HANYA aktifkan jika soal terjawab SUDAH SAMA DENGAN total soal
+        if (answeredCount >= totalCount && totalCount > 0) {
+            finishBtn.disabled = false;
+            finishBtn.classList.remove('opacity-50', 'pe-none');
+            finishBtn.style.opacity = '1';
+            finishBtn.style.cursor = 'pointer';
+            finishBtn.style.pointerEvents = 'auto';
+        } else {
+            finishBtn.disabled = true;
+            finishBtn.classList.add('opacity-50', 'pe-none');
+            finishBtn.style.opacity = '0.5';
+            finishBtn.style.cursor = 'not-allowed';
+            finishBtn.style.pointerEvents = 'none';
+        }
+    }
+
+    function submitAssessmentForm() {
+        window.assessmentAutoSubmit = true;
+        var form = document.getElementById('formAssesment') || document.getElementById('assessmentForm') || document.querySelector('form[action*="assesment"]') || document.querySelector('form');
+        if (form) {
+            form.removeAttribute('novalidate');
+            $('#btnFinishSubmit, #submitAssesment, #btnConfirmFinishSubmit, #btnConfirmLeaveTest').prop('disabled', true).text('Submitting...');
+            form.submit();
+        } else {
+            var finishBtn = document.getElementById('btnFinishSubmit') || document.getElementById('submitAssesment') || document.querySelector('button[type="submit"]');
+            if (finishBtn) {
+                finishBtn.disabled = false;
+                finishBtn.click();
+            }
+        }
+    }
+
     $(function () {
         let assessmentSubmitting = false;
         let isSaving = false;
@@ -43,32 +160,6 @@
             });
         }
 
-        function checkAssessmentCompletion() {
-            const totalQuestions = {{ count($assesment_question ?? []) }};
-            const answeredQuestions = $('#formAssesment input[type="radio"]:checked').length;
-            const finishBtn = $('#submitAssesment');
-
-            if (!finishBtn.length) return;
-
-            if (answeredQuestions >= totalQuestions && totalQuestions > 0) {
-                finishBtn.prop('disabled', false)
-                         .removeClass('opacity-50 pe-none')
-                         .css({
-                             'opacity': '1',
-                             'cursor': 'pointer',
-                             'pointer-events': 'auto'
-                         });
-            } else {
-                finishBtn.prop('disabled', true)
-                         .addClass('opacity-50 pe-none')
-                         .css({
-                             'opacity': '0.45',
-                             'cursor': 'not-allowed',
-                             'pointer-events': 'none'
-                         });
-            }
-        }
-
         function updateNavAnswerStatus() {
             $('#formAssesment input[type="radio"]:checked').each(function () {
                 let questionId = $(this).attr('name');
@@ -78,17 +169,21 @@
             });
         }
 
-        $(document).on('change', '#formAssesment input[type="radio"]', function () {
+        $(document).on('change', '#formAssesment input[type="radio"], #formAssesment input[type="checkbox"], #formAssesment select, #formAssesment textarea', function () {
             let questionId = $(this).attr('name');
             if ($(this).is(':checked') && questionId) {
                 $('.assessment-wizard .nav a[href="#step-' + questionId + '"]').addClass('done');
             }
-            checkAssessmentCompletion();
-            doAutosave();
+            updateLeaveModalText();
+            checkFinishButtonState();
+            @if (!auth()->user()->isAdmin())
+                doAutosave();
+            @endif
         });
 
         updateNavAnswerStatus();
-        checkAssessmentCompletion();
+        updateLeaveModalText();
+        checkFinishButtonState();
 
         $('#formAssesment').on('submit', function (e) {
             if (assessmentSubmitting) {
@@ -96,13 +191,20 @@
                 return;
             }
 
-            if (!window.assessmentAutoSubmit && !confirm('Are you sure want to finish the assessment and submit all the answer?')) {
+            if (!window.assessmentAutoSubmit) {
                 e.preventDefault();
+                const answered = getAnsweredQuestionsCount();
+                const total = getTotalQuestionsCount();
+                if (answered < total || total === 0) {
+                    checkFinishButtonState();
+                    return;
+                }
+                openAssessmentModal('finishAssessmentModal');
                 return;
             }
 
             assessmentSubmitting = true;
-            $('#submitAssesment').prop('disabled', true).text('Submitting...');
+            $('#btnFinishSubmit, #submitAssesment, #btnConfirmFinishSubmit, #btnConfirmLeaveTest').prop('disabled', true).text('Submitting...');
         });
 
         $('#smartwizard').smartWizard({
@@ -120,6 +222,7 @@
         // Re-sync answered navigation dots whenever active step changes
         $("#smartwizard").on("showStep", function (e, anchorObject, stepIndex, stepDirection, stepPosition) {
             updateNavAnswerStatus();
+            checkFinishButtonState();
         });
 
         // Leave step event is used for validating the forms
@@ -137,37 +240,83 @@
                 $('#smartwizard').smartWizard("setState", [currentStepIdx], 'error');
             }
 
-            doAutosave();
+            checkFinishButtonState();
+
+            @if (!auth()->user()->isAdmin())
+                doAutosave();
+            @endif
         });
 
-        $(document).on('click', '.sw-btn, .assessment-wizard .nav a', function () {
-            doAutosave();
+        @if (!auth()->user()->isAdmin())
+            $(document).on('click', '.sw-btn, .assessment-wizard .nav a', function () {
+                doAutosave();
+            });
+        @endif
+
+        // Trigger finish modal on button click with Strict Guard Clause
+        $(document).on('click', '#btnFinishSubmit, .btn-submit-assessment', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const answered = getAnsweredQuestionsCount();
+            const total = getTotalQuestionsCount();
+
+            if (answered < total || total === 0) {
+                checkFinishButtonState();
+                return false;
+            }
+
+            openAssessmentModal('finishAssessmentModal');
+        });
+
+        // Trigger modal dismiss
+        $(document).on('click', '[data-bs-dismiss="modal"], [data-dismiss="modal"]', function (e) {
+            var modal = $(this).closest('.modal');
+            if (modal.length && modal.attr('id')) {
+                closeAssessmentModal(modal.attr('id'));
+            }
+        });
+
+        // Execute Submit from Finish Assessment Modal
+        $(document).on('click', '#btnConfirmFinishSubmit', function (e) {
+            e.preventDefault();
+            $(this).prop('disabled', true).text('Submitting...');
+            submitAssessmentForm();
+        });
+
+        // Execute Submit from Leave Assessment Modal
+        $(document).on('click', '#btnConfirmLeaveTest', function (e) {
+            e.preventDefault();
+            $(this).prop('disabled', true).text('Submitting...');
+            submitAssessmentForm();
         });
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-        var leaveModalEl = document.getElementById('leaveAssessmentModal');
-        var leaveModal = leaveModalEl && window.bootstrap ? new bootstrap.Modal(leaveModalEl) : null;
-        var pendingTargetUrl = null;
+        updateLeaveModalText();
+        checkFinishButtonState();
+
+        function showLeaveModal() {
+            updateLeaveModalText();
+            openAssessmentModal('leaveAssessmentModal');
+        }
 
         // Cegat tombol Back bawaan browser (Chrome Back Button)
         history.pushState(null, null, location.href);
 
         window.addEventListener('popstate', function (event) {
             history.pushState(null, null, location.href);
-            pendingTargetUrl = "{{ url('/my-learning?learning_tab=assessment') }}";
-
-            if (leaveModal) {
-                leaveModal.show();
-            } else if (window.jQuery && $(leaveModalEl).modal) {
-                $(leaveModalEl).modal('show');
-            }
+            showLeaveModal();
         });
 
-        // Tangkap semua klik tautan internal aplikasi (termasuk Home & Logo)
+        // Tangkap semua klik tautan internal aplikasi (termasuk Sidebar & Logo)
         document.addEventListener('click', function(e) {
             var anchor = e.target.closest('a[href]');
             if (!anchor) return;
+
+            // Abaikan jika klik di dalam modal, tombol logout, atau navigasi wizard
+            if (anchor.closest('.modal') || anchor.closest('.assessment-wizard') || anchor.closest('.sw-btn-group')) return;
+            if (anchor.closest('[data-logout-trigger="true"], .owl-sidebar-logout-btn, form[action*="logout"], a[href*="logout"]')) return;
 
             var rawHref = anchor.getAttribute('href');
             if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
@@ -181,48 +330,9 @@
             if (rawHref !== currentPath && targetHrefClean !== currentHref) {
                 e.preventDefault();
                 e.stopPropagation();
-                pendingTargetUrl = targetHref;
-
-                if (leaveModal) {
-                    leaveModal.show();
-                } else if (window.jQuery && $(leaveModalEl).modal) {
-                    $(leaveModalEl).modal('show');
-                }
+                showLeaveModal();
             }
         }, true); // Gunakan parameter true (capturing phase) agar diproses lebih dulu
-
-        // Ketika user menekan tombol "Yes, Leave Test" di modal
-        var confirmBtn = document.getElementById('btnConfirmLeaveTest');
-        if (confirmBtn) {
-            confirmBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                window.assessmentAutoSubmit = true;
-                this.disabled = true;
-                this.innerText = 'Submitting...';
-
-                var assessmentForm = document.getElementById('formAssesment') || document.getElementById('assessmentForm') || document.querySelector('form[action*="assesment"]') || document.querySelector('form');
-
-                if (assessmentForm) {
-                    // Hapus validasi HTML5 jika ada agar form tetap bisa ter-submit meskipun belum semua soal diisi
-                    assessmentForm.removeAttribute('novalidate');
-                    
-                    // Trigger pemicu submit form assessment secara resmi
-                    if (typeof assessmentForm.requestSubmit === 'function') {
-                        assessmentForm.requestSubmit();
-                    } else {
-                        assessmentForm.submit();
-                    }
-                } else {
-                    // Fallback submit jika tombol Finish & Submit Answers diklik secara terprogram
-                    var finishBtn = document.getElementById('submitAssesment') || document.getElementById('btnFinishSubmit') || document.querySelector('button[type="submit"]');
-                    if (finishBtn) {
-                        finishBtn.disabled = false; // Aktifkan bypass
-                        finishBtn.click();
-                    }
-                }
-            });
-        }
     });
 </script>
 
@@ -246,7 +356,7 @@
 
                     @if(!in_array((int) (auth()->user()->role ?? auth()->user()->role_id), [2, 3], true))
                         window.assessmentAutoSubmit = true;
-                        var formEl = document.getElementById("formAssesment");
+                        var formEl = document.getElementById("formAssesment") || document.getElementById("assessmentForm") || document.querySelector('form[action*="assesment"]') || document.querySelector('form');
                         if (formEl) {
                             if (!formEl.querySelector('input[name="is_expired"]')) {
                                 var expiredInput = document.createElement("input");
@@ -255,8 +365,8 @@
                                 expiredInput.value = "1";
                                 formEl.appendChild(expiredInput);
                             }
-                            formEl.requestSubmit();
                         }
+                        submitAssessmentForm();
                     @endif
                     return;
                 }

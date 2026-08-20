@@ -202,6 +202,22 @@ function submitAssessmentAccess() {
                 $modal.find('#assessmentAccessModalPassingGrade').text(response.assessment_passing_grade !== undefined && response.assessment_passing_grade !== '' ? response.assessment_passing_grade : '-');
                 $modal.find('#assessmentAccessModalAttempt').text(attemptDisplay);
 
+                var actionType = response.action_type || 'start';
+                var $startBtn = $('#btnStartAssessmentAccess');
+                if (actionType === 'continue') {
+                    $modal.find('#assessmentAccessModalTitle').text('Continue Assessment');
+                    $startBtn.attr('style', 'background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;')
+                             .html('<i class="ti ti-player-play"></i> <span>Continue Assessment</span>');
+                } else if (actionType === 'remedial') {
+                    $modal.find('#assessmentAccessModalTitle').text('REMEDIAL');
+                    $startBtn.attr('style', 'background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;')
+                             .html('<i class="ti ti-refresh"></i> <span>Start Remedial</span>');
+                } else {
+                    $modal.find('#assessmentAccessModalTitle').text('Start Assessment');
+                    $startBtn.attr('style', 'background-color: #28be58 !important; border-color: #28be58 !important; color: #ffffff !important;')
+                             .html('<i class="ti ti-player-play"></i> <span>Start Test</span>');
+                }
+
                 var targetUrl = response.assessment_url;
                 if (response.assessment_slug) {
                     targetUrl = "{{ url('/assesment') }}/" + response.assessment_slug;

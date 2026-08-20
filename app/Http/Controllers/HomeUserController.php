@@ -440,15 +440,29 @@ class HomeUserController extends Controller
 
         if ($assessment) {
             $user = auth()->user();
-            $currentUserId = $user->id;
+            $currentUserId = $user ? $user->id : auth()->id();
 
-            // Check if user has an active draft (already started)
+            // Check for active unsubmitted draft (Snapshot detection)
             $activeDraft = AssesmentResult::where('user_id', $currentUserId)
                 ->where('assesment_id', $assessment->id)
                 ->where('batch', $assessment->batch)
                 ->where('final', 0)
                 ->latest('id')
                 ->first();
+
+            $hasSnapshot = $activeDraft && (!empty($activeDraft->user_answer) || !empty($activeDraft->question_snapshot));
+
+            $answeredCount = ($activeDraft && is_array($activeDraft->user_answer))
+                ? count(array_filter($activeDraft->user_answer, fn($v) => $v !== null && $v !== ''))
+                : 0;
+
+            $totalCount = ($activeDraft && is_array($activeDraft->question_snapshot) && count($activeDraft->question_snapshot) > 0)
+                ? count($activeDraft->question_snapshot)
+                : ($assessment->questions()->count() ?: 10);
+
+            $userScores = collect($assessment->scores ?? [])->filter(function ($scoreItem) use ($currentUserId) {
+                return (string) ($scoreItem->user_id ?? '') === (string) $currentUserId;
+            });
 
             // Evaluate access denial reason
             $reason = $assessmentAccess->denialReason($assessment, $user);
@@ -479,6 +493,18 @@ class HomeUserController extends Controller
                 $passingGrade = (int) ($assessment->passing_grade ?? 0);
                 $resultIsPassed = (bool) ($highestResult->pass ?? ($resultScore >= $passingGrade));
                 $resultCurrentAttempt = $completedResults->count();
+            }
+
+            $isPassed = $userScores->where('final', 1)->where('pass', 1)->count() > 0;
+            $isCompleted = $userAttempts > 0;
+            $isRemedial = (string) ($assessment->type ?? '') !== 'global' && $isCompleted && !$isPassed && ($userAttempts < $maxAttempts);
+
+            if ($hasSnapshot) {
+                $actionType = 'continue';
+            } elseif ($isRemedial) {
+                $actionType = 'remedial';
+            } else {
+                $actionType = 'start';
             }
 
             $fromDateDisplay = !empty($assessment->fromdate)
@@ -518,11 +544,16 @@ class HomeUserController extends Controller
                 'assessment_to_date' => $toDateDisplay ?? '-',
                 'assessment_period' => $periodDisplay,
                 'assessment_passing_grade' => $assessment->passing_grade ?? '-',
+                'assessment_duration' => $assessment->duration ?? ($assessment->time_limit_minutes ?? 60),
                 'assessment_user_attempts' => $userAttempts,
                 'assessment_max_attempts' => $maxAttempts,
                 'assessment_score' => $resultScore,
                 'assessment_is_passed' => $resultIsPassed,
                 'assessment_current_attempt' => $resultCurrentAttempt,
+                'has_snapshot' => $hasSnapshot,
+                'action_type' => $actionType,
+                'answered_count' => $answeredCount,
+                'total_count' => $totalCount,
                 'assessment_url' => route('assesment.user.view', $assessment->slug, false),
             ], 200);
 

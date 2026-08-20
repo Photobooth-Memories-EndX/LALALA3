@@ -1,5 +1,6 @@
 <div id="step-{{ $step->id }}"
-     class="tab-pane"
+     class="tab-pane question-item"
+     data-question-id="{{ $step->id }}"
      role="tabpanel"
      aria-labelledby="step-{{ $step->id }}">
 

@@ -107,6 +107,29 @@
     $totalRemedials = (int) ($assessment->total_remedials ?? 0);
     $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
     $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
+
+    $activeDraft = ($assessment->scores ?? null) 
+        ? collect($assessment->scores)->where('user_id', $currentUserId)->where('final', 0)->first() 
+        : null;
+
+    if (!$activeDraft) {
+        $activeDraft = \App\Models\AssesmentResult::where('user_id', $currentUserId)
+            ->where('assesment_id', $assessment->id)
+            ->where('batch', $assessment->batch)
+            ->where('final', 0)
+            ->latest('id')
+            ->first();
+    }
+
+    $hasSnapshot = $activeDraft && (!empty($activeDraft->user_answer) || !empty($activeDraft->question_snapshot));
+
+    $answeredCount = ($activeDraft && is_array($activeDraft->user_answer))
+        ? count(array_filter($activeDraft->user_answer, fn($v) => $v !== null && $v !== ''))
+        : 0;
+
+    $totalCount = ($activeDraft && is_array($activeDraft->question_snapshot) && count($activeDraft->question_snapshot) > 0)
+        ? count($activeDraft->question_snapshot)
+        : (isset($assessment->questions) ? $assessment->questions->count() : ($assessment->questions_count ?? 10));
 @endphp
 
 <tr class="assessment-row"
@@ -121,11 +144,16 @@
     data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
     data-assessment-grade="{{ $assessment->passing_grade ?? '-' }}"
     data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
+    data-assessment-duration="{{ $assessment->duration ?? ($assessment->time_limit_minutes ?? 60) }}"
     data-assessment-from-date="{{ $fromDateDisplay }}"
     data-assessment-to-date="{{ $toDateDisplay }}"
     data-assessment-user-attempts="{{ $userAttempts }}"
     data-assessment-max-attempts="{{ $maxAttempts }}"
     data-assessment-score="{{ $finalResult->score ?? '' }}"
+    data-assessment-has-snapshot="{{ $hasSnapshot ? 'true' : 'false' }}"
+    data-assessment-answered-count="{{ $answeredCount }}"
+    data-assessment-total-count="{{ $totalCount }}"
+    data-assessment-action-type="{{ $hasSnapshot ? 'continue' : ($isCompleted && !$isPassed && (string)($assessment->type ?? '') !== 'global' ? 'remedial' : 'start') }}"
     data-assessment-availability="{{ $availability }}">
     <td class="text-center text-muted align-middle">{{ $index }}</td>
 
@@ -232,6 +260,10 @@
             :is-completed="$isCompleted"
             :is-passed="$isPassed"
             :is-expired="$isExpired"
+            :has-snapshot="$hasSnapshot"
+            :answered-count="$answeredCount"
+            :total-count="$totalCount"
+            :duration="$assessment->duration ?? ($assessment->time_limit_minutes ?? 60)"
             :user-attempts="$userAttempts"
             :max-attempts="$maxAttempts"
             :total-remedials="$totalRemedials"
