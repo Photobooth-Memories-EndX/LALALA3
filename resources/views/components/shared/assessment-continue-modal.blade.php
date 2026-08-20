@@ -35,7 +35,7 @@
                         <div class="text-dark small fw-bold text-uppercase mb-1" 
                              id="continueModalTypeHeader" 
                              style="color: #212529 !important; font-size: 0.78rem; letter-spacing: 0.5px;">
-                            {{ $type === 'global' ? 'ASSESSMENT TITLE' : 'ASSESSMENT CONTENT' }}
+                            {{ $type === 'global' ? 'ASSESSMENT GLOBAL' : 'ASSESSMENT CONTENT' }}
                         </div>
                         <h5 class="fw-bold text-dark mb-0 fs-5" 
                             id="continueModalName" 
@@ -77,15 +77,21 @@
                     </div>
                 </div>
 
-                <!-- REQUIREMENTS / NOTICE SECTION -->
-                <h6 class="fw-bold text-dark text-uppercase mt-3 mb-2" id="continueModalNoticeTitle" style="font-size: 0.85rem; letter-spacing: 0.5px; color: #000000 !important;">
-                    REQUIREMENTS
+                <!-- NOTICE SECTION -->
+                <h6 class="fw-bold text-dark text-uppercase mb-2" id="continueModalNoticeTitle" style="font-size: 0.85rem; letter-spacing: 0.5px; color: #000000 !important;">
+                    NOTICE
                 </h6>
                 <div id="continueModalNoticeWrapper">
-                    <ol class="small text-dark ps-3 mb-0" style="color: #212529 !important;">
+                    <ol class="small text-dark ps-3 mb-0" id="continueNoticeGlobal" style="color: #212529 !important; {{ $type === 'global' ? '' : 'display: none;' }}">
+                        <li>Make sure you are in a safe and conducive environment, and that your device is ready to use.</li>
+                        <li><em>Once resumed, the assessment cannot be exited until it is completed or the time expires.</em></li>
+                        <li>The assessment will take place according to the stated date & time.</li>
+                        <li>If an error occurs on your device or the connection is interrupted, your answers will be saved. Re-enter the assessment to continue as long as time is still available.</li>
+                    </ol>
+                    <ol class="small text-dark ps-3 mb-0" id="continueNoticeContent" style="color: #212529 !important; {{ $type !== 'global' ? '' : 'display: none;' }}">
                         <li>Ensure yourself, your device, and your environment are in a safe and conducive condition.</li>
                         <li>Assessment will continue using the remaining available time.</li>
-                        <li>Once resumed, the assessment cannot be exited until it is completed or time expires.</li>
+                        <li><em>Once resumed, the assessment cannot be exited until it is completed or time expires.</em></li>
                         <li>If an error or technical issue occurs, your answers are saved. Re-enter immediately to continue as long as time remains.</li>
                         <li>Perform your best by utilizing the available opportunity.</li>
                     </ol>

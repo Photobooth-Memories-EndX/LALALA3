@@ -74,6 +74,13 @@
                     REQUIREMENTS
                 </h6>
                 <div id="assessmentModalNoticeContent">
+                    <!-- Global Start Notice (English) -->
+                    <ol class="small text-dark ps-3 mb-0" id="assessmentNoticeGlobalStart" style="color: #212529 !important; display: none;">
+                        <li>Make sure you are in a safe and conducive environment, and that your device is ready to use.</li>
+                        <li><em>Once started, the assessment cannot be exited until it is completed or the time expires.</em></li>
+                        <li>The assessment will take place according to the stated date & time.</li>
+                        <li>If an error occurs on your device or the connection is interrupted, your answers will be saved. Re-enter the assessment to continue as long as time is still available.</li>
+                    </ol>
                     <!-- Start Requirements (English) -->
                     <ol class="small text-dark ps-3 mb-0" id="assessmentNoticeStart" style="color: #212529 !important;">
                         <li>Ensure yourself, your device, and your environment are in a safe and conducive condition.</li>
@@ -248,7 +255,7 @@
                 if (actionType === 'continue') {
                     var $continueModal = $('#continueAssessmentModal');
                     if ($continueModal.length) {
-                        $continueModal.find('#continueModalTypeHeader').text(isGlobal ? 'ASSESSMENT TITLE' : 'ASSESSMENT CONTENT');
+                        $continueModal.find('#continueModalTypeHeader').text(isGlobal ? 'ASSESSMENT GLOBAL' : 'ASSESSMENT CONTENT');
                         $continueModal.find('#continueModalName').text(title);
                         $continueModal.find('#continueModalDateTime').text(dateTimeDisplay);
                         $continueModal.find('#continueModalPassingGrade').text(passingGrade);
@@ -259,13 +266,17 @@
                             $continueModal.find('#continueModalBatch').text(batchDisplay !== '-' ? batchDisplay : 'Batch 1');
                             $continueModal.find('#continueModalAttemptContainer').hide();
                             $continueModal.find('#continueModalProgress').text(answeredCount + ' / ' + totalCount + ' answered');
-                            $continueModal.find('#continueModalNoticeTitle').text('REQUIREMENTS');
+                            $continueModal.find('#continueModalNoticeTitle').text('NOTICE');
+                            $continueModal.find('#continueNoticeGlobal').show();
+                            $continueModal.find('#continueNoticeContent').hide();
                         } else {
                             $continueModal.find('#continueModalBatchContainer').hide();
                             $continueModal.find('#continueModalAttemptContainer').show();
                             $continueModal.find('#continueModalAttempt').text(attemptDisplay);
                             $continueModal.find('#continueModalProgress').text(answeredCount + ' / ' + totalCount + ' answered');
                             $continueModal.find('#continueModalNoticeTitle').text('REQUIREMENTS');
+                            $continueModal.find('#continueNoticeGlobal').hide();
+                            $continueModal.find('#continueNoticeContent').show();
                         }
 
                         $continueModal.find('#btnConfirmContinueAssessment').attr('href', targetUrl);
@@ -279,7 +290,7 @@
                 // 2. START / REMEDIAL MODAL
                 var $confirmModal = $('#assessmentConfirmationModal');
                 if ($confirmModal.length) {
-                    $confirmModal.find('#assessmentModalTypeHeader').text(isGlobal ? 'ASSESSMENT TITLE' : 'ASSESSMENT CONTENT');
+                    $confirmModal.find('#assessmentModalTypeHeader').text(isGlobal ? 'ASSESSMENT GLOBAL' : 'ASSESSMENT CONTENT');
                     $confirmModal.find('#assessmentModalName').text(title);
                     $confirmModal.find('#assessmentModalDateTime').text(dateTimeDisplay);
                     $confirmModal.find('#assessmentModalPassingGrade').text(passingGrade);
@@ -303,6 +314,7 @@
                         $confirmModal.find('#assessmentModalSubtitle').text('Confirmation');
                         $confirmModal.find('#assessmentModalNoticeHeader').text('REQUIREMENTS');
                         $confirmModal.find('#assessmentNoticeStart').hide();
+                        $confirmModal.find('#assessmentNoticeGlobalStart').hide();
                         $confirmModal.find('#assessmentNoticeRemedial').show();
 
                         $confirmModal.find('#btnConfirmAssessmentAction')
@@ -315,9 +327,18 @@
                         $confirmModal.find('#assessmentModalHeaderIconInner').attr('class', 'ti ti-player-play fs-2');
                         $confirmModal.find('#assessmentConfirmationModalTitle').text('Start Assessment').attr('style', 'color: #28be58 !important;');
                         $confirmModal.find('#assessmentModalSubtitle').text('Confirmation');
-                        $confirmModal.find('#assessmentModalNoticeHeader').text('REQUIREMENTS');
-                        $confirmModal.find('#assessmentNoticeStart').show();
-                        $confirmModal.find('#assessmentNoticeRemedial').hide();
+
+                        if (isGlobal) {
+                            $confirmModal.find('#assessmentModalNoticeHeader').text('NOTICE');
+                            $confirmModal.find('#assessmentNoticeGlobalStart').show();
+                            $confirmModal.find('#assessmentNoticeStart').hide();
+                            $confirmModal.find('#assessmentNoticeRemedial').hide();
+                        } else {
+                            $confirmModal.find('#assessmentModalNoticeHeader').text('REQUIREMENTS');
+                            $confirmModal.find('#assessmentNoticeStart').show();
+                            $confirmModal.find('#assessmentNoticeGlobalStart').hide();
+                            $confirmModal.find('#assessmentNoticeRemedial').hide();
+                        }
 
                         $confirmModal.find('#btnConfirmAssessmentAction')
                             .attr('style', 'background-color: #28be58 !important; border-color: #28be58 !important; color: #ffffff !important;')

@@ -301,13 +301,26 @@
             ? (String(batch).toLowerCase().indexOf('batch') !== -1 ? batch : 'Batch ' + batch)
             : '-';
 
+        var dateTimeDisplay = '-';
+        if (fromDate !== '-' && toDate !== '-') {
+            dateTimeDisplay = fromDate + ' – ' + toDate;
+        } else if (fromDate !== '-') {
+            dateTimeDisplay = fromDate;
+        } else if (toDate !== '-') {
+            dateTimeDisplay = toDate;
+        }
+
+        var duration = $btn.data('assessment-duration') || '60';
+
         $modal.find('#assessmentAccessModalTypeBadge').text(typeBadge);
         $modal.find('#assessmentAccessModalName').text(title);
         $modal.find('#assessmentAccessModalSubText').text(batchDisplay);
-        $modal.find('#assessmentAccessModalBatch').text(batchDisplay);
+        $modal.find('#assessmentAccessModalBatch').text(batchDisplay !== '-' ? batchDisplay : 'Batch 1');
         $modal.find('#assessmentAccessModalFromDate').text(fromDate);
         $modal.find('#assessmentAccessModalToDate').text(toDate);
+        $modal.find('#assessmentAccessModalDateTime').text(dateTimeDisplay);
         $modal.find('#assessmentAccessModalPassingGrade').text(passingGrade);
+        $modal.find('#assessmentAccessModalDuration').text(duration + ' Minutes');
         $modal.find('#assessmentAccessModalAttempt').text(attempts);
 
         $('#btnStartAssessmentAccess')
