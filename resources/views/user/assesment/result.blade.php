@@ -150,6 +150,8 @@
     </div>
 </div>
 
+@include('components.shared.assessment-result-modal')
+
 @endsection
 
 @php
@@ -208,4 +210,20 @@ document.addEventListener("DOMContentLoaded", function() {
     chart.render();
 });
 </script>
+
+@if (session('show_result_modal'))
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var modalEl = document.getElementById('assessmentResultModal');
+    if (modalEl) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            bsModal.show();
+        } else if (typeof jQuery !== 'undefined' && jQuery(modalEl).modal) {
+            jQuery(modalEl).modal('show');
+        }
+    }
+});
+</script>
+@endif
 @endsection

@@ -127,6 +127,30 @@ final class AssessmentAccessService
         return null;
     }
 
+    public function denialReasonForSubmitting(Assesment $assessment, User $user, ?Carbon $now = null): ?string
+    {
+        if ($this->isAssessmentDebugBypass($user)) {
+            return null;
+        }
+
+        if (strtoupper(trim((string) ($assessment->status ?? ''))) === 'NOT') {
+            return self::REASON_INACTIVE;
+        }
+
+        $activeDraft = AssesmentResult::where('user_id', $user->id)
+            ->where('assesment_id', $assessment->id)
+            ->where('batch', $assessment->batch)
+            ->where('final', 0)
+            ->latest('id')
+            ->first();
+
+        if ($activeDraft) {
+            return null;
+        }
+
+        return $this->denialReason($assessment, $user, $now);
+    }
+
     public function authorize(Assesment $assessment, User $user): void
     {
         $reason = $this->denialReason($assessment, $user);

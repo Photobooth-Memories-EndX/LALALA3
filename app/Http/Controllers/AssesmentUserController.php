@@ -45,6 +45,22 @@
 
             $reason = $assessmentAccess->denialReason($assesment, auth()->user());
             if ($reason !== null) {
+                if ($reason === AssessmentAccessService::REASON_EXPIRED) {
+                    $activeDraft = AssesmentResult::where('user_id', auth()->id())
+                        ->where('assesment_id', $assesment->id)
+                        ->where('batch', $assesment->batch)
+                        ->where('final', 0)
+                        ->latest('id')
+                        ->first();
+
+                    if ($activeDraft) {
+                        $this->finalizeExpiredDraft($activeDraft, $assesment);
+                        return to_route('assesment.user.result', $slug)
+                            ->with('assesmentResultId', $activeDraft->id)
+                            ->with('show_result_modal', true)
+                            ->with('is_expired_autosubmit', true);
+                    }
+                }
                 return $this->assessmentAccessDeniedResponse($assesment, $reason, $assessmentAccess);
             }
 
@@ -124,6 +140,14 @@
             if ($effectiveDeadline !== null) {
                 $countDownDate = $effectiveDeadline->format('Y-m-d H:i:s');
                 $expiresAtIso  = $effectiveDeadline->toIso8601String();
+
+                if ($assesment_result_draft && now()->format('Y-m-d H:i:s') > $effectiveDeadline->format('Y-m-d H:i:s')) {
+                    $this->finalizeExpiredDraft($assesment_result_draft, $assesment);
+                    return to_route('assesment.user.result', $slug)
+                        ->with('assesmentResultId', $assesment_result_draft->id)
+                        ->with('show_result_modal', true)
+                        ->with('is_expired_autosubmit', true);
+                }
             }
 
             $submissionSessionKey = "assessment_submission_token.{$assesment->id}.{$assesment->batch}";
@@ -174,7 +198,7 @@
                 abort(404);
             }
 
-            $reason = $assessmentAccess->denialReason($assesment, auth()->user());
+            $reason = $assessmentAccess->denialReasonForSubmitting($assesment, auth()->user());
             if ($reason !== null) {
                 return $this->assessmentAccessDeniedResponse($assesment, $reason, $assessmentAccess);
             }
@@ -300,12 +324,38 @@
                 return $result;
             });
 
+            $isExpiredAutoSubmit = $request->boolean('is_expired');
+            if (!$isExpiredAutoSubmit && $activeDraft) {
+                $hasAccessPeriod = $assesment->hasAccessPeriod() && !empty($assesment->todate);
+                $hasTimeLimit    = $assesment->hasTimeLimit();
+
+                $effectiveDeadline = null;
+                if ($hasAccessPeriod && $hasTimeLimit) {
+                    $periodDeadline    = \Illuminate\Support\Carbon::parse($assesment->todate);
+                    $timeLimitDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
+                    $effectiveDeadline = $periodDeadline->min($timeLimitDeadline);
+                } elseif ($hasAccessPeriod) {
+                    $effectiveDeadline = \Illuminate\Support\Carbon::parse($assesment->todate);
+                } elseif ($hasTimeLimit) {
+                    $effectiveDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
+                }
+
+                if ($effectiveDeadline !== null && now()->format('Y-m-d H:i:s') > $effectiveDeadline->format('Y-m-d H:i:s')) {
+                    $isExpiredAutoSubmit = true;
+                }
+            }
+
             $submissionSessionKey = "assessment_submission_token.{$assesment->id}.{$assesment->batch}";
             if (session($submissionSessionKey) === $request->submission_token) {
                 session()->forget($submissionSessionKey);
             }
 
-            return to_route('assesment.user.result', $slug)->with('assesmentResultId', $assesment_result->id);
+            $redirect = to_route('assesment.user.result', $slug)->with('assesmentResultId', $assesment_result->id);
+            if ($isExpiredAutoSubmit) {
+                $redirect->with('show_result_modal', true)->with('is_expired_autosubmit', true);
+            }
+
+            return $redirect;
         }
 
         public function result($slug, AssessmentAccessService $assessmentAccess)
@@ -583,5 +633,38 @@
 
                 return $assesment_question;
             });
+        }
+
+        /**
+         * Finalizes an active draft that has expired.
+         */
+        private function finalizeExpiredDraft(AssesmentResult $result, Assesment $assesment): void
+        {
+            if ((int) $result->final === 1) {
+                return;
+            }
+
+            $assessmentQuestionBank = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get()->sum('questions_amount');
+            $checkAssesmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->first();
+            $assesment_question = AssesmentQuestion::where('assesment_id', $assesment->id)->pluck('answer', 'id')->toArray();
+            $assesment_question_count = $checkAssesmentQuestionBanks ? $assessmentQuestionBank : count($assesment_question);
+
+            $formulaScorePerQuestion = $assesment_question_count > 0 ? (100 / $assesment_question_count) : 0;
+            $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
+            $user_answers = collect($existingUserAnswers)->sortKeys()->toArray();
+            $wrong_answer = array_diff_assoc($assesment_question, $user_answers);
+            $wrong_answer_count = count($wrong_answer);
+            $right_answer_count = count($assesment_question) - $wrong_answer_count;
+            $amountOfRightAnswer = $assesment_question_count - ($assesment_question_count - $right_answer_count);
+            $score = $amountOfRightAnswer * $formulaScorePerQuestion;
+
+            $result->score = $score >= 100 ? 100 : $score;
+            $result->batch = $assesment->batch;
+            $result->pass = ($score < $assesment->passing_grade) ? 0 : 1;
+            $result->final = 1;
+            $result->save();
+
+            $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch . ':' . $result->id;
+            Cache::put($completedKey, $result->id, now()->addDay());
         }
     }

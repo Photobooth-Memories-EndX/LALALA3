@@ -254,6 +254,13 @@
                         window.assessmentAutoSubmit = true;
                         var formEl = document.getElementById("formAssesment");
                         if (formEl) {
+                            if (!formEl.querySelector('input[name="is_expired"]')) {
+                                var expiredInput = document.createElement("input");
+                                expiredInput.type = "hidden";
+                                expiredInput.name = "is_expired";
+                                expiredInput.value = "1";
+                                formEl.appendChild(expiredInput);
+                            }
                             formEl.requestSubmit();
                         }
                     @endif
