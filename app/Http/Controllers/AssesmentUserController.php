@@ -84,7 +84,14 @@
             $hasTimeLimit    = $assesment->hasTimeLimit();
 
             if (!$assesment_result_draft) {
-                $draftLockKey = 'assessment-draft-lock:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
+                $completedCount = AssesmentResult::where('user_id', auth()->id())
+                    ->where('assesment_id', $assesment->id)
+                    ->where('batch', $assesment->batch)
+                    ->where('final', 1)
+                    ->count();
+                $currentAttempt = $completedCount + 1;
+
+                $draftLockKey = 'assessment-draft-lock:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch . ':' . $currentAttempt;
                 $assesment_result_draft = Cache::lock($draftLockKey, 10)->block(5, function () use ($assesment) {
                     return AssesmentResult::firstOrCreate(
                         [
@@ -208,21 +215,53 @@
             /**
              * Last Step is counting the score.
              */
-            $lockKey = 'assessment-store-lock:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
-            $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
+            $activeDraft = AssesmentResult::where('user_id', auth()->id())
+                ->where('assesment_id', $assesment->id)
+                ->where('batch', $assesment->batch)
+                ->where('final', 0)
+                ->latest('id')
+                ->first();
 
-            $assesment_result = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $completedKey) {
+            if (!$activeDraft) {
+                $alreadySubmitted = AssesmentResult::where('user_id', auth()->id())
+                    ->where('assesment_id', $assesment->id)
+                    ->where('batch', $assesment->batch)
+                    ->where('final', 1)
+                    ->latest('id')
+                    ->first();
+
+                if ($alreadySubmitted) {
+                    $submissionSessionKey = "assessment_submission_token.{$assesment->id}.{$assesment->batch}";
+                    if (session($submissionSessionKey) === $request->submission_token) {
+                        session()->forget($submissionSessionKey);
+                    }
+                    return to_route('assesment.user.result', $slug)->with('assesmentResultId', $alreadySubmitted->id);
+                }
+            }
+
+            $draftId = $activeDraft ? $activeDraft->id : 0;
+            $lockKey = 'assessment-store-lock:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch . ':' . $draftId;
+            $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch . ':' . $draftId;
+
+            $assesment_result = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $completedKey, $activeDraft) {
                 $completedResultId = Cache::get($completedKey);
                 if ($completedResultId) {
                     return AssesmentResult::findOrFail($completedResultId);
                 }
 
-                $result = AssesmentResult::firstOrNew([
-                    'user_id' => auth()->id(),
-                    'assesment_id' => $assesment->id,
-                    'batch' => $assesment->batch,
-                    'final' => 0,
-                ]);
+                $result = $activeDraft ?: AssesmentResult::firstOrCreate(
+                    [
+                        'user_id'      => auth()->id(),
+                        'assesment_id' => $assesment->id,
+                        'batch'        => $assesment->batch,
+                        'final'        => 0,
+                    ],
+                    [
+                        'user_answer'  => [],
+                        'score'        => 0,
+                        'pass'         => 0,
+                    ]
+                );
 
                 // Safety check: ensure question_snapshot exists on the draft without modifying existing snapshots
                 $this->ensureQuestionSnapshot($result, $assesment);
@@ -371,20 +410,29 @@
             /**
              * Last Step is counting the score.
              */
-            $lockKey = 'assessment-autosave-lock:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
-            $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch;
+            $activeDraft = AssesmentResult::where('user_id', auth()->id())
+                ->where('assesment_id', $assesment->id)
+                ->where('batch', $assesment->batch)
+                ->where('final', 0)
+                ->latest('id')
+                ->first();
 
-            $saved = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $completedKey) {
+            if (!$activeDraft) {
+                return response()->json([
+                    'status' => 200,
+                    'message' => 'Assessment sudah disubmit atau draft tidak ditemukan',
+                ]);
+            }
+
+            $lockKey = 'assessment-autosave-lock:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch . ':' . $activeDraft->id;
+            $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch . ':' . $activeDraft->id;
+
+            $saved = Cache::lock($lockKey, 10)->block(5, function () use ($request, $assesment, $completedKey, $activeDraft) {
                 if (Cache::has($completedKey)) {
                     return false;
                 }
 
-                $result = AssesmentResult::firstOrNew([
-                    'user_id' => auth()->id(),
-                    'assesment_id' => $assesment->id,
-                    'batch' => $assesment->batch,
-                    'final' => 0,
-                ]);
+                $result = $activeDraft;
 
                 // Safety check: ensure question_snapshot exists on the draft without modifying existing snapshots
                 $this->ensureQuestionSnapshot($result, $assesment);
@@ -481,7 +529,10 @@
             $snapshotLockKey = 'assessment-snapshot-lock:' . auth()->id() . ':' . $resultDraft->id;
 
             return Cache::lock($snapshotLockKey, 10)->block(5, function () use ($assesment, $resultDraft) {
-                $resultDraft->refresh();
+                if ($resultDraft->exists) {
+                    $resultDraft->refresh();
+                }
+
                 if (!empty($resultDraft->question_snapshot)) {
                     $snapshot = $resultDraft->question_snapshot;
                     $questionIds = array_column($snapshot, 'question_id');
@@ -519,6 +570,13 @@
                         'order'       => $index + 1,
                     ];
                 })->toArray();
+
+                if (!$resultDraft->exists) {
+                    $resultDraft->user_answer = $resultDraft->user_answer ?? [];
+                    $resultDraft->score = $resultDraft->score ?? 0;
+                    $resultDraft->pass = $resultDraft->pass ?? 0;
+                    $resultDraft->final = $resultDraft->final ?? 0;
+                }
 
                 $resultDraft->question_snapshot = $snapshotData;
                 $resultDraft->save();

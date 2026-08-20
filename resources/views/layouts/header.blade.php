@@ -4,9 +4,8 @@
     $darkThemeUrl = request()->fullUrlWithQuery(['theme' => 'dark']);
     $lightThemeUrl = request()->fullUrlWithQuery(['theme' => 'light']);
 
-
-
-      $authUser = auth()->user();
+    $authUser = auth()->user();
+    $isAssessmentPage = request()->is('assesment*') || request()->is('assessment*') || request()->routeIs('assesment.*') || request()->routeIs('assessment.*');
 @endphp
 
 
@@ -28,6 +27,63 @@
                 <img src="{{ asset('owl.png') }}" width="164" height="97" alt="OWL Learning Hub" class="navbar-brand-image owl-sidebar-logo">
             </a>
         </h1>
+
+        @if ($isAssessmentPage)
+            {{-- Assessment Mobile: Notification & Dark Mode Icons on Top Right --}}
+            <div class="d-flex align-items-center gap-1 ms-auto d-lg-none owl-assessment-mobile-actions">
+                {{-- NOTIFICATION BELL --}}
+                <div class="nav-item dropdown me-1">
+                    <a href="#"
+                       class="nav-link px-2 position-relative text-muted"
+                       data-bs-toggle="dropdown"
+                       role="button"
+                       aria-expanded="false"
+                       aria-label="Open notifications">
+
+                        <i class="ti ti-bell fs-2"></i>
+
+                        @if (($mylearningongoing ?? 0) >= 1)
+                            <span class="badge bg-red badge-notification">
+                                {{ $mylearningongoing }}
+                            </span>
+                        @endif
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <div class="dropdown-header">
+                            Notifications
+                        </div>
+
+                        @if (($mylearningongoing ?? 0) >= 1)
+                            <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
+                                <i class="ti ti-book-2 me-2"></i>
+                                You have {{ $mylearningongoing }} ongoing learning
+                            </a>
+                        @else
+                            <span class="dropdown-item text-muted">
+                                <i class="ti ti-bell-off me-2"></i>
+                                No notifications
+                            </span>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- DARK MODE TOGGLE --}}
+                <div class="nav-item">
+                    <a href="{{ $darkThemeUrl }}"
+                       class="nav-link px-2 hide-theme-dark text-muted"
+                       title="Enable dark mode">
+                        <i class="ti ti-moon fs-2"></i>
+                    </a>
+
+                    <a href="{{ $lightThemeUrl }}"
+                       class="nav-link px-2 hide-theme-light text-muted"
+                       title="Enable light mode">
+                        <i class="ti ti-sun fs-2"></i>
+                    </a>
+                </div>
+            </div>
+        @endif
 
         <div class="collapse navbar-collapse" id="sidebar-menu">
             <ul class="navbar-nav owl-sidebar-nav">
@@ -244,108 +300,141 @@
              MOBILE HEADER LAYOUT (< 992px)
              Row 1: Hamburger + Logo (in <aside>)
              Row 2: User Profile Strip (Avatar + Username + Team)
-             Row 3: Search Bar (left) + Notification Bell (right)
+             Row 3: Search Bar (left) + Notification Bell (right) [Non-Assessment only]
              ======================================================== --}}
         <div class="d-lg-none w-100 py-1">
 
-            {{-- ROW 2: USER PROFILE --}}
-            <div class="owl-mobile-user-row d-flex align-items-center justify-content-between py-1 border-bottom mb-2">
-                <a href="{{ route('user.profile') }}" class="d-flex align-items-center text-decoration-none text-reset min-w-0 flex-grow-1 me-2">
-                    @if (!empty(auth()->user()->avatar))
-                        <span class="avatar owl-mobile-avatar rounded-circle flex-shrink-0"
-                              style="background-image: url('{{ asset('storage/profile/' . auth()->user()->avatar) }}')">
-                        </span>
-                    @else
-                        <span class="avatar owl-mobile-avatar rounded-circle avatar-default-icon flex-shrink-0">
-                            <i class="ti ti-user"></i>
-                        </span>
-                    @endif
-
-                    <div class="ps-2 ms-1 min-w-0 flex-grow-1">
-                        <div class="fw-bold text-truncate owl-mobile-user-name" style="font-size: 0.9rem; line-height: 1.2;">
-                            {{ ucwords(strtolower(auth()->user()->name ?? '')) }}
-                        </div>
-                        <div class="text-muted text-truncate owl-mobile-user-team" style="font-size: 0.775rem; line-height: 1.2;">
-                            {{ auth()->user()->team ?? (auth()->user()->division ?? 'Training Team') }}
-                        </div>
-                    </div>
-                </a>
-
-                {{-- Dark Mode Toggle --}}
-                <div class="nav-item flex-shrink-0 ms-auto">
-                    <a href="{{ $darkThemeUrl }}"
-                       class="nav-link px-2 hide-theme-dark text-muted"
-                       title="Enable dark mode">
-                        <i class="ti ti-moon fs-2"></i>
-                    </a>
-
-                    <a href="{{ $lightThemeUrl }}"
-                       class="nav-link px-2 hide-theme-light text-muted"
-                       title="Enable light mode">
-                        <i class="ti ti-sun fs-2"></i>
-                    </a>
-                </div>
-            </div>
-
-            {{-- ROW 3: SEARCH BAR (LEFT) + NOTIFICATION BELL (RIGHT) --}}
-            <div class="owl-mobile-action-row d-flex align-items-center gap-2 pb-1">
-                {{-- Search Bar (left, flexible) --}}
-                <form action="{{ route('search', ['searchtype' => 'all']) }}"
-                      method="get"
-                      autocomplete="off"
-                      novalidate
-                      class="flex-grow-1 min-w-0">
-
-                    <div class="input-icon w-100">
-                        <span class="input-icon-addon">
-                            <i class="ti ti-search"></i>
-                        </span>
-
-                        <input type="text"
-                               name="s"
-                               class="form-control"
-                               placeholder="Search learning, content, news..."
-                               aria-label="Search in website">
-                    </div>
-                </form>
-
-                {{-- Notification Bell (right, fixed) --}}
-                <div class="nav-item dropdown flex-shrink-0">
-                    <a href="#"
-                       class="nav-link px-2 position-relative"
-                       data-bs-toggle="dropdown"
-                       role="button"
-                       aria-expanded="false"
-                       aria-label="Open notifications">
-
-                        <i class="ti ti-bell fs-2"></i>
-
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <span class="badge bg-red badge-notification">
-                                {{ $mylearningongoing }}
+            @if ($isAssessmentPage)
+                {{-- ========================================================
+                     ASSESSMENT MOBILE HEADER LAYOUT (< 992px)
+                     Row 2: User Profile Strip (Avatar + Username + Team)
+                     ======================================================== --}}
+                <div class="owl-mobile-user-row d-flex align-items-center justify-content-between py-1">
+                    <a href="{{ route('user.profile') }}" class="d-flex align-items-center text-decoration-none text-reset min-w-0 flex-grow-1">
+                        @if (!empty(auth()->user()->avatar))
+                            <span class="avatar owl-mobile-avatar rounded-circle flex-shrink-0"
+                                  style="background-image: url('{{ asset('storage/profile/' . auth()->user()->avatar) }}')">
                             </span>
-                        @endif
-                    </a>
-
-                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                        <div class="dropdown-header">
-                            Notifications
-                        </div>
-
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
-                                <i class="ti ti-book-2 me-2"></i>
-                                You have {{ $mylearningongoing }} ongoing learning
-                            </a>
                         @else
-                            <span class="dropdown-item text-muted">
-                                <i class="ti ti-bell-off me-2"></i>
-                                No notifications
+                            <span class="avatar owl-mobile-avatar rounded-circle avatar-default-icon flex-shrink-0">
+                                <i class="ti ti-user"></i>
                             </span>
                         @endif
+
+                        <div class="ps-2 ms-1 min-w-0 flex-grow-1">
+                            <div class="fw-bold text-truncate owl-mobile-user-name" style="font-size: 0.9rem; line-height: 1.2;">
+                                {{ ucwords(strtolower(auth()->user()->name ?? '')) }}
+                            </div>
+                            <div class="text-muted text-truncate owl-mobile-user-team" style="font-size: 0.775rem; line-height: 1.2;">
+                                {{ auth()->user()->team ?? (auth()->user()->division ?? 'Training Team') }}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            @else
+                {{-- ========================================================
+                     DEFAULT NON-ASSESSMENT MOBILE HEADER LAYOUT (< 992px)
+                     Row 2: User Profile Strip + Dark Mode
+                     Row 3: Search Bar (left) + Notification Bell (right)
+                     ======================================================== --}}
+                <div class="owl-mobile-user-row d-flex align-items-center justify-content-between py-1 border-bottom mb-2">
+                    <a href="{{ route('user.profile') }}" class="d-flex align-items-center text-decoration-none text-reset min-w-0 flex-grow-1 me-2">
+                        @if (!empty(auth()->user()->avatar))
+                            <span class="avatar owl-mobile-avatar rounded-circle flex-shrink-0"
+                                  style="background-image: url('{{ asset('storage/profile/' . auth()->user()->avatar) }}')">
+                            </span>
+                        @else
+                            <span class="avatar owl-mobile-avatar rounded-circle avatar-default-icon flex-shrink-0">
+                                <i class="ti ti-user"></i>
+                            </span>
+                        @endif
+
+                        <div class="ps-2 ms-1 min-w-0 flex-grow-1">
+                            <div class="fw-bold text-truncate owl-mobile-user-name" style="font-size: 0.9rem; line-height: 1.2;">
+                                {{ ucwords(strtolower(auth()->user()->name ?? '')) }}
+                            </div>
+                            <div class="text-muted text-truncate owl-mobile-user-team" style="font-size: 0.775rem; line-height: 1.2;">
+                                {{ auth()->user()->team ?? (auth()->user()->division ?? 'Training Team') }}
+                            </div>
+                        </div>
+                    </a>
+
+                    {{-- Dark Mode Toggle --}}
+                    <div class="nav-item flex-shrink-0 ms-auto">
+                        <a href="{{ $darkThemeUrl }}"
+                           class="nav-link px-2 hide-theme-dark text-muted"
+                           title="Enable dark mode">
+                            <i class="ti ti-moon fs-2"></i>
+                        </a>
+
+                        <a href="{{ $lightThemeUrl }}"
+                           class="nav-link px-2 hide-theme-light text-muted"
+                           title="Enable light mode">
+                            <i class="ti ti-sun fs-2"></i>
+                        </a>
                     </div>
                 </div>
-            </div>
+
+                {{-- ROW 3: SEARCH BAR (LEFT) + NOTIFICATION BELL (RIGHT) --}}
+                <div class="owl-mobile-action-row d-flex align-items-center gap-2 pb-1">
+                    {{-- Search Bar (left, flexible) --}}
+                    <form action="{{ route('search', ['searchtype' => 'all']) }}"
+                          method="get"
+                          autocomplete="off"
+                          novalidate
+                          class="flex-grow-1 min-w-0">
+
+                        <div class="input-icon w-100">
+                            <span class="input-icon-addon">
+                                <i class="ti ti-search"></i>
+                            </span>
+
+                            <input type="text"
+                                   name="s"
+                                   class="form-control"
+                                   placeholder="Search learning, content, news..."
+                                   aria-label="Search in website">
+                        </div>
+                    </form>
+
+                    {{-- Notification Bell (right, fixed) --}}
+                    <div class="nav-item dropdown flex-shrink-0">
+                        <a href="#"
+                           class="nav-link px-2 position-relative"
+                           data-bs-toggle="dropdown"
+                           role="button"
+                           aria-expanded="false"
+                           aria-label="Open notifications">
+
+                            <i class="ti ti-bell fs-2"></i>
+
+                            @if (($mylearningongoing ?? 0) >= 1)
+                                <span class="badge bg-red badge-notification">
+                                    {{ $mylearningongoing }}
+                                </span>
+                            @endif
+                        </a>
+
+                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                            <div class="dropdown-header">
+                                Notifications
+                            </div>
+
+                            @if (($mylearningongoing ?? 0) >= 1)
+                                <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
+                                    <i class="ti ti-book-2 me-2"></i>
+                                    You have {{ $mylearningongoing }} ongoing learning
+                                </a>
+                            @else
+                                <span class="dropdown-item text-muted">
+                                    <i class="ti ti-bell-off me-2"></i>
+                                    No notifications
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
 
         </div>
 
