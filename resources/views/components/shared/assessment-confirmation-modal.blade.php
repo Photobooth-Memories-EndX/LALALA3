@@ -33,38 +33,58 @@
                     INFORMATION
                 </h6>
                 <div class="bg-light rounded-3 p-3 mb-3">
+                    <!-- ASSESSMENT TITLE / CONTENT HEADER -->
                     <div class="assessment-title-wrapper mb-3 pb-2 border-bottom">
                         <div class="text-dark small fw-bold text-uppercase mb-1" 
                              id="assessmentModalTypeHeader" 
-                             style="color: #212529 !important; font-size: 0.78rem; letter-spacing: 0.5px;">
+                             style="font-size: 0.75rem; color: #212529 !important; letter-spacing: 0.5px;">
                             ASSESSMENT CONTENT
                         </div>
                         <h5 class="fw-bold text-dark mb-0 fs-5" 
                             id="assessmentModalName" 
-                            style="font-size: 1.1rem !important; line-height: 1.4 !important; letter-spacing: -0.2px !important; color: #1a1d20 !important;">
+                            style="font-size: 1.1rem !important; line-height: 1.4; color: #1a1d20 !important;">
                             -
                         </h5>
                     </div>
-                    <div class="row g-2 small text-secondary">
+
+                    <!-- DETAILS GRID -->
+                    <div class="row g-3">
+                        <!-- Date & Time (Stacked) -->
                         <div class="col-6">
-                            <strong class="text-dark">Date & Time:</strong> 
-                            <div class="text-truncate" id="assessmentModalDateTime">-</div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DATE & TIME</strong>
+                            <div class="text-dark fw-normal" id="assessmentModalDateTime" style="color: #212529 !important; font-size: 0.82rem; line-height: 1.35;">
+                                -
+                            </div>
                         </div>
+
+                        <!-- Passing Grade -->
                         <div class="col-6">
-                            <strong class="text-dark">Passing Grade:</strong> 
-                            <div><span id="assessmentModalPassingGrade" class="fw-semibold text-primary">-</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">PASSING GRADE</strong>
+                            <div class="text-dark fw-bold" id="assessmentModalPassingGrade" style="color: #212529 !important; font-size: 0.85rem;">
+                                -
+                            </div>
                         </div>
+
+                        <!-- Duration -->
                         <div class="col-6">
-                            <strong class="text-dark">Duration:</strong> 
-                            <div><span id="assessmentModalDuration">-</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DURATION</strong>
+                            <div class="text-dark" id="assessmentModalDuration" style="color: #212529 !important; font-size: 0.82rem;">
+                                -
+                            </div>
                         </div>
+
+                        <!-- Batch (Global) atau Attempt (Content) -->
                         <div class="col-6" id="assessmentModalBatchContainer" style="display: none;">
-                            <strong class="text-dark">Batch:</strong> 
-                            <div><span id="assessmentModalBatch">-</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">BATCH</strong>
+                            <div class="text-dark" id="assessmentModalBatch" style="color: #212529 !important; font-size: 0.82rem;">
+                                -
+                            </div>
                         </div>
                         <div class="col-6" id="assessmentModalAttemptContainer">
-                            <strong class="text-dark">Attempt:</strong> 
-                            <div><span id="assessmentModalAttempt">-</span></div>
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">ATTEMPT</strong>
+                            <div class="text-dark" id="assessmentModalAttempt" style="color: #212529 !important; font-size: 0.82rem;">
+                                -
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -74,6 +94,13 @@
                     REQUIREMENTS
                 </h6>
                 <div id="assessmentModalNoticeContent">
+                    <!-- Global Start Notice (English) -->
+                    <ol class="small text-dark ps-3 mb-0" id="assessmentNoticeGlobalStart" style="color: #212529 !important; display: none;">
+                        <li>Make sure you are in a safe and conducive environment, and that your device is ready to use.</li>
+                        <li><em>Once started, the assessment cannot be exited until it is completed or the time expires.</em></li>
+                        <li>The assessment will take place according to the stated date & time.</li>
+                        <li>If an error occurs on your device or the connection is interrupted, your answers will be saved. Re-enter the assessment to continue as long as time is still available.</li>
+                    </ol>
                     <!-- Start Requirements (English) -->
                     <ol class="small text-dark ps-3 mb-0" id="assessmentNoticeStart" style="color: #212529 !important;">
                         <li>Ensure yourself, your device, and your environment are in a safe and conducive condition.</li>
@@ -208,11 +235,11 @@
                 var toDate = $btn.data('assessment-to-date') || $row.attr('data-assessment-to-date') || '-';
                 var dateTimeDisplay = '-';
                 if (fromDate !== '-' && toDate !== '-') {
-                    dateTimeDisplay = formatAssessmentDate(fromDate) + ' – ' + formatAssessmentDate(toDate);
+                    dateTimeDisplay = '<div>' + formatAssessmentDate(fromDate) + '</div><div>' + formatAssessmentDate(toDate) + '</div>';
                 } else if (fromDate !== '-') {
-                    dateTimeDisplay = formatAssessmentDate(fromDate);
+                    dateTimeDisplay = '<div>' + formatAssessmentDate(fromDate) + '</div>';
                 } else if (toDate !== '-') {
-                    dateTimeDisplay = formatAssessmentDate(toDate);
+                    dateTimeDisplay = '<div>' + formatAssessmentDate(toDate) + '</div>';
                 }
 
                 var passingGrade = $btn.data('assessment-passing-grade') || $row.attr('data-assessment-passing-grade') || $row.attr('data-assessment-grade') || '-';
@@ -248,9 +275,9 @@
                 if (actionType === 'continue') {
                     var $continueModal = $('#continueAssessmentModal');
                     if ($continueModal.length) {
-                        $continueModal.find('#continueModalTypeHeader').text(isGlobal ? 'ASSESSMENT TITLE' : 'ASSESSMENT CONTENT');
+                        $continueModal.find('#continueModalTypeHeader').text(isGlobal ? 'ASSESSMENT GLOBAL' : 'ASSESSMENT CONTENT');
                         $continueModal.find('#continueModalName').text(title);
-                        $continueModal.find('#continueModalDateTime').text(dateTimeDisplay);
+                        $continueModal.find('#continueModalDateTime').html(dateTimeDisplay);
                         $continueModal.find('#continueModalPassingGrade').text(passingGrade);
                         $continueModal.find('#continueModalDuration').text(duration + ' Minutes');
                         
@@ -259,13 +286,17 @@
                             $continueModal.find('#continueModalBatch').text(batchDisplay !== '-' ? batchDisplay : 'Batch 1');
                             $continueModal.find('#continueModalAttemptContainer').hide();
                             $continueModal.find('#continueModalProgress').text(answeredCount + ' / ' + totalCount + ' answered');
-                            $continueModal.find('#continueModalNoticeTitle').text('REQUIREMENTS');
+                            $continueModal.find('#continueModalNoticeTitle').text('NOTICE');
+                            $continueModal.find('#continueNoticeGlobal').show();
+                            $continueModal.find('#continueNoticeContent').hide();
                         } else {
                             $continueModal.find('#continueModalBatchContainer').hide();
                             $continueModal.find('#continueModalAttemptContainer').show();
                             $continueModal.find('#continueModalAttempt').text(attemptDisplay);
                             $continueModal.find('#continueModalProgress').text(answeredCount + ' / ' + totalCount + ' answered');
                             $continueModal.find('#continueModalNoticeTitle').text('REQUIREMENTS');
+                            $continueModal.find('#continueNoticeGlobal').hide();
+                            $continueModal.find('#continueNoticeContent').show();
                         }
 
                         $continueModal.find('#btnConfirmContinueAssessment').attr('href', targetUrl);
@@ -279,9 +310,9 @@
                 // 2. START / REMEDIAL MODAL
                 var $confirmModal = $('#assessmentConfirmationModal');
                 if ($confirmModal.length) {
-                    $confirmModal.find('#assessmentModalTypeHeader').text(isGlobal ? 'ASSESSMENT TITLE' : 'ASSESSMENT CONTENT');
+                    $confirmModal.find('#assessmentModalTypeHeader').text(isGlobal ? 'ASSESSMENT GLOBAL' : 'ASSESSMENT CONTENT');
                     $confirmModal.find('#assessmentModalName').text(title);
-                    $confirmModal.find('#assessmentModalDateTime').text(dateTimeDisplay);
+                    $confirmModal.find('#assessmentModalDateTime').html(dateTimeDisplay);
                     $confirmModal.find('#assessmentModalPassingGrade').text(passingGrade);
                     $confirmModal.find('#assessmentModalDuration').text(duration + ' Minutes');
 
@@ -303,6 +334,7 @@
                         $confirmModal.find('#assessmentModalSubtitle').text('Confirmation');
                         $confirmModal.find('#assessmentModalNoticeHeader').text('REQUIREMENTS');
                         $confirmModal.find('#assessmentNoticeStart').hide();
+                        $confirmModal.find('#assessmentNoticeGlobalStart').hide();
                         $confirmModal.find('#assessmentNoticeRemedial').show();
 
                         $confirmModal.find('#btnConfirmAssessmentAction')
@@ -315,9 +347,18 @@
                         $confirmModal.find('#assessmentModalHeaderIconInner').attr('class', 'ti ti-player-play fs-2');
                         $confirmModal.find('#assessmentConfirmationModalTitle').text('Start Assessment').attr('style', 'color: #28be58 !important;');
                         $confirmModal.find('#assessmentModalSubtitle').text('Confirmation');
-                        $confirmModal.find('#assessmentModalNoticeHeader').text('REQUIREMENTS');
-                        $confirmModal.find('#assessmentNoticeStart').show();
-                        $confirmModal.find('#assessmentNoticeRemedial').hide();
+
+                        if (isGlobal) {
+                            $confirmModal.find('#assessmentModalNoticeHeader').text('NOTICE');
+                            $confirmModal.find('#assessmentNoticeGlobalStart').show();
+                            $confirmModal.find('#assessmentNoticeStart').hide();
+                            $confirmModal.find('#assessmentNoticeRemedial').hide();
+                        } else {
+                            $confirmModal.find('#assessmentModalNoticeHeader').text('REQUIREMENTS');
+                            $confirmModal.find('#assessmentNoticeStart').show();
+                            $confirmModal.find('#assessmentNoticeGlobalStart').hide();
+                            $confirmModal.find('#assessmentNoticeRemedial').hide();
+                        }
 
                         $confirmModal.find('#btnConfirmAssessmentAction')
                             .attr('style', 'background-color: #28be58 !important; border-color: #28be58 !important; color: #ffffff !important;')

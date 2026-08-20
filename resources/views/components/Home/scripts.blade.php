@@ -192,37 +192,77 @@ function submitAssessmentAccess() {
                     ? (String(response.assessment_batch).toLowerCase().indexOf('batch') !== -1 ? response.assessment_batch : 'Batch ' + response.assessment_batch) 
                     : '-';
                 $modal.find('#assessmentAccessModalSubText').text(batchDisplay);
-                $modal.find('#assessmentAccessModalBatch').text(batchDisplay);
+                $modal.find('#assessmentAccessModalBatch').text(batchDisplay !== '-' ? batchDisplay : 'Batch 1');
 
                 var fromDateVal = (typeof formatAssessmentDate === 'function') ? formatAssessmentDate(response.assessment_from_date) : (response.assessment_from_date || '-');
                 var toDateVal = (typeof formatAssessmentDate === 'function') ? formatAssessmentDate(response.assessment_to_date) : (response.assessment_to_date || '-');
                 $modal.find('#assessmentAccessModalFromDate').text(fromDateVal);
                 $modal.find('#assessmentAccessModalToDate').text(toDateVal);
 
+                var dateTimeDisplay = '-';
+                if (fromDateVal !== '-' && toDateVal !== '-') {
+                    dateTimeDisplay = '<div>' + fromDateVal + '</div><div>' + toDateVal + '</div>';
+                } else if (fromDateVal !== '-') {
+                    dateTimeDisplay = '<div>' + fromDateVal + '</div>';
+                } else if (toDateVal !== '-') {
+                    dateTimeDisplay = '<div>' + toDateVal + '</div>';
+                }
+                $modal.find('#assessmentAccessModalDateTime').html(dateTimeDisplay);
+
                 $modal.find('#assessmentAccessModalPassingGrade').text(response.assessment_passing_grade !== undefined && response.assessment_passing_grade !== '' ? response.assessment_passing_grade : '-');
+                $modal.find('#assessmentAccessModalDuration').text((response.assessment_duration || '60') + ' Minutes');
                 $modal.find('#assessmentAccessModalAttempt').text(attemptDisplay);
 
-                var actionType = response.action_type || 'start';
-                var $startBtn = $('#btnStartAssessmentAccess');
-                if (actionType === 'continue') {
-                    $modal.find('#assessmentAccessModalTitle').text('Continue Assessment');
-                    $startBtn.attr('style', 'background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;')
-                             .html('<i class="ti ti-player-play"></i> <span>Continue Assessment</span>');
-                } else if (actionType === 'remedial') {
-                    $modal.find('#assessmentAccessModalTitle').text('REMEDIAL');
-                    $startBtn.attr('style', 'background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;')
-                             .html('<i class="ti ti-refresh"></i> <span>Start Remedial</span>');
+                // Toggle Batch vs Attempt Container
+                var isGlobal = String(typeToMap).trim().toLowerCase().indexOf('global') !== -1 || String(response.assessment_type).trim().toLowerCase() === 'global';
+                if (isGlobal) {
+                    $modal.find('#assessmentAccessModalBatchContainer').show();
+                    $modal.find('#assessmentAccessModalAttemptContainer').hide();
                 } else {
-                    $modal.find('#assessmentAccessModalTitle').text('Start Assessment');
-                    $startBtn.attr('style', 'background-color: #28be58 !important; border-color: #28be58 !important; color: #ffffff !important;')
-                             .html('<i class="ti ti-player-play"></i> <span>Start Test</span>');
+                    $modal.find('#assessmentAccessModalBatchContainer').hide();
+                    $modal.find('#assessmentAccessModalAttemptContainer').show();
                 }
+
+                var answeredCount = response.answered_count || 0;
+                var totalCount = response.total_count || 0;
+                $modal.find('#assessmentAccessModalProgress').text(answeredCount + ' / ' + totalCount + ' answered');
 
                 var targetUrl = response.assessment_url;
                 if (response.assessment_slug) {
                     targetUrl = "{{ url('/assesment') }}/" + response.assessment_slug;
                 } else if (!targetUrl) {
                     targetUrl = "{{ route('assesment.user.view', ':slug') }}".replace(':slug', response.assessment_slug);
+                }
+
+                var actionType = response.action_type || 'start';
+                var $startBtn = $('#btnStartAssessmentAccess');
+                if (actionType === 'continue') {
+                    $modal.find('#assessmentAccessModalTitle').text('Continue Assessment').attr('style', 'color: #0c5b9e !important;');
+                    $modal.find('#assessmentAccessModalIconBox').attr('style', 'width: 40px; height: 40px; background-color: rgba(12, 91, 158, 0.12); color: #0c5b9e;');
+                    $modal.find('#assessmentAccessModalProgressContainer').show();
+                    $modal.find('#assessmentAccessNoticeStart').hide();
+                    $modal.find('#assessmentAccessNoticeContinue').show();
+                    $modal.find('#assessmentAccessNoticeRemedial').hide();
+                    $startBtn.attr('style', 'background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;')
+                             .html('<i class="ti ti-player-play"></i> <span>Continue Assessment</span>');
+                } else if (actionType === 'remedial') {
+                    $modal.find('#assessmentAccessModalTitle').text('REMEDIAL').attr('style', 'color: #f59e0b !important;');
+                    $modal.find('#assessmentAccessModalIconBox').attr('style', 'width: 40px; height: 40px; background-color: rgba(245, 158, 11, 0.12); color: #f59e0b;');
+                    $modal.find('#assessmentAccessModalProgressContainer').hide();
+                    $modal.find('#assessmentAccessNoticeStart').hide();
+                    $modal.find('#assessmentAccessNoticeContinue').hide();
+                    $modal.find('#assessmentAccessNoticeRemedial').show();
+                    $startBtn.attr('style', 'background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;')
+                             .html('<i class="ti ti-refresh"></i> <span>Start Remedial</span>');
+                } else {
+                    $modal.find('#assessmentAccessModalTitle').text('Start Assessment').attr('style', 'color: #28be58 !important;');
+                    $modal.find('#assessmentAccessModalIconBox').attr('style', 'width: 40px; height: 40px; background-color: rgba(40, 190, 88, 0.12); color: #28be58;');
+                    $modal.find('#assessmentAccessModalProgressContainer').hide();
+                    $modal.find('#assessmentAccessNoticeStart').show();
+                    $modal.find('#assessmentAccessNoticeContinue').hide();
+                    $modal.find('#assessmentAccessNoticeRemedial').hide();
+                    $startBtn.attr('style', 'background-color: #28be58 !important; border-color: #28be58 !important; color: #ffffff !important;')
+                             .html('<i class="ti ti-player-play"></i> <span>Start Test</span>');
                 }
 
                 $('#btnStartAssessmentAccess')
