@@ -465,6 +465,16 @@
         overflow: hidden;
     }
 
+    .content-title-two-lines {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+        word-break: break-word;
+    }
+
     .lesson-play-icon,
     .lesson-done-icon {
         flex: 0 0 auto;

@@ -13,10 +13,10 @@
     // thumbnail_url is null when missing, external URL, or file not on disk
     $thumbUrl         = $playlist->thumbnail_url;
 
-    $durationSec       = (int) ($playlist->total_duration_seconds ?? 0);
-    $formattedDuration = $playlist->duration ?? ($durationSec > 0 ? sprintf('%02d:%02d:%02d', floor($durationSec / 3600), floor(($durationSec % 3600) / 60), $durationSec % 60) : '00:00:00');
+    $durationSec       = (int) ($stats['total_duration_seconds'] ?? $playlist->total_duration_seconds ?? 0);
+    $formattedDuration = $stats['duration'] ?? $playlist->duration ?? ($durationSec > 0 ? sprintf('%02d:%02d:%02d', floor($durationSec / 3600), floor(($durationSec % 3600) / 60), $durationSec % 60) : '00:00:00');
     
-    $rawLh = $playlist->learning_hours ?? null;
+    $rawLh = $stats['learning_hours'] ?? $playlist->learning_hours ?? null;
     if (!is_null($rawLh) && $rawLh !== '') {
         $numLh = (float) $rawLh == (int) $rawLh ? (int) $rawLh : (float) $rawLh;
         $learningHoursDisplay = $numLh . ' ' . ($numLh == 1 ? 'Hour' : 'Hours');

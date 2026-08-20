@@ -47,9 +47,22 @@ class TrainingPlan extends Model
         return asset('storage/' . $rel);
     }
 
+    public function contents()
+    {
+        return $this->belongsToMany(
+            Content::class,
+            'trainingplandetail',
+            'trainingplan_id',
+            'content_id'
+        )
+        ->withPivot('id', 'content_order')
+        ->orderByRaw('CAST(trainingplandetail.content_order AS UNSIGNED) ASC');
+    }
+
     public function trainingplandetail()
     {
-        return $this->hasMany(TrainingPlanDetail::class,  'trainingplan_id', 'id');
+        return $this->hasMany(TrainingPlanDetail::class, 'trainingplan_id', 'id')
+            ->orderByRaw('CAST(content_order AS UNSIGNED) ASC');
     }
 
     public function isExpired(): bool

@@ -154,6 +154,17 @@
                 @endif
 
             </ul>
+
+            {{-- Sidebar Footer: Logout fixed at bottom-left --}}
+            <div class="owl-sidebar-footer">
+                <form action="{{ route('logoutpage') }}" method="POST" id="sidebar-logout-form" class="m-0 p-0">
+                    @csrf
+                    <button type="submit" class="nav-link owl-sidebar-logout-btn" data-logout-trigger="true">
+                        <span class="nav-link-icon"><i class="ti ti-logout"></i></span>
+                        <span class="nav-link-title">Logout</span>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </aside>
@@ -283,9 +294,9 @@
                             Profile
                         </a>
 
-                        <form action="{{ route('logoutpage') }}" method="POST">
+                        <form action="{{ route('logoutpage') }}" method="POST" class="m-0 p-0">
                             @csrf
-                            <button type="submit" class="dropdown-item">
+                            <button type="submit" class="dropdown-item" data-logout-trigger="true">
                                 <i class="ti ti-logout me-2"></i>
                                 Logout
                             </button>
@@ -440,3 +451,5 @@
 
     </div>
 </header>
+
+@include('partials.logout-modal')
