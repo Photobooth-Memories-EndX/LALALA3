@@ -47,6 +47,25 @@
             background-color: rgba(255, 255, 255, 0.95) !important;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+
+        @media (max-width: 576px) {
+            .modal-dialog {
+                margin: 12px auto !important;
+                max-width: calc(100% - 24px) !important;
+            }
+            .modal-content {
+                padding: 0.5rem !important;
+            }
+            .modal-body {
+                padding: 0.75rem 1rem !important;
+            }
+            .modal-title {
+                font-size: 1.05rem !important;
+            }
+            .assessment-title-wrapper h5 {
+                font-size: 1rem !important;
+            }
+        }
     </style>
 
     <script src="{{ asset('js/jquery.min.js') }}"></script>

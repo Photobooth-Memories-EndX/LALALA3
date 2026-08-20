@@ -2,7 +2,7 @@
 
 <div class="modal fade" id="assessmentAccessModal" tabindex="-1" role="dialog"
      aria-labelledby="assessmentAccessModalTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 480px !important; width: 100%;">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable px-2 px-sm-0" role="document" style="max-width: 480px; margin: 1.75rem auto;">
         <div class="modal-content rounded-4 border-0 shadow">
 
             {{-- Header --}}
@@ -45,11 +45,11 @@
                     </div>
 
                     <!-- DETAILS GRID (MEMANFAATKAN VARIABEL ASLI) -->
-                    <div class="row g-3">
+                    <div class="row g-2">
                         <!-- Date & Time (Stacked) -->
-                        <div class="col-6">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DATE & TIME</strong>
-                            <div class="text-dark fw-normal" id="assessmentAccessModalDateTime" style="color: #212529 !important; font-size: 0.82rem; line-height: 1.35;">
+                        <div class="col-12 col-sm-6">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">DATE & TIME</strong>
+                            <div class="text-dark small" id="assessmentAccessModalDateTime" style="color: #212529 !important; line-height: 1.35;">
                                 @if($assessment)
                                     <div>{{ $assessment?->formatted_start_date ?? ($assessment?->fromdate ? date('d M Y, H:i', strtotime($assessment->fromdate)) : '-') }}</div>
                                     <div>{{ $assessment?->formatted_end_date ?? ($assessment?->todate ? date('d M Y, H:i', strtotime($assessment->todate)) : '-') }}</div>
@@ -61,39 +61,39 @@
                         </div>
 
                         <!-- Passing Grade -->
-                        <div class="col-6">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">PASSING GRADE</strong>
-                            <div class="text-dark fw-bold" id="assessmentAccessModalPassingGrade" style="color: #212529 !important; font-size: 0.85rem;">
+                        <div class="col-6 col-sm-6">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">PASSING GRADE</strong>
+                            <div class="text-dark fw-bold small" id="assessmentAccessModalPassingGrade" style="color: #212529 !important;">
                                 {{ $assessment?->passing_grade ?? '-' }}
                             </div>
                         </div>
 
                         <!-- Duration -->
-                        <div class="col-6">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DURATION</strong>
-                            <div class="text-dark" id="assessmentAccessModalDuration" style="color: #212529 !important; font-size: 0.82rem;">
+                        <div class="col-6 col-sm-6">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">DURATION</strong>
+                            <div class="text-dark small" id="assessmentAccessModalDuration" style="color: #212529 !important;">
                                 {{ $assessment ? ($assessment->duration ?? ($assessment->time_limit_minutes ?? 60)) : '-' }} Minutes
                             </div>
                         </div>
 
                         <!-- Batch (Global) atau Attempt (Content) -->
-                        <div class="col-6" id="assessmentAccessModalBatchContainer" style="{{ $type === 'global' ? '' : 'display: none;' }}">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">BATCH</strong>
-                            <div class="text-dark" id="assessmentAccessModalBatch" style="color: #212529 !important; font-size: 0.82rem;">
+                        <div class="col-12 col-sm-6" id="assessmentAccessModalBatchContainer" style="{{ $type === 'global' ? '' : 'display: none;' }}">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">BATCH</strong>
+                            <div class="text-dark small" id="assessmentAccessModalBatch" style="color: #212529 !important;">
                                 {{ $assessment ? ($assessment->batch_name ?? ($assessment->batch ? (str_contains(strtolower($assessment->batch), 'batch') ? $assessment->batch : 'Batch ' . $assessment->batch) : 'Batch 1')) : '-' }}
                             </div>
                         </div>
-                        <div class="col-6" id="assessmentAccessModalAttemptContainer" style="{{ $type !== 'global' ? '' : 'display: none;' }}">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">ATTEMPT</strong>
-                            <div class="text-dark" id="assessmentAccessModalAttempt" style="color: #212529 !important; font-size: 0.82rem;">
+                        <div class="col-12 col-sm-6" id="assessmentAccessModalAttemptContainer" style="{{ $type !== 'global' ? '' : 'display: none;' }}">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">ATTEMPT</strong>
+                            <div class="text-dark small" id="assessmentAccessModalAttempt" style="color: #212529 !important;">
                                 {{ $assessment ? ($assessment->current_attempt ?? 1) . ' / ' . ($assessment->max_attempts ?? 1) : '-' }}
                             </div>
                         </div>
 
                         <!-- Progress (Khusus Continue Modal) -->
                         <div class="col-12 border-top pt-2 mt-2" id="assessmentAccessModalProgressContainer" style="{{ ($actionType === 'continue' || (isset($isContinue) && $isContinue)) ? '' : 'display: none;' }}">
-                            <strong class="text-dark d-inline-block me-2" style="font-size: 0.78rem; color: #212529 !important;">PROGRESS:</strong>
-                            <span class="text-dark fw-bold" id="assessmentAccessModalProgress" style="color: #212529 !important; font-size: 0.85rem;">
+                            <strong class="text-dark d-inline-block me-2" style="font-size: 0.75rem; color: #212529 !important;">PROGRESS:</strong>
+                            <span class="text-dark fw-bold small" id="assessmentAccessModalProgress" style="color: #212529 !important;">
                                 {{ $answeredCount ?? 0 }} / {{ $totalCount ?? 10 }} answered
                             </span>
                         </div>
@@ -127,10 +127,12 @@
             </div>
 
             {{-- Footer --}}
-            <div class="modal-footer border-0 pt-0 px-4 pb-4">
-                <button type="button" class="btn btn-light rounded-pill px-4 text-secondary" data-dismiss="modal" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" id="btnStartAssessmentAccess" class="btn rounded-pill px-4 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1"
-                        style="background-color: #28be58 !important; border-color: #28be58 !important; color: #ffffff !important;">
+            <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-danger text-white fw-semibold px-3 py-2" data-dismiss="modal" data-bs-dismiss="modal" style="background-color: #dc3545 !important; border-color: #dc3545 !important;">
+                    <i class="ti ti-x me-1"></i> Cancel
+                </button>
+                <button type="button" id="btnStartAssessmentAccess" class="btn btn-success text-white fw-semibold px-3 py-2 d-inline-flex align-items-center gap-1"
+                        style="background-color: #28a745 !important; border-color: #28a745 !important;">
                     <i class="ti ti-player-play fs-6"></i>
                     <span>Start Test</span>
                 </button>

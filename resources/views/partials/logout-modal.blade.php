@@ -1,30 +1,28 @@
 {{-- Logout Confirmation Modal --}}
 <div class="modal modal-blur fade" id="modal-logout-confirm" tabindex="-1" role="dialog" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-sm modal-dialog-centered" role="document" style="max-width: 420px; margin: 1.75rem auto;">
-        <div class="modal-content shadow-lg border-0 rounded-4">
-            <div class="modal-body text-center py-4 px-4">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 380px !important;">
+        <div class="modal-content rounded-4 border-0 shadow text-center p-3">
+            <div class="modal-body">
                 {{-- Logout Icon Circle --}}
-                <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-circle bg-red-lt" style="width: 56px; height: 56px; color: var(--tblr-danger, #ef3340);">
-                    <i class="ti ti-logout fs-1"></i>
+                <div class="logout-icon-box mx-auto mb-3 bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <i class="ti ti-logout fs-2"></i>
                 </div>
                 
                 {{-- Title & Description --}}
-                <h3 class="fw-bold mb-2 text-dark dark:text-white" style="font-size: 1.15rem; line-height: 1.3;">
-                    Are you sure you want to log out?
-                </h3>
-                <p class="text-muted fs-4 mb-4" style="line-height: 1.5; font-size: 0.9rem;">
-                    You will be signed out of your account and redirected to the login page.
-                </p>
+                <h5 class="fw-bold text-dark mb-2">Are you sure you want to log out?</h5>
+                <p class="text-muted small mb-4">You will be signed out of your account and redirected to the login page.</p>
 
                 {{-- Modal Action Buttons --}}
-                <div class="d-flex align-items-center justify-content-center gap-2">
-                    <button type="button" class="btn btn-outline-secondary w-50 py-2 fw-semibold rounded-3" id="btn-cancel-logout" data-bs-dismiss="modal" data-dismiss="modal">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill flex-fill" id="btn-cancel-logout" data-bs-dismiss="modal" data-dismiss="modal">
                         Cancel
                     </button>
-                    <button type="button" class="btn btn-danger w-50 py-2 fw-semibold rounded-3 d-flex align-items-center justify-content-center gap-2" id="btn-confirm-logout">
-                        <i class="ti ti-logout"></i>
-                        <span>Log Out</span>
-                    </button>
+                    <form action="{{ Route::has('logoutpage') ? route('logoutpage') : (Route::has('logout') ? route('logout') : url('/logout')) }}" method="POST" class="flex-fill m-0 p-0" id="modal-logout-form">
+                        @csrf
+                        <button type="submit" class="btn btn-danger rounded-pill w-100 fw-semibold d-flex align-items-center justify-content-center gap-1" id="btn-confirm-logout">
+                            <i class="ti ti-logout me-1"></i> Log Out
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -105,7 +103,7 @@
         // 2. Intercept submit events as fallback
         document.addEventListener('submit', function (e) {
             const form = e.target;
-            if (form && form.action && (form.action.includes('logout') || form.id === 'sidebar-logout-form')) {
+            if (form && form.action && (form.action.includes('logout') || form.id === 'sidebar-logout-form' || form.id === 'modal-logout-form')) {
                 if (!window.isExecutingLogoutSubmit) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -131,11 +129,16 @@
             if (confirmLogoutBtn) {
                 confirmLogoutBtn.addEventListener('click', function (e) {
                     e.preventDefault();
+                    window.isExecutingLogoutSubmit = true;
+                    confirmLogoutBtn.disabled = true;
+                    confirmLogoutBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Logging out...';
                     if (activeLogoutForm) {
-                        window.isExecutingLogoutSubmit = true;
-                        confirmLogoutBtn.disabled = true;
-                        confirmLogoutBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Logging out...';
                         activeLogoutForm.submit();
+                    } else {
+                        const fallbackForm = document.getElementById('modal-logout-form') || document.getElementById('sidebar-logout-form');
+                        if (fallbackForm) {
+                            fallbackForm.submit();
+                        }
                     }
                 });
             }

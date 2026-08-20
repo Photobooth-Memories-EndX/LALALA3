@@ -4,7 +4,7 @@
      role="dialog"
      aria-labelledby="assessmentConfirmationModalTitle"
      aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 480px !important; width: 100%;">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document" style="max-width: 480px !important; width: 100%;">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0 pb-0 px-4 pt-4">
                 <div class="d-flex align-items-center gap-2">
@@ -48,41 +48,41 @@
                     </div>
 
                     <!-- DETAILS GRID -->
-                    <div class="row g-3">
+                    <div class="row g-2">
                         <!-- Date & Time (Stacked) -->
-                        <div class="col-6">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DATE & TIME</strong>
-                            <div class="text-dark fw-normal" id="assessmentModalDateTime" style="color: #212529 !important; font-size: 0.82rem; line-height: 1.35;">
+                        <div class="col-12 col-sm-6">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">DATE & TIME</strong>
+                            <div class="text-dark small" id="assessmentModalDateTime" style="color: #212529 !important; line-height: 1.35;">
                                 -
                             </div>
                         </div>
 
                         <!-- Passing Grade -->
-                        <div class="col-6">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">PASSING GRADE</strong>
-                            <div class="text-dark fw-bold" id="assessmentModalPassingGrade" style="color: #212529 !important; font-size: 0.85rem;">
+                        <div class="col-6 col-sm-6">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">PASSING GRADE</strong>
+                            <div class="text-dark fw-bold small" id="assessmentModalPassingGrade" style="color: #212529 !important;">
                                 -
                             </div>
                         </div>
 
                         <!-- Duration -->
-                        <div class="col-6">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">DURATION</strong>
-                            <div class="text-dark" id="assessmentModalDuration" style="color: #212529 !important; font-size: 0.82rem;">
+                        <div class="col-6 col-sm-6">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">DURATION</strong>
+                            <div class="text-dark small" id="assessmentModalDuration" style="color: #212529 !important;">
                                 -
                             </div>
                         </div>
 
                         <!-- Batch (Global) atau Attempt (Content) -->
-                        <div class="col-6" id="assessmentModalBatchContainer" style="display: none;">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">BATCH</strong>
-                            <div class="text-dark" id="assessmentModalBatch" style="color: #212529 !important; font-size: 0.82rem;">
+                        <div class="col-12 col-sm-6" id="assessmentModalBatchContainer" style="display: none;">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">BATCH</strong>
+                            <div class="text-dark small" id="assessmentModalBatch" style="color: #212529 !important;">
                                 -
                             </div>
                         </div>
-                        <div class="col-6" id="assessmentModalAttemptContainer">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.78rem; color: #212529 !important;">ATTEMPT</strong>
-                            <div class="text-dark" id="assessmentModalAttempt" style="color: #212529 !important; font-size: 0.82rem;">
+                        <div class="col-12 col-sm-6" id="assessmentModalAttemptContainer">
+                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">ATTEMPT</strong>
+                            <div class="text-dark small" id="assessmentModalAttempt" style="color: #212529 !important;">
                                 -
                             </div>
                         </div>
