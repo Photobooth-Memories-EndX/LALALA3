@@ -460,16 +460,6 @@ class HomeUserController extends Controller
                 ? count($activeDraft->question_snapshot)
                 : ($assessment->questions()->count() ?: 10);
 
-            $userScores = collect($assessment->scores ?? [])->filter(function ($scoreItem) use ($currentUserId) {
-                return (string) ($scoreItem->user_id ?? '') === (string) $currentUserId;
-            });
-
-            // Evaluate access denial reason
-            $reason = $assessmentAccess->denialReason($assessment, $user);
-
-            // User CAN START / CONTINUE if no denial reason OR if an active draft exists
-            $canStart = ($reason === null) || ($activeDraft !== null);
-
             $completedResults = AssesmentResult::where('user_id', $currentUserId)
                 ->where('assesment_id', $assessment->id)
                 ->where('batch', $assessment->batch)
@@ -479,31 +469,44 @@ class HomeUserController extends Controller
 
             $userAttempts = $completedResults->count();
             $totalRemedials = (int) ($assessment->total_remedials ?? 0);
-            $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
+            $isGlobal = (string) ($assessment->type ?? '') === 'global';
+            $maxAttempts = $isGlobal ? 1 : (1 + $totalRemedials);
+            $passingGrade = (int) ($assessment->passing_grade ?? 0);
+
+            $highestResult = $completedResults->sortByDesc('score')->first();
+            $resultScore = $highestResult ? (int) ($highestResult->score ?? 0) : 0;
+            $resultIsPassed = $highestResult ? (bool) ($highestResult->pass ?? ($resultScore >= $passingGrade)) : false;
+            $resultCurrentAttempt = $completedResults->count();
 
             $showResult = false;
-            $resultScore = 0;
-            $resultIsPassed = false;
-            $resultCurrentAttempt = 1;
-
-            if (!$canStart && $completedResults->isNotEmpty()) {
-                $showResult = true;
-                $highestResult = $completedResults->sortByDesc('score')->first();
-                $resultScore = (int) ($highestResult->score ?? 0);
-                $passingGrade = (int) ($assessment->passing_grade ?? 0);
-                $resultIsPassed = (bool) ($highestResult->pass ?? ($resultScore >= $passingGrade));
-                $resultCurrentAttempt = $completedResults->count();
-            }
-
-            $isPassed = $userScores->where('final', 1)->where('pass', 1)->count() > 0;
-            $isCompleted = $userAttempts > 0;
-            $isRemedial = (string) ($assessment->type ?? '') !== 'global' && $isCompleted && !$isPassed && ($userAttempts < $maxAttempts);
+            $canStart = false;
+            $actionType = 'start';
+            $reason = null;
 
             if ($hasSnapshot) {
+                // User has active unsubmitted draft -> Continue test
+                $canStart = true;
+                $showResult = false;
                 $actionType = 'continue';
-            } elseif ($isRemedial) {
+            } elseif ($isGlobal && $userAttempts >= 1) {
+                // Global assessment: 1 attempt per batch completed -> Show Result Modal
+                $showResult = true;
+                $canStart = false;
+            } elseif (!$isGlobal && $completedResults->isNotEmpty() && ($resultIsPassed || $userAttempts >= $maxAttempts)) {
+                // Content/Playlist: Passed or all attempts exhausted -> Show Result Modal with Highest Score
+                $showResult = true;
+                $canStart = false;
+            } elseif (!$isGlobal && $completedResults->isNotEmpty() && !$resultIsPassed && $userAttempts < $maxAttempts) {
+                // Content/Playlist: Failed previous attempt but has remedial available
+                $reason = $assessmentAccess->denialReason($assessment, $user);
+                $canStart = ($reason === null);
+                $showResult = false;
                 $actionType = 'remedial';
             } else {
+                // First attempt / not started yet
+                $reason = $assessmentAccess->denialReason($assessment, $user);
+                $canStart = ($reason === null);
+                $showResult = false;
                 $actionType = 'start';
             }
 
