@@ -92,33 +92,6 @@
         updateNavAnswerStatus();
         checkAssessmentCompletion();
 
-        window.addEventListener('beforeunload', function (e) {
-            if (assessmentSubmitting || window.assessmentAutoSubmit) return;
-            @if (!auth()->user()->isAdmin())
-                if (hasPendingSave || isSaving) {
-                    let formElement = document.getElementById('formAssesment');
-                    if (formElement && window.FormData && window.fetch) {
-                        let formData = new FormData(formElement);
-                        fetch("{{ route('assesment.user.autosave', $assesment->slug) }}", {
-                            method: "POST",
-                            body: formData,
-                            keepalive: true
-                        }).catch(function() {});
-                    }
-                }
-            @endif
-            e.preventDefault();
-            e.returnValue = 'Are you sure you want to leave this test?';
-        });
-
-        document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'hidden' && !assessmentSubmitting && !window.assessmentAutoSubmit) {
-                @if (!auth()->user()->isAdmin())
-                    doAutosave();
-                @endif
-            }
-        });
-
         $('#formAssesment').on('submit', function (e) {
             if (assessmentSubmitting) {
                 e.preventDefault();
@@ -176,6 +149,86 @@
                 doAutosave();
             });
         @endif
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var leaveModalEl = document.getElementById('leaveAssessmentModal');
+        var leaveModal = leaveModalEl && window.bootstrap ? new bootstrap.Modal(leaveModalEl) : null;
+        var pendingTargetUrl = null;
+
+        // Cegat tombol Back bawaan browser (Chrome Back Button)
+        history.pushState(null, null, location.href);
+
+        window.addEventListener('popstate', function (event) {
+            history.pushState(null, null, location.href);
+            pendingTargetUrl = "{{ url('/my-learning?learning_tab=assessment') }}";
+
+            if (leaveModal) {
+                leaveModal.show();
+            } else if (window.jQuery && $(leaveModalEl).modal) {
+                $(leaveModalEl).modal('show');
+            }
+        });
+
+        // Tangkap semua klik tautan internal aplikasi (termasuk Home & Logo)
+        document.addEventListener('click', function(e) {
+            var anchor = e.target.closest('a[href]');
+            if (!anchor) return;
+
+            var rawHref = anchor.getAttribute('href');
+            if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
+
+            var currentPath = window.location.pathname;
+            var currentHref = window.location.href.split('#')[0];
+            var targetHref = anchor.href;
+            var targetHrefClean = targetHref ? targetHref.split('#')[0] : '';
+
+            // Jika URL mengarah keluar dari lembar ujian saat ini
+            if (rawHref !== currentPath && targetHrefClean !== currentHref) {
+                e.preventDefault();
+                e.stopPropagation();
+                pendingTargetUrl = targetHref;
+
+                if (leaveModal) {
+                    leaveModal.show();
+                } else if (window.jQuery && $(leaveModalEl).modal) {
+                    $(leaveModalEl).modal('show');
+                }
+            }
+        }, true); // Gunakan parameter true (capturing phase) agar diproses lebih dulu
+
+        // Ketika user menekan tombol "Yes, Leave Test" di modal
+        var confirmBtn = document.getElementById('btnConfirmLeaveTest');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                window.assessmentAutoSubmit = true;
+                this.disabled = true;
+                this.innerText = 'Submitting...';
+
+                var assessmentForm = document.getElementById('formAssesment') || document.getElementById('assessmentForm') || document.querySelector('form[action*="assesment"]') || document.querySelector('form');
+
+                if (assessmentForm) {
+                    // Hapus validasi HTML5 jika ada agar form tetap bisa ter-submit meskipun belum semua soal diisi
+                    assessmentForm.removeAttribute('novalidate');
+                    
+                    // Trigger pemicu submit form assessment secara resmi
+                    if (typeof assessmentForm.requestSubmit === 'function') {
+                        assessmentForm.requestSubmit();
+                    } else {
+                        assessmentForm.submit();
+                    }
+                } else {
+                    // Fallback submit jika tombol Finish & Submit Answers diklik secara terprogram
+                    var finishBtn = document.getElementById('submitAssesment') || document.getElementById('btnFinishSubmit') || document.querySelector('button[type="submit"]');
+                    if (finishBtn) {
+                        finishBtn.disabled = false; // Aktifkan bypass
+                        finishBtn.click();
+                    }
+                }
+            });
+        }
     });
 </script>
 
