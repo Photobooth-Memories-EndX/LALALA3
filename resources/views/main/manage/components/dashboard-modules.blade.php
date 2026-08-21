@@ -138,6 +138,7 @@
             @if(
                 auth()->user()->canManageRole() ||
                 auth()->user()->canAccessManageModule('monitoring') ||
+                auth()->user()->canAccessManageModule('learning_hours_management') ||
                 auth()->user()->isSuperAdmin()
             )
 
@@ -179,6 +180,16 @@
                         ? 'Open Division Monitoring'
                         : 'Open Monitoring',
                     'icon' => 'ti ti-chart-bar'
+                ])
+            @endif
+
+            @if(auth()->user()->canAccessManageModule('learning_hours_management'))
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => 'Learning Hour Management',
+                    'description' => 'Manage and calculate learning hours for Content User records.',
+                    'url' => route('manage.learning-hours.content-user.index'),
+                    'button' => 'Manage Learning Hours',
+                    'icon' => 'ti ti-clock-check'
                 ])
             @endif
 
