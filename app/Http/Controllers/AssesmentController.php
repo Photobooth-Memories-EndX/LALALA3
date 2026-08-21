@@ -48,6 +48,21 @@ class AssesmentController extends Controller
             ->orderBy('status')
             ->pluck('status');
 
+        $passingGradeOptions = [
+            'lt60'   => '< 60',
+            '60-69'  => '60 - 69',
+            '70-79'  => '70 - 79',
+            '80-89'  => '80 - 89',
+            '90-100' => '90 - 100',
+        ];
+
+        $sortOptions = [
+            'newest'     => 'Newest',
+            'oldest'     => 'Oldest',
+            'title_asc'  => 'Title A - Z',
+            'title_desc' => 'Title Z - A',
+        ];
+
         $query = Assesment::with([
             'assessment_question_banks',
             'questions',
@@ -103,8 +118,64 @@ class AssesmentController extends Controller
             });
         }
 
+        if ($request->filled('passing_grade')) {
+            switch ($request->passing_grade) {
+                case 'lt60':
+                    $query->where('passing_grade', '<', 60);
+                    break;
+                case '60-69':
+                    $query->whereBetween('passing_grade', [60, 69]);
+                    break;
+                case '70-79':
+                    $query->whereBetween('passing_grade', [70, 79]);
+                    break;
+                case '80-89':
+                    $query->whereBetween('passing_grade', [80, 89]);
+                    break;
+                case '90-100':
+                    $query->whereBetween('passing_grade', [90, 100]);
+                    break;
+                default:
+                    if (is_numeric($request->passing_grade)) {
+                        $query->where('passing_grade', (int) $request->passing_grade);
+                    }
+                    break;
+            }
+        }
+
+        if ($request->filled('created_from')) {
+            $query->whereDate('created_at', '>=', $request->created_from);
+        }
+
+        if ($request->filled('created_to')) {
+            $query->whereDate('created_at', '<=', $request->created_to);
+        }
+
+        if ($request->filled('schedule_from')) {
+            $query->whereDate('fromdate', '>=', $request->schedule_from);
+        }
+
+        if ($request->filled('schedule_to')) {
+            $query->whereDate('todate', '<=', $request->schedule_to);
+        }
+
+        switch ($request->input('sort')) {
+            case 'oldest':
+                $query->oldest('id');
+                break;
+            case 'title_asc':
+                $query->orderBy('title', 'asc');
+                break;
+            case 'title_desc':
+                $query->orderBy('title', 'desc');
+                break;
+            case 'newest':
+            default:
+                $query->latest('id');
+                break;
+        }
+
         $assesment = $query
-            ->latest()
             ->paginate($entries)
             ->withQueryString();
 
@@ -113,7 +184,9 @@ class AssesmentController extends Controller
             'types',
             'timers',
             'statuses',
-            'questionFilters'
+            'questionFilters',
+            'passingGradeOptions',
+            'sortOptions'
         ));
     }
 

@@ -13,131 +13,109 @@
     </div>
 
     <div class="card-body border-top border-bottom py-3">
+        @php
+            $advancedCount = collect([
+                request('questions') !== null && request('questions') !== '',
+                request('passing_grade') !== null && request('passing_grade') !== '',
+                filled(request('created_from')),
+                filled(request('created_to')),
+                filled(request('schedule_from')),
+                filled(request('schedule_to')),
+                request('sort') && !in_array(request('sort'), ['default', 'newest', '']),
+                request('entries') && (int) request('entries') !== 15,
+            ])->filter()->count();
+        @endphp
 
         <form method="GET" action="{{ route('assesment.index') }}" id="assessmentFilterForm">
+            <div class="assessment-fast-filter-section">
+                <label class="form-label small text-muted mb-2 assessment-fast-filter-label" for="assessmentSearchInput">
+                    Quick Filter
+                </label>
 
-            <div class="row align-items-end">
-
-                <div class="col-md-2 mb-2">
-                    <label class="form-label small text-muted mb-1">
-                        Show
-                    </label>
-
-                    <select name="entries" class="form-control form-control-sm">
-                        <option value="10" {{ request('entries', 15) == 10 ? 'selected' : '' }}>10</option>
-                        <option value="15" {{ request('entries', 15) == 15 ? 'selected' : '' }}>15</option>
-                        <option value="20" {{ request('entries', 15) == 20 ? 'selected' : '' }}>20</option>
-                        <option value="25" {{ request('entries', 15) == 25 ? 'selected' : '' }}>25</option>
-                        <option value="50" {{ request('entries', 15) == 50 ? 'selected' : '' }}>50</option>
-                    </select>
-                </div>
-
-                <div class="col-md-2 mb-2">
-                    <label class="form-label small text-muted mb-1">
-                        Type
-                    </label>
-
-                    <select name="type" class="form-control form-control-sm">
-                        <option value="">All Type</option>
-
-                        @foreach ($types as $type)
-                            <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
-                                {{ $type === 'trainingplan' ? 'Playlist' : ucwords($type) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                    <div class="col-md-2 mb-2">
-
-                        <label class="form-label small text-muted mb-1">
-                            Questions
-                        </label>
-
-                        <select name="questions" class="form-control form-control-sm">
-
-                            <option value="">
-                                All Questions
-                            </option>
-
-                            @foreach ($questionFilters as $value => $label)
-                                <option
-                                    value="{{ $value }}"
-                                    {{ request('questions') == $value ? 'selected' : '' }}>
-
-                                    {{ $label }}
-
+                <div class="assessment-filter-toolbar">
+                    <div class="assessment-filter-field assessment-filter-field-type">
+                        <select name="type" id="assessmentQuickType" class="form-select form-control assessment-filter-control" aria-label="Type">
+                            <option value="">All Type</option>
+                            @foreach ($types as $type)
+                                <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
+                                    {{ $type === 'trainingplan' ? 'Playlist' : ucwords($type) }}
                                 </option>
                             @endforeach
-
                         </select>
-
                     </div>
 
-                <div class="col-md-2 mb-2">
-                    <label class="form-label small text-muted mb-1">
-                        Timer
-                    </label>
+                    <div class="assessment-filter-field assessment-filter-field-status">
+                        <select name="status" id="assessmentQuickStatus" class="form-select form-control assessment-filter-control" aria-label="Status">
+                            <option value="">All Status</option>
+                            @foreach ($statuses as $status)
+                                <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
+                                    {{ $status == 'OK' ? 'Active' : 'Inactive' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                    <select name="timer" class="form-control form-control-sm">
-                        <option value="">All Timer</option>
+                    <div class="assessment-filter-field assessment-filter-field-timer">
+                        <select name="timer" id="assessmentQuickTimer" class="form-select form-control assessment-filter-control" aria-label="Timer">
+                            <option value="">All Timer</option>
+                            @foreach ($timers as $timer)
+                                <option value="{{ $timer }}" {{ request('timer') == $timer ? 'selected' : '' }}>
+                                    {{ $timer == 'y' ? 'With Timer' : 'No Timer' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        @foreach ($timers as $timer)
-                            <option value="{{ $timer }}" {{ request('timer') == $timer ? 'selected' : '' }}>
-                                {{ $timer == 'y' ? 'With Timer' : 'No Timer' }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="assessment-filter-search">
+                        <div class="input-icon">
+                            <span class="input-icon-addon">
+                                <i class="ti ti-search"></i>
+                            </span>
+                            <input type="search"
+                                   name="search"
+                                   id="assessmentSearchInput"
+                                   class="form-control assessment-search-control"
+                                   value="{{ request('search') }}"
+                                   placeholder="Search assessment..."
+                                   autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="assessment-filter-actions">
+                        <button type="submit"
+                                class="btn btn-primary assessment-filter-action-btn"
+                                id="assessmentSearchAction"
+                                title="Search / Apply Filter"
+                                aria-label="Search">
+                            <i class="ti ti-search"></i>
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-outline-primary assessment-filter-action-btn position-relative"
+                                id="assessmentMoreFiltersBtn"
+                                data-bs-toggle="modal" data-bs-target="#assessmentMoreFiltersModal"
+                                data-toggle="modal" data-target="#assessmentMoreFiltersModal"
+                                title="More Filters"
+                                aria-label="More Filters">
+                            <i class="ti ti-adjustments-horizontal"></i>
+                            <span class="badge bg-primary text-white assessment-filter-count {{ $advancedCount > 0 ? '' : 'd-none' }}" id="assessmentMoreFiltersCount">
+                                {{ $advancedCount > 0 ? $advancedCount : '' }}
+                            </span>
+                        </button>
+
+                        <a href="{{ route('assesment.index') }}"
+                           class="btn btn-outline-primary assessment-filter-action-btn {{ ($advancedCount > 0 || request('type') || request('status') || request('timer') || request('search')) ? 'is-active' : '' }}"
+                           id="assessmentResetFilter"
+                           title="Reset Filter"
+                           aria-label="Reset Filter">
+                            <i class="ti ti-refresh"></i>
+                        </a>
+                    </div>
                 </div>
-
-                <div class="col-md-2 mb-2">
-                    <label class="form-label small text-muted mb-1">
-                        Status
-                    </label>
-
-                    <select name="status" class="form-control form-control-sm">
-                        <option value="">All Status</option>
-
-                        @foreach ($statuses as $status)
-                            <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
-                                {{ $status == 'OK' ? 'Active' : 'Inactive' }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-2 mb-2">
-                    <label class="form-label small text-muted mb-1">
-                        Search
-                    </label>
-
-                    <input
-                        type="text"
-                        name="search"
-                        class="form-control form-control-sm"
-                        value="{{ request('search') }}"
-                        placeholder="Search title/code...">
-                </div>
-
             </div>
 
-            <div class="row mt-2">
-                <div class="col-md-12 text-right">
-
-                    <button type="submit" class="btn btn-sm btn-primary owl-action-btn">
-                        <i class="fas fa-filter mr-1"></i>
-                        Filter
-                    </button>
-
-                    <a href="{{ route('assesment.index') }}" class="btn btn-sm btn-light owl-action-btn">
-                        <i class="fas fa-undo mr-1"></i>
-                        Reset
-                    </a>
-
-                </div>
-            </div>
-
+            @include('main.assesment.partials.modal-filter')
         </form>
-
     </div>
 
     <div class="table-responsive">

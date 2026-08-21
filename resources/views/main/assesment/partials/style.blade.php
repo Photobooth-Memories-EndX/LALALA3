@@ -517,4 +517,259 @@
         border-color: rgba(255, 255, 255, 0.2) !important;
     }
 
+    /* ==========================
+       ASSESSMENT QUICK FILTER & TOOLBAR
+    ========================== */
+
+    .assessment-fast-filter-section {
+        width: 100%;
+    }
+
+    .assessment-fast-filter-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--tblr-muted, #64748b);
+        letter-spacing: .02em;
+    }
+
+    .assessment-filter-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-width: 0;
+        flex-wrap: nowrap;
+    }
+
+    .assessment-filter-field {
+        width: max-content;
+        min-width: 0;
+        flex: 0 1 auto;
+    }
+
+    .assessment-filter-field-type {
+        min-width: 135px;
+    }
+
+    .assessment-filter-field-status {
+        min-width: 135px;
+    }
+
+    .assessment-filter-field-timer {
+        min-width: 135px;
+    }
+
+    .assessment-filter-control {
+        width: 100%;
+        min-width: 0;
+        height: 40px;
+        min-height: 40px;
+        padding: 0.375rem 0.75rem;
+        border-radius: 8px !important;
+        font-size: 13px;
+        font-weight: 500;
+        background-color: var(--tblr-bg-surface, #ffffff);
+        color: var(--tblr-body-color, #1e293b);
+        border: 1px solid var(--tblr-border-color, #dbe0e6) !important;
+        box-shadow: none !important;
+    }
+
+    .assessment-filter-search {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .assessment-filter-search .input-icon {
+        width: 100%;
+        min-width: 0;
+        position: relative;
+    }
+
+    .assessment-search-control {
+        height: 40px;
+        min-height: 40px;
+        border-radius: 8px !important;
+        font-size: 13px;
+        border: 1px solid var(--tblr-border-color, #dbe0e6) !important;
+        background-color: var(--tblr-bg-surface, #ffffff);
+        color: var(--tblr-body-color, #1e293b);
+        box-shadow: none !important;
+    }
+
+    .assessment-filter-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+    }
+
+    .assessment-filter-action-btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        min-width: 40px;
+        height: 40px;
+        min-height: 40px;
+        padding: 0;
+        border-radius: 8px !important;
+        line-height: 1;
+        font-size: 16px;
+        transition: all .2s ease;
+    }
+
+    .assessment-filter-action-btn > i {
+        margin: 0 !important;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .assessment-filter-count {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        border: 2px solid var(--tblr-bg-surface, #fff);
+        border-radius: 999px;
+        font-size: 10px;
+        line-height: 14px;
+        font-weight: 700;
+    }
+
+    .assessment-filter-action-btn.is-active,
+    .assessment-filter-action-btn.is-active:hover,
+    .assessment-filter-action-btn.is-active:focus {
+        border-color: #05507d;
+        background: #05507d;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(5, 80, 125, .22);
+    }
+
+    /* Responsive Filter Toolbar */
+    @media (max-width: 991.98px) {
+        .assessment-filter-toolbar {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .assessment-filter-field {
+            flex: 1 1 calc(33.333% - 10px);
+            min-width: 120px;
+        }
+
+        .assessment-filter-search {
+            flex: 1 1 calc(100% - 140px);
+            min-width: 180px;
+        }
+
+        .assessment-filter-actions {
+            flex: 0 0 auto;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .assessment-filter-field {
+            flex: 1 1 100%;
+            min-width: 100%;
+        }
+
+        .assessment-filter-search {
+            flex: 1 1 100%;
+            width: 100%;
+        }
+
+        .assessment-filter-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+
+    /* ==========================
+       MORE FILTERS MODAL
+    ========================== */
+
+    .assessment-filter-modal-dialog {
+        max-width: 680px;
+        width: 100%;
+        margin: 1.75rem auto;
+    }
+
+    .assessment-filter-modal-dialog .modal-content {
+        border-radius: 16px !important;
+        border: 0;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+    }
+
+    .assessment-filter-modal-dialog .modal-header {
+        padding: 1.25rem 1.5rem 0.5rem;
+    }
+
+    .assessment-filter-modal-dialog .modal-body {
+        padding: 0.5rem 1.5rem 1.25rem;
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+
+    .assessment-filter-modal-dialog .modal-footer {
+        padding: 1rem 1.5rem 1.25rem;
+        border-top: 1px solid var(--tblr-border-color, #e5e7eb) !important;
+    }
+
+    .assessment-filter-group label {
+        font-size: 12.5px;
+        color: var(--tblr-body-color, #334155);
+    }
+
+    .assessment-filter-group .form-control,
+    .assessment-filter-group .form-select {
+        height: 40px;
+        min-height: 40px;
+        border-radius: 8px;
+        font-size: 13px;
+        border-color: var(--tblr-border-color, #dbe0e6);
+    }
+
+    /* Dark mode for Filter & Modal */
+    [data-bs-theme="dark"] .assessment-filter-control,
+    [data-bs-theme="dark"] .assessment-search-control,
+    [data-bs-theme="dark"] .assessment-filter-group .form-control,
+    [data-bs-theme="dark"] .assessment-filter-group .form-select,
+    body.dark-mode .assessment-filter-control,
+    body.dark-mode .assessment-search-control,
+    body.dark-mode .assessment-filter-group .form-control,
+    body.dark-mode .assessment-filter-group .form-select {
+        background-color: var(--tblr-bg-surface, #111827) !important;
+        color: #ffffff !important;
+        border-color: #25384d !important;
+    }
+
+    [data-bs-theme="dark"] .assessment-filter-modal-dialog .modal-content,
+    body.dark-mode .assessment-filter-modal-dialog .modal-content {
+        background-color: #182433 !important;
+        color: #dce6f1 !important;
+        border: 1px solid #25384d !important;
+    }
+
+    [data-bs-theme="dark"] .assessment-filter-modal-dialog .modal-header,
+    [data-bs-theme="dark"] .assessment-filter-modal-dialog .modal-footer,
+    body.dark-mode .assessment-filter-modal-dialog .modal-header,
+    body.dark-mode .assessment-filter-modal-dialog .modal-footer {
+        background-color: #1f2d3d !important;
+        border-color: #25384d !important;
+    }
+
+    [data-bs-theme="dark"] .assessment-filter-modal-dialog .btn-close,
+    body.dark-mode .assessment-filter-modal-dialog .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    [data-bs-theme="dark"] .assessment-filter-count,
+    body.dark-mode .assessment-filter-count {
+        border-color: #182433 !important;
+    }
+
 </style>

@@ -46,6 +46,63 @@
             }
         });
 
+        function updateAdvancedFilterBadge() {
+            let questions = $('#assessmentFilterQuestions').val();
+            let passingGrade = $('#assessmentFilterPassingGrade').val();
+            let createdFrom = $('#assessmentFilterCreatedFrom').val();
+            let createdTo = $('#assessmentFilterCreatedTo').val();
+            let scheduleFrom = $('#assessmentFilterScheduleFrom').val();
+            let scheduleTo = $('#assessmentFilterScheduleTo').val();
+            let sort = $('#assessmentFilterSort').val();
+            let entries = $('#assessmentFilterEntries').val();
+
+            let count = 0;
+            if (questions && questions !== '') count++;
+            if (passingGrade && passingGrade !== '') count++;
+            if (createdFrom) count++;
+            if (createdTo) count++;
+            if (scheduleFrom) count++;
+            if (scheduleTo) count++;
+            if (sort && !['default', 'newest', ''].includes(sort)) count++;
+            if (entries && parseInt(entries, 10) !== 15) count++;
+
+            let $badge = $('#assessmentMoreFiltersCount');
+            if (count > 0) {
+                $badge.text(count).removeClass('d-none');
+            } else {
+                $badge.text('').addClass('d-none');
+            }
+        }
+
+        $('#assessmentFilterQuestions, #assessmentFilterPassingGrade, #assessmentFilterCreatedFrom, #assessmentFilterCreatedTo, #assessmentFilterScheduleFrom, #assessmentFilterScheduleTo, #assessmentFilterSort, #assessmentFilterEntries').on('change input', function () {
+            updateAdvancedFilterBadge();
+        });
+
+        $('#assessmentResetMoreFilters').on('click', function (e) {
+            e.preventDefault();
+            $('#assessmentFilterQuestions').val('');
+            $('#assessmentFilterPassingGrade').val('');
+            $('#assessmentFilterCreatedFrom').val('');
+            $('#assessmentFilterCreatedTo').val('');
+            $('#assessmentFilterScheduleFrom').val('');
+            $('#assessmentFilterScheduleTo').val('');
+            $('#assessmentFilterSort').val('newest');
+            $('#assessmentFilterEntries').val('15');
+            updateAdvancedFilterBadge();
+            $('#assessmentFilterForm').submit();
+        });
+
+        $('#assessmentQuickType, #assessmentQuickStatus, #assessmentQuickTimer').on('change', function () {
+            $('#assessmentFilterForm').submit();
+        });
+
+        $('#assessmentSearchInput').on('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('#assessmentFilterForm').submit();
+            }
+        });
+
         function positionAssessmentDropdown($dropdown) {
             let $menu = $dropdown.find('.dropdown-menu');
             let $button = $dropdown.find('.owl-dropdown-btn, [data-toggle="dropdown"], [data-bs-toggle="dropdown"]');
