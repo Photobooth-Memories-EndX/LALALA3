@@ -59,10 +59,24 @@ class ManageLearningTest extends TestCase
             $response = $this->actingAs($user)->get('/manage/learning/category/' . $classification->slug);
             $response->assertStatus(200);
             $response->assertViewIs('main.learning.all');
+            $response->assertSee('Classification: ' . $classification->classification_name);
         }
     }
 
-    public function test_authenticated_admin_can_fetch_datatable(): void
+    public function test_authenticated_admin_can_access_content_learning_page(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+        $content = Content::first();
+
+        if ($content) {
+            $response = $this->actingAs($user)->get('/manage/learning/content/' . $content->slug);
+            $response->assertStatus(200);
+            $response->assertViewIs('main.learning.all');
+            $response->assertSee('Content: ' . $content->title);
+        }
+    }
+
+    public function test_authenticated_admin_can_fetch_datatable_with_server_side_pagination(): void
     {
         $user = User::where('role', '2')->first() ?? User::first();
 
@@ -74,5 +88,32 @@ class ManageLearningTest extends TestCase
             'recordsFiltered',
             'data',
         ]);
+
+        $json = $response->json();
+        $this->assertEquals(1, $json['draw']);
+        $this->assertGreaterThan(0, $json['recordsTotal']);
+        $this->assertCount(10, $json['data']);
+    }
+
+    public function test_datatable_filtering_by_status_and_year(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=10&status=optional&year=' . date('Y'));
+        $response->assertStatus(200);
+
+        $json = $response->json();
+        $this->assertLessThanOrEqual(10, count($json['data']));
+    }
+
+    public function test_datatable_search(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=10&search[value]=safety');
+        $response->assertStatus(200);
+
+        $json = $response->json();
+        $this->assertLessThanOrEqual(10, count($json['data']));
     }
 }
