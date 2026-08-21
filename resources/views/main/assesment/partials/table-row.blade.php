@@ -16,7 +16,20 @@
     ];
     $typeLabel = $typeLabels[$list->type] ?? ucwords($list->type ?? '');
 
-    $totalQuestions = count($list->assessment_question_banks) > 0
+    $hasAQB = count($list->assessment_question_banks) > 0;
+
+    // Bank Question: Pool of questions available in Question Banks attached
+    if ($hasAQB) {
+        $bankQuestions = $list->assessment_question_banks->sum(function ($aqb) {
+            return $aqb->question_bank ? ($aqb->question_bank->questions_count ?? count($aqb->question_bank->questions ?? [])) : 0;
+        });
+        $bankQuestionDisplay = $bankQuestions;
+    } else {
+        $bankQuestionDisplay = '-';
+    }
+
+    // Used Question: Actual questions used by assessment
+    $usedQuestions = $hasAQB
         ? $list->assessment_question_banks->sum('questions_amount')
         : count($list->questions);
 
@@ -28,14 +41,14 @@
         {{ $iteration }}
     </td>
 
-    <td style="min-width: 420px;">
-        <div class="font-weight-bold">
+    <td style="min-width: 280px;">
+        <div class="font-weight-bold" style="line-height: 1.4; word-break: break-word;">
             <a href="{{ $assessmentUrl }}" class="text-dark">
                 {{ $list->title }}
             </a>
         </div>
 
-        <div class="mt-2 d-flex align-items-center flex-wrap">
+        <div class="mt-1 d-flex align-items-center flex-wrap">
             <span class="text-muted small mr-1">
                 Unique Code:
             </span>
@@ -62,8 +75,18 @@
         </span>
     </td>
 
-    <td class="text-center font-weight-bold">
-        {{ $totalQuestions }}
+    <td class="text-center">
+        @if ($bankQuestionDisplay !== '-')
+            <span class="text-muted font-weight-semibold">
+                {{ $bankQuestionDisplay }}
+            </span>
+        @else
+            <span class="text-muted small">-</span>
+        @endif
+    </td>
+
+    <td class="text-center font-weight-bold text-dark">
+        {{ $usedQuestions }}
     </td>
 
     <td class="text-center">
@@ -72,30 +95,44 @@
         </span>
     </td>
 
-    <td style="min-width: 185px;">
+    @php
+        $durationText = '-';
+        if ($list->hasTimeLimit() && !empty($list->time_limit_minutes) && (int) $list->time_limit_minutes > 0) {
+            $m = (int) $list->time_limit_minutes;
+            if ($m < 60) {
+                $durationText = $m . ' mins';
+            } else {
+                $hrs = intdiv($m, 60);
+                $remMins = $m % 60;
+                $durationText = $hrs . ($hrs > 1 ? ' hrs' : ' hr') . ($remMins > 0 ? ' ' . $remMins . ' mins' : '');
+            }
+        }
+    @endphp
+
+    <td style="min-width: 170px;">
         @if ($list->hasAccessPeriod() && $list->fromdate && $list->todate)
             <div class="small">
                 <div>
                     <i class="far fa-calendar-alt mr-1 text-primary"></i>
-                    {{ date('d M Y H:i', strtotime($list->fromdate)) }}
+                    {{ date('d M Y', strtotime($list->fromdate)) }}
                 </div>
-
                 <div class="text-muted mt-1">
                     <i class="far fa-clock mr-1"></i>
-                    {{ date('d M Y H:i', strtotime($list->todate)) }}
+                    {{ date('d M Y', strtotime($list->todate)) }}
                 </div>
             </div>
+        @else
+            <span class="text-muted small">-</span>
         @endif
+    </td>
 
-        @if ($list->hasTimeLimit())
-            <div class="small fw-semibold text-primary {{ $list->hasAccessPeriod() ? 'mt-1' : '' }}">
-                <i class="fas fa-stopwatch mr-1"></i>
-                {{ $list->time_limit_minutes }} Mins Time Limit
-            </div>
-        @elseif (!$list->hasAccessPeriod())
-            <span class="text-muted small">
-                No Deadline
+    <td class="text-center" style="min-width: 110px;">
+        @if ($durationText !== '-')
+            <span class="small font-weight-bold text-primary">
+                <i class="fas fa-stopwatch mr-1"></i>{{ $durationText }}
             </span>
+        @else
+            <span class="text-muted small">-</span>
         @endif
     </td>
 
@@ -112,16 +149,6 @@
             data-size="small"
             data-width="48"
             {{ $list->status == 'OK' ? 'checked' : '' }}>
-    </td>
-
-    <td class="text-center">
-        <a
-            href="{{ route('assesment.assign.users.index', $list->slug) }}"
-            class="btn btn-sm btn-outline-secondary owl-action-btn"
-            data-toggle="tooltip"
-            title="Assign users">
-            <i class="fas fa-users"></i>
-        </a>
     </td>
 
     <td class="text-right">

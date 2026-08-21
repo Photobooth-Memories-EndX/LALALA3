@@ -110,13 +110,14 @@
         border-bottom: 1px solid #e5e7eb;
 
         vertical-align: middle;
-        padding: 14px 12px;
+        padding: 12px 10px;
+        white-space: nowrap;
     }
 
     .owl-table tbody td {
         vertical-align: middle;
         font-size: 13px;
-        padding: 18px 12px;
+        padding: 14px 10px;
     }
 
     .table-hover tbody tr:hover {
@@ -547,16 +548,20 @@
         flex: 0 1 auto;
     }
 
+    .assessment-filter-field-year {
+        min-width: 110px;
+    }
+
+    .assessment-filter-field-month {
+        min-width: 125px;
+    }
+
     .assessment-filter-field-type {
-        min-width: 135px;
+        min-width: 115px;
     }
 
     .assessment-filter-field-status {
-        min-width: 135px;
-    }
-
-    .assessment-filter-field-timer {
-        min-width: 135px;
+        min-width: 115px;
     }
 
     .assessment-filter-control {
@@ -650,19 +655,22 @@
     }
 
     /* Responsive Filter Toolbar */
-    @media (max-width: 991.98px) {
+    @media (max-width: 1199.98px) {
         .assessment-filter-toolbar {
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
 
-        .assessment-filter-field {
-            flex: 1 1 calc(33.333% - 10px);
-            min-width: 120px;
+        .assessment-filter-field-year,
+        .assessment-filter-field-month,
+        .assessment-filter-field-type,
+        .assessment-filter-field-status {
+            flex: 1 1 calc(25% - 8px);
+            min-width: 110px;
         }
 
         .assessment-filter-search {
-            flex: 1 1 calc(100% - 140px);
+            flex: 1 1 calc(100% - 150px);
             min-width: 180px;
         }
 
@@ -671,10 +679,13 @@
         }
     }
 
-    @media (max-width: 575.98px) {
-        .assessment-filter-field {
-            flex: 1 1 100%;
-            min-width: 100%;
+    @media (max-width: 767.98px) {
+        .assessment-filter-field-year,
+        .assessment-filter-field-month,
+        .assessment-filter-field-type,
+        .assessment-filter-field-status {
+            flex: 1 1 calc(50% - 8px);
+            min-width: 120px;
         }
 
         .assessment-filter-search {
@@ -685,6 +696,16 @@
         .assessment-filter-actions {
             width: 100%;
             justify-content: flex-end;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .assessment-filter-field-year,
+        .assessment-filter-field-month,
+        .assessment-filter-field-type,
+        .assessment-filter-field-status {
+            flex: 1 1 100%;
+            min-width: 100%;
         }
     }
 

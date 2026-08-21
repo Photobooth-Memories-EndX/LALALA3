@@ -15,14 +15,12 @@
     <div class="card-body border-top border-bottom py-3">
         @php
             $advancedCount = collect([
-                request('questions') !== null && request('questions') !== '',
-                request('passing_grade') !== null && request('passing_grade') !== '',
-                filled(request('created_from')),
-                filled(request('created_to')),
-                filled(request('schedule_from')),
-                filled(request('schedule_to')),
+                request('question_used') !== null && request('question_used') !== '',
+                request('question_bank') !== null && request('question_bank') !== '',
+                filled(request('period_from')),
+                filled(request('period_to')),
+                request('duration') !== null && request('duration') !== '' && request('duration') !== 'all',
                 request('sort') && !in_array(request('sort'), ['default', 'newest', '']),
-                request('entries') && (int) request('entries') !== 15,
             ])->filter()->count();
         @endphp
 
@@ -33,9 +31,31 @@
                 </label>
 
                 <div class="assessment-filter-toolbar">
+                    <div class="assessment-filter-field assessment-filter-field-year">
+                        <select name="year" id="assessmentQuickYear" class="form-select form-control assessment-filter-control" aria-label="Year">
+                            <option value="">All Years</option>
+                            @foreach ($years as $year)
+                                <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>
+                                    {{ $year }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="assessment-filter-field assessment-filter-field-month">
+                        <select name="month" id="assessmentQuickMonth" class="form-select form-control assessment-filter-control" aria-label="Month">
+                            <option value="">All Months</option>
+                            @foreach ($months as $monthNumber => $monthName)
+                                <option value="{{ $monthNumber }}" {{ request('month') == $monthNumber ? 'selected' : '' }}>
+                                    {{ $monthName }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <div class="assessment-filter-field assessment-filter-field-type">
                         <select name="type" id="assessmentQuickType" class="form-select form-control assessment-filter-control" aria-label="Type">
-                            <option value="">All Type</option>
+                            <option value="">All Types</option>
                             @foreach ($types as $type)
                                 <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
                                     {{ $type === 'trainingplan' ? 'Playlist' : ucwords($type) }}
@@ -55,18 +75,8 @@
                         </select>
                     </div>
 
-                    <div class="assessment-filter-field assessment-filter-field-timer">
-                        <select name="timer" id="assessmentQuickTimer" class="form-select form-control assessment-filter-control" aria-label="Timer">
-                            <option value="">All Timer</option>
-                            @foreach ($timers as $timer)
-                                <option value="{{ $timer }}" {{ request('timer') == $timer ? 'selected' : '' }}>
-                                    {{ $timer == 'y' ? 'With Timer' : 'No Timer' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
                     <div class="assessment-filter-search">
+                        <label class="sr-only visually-hidden" for="assessmentSearchInput">Search assessment</label>
                         <div class="input-icon">
                             <span class="input-icon-addon">
                                 <i class="ti ti-search"></i>
@@ -104,7 +114,7 @@
                         </button>
 
                         <a href="{{ route('assesment.index') }}"
-                           class="btn btn-outline-primary assessment-filter-action-btn {{ ($advancedCount > 0 || request('type') || request('status') || request('timer') || request('search')) ? 'is-active' : '' }}"
+                           class="btn btn-outline-primary assessment-filter-action-btn {{ ($advancedCount > 0 || request('year') || request('month') || request('type') || request('status') || request('search')) ? 'is-active' : '' }}"
                            id="assessmentResetFilter"
                            title="Reset Filter"
                            aria-label="Reset Filter">
@@ -124,15 +134,16 @@
             <table class="table table-hover table-vcenter owl-table mb-0" id="MyTable">
                 <thead>
                     <tr>
-                        <th class="text-center">No</th>
+                        <th class="text-center" style="width: 50px;">No</th>
                         <th>Assessment</th>
-                        <th class="text-center">Type</th>
-                        <th class="text-center">Questions</th>
-                        <th class="text-center">PG</th>
-                        <th>Schedule</th>
-                        <th class="text-center">Status</th>
-                        <th class="text-center">Assign</th>
-                        <th class="text-right">Action</th>
+                        <th class="text-center" style="width: 100px;">Type</th>
+                        <th class="text-center" style="width: 110px;">Bank Question</th>
+                        <th class="text-center" style="width: 110px;">Used Question</th>
+                        <th class="text-center" style="width: 80px;">PG</th>
+                        <th style="min-width: 150px;">Period</th>
+                        <th class="text-center" style="width: 100px;">Duration</th>
+                        <th class="text-center" style="width: 80px;">Status</th>
+                        <th class="text-right" style="width: 80px;">Action</th>
                     </tr>
                 </thead>
 

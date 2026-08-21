@@ -10,21 +10,17 @@
             </div>
 
             <div class="modal-body pt-3 pb-2">
-                <p class="text-muted small mb-3">
-                    Refine your assessment list with advanced filters.
-                </p>
-
-                {{-- ROW 1: Questions & Passing Grade --}}
-                <div class="row g-3 mb-3">
+                {{-- SECTION 1: Total Questions Used & Total Question Bank --}}
+                <div class="row g-3">
                     <div class="col-12 col-md-6">
                         <div class="assessment-filter-group">
-                            <label class="form-label fw-semibold mb-1" for="assessmentFilterQuestions">
-                                Questions
+                            <label class="form-label fw-semibold mb-1" for="assessmentFilterQuestionUsed">
+                                Total Questions Used
                             </label>
-                            <select id="assessmentFilterQuestions" name="questions" class="form-select form-control rounded-3">
+                            <select id="assessmentFilterQuestionUsed" name="question_used" class="form-select form-control rounded-3">
                                 <option value="">All Questions</option>
-                                @foreach ($questionFilters as $value => $label)
-                                    <option value="{{ $value }}" {{ request('questions') == $value ? 'selected' : '' }}>
+                                @foreach ($questionUsedFilters as $value => $label)
+                                    <option value="{{ $value }}" {{ request('question_used', request('questions')) == $value ? 'selected' : '' }}>
                                         {{ $label }}
                                     </option>
                                 @endforeach
@@ -34,13 +30,13 @@
 
                     <div class="col-12 col-md-6">
                         <div class="assessment-filter-group">
-                            <label class="form-label fw-semibold mb-1" for="assessmentFilterPassingGrade">
-                                Passing Grade
+                            <label class="form-label fw-semibold mb-1" for="assessmentFilterQuestionBank">
+                                Total Question Bank
                             </label>
-                            <select id="assessmentFilterPassingGrade" name="passing_grade" class="form-select form-control rounded-3">
-                                <option value="">All Grades</option>
-                                @foreach ($passingGradeOptions as $val => $label)
-                                    <option value="{{ $val }}" {{ request('passing_grade') == $val ? 'selected' : '' }}>
+                            <select id="assessmentFilterQuestionBank" name="question_bank" class="form-select form-control rounded-3">
+                                <option value="">All Question Banks</option>
+                                @foreach ($questionBankFilters as $val => $label)
+                                    <option value="{{ $val }}" {{ request('question_bank') == $val ? 'selected' : '' }}>
                                         {{ $label }}
                                     </option>
                                 @endforeach
@@ -51,30 +47,30 @@
 
                 <hr class="my-3">
 
-                {{-- ROW 2: Created Date --}}
-                <div class="assessment-filter-group mb-3">
-                    <div class="fw-semibold mb-2">Created Date</div>
+                {{-- SECTION 2: Period --}}
+                <div class="assessment-filter-group">
+                    <div class="fw-semibold mb-2">Period</div>
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
-                            <label class="form-label small text-muted mb-1" for="assessmentFilterCreatedFrom">From Date</label>
+                            <label class="form-label small text-muted mb-1" for="assessmentFilterPeriodFrom">From Date</label>
                             <div class="input-icon">
                                 <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
                                 <input type="date"
-                                       id="assessmentFilterCreatedFrom"
-                                       name="created_from"
+                                       id="assessmentFilterPeriodFrom"
+                                       name="period_from"
                                        class="form-control rounded-3"
-                                       value="{{ request('created_from') }}">
+                                       value="{{ request('period_from', request('schedule_from')) }}">
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label small text-muted mb-1" for="assessmentFilterCreatedTo">To Date</label>
+                            <label class="form-label small text-muted mb-1" for="assessmentFilterPeriodTo">To Date</label>
                             <div class="input-icon">
                                 <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
                                 <input type="date"
-                                       id="assessmentFilterCreatedTo"
-                                       name="created_to"
+                                       id="assessmentFilterPeriodTo"
+                                       name="period_to"
                                        class="form-control rounded-3"
-                                       value="{{ request('created_to') }}">
+                                       value="{{ request('period_to', request('schedule_to')) }}">
                             </div>
                         </div>
                     </div>
@@ -82,39 +78,25 @@
 
                 <hr class="my-3">
 
-                {{-- ROW 3: Schedule / Access Period --}}
-                <div class="assessment-filter-group mb-3">
-                    <div class="fw-semibold mb-2">Schedule / Access Period</div>
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <label class="form-label small text-muted mb-1" for="assessmentFilterScheduleFrom">From Date</label>
-                            <div class="input-icon">
-                                <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
-                                <input type="date"
-                                       id="assessmentFilterScheduleFrom"
-                                       name="schedule_from"
-                                       class="form-control rounded-3"
-                                       value="{{ request('schedule_from') }}">
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label small text-muted mb-1" for="assessmentFilterScheduleTo">To Date</label>
-                            <div class="input-icon">
-                                <span class="input-icon-addon"><i class="ti ti-calendar"></i></span>
-                                <input type="date"
-                                       id="assessmentFilterScheduleTo"
-                                       name="schedule_to"
-                                       class="form-control rounded-3"
-                                       value="{{ request('schedule_to') }}">
-                            </div>
-                        </div>
-                    </div>
+                {{-- SECTION 3: Duration --}}
+                <div class="assessment-filter-group">
+                    <label class="form-label fw-semibold mb-1" for="assessmentFilterDuration">
+                        Duration
+                    </label>
+                    <select id="assessmentFilterDuration" name="duration" class="form-select form-control rounded-3">
+                        <option value="">All Durations</option>
+                        @foreach ($durationFilters as $val => $label)
+                            <option value="{{ $val }}" {{ request('duration') == $val ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <hr class="my-3">
 
-                {{-- ROW 4: Sort By --}}
-                <div class="assessment-filter-group mb-3">
+                {{-- SECTION 4: Sort By --}}
+                <div class="assessment-filter-group">
                     <label class="form-label fw-semibold mb-1" for="assessmentFilterSort">
                         Sort By
                     </label>
@@ -124,22 +106,6 @@
                                 {{ $label }}
                             </option>
                         @endforeach
-                    </select>
-                </div>
-
-                <hr class="my-3">
-
-                {{-- ROW 5: Entries per Page --}}
-                <div class="assessment-filter-group">
-                    <label class="form-label fw-semibold mb-1" for="assessmentFilterEntries">
-                        Entries per Page
-                    </label>
-                    <select id="assessmentFilterEntries" name="entries" class="form-select form-control rounded-3">
-                        <option value="10" {{ request('entries', 15) == 10 ? 'selected' : '' }}>10</option>
-                        <option value="15" {{ request('entries', 15) == 15 ? 'selected' : '' }}>15</option>
-                        <option value="20" {{ request('entries', 15) == 20 ? 'selected' : '' }}>20</option>
-                        <option value="25" {{ request('entries', 15) == 25 ? 'selected' : '' }}>25</option>
-                        <option value="50" {{ request('entries', 15) == 50 ? 'selected' : '' }}>50</option>
                     </select>
                 </div>
             </div>
