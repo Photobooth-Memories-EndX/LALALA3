@@ -109,17 +109,44 @@
         }
     @endphp
 
-    <td style="min-width: 170px;">
-        @if ($list->hasAccessPeriod() && $list->fromdate && $list->todate)
-            <div class="small">
-                <div>
-                    <i class="far fa-calendar-alt mr-1 text-primary"></i>
-                    {{ date('d M Y', strtotime($list->fromdate)) }}
-                </div>
-                <div class="text-muted mt-1">
-                    <i class="far fa-clock mr-1"></i>
-                    {{ date('d M Y', strtotime($list->todate)) }}
-                </div>
+    @php
+        $hasFromDate = !empty($list->fromdate);
+        $hasToDate = !empty($list->todate);
+        $hasPeriod = $list->hasAccessPeriod() && ($hasFromDate || $hasToDate);
+    @endphp
+
+    <td style="min-width: 165px;">
+        @if ($hasPeriod)
+            <div class="assessment-period">
+                @if ($hasFromDate)
+                    <div class="assessment-period-line">
+                        <span class="period-date">
+                            <i class="ti ti-calendar"></i>
+                            {{ date('d M Y', strtotime($list->fromdate)) }}
+                        </span>
+                        <span class="period-time">
+                            <i class="ti ti-clock"></i>
+                            {{ date('H:i', strtotime($list->fromdate)) }}
+                        </span>
+                    </div>
+                @else
+                    <div class="period-null">-</div>
+                @endif
+
+                @if ($hasToDate)
+                    <div class="assessment-period-line">
+                        <span class="period-date">
+                            <i class="ti ti-calendar"></i>
+                            {{ date('d M Y', strtotime($list->todate)) }}
+                        </span>
+                        <span class="period-time">
+                            <i class="ti ti-clock"></i>
+                            {{ date('H:i', strtotime($list->todate)) }}
+                        </span>
+                    </div>
+                @else
+                    <div class="period-null">-</div>
+                @endif
             </div>
         @else
             <span class="text-muted small">-</span>

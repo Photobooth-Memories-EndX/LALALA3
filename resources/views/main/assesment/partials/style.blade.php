@@ -173,6 +173,98 @@
     }
 
     /* ==========================
+       PERIOD DATE & TIME
+    ========================== */
+
+    .assessment-period {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        line-height: 1.3;
+        text-align: left;
+    }
+
+    .assessment-period-line {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+    .period-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 600;
+        color: #1e293b;
+        letter-spacing: -0.01em;
+    }
+
+    .period-date i {
+        font-size: 13.5px;
+        color: #206bc4;
+        opacity: 0.9;
+    }
+
+    .period-time {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11.5px;
+        color: #64748b;
+        font-weight: 400;
+    }
+
+    .period-time i {
+        font-size: 12.5px;
+        color: #94a3b8;
+    }
+
+    .period-null {
+        color: #94a3b8;
+        font-size: 12px;
+        padding-left: 2px;
+        line-height: 1;
+    }
+
+    /* Dark Mode Support */
+    [data-theme="dark"] .period-date,
+    [data-bs-theme="dark"] .period-date,
+    body.theme-dark .period-date,
+    body.dark-mode .period-date {
+        color: #e2e8f0 !important;
+    }
+
+    [data-theme="dark"] .period-date i,
+    [data-bs-theme="dark"] .period-date i,
+    body.theme-dark .period-date i,
+    body.dark-mode .period-date i {
+        color: #60a5fa !important;
+    }
+
+    [data-theme="dark"] .period-time,
+    [data-bs-theme="dark"] .period-time,
+    body.theme-dark .period-time,
+    body.dark-mode .period-time {
+        color: #94a3b8 !important;
+    }
+
+    [data-theme="dark"] .period-time i,
+    [data-bs-theme="dark"] .period-time i,
+    body.theme-dark .period-time i,
+    body.dark-mode .period-time i {
+        color: #64748b !important;
+    }
+
+    [data-theme="dark"] .period-null,
+    [data-bs-theme="dark"] .period-null,
+    body.theme-dark .period-null,
+    body.dark-mode .period-null {
+        color: #64748b !important;
+    }
+
+    /* ==========================
        BUTTON
     ========================== */
 
