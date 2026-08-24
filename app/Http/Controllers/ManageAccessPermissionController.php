@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class ManageAccessPermissionController extends Controller
 {
-        private array $modules = [
+    private array $modules = [
         'admin_management'           => 'Admin Management',
         'user_management'            => 'User Management',
         'learning_management'        => 'Learning Management',
@@ -17,6 +17,7 @@ class ManageAccessPermissionController extends Controller
         'assessment_management'      => 'Assessment Management',
         'question_bank'              => 'Question Bank',
         'playlist_learning_path'     => 'Playlist & Learning Path',
+        'learning_hours_management'  => 'Learning Hours Management',
         'playlist_debug_tools'       => 'Playlist Debug Tools',
         'news_announcement'          => 'News & Announcement',
         'page_management'            => 'Page Management',
