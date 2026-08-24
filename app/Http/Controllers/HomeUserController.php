@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assesment;
+use App\Models\AssesmentResult;
 use App\Models\News;
 use App\Models\Content;
 use App\Models\ContentUser;
 use App\Models\EventPhoto;
 use App\Models\TrainingPlan;
 use App\Services\LearningAnalyticsService;
+use App\Services\AssessmentAccessService;
 use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -415,7 +417,7 @@ class HomeUserController extends Controller
         ->get();
 }
 
-    public function accessAssessmentByUniqueCode(Request $request)
+    public function accessAssessmentByUniqueCode(Request $request, AssessmentAccessService $assessmentAccess)
     {
         $validator = Validator::make(
             $request->all(),
@@ -437,49 +439,145 @@ class HomeUserController extends Controller
         )->first();
 
         if ($assessment) {
-            $currentUserId = auth()->id();
-            $userScores = collect($assessment->scores ?? [])->filter(function ($scoreItem) use ($currentUserId) {
-                return (string) ($scoreItem->user_id ?? '') === (string) $currentUserId;
-            });
+            $user = auth()->user();
+            $currentUserId = $user ? $user->id : auth()->id();
 
-            $userAttempts = $userScores->where('final', 1)->count();
-            if ($userAttempts === 0 && $userScores->count() > 0) {
-                $userAttempts = $userScores->count();
+            // Check for active unsubmitted draft (Snapshot detection)
+            $activeDraft = AssesmentResult::where('user_id', $currentUserId)
+                ->where('assesment_id', $assessment->id)
+                ->where('batch', $assessment->batch)
+                ->where('final', 0)
+                ->latest('id')
+                ->first();
+
+            $hasSnapshot = $activeDraft && (!empty($activeDraft->user_answer) || !empty($activeDraft->question_snapshot));
+
+            $answeredCount = ($activeDraft && is_array($activeDraft->user_answer))
+                ? count(array_filter($activeDraft->user_answer, fn($v) => $v !== null && $v !== ''))
+                : 0;
+
+            $totalCount = ($activeDraft && is_array($activeDraft->question_snapshot) && count($activeDraft->question_snapshot) > 0)
+                ? count($activeDraft->question_snapshot)
+                : ($assessment->questions()->count() ?: 10);
+
+            $completedResults = AssesmentResult::where('user_id', $currentUserId)
+                ->where('assesment_id', $assessment->id)
+                ->where('batch', $assessment->batch)
+                ->where('final', 1)
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $userAttempts = $completedResults->count();
+            $totalRemedials = (int) ($assessment->total_remedials ?? 0);
+            $isGlobal = (string) ($assessment->type ?? '') === 'global';
+            $maxAttempts = $isGlobal ? 1 : (1 + $totalRemedials);
+            $passingGrade = (int) ($assessment->passing_grade ?? 0);
+
+            $highestResult = $completedResults->sortByDesc('score')->first();
+            $resultScore = $highestResult ? (int) ($highestResult->score ?? 0) : 0;
+            $resultIsPassed = $highestResult ? (bool) ($highestResult->pass ?? ($resultScore >= $passingGrade)) : false;
+            $resultCurrentAttempt = $completedResults->count();
+
+            $showResult = false;
+            $canStart = false;
+            $actionType = 'start';
+            $reason = $assessmentAccess->denialReason($assessment, $user);
+
+            $assessmentStatus = 'active';
+            $statusMessage = null;
+
+            if ($reason === AssessmentAccessService::REASON_INACTIVE) {
+                $assessmentStatus = 'inactive';
+                $statusMessage = 'This assessment is currently inactive and cannot be started.';
+                $canStart = false;
+                $showResult = false;
+            } elseif ($reason === AssessmentAccessService::REASON_EXPIRED) {
+                $assessmentStatus = 'expired';
+                $statusMessage = 'This assessment has expired and can no longer be started.';
+                $canStart = false;
+                $showResult = false;
+            } elseif ($hasSnapshot) {
+                // User has active unsubmitted draft -> Continue test
+                $canStart = true;
+                $showResult = false;
+                $actionType = 'continue';
+            } elseif ($isGlobal && $userAttempts >= 1) {
+                // Global assessment: 1 attempt per batch completed -> Show Result Modal
+                $showResult = true;
+                $canStart = false;
+            } elseif (!$isGlobal && $completedResults->isNotEmpty() && ($resultIsPassed || $userAttempts >= $maxAttempts)) {
+                // Content/Playlist: Passed or all attempts exhausted -> Show Result Modal with Highest Score
+                $showResult = true;
+                $canStart = false;
+            } elseif (!$isGlobal && $completedResults->isNotEmpty() && !$resultIsPassed && $userAttempts < $maxAttempts) {
+                // Content/Playlist: Failed previous attempt but has remedial available
+                $canStart = ($reason === null);
+                $showResult = false;
+                $actionType = 'remedial';
+            } else {
+                // First attempt / not started yet
+                $canStart = ($reason === null);
+                $showResult = false;
+                $actionType = 'start';
             }
 
-            $totalRemedials = (int) ($assessment->total_remedials ?? 0);
-            $maxAttempts = 1 + $totalRemedials;
-
-            $fromDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->fromdate))
+            $fromDateDisplay = !empty($assessment->fromdate)
                 ? date('d M Y, H:i', strtotime($assessment->fromdate))
-                : '-';
-            $toDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->todate))
+                : null;
+            $toDateDisplay = !empty($assessment->todate)
                 ? date('d M Y, H:i', strtotime($assessment->todate))
-                : '-';
+                : null;
+
+            $periodDisplay = '-';
+            if ($fromDateDisplay && $toDateDisplay) {
+                $periodDisplay = $fromDateDisplay . ' - ' . $toDateDisplay;
+            } elseif ($fromDateDisplay) {
+                $periodDisplay = 'From ' . $fromDateDisplay;
+            } elseif ($toDateDisplay) {
+                $periodDisplay = 'Until ' . $toDateDisplay;
+            }
 
             $typeLabel = match (strtolower((string) ($assessment->type ?? ''))) {
-                'trainingplan', 'playlist' => 'Playlist',
-                'youtube'                  => 'MOOC',
-                default                    => ucwords(str_replace('_', ' ', $assessment->type ?? '-')),
+                'trainingplan', 'playlist' => 'Playlist Assessment',
+                'youtube'                  => 'MOOC Assessment',
+                'global'                   => 'Global Assessment',
+                default                    => ucwords(str_replace('_', ' ', $assessment->type ?? '-')) . ' Assessment',
             };
 
             return response()->json([
+                'status' => $assessmentStatus,
+                'assessment_status' => $assessmentStatus,
+                'is_active' => $assessmentStatus === 'active',
+                'is_inactive' => $assessmentStatus === 'inactive',
+                'is_expired' => $assessmentStatus === 'expired',
+                'status_message' => $statusMessage,
+                'can_start' => $canStart,
+                'show_result' => $showResult,
+                'denial_reason' => $reason,
                 'assessment_id' => $assessment->id,
                 'assessment_slug' => $assessment->slug,
                 'assessment_title' => $assessment->title ?? '-',
                 'assessment_type' => $assessment->type ?? 'content',
                 'assessment_type_label' => $typeLabel,
                 'assessment_batch' => $assessment->batch ?? '-',
-                'assessment_from_date' => $fromDateDisplay,
-                'assessment_to_date' => $toDateDisplay,
+                'assessment_from_date' => $fromDateDisplay ?? '-',
+                'assessment_to_date' => $toDateDisplay ?? '-',
+                'assessment_period' => $periodDisplay,
                 'assessment_passing_grade' => $assessment->passing_grade ?? '-',
+                'assessment_duration' => $assessment->duration ?? ($assessment->time_limit_minutes ?? 60),
                 'assessment_user_attempts' => $userAttempts,
                 'assessment_max_attempts' => $maxAttempts,
+                'assessment_score' => $resultScore,
+                'assessment_is_passed' => $resultIsPassed,
+                'assessment_current_attempt' => $resultCurrentAttempt,
+                'has_snapshot' => $hasSnapshot,
+                'action_type' => $actionType,
+                'answered_count' => $answeredCount,
+                'total_count' => $totalCount,
                 'assessment_url' => route('assesment.user.view', $assessment->slug, false),
             ], 200);
 
         } else {
-
             return response()->json([
                 'error_message' =>
                     'The assessment with unique code '

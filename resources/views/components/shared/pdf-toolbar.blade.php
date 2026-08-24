@@ -101,7 +101,7 @@
     </button>
 
     <div class="pdf-page-navigation-status" aria-live="polite">
-        <span class="pdf-tb-reading-stat">
+        <span class="pdf-tb-reading-stat pdf-tb-stat-page">
             <span class="pdf-tb-stat-label">Page</span>
             <strong class="pageno pdf-tb-pageno">-- / --</strong>
         </span>
@@ -110,12 +110,12 @@
             <div class="pdf-tb-reading-timing"
                  data-page-duration="{{ $pdfPageDuration }}"
                  aria-label="PDF minimum page reading time">
-                <span class="pdf-tb-reading-stat">
+                <span class="pdf-tb-reading-stat pdf-tb-stat-minimum">
                     <span class="pdf-tb-stat-label">Minimum Time</span>
                     <strong><span class="pdf-tb-minimum-time-value">{{ $pdfPageDuration }}</span> sec</strong>
                 </span>
-                <span class="pdf-tb-reading-stat">
-                    <span class="pdf-tb-stat-label">Remaining</span>
+                <span class="pdf-tb-reading-stat pdf-tb-stat-countdown">
+                    <span class="pdf-tb-stat-label">Next Page In</span>
                     <strong><span class="pdf-tb-remaining-time-value">{{ $pdfPageDuration }}</span> sec</strong>
                 </span>
             </div>

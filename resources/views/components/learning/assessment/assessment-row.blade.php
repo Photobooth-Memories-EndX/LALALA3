@@ -81,25 +81,55 @@
         $assessment->trainingplan->title ?? null,
     ])->merge($contentTitles)->filter()->implode(' ');
     $now = time();
-    $fromDateRaw = !empty($assessment->fromdate) ? (strlen(trim((string) $assessment->fromdate)) === 10 ? trim((string) $assessment->fromdate) . ' 23:59:59' : (string) $assessment->fromdate) : null;
-    $toDateRaw = !empty($assessment->todate) ? (strlen(trim((string) $assessment->todate)) === 10 ? trim((string) $assessment->todate) . ' 23:59:59' : (string) $assessment->todate) : null;
-    $fromDate = $fromDateRaw ? strtotime($fromDateRaw) : null;
-    $toDate = $toDateRaw ? strtotime($toDateRaw) : null;
+    $hasAccessPeriod = $assessment->hasAccessPeriod();
+    $hasTimeLimit = $assessment->hasTimeLimit();
 
-    $isExpired = $toDate ? ($now > $toDate) : false;
-    $isUpcoming = $fromDate ? ($now < $fromDate) : false;
-    $availability = $isUpcoming ? 'upcoming' : ($isExpired ? 'expired' : 'available');
+    if ($hasAccessPeriod && !empty($assessment->fromdate) && !empty($assessment->todate)) {
+        $fromDateRaw = (strlen(trim((string) $assessment->fromdate)) === 10 ? trim((string) $assessment->fromdate) . ' 23:59:59' : (string) $assessment->fromdate);
+        $toDateRaw = (strlen(trim((string) $assessment->todate)) === 10 ? trim((string) $assessment->todate) . ' 23:59:59' : (string) $assessment->todate);
+        $fromDate = strtotime($fromDateRaw);
+        $toDate = strtotime($toDateRaw);
+
+        $isExpired = $toDate ? ($now > $toDate) : false;
+        $isUpcoming = $fromDate ? ($now < $fromDate) : false;
+        $availability = $isUpcoming ? 'upcoming' : ($isExpired ? 'expired' : 'available');
+
+        $fromDateDisplay = date('d M Y, H:i', strtotime($assessment->fromdate));
+        $toDateDisplay = date('d M Y, H:i', strtotime($assessment->todate));
+    } else {
+        $isExpired = false;
+        $isUpcoming = false;
+        $availability = 'available';
+        $fromDateDisplay = '-';
+        $toDateDisplay = $hasTimeLimit ? ('Time Limit: ' . $assessment->time_limit_minutes . ' mins') : 'No Deadline';
+    }
 
     $totalRemedials = (int) ($assessment->total_remedials ?? 0);
-    $maxAttempts = 1 + $totalRemedials;
+    $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
     $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
 
-    $fromDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->fromdate))
-        ? date('d M Y, H:i', strtotime($assessment->fromdate))
-        : '-';
-    $toDateDisplay = (($assessment->timer ?? 'n') == 'y' && !empty($assessment->todate))
-        ? date('d M Y, H:i', strtotime($assessment->todate))
-        : '-';
+    $activeDraft = ($assessment->scores ?? null) 
+        ? collect($assessment->scores)->where('user_id', $currentUserId)->where('final', 0)->first() 
+        : null;
+
+    if (!$activeDraft) {
+        $activeDraft = \App\Models\AssesmentResult::where('user_id', $currentUserId)
+            ->where('assesment_id', $assessment->id)
+            ->where('batch', $assessment->batch)
+            ->where('final', 0)
+            ->latest('id')
+            ->first();
+    }
+
+    $hasSnapshot = $activeDraft && (!empty($activeDraft->user_answer) || !empty($activeDraft->question_snapshot));
+
+    $answeredCount = ($activeDraft && is_array($activeDraft->user_answer))
+        ? count(array_filter($activeDraft->user_answer, fn($v) => $v !== null && $v !== ''))
+        : 0;
+
+    $totalCount = ($activeDraft && is_array($activeDraft->question_snapshot) && count($activeDraft->question_snapshot) > 0)
+        ? count($activeDraft->question_snapshot)
+        : (isset($assessment->questions) ? $assessment->questions->count() : ($assessment->questions_count ?? 10));
 @endphp
 
 <tr class="assessment-row"
@@ -114,11 +144,16 @@
     data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
     data-assessment-grade="{{ $assessment->passing_grade ?? '-' }}"
     data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
+    data-assessment-duration="{{ $assessment->duration ?? ($assessment->time_limit_minutes ?? 60) }}"
     data-assessment-from-date="{{ $fromDateDisplay }}"
     data-assessment-to-date="{{ $toDateDisplay }}"
     data-assessment-user-attempts="{{ $userAttempts }}"
     data-assessment-max-attempts="{{ $maxAttempts }}"
     data-assessment-score="{{ $finalResult->score ?? '' }}"
+    data-assessment-has-snapshot="{{ $hasSnapshot ? 'true' : 'false' }}"
+    data-assessment-answered-count="{{ $answeredCount }}"
+    data-assessment-total-count="{{ $totalCount }}"
+    data-assessment-action-type="{{ $hasSnapshot ? 'continue' : ($isCompleted && !$isPassed && (string)($assessment->type ?? '') !== 'global' ? 'remedial' : 'start') }}"
     data-assessment-availability="{{ $availability }}">
     <td class="text-center text-muted align-middle">{{ $index }}</td>
 
@@ -161,15 +196,21 @@
     </td>
 
     <td class="text-start align-middle small lh-sm" data-order="{{ $assessment->fromdate ? strtotime($assessment->fromdate) : 0 }}">
-        @if (($assessment->timer ?? 'n') == 'y')
+        @if ($hasAccessPeriod && !empty($assessment->fromdate) && !empty($assessment->todate))
             <div>
-                <span class="text-muted fw-medium">From:</span> {{ $assessment->fromdate ? date('d/m/y H:i', strtotime($assessment->fromdate)) : '-' }}
+                <span class="text-muted fw-medium">From:</span> {{ date('d/m/y H:i', strtotime($assessment->fromdate)) }}
             </div>
             <div>
-                <span class="text-muted fw-medium">To:</span> {{ $assessment->todate ? date('d/m/y H:i', strtotime($assessment->todate)) : '-' }}
+                <span class="text-muted fw-medium">To:</span> {{ date('d/m/y H:i', strtotime($assessment->todate)) }}
             </div>
-        @else
-            -
+        @endif
+
+        @if ($hasTimeLimit)
+            <div class="{{ $hasAccessPeriod ? 'mt-1' : '' }}">
+                <span class="badge bg-blue-lt text-blue"><i class="ti ti-clock me-1"></i>{{ $assessment->time_limit_minutes }} mins</span>
+            </div>
+        @elseif (!$hasAccessPeriod)
+            <span class="text-muted">No Deadline</span>
         @endif
     </td>
 
@@ -178,12 +219,6 @@
             :type="$assessment->type"
             :label="$typeLabel"
         />
-    </td>
-
-    <td class="text-center align-middle">
-        <div class="d-flex justify-content-center align-items-center h-100">
-            {{ $finalResult->batch ?? '-' }}
-        </div>
     </td>
 
     <td class="text-center align-middle score-column">
@@ -201,6 +236,9 @@
                     <x-learning.assessment.assessment-score-popover
                         :latest-scores="$latestScores"
                         :total-history-count="$totalHistoryCount"
+                        :assessment-type="$assessment->type"
+                        :assessment-batch="$finalResult->batch ?? ($assessment->batch ?? null)"
+                        :passing-grade="$assessment->passing_grade"
                     />
                 </div>
             </div>
@@ -222,6 +260,10 @@
             :is-completed="$isCompleted"
             :is-passed="$isPassed"
             :is-expired="$isExpired"
+            :has-snapshot="$hasSnapshot"
+            :answered-count="$answeredCount"
+            :total-count="$totalCount"
+            :duration="$assessment->duration ?? ($assessment->time_limit_minutes ?? 60)"
             :user-attempts="$userAttempts"
             :max-attempts="$maxAttempts"
             :total-remedials="$totalRemedials"

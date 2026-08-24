@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Http;
 
 class AssesmentController extends Controller
 {
-  public function index(Request $request)
+    public function index(Request $request)
     {
         $entries = $request->input('entries', 15);
 
@@ -21,26 +21,34 @@ class AssesmentController extends Controller
             ? (int) $entries
             : 15;
 
+        // Distinct years from assessments created_at
+        $years = Assesment::selectRaw('YEAR(created_at) as year')
+            ->whereNotNull('created_at')
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year');
+
+        // Months 01 - 12
+        $months = [
+            '01' => 'January',
+            '02' => 'February',
+            '03' => 'March',
+            '04' => 'April',
+            '05' => 'May',
+            '06' => 'June',
+            '07' => 'July',
+            '08' => 'August',
+            '09' => 'September',
+            '10' => 'October',
+            '11' => 'November',
+            '12' => 'December',
+        ];
+
         $types = Assesment::select('type')
             ->whereNotNull('type')
             ->distinct()
             ->orderBy('type')
             ->pluck('type');
-
-        $questionFilters = [
-            '1-10'   => '1 - 10 Questions',
-            '11-20'  => '11 - 20 Questions',
-            '21-30'  => '21 - 30 Questions',
-            '31-50'  => '31 - 50 Questions',
-            '51-100' => '51 - 100 Questions',
-            '100+'   => '100+ Questions',
-        ];
-
-        $timers = Assesment::select('timer')
-            ->whereNotNull('timer')
-            ->distinct()
-            ->orderBy('timer')
-            ->pluck('timer');
 
         $statuses = Assesment::select('status')
             ->whereNotNull('status')
@@ -48,17 +56,57 @@ class AssesmentController extends Controller
             ->orderBy('status')
             ->pluck('status');
 
+        $questionUsedFilters = [
+            '1-10'   => '1 – 10',
+            '11-20'  => '11 – 20',
+            '21-30'  => '21 – 30',
+            '31-50'  => '31 – 50',
+            '51-100' => '51 – 100',
+            '100+'   => '> 100',
+        ];
+
+        $questionBankFilters = [
+            '1-10'   => '1 – 10',
+            '11-20'  => '11 – 20',
+            '21-30'  => '21 – 30',
+            '31-50'  => '31 – 50',
+            '51-100' => '51 – 100',
+            '100+'   => '> 100',
+        ];
+
+        $durationFilters = [
+            'lt10'  => '< 10 Minutes',
+            '10-30' => '10 – 30 Minutes',
+            '30-60' => '30 – 60 Minutes',
+            'gt60'  => '> 1 Hour',
+            'none'  => 'No Duration',
+        ];
+
+        $sortOptions = [
+            'newest'     => 'Newest',
+            'oldest'     => 'Oldest',
+            'title_asc'  => 'Assessment Title A–Z',
+            'title_desc' => 'Assessment Title Z–A',
+        ];
+
         $query = Assesment::with([
-            'assessment_question_banks',
+            'assessment_question_banks.question_bank' => function ($q) {
+                $q->withCount('questions');
+            },
             'questions',
         ]);
 
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
+        // Quick Filters
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
         }
 
-        if ($request->filled('timer')) {
-            $query->where('timer', $request->timer);
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
         }
 
         if ($request->filled('status')) {
@@ -73,47 +121,107 @@ class AssesmentController extends Controller
             });
         }
 
-        if ($request->filled('questions')) {
-            $query->whereHas('assessment_question_banks', function ($q) use ($request) {
-                switch ($request->questions) {
-                    case '1-10':
-                        $q->whereBetween('questions_amount', [1, 10]);
-                        break;
+        // More Filters: Total Question Used
+        $questionUsed = $request->input('question_used', $request->input('questions'));
+        if (!empty($questionUsed)) {
+            $usedSubquery = "(CASE 
+                WHEN (SELECT COUNT(*) FROM assesment_question_banks WHERE assesment_question_banks.assesment_id = assesments.id) > 0 
+                THEN (SELECT COALESCE(SUM(questions_amount), 0) FROM assesment_question_banks WHERE assesment_question_banks.assesment_id = assesments.id)
+                ELSE (SELECT COUNT(*) FROM assesment_questions WHERE assesment_questions.assesment_id = assesments.id)
+            END)";
 
-                    case '11-20':
-                        $q->whereBetween('questions_amount', [11, 20]);
-                        break;
+            if ($questionUsed === '100+' || $questionUsed === 'gt100') {
+                $query->whereRaw("$usedSubquery > 100");
+            } elseif (str_contains($questionUsed, '-')) {
+                [$min, $max] = explode('-', $questionUsed);
+                $query->whereRaw("$usedSubquery BETWEEN ? AND ?", [(int) $min, (int) $max]);
+            }
+        }
 
-                    case '21-30':
-                        $q->whereBetween('questions_amount', [21, 30]);
-                        break;
+        // More Filters: Total Question Bank (Pool of questions in Question Banks attached to assessment)
+        if ($request->filled('question_bank')) {
+            $qbPoolSubquery = "(SELECT COALESCE(SUM(qb_pool.cnt), 0) FROM assesment_question_banks aqb 
+                JOIN (SELECT question_bank_id, COUNT(*) as cnt FROM questions GROUP BY question_bank_id) qb_pool 
+                ON qb_pool.question_bank_id = aqb.question_bank_id 
+                WHERE aqb.assesment_id = assesments.id)";
 
-                    case '31-50':
-                        $q->whereBetween('questions_amount', [31, 50]);
-                        break;
+            $qbVal = $request->question_bank;
+            if ($qbVal === '100+' || $qbVal === 'gt100') {
+                $query->whereRaw("$qbPoolSubquery > 100");
+            } elseif (str_contains($qbVal, '-')) {
+                [$min, $max] = explode('-', $qbVal);
+                $query->whereRaw("$qbPoolSubquery BETWEEN ? AND ?", [(int) $min, (int) $max]);
+            }
+        }
 
-                    case '51-100':
-                        $q->whereBetween('questions_amount', [51, 100]);
-                        break;
+        // More Filters: Period
+        $periodFrom = $request->input('period_from', $request->input('schedule_from'));
+        if (!empty($periodFrom)) {
+            $query->whereDate('fromdate', '>=', $periodFrom);
+        }
 
-                    case '100+':
-                        $q->where('questions_amount', '>', 100);
-                        break;
-                }
-            });
+        $periodTo = $request->input('period_to', $request->input('schedule_to'));
+        if (!empty($periodTo)) {
+            $query->whereDate('todate', '<=', $periodTo);
+        }
+
+        // More Filters: Duration
+        if ($request->filled('duration') && $request->duration !== 'all') {
+            switch ($request->duration) {
+                case 'lt10':
+                    $query->where('timer', 'y')->whereNotNull('time_limit_minutes')->where('time_limit_minutes', '<', 10)->where('time_limit_minutes', '>', 0);
+                    break;
+                case '10-30':
+                    $query->where('timer', 'y')->whereBetween('time_limit_minutes', [10, 30]);
+                    break;
+                case '30-60':
+                    $query->where('timer', 'y')->whereBetween('time_limit_minutes', [30, 60]);
+                    break;
+                case 'gt60':
+                    $query->where('timer', 'y')->where('time_limit_minutes', '>', 60);
+                    break;
+                case 'none':
+                    $query->where(function ($sq) {
+                        $sq->where('timer', '!=', 'y')
+                            ->orWhereNull('timer')
+                            ->orWhereNull('time_limit_minutes')
+                            ->orWhere('time_limit_minutes', '<=', 0);
+                    });
+                    break;
+            }
+        }
+
+        // Sort By
+        switch ($request->input('sort')) {
+            case 'oldest':
+                $query->oldest('id');
+                break;
+            case 'title_asc':
+                $query->orderBy('title', 'asc');
+                break;
+            case 'title_desc':
+                $query->orderBy('title', 'desc');
+                break;
+            case 'newest':
+            default:
+                $query->latest('id');
+                break;
         }
 
         $assesment = $query
-            ->latest()
             ->paginate($entries)
             ->withQueryString();
 
         return view('main.assesment.index', compact(
             'assesment',
+            'years',
+            'months',
             'types',
-            'timers',
             'statuses',
-            'questionFilters'
+            'questionUsedFilters',
+            'questionBankFilters',
+            'durationFilters',
+            'sortOptions'
         ));
     }
 
@@ -126,28 +234,47 @@ class AssesmentController extends Controller
 
     public function store(Request $request)
     {
+        $isGlobal        = $request->input('type') === 'global';
+        $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
+        $hasTimeLimit    = !$isGlobal && in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
+
         $request->validate([
-            'title'           => 'required',
-            'unique_code'     => 'nullable|max:8|alpha_dash|unique:assesments,unique_code',
-            'type'            => 'required',
-            'timer'           => 'required',
-            'fromdate'        => 'required_if:timer,y',
-            'todate'          => 'required_if:timer,y',
-            'passing_grade'   => 'required',
-            'total_remedials' => 'required',
+            'title'              => 'required',
+            'unique_code'        => 'nullable|max:8|alpha_dash|unique:assesments,unique_code',
+            'type'               => 'required',
+            'fromdate'           => $hasAccessPeriod ? 'required' : 'nullable',
+            'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
+            'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
+            'passing_grade'      => 'required',
+            'total_remedials'    => $isGlobal ? 'nullable' : 'required',
         ]);
 
         $assesment = new Assesment();
-        $assesment->type            = $request->input('type');
-        $assesment->content_id      = $request->input('content_id');
-        $assesment->trainingplan_id = $request->input('trainingplan_id');
-        $assesment->title           = $request->input('title');
-        $assesment->unique_code     = $request->input('unique_code');
-        $assesment->passing_grade   = $request->input('passing_grade');
-        $assesment->timer           = $request->input('timer');
-        $assesment->fromdate        = $request->input('fromdate');
-        $assesment->todate          = $request->input('todate');
-        $assesment->total_remedials = $request->input('total_remedials');
+        $assesment->type               = $request->input('type');
+        $assesment->content_id         = $request->input('type') === 'content' ? $request->input('content_id') : null;
+        $assesment->trainingplan_id    = $request->input('type') === 'trainingplan' ? $request->input('trainingplan_id') : null;
+        $assesment->title              = $request->input('title');
+        $assesment->unique_code        = $request->input('unique_code');
+        $assesment->passing_grade      = $request->input('passing_grade');
+
+        $assesment->has_access_period  = $hasAccessPeriod;
+        $assesment->fromdate           = $hasAccessPeriod ? $request->input('fromdate') : null;
+        $assesment->todate             = $hasAccessPeriod ? $request->input('todate') : null;
+
+        $assesment->timer              = $hasTimeLimit ? 'y' : 'n';
+        $assesment->time_limit_minutes = $hasTimeLimit ? $request->input('time_limit_minutes') : null;
+
+        if ($hasAccessPeriod && $hasTimeLimit) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasAccessPeriod) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasTimeLimit) {
+            $assesment->deadline_type = 'time_limit';
+        } else {
+            $assesment->deadline_type = 'none';
+        }
+
+        $assesment->total_remedials = $isGlobal ? 0 : ($request->input('total_remedials') ?? 0);
         $assesment->save();
 
         return redirect()->route('assesment.edit', $assesment->slug)->with('success','Assesment created successfully.');
@@ -168,27 +295,46 @@ class AssesmentController extends Controller
 
     public function update(Request $request, Assesment $assesment)
     {
+        $isGlobal        = $request->input('type') === 'global';
+        $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
+        $hasTimeLimit    = !$isGlobal && in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
+
         $request->validate([
-            'title'           => 'required',
-            'unique_code'     => 'nullable|max:8|alpha_dash|unique:assesments,unique_code,' . $assesment->id,
-            'type'            => 'required',
-            'timer'           => 'required',
-            'fromdate'        => 'required_if:timer,y',
-            'todate'          => 'required_if:timer,y',
-            'passing_grade'   => 'required',
-            'total_remedials' => 'required',
+            'title'              => 'required',
+            'unique_code'        => 'nullable|max:8|alpha_dash|unique:assesments,unique_code,' . $assesment->id,
+            'type'               => 'required',
+            'fromdate'           => $hasAccessPeriod ? 'required' : 'nullable',
+            'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
+            'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
+            'passing_grade'      => 'required',
+            'total_remedials'    => $isGlobal ? 'nullable' : 'required',
         ]);
 
-        $assesment->type            = $request->input('type');
-        $assesment->content_id      = $request->input('content_id');
-        $assesment->trainingplan_id = $request->input('trainingplan_id');
-        $assesment->title           = $request->input('title');
-        $assesment->unique_code     = $request->input('unique_code');
-        $assesment->passing_grade   = $request->input('passing_grade');
-        $assesment->timer           = $request->input('timer');
-        $assesment->fromdate        = $request->input('fromdate');
-        $assesment->todate          = $request->input('todate');
-        $assesment->total_remedials = $request->input('total_remedials');
+        $assesment->type               = $request->input('type');
+        $assesment->content_id         = $request->input('type') === 'content' ? $request->input('content_id') : null;
+        $assesment->trainingplan_id    = $request->input('type') === 'trainingplan' ? $request->input('trainingplan_id') : null;
+        $assesment->title              = $request->input('title');
+        $assesment->unique_code        = $request->input('unique_code');
+        $assesment->passing_grade      = $request->input('passing_grade');
+
+        $assesment->has_access_period  = $hasAccessPeriod;
+        $assesment->fromdate           = $hasAccessPeriod ? $request->input('fromdate') : null;
+        $assesment->todate             = $hasAccessPeriod ? $request->input('todate') : null;
+
+        $assesment->timer              = $hasTimeLimit ? 'y' : 'n';
+        $assesment->time_limit_minutes = $hasTimeLimit ? $request->input('time_limit_minutes') : null;
+
+        if ($hasAccessPeriod && $hasTimeLimit) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasAccessPeriod) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasTimeLimit) {
+            $assesment->deadline_type = 'time_limit';
+        } else {
+            $assesment->deadline_type = 'none';
+        }
+
+        $assesment->total_remedials = $isGlobal ? 0 : ($request->input('total_remedials') ?? 0);
         $assesment->save();
 
         return to_route('assesment.index')->with('success','Assesment updated successfully');
@@ -216,20 +362,35 @@ class AssesmentController extends Controller
 
     public function updatelink(Request $request, Assesment $assesment)
     {
+        $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
+        $hasTimeLimit    = in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
+
         $request->validate([
-            //'slug' => 'required|unique:assesments,slug',
-            'slug' => 'required',
-            'batch' => 'required',
-            'timer' => 'required',
-            'fromdate' => 'required_if:timer,y',
-            'todate' => 'required_if:timer,y',
+            'slug'               => 'required',
+            'batch'              => 'required',
+            'fromdate'           => $hasAccessPeriod ? 'required' : 'nullable',
+            'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
+            'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
         ]);
 
+        $assesment->batch              = $request->input('batch');
+        $assesment->has_access_period  = $hasAccessPeriod;
+        $assesment->fromdate           = $hasAccessPeriod ? $request->input('fromdate') : null;
+        $assesment->todate             = $hasAccessPeriod ? $request->input('todate') : null;
 
-        $assesment->timer = $request->input('timer');
-        $assesment->fromdate = $request->input('fromdate');
-        $assesment->todate = $request->input('todate');
-        $assesment->batch = $request->input('batch');
+        $assesment->timer              = $hasTimeLimit ? 'y' : 'n';
+        $assesment->time_limit_minutes = $hasTimeLimit ? $request->input('time_limit_minutes') : null;
+
+        if ($hasAccessPeriod && $hasTimeLimit) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasAccessPeriod) {
+            $assesment->deadline_type = 'period';
+        } elseif ($hasTimeLimit) {
+            $assesment->deadline_type = 'time_limit';
+        } else {
+            $assesment->deadline_type = 'none';
+        }
+
         $assesment->save();
         $assesment->slug = $request->input('slug');
         $assesment->update();

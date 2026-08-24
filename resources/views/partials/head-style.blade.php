@@ -667,6 +667,26 @@
         color: #ffffff !important;
     }
 
+    @media (max-width: 576px) {
+        /* Mengunci lebar modal agar memiliki jarak aman dari pinggir layar */
+        .modal-dialog {
+            margin: 12px auto !important;
+            max-width: calc(100% - 24px) !important;
+        }
+        /* Penyesuaian ukuran font dan padding modal agar pas di mobile */
+        .modal-content {
+            padding: 0.5rem !important;
+        }
+        .modal-body {
+            padding: 0.75rem 1rem !important;
+        }
+        .modal-title {
+            font-size: 1.05rem !important;
+        }
+        .assessment-title-wrapper h5 {
+            font-size: 1rem !important;
+        }
+    }
 </style>
 
 {{-- Select2 --}}

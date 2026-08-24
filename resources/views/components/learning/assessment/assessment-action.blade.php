@@ -3,6 +3,10 @@
     'isCompleted' => false,
     'isPassed' => false,
     'isExpired' => false,
+    'hasSnapshot' => false,
+    'answeredCount' => 0,
+    'totalCount' => 0,
+    'duration' => 60,
     'userAttempts' => 0,
     'maxAttempts' => 0,
     'totalRemedials' => 0,
@@ -31,6 +35,28 @@
             <i class="ti ti-clock-off"></i>
             <span>Expired</span>
         </button>
+    @elseif ($hasSnapshot && $url)
+        <a href="{{ $url }}"
+           class="btn btn-sm assessment-action-btn btn-assessment-continue btn-continue-test"
+           style="background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;"
+           data-assessment-id="{{ $assessmentId }}"
+           data-assessment-title="{{ $assessmentTitle }}"
+           data-assessment-type="{{ $assessmentType ?? '' }}"
+           data-assessment-type-label="{{ $typeLabel ?? '-' }}"
+           data-assessment-batch="{{ $assessmentBatch }}"
+           data-assessment-passing-grade="{{ $passingGrade ?? '-' }}"
+           data-assessment-duration="{{ $duration ?? 60 }}"
+           data-assessment-from-date="{{ $fromDate ?? '-' }}"
+           data-assessment-to-date="{{ $toDate ?? '-' }}"
+           data-assessment-user-attempts="{{ $userAttempts }}"
+           data-assessment-max-attempts="{{ $maxAttemptsDisplay }}"
+           data-assessment-total-remedials="{{ $totalRemedials }}"
+           data-assessment-answered-count="{{ $answeredCount }}"
+           data-assessment-total-count="{{ $totalCount }}"
+           data-assessment-action-type="continue">
+            <i class="ti ti-player-play"></i>
+            <span>Continue</span>
+        </a>
     @elseif ($isCompleted)
         @if ($userAttempts >= $maxAttemptsDisplay)
             <button type="button"
@@ -42,12 +68,14 @@
         @elseif ($url)
             <a href="{{ $url }}"
                class="btn btn-sm assessment-action-btn btn-assessment-remedial btn-remedial"
+               style="background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;"
                data-assessment-id="{{ $assessmentId }}"
                data-assessment-title="{{ $assessmentTitle }}"
                data-assessment-type="{{ $assessmentType ?? '' }}"
                data-assessment-type-label="{{ $typeLabel ?? '-' }}"
                data-assessment-batch="{{ $assessmentBatch }}"
                data-assessment-passing-grade="{{ $passingGrade ?? '-' }}"
+               data-assessment-duration="{{ $duration ?? 60 }}"
                data-assessment-from-date="{{ $fromDate ?? '-' }}"
                data-assessment-to-date="{{ $toDate ?? '-' }}"
                data-assessment-user-attempts="{{ $userAttempts }}"
@@ -66,12 +94,14 @@
     @elseif ($url)
         <a href="{{ $url }}"
            class="btn btn-sm assessment-action-btn btn-assessment-start btn-start-test"
+           style="background-color: #28be58 !important; border-color: #28be58 !important; color: #ffffff !important;"
            data-assessment-id="{{ $assessmentId }}"
            data-assessment-title="{{ $assessmentTitle }}"
            data-assessment-type="{{ $assessmentType ?? '' }}"
            data-assessment-type-label="{{ $typeLabel ?? '-' }}"
            data-assessment-batch="{{ $assessmentBatch }}"
            data-assessment-passing-grade="{{ $passingGrade ?? '-' }}"
+           data-assessment-duration="{{ $duration ?? 60 }}"
            data-assessment-from-date="{{ $fromDate ?? '-' }}"
            data-assessment-to-date="{{ $toDate ?? '-' }}"
            data-assessment-user-attempts="{{ $userAttempts }}"

@@ -9,6 +9,12 @@
             $score = (int) ($assesment_result->score ?? 0);
             $passingGrade = (int) ($assesment->passing_grade ?? 0);
             $isPassed = $score >= $passingGrade;
+            $assessmentType = match (strtolower((string) ($assesment->type ?? ''))) {
+                'content' => 'Content Assessment',
+                'trainingplan', 'playlist' => 'Playlist Assessment',
+                'global' => 'Global Assessment',
+                default => !empty($assesment->type) ? ucwords(str_replace('_', ' ', $assesment->type)) . ' Assessment' : 'Assessment',
+            };
         @endphp
 
         <div class="card border-0 shadow-sm rounded-4 mb-3">
@@ -68,11 +74,27 @@
                             </div>
 
                             <div class="col-sm-6">
-                                <div class="p-3 rounded-4 bg-purple-lt">
-                                    <div class="text-muted small">Batch</div>
-                                    <div class="fw-bold">{{ $assesment_result->batch ?? $assesment->batch ?? '-' }}</div>
+                                <div class="p-3 rounded-4 bg-cyan-lt">
+                                    <div class="text-muted small">Type</div>
+                                    <div class="fw-bold">{{ $assessmentType }}</div>
                                 </div>
                             </div>
+
+                            @if (($assesment->type ?? '') === 'global')
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded-4 bg-purple-lt">
+                                        <div class="text-muted small">Batch</div>
+                                        <div class="fw-bold">{{ $assesment_result->batch ?? $assesment->batch ?? '-' }}</div>
+                                    </div>
+                                </div>
+                            @elseif (!empty($currentAttempt) && !empty($maxAttempts))
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded-4 bg-indigo-lt">
+                                        <div class="text-muted small">Attempt</div>
+                                        <div class="fw-bold">{{ $currentAttempt }} / {{ $maxAttempts }}</div>
+                                    </div>
+                                </div>
+                            @endif
 
                             <div class="col-sm-6">
                                 <div class="p-3 rounded-4 bg-orange-lt">
@@ -81,7 +103,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-6">
+                            <div class="col-12">
                                 <div class="p-3 rounded-4 {{ $isPassed ? 'bg-green-lt' : 'bg-red-lt' }}">
                                     <div class="text-muted small">Status</div>
                                     <div class="fw-bold">
@@ -127,6 +149,8 @@
 
     </div>
 </div>
+
+@include('components.shared.assessment-result-modal')
 
 @endsection
 
@@ -186,4 +210,20 @@ document.addEventListener("DOMContentLoaded", function() {
     chart.render();
 });
 </script>
+
+@if (session('show_result_modal'))
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var modalEl = document.getElementById('assessmentResultModal');
+    if (modalEl) {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            bsModal.show();
+        } else if (typeof jQuery !== 'undefined' && jQuery(modalEl).modal) {
+            jQuery(modalEl).modal('show');
+        }
+    }
+});
+</script>
+@endif
 @endsection

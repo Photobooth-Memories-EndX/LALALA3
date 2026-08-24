@@ -154,7 +154,10 @@
                 </div>
 
                 @php
-                    $debuggerModuleKeys = ['playlist_debug_tools'];
+                    $debuggerModuleKeys = [
+                        'learning_hours_management',
+                        'playlist_debug_tools',
+                    ];
                     $standardModules = collect($modules)->except($debuggerModuleKeys);
                     $debuggerModules = collect($modules)->only($debuggerModuleKeys);
                 @endphp

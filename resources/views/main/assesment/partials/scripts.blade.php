@@ -1,3 +1,5 @@
+<script src="{{ asset('js/bootstrap-toggle.min.js') }}"></script>
+
 <script>
     $(document).ready(function () {
 
@@ -28,7 +30,11 @@
                     showToast('Status assessment berhasil diperbarui.', 'success');
                 },
                 error: function () {
-                    checkbox.prop('checked', !checkbox.prop('checked')).change();
+                    if (typeof checkbox.bootstrapToggle === 'function') {
+                        checkbox.bootstrapToggle(status === 'OK' ? 'off' : 'on', true);
+                    } else {
+                        checkbox.prop('checked', status !== 'OK');
+                    }
                     showToast('Gagal memperbarui status assessment.', 'danger');
                 }
             });
@@ -37,6 +43,57 @@
         $('#assessment-search').on('keyup', function () {
             if ($.fn.DataTable && $.fn.DataTable.isDataTable('#MyTable')) {
                 $('#MyTable').DataTable().search(this.value).draw();
+            }
+        });
+
+        function updateAdvancedFilterBadge() {
+            let questionUsed = $('#assessmentFilterQuestionUsed').val();
+            let questionBank = $('#assessmentFilterQuestionBank').val();
+            let periodFrom = $('#assessmentFilterPeriodFrom').val();
+            let periodTo = $('#assessmentFilterPeriodTo').val();
+            let duration = $('#assessmentFilterDuration').val();
+            let sort = $('#assessmentFilterSort').val();
+
+            let count = 0;
+            if (questionUsed && questionUsed !== '') count++;
+            if (questionBank && questionBank !== '') count++;
+            if (periodFrom) count++;
+            if (periodTo) count++;
+            if (duration && duration !== '' && duration !== 'all') count++;
+            if (sort && !['default', 'newest', ''].includes(sort)) count++;
+
+            let $badge = $('#assessmentMoreFiltersCount');
+            if (count > 0) {
+                $badge.text(count).removeClass('d-none');
+            } else {
+                $badge.text('').addClass('d-none');
+            }
+        }
+
+        $('#assessmentFilterQuestionUsed, #assessmentFilterQuestionBank, #assessmentFilterPeriodFrom, #assessmentFilterPeriodTo, #assessmentFilterDuration, #assessmentFilterSort').on('change input', function () {
+            updateAdvancedFilterBadge();
+        });
+
+        $('#assessmentResetMoreFilters').on('click', function (e) {
+            e.preventDefault();
+            $('#assessmentFilterQuestionUsed').val('');
+            $('#assessmentFilterQuestionBank').val('');
+            $('#assessmentFilterPeriodFrom').val('');
+            $('#assessmentFilterPeriodTo').val('');
+            $('#assessmentFilterDuration').val('');
+            $('#assessmentFilterSort').val('newest');
+            updateAdvancedFilterBadge();
+            $('#assessmentFilterForm').submit();
+        });
+
+        $('#assessmentQuickYear, #assessmentQuickMonth, #assessmentQuickType, #assessmentQuickStatus').on('change', function () {
+            $('#assessmentFilterForm').submit();
+        });
+
+        $('#assessmentSearchInput').on('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('#assessmentFilterForm').submit();
             }
         });
 

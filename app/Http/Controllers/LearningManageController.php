@@ -24,15 +24,6 @@ class LearningManageController extends Controller
             ? round(($finish / $totalLearning) * 100, 1)
             : 0;
 
-        // Total Learning Hour dari semua content yang ada di content_users
-        $learningHours = ContentUser::with('content')
-            ->get()
-            ->sum(function ($item) {
-                return DurationFormatter::toHours($item->content->duration ?? null);
-            });
-
-        $learningHours = round($learningHours, 1);
-
         $classification = DB::table('classification')
             ->leftJoin('content', function ($join) {
                 $join->on('content.classification_id', '=', 'classification.id')
@@ -77,12 +68,12 @@ class LearningManageController extends Controller
                                     AND content.duration != ''
                                 THEN CASE
                                     WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2
-                                    THEN TIME_TO_SEC(content.duration) / 3600
-                                    ELSE TIME_TO_SEC(CONCAT('00:', content.duration)) / 3600
+                                    THEN TIME_TO_SEC(content.duration)
+                                    ELSE TIME_TO_SEC(CONCAT('00:', content.duration))
                                 END
                                 ELSE 0 
                             END
-                        ), 0
+                        ) / 3600, 0
                     ) as learning_hours
                 "),
             ])
@@ -92,6 +83,8 @@ class LearningManageController extends Controller
             ->groupBy('classification.id')
             ->orderBy('classification_name')
             ->get();
+
+        $learningHours = round((float) $classification->sum('learning_hours'), 1);
 
         return view('main.learning.index', [
             'ongoing' => $ongoing,

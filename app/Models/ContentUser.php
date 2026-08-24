@@ -22,6 +22,7 @@ class ContentUser extends Model
         'total_pages',
         'current_time',
         'duration_seconds',
+        'learning_hours',
         'learning_status',
     ];
 
@@ -31,6 +32,7 @@ class ContentUser extends Model
         'total_pages' => 'integer',
         'current_time' => 'integer',
         'duration_seconds' => 'integer',
+        'learning_hours' => 'decimal:1',
     ];
 
     public function content()

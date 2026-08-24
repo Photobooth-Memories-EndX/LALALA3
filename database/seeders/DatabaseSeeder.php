@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PageSeeder::class);
         // $this->call(UserSeeder::class);
         $this->call(RoleAccessPermissionSeeder::class);
+        $this->call(LearningHoursPermissionSeeder::class);
         $data = [
             ['classification_name' => 'Leadership'],
             ['classification_name' => 'Basic mindset'],

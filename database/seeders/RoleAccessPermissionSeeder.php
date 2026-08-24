@@ -27,6 +27,7 @@ class RoleAccessPermissionSeeder extends Seeder
 
         // tambahan
         'monitoring',
+        'learning_hours_management',
     ];
         /*
         |--------------------------------------------------------------------------

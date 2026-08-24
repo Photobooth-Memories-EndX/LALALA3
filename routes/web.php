@@ -48,6 +48,7 @@ use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\ManageAccessPermissionController;
 use App\Http\Controllers\PlaylistDebugController;
 use App\Http\Controllers\PlaylistCertificateDebugController;
+use App\Http\Controllers\Manage\LearningHours\ContentUserLearningHourController;
 
 /*
 |--------------------------------------------------------------------------
@@ -379,6 +380,18 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('learning/category/{slug}', [LearningManageController::class, 'category'])->name('learning.manage.category');
         Route::get('learning/content/{slug}', [LearningManageController::class, 'content'])->name('learning.manage.content');
         Route::get('learning/download', [DownloadController::class, 'learningdownload'])->name('manage.learning.download');
+    });
+
+    Route::group(['middleware' => 'mpermission:learning_hours_management'], function () {
+        Route::prefix('learning-hours/content-user')->name('manage.learning-hours.content-user.')->group(function () {
+            Route::get('/', [ContentUserLearningHourController::class, 'index'])->name('index');
+            Route::get('/datatable', [ContentUserLearningHourController::class, 'datatable'])->name('datatable');
+            Route::get('/statistics', [ContentUserLearningHourController::class, 'statistics'])->name('statistics');
+            Route::post('/calculate-selected', [ContentUserLearningHourController::class, 'calculateSelected'])->name('calculate-selected');
+            Route::post('/recalculate-selected', [ContentUserLearningHourController::class, 'recalculateSelected'])->name('recalculate-selected');
+            Route::post('/batch/start', [ContentUserLearningHourController::class, 'startBatch'])->name('batch.start');
+            Route::post('/batch/process', [ContentUserLearningHourController::class, 'processBatch'])->name('batch.process');
+        });
     });
 });
 

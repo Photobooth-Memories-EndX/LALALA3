@@ -1,0 +1,254 @@
+<?php
+
+namespace App\Http\Controllers\Manage\LearningHours;
+
+use App\Http\Controllers\Controller;
+use App\Models\Classification;
+use App\Models\ContentUser;
+use App\Services\LearningHours\ContentUserLearningHourManagementService;
+use App\Support\DurationFormatter;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\Facades\DataTables;
+
+class ContentUserLearningHourController extends Controller
+{
+    public function __construct(
+        protected ContentUserLearningHourManagementService $service
+    ) {}
+
+    /**
+     * Display the main management page.
+     */
+    public function index()
+    {
+        $statistics = $this->service->getStatistics();
+        $classifications = Classification::orderBy('classification_name')->get();
+
+        return view('manage.learning-hours.content-user.index', [
+            'statistics' => $statistics,
+            'classifications' => $classifications,
+        ]);
+    }
+
+    /**
+     * AJAX endpoint for Yajra DataTables Server-Side Processing.
+     */
+    public function datatable(Request $request): JsonResponse
+    {
+        $query = $this->service->buildDatatableQuery($request);
+
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $this->applyGlobalSearch($query, $request);
+            })
+            ->addColumn('checkbox', function (ContentUser $row) {
+                return '<input type="checkbox" class="form-check-input record-checkbox" value="' . $row->id . '">';
+            })
+            ->addIndexColumn()
+            ->addColumn('employee', function (ContentUser $row) {
+                $name = $row->user->name ?? '-';
+                $idEmp = $row->user->id_emp ?? null;
+                $ssohash = $row->user->ssohash ?? null;
+
+                $empInfo = $idEmp ? '<div class="small text-muted font-monospace">' . e($idEmp) . '</div>' : '';
+
+                if ($ssohash) {
+                    return '<div class="d-flex flex-column">'
+                        . '<a href="' . route('user.manage.profile', $ssohash) . '" class="fw-semibold text-reset">'
+                        . e($name)
+                        . '</a>'
+                        . $empInfo
+                        . '</div>';
+                }
+
+                return '<div class="d-flex flex-column"><span class="fw-semibold">' . e($name) . '</span>' . $empInfo . '</div>';
+            })
+            ->addColumn('content_title', function (ContentUser $row) {
+                if (!$row->content) {
+                    return '<span class="text-muted fst-italic">Content unavailable</span>';
+                }
+
+                $type = $row->content->type ?? 'Content';
+                $icon = in_array($type, ['Video', 'YouTube'], true)
+                    ? '<i class="ti ti-video text-danger"></i>'
+                    : '<i class="ti ti-file-type-pdf text-warning"></i>';
+
+                return '<div class="d-flex align-items-center gap-2">'
+                    . '<span class="avatar avatar-xs bg-transparent">' . $icon . '</span>'
+                    . '<span class="text-truncate" style="max-width: 280px;" title="' . e($row->content->title) . '">'
+                    . e($row->content->title)
+                    . '</span>'
+                    . '</div>';
+            })
+            ->addColumn('content_type', function (ContentUser $row) {
+                $type = $row->content->type ?? '-';
+                $badgeClass = match ($type) {
+                    'Video' => 'bg-danger-lt text-danger',
+                    'YouTube' => 'bg-red-lt text-red',
+                    'Document' => 'bg-warning-lt text-warning',
+                    default => 'bg-secondary-lt text-secondary',
+                };
+
+                return '<span class="badge ' . $badgeClass . '">' . e($type) . '</span>';
+            })
+            ->addColumn('duration', function (ContentUser $row) {
+                return e(DurationFormatter::format($row->content->duration ?? null));
+            })
+            ->addColumn('learning_hours_badge', function (ContentUser $row) {
+                if ($row->learning_hours === null) {
+                    return '<span class="badge bg-yellow-lt text-yellow"><i class="ti ti-clock-pause me-1"></i> Not Calculated</span>';
+                }
+
+                return '<span class="badge bg-teal-lt text-teal fw-bold"><i class="ti ti-clock-check me-1"></i> '
+                    . e($this->service->formatHours((float) $row->learning_hours))
+                    . '</span>';
+            })
+            ->addColumn('status_badge', function (ContentUser $row) {
+                $status = $row->status ?? 'optional';
+                $color = $status === 'mandatory' ? 'red' : 'blue';
+
+                return '<span class="badge bg-' . $color . '-lt text-' . $color . '">' . e(ucfirst($status)) . '</span>';
+            })
+            ->addColumn('calculated_date', function (ContentUser $row) {
+                return optional($row->updated_at)->format('d M Y H:i') ?? '-';
+            })
+            ->addColumn('action', function (ContentUser $row) {
+                return '<button type="button" class="btn btn-sm btn-outline-primary btn-recalculate-single rounded-pill" data-id="' . $row->id . '">'
+                    . '<i class="ti ti-refresh me-1"></i> Recalculate'
+                    . '</button>';
+            })
+            ->rawColumns([
+                'checkbox',
+                'employee',
+                'content_title',
+                'content_type',
+                'learning_hours_badge',
+                'status_badge',
+                'action',
+            ])
+            ->make(true);
+    }
+
+    /**
+     * Calculate learning hours for selected records.
+     */
+    public function calculateSelected(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:content_users,id',
+        ]);
+
+        $ids = $request->input('ids', []);
+        $result = $this->service->calculateSelected($ids, force: false);
+        $statistics = $this->service->getStatistics();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully calculated {$result['updated']} records ({$result['skipped']} already up to date, {$result['failed']} failed).",
+            'result' => $result,
+            'statistics' => $statistics,
+        ]);
+    }
+
+    /**
+     * Recalculate learning hours for selected records.
+     */
+    public function recalculateSelected(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:content_users,id',
+        ]);
+
+        $ids = $request->input('ids', []);
+        $result = $this->service->calculateSelected($ids, force: true);
+        $statistics = $this->service->getStatistics();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully recalculated {$result['updated']} records ({$result['failed']} failed).",
+            'result' => $result,
+            'statistics' => $statistics,
+        ]);
+    }
+
+    /**
+     * Start a bulk calculation batch.
+     */
+    public function startBatch(Request $request): JsonResponse
+    {
+        $request->validate([
+            'type' => 'required|in:all_remaining,recalculate_all',
+        ]);
+
+        $type = $request->input('type', 'all_remaining');
+        $batch = $this->service->startBatch($type, Auth::id());
+
+        return response()->json([
+            'success' => true,
+            'batch_id' => $batch->id,
+            'total_records' => $batch->total_records,
+            'percentage' => $batch->percentage,
+            'status' => $batch->status,
+        ]);
+    }
+
+    /**
+     * Process one chunk of the calculation batch via AJAX.
+     */
+    public function processBatch(Request $request): JsonResponse
+    {
+        $request->validate([
+            'batch_id' => 'required|integer|exists:learning_hour_calculation_batches,id',
+        ]);
+
+        $batchId = (int) $request->input('batch_id');
+        $result = $this->service->processBatchStep($batchId, chunkSize: 2500);
+
+        if ($result['is_completed'] ?? false) {
+            $result['statistics'] = $this->service->getStatistics();
+        }
+
+        return response()->json($result);
+    }
+
+    /**
+     * Get live statistics.
+     */
+    public function statistics(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'statistics' => $this->service->getStatistics(),
+        ]);
+    }
+
+    /**
+     * Apply search on user and content relationships.
+     */
+    protected function applyGlobalSearch($query, Request $request): void
+    {
+        $search = trim((string) $request->input('search.value'));
+
+        if ($search === '') {
+            return;
+        }
+
+        $query->where(function ($q) use ($search) {
+            $q->where('content_users.status', 'like', '%' . $search . '%')
+                ->orWhere('content_users.learning_hours', 'like', '%' . $search . '%')
+                ->orWhereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('id_emp', 'like', '%' . $search . '%');
+                })
+                ->orWhereHas('content', function ($contentQuery) use ($search) {
+                    $contentQuery->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('type', 'like', '%' . $search . '%')
+                        ->orWhere('duration', 'like', '%' . $search . '%');
+                });
+        });
+    }
+}
