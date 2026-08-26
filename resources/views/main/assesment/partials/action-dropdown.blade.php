@@ -39,6 +39,7 @@
             <span>Duplicate Assessment</span>
         </button>
 
+
         <button
             type="button"
             class="dropdown-item btn-copy-assessment"
@@ -47,6 +48,15 @@
             <i class="fas fa-copy text-info"></i>
             <span>Copy Link Assessment </span>
         </button>
+
+        <a href="{{ route('assesment.result', $list->slug) }}"
+            class="dropdown-item">
+
+            <i class="fas fa-chart-line text-success"></i>
+            <span>Assessment Result</span>
+        </a>
+
+        <div class="dropdown-divider"></div>
 
         <a href="{{ route('assesment.newlink', $list->slug) }}"
             class="dropdown-item">
@@ -62,12 +72,6 @@
             <span>Question List</span>
         </a>
 
-        <a href="{{ route('assesment.result', $list->slug) }}"
-            class="dropdown-item">
-
-            <i class="fas fa-chart-line text-success"></i>
-            <span>View Result</span>
-        </a>
 
         <a href="{{ route('assesment.assign.users.index', $list->slug) }}"
             class="dropdown-item">

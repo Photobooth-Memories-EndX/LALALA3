@@ -377,6 +377,20 @@
         box-shadow: 0 10px 30px rgba(15, 23, 42, .15);
     }
 
+    .owl-dropdown-menu .dropdown-header {
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #8a8d8f;
+    }
+
+    .owl-dropdown-menu .dropdown-divider {
+        margin: 4px 0;
+        border-top: 1px solid rgba(0, 0, 0, .08);
+    }
+
     .owl-dropdown-menu .dropdown-item {
         display: flex;
         align-items: center;
@@ -726,6 +740,30 @@
         min-width: 115px;
     }
 
+    .assessment-filter-field-batch {
+        min-width: 110px;
+    }
+
+    .assessment-filter-field-result {
+        min-width: 115px;
+    }
+
+    .assessment-filter-field-team {
+        min-width: 120px;
+    }
+
+    .assessment-filter-field-department {
+        min-width: 130px;
+    }
+
+    .assessment-filter-field-score {
+        min-width: 120px;
+    }
+
+    .assessment-filter-field-date {
+        min-width: 135px;
+    }
+
     .assessment-filter-control {
         width: 100%;
         min-width: 0;
@@ -816,8 +854,59 @@
         box-shadow: 0 4px 12px rgba(5, 80, 125, .22);
     }
 
+    .assessment-filter-action-btn.btn-success,
+    .assessment-filter-action-btn.btn-success:hover,
+    .assessment-filter-action-btn.btn-success:focus,
+    .assessment-filter-action-btn.btn-success:active,
+    .assessment-filter-action-btn.btn-success:visited,
+    .assessment-filter-action-btn.btn-success:focus-visible,
+    #resultDownloadAction,
+    #resultDownloadAction:hover,
+    #resultDownloadAction:focus,
+    #resultDownloadAction:active,
+    #resultDownloadAction:visited,
+    #resultDownloadAction:focus-visible {
+        --tblr-btn-bg: #2fb344 !important;
+        --tblr-btn-border-color: #2fb344 !important;
+        --tblr-btn-hover-bg: #2fb344 !important;
+        --tblr-btn-hover-border-color: #2fb344 !important;
+        --tblr-btn-active-bg: #2fb344 !important;
+        --tblr-btn-active-border-color: #2fb344 !important;
+        --tblr-btn-color: #ffffff !important;
+        --tblr-btn-hover-color: #ffffff !important;
+        --tblr-btn-active-color: #ffffff !important;
+        --bs-btn-bg: #2fb344 !important;
+        --bs-btn-border-color: #2fb344 !important;
+        --bs-btn-hover-bg: #2fb344 !important;
+        --bs-btn-hover-border-color: #2fb344 !important;
+        --bs-btn-active-bg: #2fb344 !important;
+        --bs-btn-active-border-color: #2fb344 !important;
+        --bs-btn-color: #ffffff !important;
+        --bs-btn-hover-color: #ffffff !important;
+        --bs-btn-active-color: #ffffff !important;
+        background-color: #2fb344 !important;
+        background: #2fb344 !important;
+        border-color: #2fb344 !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
+    .assessment-filter-action-btn.btn-success > i,
+    .assessment-filter-action-btn.btn-success:hover > i,
+    .assessment-filter-action-btn.btn-success:focus > i,
+    .assessment-filter-action-btn.btn-success:active > i,
+    #resultDownloadAction > i,
+    #resultDownloadAction:hover > i,
+    #resultDownloadAction:focus > i,
+    #resultDownloadAction:active > i {
+        color: #ffffff !important;
+    }
+
     /* Responsive Filter Toolbar */
-    @media (max-width: 1199.98px) {
+    @media (max-width: 991.98px) {
         .assessment-filter-toolbar {
             flex-wrap: wrap;
             gap: 8px;
@@ -826,7 +915,13 @@
         .assessment-filter-field-year,
         .assessment-filter-field-month,
         .assessment-filter-field-type,
-        .assessment-filter-field-status {
+        .assessment-filter-field-status,
+        .assessment-filter-field-batch,
+        .assessment-filter-field-result,
+        .assessment-filter-field-team,
+        .assessment-filter-field-department,
+        .assessment-filter-field-score,
+        .assessment-filter-field-date {
             flex: 1 1 calc(25% - 8px);
             min-width: 110px;
         }
@@ -845,7 +940,13 @@
         .assessment-filter-field-year,
         .assessment-filter-field-month,
         .assessment-filter-field-type,
-        .assessment-filter-field-status {
+        .assessment-filter-field-status,
+        .assessment-filter-field-batch,
+        .assessment-filter-field-result,
+        .assessment-filter-field-team,
+        .assessment-filter-field-department,
+        .assessment-filter-field-score,
+        .assessment-filter-field-date {
             flex: 1 1 calc(50% - 8px);
             min-width: 120px;
         }
@@ -865,7 +966,13 @@
         .assessment-filter-field-year,
         .assessment-filter-field-month,
         .assessment-filter-field-type,
-        .assessment-filter-field-status {
+        .assessment-filter-field-status,
+        .assessment-filter-field-batch,
+        .assessment-filter-field-result,
+        .assessment-filter-field-team,
+        .assessment-filter-field-department,
+        .assessment-filter-field-score,
+        .assessment-filter-field-date {
             flex: 1 1 100%;
             min-width: 100%;
         }

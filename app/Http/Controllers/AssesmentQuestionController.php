@@ -7,6 +7,7 @@ use App\Models\Assesment;
 use Illuminate\Http\Request;
 use App\Models\AssesmentResult;
 use App\Models\AssesmentQuestion;
+use App\Models\User;
 use App\Services\AssessmentDuplicateService;
 use Illuminate\Support\Facades\Log;
 
@@ -91,25 +92,255 @@ class AssesmentQuestionController extends Controller
 
     public function result(Assesment $assesment, Request $request)
     {
-        $entries    = $request->show_entries ?? 25;
-        $search     = $request->search_user ?? "";
-        $query      = AssesmentResult::select('assesment_results.*', 'users.id_emp', 'users.name', 'users.team', 'users.department')
+        $entries = (int) ($request->show_entries ?? 25);
+        if ($entries <= 0) {
+            $entries = 25;
+        }
+
+        $search = $request->search_user ?? $request->search ?? "";
+        $team = $request->team;
+        $department = $request->department;
+        $year = $request->year;
+        $month = $request->month;
+
+        // Modal / Advanced Filters
+        $batch = $request->batch;
+        $result = $request->result;
+        $score = $request->score;
+        $minScore = $request->min_score;
+        $maxScore = $request->max_score;
+        $startDateFrom = $request->start_date_from;
+        $startDateTo = $request->start_date_to;
+        $finishDateFrom = $request->finish_date_from;
+        $finishDateTo = $request->finish_date_to;
+
+        $query = AssesmentResult::select('assesment_results.*', 'users.id_emp', 'users.name', 'users.team', 'users.department')
             ->join('users', 'assesment_results.user_id', '=', 'users.id')
             ->where('assesment_id', $assesment->id)
             ->whereFinal(1);
 
-        if ($search)
-            $query->where(function ($query) use ($search) {
-                $query->where('users.id_emp', 'LIKE', '%' . $search . '%')
-                    ->orWhere('users.name', 'LIKE', '%' . $search . '%')
-                    ->orWhere('users.team', 'LIKE', '%' . $search . '%')
-                    ->orWhere('users.department', 'LIKE', '%' . $search . '%');
+        // 1. Search User (name, id_emp, team, department)
+        if ($search !== null && trim($search) !== '') {
+            $searchTerm = trim($search);
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('users.id_emp', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('users.name', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('users.team', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('users.department', 'LIKE', '%' . $searchTerm . '%');
             });
+        }
 
-        $assesment_result   = $query->paginate($entries)->withQueryString();
+        // 2. Team Filter
+        if ($team !== null && trim($team) !== '') {
+            $query->where('users.team', trim($team));
+        }
 
-        return view('main.assesment.result', compact('assesment', 'entries', 'assesment_result', 'search'))
-            ->with('no', (request('page', 1) - 1) * $entries);
+        // 3. Department Filter
+        if ($department !== null && trim($department) !== '') {
+            $query->where('users.department', trim($department));
+        }
+
+        // 4. Year Filter (based on assesment_results.created_at)
+        if ($year !== null && trim($year) !== '') {
+            $query->whereYear('assesment_results.created_at', $year);
+        }
+
+        // 5. Month Filter (based on assesment_results.created_at)
+        if ($month !== null && trim($month) !== '') {
+            $query->whereMonth('assesment_results.created_at', $month);
+        }
+
+        // 6. Batch Filter (Modal)
+        if ($batch !== null && $batch !== '') {
+            $query->where('assesment_results.batch', $batch);
+        }
+
+        // 7. Result Filter (Pass / Failed) (Modal)
+        if ($result !== null && $result !== '') {
+            $resultLower = strtolower(trim($result));
+            if (in_array($resultLower, ['pass', 'passed', '1'])) {
+                $query->where('assesment_results.pass', 1);
+            } elseif (in_array($resultLower, ['failed', 'fail', '0'])) {
+                $query->where('assesment_results.pass', 0);
+            }
+        }
+
+        // 8. Score Filter (Presets & Min/Max) (Modal)
+        $passingGrade = (int) ($assesment->passing_grade ?? 0);
+
+        if ($minScore !== null && $minScore !== '') {
+            $query->where('assesment_results.score', '>=', (int) $minScore);
+        }
+
+        if ($maxScore !== null && $maxScore !== '') {
+            $query->where('assesment_results.score', '<=', (int) $maxScore);
+        }
+
+        if ($score !== null && trim($score) !== '') {
+            $scoreLower = strtolower(trim($score));
+            if ($scoreLower === 'passing') {
+                if ($passingGrade > 0) {
+                    $query->where('assesment_results.score', '>=', $passingGrade);
+                } else {
+                    $query->where('assesment_results.pass', 1);
+                }
+            } elseif (in_array($scoreLower, ['below_passing', 'below passing', 'failed'])) {
+                if ($passingGrade > 0) {
+                    $query->where('assesment_results.score', '<', $passingGrade);
+                } else {
+                    $query->where('assesment_results.pass', 0);
+                }
+            } elseif (str_contains($scoreLower, '-')) {
+                $parts = explode('-', $scoreLower);
+                if (count($parts) === 2 && is_numeric(trim($parts[0])) && is_numeric(trim($parts[1]))) {
+                    $query->whereBetween('assesment_results.score', [(int) trim($parts[0]), (int) trim($parts[1])]);
+                }
+            } elseif (is_numeric($scoreLower)) {
+                $query->where('assesment_results.score', (int) $scoreLower);
+            }
+        }
+
+        // 9. Start Date Filter (Modal: assesment_results.created_at)
+        if ($startDateFrom !== null && trim($startDateFrom) !== '') {
+            try {
+                $from = Carbon::parse($startDateFrom)->startOfDay();
+                $query->where('assesment_results.created_at', '>=', $from);
+            } catch (\Throwable $e) {
+                // Ignore invalid date format
+            }
+        }
+        if ($startDateTo !== null && trim($startDateTo) !== '') {
+            try {
+                $to = Carbon::parse($startDateTo)->endOfDay();
+                $query->where('assesment_results.created_at', '<=', $to);
+            } catch (\Throwable $e) {
+                // Ignore invalid date format
+            }
+        }
+
+        // 10. Finish Date Filter (Modal: assesment_results.updated_at)
+        if ($finishDateFrom !== null && trim($finishDateFrom) !== '') {
+            try {
+                $from = Carbon::parse($finishDateFrom)->startOfDay();
+                $query->where('assesment_results.updated_at', '>=', $from);
+            } catch (\Throwable $e) {
+                // Ignore invalid date format
+            }
+        }
+        if ($finishDateTo !== null && trim($finishDateTo) !== '') {
+            try {
+                $to = Carbon::parse($finishDateTo)->endOfDay();
+                $query->where('assesment_results.updated_at', '<=', $to);
+            } catch (\Throwable $e) {
+                // Ignore invalid date format
+            }
+        }
+
+        // Available Batches
+        $available_batches = AssesmentResult::where('assesment_id', $assesment->id)
+            ->whereFinal(1)
+            ->whereNotNull('batch')
+            ->distinct()
+            ->orderBy('batch')
+            ->pluck('batch')
+            ->map(fn($b) => (int) $b)
+            ->toArray();
+
+        if (empty($available_batches) && !empty($assesment->batch)) {
+            $available_batches = [(int) $assesment->batch];
+        } elseif (!empty($assesment->batch) && !in_array((int) $assesment->batch, $available_batches)) {
+            $available_batches[] = (int) $assesment->batch;
+            sort($available_batches);
+        }
+
+        // Available Teams
+        $available_teams = AssesmentResult::join('users', 'assesment_results.user_id', '=', 'users.id')
+            ->where('assesment_id', $assesment->id)
+            ->whereFinal(1)
+            ->whereNotNull('users.team')
+            ->whereRaw("TRIM(users.team) != ''")
+            ->selectRaw('TRIM(users.team) as team')
+            ->distinct()
+            ->orderBy('team')
+            ->pluck('team')
+            ->toArray();
+
+        if (empty($available_teams)) {
+            $available_teams = User::whereNotNull('team')
+                ->whereRaw("TRIM(team) != ''")
+                ->selectRaw('TRIM(team) as team')
+                ->distinct()
+                ->orderBy('team')
+                ->pluck('team')
+                ->toArray();
+        }
+
+        // Available Departments
+        $available_departments = AssesmentResult::join('users', 'assesment_results.user_id', '=', 'users.id')
+            ->where('assesment_id', $assesment->id)
+            ->whereFinal(1)
+            ->whereNotNull('users.department')
+            ->whereRaw("TRIM(users.department) != ''")
+            ->selectRaw('TRIM(users.department) as department')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department')
+            ->toArray();
+
+        if (empty($available_departments)) {
+            $available_departments = User::whereNotNull('department')
+                ->whereRaw("TRIM(department) != ''")
+                ->selectRaw('TRIM(department) as department')
+                ->distinct()
+                ->orderBy('department')
+                ->pluck('department')
+                ->toArray();
+        }
+
+        // Distinct Years from Results created_at
+        $years = AssesmentResult::where('assesment_id', $assesment->id)
+            ->whereFinal(1)
+            ->whereNotNull('created_at')
+            ->selectRaw('YEAR(created_at) as year')
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->map(fn($y) => (string) $y)
+            ->toArray();
+
+        if (empty($years)) {
+            $years = [(string) date('Y')];
+        }
+
+        // Months 01 - 12
+        $months = [
+            '01' => 'January',
+            '02' => 'February',
+            '03' => 'March',
+            '04' => 'April',
+            '05' => 'May',
+            '06' => 'June',
+            '07' => 'July',
+            '08' => 'August',
+            '09' => 'September',
+            '10' => 'October',
+            '11' => 'November',
+            '12' => 'December',
+        ];
+
+        $assesment_result = $query->paginate($entries)->withQueryString();
+
+        return view('main.assesment.result', compact(
+            'assesment',
+            'entries',
+            'assesment_result',
+            'search',
+            'available_batches',
+            'available_teams',
+            'available_departments',
+            'years',
+            'months'
+        ))->with('no', (request('page', 1) - 1) * $entries);
     }
 
     public function clone(Assesment $assesment, AssessmentDuplicateService $duplicateService)

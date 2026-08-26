@@ -23,8 +23,8 @@
                     <div class="col">
                         <div class="text-muted small mb-1">Assessment Result</div>
                         <h2 class="mb-1">{{ $assesment->title ?? '-' }}</h2>
-                        <div class="text-muted">
-                            Berikut adalah hasil assessment yang sudah Anda submit.
+                        <div class="text-muted">      
+                        The following are the assessment results you have submitted.
                         </div>
                     </div>
 
