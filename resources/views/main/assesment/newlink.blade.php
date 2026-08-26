@@ -1,44 +1,17 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
-    <div class="assessment-page-header page-header d-print-none mb-3">
-        <div class="container-xl">
-            <div class="row justify-content-center">
-                <div class="col-lg-10 col-xl-9">
-                    <div class="row align-items-center g-2">
-                        <div class="col">
-                            <div class="page-pretitle text-muted">
-                                Learning Management System
-                            </div>
-                            <h2 class="page-title fw-bold mb-0">
-                                <i class="fas fa-link me-2 text-primary"></i>
-                                Manage Assessment
-                            </h2>
-                        </div>
-                        <div class="col-auto">
-                            <ol class="breadcrumb breadcrumb-arrows mb-0">
-                                <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                                <li class="breadcrumb-item"><a href="{{ route('assesment.index') }}">Assessment</a></li>
-                                <li class="breadcrumb-item active">New Link</li>
-                            </ol>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('main.assesment.partials.subpage-header', [
+        'breadcrumb'     => ['New Link'],
+        'title'          => 'Generate New Link',
+        'titleId'        => 'dynamic_page_title',
+        'containerClass' => 'col-lg-10 col-xl-9',
+    ])
 
     <div class="page-body">
         <div class="container-xl">
             <div class="row justify-content-center">
                 <div class="col-lg-10 col-xl-9">
-
-                    {{-- Dynamic Assessment Title Area displayed above Card --}}
-                    <div class="mb-3">
-                        <h2 class="page-title fw-bold text-primary" id="dynamic_page_title">
-                            {{ $assesment->title }}
-                        </h2>
-                    </div>
 
                     <x-form class="card shadow-sm border-0 mb-4" action="{{ route('assesment.updatelink', $assesment->slug) }}" method="put">
                         <div class="card-header bg-primary-lt">

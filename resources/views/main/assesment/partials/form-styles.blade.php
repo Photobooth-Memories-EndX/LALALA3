@@ -5,24 +5,65 @@
 <style>
     /* Scoped Assessment Header Styling */
     .assessment-page-header {
-        margin-bottom: 0.75rem !important;
+        margin-bottom: 1.25rem !important;
         padding-top: 0.25rem;
     }
 
-    .assessment-page-header .page-pretitle {
-        font-size: 0.75rem;
-        font-weight: 500;
-        margin-bottom: 0.25rem;
+    .assessment-back-link,
+    .assessment-page-header .assessment-back a {
+        display: inline-flex;
+        align-items: center;
+        color: var(--tblr-primary, #206bc4) !important;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none !important;
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        transition: color 0.15s ease-in-out;
+        cursor: pointer;
+    }
+
+    .assessment-back-link:hover,
+    .assessment-page-header .assessment-back a:hover {
+        color: var(--tblr-primary-dark, #185294) !important;
+        text-decoration: underline !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .assessment-back-link i,
+    .assessment-page-header .assessment-back a i {
+        font-size: 1rem;
+        transition: transform 0.15s ease-in-out;
+    }
+
+    .assessment-back-link:hover i,
+    .assessment-page-header .assessment-back a:hover i {
+        transform: translateX(-2px);
     }
 
     .assessment-page-header .page-title {
-        font-size: 1.25rem;
+        font-size: 1.35rem;
+        font-weight: 700;
         line-height: 1.3;
+        color: #1f2937;
     }
 
     .assessment-page-header .breadcrumb {
         font-size: 0.85rem;
         margin-bottom: 0;
+    }
+
+    [data-bs-theme="dark"] .assessment-page-header .page-title,
+    [data-theme="dark"] .assessment-page-header .page-title,
+    body.dark-mode .assessment-page-header .page-title,
+    body.theme-dark .assessment-page-header .page-title {
+        color: #f8fafc !important;
     }
 
     .owl-section-number {

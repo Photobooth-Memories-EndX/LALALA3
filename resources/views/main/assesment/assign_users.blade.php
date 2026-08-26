@@ -1,36 +1,10 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
-    <div class="page-header d-print-none mb-4">
-        <div class="container-xl">
-            <div class="row align-items-center">
-                <div class="col">
-                    <div class="page-pretitle text-muted">
-                        Learning Management System
-                    </div>
-
-                    <h2 class="page-title fw-bold">
-                        <i class="fas fa-user-plus me-2 text-primary"></i>
-                        Manage Assessment
-                    </h2>
-                </div>
-
-                <div class="col-auto">
-                    <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
-                        <li class="breadcrumb-item">
-                            <a href="#">Manage</a>
-                        </li>
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('assesment.index') }}">Assessment</a>
-                        </li>
-                        <li class="breadcrumb-item active" aria-current="page">
-                            Assign Users
-                        </li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('main.assesment.partials.subpage-header', [
+        'breadcrumb' => ['Assign Users'],
+        'title'      => 'Assign Users',
+    ])
 
     <div class="page-body">
         <div class="container-xl">
