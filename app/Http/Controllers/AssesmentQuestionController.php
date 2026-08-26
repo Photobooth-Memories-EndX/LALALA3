@@ -7,6 +7,8 @@ use App\Models\Assesment;
 use Illuminate\Http\Request;
 use App\Models\AssesmentResult;
 use App\Models\AssesmentQuestion;
+use App\Services\AssessmentDuplicateService;
+use Illuminate\Support\Facades\Log;
 
 class AssesmentQuestionController extends Controller
 {
@@ -110,44 +112,21 @@ class AssesmentQuestionController extends Controller
             ->with('no', (request('page', 1) - 1) * $entries);
     }
 
-    public function clone(Assesment $assesment)
+    public function clone(Assesment $assesment, AssessmentDuplicateService $duplicateService)
     {
-        // Clone assesment
-        $newAssesment = $assesment->replicate();
-        $newAssesment->created_at  = Carbon::now();
-        $newAssesment->updated_at  = Carbon::now();
-        $newAssesment->unique_code = null;
-        $newAssesment->push();
-        
-        // Clone Question Banks
-        foreach ($assesment->assessment_question_banks as $questionBank) {
-            $newQuestionBank = $questionBank->replicate();
-            $newQuestionBank->assesment_id = $newAssesment->id;
-            $newQuestionBank->created_at   = Carbon::now();
-            $newQuestionBank->updated_at   = Carbon::now();
-            $newQuestionBank->push();
+        try {
+            $duplicateService->duplicate($assesment);
 
-            // Clone Assessment Questions
-            foreach ($questionBank->assessment_questions->where('assesment_id', $assesment->id) as $question) {
-                $newQuestion = AssesmentQuestion::create(
-                    $question->toArray()
-                );
-                $newQuestion->assesment_id = $newQuestionBank->assesment_id;
-                $newQuestion->question_bank_id = $newQuestionBank->question_bank_id;
-                $newQuestion->save();
-            }
+            return redirect()->route('assesment.index')
+                ->with('success', 'Assessment duplicated successfully.');
+        } catch (\Throwable $e) {
+            Log::error('Failed to duplicate assessment: ' . $e->getMessage(), [
+                'assessment_id' => $assesment->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-            // Set Random used question
-            $randomizeQuestions = AssesmentQuestion::where('assesment_id', $newQuestionBank->assesment_id)
-                ->where('question_bank_id', $newQuestionBank->question_bank_id)
-                ->inRandomOrder()->limit($newQuestionBank->questions_amount)->get();
-
-            foreach ($randomizeQuestions as $randomQuestion) {
-                $randomQuestion->is_used = true;
-                $randomQuestion->save();
-            }
+            return redirect()->route('assesment.index')
+                ->with('danger', 'Failed to duplicate assessment. Please try again.');
         }
-
-        return to_route('assesment.index', $assesment->slug)->with('success','Assesment question clone successfully.');
     }
 }

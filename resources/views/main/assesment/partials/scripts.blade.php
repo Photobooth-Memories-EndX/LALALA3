@@ -185,6 +185,71 @@
             });
         });
 
+        // Setup duplicate assessment modal data
+        $(document).on('click', '.btn-duplicate-assessment', function () {
+            let url = $(this).data('url');
+            let title = $(this).data('title');
+
+            $('#formDuplicateAssessment').attr('action', url);
+            $('#duplicateAssessmentTitle').text(title || '-');
+
+            let $submitBtn = $('#btnSubmitDuplicate');
+            let $cancelBtn = $('#btnCancelDuplicate');
+
+            $submitBtn.data('submitting', false).prop('disabled', false).removeClass('disabled');
+            $cancelBtn.prop('disabled', false).removeClass('disabled');
+            $submitBtn.find('.btn-text').text('Duplicate Assessment');
+            $submitBtn.find('i').attr('class', 'fas fa-copy mr-1 me-1');
+        });
+
+        $('#modalDuplicateAssessment').on('show.bs.modal', function (event) {
+            let button = $(event.relatedTarget);
+            if (button && button.length && button.data('url')) {
+                let url = button.data('url');
+                let title = button.data('title');
+                $('#formDuplicateAssessment').attr('action', url);
+                $('#duplicateAssessmentTitle').text(title || '-');
+            }
+
+            let $submitBtn = $('#btnSubmitDuplicate');
+            let $cancelBtn = $('#btnCancelDuplicate');
+            $submitBtn.data('submitting', false).prop('disabled', false).removeClass('disabled');
+            $cancelBtn.prop('disabled', false).removeClass('disabled');
+            $submitBtn.find('.btn-text').text('Duplicate Assessment');
+            $submitBtn.find('i').attr('class', 'fas fa-copy mr-1 me-1');
+        });
+
+        // Prevent double submission & show loading indicator
+        $('#formDuplicateAssessment').on('submit', function (e) {
+            let $submitBtn = $('#btnSubmitDuplicate');
+            let $cancelBtn = $('#btnCancelDuplicate');
+
+            if ($submitBtn.data('submitting') === true) {
+                e.preventDefault();
+                return false;
+            }
+
+            $submitBtn.data('submitting', true);
+            $submitBtn.find('i').attr('class', 'fas fa-spinner fa-spin mr-1 me-1');
+            $submitBtn.find('.btn-text').text('Duplicating...');
+            $cancelBtn.prop('disabled', true).addClass('disabled');
+
+            setTimeout(function () {
+                $submitBtn.prop('disabled', true).addClass('disabled');
+            }, 10);
+
+            return true;
+        });
+
+        $('#modalDuplicateAssessment').on('hidden.bs.modal', function () {
+            let $submitBtn = $('#btnSubmitDuplicate');
+            let $cancelBtn = $('#btnCancelDuplicate');
+            $submitBtn.data('submitting', false).prop('disabled', false).removeClass('disabled');
+            $cancelBtn.prop('disabled', false).removeClass('disabled');
+            $submitBtn.find('.btn-text').text('Duplicate Assessment');
+            $submitBtn.find('i').attr('class', 'fas fa-copy mr-1 me-1');
+        });
+
     });
 
     function copyAssessmentLink(text, button) {

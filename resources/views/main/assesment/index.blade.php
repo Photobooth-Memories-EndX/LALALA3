@@ -24,6 +24,8 @@
         </div>
     </div>
 
+    @include('main.assesment.partials.modal-duplicate')
+
 @endsection
 
 @push('scripts')

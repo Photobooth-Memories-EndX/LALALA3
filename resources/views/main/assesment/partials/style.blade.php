@@ -885,4 +885,61 @@
         border-color: #182433 !important;
     }
 
+    /* Duplicate Assessment Modal */
+    #modalDuplicateAssessment .modal-content {
+        border-radius: 16px !important;
+        border: 0;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+    }
+
+    #modalDuplicateAssessment .modal-header {
+        padding: 1.25rem 1.5rem 0.5rem;
+    }
+
+    #modalDuplicateAssessment .modal-body {
+        padding: 0.75rem 1.5rem 1.25rem;
+    }
+
+    #modalDuplicateAssessment .modal-footer {
+        padding: 1rem 1.5rem 1.25rem;
+        border-top: 1px solid var(--tblr-border-color, #e5e7eb) !important;
+    }
+
+    #modalDuplicateAssessment .duplicate-target-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .modal-content,
+    body.dark-mode #modalDuplicateAssessment .modal-content {
+        background-color: #182433 !important;
+        color: #dce6f1 !important;
+        border: 1px solid #25384d !important;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .modal-header,
+    [data-bs-theme="dark"] #modalDuplicateAssessment .modal-footer,
+    body.dark-mode #modalDuplicateAssessment .modal-header,
+    body.dark-mode #modalDuplicateAssessment .modal-footer {
+        background-color: #1f2d3d !important;
+        border-color: #25384d !important;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .duplicate-target-box,
+    body.dark-mode #modalDuplicateAssessment .duplicate-target-box {
+        background-color: #1f2d3d !important;
+        border-color: #25384d !important;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .duplicate-target-title,
+    body.dark-mode #modalDuplicateAssessment .duplicate-target-title {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .btn-close,
+    body.dark-mode #modalDuplicateAssessment .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
 </style>
