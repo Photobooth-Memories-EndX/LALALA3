@@ -48,16 +48,22 @@
 
             {{-- DOCUMENT --}}
             @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
+                @php
+                    $isScrollMode = ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0);
+                    $shellModeClass = $isScrollMode ? 'owl-pdf-scroll-mode' : 'owl-pdf-single-page';
+                    $pageDurationVal = $isScrollMode ? 0 : (int) ($content->page_duration ?: 30);
+                @endphp
 
-                <div class="pdfviewer owl-pdf-reader owl-pdf-mode-portrait owl-pdf-single-page"
-                    id="pdfviewer-shell">
+                <div class="pdfviewer owl-pdf-reader owl-pdf-mode-portrait {{ $shellModeClass }}"
+                    id="pdfviewer-shell"
+                    data-reading-mode="{{ $isScrollMode ? 'scroll' : 'pagination' }}">
 
                     {{-- PDF TOOLBAR --}}
                     @include('components.shared.pdf-toolbar', [
                         'toolbarClass' => 'owl-pdf-toolbar',
                         'showReadingMode' => true,
                         'showPageTiming' => $content->type === 'Document',
-                        'pageDuration' => (int) ($content->page_duration ?: 30),
+                        'pageDuration' => $pageDurationVal,
                     ])
 
                     {{-- PDF VIEWER --}}

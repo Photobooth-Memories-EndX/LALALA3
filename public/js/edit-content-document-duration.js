@@ -5,6 +5,9 @@
         this.options = options || {};
         this.typeInput = document.getElementById(this.options.typeInputId || 'type');
         this.fields = document.getElementById('document-duration-fields') || document.getElementById('metadata-section-document');
+        this.requireDurationInput = document.getElementById('require_page_duration');
+        this.scrollModeNotice = document.getElementById('document-scroll-mode-notice');
+        this.pageDurationHint = document.getElementById('page-duration-hint');
         this.totalPageInput = document.getElementById('total_page') || document.getElementById('document_total_pages');
         this.pageDurationInput = document.getElementById('page_duration');
         this.durationInput = document.getElementById('doc_duration') || document.getElementById(this.options.durationInputId || 'duration');
@@ -31,6 +34,7 @@
         this.bind();
         this.initializeTooltip();
         this.syncType();
+        this.syncRequireDuration();
 
         if (this.isDocument() && this.existingPdfUrl) {
             this.readPdf(this.existingPdfUrl);
@@ -39,6 +43,10 @@
 
     EditContentDocumentDuration.prototype.isDocument = function () {
         return this.typeInput && this.typeInput.value === 'Document';
+    };
+
+    EditContentDocumentDuration.prototype.isDurationRequired = function () {
+        return !this.requireDurationInput || this.requireDurationInput.checked;
     };
 
     EditContentDocumentDuration.prototype.bind = function () {
@@ -52,6 +60,13 @@
             }
         });
 
+        if (this.requireDurationInput) {
+            this.requireDurationInput.addEventListener('change', function () {
+                self.syncRequireDuration();
+                self.recalculate();
+            });
+        }
+
         if (this.totalPageInput) {
             this.totalPageInput.addEventListener('input', function () {
                 self.recalculate();
@@ -60,6 +75,11 @@
 
         if (this.pageDurationInput) {
             this.pageDurationInput.addEventListener('input', function () {
+                if (self.isDurationRequired() && parseInt(self.pageDurationInput.value, 10) === 0) {
+                    self.setStatus('Page Duration must be at least 1 second when duration is enabled.', true);
+                } else {
+                    self.setStatus('', false);
+                }
                 self.recalculate();
             });
         }
@@ -74,7 +94,7 @@
             this.synchronizeButton.addEventListener('click', function () {
                 var calculated = self.getCalculatedDuration();
                 if (self.durationEstimate) {
-                    self.durationEstimate.textContent = calculated;
+                    self.durationEstimate.textContent = self.isDurationRequired() ? calculated : 'Self-paced';
                 }
                 if (self.totalPageEstimate) {
                     self.totalPageEstimate.textContent = self.getTotalPage();
@@ -92,6 +112,19 @@
             });
         }
 
+        var form = this.pageDurationInput.closest('form');
+        if (form) {
+            form.addEventListener('submit', function (event) {
+                if (!self.isDocument()) return;
+
+                if (self.isDurationRequired() && self.getPageDuration() < 1) {
+                    event.preventDefault();
+                    self.setStatus('Page Duration must be at least 1 second when duration is enabled.', true);
+                    if (self.pageDurationInput) self.pageDurationInput.focus();
+                }
+            });
+        }
+
         if (this.useDetectedPageCountButton) {
             this.useDetectedPageCountButton.addEventListener('click', function () {
                 if (!self.detectedPageCount) return;
@@ -100,6 +133,38 @@
                 self.recalculate();
                 self.totalPageInput.focus();
             });
+        }
+    };
+
+    EditContentDocumentDuration.prototype.syncRequireDuration = function () {
+        if (!this.isDocument()) return;
+
+        var required = this.isDurationRequired();
+
+        if (this.pageDurationInput) {
+            if (required) {
+                this.pageDurationInput.readOnly = false;
+                this.pageDurationInput.min = '1';
+                this.pageDurationInput.style.backgroundColor = '';
+                this.pageDurationInput.style.cursor = '';
+                var val = parseInt(this.pageDurationInput.value, 10);
+                if (!val || val < 1) {
+                    this.pageDurationInput.value = 30;
+                }
+            } else {
+                this.pageDurationInput.value = 0;
+                this.pageDurationInput.readOnly = true;
+                this.pageDurationInput.min = '0';
+                this.pageDurationInput.style.backgroundColor = 'var(--tblr-gray-200, #e9ecef)';
+                this.pageDurationInput.style.cursor = 'not-allowed';
+            }
+        }
+
+        if (this.scrollModeNotice) {
+            this.scrollModeNotice.style.display = required ? 'none' : '';
+        }
+        if (this.pageDurationHint) {
+            this.pageDurationHint.style.display = required ? '' : 'none';
         }
     };
 
@@ -132,6 +197,7 @@
         }
 
         if (active) {
+            this.syncRequireDuration();
             this.recalculate();
         } else if (this.synchronizeButton) {
             this.synchronizeButton.disabled = true;
@@ -143,6 +209,7 @@
     };
 
     EditContentDocumentDuration.prototype.getPageDuration = function () {
+        if (!this.isDurationRequired()) return 0;
         return Math.max(0, parseInt(this.pageDurationInput ? this.pageDurationInput.value : 0, 10) || 0);
     };
 
@@ -157,6 +224,9 @@
     };
 
     EditContentDocumentDuration.prototype.getCalculatedDuration = function () {
+        if (!this.isDurationRequired()) {
+            return '00:00:00';
+        }
         return this.formatDuration(this.getTotalPage() * this.getPageDuration());
     };
 
@@ -218,7 +288,9 @@
 
         if (this.totalPageEstimate) this.totalPageEstimate.textContent = totalPage;
         if (this.pageDurationEstimate) this.pageDurationEstimate.textContent = pageDuration;
-        if (this.durationEstimate) this.durationEstimate.textContent = formatted;
+        if (this.durationEstimate) {
+            this.durationEstimate.textContent = this.isDurationRequired() ? formatted : 'Self-paced';
+        }
 
         this.updateSynchronizationState();
     };

@@ -38,8 +38,15 @@
 
             @elseif (in_array($content->type, ['Document', 'SOP/Regulation']))
                 @if ($getcontentfile)
-                    <div class="pdfviewer playlist-pdfviewer owl-pdf-reader owl-pdf-mode-portrait owl-pdf-single-page"
-                        id="playlist-pdf-shell">
+                    @php
+                        $isPlaylistScrollMode = ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0);
+                        $playlistShellClass = $isPlaylistScrollMode ? 'owl-pdf-scroll-mode' : 'owl-pdf-single-page';
+                        $playlistPageDurationVal = $isPlaylistScrollMode ? 0 : (int) ($content->page_duration ?: 30);
+                    @endphp
+
+                    <div class="pdfviewer playlist-pdfviewer owl-pdf-reader owl-pdf-mode-portrait {{ $playlistShellClass }}"
+                        id="playlist-pdf-shell"
+                        data-reading-mode="{{ $isPlaylistScrollMode ? 'scroll' : 'pagination' }}">
                         @include('components.shared.pdf-toolbar', [
                             'toolbarId' => 'playlist-pdf-toolbar-main',
                             'toolbarClass' => 'playlist-pdf-toolbar owl-pdf-toolbar',
@@ -55,7 +62,7 @@
                             'previousButtonId' => 'playlist-pdf-previous-page',
                             'nextButtonId' => 'playlist-pdf-next-page',
                             'showPageTiming' => $content->type === 'Document',
-                            'pageDuration' => (int) ($content->page_duration ?: 30),
+                            'pageDuration' => $playlistPageDurationVal,
                         ])
                         <div class="playlist-pdf-reader-stage owl-pdf-reader-stage">
                             <div class="pdfjs-viewer playlist-pdfjs-viewer owl-pdf-viewer"></div>

@@ -268,7 +268,25 @@ class ContentController extends Controller
         Log::info('ContentController@store called', ['user_id' => auth()->id(), 'payload' => $request->all()]);
 
         $request->validate([
-            'page_duration' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:300'],
+            'require_page_duration' => ['nullable'],
+            'page_duration' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->type === 'Document') {
+                        $requireDuration = $request->has('require_page_duration')
+                            ? $request->boolean('require_page_duration')
+                            : true;
+
+                        if ($requireDuration) {
+                            if ($value === null || $value === '' || (int) $value < 1) {
+                                $fail('Page Duration must be at least 1 second when duration is enabled.');
+                            } elseif ((int) $value > 300) {
+                                $fail('The page duration must not be greater than 300.');
+                            }
+                        }
+                    }
+                },
+            ],
             'document_total_pages' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'duration' => ['nullable', function ($attribute, $value, $fail) {
                 if (!DurationFormatter::isValid($value)) {
@@ -278,7 +296,7 @@ class ContentController extends Controller
             'learning_hours' => [
                 'required',
                 'numeric',
-                'min:1',
+                'min:0',
                 function ($attribute, $value, $fail) {
                     if (fmod((float) $value * 2, 1.0) !== 0.0) {
                         $fail('Learning Hours must be in increments of 0.5.');
@@ -295,23 +313,35 @@ class ContentController extends Controller
             $ytid = null;
         }
         $hasDeadline = $request->boolean('has_deadline');
-        $pageDuration = $request->type === 'Document' ? (int) $request->page_duration : 30;
-        $documentTotalPages = $request->type === 'Document' ? (int) $request->document_total_pages : 0;
-        $duration = $documentTotalPages > 0
-            ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
-            : DurationFormatter::normalize($request->duration);
+
+        if ($request->type === 'Document') {
+            $requireDuration = $request->has('require_page_duration')
+                ? $request->boolean('require_page_duration')
+                : ((int) ($request->page_duration ?? 30) > 0);
+            $pageDuration = $requireDuration ? max(1, (int) $request->page_duration) : 0;
+            $documentTotalPages = (int) $request->document_total_pages;
+            $duration = ($documentTotalPages > 0 && $pageDuration > 0)
+                ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
+                : ($requireDuration ? DurationFormatter::normalize($request->duration) : '00:00:00');
+        } else {
+            $pageDuration = 30;
+            $documentTotalPages = 0;
+            $duration = DurationFormatter::normalize($request->duration);
+        }
+
         $learningHours = (float) $request->input('learning_hours');
         $newcontent = new Content([
             'title'            => $request->title,
             'type'             => $request->type,
             'classification_id' => $request->classification,
-            'date'             => $request->date,
-            'author'           => $request->author,
+            'date'             => $request->date ?? now()->toDateString(),
+            'author'           => $request->author ?? '',
             'duration'         => $duration,
             'learning_hours'   => $learningHours,
             'page_duration'    => $pageDuration,
-            'description'      => $request->description,
-            'playlistonly'     => $request->playlistonly,
+            'total_page'       => $documentTotalPages,
+            'description'      => $request->description ?? '',
+            'playlistonly'     => ($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N',
             'link'             => $ytid,
             'has_deadline'     => $hasDeadline,
             'from_date'        => $hasDeadline ? $request->from_date : null,
@@ -391,7 +421,25 @@ class ContentController extends Controller
     public function update(Request $request, Content $content)
     {
         $request->validate([
-            'page_duration' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:300'],
+            'require_page_duration' => ['nullable'],
+            'page_duration' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($request, $content) {
+                    if ($request->type === 'Document') {
+                        $requireDuration = $request->has('require_page_duration')
+                            ? $request->boolean('require_page_duration')
+                            : ((int) ($request->page_duration ?? $content->page_duration ?? 30) > 0);
+
+                        if ($requireDuration) {
+                            if ($value === null || $value === '' || (int) $value < 1) {
+                                $fail('Page Duration must be at least 1 second when duration is enabled.');
+                            } elseif ((int) $value > 300) {
+                                $fail('The page duration must not be greater than 300.');
+                            }
+                        }
+                    }
+                },
+            ],
             'total_page' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:100000'],
             'duration' => ['nullable', function ($attribute, $value, $fail) {
                 if (!DurationFormatter::isValid($value)) {
@@ -462,9 +510,12 @@ class ContentController extends Controller
             }
         }
 
-        $getcontent = Content::firstWhere('id', $request->contentid);
+        $targetContent = ($request->filled('contentid') ? Content::find($request->contentid) : null)
+            ?: ($content->exists ? $content : Content::findOrFail($request->id));
+        $targetId = $targetContent->id;
+
         if ($request->action == "publish") {
-            if ($getcontent->file) {
+            if ($targetContent->file) {
                 $message = "Content successfully saved and published";
                 $active = "Active";
                 $redir = "-";
@@ -486,7 +537,7 @@ class ContentController extends Controller
             $redir = "-";
             $redirmessage = "-";
         } else if ($request->action == "update") {
-            $active = $getcontent->active;
+            $active = $targetContent->active;
             $message = "Content successfully updated ";
             $redir = "-";
             $redirmessage = "-";
@@ -495,29 +546,43 @@ class ContentController extends Controller
             $message = "Content successfully unpublished ";
             $redir = "-";
             $redirmessage = "-";
+        } else {
+            $active = $targetContent->active ?? 'Active';
+            $message = "Content successfully updated ";
+            $redir = "-";
+            $redirmessage = "-";
         }
         $hasDeadlineUpdate = $request->boolean('has_deadline');
-        $pageDuration = $request->type === 'Document'
-            ? (int) $request->page_duration
-            : (int) ($getcontent->page_duration ?: 30);
-        $totalPage = $request->type === 'Document'
-            ? (int) $request->total_page
-            : (int) ($getcontent->total_page ?: 0);
-        $duration = DurationFormatter::normalize($request->duration);
+
+        if ($request->type === 'Document') {
+            $requireDuration = $request->has('require_page_duration')
+                ? filter_var($request->require_page_duration, FILTER_VALIDATE_BOOLEAN)
+                : ((int) ($request->page_duration ?? $targetContent->page_duration ?? 30) > 0);
+            $pageDuration = $requireDuration ? max(1, (int) $request->page_duration) : 0;
+            $totalPage = (int) $request->total_page;
+            $duration = ($pageDuration > 0 && $totalPage > 0)
+                ? DurationFormatter::fromSeconds($totalPage * $pageDuration)
+                : ($requireDuration ? DurationFormatter::normalize($request->duration) : '00:00:00');
+        } else {
+            $pageDuration = (int) ($targetContent->page_duration ?: 30);
+            $totalPage = (int) ($targetContent->total_page ?: 0);
+            $duration = DurationFormatter::normalize($request->duration);
+        }
+
         $learningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convert($duration);
-        Content::where('id', $request->contentid)
+        Content::where('id', $targetId)
             ->update([
                 'title'            => $request->title,
                 'type'             => $request->type,
                 'classification_id' => $request->classification,
-                'date'             => $request->date,
-                'author'           => $request->author,
+                'date'             => $request->date ?? ($targetContent->date ?? now()->toDateString()),
+                'author'           => $request->author ?? ($targetContent->author ?? ''),
                 'duration'         => $duration,
                 'learning_hours'   => $learningHours,
                 'page_duration'    => $pageDuration,
                 'total_page'       => $totalPage,
-                'description'      => $request->description,
-                'playlistonly'     => $request->playlistonly,
+                'description'      => $request->description ?? ($targetContent->description ?? ''),
+                'playlistonly'     => $request->has('playlistonly') ? (($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N') : ($targetContent->playlistonly ?? 'N'),
                 'active'           => $active,
                 'link'             => $ytid,
                 'has_deadline'     => $hasDeadlineUpdate,
@@ -525,9 +590,9 @@ class ContentController extends Controller
                 'to_date'          => $hasDeadlineUpdate ? $request->to_date : null,
             ]);
 
-        app(\App\Services\PlaylistDurationService::class)->refreshForContent((int) $request->contentid);
+        app(\App\Services\PlaylistDurationService::class)->refreshForContent((int) $targetId);
 
-        return to_route('content.edit', $getcontent->slug)->with('success', $message)->with($redir, $redirmessage);
+        return to_route('content.edit', $targetContent->slug)->with('success', $message)->with($redir, $redirmessage);
     }
     public function assign(Request $request)
     {
@@ -576,7 +641,7 @@ class ContentController extends Controller
                 'file_url' => $fileUrl,
                 'file_exists' => !empty($filePath) && file_exists($filePath),
                 'total_page' => (int) ($item->total_page ?? 0),
-                'page_duration' => (int) ($item->page_duration ?: 30),
+                'page_duration' => (int) ($item->page_duration ?? 0),
             ];
         });
 

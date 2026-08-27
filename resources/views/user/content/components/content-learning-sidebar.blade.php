@@ -85,7 +85,7 @@
 
                 <span class="fw-semibold text-dark d-block">
                     <i class="ti ti-clock me-1 text-muted"></i>
-                    {{ \App\Support\DurationFormatter::format($content->duration, 'Self-paced') }}
+                    {{ ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0) ? 'Self-paced' : \App\Support\DurationFormatter::format($content->duration, 'Self-paced') }}
                 </span>
             </div>
 

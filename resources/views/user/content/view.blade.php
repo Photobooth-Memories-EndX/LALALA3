@@ -105,6 +105,9 @@
     @if ($content->type == 'Document' || $content->type == 'SOP/Regulation')
         <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
         <link rel="stylesheet" href="{{ asset('css/owl-pdf-reader.css') }}">
+        @if ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0)
+            <link rel="stylesheet" href="{{ asset('css/document-scroll-mode.css') }}">
+        @endif
     @endif
 
     <style>
@@ -724,6 +727,9 @@
         <script src="{{ asset('js/pdf.min.js') }}"></script>
         <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
         <script src="{{ asset('js/owl-pdf-reader.js') }}"></script>
+        @if ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0)
+            <script src="{{ asset('js/document-scroll-mode.js') }}"></script>
+        @endif
 
         <script>
             function hideContentPlayerSkeleton() {
@@ -754,50 +760,6 @@
                 onUpdate: window.owlUpdateLearningUi
             });
 
-            var isTimedDocument = @json($content->type === 'Document');
-            var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 30)) }};
-
-            var contentPdfReader = new OwlPdfReader({
-                shellId: 'pdfviewer-shell',
-                viewerSelector: '.content-pdfjs-viewer',
-                pageTimingEnabled: isTimedDocument,
-                pageDuration: documentPageDuration,
-                completedPages: {{ (int) ($content_user->last_page ?? 0) }},
-                contentCompleted: {{ (int) ($content_user->finish ?? 0) }} === 1,
-                onPageStarted: function(page, totalPages) {
-                    return progressTracker.send({
-                        active_page: page,
-                        total_pages: totalPages,
-                        status: 'in_progress'
-                    }, true);
-                },
-                onPageCompleted: function(page, totalPages, elapsedSeconds) {
-                    return progressTracker.send({
-                        active_page: page,
-                        completed_page: page,
-                        page_elapsed_seconds: elapsedSeconds,
-                        total_pages: totalPages,
-                        status: 'in_progress'
-                    }, true).then(function(result) {
-                        if (result && result.page_completed) {
-                            updateDocumentProgressUi(result.last_page || page, totalPages);
-                        }
-
-                        return result;
-                    });
-                }
-            });
-
-            let maxPagesRead = isTimedDocument
-                ? {{ (int) ($content_user->last_page ?? 0) }}
-                : Math.max(1, {{ (int) ($content_user->last_page ?? 0) }});
-
-            function updatePdfPageButtons(activePage, totalPages) {
-                var currentPage = Math.max(1, parseInt(activePage, 10) || 1);
-                contentPdfReader.totalPages = Math.max(0, parseInt(totalPages, 10) || 0);
-                contentPdfReader.updateNavigationButtons(currentPage);
-            }
-
             function updateDocumentProgressUi(readPage, totalPages) {
                 var progress = totalPages > 0
                     ? Math.min(100, Math.round((readPage / totalPages) * 100))
@@ -808,93 +770,207 @@
                 $('#contentProgressBar').css('width', progress + '%');
             }
 
-            var pdfViewer = window.pdfViewer = new PDFjsViewer(
-                $(".content-pdfjs-viewer"),
-                contentPdfReader.getViewerOptions({
-                    onDocumentReady: function () {
-                        var totalPages = pdfViewer.getPageCount();
+            var isDocument = @json($content->type === 'Document');
+            var rawPageDuration = {{ (int) ($content->page_duration ?? 30) }};
+            var isScrollMode = isDocument && rawPageDuration === 0;
 
-                        var lastPage = {{ (int) ($content_user->last_page ?? 0) }};
-
-                        if (!lastPage) {
-                            var progression = {{ (int) $content_user->progress }};
-                            lastPage = parseInt((progression * totalPages) / 100);
-                        }
-
-                        var initialActivePage = 1;
-
-                        if (isTimedDocument) {
-                            maxPagesRead = Math.min(lastPage, totalPages);
-                            initialActivePage = {{ (int) ($content_user->finish ?? 0) }} === 1
-                                ? totalPages
-                                : Math.min(totalPages, maxPagesRead + 1);
-                        } else {
-                            maxPagesRead = Math.max(maxPagesRead, lastPage || 1);
-                            initialActivePage = lastPage > 1 && lastPage < totalPages ? lastPage : 1;
-                        }
-
-                        if (initialActivePage > 1) {
-                            pdfViewer.scrollToPage(initialActivePage);
-                        }
-
-                        if (!isTimedDocument
-                            || {{ (int) ($content_user->finish ?? 0) }} === 1
-                            || lastPage >= totalPages) {
-                            progressTracker.send({ total_pages: totalPages }, true);
-                        }
-
-                        updatePdfPageButtons(initialActivePage, totalPages);
-
-                        hideContentPlayerSkeleton();
-                    },
-
-                    onActivePageChanged: function (page, pageno) {
-                        var totalPages = this.getPageCount();
-                        var activePage = parseInt(pageno, 10) || 1;
-
-                        // The top label represents the page currently visible.
-                        contentPdfReader.updatePageLabel(activePage, totalPages);
-                        updatePdfPageButtons(activePage, totalPages);
-
-                        if (isTimedDocument) return;
-
-                        // Sidebar progress is monotonic: going backward must
-                        // never reduce the highest page already reached.
-                        if (activePage <= maxPagesRead) return;
-
-                        maxPagesRead = activePage;
-                        updateDocumentProgressUi(maxPagesRead, totalPages);
-
+            if (isScrollMode) {
+                var scrollReader = new DocumentScrollMode({
+                    shellId: 'pdfviewer-shell',
+                    viewerSelector: '.content-pdfjs-viewer',
+                    completedPages: {{ (int) ($content_user->last_page ?? 0) }},
+                    contentCompleted: {{ (int) ($content_user->finish ?? 0) }} === 1,
+                    onPageProgress: function(readPage, totalPages) {
+                        updateDocumentProgressUi(readPage, totalPages);
                         progressTracker.sendDebounced({
-                            last_page: maxPagesRead,
-                            total_pages: totalPages
+                            last_page: readPage,
+                            total_pages: totalPages,
+                            status: 'in_progress'
                         });
                     }
-                }));
-
-            contentPdfReader.attach(pdfViewer, pdfFile);
-
-            window.pdfRotateLeft = function () {
-                return contentPdfReader.rotate(-90);
-            };
-            window.pdfRotateRight = function () {
-                return contentPdfReader.rotate(90);
-            };
-            window.pdfToggleReadingMode = function () {
-                return contentPdfReader.toggleReadingMode();
-            };
-            window.pdfDoPrint = function () {
-                return contentPdfReader.print();
-            };
-            window.pdfToggleFullscreen = function () {
-                return contentPdfReader.toggleFullscreen();
-            };
-
-            if (fileName) {
-                pdfViewer.loadDocument(pdfFile).then(function () {
-                    contentPdfReader.scheduleAutoFit(true);
-                    hideContentPlayerSkeleton();
                 });
+
+                var pdfViewer = window.pdfViewer = new PDFjsViewer(
+                    $(".content-pdfjs-viewer"),
+                    scrollReader.getViewerOptions({
+                        onDocumentReady: function () {
+                            var totalPages = pdfViewer.getPageCount();
+                            var lastPage = {{ (int) ($content_user->last_page ?? 0) }};
+
+                            if (!lastPage) {
+                                var progression = {{ (int) $content_user->progress }};
+                                lastPage = parseInt((progression * totalPages) / 100);
+                            }
+
+                            var initialActivePage = lastPage > 1 ? Math.min(lastPage, totalPages) : 1;
+                            if (initialActivePage > 1) {
+                                scrollReader.scrollToPage(initialActivePage);
+                            }
+
+                            progressTracker.send({ total_pages: totalPages }, true);
+                            hideContentPlayerSkeleton();
+                        }
+                    })
+                );
+
+                scrollReader.attach(pdfViewer, pdfFile);
+
+                window.pdfRotateLeft = function () {
+                    return scrollReader.rotate(-90);
+                };
+                window.pdfRotateRight = function () {
+                    return scrollReader.rotate(90);
+                };
+                window.pdfToggleReadingMode = function () {
+                    return Promise.resolve();
+                };
+                window.pdfDoPrint = function () {
+                    return scrollReader.print();
+                };
+                window.pdfToggleFullscreen = function () {
+                    return scrollReader.toggleFullscreen();
+                };
+
+                if (fileName) {
+                    pdfViewer.loadDocument(pdfFile).then(function () {
+                        scrollReader.scheduleAutoFit(true);
+                        hideContentPlayerSkeleton();
+                    });
+                }
+            } else {
+                // EXISTING TIMED PAGINATION / SOP LOGIC (100% UNCHANGED)
+                var isTimedDocument = isDocument;
+                var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 30)) }};
+
+                var contentPdfReader = new OwlPdfReader({
+                    shellId: 'pdfviewer-shell',
+                    viewerSelector: '.content-pdfjs-viewer',
+                    pageTimingEnabled: isTimedDocument,
+                    pageDuration: documentPageDuration,
+                    completedPages: {{ (int) ($content_user->last_page ?? 0) }},
+                    contentCompleted: {{ (int) ($content_user->finish ?? 0) }} === 1,
+                    onPageStarted: function(page, totalPages) {
+                        return progressTracker.send({
+                            active_page: page,
+                            total_pages: totalPages,
+                            status: 'in_progress'
+                        }, true);
+                    },
+                    onPageCompleted: function(page, totalPages, elapsedSeconds) {
+                        return progressTracker.send({
+                            active_page: page,
+                            completed_page: page,
+                            page_elapsed_seconds: elapsedSeconds,
+                            total_pages: totalPages,
+                            status: 'in_progress'
+                        }, true).then(function(result) {
+                            if (result && result.page_completed) {
+                                updateDocumentProgressUi(result.last_page || page, totalPages);
+                            }
+
+                            return result;
+                        });
+                    }
+                });
+
+                let maxPagesRead = isTimedDocument
+                    ? {{ (int) ($content_user->last_page ?? 0) }}
+                    : Math.max(1, {{ (int) ($content_user->last_page ?? 0) }});
+
+                function updatePdfPageButtons(activePage, totalPages) {
+                    var currentPage = Math.max(1, parseInt(activePage, 10) || 1);
+                    contentPdfReader.totalPages = Math.max(0, parseInt(totalPages, 10) || 0);
+                    contentPdfReader.updateNavigationButtons(currentPage);
+                }
+
+                var pdfViewer = window.pdfViewer = new PDFjsViewer(
+                    $(".content-pdfjs-viewer"),
+                    contentPdfReader.getViewerOptions({
+                        onDocumentReady: function () {
+                            var totalPages = pdfViewer.getPageCount();
+
+                            var lastPage = {{ (int) ($content_user->last_page ?? 0) }};
+
+                            if (!lastPage) {
+                                var progression = {{ (int) $content_user->progress }};
+                                lastPage = parseInt((progression * totalPages) / 100);
+                            }
+
+                            var initialActivePage = 1;
+
+                            if (isTimedDocument) {
+                                maxPagesRead = Math.min(lastPage, totalPages);
+                                initialActivePage = {{ (int) ($content_user->finish ?? 0) }} === 1
+                                    ? totalPages
+                                    : Math.min(totalPages, maxPagesRead + 1);
+                            } else {
+                                maxPagesRead = Math.max(maxPagesRead, lastPage || 1);
+                                initialActivePage = lastPage > 1 && lastPage < totalPages ? lastPage : 1;
+                            }
+
+                            if (initialActivePage > 1) {
+                                pdfViewer.scrollToPage(initialActivePage);
+                            }
+
+                            if (!isTimedDocument
+                                || {{ (int) ($content_user->finish ?? 0) }} === 1
+                                || lastPage >= totalPages) {
+                                progressTracker.send({ total_pages: totalPages }, true);
+                            }
+
+                            updatePdfPageButtons(initialActivePage, totalPages);
+
+                            hideContentPlayerSkeleton();
+                        },
+
+                        onActivePageChanged: function (page, pageno) {
+                            var totalPages = this.getPageCount();
+                            var activePage = parseInt(pageno, 10) || 1;
+
+                            // The top label represents the page currently visible.
+                            contentPdfReader.updatePageLabel(activePage, totalPages);
+                            updatePdfPageButtons(activePage, totalPages);
+
+                            if (isTimedDocument) return;
+
+                            // Sidebar progress is monotonic: going backward must
+                            // never reduce the highest page already reached.
+                            if (activePage <= maxPagesRead) return;
+
+                            maxPagesRead = activePage;
+                            updateDocumentProgressUi(maxPagesRead, totalPages);
+
+                            progressTracker.sendDebounced({
+                                last_page: maxPagesRead,
+                                total_pages: totalPages
+                            });
+                        }
+                    }));
+
+                contentPdfReader.attach(pdfViewer, pdfFile);
+
+                window.pdfRotateLeft = function () {
+                    return contentPdfReader.rotate(-90);
+                };
+                window.pdfRotateRight = function () {
+                    return contentPdfReader.rotate(90);
+                };
+                window.pdfToggleReadingMode = function () {
+                    return contentPdfReader.toggleReadingMode();
+                };
+                window.pdfDoPrint = function () {
+                    return contentPdfReader.print();
+                };
+                window.pdfToggleFullscreen = function () {
+                    return contentPdfReader.toggleFullscreen();
+                };
+
+                if (fileName) {
+                    pdfViewer.loadDocument(pdfFile).then(function () {
+                        contentPdfReader.scheduleAutoFit(true);
+                        hideContentPlayerSkeleton();
+                    });
+                }
             }
         </script>
     @endif

@@ -73,7 +73,7 @@
                 </span>
                 <span class="text-muted">&bull;</span>
                 <span>
-                    <i class="ti ti-clock me-1"></i>{{ \App\Support\DurationFormatter::format($item->duration, 'Self-paced') }}
+                    <i class="ti ti-clock me-1"></i>{{ ($item->duration === '00:00:00' || (int) ($item->page_duration ?? 30) === 0) ? 'Self-paced' : \App\Support\DurationFormatter::format($item->duration) }}
                 </span>
             </div>
 

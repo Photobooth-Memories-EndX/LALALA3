@@ -83,8 +83,12 @@ class ContentLearningHourService implements LearningHourSyncInterface
             if ($contentType === 'Document') {
                 $totalPages = (int) ($inputTotalPages ?? $content->document_total_pages ?? $content->total_page ?? 0);
                 if ($totalPages > 0) {
-                    $pageDuration = (int) ($inputPageDuration ?? $content->page_duration ?: 30);
-                    $newDuration = $this->parser->fromSeconds($totalPages * $pageDuration);
+                    $pageDuration = isset($inputPageDuration) ? (int) $inputPageDuration : (int) ($content->page_duration ?? 30);
+                    if ($pageDuration > 0) {
+                        $newDuration = $this->parser->fromSeconds($totalPages * $pageDuration);
+                    } elseif ($pageDuration === 0) {
+                        $newDuration = '00:00:00';
+                    }
                 }
             } elseif (empty($inputDuration)) {
                 $newDuration = $this->parser->normalize($oldDuration);

@@ -7,12 +7,27 @@
         $durationVal = \App\Support\DurationFormatter::format($content->duration, '');
     }
 
-    $pageDurationValue = old('page_duration', (int) ($content?->page_duration ?: 30));
+    $hasRequireOld = old('require_page_duration') !== null;
+    $requirePageDuration = $hasRequireOld
+        ? (bool) old('require_page_duration')
+        : ($content ? ((int) ($content->page_duration ?? 30) > 0) : true);
+
+    if ($requirePageDuration) {
+        $pageDurationValue = old('page_duration', (int) ($content?->page_duration ?: 30));
+        if ($pageDurationValue < 1) {
+            $pageDurationValue = 30;
+        }
+    } else {
+        $pageDurationValue = 0;
+    }
+
     $totalPageValue = old('total_page', old('document_total_pages', (int) ($content?->total_page ?: 0)));
 
-    $initialTotalSeconds = (int) $totalPageValue * (int) $pageDurationValue;
-    $initialEstimatedResult = \App\Support\DurationFormatter::format($initialTotalSeconds, '00:00:00');
-    $isInitialSynced = !empty($durationVal) && ($durationVal === $initialEstimatedResult);
+    $initialTotalSeconds = $requirePageDuration ? ((int) $totalPageValue * (int) $pageDurationValue) : 0;
+    $initialEstimatedResult = $requirePageDuration
+        ? \App\Support\DurationFormatter::format($initialTotalSeconds, '00:00:00')
+        : 'Self-paced';
+    $isInitialSynced = !empty($durationVal) && ($durationVal === ($requirePageDuration ? $initialEstimatedResult : '00:00:00'));
 @endphp
 
 <div id="document-duration-fields" class="row g-3">
@@ -52,21 +67,42 @@
 
     {{-- 2. Page Duration (Seconds) --}}
     <div class="col-md-6">
-        <label class="form-label required" for="page_duration">Page Duration (Seconds)</label>
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <label class="form-label mb-0 required" for="page_duration">Page Duration (Seconds)</label>
+            <label class="form-check form-switch mb-0 cursor-pointer" title="Toggle between Timed Pagination Mode and Continuous Scroll Mode">
+                <input type="hidden" name="require_page_duration" value="0">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="require_page_duration"
+                       name="require_page_duration"
+                       value="1"
+                       {{ $requirePageDuration ? 'checked' : '' }}>
+                <span class="form-check-label small fw-medium">Require Page Duration</span>
+            </label>
+        </div>
+
         <input type="number"
                class="form-control @error('page_duration') is-invalid @enderror"
                name="page_duration"
                id="page_duration"
                value="{{ $pageDurationValue }}"
-               min="1"
+               min="{{ $requirePageDuration ? 1 : 0 }}"
                max="300"
                step="1"
                inputmode="numeric"
-               placeholder="30">
+               placeholder="30"
+               {{ $requirePageDuration ? '' : 'readonly' }}
+               style="{{ $requirePageDuration ? '' : 'background-color: var(--tblr-gray-200, #e9ecef); cursor: not-allowed;' }}">
         @error('page_duration')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
-        <small class="form-hint">Minimum reading time for each PDF page.</small>
+        <small id="page-duration-hint" class="form-hint" style="{{ $requirePageDuration ? '' : 'display: none;' }}">Minimum reading time for each PDF page.</small>
+        <div id="document-scroll-mode-notice" class="document-scroll-mode-notice mt-2" style="{{ $requirePageDuration ? 'display: none;' : '' }}">
+            <i class="ti ti-info-circle fs-2 me-1" aria-hidden="true"></i>
+            <div>
+                Page duration is disabled. This document will use Scroll Mode.
+            </div>
+        </div>
     </div>
 
     {{-- 3 & 4. Compact Estimated Duration Information Card --}}
