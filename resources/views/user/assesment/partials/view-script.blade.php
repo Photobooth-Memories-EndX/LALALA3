@@ -176,9 +176,7 @@
             }
             updateLeaveModalText();
             checkFinishButtonState();
-            @if (!auth()->user()->isAdmin())
-                doAutosave();
-            @endif
+            doAutosave();
         });
 
         updateNavAnswerStatus();
@@ -242,16 +240,12 @@
 
             checkFinishButtonState();
 
-            @if (!auth()->user()->isAdmin())
-                doAutosave();
-            @endif
+            doAutosave();
         });
 
-        @if (!auth()->user()->isAdmin())
-            $(document).on('click', '.sw-btn, .assessment-wizard .nav a', function () {
-                doAutosave();
-            });
-        @endif
+        $(document).on('click', '.sw-btn, .assessment-wizard .nav a', function () {
+            doAutosave();
+        });
 
         // Trigger finish modal on button click with Strict Guard Clause
         $(document).on('click', '#btnFinishSubmit, .btn-submit-assessment', function (e) {
