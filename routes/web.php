@@ -86,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/mycomment', [ProfileController::class, 'comment'])->name('user.comment');
 
     Route::get('/search/{searchtype}', [SearchController::class, 'index'])->name('search');
+    Route::get('/api/search-autocomplete', [SearchController::class, 'autocomplete'])->name('api.search.autocomplete');
 
     Route::get('/change-password', [ProfileController::class, 'changePassword'])->name('user.changepassword');
     Route::post('/change-password', [ProfileController::class, 'updatePassword'])->name('user.updatepassword');

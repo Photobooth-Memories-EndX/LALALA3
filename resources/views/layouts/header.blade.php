@@ -185,16 +185,20 @@
                       novalidate
                       class="w-100">
 
-                    <div class="input-icon w-100">
-                        <span class="input-icon-addon">
-                            <i class="ti ti-search"></i>
-                        </span>
-
+                    <div class="position-relative w-100" style="max-width: 450px;">
                         <input type="text"
+                               id="globalSearchInput"
                                name="s"
-                               class="form-control"
+                               class="form-control rounded-pill px-4"
                                placeholder="Search learning, content, news..."
+                               autocomplete="off"
                                aria-label="Search in website">
+
+                        <!-- DROPDOWN HASIL AUTOCOMPLETE -->
+                        <div id="searchDropdownResults"
+                             class="dropdown-menu shadow-lg border-0 rounded-4 w-100 mt-1 overflow-hidden"
+                             style="display: none; position: absolute; top: 100%; left: 0; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                        </div>
                     </div>
                 </form>
             </div>
@@ -395,16 +399,20 @@
                           novalidate
                           class="flex-grow-1 min-w-0">
 
-                        <div class="input-icon w-100">
-                            <span class="input-icon-addon">
-                                <i class="ti ti-search"></i>
-                            </span>
-
+                        <div class="position-relative w-100">
                             <input type="text"
+                                   id="mobileSearchInput"
                                    name="s"
-                                   class="form-control"
+                                   class="form-control rounded-pill px-4"
                                    placeholder="Search learning, content, news..."
+                                   autocomplete="off"
                                    aria-label="Search in website">
+
+                            <!-- DROPDOWN HASIL AUTOCOMPLETE -->
+                            <div id="mobileSearchDropdownResults"
+                                 class="dropdown-menu shadow-lg border-0 rounded-4 w-100 mt-1 overflow-hidden"
+                                 style="display: none; position: absolute; top: 100%; left: 0; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                            </div>
                         </div>
                     </form>
 
@@ -453,3 +461,79 @@
 </header>
 
 @include('partials.logout-modal')
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function initAutocomplete(inputId, dropdownId) {
+        const searchInput = document.getElementById(inputId);
+        const searchDropdown = document.getElementById(dropdownId);
+        let debounceTimer = null;
+
+        if (!searchInput || !searchDropdown) return;
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+
+            clearTimeout(debounceTimer);
+
+            // Sembunyikan jika kosong
+            if (query.length < 1) {
+                searchDropdown.style.display = 'none';
+                searchDropdown.innerHTML = '';
+                return;
+            }
+
+            // Debounce 250ms agar efisien
+            debounceTimer = setTimeout(() => {
+                fetch(`/api/search-autocomplete?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data || data.length === 0) {
+                            searchDropdown.innerHTML = `<div class="dropdown-item text-muted small py-2 px-3">Tidak ada hasil ditemukan</div>`;
+                        } else {
+                            let html = '';
+                            data.forEach(item => {
+                                let targetUrl = item.category === 'news' ? `/news/${item.slug}` : `/content/${item.slug}`;
+
+                                html += `
+                                    <a href="${targetUrl}" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle">
+                                        <span class="text-dark small fw-semibold">${escapeHtml(item.title)}</span>
+                                    </a>
+                                `;
+                            });
+                            searchDropdown.innerHTML = html;
+                        }
+                        searchDropdown.style.display = 'block';
+                    })
+                    .catch(err => {
+                        searchDropdown.style.display = 'none';
+                    });
+            }, 250);
+        });
+
+        // Sembunyikan dropdown jika pengguna mengklik di luar area search
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+                searchDropdown.style.display = 'none';
+            }
+        });
+
+        // Munculkan kembali jika input diklik lagi & ada teks
+        searchInput.addEventListener('focus', function() {
+            if (this.value.trim().length >= 1 && searchDropdown.children.length > 0) {
+                searchDropdown.style.display = 'block';
+            }
+        });
+    }
+
+    initAutocomplete('globalSearchInput', 'searchDropdownResults');
+    initAutocomplete('mobileSearchInput', 'mobileSearchDropdownResults');
+});
+</script>

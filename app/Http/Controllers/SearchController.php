@@ -7,9 +7,36 @@ use App\Models\Content;
 use App\Models\EventPhoto;
 use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SearchController extends Controller
 {
+    public function autocomplete(Request $request)
+    {
+        $query = trim($request->get('q', ''));
+        if (empty($query)) {
+            return response()->json([]);
+        }
+
+        // Search dari tabel Content (Pembelajaran/Video)
+        $contents = Content::where('title', 'LIKE', "{$query}%")
+            ->orWhere('title', 'LIKE', "%{$query}%")
+            ->select('id', 'title', 'slug', DB::raw("'content' as category"))
+            ->limit(5)
+            ->get();
+
+        // Search dari tabel News
+        $news = News::where('title', 'LIKE', "{$query}%")
+            ->orWhere('title', 'LIKE', "%{$query}%")
+            ->select('id', 'title', 'slug', DB::raw("'news' as category"))
+            ->limit(3)
+            ->get();
+
+        $results = $contents->concat($news);
+
+        return response()->json($results);
+    }
+
     public function index($searchtype)
     {
         $keyword = request('s', '');
