@@ -1,6 +1,7 @@
 @php
     $content = $content ?? null;
     $mode = $mode ?? ($content ? 'edit' : 'create');
+    $isLocked = $isLocked ?? ($content && $content->isPublished());
 
     $durationVal = old('duration');
     if ($durationVal === null && $content) {
@@ -43,7 +44,8 @@
                max="100000"
                step="1"
                inputmode="numeric"
-               placeholder="Auto-detected from PDF or enter manually">
+               placeholder="Auto-detected from PDF or enter manually"
+               {{ $isLocked ? 'disabled' : '' }}>
         @error('total_page')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
@@ -58,7 +60,7 @@
                 <span class="badge bg-azure-lt text-azure">
                     Detected PDF Pages: <strong id="edit-detected-page-count">0</strong>
                 </span>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="edit-use-detected-page-count">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="edit-use-detected-page-count" {{ $isLocked ? 'disabled' : '' }}>
                     Use Detected Page Count
                 </button>
             </div>
@@ -76,7 +78,8 @@
                        id="require_page_duration"
                        name="require_page_duration"
                        value="1"
-                       {{ $requirePageDuration ? 'checked' : '' }}>
+                       {{ $requirePageDuration ? 'checked' : '' }}
+                       {{ $isLocked ? 'disabled' : '' }}>
                 <span class="form-check-label small fw-medium">Require Page Duration</span>
             </label>
         </div>
@@ -91,8 +94,9 @@
                step="1"
                inputmode="numeric"
                placeholder="30"
-               {{ $requirePageDuration ? '' : 'readonly' }}
-               style="{{ $requirePageDuration ? '' : 'background-color: var(--tblr-gray-200, #e9ecef); cursor: not-allowed;' }}">
+               {{ ($requirePageDuration && !$isLocked) ? '' : 'readonly' }}
+               {{ $isLocked ? 'disabled' : '' }}
+               style="{{ ($requirePageDuration && !$isLocked) ? '' : 'background-color: var(--tblr-gray-200, #e9ecef); cursor: not-allowed;' }}">
         @error('page_duration')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
@@ -145,7 +149,7 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         title="Synchronize Duration — copies Estimated Duration into Duration field."
-                        {{ $isInitialSynced ? 'disabled' : '' }}>
+                        {{ ($isInitialSynced || $isLocked) ? 'disabled' : '' }}>
                     <i class="ti ti-refresh me-1" aria-hidden="true"></i> Synchronize Duration
                 </button>
             </div>
@@ -164,7 +168,8 @@
             value="{{ $durationVal }}"
             readonly
             aria-readonly="true"
-            autocomplete="off">
+            autocomplete="off"
+            {{ $isLocked ? 'disabled' : '' }}>
         @error('duration')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror

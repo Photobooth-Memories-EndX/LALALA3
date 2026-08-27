@@ -1,5 +1,6 @@
 @php
     $content = $content ?? null;
+    $isLocked = $isLocked ?? ($content && $content->isPublished());
 
     $durationVal = old('duration');
     if ($durationVal === null && $content) {
@@ -14,7 +15,8 @@
             name="duration" id="default_duration"
             value="{{ $durationVal }}"
             pattern="^(\d+:[0-5]\d|\d{2}:[0-5]\d:[0-5]\d)$"
-            autocomplete="off">
+            autocomplete="off"
+            {{ $isLocked ? 'disabled' : '' }}>
         @error('duration')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror

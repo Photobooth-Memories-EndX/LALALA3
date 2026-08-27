@@ -125,7 +125,7 @@ class DocumentScrollModeTest extends TestCase
             'page_duration'     => 30,
             'duration'          => '00:29:30',
             'learning_hours'    => 0.5,
-            'active'            => 'Active',
+            'active'            => 'Inactive',
             'slug'              => 'existing-timed-doc',
         ]);
 
@@ -161,7 +161,7 @@ class DocumentScrollModeTest extends TestCase
             'page_duration'     => 0,
             'duration'          => '00:00:00',
             'learning_hours'    => 0.0,
-            'active'            => 'Active',
+            'active'            => 'Inactive',
             'slug'              => 'existing-scroll-doc',
         ]);
 
@@ -418,7 +418,7 @@ class DocumentScrollModeTest extends TestCase
             'page_duration'     => 0,
             'duration'          => '00:00:00',
             'learning_hours'    => 0.0,
-            'active'            => 'Active',
+            'active'            => 'Inactive',
             'slug'              => 'sync-scroll-doc',
         ]);
 

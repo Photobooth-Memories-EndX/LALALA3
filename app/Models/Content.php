@@ -106,6 +106,16 @@ class Content extends Model
         return (bool) $this->has_deadline && $this->from_date && now()->toDateString() < $this->from_date->format('Y-m-d');
     }
 
+    public function isPublished(): bool
+    {
+        return $this->active === 'Active';
+    }
+
+    public function isUnpublished(): bool
+    {
+        return $this->active !== 'Active';
+    }
+
     public function isAccessibleByDeadline(): bool
     {
         if (!$this->has_deadline) {

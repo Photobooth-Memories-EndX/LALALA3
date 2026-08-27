@@ -420,6 +420,19 @@ class ContentController extends Controller
     }
     public function update(Request $request, Content $content)
     {
+        $targetContent = ($request->filled('contentid') ? Content::find($request->contentid) : null)
+            ?: ($content->exists ? $content : Content::findOrFail($request->id));
+
+        if ($targetContent->isPublished()) {
+            if ($request->action === 'unpublish') {
+                $targetContent->active = 'Inactive';
+                $targetContent->save();
+                return to_route('content.edit', $targetContent->slug)->with('success', 'Content successfully unpublished');
+            }
+
+            return to_route('content.edit', $targetContent->slug)->with('warning', 'Cannot modify content while it is published. Please unpublish this content first before making changes.');
+        }
+
         $request->validate([
             'require_page_duration' => ['nullable'],
             'page_duration' => [
@@ -596,18 +609,25 @@ class ContentController extends Controller
     }
     public function assign(Request $request)
     {
+        $targetContent = Content::where('id', $request->content_id)->orWhere('slug', $request->slug)->first();
+        if ($targetContent && $targetContent->isPublished()) {
+            return to_route('content.edit', $request->slug)->with('warning', 'Cannot assign employee while content is published. Please unpublish this content first.');
+        }
+
         $employee = $request->employee;
-        foreach ($employee as $id) {
-            $contentuser = ContentUser::where('content_id', $request->content_id)->firstWhere('user_id', $id);
-            if ($contentuser) {
-                // $arrayexist[] = $contentuser->progress;
-                $content_user = ContentUser::where('id', $contentuser->id)->Update([
-                    'status' => 'mandatory'
-                ]);
-            } else {
-                $content_user = ContentUser::Create([
-                    'user_id' => $id, 'content_id' => $request->content_id, 'status' => 'mandatory'
-                ]);
+        if (!empty($employee) && is_array($employee)) {
+            foreach ($employee as $id) {
+                $contentuser = ContentUser::where('content_id', $request->content_id)->firstWhere('user_id', $id);
+                if ($contentuser) {
+                    // $arrayexist[] = $contentuser->progress;
+                    $content_user = ContentUser::where('id', $contentuser->id)->Update([
+                        'status' => 'mandatory'
+                    ]);
+                } else {
+                    $content_user = ContentUser::Create([
+                        'user_id' => $id, 'content_id' => $request->content_id, 'status' => 'mandatory'
+                    ]);
+                }
             }
         }
         return to_route('content.edit', $request->slug)->with('success', 'Content successfully assigned');
@@ -615,6 +635,13 @@ class ContentController extends Controller
 
     public function synchronizeLearningHours(Request $request, Content $content, \App\Services\LearningHours\ContentLearningHourService $service): \Illuminate\Http\JsonResponse
     {
+        if ($content->isPublished()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot synchronize learning hours while content is published. Please unpublish first.'
+            ], 422);
+        }
+
         $result = $service->syncSingleContent($content, $request->all());
 
         return response()->json($result->toArray());
@@ -660,6 +687,13 @@ class ContentController extends Controller
         ]);
 
         $content = Content::findOrFail($validated['id']);
+
+        if ($content->isPublished()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot update total page while content is published. Please unpublish first.',
+            ], 422);
+        }
 
         if ($content->type !== 'Document') {
             return response()->json([

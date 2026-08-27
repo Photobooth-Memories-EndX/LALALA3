@@ -3,6 +3,7 @@
     $mode = $mode ?? ($content ? 'edit' : 'create');
     $stepNumber = $stepNumber ?? 3;
     $contentType = old('type', $content?->type ?? '');
+    $isLocked = $isLocked ?? ($content && $content->isPublished());
 @endphp
 
 @once
@@ -59,22 +60,22 @@ document.addEventListener("DOMContentLoaded", function () {
         
         {{-- Type-Specific Metadata Sections --}}
         <div id="metadata-section-document" class="mb-3" style="{{ $contentType === 'Document' ? '' : 'display: none;' }}">
-            @include('main.content.components.metadata-document', ['content' => $content, 'mode' => $mode])
+            @include('main.content.components.metadata-document', ['content' => $content, 'mode' => $mode, 'isLocked' => $isLocked])
         </div>
 
         <div id="metadata-section-video" class="mb-3" style="{{ $contentType === 'Video' ? '' : 'display: none;' }}">
-            @include('main.content.components.metadata-video', ['content' => $content, 'mode' => $mode])
+            @include('main.content.components.metadata-video', ['content' => $content, 'mode' => $mode, 'isLocked' => $isLocked])
         </div>
 
         <div id="metadata-section-youtube" class="mb-3" style="{{ $contentType === 'YouTube' ? '' : 'display: none;' }}">
-            @include('main.content.components.metadata-youtube', ['content' => $content, 'mode' => $mode])
+            @include('main.content.components.metadata-youtube', ['content' => $content, 'mode' => $mode, 'isLocked' => $isLocked])
         </div>
 
         <div id="metadata-section-default" class="mb-3" style="{{ (!in_array($contentType, ['Document', 'Video', 'YouTube'])) ? '' : 'display: none;' }}">
-            @include('main.content.components.metadata-default', ['content' => $content, 'mode' => $mode])
+            @include('main.content.components.metadata-default', ['content' => $content, 'mode' => $mode, 'isLocked' => $isLocked])
         </div>
 
         {{-- Shared Metadata Partial (Learning Hours, Publish Date, Deadline) --}}
-        @include('main.content.components.metadata-common', ['content' => $content, 'mode' => $mode])
+        @include('main.content.components.metadata-common', ['content' => $content, 'mode' => $mode, 'isLocked' => $isLocked])
     </div>
 </div>

@@ -5,6 +5,7 @@
     $stepNumber = $stepNumber ?? ($mode === 'edit' ? 6 : 5);
     $hasUserList = count($user) > 0;
     $cardTitle = ($mode === 'edit' || $hasUserList) ? 'Assignment & Action' : 'Action';
+    $isLocked = $isLocked ?? ($content && $content->isPublished());
 @endphp
 
 <div class="card owl-main-card mb-4">
@@ -24,7 +25,7 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-md-10">
                             <label class="form-label" for="select-user">Employee</label>
-                            <select class="form-select" id="select-user" name="employee[]" multiple>
+                            <select class="form-select" id="select-user" name="employee[]" multiple {{ $isLocked ? 'disabled' : '' }}>
                                 @unless (count($user) == 0)
                                     @foreach ($user as $list)
                                         <option value="{{ $list->id }}">{{ $list->id_emp }} - {{ $list->name }}</option>
@@ -37,7 +38,7 @@
                         <div class="col-md-2">
                             <input type="hidden" name="content_id" value="{{ $content->id }}">
                             <input type="hidden" name="slug" value="{{ $content->slug }}">
-                            <button type="submit" form="contentAssignForm" class="btn btn-primary w-100" name="action" value="assign">
+                            <button type="submit" form="contentAssignForm" class="btn btn-primary w-100" name="action" value="assign" {{ $isLocked ? 'disabled' : '' }}>
                                 Assign
                             </button>
                         </div>
@@ -76,28 +77,21 @@
             @if ($mode === 'edit' && $content)
                 <a href="{{ route('content.index') }}" class="btn btn-light me-auto">Back to List</a>
 
-                <button type="submit" form="contentEditForm" class="btn btn-primary" name="action" value="update">
-                    <i class="ti ti-device-floppy me-1"></i>
-                    Save Content
-                </button>
-
-                @if ($content->active != 'Active')
-                    {{-- <button type="submit" form="contentEditForm" class="btn btn-success" name="action" value="save" formnovalidate>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                            <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"></path>
-                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                            <path d="M14 4l0 4l-6 0l0 -4"></path>
-                        </svg>
-                        Unpublish Content
-                    </button> --}}
-                    <button type="submit" form="contentEditForm" class="btn btn-primary" name="action" value="publish">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                            <path d="M7 11v8a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1h3a4 4 0 0 0 4 -4v-1a2 2 0 0 1 4 0v5h3a2 2 0 0 1 2 2l-1 5a2 3 0 0 1 -3 -3"></path>
-                        </svg>
-                        Save & Publish
+                @if (!$isLocked)
+                    <button type="submit" form="contentEditForm" class="btn btn-primary" name="action" value="update">
+                        <i class="ti ti-device-floppy me-1"></i>
+                        Save Content
                     </button>
+
+                    @if ($content->active != 'Active')
+                        <button type="submit" form="contentEditForm" class="btn btn-primary" name="action" value="publish">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M7 11v8a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1h3a4 4 0 0 0 4 -4v-1a2 2 0 0 1 4 0v5h3a2 2 0 0 1 2 2l-1 5a2 3 0 0 1 -3 -3"></path>
+                            </svg>
+                            Save & Publish
+                        </button>
+                    @endif
                 @endif
             @else
                 <a href="{{ route('content.index') }}" class="btn btn-light me-auto">Cancel</a>

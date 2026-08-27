@@ -9,6 +9,7 @@
         $url_litepicker = asset('Tabler/dist/libs/litepicker/dist/litepicker.js?1684106062');
         $url_select = asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062');
         $url_vendor = asset('Tabler/dist/css/tabler-vendors.min.css?1684106062');
+        $isLocked = $content && $content->isPublished();
     @endphp
 
     @include('main.monitoring.components.style')
@@ -59,7 +60,8 @@
                             @include('main.content.components.section-publish-status', [
                                 'mode' => 'edit',
                                 'stepNumber' => 1,
-                                'content' => $content
+                                'content' => $content,
+                                'isLocked' => $isLocked,
                             ])
 
                             {{-- ② Main Information --}}
@@ -67,28 +69,32 @@
                                 'mode' => 'edit',
                                 'stepNumber' => 2,
                                 'content' => $content,
-                                'classification' => $classification
+                                'classification' => $classification,
+                                'isLocked' => $isLocked,
                             ])
 
                             {{-- ③ Content Files --}}
                             @include('main.content.components.section-content-files', [
                                 'mode' => 'edit',
                                 'stepNumber' => 3,
-                                'content' => $content
+                                'content' => $content,
+                                'isLocked' => $isLocked,
                             ])
 
                             {{-- ④ Metadata Content --}}
                             @include('main.content.components.section-metadata', [
                                 'mode' => 'edit',
                                 'stepNumber' => 4,
-                                'content' => $content
+                                'content' => $content,
+                                'isLocked' => $isLocked,
                             ])
 
                             {{-- ⑤ Live Preview --}}
                             @include('main.content.components.section-preview', [
                                 'mode' => 'edit',
                                 'stepNumber' => 5,
-                                'content' => $content
+                                'content' => $content,
+                                'isLocked' => $isLocked,
                             ])
 
                         </div>
@@ -100,7 +106,8 @@
                     'mode' => 'edit',
                     'stepNumber' => 6,
                     'content' => $content,
-                    'user' => $user
+                    'user' => $user,
+                    'isLocked' => $isLocked,
                 ])
 
             </div>
@@ -131,8 +138,6 @@
             border-radius: var(--tblr-border-radius, .375rem);
         }
 
-
-
         [data-bs-theme="dark"] .document-duration-estimate,
         body.dark-mode .document-duration-estimate {
             background: rgba(255, 255, 255, .04);
@@ -145,6 +150,23 @@
             border: 2px dashed var(--tblr-border-color, #dce1e7) !important;
             border-radius: var(--tblr-border-radius, .375rem) !important;
             background: var(--tblr-bg-surface-secondary, rgba(98, 105, 118, .03)) !important;
+        }
+
+        .compact-dropzone.is-locked {
+            pointer-events: none !important;
+            cursor: not-allowed !important;
+            opacity: 0.7 !important;
+            background: var(--tblr-bg-surface-secondary, rgba(98, 105, 118, .06)) !important;
+            border-style: solid !important;
+        }
+
+        .form-control:disabled,
+        .form-select:disabled,
+        .form-check-input:disabled {
+            background-color: var(--tblr-bg-surface-secondary, #f8fafc) !important;
+            color: var(--tblr-muted, #64748b) !important;
+            cursor: not-allowed !important;
+            opacity: 0.9 !important;
         }
     </style>
 @endsection
@@ -162,6 +184,7 @@
             window.Plyr && (new Plyr('#player-youtube'));
         });
 
+        @if (!$isLocked)
         $(document).on('click', '.btn-remove-content', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -223,6 +246,7 @@
                 }
             }
         });
+        @endif
 
         var gettype = document.getElementById("type").value;
         if (gettype == "YouTube") {
@@ -238,6 +262,7 @@
             }
         }
 
+        @if (!$isLocked)
         window.contentFileHandler = new ContentFileHandler({
             formId: 'contentEditForm',
             typeSelectId: 'type',
@@ -254,6 +279,10 @@
 
         let myDropzone = window.contentFileHandler.getDocDropzone();
         let myThumbnailDropzone = window.contentFileHandler.getThumbDropzone();
+        @else
+        let myDropzone = null;
+        let myThumbnailDropzone = null;
+        @endif
 
         var pdfjsLib = window.pdfjsLib || window["pdfjs-dist/build/pdf"];
         if (pdfjsLib) {
@@ -283,6 +312,7 @@
             });
         }
 
+        @if (!$isLocked)
         document.addEventListener("DOMContentLoaded", function() {
             window.Litepicker && (new Litepicker({
                 element: document.getElementById('datepicker-icon-prepend'),
@@ -310,6 +340,7 @@
                 }
             });
         })();
+        @endif
 
         // ── Live Preview ──────────────────────────────────────────────────
         if (window.OwlPreview) {
@@ -337,27 +368,32 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            var el;
-            window.TomSelect && (new TomSelect(el = document.getElementById('select-user'), {
-                copyClassesToDropdown: false,
-                dropdownParent: 'body',
-                controlInput: '<input>',
-                plugins: ['remove_button'],
-                render: {
-                    item: function(data, escape) {
-                        if (data.customProperties) {
-                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
-                        }
-                        return '<div>' + escape(data.text) + '</div>';
+            var el = document.getElementById('select-user');
+            if (el && window.TomSelect) {
+                var ts = new TomSelect(el, {
+                    copyClassesToDropdown: false,
+                    dropdownParent: 'body',
+                    controlInput: '<input>',
+                    plugins: ['remove_button'],
+                    render: {
+                        item: function(data, escape) {
+                            if (data.customProperties) {
+                                return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                            }
+                            return '<div>' + escape(data.text) + '</div>';
+                        },
+                        option: function(data, escape) {
+                            if (data.customProperties) {
+                                return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                            }
+                            return '<div>' + escape(data.text) + '</div>';
+                        },
                     },
-                    option: function(data, escape) {
-                        if (data.customProperties) {
-                            return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
-                        }
-                        return '<div>' + escape(data.text) + '</div>';
-                    },
-                },
-            }));
+                });
+                @if ($isLocked)
+                ts.disable();
+                @endif
+            }
         });
     </script>
 @endsection
