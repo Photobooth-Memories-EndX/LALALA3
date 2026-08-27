@@ -74,16 +74,10 @@
                                 </td>
 
                                 <td>
-                                    @if ($role === \App\Models\User::ROLE_SUPER_ADMIN)
-                                        <span class="text-muted small">
-                                            Tidak perlu diatur
-                                        </span>
-                                    @else
-                                        <a href="{{ route('manage.access-permission.edit', $role) }}"
-                                           class="btn btn-sm btn-primary">
-                                            Atur Permission
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('manage.access-permission.edit', $role) }}"
+                                       class="btn btn-sm btn-primary">
+                                        Settings Permission
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach

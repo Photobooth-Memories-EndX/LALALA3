@@ -56,12 +56,6 @@ class ManageAccessPermissionController extends Controller
     {
         abort_if(!array_key_exists($role, User::roles()), 404);
 
-        if ($role === User::ROLE_SUPER_ADMIN) {
-            return redirect()
-                ->route('manage.access-permission.index')
-                ->with('warning', 'Super Admin selalu memiliki full access.');
-        }
-
         $selectedModules = $request->input('permissions', []);
 
         foreach ($this->modules as $moduleKey => $label) {

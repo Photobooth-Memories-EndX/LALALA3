@@ -178,7 +178,7 @@
                                 @php
                                     $checked = isset($permissions[$moduleKey])
                                         ? (bool) $permissions[$moduleKey]
-                                        : $role === \App\Models\User::ROLE_ADMIN;
+                                        : in_array((int) $role, [\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_SUPER_ADMIN], true);
                                 @endphp
 
                                 <div class="col-sm-6 col-xl-4">
@@ -219,7 +219,7 @@
                                 @php
                                     $checked = isset($permissions[$moduleKey])
                                         ? (bool) $permissions[$moduleKey]
-                                        : $role === \App\Models\User::ROLE_ADMIN;
+                                        : in_array((int) $role, [\App\Models\User::ROLE_ADMIN, \App\Models\User::ROLE_SUPER_ADMIN], true);
                                 @endphp
 
                                 <div class="col-sm-6 col-xl-4">
