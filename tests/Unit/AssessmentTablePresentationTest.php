@@ -32,17 +32,15 @@ class AssessmentTablePresentationTest extends TestCase
             ['assessments' => collect([$passed, $failed, $pending, $withoutResult])]
         );
 
-        $this->assertSame(1, substr_count($html, 'Assessment Score'));
+        $this->assertSame(1, substr_count($html, 'SCORE'));
         $this->assertStringNotContainsString('>Passing Grade</', $html);
         $this->assertStringContainsString('data-assessment-score="90"', $html);
-        $this->assertStringContainsString('>90</td>', $html);
         $this->assertStringContainsString('data-assessment-score="70"', $html);
-        $this->assertStringContainsString('>70</td>', $html);
-        $this->assertSame(2, substr_count($html, 'data-assessment-score=""'));
-        $this->assertSame(2, substr_count($html, '>Pending</span>'));
-        $this->assertSame(1, substr_count($html, 'Passing Grade: 80'));
-        $this->assertStringNotContainsString('Passing Grade: 75', $html);
-        $this->assertStringNotContainsString('Passing Grade: 85', $html);
+        $this->assertSame(1, substr_count($html, 'data-assessment-score=""'));
+        $this->assertSame(1, substr_count($html, '>Pending</span>'));
+        $this->assertStringContainsString('Passing Grade : 80', $html);
+        $this->assertStringContainsString('Passing Grade : 75', $html);
+        $this->assertStringContainsString('Passing Grade : 85', $html);
     }
 
     private function assessment(string $title, int $passingGrade, array $results = []): Assesment

@@ -439,6 +439,7 @@
                                     <th class="text-center" style="width: 100px;">Result</th>
                                     <th class="text-end" style="width: 150px;">Start Date Time</th>
                                     <th class="text-end" style="width: 150px;">Finish Date Time</th>
+                                    <th class="text-center" style="width: 90px;">Action</th>
                                 </tr>
                             </thead>
 
@@ -508,6 +509,22 @@
 
                                         <td class="text-end text-muted">
                                             {{ $list->updated_at ? date("d/m/y H:i:s", strtotime($list->updated_at)) : '-' }}
+                                        </td>
+
+                                        <td class="text-center">
+                                            @if (auth()->user()->canAccessManageModule('assessment_management'))
+                                                <button type="button"
+                                                        class="btn btn-sm btn-danger owl-action-btn btn-delete-result"
+                                                        data-url="{{ route('assesment.result.destroy', ['assesment' => $assesment->slug, 'id' => $list->id]) }}"
+                                                        data-id="{{ $list->id }}"
+                                                        data-bs-toggle="tooltip"
+                                                        data-toggle="tooltip"
+                                                        data-bs-placement="top"
+                                                        title="Delete"
+                                                        aria-label="Delete">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -616,6 +633,17 @@
             </div>
         </div>
     </div>
+
+    {{-- Reusable Delete Confirmation Modal --}}
+    <x-shared.delete-confirmation-modal
+        id="modal-delete-result"
+        form-id="form-delete-result"
+        title="Delete Assessment Result"
+        message="Are you sure you want to delete this assessment result?"
+        warning="Deleted data cannot be recovered."
+        confirm-text="Delete"
+        cancel-text="Cancel"
+    />
 @endsection
 
 @section('script')
@@ -773,6 +801,14 @@
                     }
                 });
             });
+
+            // Delete assessment result confirmation modal handler
+            $(document).on('click', '.btn-delete-result', function(e) {
+                e.preventDefault();
+                var url = $(this).data('url');
+                $('#form-delete-result').attr('action', url);
+                $('#modal-delete-result').modal('show');
+            });
         });
     </script>
-@endsection
+@endsection

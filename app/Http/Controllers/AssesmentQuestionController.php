@@ -7,6 +7,7 @@ use App\Models\Assesment;
 use Illuminate\Http\Request;
 use App\Models\AssesmentResult;
 use App\Models\AssesmentQuestion;
+use App\Models\Certificate;
 use App\Models\User;
 use App\Services\AssessmentDuplicateService;
 use Illuminate\Support\Facades\Log;
@@ -359,5 +360,26 @@ class AssesmentQuestionController extends Controller
             return redirect()->route('assesment.index')
                 ->with('danger', 'Failed to duplicate assessment. Please try again.');
         }
+    }
+
+    public function destroyResult(Assesment $assesment, $id)
+    {
+        if (!auth()->user()->canAccessManageModule('assessment_management')) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus assessment result.');
+        }
+
+        $result = AssesmentResult::where('assesment_id', $assesment->id)
+            ->where('id', $id)
+            ->first();
+
+        if (!$result) {
+            return back()->with('warning', 'Assessment result not found or has already been deleted.');
+        }
+
+        Certificate::where('assessment_result_id', $result->id)->update(['assessment_result_id' => null]);
+
+        $result->delete();
+
+        return back()->with('success', 'Assessment result deleted successfully.');
     }
 }
