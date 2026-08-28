@@ -500,10 +500,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else {
                             let html = '';
                             data.forEach(item => {
-                                let targetUrl = item.category === 'news' ? `/news/${item.slug}` : `/content/${item.slug}`;
+                                // Ubah URL agar mengarah ke halaman hasil pencarian global
+                                let searchUrl = `/search/all?s=${encodeURIComponent(item.title)}`;
 
                                 html += `
-                                    <a href="${targetUrl}" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle">
+                                    <a href="${searchUrl}" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle">
                                         <span class="text-dark small fw-semibold">${escapeHtml(item.title)}</span>
                                     </a>
                                 `;
@@ -516,6 +517,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         searchDropdown.style.display = 'none';
                     });
             }, 250);
+        });
+
+        // Penanganan tekan Enter pada input search
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = this.value.trim();
+                if (query.length > 0) {
+                    window.location.href = `/search/all?s=${encodeURIComponent(query)}`;
+                }
+            }
         });
 
         // Sembunyikan dropdown jika pengguna mengklik di luar area search
