@@ -55,19 +55,18 @@
         : collect();
     $playlistCount = $activePlaylists->count();
 
-    if ($isPlaylistOnly) {
-        if ($playlistCount === 1) {
-            $cardUrl = route('playlist.user.view', ['slug' => $activePlaylists->first()->slug, 'vidslug' => $item->slug]);
-            $isModalLink = false;
-        } elseif ($playlistCount > 1) {
-            $cardUrl = '#';
-            $isModalLink = true;
-            $modalId = 'modal-select-playlist-' . $item->id;
-        } else {
-            $cardUrl = '#';
-            $isModalLink = false;
-        }
+    if (!$isPlaylistOnly) {
+        $cardUrl = route('content.user.view', $item->slug);
+        $isModalLink = false;
+    } elseif ($playlistCount === 1) {
+        $cardUrl = route('playlist.user.view', ['slug' => $activePlaylists->first()->slug, 'vidslug' => $item->slug]);
+        $isModalLink = false;
+    } elseif ($playlistCount > 1) {
+        $cardUrl = '#';
+        $isModalLink = true;
+        $modalId = 'modal-select-playlist-' . $item->id;
     } else {
+        // PLAYLIST ONLY WITHOUT AVAILABLE PLAYLIST -> FALLBACK TO DIRECT CONTENT
         $cardUrl = route('content.user.view', $item->slug);
         $isModalLink = false;
     }
@@ -75,13 +74,13 @@
 
 <div class="card content-card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
     <div class="position-relative">
-        @if ($isPlaylistOnly)
-            <span class="badge bg-purple text-white position-absolute top-0 start-0 m-3 shadow-sm" style="pointer-events: none; z-index: 2;">
-                <i class="ti ti-playlist me-1"></i>Playlist Only
+        @if ($isPlaylistOnly && $playlistCount > 0)
+            <span class="badge bg-green text-white position-absolute top-0 start-0 m-3 shadow-sm" style="pointer-events: none; z-index: 2;">
+                <i class="ti ti-playlist me-1"></i>Playlist
             </span>
         @endif
 
-        @if ($isExpired || ($isPlaylistOnly && $playlistCount === 0))
+        @if ($isExpired)
             <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
         @elseif ($isModalLink)
             <a href="javascript:void(0)"
@@ -114,7 +113,7 @@
             </div>
 
             <h3 class="card-title content-card-title mb-1 fw-bold">
-                @if ($isExpired || ($isPlaylistOnly && $playlistCount === 0))
+                @if ($isExpired)
                     <span title="{{ $item->title }}">{{ $item->title }}</span>
                 @elseif ($isModalLink)
                     <a href="javascript:void(0)"
@@ -179,11 +178,6 @@
                 <button type="button" class="btn btn-danger-lt w-100 rounded-pill" disabled>
                     <i class="ti ti-lock me-1"></i>
                     Akses Expired
-                </button>
-            @elseif ($isPlaylistOnly && $playlistCount === 0)
-                <button type="button" class="btn btn-secondary-lt w-100 rounded-pill" disabled>
-                    <i class="ti ti-alert-circle me-1"></i>
-                    Playlist Belum Tersedia
                 </button>
             @elseif ($isModalLink)
                 <button type="button"

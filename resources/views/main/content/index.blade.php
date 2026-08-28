@@ -130,7 +130,7 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <div class="text-secondary text-uppercase fw-bold small mb-2">
-                            Playlist Only
+                            Playlist
                         </div>
                         <div class="display-6 fw-bold text-purple">
                             {{ number_format($playlistOnly) }}
@@ -240,7 +240,7 @@
                                 </select>
                             </div>
                             <div class="col-md-3 col-lg-2">
-                                <label class="form-label small fw-semibold">Playlist Only</label>
+                                <label class="form-label small fw-semibold">Playlist</label>
                                 <select name="playlistonly" class="form-select form-select-sm">
                                     <option value="">All</option>
                                     <option value="Y" @selected(request('playlistonly') == 'Y')>Yes</option>
