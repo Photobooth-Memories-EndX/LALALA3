@@ -245,6 +245,7 @@ Route::get('/certificate/verify/{credentialId}', [UserCertificateController::cla
 Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
+    Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
 
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);

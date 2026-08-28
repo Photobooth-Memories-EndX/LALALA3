@@ -78,6 +78,14 @@
 [data-bs-theme="dark"] #moreGalleryFiltersModal .text-dark {
     color: var(--tblr-body-color) !important;
 }
+.btn-back {
+    color: #0c5b9e !important;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.btn-back:hover {
+    opacity: 0.85;
+    transform: translateX(-3px);
+}
 </style>
 @endsection
 
@@ -85,6 +93,13 @@
 
 <div class="page-header d-print-none">
     <div class="container-xl">
+        <!-- TOMBOL BACK KE DASHBOARD MANAGE -->
+        <div class="mb-3">
+            <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
+                <i class="ti ti-arrow-left me-1 fs-5"></i> Back
+            </a>
+        </div>
+
         <div class="row align-items-center">
             <div class="col">
                 <div class="d-flex align-items-center gap-3">
