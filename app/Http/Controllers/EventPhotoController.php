@@ -13,77 +13,162 @@ class EventPhotoController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-public function index(Request $request)
-{
-$query = EventPhoto::query();
+    public function index(Request $request)
+    {
+        $query = EventPhoto::query();
 
-// Search
-if ($request->filled('search')) {
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                  ->orWhere('uploader', 'like', '%' . $search . '%')
+                  ->orWhere('category', 'like', '%' . $search . '%');
+            });
+        }
 
-    $query->where(
-        'title',
-        'like',
-        '%' . $request->search . '%'
-    );
+        // Status Filter (Approved, Pending, Reject)
+        if ($request->filled('status')) {
+            $status = strtolower($request->status);
+            if ($status === 'reject' || $status === 'rejected') {
+                $query->whereIn('status', ['reject', 'rejected']);
+            } else {
+                $query->where('status', $status);
+            }
+        }
 
-}
+        // Year Filter
+        if ($request->filled('year') && $request->year !== 'all') {
+            $query->where(function ($q) use ($request) {
+                $q->whereYear('eventdate', (int) $request->year)
+                  ->orWhere(function ($sub) use ($request) {
+                      $sub->whereNull('eventdate')->whereYear('created_at', (int) $request->year);
+                  });
+            });
+        }
 
-// Status Filter
-if ($request->filled('status')) {
+        // Month Filter
+        if ($request->filled('month') && $request->month !== 'all') {
+            $query->where(function ($q) use ($request) {
+                $q->whereMonth('eventdate', (int) $request->month)
+                  ->orWhere(function ($sub) use ($request) {
+                      $sub->whereNull('eventdate')->whereMonth('created_at', (int) $request->month);
+                  });
+            });
+        }
 
-    $query->where(
-        'active',
-        $request->status
-    );
+        // Uploader / Organizer Filter
+        if ($request->filled('uploader_id')) {
+            $query->where('user_id', $request->uploader_id);
+        } elseif ($request->filled('uploader')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('user_id', $request->uploader)
+                  ->orWhere('uploader', 'like', '%' . $request->uploader . '%');
+            });
+        }
 
-}
+        // Type / Category Filter
+        if ($request->filled('category_id')) {
+            $query->where('category', $request->category_id);
+        } elseif ($request->filled('category') && $request->category !== 'all') {
+            $query->where('category', $request->category);
+        }
 
-$show = $request->show ?? 25;
+        // Event Date Range Filter
+        $fromDate = $request->input('from_date', $request->input('date_from'));
+        $toDate = $request->input('to_date', $request->input('date_to'));
 
-$eventphoto = $query
-    ->latest()
-    ->paginate($show)
-    ->withQueryString();
+        if ($fromDate && $toDate) {
+            $query->where(function ($q) use ($fromDate, $toDate) {
+                $q->whereBetween('eventdate', [$fromDate, $toDate])
+                  ->orWhere(function ($sub) use ($fromDate, $toDate) {
+                      $sub->whereNull('eventdate')->whereDate('created_at', '>=', $fromDate)->whereDate('created_at', '<=', $toDate);
+                  });
+            });
+        } elseif ($fromDate) {
+            $query->where(function ($q) use ($fromDate) {
+                $q->whereDate('eventdate', '>=', $fromDate)
+                  ->orWhere(function ($sub) use ($fromDate) {
+                      $sub->whereNull('eventdate')->whereDate('created_at', '>=', $fromDate);
+                  });
+            });
+        } elseif ($toDate) {
+            $query->where(function ($q) use ($toDate) {
+                $q->whereDate('eventdate', '<=', $toDate)
+                  ->orWhere(function ($sub) use ($toDate) {
+                      $sub->whereNull('eventdate')->whereDate('created_at', '<=', $toDate);
+                  });
+            });
+        }
 
-$totalEvent = EventPhoto::count();
+        // Views & Sorting
+        $views = $request->input('views');
+        $sort = $request->input('sort');
 
-$activeEvent = EventPhoto::where(
-    'active',
-    'Active'
-)->count();
+        if ($views === 'most' || $views === 'most_viewed' || $sort === 'most_viewed') {
+            $query->orderBy('views', 'desc');
+        } elseif ($views === 'least' || $views === 'least_viewed' || $sort === 'least_viewed') {
+            $query->orderBy('views', 'asc');
+        } elseif ($sort === 'oldest') {
+            $query->orderBy('created_at', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
 
-$draftEvent = EventPhoto::where(
-    'active',
-    'Inactive'
-)->count();
+        $show = $request->input('show', 15);
+        $eventphoto = $query->paginate($show)->withQueryString();
 
-$totalPhotos = 0;
+        // Statistics
+        $totalEvent = EventPhoto::count();
+        $activeEvent = EventPhoto::where(function ($q) {
+            $q->where('active', 'Active')->orWhere('status', 'approved');
+        })->count();
+        $draftEvent = EventPhoto::where(function ($q) {
+            $q->where('active', 'Inactive')->orWhere('status', '!=', 'approved');
+        })->count();
 
-foreach (EventPhoto::all() as $event) {
+        $totalPhotos = 0;
+        foreach (EventPhoto::select('photos')->get() as $event) {
+            $photos = json_decode($event->photos, true) ?? [];
+            $totalPhotos += count($photos);
+        }
 
-    $photos =
-        json_decode(
-            $event->photos,
-            true
-        ) ?? [];
+        // Uploaders & Categories for Dropdowns
+        $uploaders = \App\Models\User::whereIn('id', EventPhoto::whereNotNull('user_id')->distinct()->pluck('user_id'))->orderBy('name')->get();
+        if ($uploaders->isEmpty()) {
+            $uploaders = \App\Models\User::orderBy('name')->take(25)->get();
+        }
 
-    $totalPhotos += count($photos);
+        $dbCategories = EventPhoto::whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->pluck('category')
+            ->toArray();
 
-}
+        $defaultCategories = ['Corporate Event', 'Workshop', 'Conference', 'Team Building', 'Gathering', 'Celebration'];
+        $mergedCategories = array_unique(array_merge($defaultCategories, $dbCategories));
 
-return view(
-    'main.gallery.index',
-    compact(
-        'eventphoto',
-        'show',
-        'totalEvent',
-        'activeEvent',
-        'draftEvent',
-        'totalPhotos'
-    )
-);
+        $categories = collect($mergedCategories)->map(function ($cat) {
+            return (object) [
+                'id'   => $cat,
+                'name' => $cat,
+            ];
+        });
 
-}
+        return view(
+            'main.gallery.index',
+            compact(
+                'eventphoto',
+                'show',
+                'totalEvent',
+                'activeEvent',
+                'draftEvent',
+                'totalPhotos',
+                'uploaders',
+                'categories'
+            )
+        );
+    }
 
 
     /**

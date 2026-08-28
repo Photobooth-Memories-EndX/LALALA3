@@ -50,7 +50,7 @@
                 </div>
             </div>
             <div class="col-auto">
-                <a href="{{ route('news.index') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('manage.news.index') }}" class="btn btn-outline-secondary">
                     <i class="ti ti-arrow-left me-1"></i>Back
                 </a>
             </div>
@@ -191,7 +191,7 @@
             <div class="row mt-3">
                 <div class="col-12">
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{{ route('news.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <a href="{{ route('manage.news.index') }}" class="btn btn-outline-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary">
                             <i class="ti ti-device-floppy me-1"></i>Update News
                         </button>

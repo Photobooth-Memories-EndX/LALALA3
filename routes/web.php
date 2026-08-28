@@ -279,6 +279,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:news_announcement'], function () {
         Route::resource('news', NewsController::class);
+        Route::get('news', [NewsController::class, 'index'])->name('manage.news.index');
         Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     });
 
@@ -369,6 +370,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:event_documentation'], function () {
         Route::resource('eventphoto', EventPhotoController::class);
+        Route::get('eventphoto', [EventPhotoController::class, 'index'])->name('manage.eventphoto.index');
         Route::post('eventphoto/create/upload', [EventPhotoController::class, 'uploadfileajax'])->name('eventphoto.uploadfileajax');
         Route::get('eventphoto/create/upload/delete', [EventPhotoController::class, 'deletefileajax'])->name('eventphoto.deletefileajax');
         Route::post('eventphoto/delete', [EventPhotoController::class, 'deleteImage'])->name('eventphoto.deleteImage');

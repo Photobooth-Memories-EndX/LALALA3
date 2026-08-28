@@ -53,6 +53,31 @@
     justify-content: center;
     border: 1px solid var(--tblr-border-color);
 }
+.btn-quick-reset {
+    border-color: #0c5b9e !important;
+    color: #0c5b9e !important;
+    background-color: transparent !important;
+    transition: background-color .15s ease-in-out, border-color .15s ease-in-out, color .15s ease-in-out;
+}
+.btn-quick-reset:hover {
+    background-color: #e6f0fa !important;
+    border-color: #0c5b9e !important;
+    color: #0c5b9e !important;
+}
+.btn-quick-reset:hover i {
+    color: #0c5b9e !important;
+}
+[data-bs-theme="dark"] .btn-quick-reset:hover {
+    background-color: rgba(12, 91, 158, 0.25) !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+}
+[data-bs-theme="dark"] .btn-quick-reset:hover i {
+    color: #60a5fa !important;
+}
+[data-bs-theme="dark"] #moreGalleryFiltersModal .text-dark {
+    color: var(--tblr-body-color) !important;
+}
 </style>
 @endsection
 
@@ -143,42 +168,83 @@
             </div>
         </div>
 
+        {{-- Quick Filter Component --}}
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-3">
+                <!-- Header Text Quick Filter -->
+                <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
+                    Quick Filter
+                </div>
+
+                <form action="{{ route('manage.eventphoto.index') }}" method="GET" id="manageGalleryFilterForm">
+                    <div class="row g-2 align-items-center">
+                        <!-- Filter Year & Month -->
+                        <div class="col-6 col-md-auto">
+                            <select name="year" class="form-select rounded-3" onchange="document.getElementById('manageGalleryFilterForm').submit()">
+                                <option value="">Year: All</option>
+                                @foreach(range(date('Y'), 2020) as $y)
+                                    <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>Year: {{ $y }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-auto">
+                            <select name="month" class="form-select rounded-3" onchange="document.getElementById('manageGalleryFilterForm').submit()">
+                                <option value="">Month: All</option>
+                                @foreach(range(1, 12) as $m)
+                                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                                        {{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-auto">
+                            <select name="views" class="form-select rounded-3" onchange="document.getElementById('manageGalleryFilterForm').submit()">
+                                <option value="">Views: All</option>
+                                <option value="most" {{ (request('views') == 'most' || request('views') == 'most_viewed') ? 'selected' : '' }}>Most Viewed</option>
+                                <option value="least" {{ (request('views') == 'least' || request('views') == 'least_viewed') ? 'selected' : '' }}>Least Viewed</option>
+                            </select>
+                        </div>
+
+                        <!-- FILTER STATUS: Approved, Pending, Reject -->
+                        <div class="col-6 col-md-auto">
+                            <select name="status" class="form-select rounded-3" onchange="document.getElementById('manageGalleryFilterForm').submit()">
+                                <option value="">Status: All</option>
+                                <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="reject" {{ (request('status') == 'reject' || request('status') == 'rejected') ? 'selected' : '' }}>Reject</option>
+                            </select>
+                        </div>
+
+                        <!-- Search Bar Input -->
+                        <div class="col-12 col-md">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="ti ti-search text-muted"></i></span>
+                                <input type="text" name="search" id="gallerySearchInput" class="form-control border-start-0 rounded-end-3" placeholder="Search by title..." value="{{ request('search') }}">
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="col-auto d-flex gap-1">
+                            <button type="submit" class="btn btn-primary rounded-3 px-3" style="background-color: #0c5b9e; border-color: #0c5b9e;" title="Search">
+                                <i class="ti ti-search"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary rounded-3 px-3" style="border-color: #0c5b9e; color: #0c5b9e;" data-bs-toggle="modal" data-bs-target="#moreGalleryFiltersModal" title="More Filters">
+                                <i class="ti ti-adjustments-horizontal"></i>
+                            </button>
+                            <!-- Tombol Reset Biru dengan Efek Hover Aman -->
+                            <a href="{{ route('manage.eventphoto.index') }}" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center justify-content-center btn-quick-reset" style="border-color: #0c5b9e; color: #0c5b9e; background-color: transparent;" title="Reset Filter">
+                                <i class="ti ti-refresh" style="font-size: 1.1rem; color: #0c5b9e !important;"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         {{-- Table Card --}}
         <div class="card shadow-sm">
             <div class="card-header">
                 <h3 class="card-title">List Event Gallery</h3>
-            </div>
-
-            <div class="card-body border-bottom py-3">
-                <div class="row g-2 align-items-center">
-                    <div class="col-md-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="text-nowrap text-secondary small">Show</span>
-                            <select id="showFilter" class="form-select form-select-sm">
-                                <option value="10">10</option>
-                                <option value="25" selected>25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <select id="statusFilter" class="form-select form-select-sm">
-                            <option value="">All Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="col-md-5">
-                        <input type="text" id="searchInput" class="form-control form-control-sm"
-                               placeholder="Search event gallery...">
-                    </div>
-                    <div class="col-md-2">
-                        <button id="btnSearch" class="btn btn-primary btn-sm w-100">
-                            <i class="ti ti-search me-1"></i>Search
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <div id="galleryTableWrapper">
@@ -236,7 +302,7 @@
                                         $statusBadge = match($statusVal) {
                                             'approved' => 'bg-success-lt text-success',
                                             'pending'  => 'bg-warning-lt text-warning',
-                                            'reject'   => 'bg-danger-lt text-danger',
+                                            'reject', 'rejected' => 'bg-danger-lt text-danger',
                                             default    => 'bg-secondary-lt text-secondary'
                                         };
                                     @endphp
@@ -296,7 +362,7 @@
                     </table>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-center py-3">
-                    {{ $eventphoto->links() }}
+                    {{ $eventphoto->withQueryString()->links() }}
                 </div>
             </div>
 
@@ -305,45 +371,89 @@
     </div>
 </div>
 
+{{-- More Filters Modal --}}
+<div class="modal fade" id="moreGalleryFiltersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="ti ti-adjustments-horizontal text-primary"></i> More Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('manage.eventphoto.index') }}" method="GET">
+                <div class="modal-body py-3">
+                    <input type="hidden" name="search" value="{{ request('search') }}">
+                    <input type="hidden" name="status" value="{{ request('status') }}">
+                    <input type="hidden" name="year" value="{{ request('year') }}">
+                    <input type="hidden" name="month" value="{{ request('month') }}">
+                    <input type="hidden" name="views" value="{{ request('views') }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small">Uploader / Organizer</label>
+                        <select name="uploader_id" class="form-select rounded-3">
+                            <option value="">All Uploaders / Organizers</option>
+                            @foreach($uploaders ?? [] as $uploader)
+                                <option value="{{ $uploader->id }}" {{ (request('uploader_id') == $uploader->id || request('uploader') == $uploader->id) ? 'selected' : '' }}>{{ $uploader->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark small">Type / Category</label>
+                            <select name="category_id" class="form-select rounded-3">
+                                <option value="">All Types</option>
+                                @foreach($categories ?? [] as $cat)
+                                    @php
+                                        $catVal = is_object($cat) ? ($cat->id ?? $cat->name) : $cat;
+                                        $catName = is_object($cat) ? $cat->name : $cat;
+                                    @endphp
+                                    <option value="{{ $catVal }}" {{ (request('category_id') == $catVal || request('category') == $catVal) ? 'selected' : '' }}>{{ $catName }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark small">Sort by</label>
+                            <select name="sort" class="form-select rounded-3">
+                                <option value="newest" {{ request('sort', 'newest') == 'newest' ? 'selected' : '' }}>Newest</option>
+                                <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar me-1"></i> Event Date</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="text" name="from_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('from_date', request('date_from')) }}">
+                            </div>
+                            <div class="col-6">
+                                <input type="text" name="to_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('to_date', request('date_to')) }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 d-flex gap-2">
+                    <a href="{{ route('manage.eventphoto.index') }}" class="btn btn-outline-secondary rounded-pill flex-fill"><i class="ti ti-refresh me-1"></i> Reset</a>
+                    <button type="submit" class="btn btn-primary rounded-pill flex-fill" style="background-color: #0c5b9e; border-color: #0c5b9e;"><i class="ti ti-check me-1"></i> Apply Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('script')
 <script>
-function loadGallery(page) {
-    page = page || 1;
-    $.get(
-        "{{ route('eventphoto.index') }}",
-        {
-            search: $('#searchInput').val(),
-            status: $('#statusFilter').val(),
-            show:   $('#showFilter').val(),
-            page:   page
-        },
-        function(response) {
-            var html = $(response).find('#galleryTableWrapper').html();
-            $('#galleryTableWrapper').html(html);
-        }
-    );
+var gallerySearchTimer;
+var gallerySearchInput = document.getElementById('gallerySearchInput');
+if (gallerySearchInput) {
+    gallerySearchInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') return;
+        clearTimeout(gallerySearchTimer);
+        var form = document.getElementById('manageGalleryFilterForm');
+        gallerySearchTimer = setTimeout(function() { if (form) form.submit(); }, 450);
+    });
 }
-
-$('#btnSearch').on('click', function() {
-    loadGallery();
-});
-
-$('#searchInput').on('keyup', function() {
-    clearTimeout(window.galleryTimer);
-    window.galleryTimer = setTimeout(loadGallery, 450);
-});
-
-$('#statusFilter, #showFilter').on('change', function() {
-    loadGallery();
-});
-
-$(document).on('click', '.pagination a', function(e) {
-    e.preventDefault();
-    var href  = $(this).attr('href') || '';
-    var match = href.match(/page=(\d+)/);
-    loadGallery(match ? match[1] : 1);
-});
 </script>
 @endsection
