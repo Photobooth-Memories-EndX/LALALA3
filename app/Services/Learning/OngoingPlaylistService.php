@@ -2,7 +2,7 @@
 
 namespace App\Services\Learning;
 
-use App\Models\ContentUser;
+use App\Models\PlaylistContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use Illuminate\Support\Collection;
@@ -43,12 +43,15 @@ class OngoingPlaylistService
             )
             ->whereExists(function ($q) use ($userId) {
                 $q->from('trainingplandetail')
-                    ->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')
+                    ->join('playlist_content_users', function ($j) {
+                        $j->on('playlist_content_users.trainingplan_id', '=', 'trainingplandetail.trainingplan_id')
+                          ->on('playlist_content_users.content_id', '=', 'trainingplandetail.content_id');
+                    })
                     ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId)
+                    ->where('playlist_content_users.user_id', $userId)
                     ->where(function ($w) {
-                        $w->where('content_users.progress', '>', 0)
-                            ->orWhere('content_users.finish', '1');
+                        $w->where('playlist_content_users.progress', '>', 0)
+                            ->orWhere('playlist_content_users.finish', '1');
                     });
             })
             ->selectSub(
@@ -57,33 +60,51 @@ class OngoingPlaylistService
                 'total_items'
             )
             ->selectSub(
-                ContentUser::selectRaw('COUNT(*)')
-                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
+                PlaylistContentUser::selectRaw('COUNT(*)')
+                    ->join('trainingplandetail', function ($j) {
+                        $j->on('trainingplandetail.trainingplan_id', '=', 'playlist_content_users.trainingplan_id')
+                          ->on('trainingplandetail.content_id', '=', 'playlist_content_users.content_id');
+                    })
                     ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId)
-                    ->where('content_users.finish', '1'),
+                    ->where('playlist_content_users.user_id', $userId)
+                    ->where(function ($w) {
+                        $w->where('playlist_content_users.finish', '1')
+                            ->orWhere('playlist_content_users.progress', '>=', 100);
+                    }),
                 'finished_items'
             )
             ->selectSub(
-                ContentUser::selectRaw('COALESCE(ROUND(AVG(content_users.progress)), 0)')
-                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
+                PlaylistContentUser::selectRaw('COALESCE(ROUND(AVG(playlist_content_users.progress)), 0)')
+                    ->join('trainingplandetail', function ($j) {
+                        $j->on('trainingplandetail.trainingplan_id', '=', 'playlist_content_users.trainingplan_id')
+                          ->on('trainingplandetail.content_id', '=', 'playlist_content_users.content_id');
+                    })
                     ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId),
+                    ->where('playlist_content_users.user_id', $userId),
                 'avg_progress'
             )
             ->selectSub(
-                ContentUser::selectRaw('MAX(content_users.updated_at)')
-                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
+                PlaylistContentUser::selectRaw('MAX(playlist_content_users.updated_at)')
+                    ->join('trainingplandetail', function ($j) {
+                        $j->on('trainingplandetail.trainingplan_id', '=', 'playlist_content_users.trainingplan_id')
+                          ->on('trainingplandetail.content_id', '=', 'playlist_content_users.content_id');
+                    })
                     ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId)
-                    ->where('content_users.finish', '1'),
+                    ->where('playlist_content_users.user_id', $userId)
+                    ->where(function ($w) {
+                        $w->where('playlist_content_users.finish', '1')
+                            ->orWhere('playlist_content_users.progress', '>=', 100);
+                    }),
                 'last_finished_at'
             )
             ->selectSub(
-                ContentUser::selectRaw('MAX(content_users.updated_at)')
-                    ->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')
+                PlaylistContentUser::selectRaw('MAX(playlist_content_users.updated_at)')
+                    ->join('trainingplandetail', function ($j) {
+                        $j->on('trainingplandetail.trainingplan_id', '=', 'playlist_content_users.trainingplan_id')
+                          ->on('trainingplandetail.content_id', '=', 'playlist_content_users.content_id');
+                    })
                     ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('content_users.user_id', $userId),
+                    ->where('playlist_content_users.user_id', $userId),
                 'last_activity_at'
             )
             ->orderBy('trainingplan.title')

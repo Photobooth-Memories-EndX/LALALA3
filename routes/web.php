@@ -28,6 +28,7 @@ use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\GalleryUserController;
 use App\Http\Controllers\ProfileUserController;
 use App\Http\Controllers\PlaylistUserController;
+use App\Http\Controllers\PlaylistProgressController;
 use App\Http\Controllers\TrainingPlanController;
 use App\Http\Controllers\AssesmentUserController;
 use App\Http\Controllers\ContentDeleteController;
@@ -189,6 +190,7 @@ Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
 */
 Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
     Route::get('/', [PlaylistUserController::class, 'index'])->name('playlist.user.index');
+    Route::post('/progress/update', [PlaylistProgressController::class, 'updateProgress'])->name('playlist.user.progress.update');
     Route::post('/{trainingplan}/debug-state', [PlaylistDebugController::class, 'update'])
         ->name('playlist.debug.update');
     Route::delete('/{trainingplan}/debug-state', [PlaylistDebugController::class, 'reset'])

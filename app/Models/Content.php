@@ -51,6 +51,11 @@ class Content extends Model
         return $this->hasMany(ContentUser::class);
     }
 
+    public function playlistContentUsers()
+    {
+        return $this->hasMany(PlaylistContentUser::class, 'content_id');
+    }
+
     /**
      * Playlist (Training Plan) yang memuat content ini.
      * Dipakai untuk eager-load badge "Playlist" di kartu Learning On Going

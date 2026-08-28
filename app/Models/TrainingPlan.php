@@ -65,6 +65,11 @@ class TrainingPlan extends Model
             ->orderByRaw('CAST(content_order AS UNSIGNED) ASC');
     }
 
+    public function playlistContentUsers()
+    {
+        return $this->hasMany(PlaylistContentUser::class, 'trainingplan_id');
+    }
+
     public function isExpired(): bool
     {
         return (bool) $this->has_deadline && $this->to_date && now()->toDateString() > $this->to_date->format('Y-m-d');

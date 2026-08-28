@@ -217,6 +217,11 @@ public function canManageLms()
         return $this->hasMany(ContentUser::class);
     }
 
+    public function playlistContentUsers()
+    {
+        return $this->hasMany(PlaylistContentUser::class, 'user_id');
+    }
+
     public function comments()
     {
         return $this->hasMany(Comment::class);

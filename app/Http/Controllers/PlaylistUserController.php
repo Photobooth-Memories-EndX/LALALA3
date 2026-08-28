@@ -8,6 +8,7 @@ use App\Models\Content;
 use App\Models\Assesment;
 use App\Models\AssesmentResult;
 use App\Models\ContentUser;
+use App\Models\PlaylistContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Services\CertificateEligibilityService;
@@ -43,8 +44,8 @@ class PlaylistUserController extends Controller
         // trainingplan columns used: id, slug, title, total_duration_seconds,
         //                            url_link, active, created_at, thumbnail,
         //                            has_deadline, from_date, to_date
-        // content columns:      id, title, slug, type, link, classification_id, duration, learning_hours
-        // content_users columns: id, user_id, content_id, progress, finish
+        // content columns:                 id, title, slug, type, link, classification_id, duration, learning_hours
+        // playlist_content_users columns:  id, user_id, trainingplan_id, content_id, progress, finish
         $trainingplan = TrainingPlan::with([
                 'trainingplandetail' => fn ($q) => $q
                     ->whereHas('content', fn ($cq) => $cq->where('active', 'Active'))
@@ -55,9 +56,9 @@ class PlaylistUserController extends Controller
                     ->select(['id', 'title', 'slug', 'type', 'link', 'classification_id', 'author', 'views', 'duration', 'learning_hours', 'active']),
                 'trainingplandetail.content.classification' => fn ($q) => $q
                     ->select(['id', 'classification_name']),
-                'trainingplandetail.content.contentuser' => fn ($q) => $q
+                'playlistContentUsers' => fn ($q) => $q
                     ->where('user_id', $userId)
-                    ->select(['id', 'user_id', 'content_id', 'progress', 'finish']),
+                    ->select(['id', 'user_id', 'trainingplan_id', 'content_id', 'progress', 'finish']),
             ])
             ->select(['id', 'title', 'slug', 'total_duration_seconds', 'learning_hours', 'url_link',
                       'active', 'created_at', 'thumbnail', 'has_deadline',
@@ -76,8 +77,8 @@ class PlaylistUserController extends Controller
             $completedContent = 0;
 
             foreach ($details as $detail) {
-                $cu = $detail->content->contentuser->first(); // already filtered to $userId
-                if ($cu && ($cu->isFinished() || (int) ($cu->finish ?? 0) === 1 || (int) ($cu->progress ?? 0) >= 100)) {
+                $pcu = $tp->playlistContentUsers->firstWhere('content_id', $detail->content_id);
+                if ($pcu && ((int) ($pcu->finish ?? 0) === 1 || (int) ($pcu->progress ?? 0) >= 100)) {
                     $completedContent++;
                 }
             }
@@ -117,13 +118,14 @@ class PlaylistUserController extends Controller
             $nextContent      = null;
 
             foreach ($details as $detail) {
-                $cu = $detail->content->contentuser->first();
+                $pcu = $featuredPlaylist->playlistContentUsers->firstWhere('content_id', $detail->content_id);
+                $isCompleted = $pcu && ((int) ($pcu->finish ?? 0) === 1 || (int) ($pcu->progress ?? 0) >= 100);
 
-                if ($cu && ($cu->isFinished() || (int) ($cu->finish ?? 0) === 1 || (int) ($cu->progress ?? 0) >= 100)) {
+                if ($isCompleted) {
                     $completedContent++;
                 }
 
-                if (!$nextContent && (!$cu || (!($cu->isFinished() || (int) ($cu->finish ?? 0) === 1 || (int) ($cu->progress ?? 0) >= 100)))) {
+                if (!$nextContent && !$isCompleted) {
                     $nextContent = $detail->content;
                 }
             }
@@ -198,9 +200,10 @@ class PlaylistUserController extends Controller
 
         $content->increment('views');
 
-        $content_user = ContentUser::firstOrCreate([
-            'user_id'    => $userId,
-            'content_id' => $content->id,
+        $content_user = PlaylistContentUser::firstOrCreate([
+            'user_id'         => $userId,
+            'trainingplan_id' => $trainingplan->id,
+            'content_id'      => $content->id,
         ]);
 
         // Recompute in-memory active duration and learning hours for the view
@@ -211,16 +214,17 @@ class PlaylistUserController extends Controller
         $trainingplan->total_duration_seconds = $activeDurationSeconds;
         $trainingplan->learning_hours = $activeLearningHours;
 
-        $contentUsers = ContentUser::where('user_id', $userId)
+        $playlistContentUsers = PlaylistContentUser::where('user_id', $userId)
+            ->where('trainingplan_id', $trainingplan->id)
             ->whereIn('content_id', $content_all->pluck('content_id'))
             ->get(['content_id', 'progress', 'finish']);
 
-        $progressByContentId = $contentUsers->pluck('progress', 'content_id');
+        $progressByContentId = $playlistContentUsers->pluck('progress', 'content_id');
 
         $completedContent = 0;
         foreach ($content_all as $item) {
-            $cu = $contentUsers->firstWhere('content_id', $item->content_id);
-            if ($cu && ($cu->isFinished() || (int) ($cu->finish ?? 0) === 1 || (int) ($cu->progress ?? 0) >= 100)) {
+            $pcu = $playlistContentUsers->firstWhere('content_id', $item->content_id);
+            if ($pcu && ((int) ($pcu->finish ?? 0) === 1 || (int) ($pcu->progress ?? 0) >= 100)) {
                 $completedContent++;
             }
         }

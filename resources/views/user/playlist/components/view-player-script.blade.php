@@ -7,9 +7,10 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const progressTracker = new OwlLearningProgress({
-            url: "{{ route('content.user.progress.update') }}",
+            url: "{{ route('playlist.user.progress.update') }}",
             csrf: "{{ csrf_token() }}",
             contentId: {{ (int) $content->id }},
+            trainingPlanId: {{ (int) ($playlist->id ?? $trainingplan->id) }},
             type: '{{ $vpIsDocument ? 'document' : 'video' }}',
             onUpdate: window.owlUpdateLearningUi
         });
