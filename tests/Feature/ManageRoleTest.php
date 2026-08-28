@@ -45,16 +45,16 @@ class ManageRoleTest extends TestCase
         $response->assertOk();
         $response->assertSee('Edit User Organization');
 
-        // Verify exact order in dropdown: User (1) -> Administrator (2) -> Super Admin (3) -> Subadmin Division (4)
+        // Verify exact order in dropdown: User (1) -> Subadmin Division (4) -> Administrator (2) -> Super Admin (3)
         $response->assertSeeInOrder([
             '<option value="1"',
             'User',
+            '<option value="4"',
+            'Subadmin Division',
             '<option value="2"',
             'Administrator',
             '<option value="3"',
             'Super Admin',
-            '<option value="4"',
-            'Subadmin Division',
         ], false);
     }
 
@@ -169,4 +169,25 @@ class ManageRoleTest extends TestCase
         $response->assertSessionHas('warning', 'Data Super Admin tidak dapat diubah melalui halaman ini.');
         $this->assertEquals(User::ROLE_SUPER_ADMIN, (int) $anotherSuperAdmin->fresh()->role);
     }
+
+    public function test_edit_user_modal_renders_correctly_with_preselected_role(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->get(route('manage.role.index', ['s' => $this->targetUser->email]));
+
+        $response->assertOk();
+        $response->assertSee('id="editUserModal' . $this->targetUser->id . '"', false);
+        $this->assertMatchesRegularExpression('/<option value="1"[^>]*selected/i', $response->getContent());
+    }
+
+    public function test_validation_rejects_invalid_roles(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->put(route('manage.role.update', $this->targetUser->id), [
+                'role' => 999,
+            ]);
+
+        $response->assertSessionHasErrors('role');
+    }
 }
+

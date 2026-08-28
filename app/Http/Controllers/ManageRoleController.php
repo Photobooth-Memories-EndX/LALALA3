@@ -12,10 +12,10 @@ class ManageRoleController extends Controller
      * Role yang boleh di-set lewat Manage Role.
      */
     private const ASSIGNABLE_ROLES = [
-        User::ROLE_USER,               // 1 - User / Employee
-        User::ROLE_ADMIN,              // 2 - Admin Training
+        User::ROLE_USER,               // 1 - User
+        User::ROLE_SUBADMIN_DIVISION,  // 4 - Subadmin Division / Sub Admin
+        User::ROLE_ADMIN,              // 2 - Administrator / Admin
         User::ROLE_SUPER_ADMIN,        // 3 - Super Admin
-        User::ROLE_SUBADMIN_DIVISION,  // 4 - Subadmin Division
     ];
 
     /**
