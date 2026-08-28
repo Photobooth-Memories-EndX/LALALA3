@@ -87,7 +87,7 @@
                                         <th class="text-start" style="min-width: 260px;">Option</th>
                                         <th class="text-start" style="min-width: 180px;">Answer</th>
                                         <th style="width: 130px;">Status</th>
-                                        <th style="width: 100px;">Action</th>
+                                        {{-- <th style="width: 100px;">Action</th> --}}
                                     </tr>
                                 </thead>
 
@@ -145,7 +145,7 @@
                                                         Non Aktif
                                                     </span>
                                                 @endif
-                                            </td>
+                                            {{-- </td>
                                             <td class="text-center">
                                                 <div class="btn-list justify-content-center flex-nowrap">
 
@@ -177,7 +177,7 @@
                                                     </form>
 
                                                 </div>
-                                            </td>
+                                            </td> --}}
                                         </tr>
                                     @endforeach
                                 </tbody>
