@@ -2,6 +2,7 @@
 
 namespace App\Services\Learning;
 
+use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
@@ -9,66 +10,94 @@ use Illuminate\Support\Collection;
 
 /**
  * Shared source for playlists completed through a user's playlist content progress.
+ *
+ * Utilizes LearningProgressResolver as the authoritative source for module completion,
+ * supporting both new playlist_content_users records (authoritative) and historical
+ * Category A fallback from content_users.
  */
 class CompletedPlaylistService
 {
+    public function __construct(private LearningProgressResolver $resolver)
+    {
+    }
+
     /**
      * @return \Illuminate\Support\Collection<int, TrainingPlan>
      */
     public function forUser(int $userId): Collection
     {
-        return TrainingPlan::query()
-            ->select('trainingplan.id', 'trainingplan.title', 'trainingplan.slug', 'trainingplan.thumbnail', 'trainingplan.total_duration_seconds', 'trainingplan.learning_hours')
-            ->whereExists(function ($q) use ($userId) {
-                $q->from('trainingplandetail')
-                    ->join('playlist_content_users', function ($j) {
-                        $j->on('playlist_content_users.trainingplan_id', '=', 'trainingplandetail.trainingplan_id')
-                          ->on('playlist_content_users.content_id', '=', 'trainingplandetail.content_id');
-                    })
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('playlist_content_users.user_id', $userId)
-                    ->where(function ($w) {
-                        $w->where('playlist_content_users.finish', '1')
-                            ->orWhere('playlist_content_users.progress', '>=', 100);
-                    });
-            })
-            ->selectSub(
-                TrainingPlanDetail::selectRaw('COUNT(*)')
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id'),
-                'total_items'
-            )
-            ->selectSub(
-                PlaylistContentUser::selectRaw('COUNT(*)')
-                    ->join('trainingplandetail', function ($j) {
-                        $j->on('trainingplandetail.trainingplan_id', '=', 'playlist_content_users.trainingplan_id')
-                          ->on('trainingplandetail.content_id', '=', 'playlist_content_users.content_id');
-                    })
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('playlist_content_users.user_id', $userId)
-                    ->where(function ($w) {
-                        $w->where('playlist_content_users.finish', '1')
-                            ->orWhere('playlist_content_users.progress', '>=', 100);
-                    }),
-                'finished_items'
-            )
-            ->selectSub(
-                PlaylistContentUser::selectRaw('MAX(playlist_content_users.updated_at)')
-                    ->join('trainingplandetail', function ($j) {
-                        $j->on('trainingplandetail.trainingplan_id', '=', 'playlist_content_users.trainingplan_id')
-                          ->on('trainingplandetail.content_id', '=', 'playlist_content_users.content_id');
-                    })
-                    ->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')
-                    ->where('playlist_content_users.user_id', $userId)
-                    ->where(function ($w) {
-                        $w->where('playlist_content_users.finish', '1')
-                            ->orWhere('playlist_content_users.progress', '>=', 100);
-                    }),
-                'last_finished_at'
-            )
-            ->orderByDesc('last_finished_at')
-            ->get()
-            ->filter(fn (TrainingPlan $plan) => (int) $plan->total_items > 0
-                && (int) $plan->finished_items >= (int) $plan->total_items)
-            ->values();
+        $plans = TrainingPlan::with([
+                'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
+                'trainingplandetail.content' => fn ($q) => $q->where('active', 'Active'),
+            ])
+            ->select([
+                'trainingplan.id',
+                'trainingplan.title',
+                'trainingplan.slug',
+                'trainingplan.thumbnail',
+                'trainingplan.total_duration_seconds',
+                'trainingplan.learning_hours',
+                'trainingplan.active',
+                'trainingplan.created_at',
+            ])
+            ->where('active', 'Active')
+            ->get();
+
+        $completed = collect();
+
+        foreach ($plans as $plan) {
+            $validDetails = $plan->trainingplandetail->filter(
+                fn ($d) => !empty($d->content) && $d->content->exists && $d->content->active === 'Active'
+            );
+
+            $total = $validDetails->count();
+            if ($total === 0) {
+                continue; // Empty playlist is not completed
+            }
+
+            $contentIds = $validDetails->pluck('content_id');
+
+            // Batch resolve progress for this playlist via LearningProgressResolver
+            $resolvedBatch = $this->resolver->resolvePlaylistBatch($userId, $plan->id, $contentIds);
+
+            $finished = $resolvedBatch->filter(fn ($r) => $r->isFinished())->count();
+
+            // Business rule: completed if total > 0 and all items are finished
+            if ($finished < $total) {
+                continue;
+            }
+
+            $plan->total_items      = $total;
+            $plan->finished_items   = $finished;
+            $plan->progress_percent = 100;
+            $plan->is_completed     = true;
+
+            $seconds = max(0, (int) ($plan->total_duration_seconds ?? 0));
+            $plan->duration = \App\Support\DurationFormatter::fromSeconds($seconds);
+
+            // Fetch timestamp of completion
+            $pcuTimestamps = PlaylistContentUser::where('user_id', $userId)
+                ->where('trainingplan_id', $plan->id)
+                ->whereIn('content_id', $contentIds)
+                ->where(fn ($q) => $q->where('finish', '1')->orWhere('progress', '>=', 100))
+                ->selectRaw('MAX(updated_at) as last_fin')
+                ->first();
+
+            $cuTimestamps = ContentUser::where('user_id', $userId)
+                ->whereIn('content_id', $contentIds)
+                ->where(fn ($q) => $q->where('finish', '1')->orWhere('progress', '>=', 100))
+                ->selectRaw('MAX(updated_at) as last_fin')
+                ->first();
+
+            $lastFinished = $pcuTimestamps?->last_fin ?? $cuTimestamps?->last_fin ?? $plan->created_at;
+            if ($pcuTimestamps?->last_fin && $cuTimestamps?->last_fin) {
+                $lastFinished = max($pcuTimestamps->last_fin, $cuTimestamps->last_fin);
+            }
+            $plan->last_finished_at = $lastFinished;
+
+            $completed->push($plan);
+        }
+
+        return $completed->sortByDesc('last_finished_at')->values();
     }
 }

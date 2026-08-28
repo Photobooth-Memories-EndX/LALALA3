@@ -12,6 +12,7 @@ use App\Models\PlaylistContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Services\CertificateEligibilityService;
+use App\Services\Learning\LearningProgressResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -20,6 +21,10 @@ use Illuminate\Support\Str;
 
 class PlaylistUserController extends Controller
 {
+    public function __construct(private LearningProgressResolver $resolver)
+    {
+    }
+
     public function index()
     {
         $userId = Auth::id();
@@ -44,8 +49,7 @@ class PlaylistUserController extends Controller
         // trainingplan columns used: id, slug, title, total_duration_seconds,
         //                            url_link, active, created_at, thumbnail,
         //                            has_deadline, from_date, to_date
-        // content columns:                 id, title, slug, type, link, classification_id, duration, learning_hours
-        // playlist_content_users columns:  id, user_id, trainingplan_id, content_id, progress, finish
+        // content columns:           id, title, slug, type, link, classification_id, duration, learning_hours, playlistonly
         $trainingplan = TrainingPlan::with([
                 'trainingplandetail' => fn ($q) => $q
                     ->whereHas('content', fn ($cq) => $cq->where('active', 'Active'))
@@ -53,12 +57,9 @@ class PlaylistUserController extends Controller
                     ->select(['id', 'trainingplan_id', 'content_id', 'content_order']),
                 'trainingplandetail.content' => fn ($q) => $q
                     ->where('active', 'Active')
-                    ->select(['id', 'title', 'slug', 'type', 'link', 'classification_id', 'author', 'views', 'duration', 'learning_hours', 'active']),
+                    ->select(['id', 'title', 'slug', 'type', 'link', 'classification_id', 'author', 'views', 'duration', 'learning_hours', 'active', 'playlistonly']),
                 'trainingplandetail.content.classification' => fn ($q) => $q
                     ->select(['id', 'classification_name']),
-                'playlistContentUsers' => fn ($q) => $q
-                    ->where('user_id', $userId)
-                    ->select(['id', 'user_id', 'trainingplan_id', 'content_id', 'progress', 'finish']),
             ])
             ->select(['id', 'title', 'slug', 'total_duration_seconds', 'learning_hours', 'url_link',
                       'active', 'created_at', 'thumbnail', 'has_deadline',
@@ -68,20 +69,15 @@ class PlaylistUserController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
-        // Pre-compute per-card stats from eager-loaded data (no extra DB queries).
-        // Also computes the thumbnail URL — moves File::exists() out of Blade.
+        // Pre-compute per-card stats using LearningProgressResolver (authoritative PCU + Category A fallback)
         $playlistStats = [];
         foreach ($trainingplan as $tp) {
             $details      = $tp->trainingplandetail->filter(fn ($d) => !empty($d->content) && $d->content->exists && $d->content->active === 'Active');
             $totalContent = $details->count();
-            $completedContent = 0;
+            $detailContentIds = $details->pluck('content_id');
 
-            foreach ($details as $detail) {
-                $pcu = $tp->playlistContentUsers->firstWhere('content_id', $detail->content_id);
-                if ($pcu && ((int) ($pcu->finish ?? 0) === 1 || (int) ($pcu->progress ?? 0) >= 100)) {
-                    $completedContent++;
-                }
-            }
+            $resolvedBatch    = $this->resolver->resolvePlaylistBatch($userId, $tp->id, $detailContentIds);
+            $completedContent = $resolvedBatch->filter(fn ($r) => $r->isFinished())->count();
 
             $firstContent = optional($details->first())->content;
             $activeDurationSeconds = $details->sum(function ($d) {
@@ -107,23 +103,21 @@ class PlaylistUserController extends Controller
         }
 
         // Pre-compute featured playlist stats (first on page) for the "Continue Learning" card.
-        // Includes nextContent (first unfinished chapter) which per-card stats don't need.
         $featuredStats    = null;
         $featuredPlaylist = $trainingplan->first();
 
         if ($featuredPlaylist) {
             $details      = $featuredPlaylist->trainingplandetail->filter(fn ($d) => !empty($d->content) && $d->content->exists && $d->content->active === 'Active');
             $totalContent = $details->count();
-            $completedContent = 0;
-            $nextContent      = null;
+            $detailContentIds = $details->pluck('content_id');
+
+            $featuredResolvedBatch = $this->resolver->resolvePlaylistBatch($userId, $featuredPlaylist->id, $detailContentIds);
+            $completedContent      = $featuredResolvedBatch->filter(fn ($r) => $r->isFinished())->count();
+            $nextContent           = null;
 
             foreach ($details as $detail) {
-                $pcu = $featuredPlaylist->playlistContentUsers->firstWhere('content_id', $detail->content_id);
-                $isCompleted = $pcu && ((int) ($pcu->finish ?? 0) === 1 || (int) ($pcu->progress ?? 0) >= 100);
-
-                if ($isCompleted) {
-                    $completedContent++;
-                }
+                $resolved = $featuredResolvedBatch->get($detail->content_id);
+                $isCompleted = $resolved && $resolved->isFinished();
 
                 if (!$nextContent && !$isCompleted) {
                     $nextContent = $detail->content;
@@ -200,11 +194,25 @@ class PlaylistUserController extends Controller
 
         $content->increment('views');
 
-        $content_user = PlaylistContentUser::firstOrCreate([
-            'user_id'         => $userId,
-            'trainingplan_id' => $trainingplan->id,
-            'content_id'      => $content->id,
-        ]);
+        // Resolve progress for current content via LearningProgressResolver
+        $resolvedCurrent = $this->resolver->resolvePlaylist($userId, $trainingplan->id, $content->id);
+
+        $content_user = PlaylistContentUser::firstOrCreate(
+            [
+                'user_id'         => $userId,
+                'trainingplan_id' => $trainingplan->id,
+                'content_id'      => $content->id,
+            ],
+            [
+                'progress'         => $resolvedCurrent->progress,
+                'finish'           => (string) $resolvedCurrent->finish,
+                'learning_status'  => $resolvedCurrent->learningStatus,
+                'current_time'     => $resolvedCurrent->currentTime ?? 0,
+                'last_page'        => $resolvedCurrent->lastPage,
+                'total_pages'      => $resolvedCurrent->totalPages,
+                'duration_seconds' => $resolvedCurrent->durationSeconds,
+            ]
+        );
 
         // Recompute in-memory active duration and learning hours for the view
         $activeDurationSeconds = $content_all->filter(fn ($item) => $item->content?->active === 'Active')->sum(function ($item) {
@@ -214,20 +222,16 @@ class PlaylistUserController extends Controller
         $trainingplan->total_duration_seconds = $activeDurationSeconds;
         $trainingplan->learning_hours = $activeLearningHours;
 
-        $playlistContentUsers = PlaylistContentUser::where('user_id', $userId)
-            ->where('trainingplan_id', $trainingplan->id)
-            ->whereIn('content_id', $content_all->pluck('content_id'))
-            ->get(['content_id', 'progress', 'finish']);
+        // Batch resolve all playlist items in one query (no N+1)
+        $resolvedBatch = $this->resolver->resolvePlaylistBatch(
+            $userId,
+            $trainingplan->id,
+            $content_all->pluck('content_id')
+        );
 
-        $progressByContentId = $playlistContentUsers->pluck('progress', 'content_id');
+        $progressByContentId = $resolvedBatch->map(fn ($r) => $r->progress);
 
-        $completedContent = 0;
-        foreach ($content_all as $item) {
-            $pcu = $playlistContentUsers->firstWhere('content_id', $item->content_id);
-            if ($pcu && ((int) ($pcu->finish ?? 0) === 1 || (int) ($pcu->progress ?? 0) >= 100)) {
-                $completedContent++;
-            }
-        }
+        $completedContent = $resolvedBatch->filter(fn ($r) => $r->isFinished())->count();
 
         $totalContent = $content_all->count();
 

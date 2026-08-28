@@ -7,6 +7,7 @@ use App\Models\AssesmentResult;
 use App\Models\CertificateSetting;
 use App\Models\ContentUser;
 use App\Models\User;
+use App\Services\Learning\LearningProgressResolver;
 use Illuminate\Support\Collection;
 
 /**
@@ -29,6 +30,10 @@ use Illuminate\Support\Collection;
  */
 class CertificateEligibilityService
 {
+    public function __construct(private LearningProgressResolver $resolver)
+    {
+    }
+
     public function check(CertificateSetting $setting, User $user): CertificateEligibilityResult
     {
         return $this->checkMany(collect([$setting]), $user)[$setting->id];
@@ -156,30 +161,46 @@ class CertificateEligibilityService
     // ─── Context loading (query massal — sekali untuk seluruh setting) ──────
 
     /**
-     * @return array{learnings: Collection, assessmentsByContent: Collection,
+     * @return array{learnings: Collection, playlistProgressByPlan: Collection, assessmentsByContent: Collection,
      *               assessmentsByPlaylist: Collection, results: Collection}
      */
     private function loadContext(Collection $settings, User $user): array
     {
         $contentIds  = $settings->where('certificate_type', 'content')
             ->pluck('content_id')->filter()->unique()->values();
-        $playlistIds = $settings->where('certificate_type', 'playlist')
+        $playlistSettings = $settings->where('certificate_type', 'playlist');
+        $playlistIds = $playlistSettings
             ->pluck('trainingplan_id')->filter()->unique()->values();
 
+        // Direct Content progress
+        $learnings = $contentIds->isEmpty()
+            ? collect()
+            : ContentUser::where('user_id', $user->id)
+                ->whereIn('content_id', $contentIds)
+                ->get()
+                ->keyBy('content_id');
+
+        // Playlist progress resolved per playlist using LearningProgressResolver
+        $playlistProgressByPlan = collect();
+        foreach ($playlistSettings as $playlistSetting) {
+            $planId = (int) $playlistSetting->trainingplan_id;
+            if ($planId && !$playlistProgressByPlan->has($planId)) {
+                $pContentIds = $this->playlistContentIds($playlistSetting);
+                if ($pContentIds->isNotEmpty()) {
+                    $resolvedBatch = $this->resolver->resolvePlaylistBatch((int) $user->id, $planId, $pContentIds);
+                    $playlistProgressByPlan->put($planId, $resolvedBatch);
+                } else {
+                    $playlistProgressByPlan->put($planId, collect());
+                }
+            }
+        }
+
         // Progress dicek per content: content setting + seluruh isi playlist.
-        $playlistContentIds = $settings->where('certificate_type', 'playlist')
+        $playlistContentIds = $playlistSettings
             ->flatMap(fn ($s) => $this->playlistContentIds($s))
             ->unique()->values();
 
-        $learningContentIds = $contentIds->merge($playlistContentIds)->unique()->values();
-        $assessmentContentIds = $learningContentIds;
-
-        $learnings = $learningContentIds->isEmpty()
-            ? collect()
-            : ContentUser::where('user_id', $user->id)
-                ->whereIn('content_id', $learningContentIds)
-                ->get()
-                ->keyBy('content_id');
+        $assessmentContentIds = $contentIds->merge($playlistContentIds)->unique()->values();
 
         // Deteksi otomatis: assessment aktif milik content/playlist via FK-nya.
         // Status "NOT" = nonaktif (konvensi AssesmentUserController) — tidak
@@ -213,10 +234,11 @@ class CertificateEligibilityService
                 ->keyBy('assesment_id');
 
         return [
-            'learnings'             => $learnings,
-            'assessmentsByContent'  => $assessments->filter(fn ($a) => $a->content_id)->groupBy('content_id'),
-            'assessmentsByPlaylist' => $assessments->filter(fn ($a) => $a->trainingplan_id)->groupBy('trainingplan_id'),
-            'results'               => $results,
+            'learnings'              => $learnings,
+            'playlistProgressByPlan' => $playlistProgressByPlan,
+            'assessmentsByContent'   => $assessments->filter(fn ($a) => $a->content_id)->groupBy('content_id'),
+            'assessmentsByPlaylist'  => $assessments->filter(fn ($a) => $a->trainingplan_id)->groupBy('trainingplan_id'),
+            'results'                => $results,
         ];
     }
 
@@ -271,9 +293,11 @@ class CertificateEligibilityService
             return new CertificateEligibilityResult(eligible: false, reason: 'Playlist has no content.');
         }
 
-        $completed = $contentIds->filter(function ($contentId) use ($setting, $context) {
-            $learning = $context['learnings']->get($contentId);
-            return $learning && (int) $learning->progress >= (int) $setting->minimum_progress;
+        $planProgress = $context['playlistProgressByPlan']->get($setting->trainingplan_id, collect());
+
+        $completed = $contentIds->filter(function ($contentId) use ($setting, $planProgress) {
+            $resolved = $planProgress->get($contentId);
+            return $resolved && ($resolved->isFinished() || (int) $resolved->progress >= (int) $setting->minimum_progress);
         })->count();
 
         if ($completed !== $contentIds->count()) {
