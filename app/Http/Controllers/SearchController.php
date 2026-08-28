@@ -9,6 +9,9 @@ use App\Models\TrainingPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+
 class SearchController extends Controller
 {
     public function autocomplete(Request $request)
@@ -37,9 +40,9 @@ class SearchController extends Controller
         return response()->json($results);
     }
 
-    public function index($searchtype)
+    public function index(Request $request, $searchtype = 'all')
     {
-        $keyword = request('s', '');
+        $keyword = $request->get('s', '');
 
         $content    = Content::where('title', 'LIKE', "%{$keyword}%")->get();
         $news       = News::where('title', 'LIKE', "%{$keyword}%")->get();
@@ -65,26 +68,44 @@ class SearchController extends Controller
             $item->searchlabel = 'Playlist';
         }
 
-        $result = collect();
+        $allResults = collect();
         if ($searchtype === 'content') {
-            $result = $content;
+            $allResults = $content->sortByDesc('created_at')->values();
         } elseif ($searchtype === 'news') {
-            $result = $news;
+            $allResults = $news->sortByDesc('created_at')->values();
         } elseif ($searchtype === 'eventphoto') {
-            $result = $eventphoto;
+            $allResults = $eventphoto->sortByDesc('created_at')->values();
         } elseif ($searchtype === 'playlist') {
-            $result = $playlist;
-        } elseif ($searchtype === 'all') {
-            $result = $result
+            $allResults = $playlist->sortByDesc('created_at')->values();
+        } else {
+            $allResults = $allResults
                 ->concat($content)
                 ->concat($news)
                 ->concat($eventphoto)
                 ->concat($playlist)
-                ->sortByDesc('created_at');
+                ->sortByDesc('created_at')
+                ->values();
         }
 
+        $currentPage = Paginator::resolveCurrentPage() ?: 1;
+        $perPage = 9;
+        $currentItems = $allResults->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $results = new LengthAwarePaginator(
+            $currentItems,
+            $allResults->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => 'page',
+            ]
+        );
+        $results->appends($request->all());
+
         return view('user.search.index', [
-            'result'          => $result,
+            'results'         => $results,
+            'result'          => $results,
             'keyword'         => $keyword,
             'searchtype'      => $searchtype,
             'totalcontent'    => $content->count(),
