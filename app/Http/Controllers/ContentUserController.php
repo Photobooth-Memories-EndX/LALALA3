@@ -19,7 +19,7 @@ class ContentUserController extends Controller
 
     public function index(Request $request, LearningAnalyticsService $analyticsService)
     {
-        $filterSearch = $request->s;
+        $filterSearch = $request->s ?: $request->search;
         $filterType = $request->type;
         $filterClassification = $request->classification;
         $filterDateOrder = $request->date_order ?? 'newest';
@@ -61,8 +61,20 @@ class ContentUserController extends Controller
             ->orderBy('author', 'asc')
             ->pluck('author');
 
-        $queryContent = Content::with('classification')
-            ->where('playlistonly', 'N')
+        $queryContent = Content::with([
+                'classification',
+                'trainingPlans' => fn ($q) => $q->where('trainingplan.active', 'Active')
+                    ->select([
+                        'trainingplan.id',
+                        'trainingplan.title',
+                        'trainingplan.slug',
+                        'trainingplan.thumbnail',
+                        'trainingplan.has_deadline',
+                        'trainingplan.from_date',
+                        'trainingplan.to_date',
+                        'trainingplan.active'
+                    ])
+            ])
             ->where('active', 'Active')
             ->notExpired($todayDate);
 

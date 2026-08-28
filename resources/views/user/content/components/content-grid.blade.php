@@ -14,6 +14,18 @@
                 @include('user.content.components.card-document', ['item' => $item])
             @endif
         </div>
+
+        @php
+            $itemActivePlans = ($item->playlistonly ?? 'N') === 'Y' && $item->relationLoaded('trainingPlans')
+                ? $item->trainingPlans->filter(fn ($p) => $p->active === 'Active' && $p->isAccessibleByDeadline())->values()
+                : collect();
+        @endphp
+        @if ($itemActivePlans->count() > 1)
+            @include('user.content.components.modal-select-playlist', [
+                'item' => $item,
+                'activePlaylists' => $itemActivePlans
+            ])
+        @endif
     @empty
         @include('user.content.components.content-empty')
     @endforelse

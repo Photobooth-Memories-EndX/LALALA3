@@ -48,14 +48,50 @@
     $learningHoursText = $learningHoursDisplay . ' ' . ($learningHoursNum == 1 ? 'Hour' : 'Hours');
 
     $authorName = $item->author ?? 'Training Team';
+
+    $isPlaylistOnly = ($item->playlistonly ?? 'N') === 'Y';
+    $activePlaylists = $isPlaylistOnly && $item->relationLoaded('trainingPlans')
+        ? $item->trainingPlans->filter(fn ($p) => $p->active === 'Active' && $p->isAccessibleByDeadline())->values()
+        : collect();
+    $playlistCount = $activePlaylists->count();
+
+    if ($isPlaylistOnly) {
+        if ($playlistCount === 1) {
+            $cardUrl = route('playlist.user.view', ['slug' => $activePlaylists->first()->slug, 'vidslug' => $item->slug]);
+            $isModalLink = false;
+        } elseif ($playlistCount > 1) {
+            $cardUrl = '#';
+            $isModalLink = true;
+            $modalId = 'modal-select-playlist-' . $item->id;
+        } else {
+            $cardUrl = '#';
+            $isModalLink = false;
+        }
+    } else {
+        $cardUrl = route('content.user.view', $item->slug);
+        $isModalLink = false;
+    }
 @endphp
 
 <div class="card content-card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
     <div class="position-relative">
-        @if ($isExpired)
+        @if ($isPlaylistOnly)
+            <span class="badge bg-purple text-white position-absolute top-0 start-0 m-3 shadow-sm" style="pointer-events: none; z-index: 2;">
+                <i class="ti ti-playlist me-1"></i>Playlist Only
+            </span>
+        @endif
+
+        @if ($isExpired || ($isPlaylistOnly && $playlistCount === 0))
             <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
+        @elseif ($isModalLink)
+            <a href="javascript:void(0)"
+               data-bs-toggle="modal"
+               data-bs-target="#{{ $modalId }}"
+               class="d-block text-decoration-none text-reset">
+                <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
+            </a>
         @else
-            <a href="{{ route('content.user.view', $item->slug) }}" class="d-block text-decoration-none text-reset">
+            <a href="{{ $cardUrl }}" class="d-block text-decoration-none text-reset">
                 <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
             </a>
         @endif
@@ -78,10 +114,18 @@
             </div>
 
             <h3 class="card-title content-card-title mb-1 fw-bold">
-                @if ($isExpired)
+                @if ($isExpired || ($isPlaylistOnly && $playlistCount === 0))
                     <span title="{{ $item->title }}">{{ $item->title }}</span>
+                @elseif ($isModalLink)
+                    <a href="javascript:void(0)"
+                       data-bs-toggle="modal"
+                       data-bs-target="#{{ $modalId }}"
+                       class="text-reset text-decoration-none"
+                       title="{{ $item->title }}">
+                        {{ $item->title }}
+                    </a>
                 @else
-                    <a href="{{ route('content.user.view', $item->slug) }}"
+                    <a href="{{ $cardUrl }}"
                        class="text-reset text-decoration-none"
                        title="{{ $item->title }}">
                         {{ $item->title }}
@@ -136,8 +180,21 @@
                     <i class="ti ti-lock me-1"></i>
                     Akses Expired
                 </button>
+            @elseif ($isPlaylistOnly && $playlistCount === 0)
+                <button type="button" class="btn btn-secondary-lt w-100 rounded-pill" disabled>
+                    <i class="ti ti-alert-circle me-1"></i>
+                    Playlist Belum Tersedia
+                </button>
+            @elseif ($isModalLink)
+                <button type="button"
+                        class="btn btn-primary w-100 rounded-pill"
+                        data-bs-toggle="modal"
+                        data-bs-target="#{{ $modalId }}">
+                    <i class="ti ti-playlist me-1"></i>
+                    Pilih Playlist ({{ $playlistCount }})
+                </button>
             @else
-                <a href="{{ route('content.user.view', $item->slug) }}"
+                <a href="{{ $cardUrl }}"
                    class="btn btn-primary w-100 rounded-pill">
                     <i class="ti ti-player-play me-1"></i>
                     Start Learning

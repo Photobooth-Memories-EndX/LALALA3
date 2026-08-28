@@ -31,7 +31,7 @@
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Role ID</th>
+                            {{-- <th>Role ID</th> --}}
                             <th>Role Name</th>
                             <th>Default Access</th>
                             <th class="w-1">Action</th>
@@ -43,11 +43,11 @@
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
 
-                                <td>
+                                {{-- <td>
                                     <span class="badge bg-blue-lt">
                                         Role {{ $role }}
                                     </span>
-                                </td>
+                                </td> --}}
 
                                 <td class="fw-bold">
                                     {{ $roleName }}
