@@ -7,9 +7,11 @@ use App\Models\Assesment;
 use Illuminate\Http\Request;
 use App\Models\AssesmentResult;
 use App\Models\AssesmentQuestion;
+use App\Models\AssesmentScoreHistory;
 use App\Models\Certificate;
 use App\Models\User;
 use App\Services\AssessmentDuplicateService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AssesmentQuestionController extends Controller
@@ -330,6 +332,7 @@ class AssesmentQuestionController extends Controller
         ];
 
         $assesment_result = $query->paginate($entries)->withQueryString();
+        $assesment_result->load(['scoreHistories.changedBy']);
 
         return view('main.assesment.result', compact(
             'assesment',
@@ -381,5 +384,99 @@ class AssesmentQuestionController extends Controller
         $result->delete();
 
         return back()->with('success', 'Assessment result deleted successfully.');
+    }
+
+    public function updateScore(Request $request, Assesment $assesment, $id)
+    {
+        if (!auth()->user()->canAccessManageModule('assessment_management')) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Anda tidak memiliki akses untuk mengubah skor assessment.',
+                ], 403);
+            }
+            abort(403, 'Anda tidak memiliki akses untuk mengubah skor assessment.');
+        }
+
+        $request->validate([
+            'score' => 'required|numeric|min:0|max:100',
+        ]);
+
+        $result = AssesmentResult::where('assesment_id', $assesment->id)
+            ->where('id', $id)
+            ->first();
+
+        if (!$result) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Assessment result not found or has already been deleted.',
+                ], 404);
+            }
+            return back()->with('warning', 'Assessment result not found or has already been deleted.');
+        }
+
+        $newScore = (float) $request->score;
+        $newScore = floor($newScore) == $newScore ? (int) $newScore : round($newScore, 2);
+
+        $previousScore = $result->score !== null ? (float) $result->score : null;
+        if ($previousScore !== null) {
+            $previousScore = floor($previousScore) == $previousScore ? (int) $previousScore : round($previousScore, 2);
+        }
+
+        // Check if score changed (no-op check)
+        $isScoreChanged = ($previousScore === null || (string) $previousScore !== (string) $newScore);
+
+        $passingGrade = (float) ($assesment->passing_grade ?? 0);
+        $pass = ($newScore < $passingGrade) ? 0 : 1;
+
+        DB::transaction(function () use ($result, $assesment, $previousScore, $newScore, $pass, $isScoreChanged) {
+            if ($isScoreChanged) {
+                AssesmentScoreHistory::create([
+                    'assesment_result_id' => $result->id,
+                    'assesment_id'        => $assesment->id,
+                    'user_id'             => $result->user_id,
+                    'changed_by_user_id'  => auth()->id(),
+                    'previous_score'      => $previousScore,
+                    'new_score'           => $newScore,
+                ]);
+            }
+
+            $result->score = $newScore;
+            $result->pass  = $pass;
+            $result->save();
+
+            Certificate::where('assessment_result_id', $result->id)->update(['score' => $newScore]);
+        });
+
+        // Load latest score histories for response
+        $histories = $result->scoreHistories()->with('changedBy')->get()->map(function ($h) {
+            return [
+                'id'             => $h->id,
+                'previous_score' => $h->previous_score,
+                'new_score'      => $h->new_score,
+                'changed_by'     => $h->changedBy->name ?? 'System',
+                'changed_at'     => $h->created_at ? $h->created_at->format('d M Y H:i') : '-',
+            ];
+        });
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => $isScoreChanged ? 'Score updated successfully.' : 'Score has not changed.',
+                'data'    => [
+                    'id'              => $result->id,
+                    'score'           => $result->score,
+                    'pass'            => (int) $result->pass,
+                    'result_label'    => $result->pass ? 'Pass' : 'Failed',
+                    'updated_at'      => $result->updated_at ? $result->updated_at->format('d/m/y H:i:s') : '-',
+                    'is_changed'      => $isScoreChanged,
+                    'score_histories' => $histories,
+                    'history_count'   => $histories->count(),
+                ],
+            ]);
+        }
+
+        return back()->with('success', $isScoreChanged ? 'Score updated successfully.' : 'Score has not changed.');
     }
 }

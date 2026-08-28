@@ -14,6 +14,7 @@
             <x-alert type="success" />
             <x-alert type="warning" />
             <x-alert type="danger" />
+            <div id="dynamicAlertContainer"></div>
 
             <div class="card owl-main-card">
                 <div class="card-header bg-white border-0">
@@ -445,7 +446,7 @@
 
                             <tbody>
                                 @foreach ($assesment_result as $list)
-                                    <tr>
+                                    <tr id="result-row-{{ $list->id }}">
                                         <td class="text-center text-muted">
                                             {{ ++$no }}
                                         </td>
@@ -470,17 +471,36 @@
                                             {{ $list->user->department ?? $list->department }}
                                         </td>
 
-                                        <td class="text-center">
-                                            <span class="badge bg-blue-lt text-blue">
-                                                {{ $list->score }}
-                                            </span>
+                                        <td class="text-center score-cell text-nowrap">
+                                            @php
+                                                $historyCount = $list->scoreHistories ? $list->scoreHistories->count() : 0;
+                                            @endphp
+
+                                            <div class="d-inline-flex align-items-center justify-content-center position-relative">
+                                                <span class="badge bg-blue-lt text-blue score-value score-history-trigger {{ $historyCount > 0 ? 'has-history' : '' }}"
+                                                      id="score-trigger-{{ $list->id }}"
+                                                      @if ($historyCount > 0)
+                                                          data-target-template="#score-history-tpl-{{ $list->id }}"
+                                                          role="button"
+                                                          tabindex="0"
+                                                      @endif
+                                                >
+                                                    <span class="score-number">{{ $list->score }}</span>
+                                                </span>
+
+                                                @if ($historyCount > 0)
+                                                    <div id="score-history-tpl-{{ $list->id }}" class="d-none score-history-popover-template">
+                                                        @include('main.assesment.partials.score-history-popover', ['histories' => $list->scoreHistories])
+                                                    </div>
+                                                @endif
+                                            </div>
                                         </td>
 
                                         <td class="text-center">
                                             {{ $list->batch }}
                                         </td>
 
-                                        <td class="text-center">
+                                        <td class="text-center result-cell">
                                             <a
                                                 href="#"
                                                 class="wrongcheck"
@@ -507,12 +527,26 @@
                                             {{ $list->created_at ? date("d/m/y H:i:s", strtotime($list->created_at)) : '-' }}
                                         </td>
 
-                                        <td class="text-end text-muted">
+                                        <td class="text-end text-muted finish-date-cell">
                                             {{ $list->updated_at ? date("d/m/y H:i:s", strtotime($list->updated_at)) : '-' }}
                                         </td>
 
-                                        <td class="text-center">
+                                        <td class="text-center text-nowrap">
                                             @if (auth()->user()->canAccessManageModule('assessment_management'))
+                                                <button type="button"
+                                                        class="btn btn-sm btn-warning owl-action-btn btn-edit-score me-1"
+                                                        data-id="{{ $list->id }}"
+                                                        data-name="{{ $list->user->name ?? $list->name }}"
+                                                        data-id-emp="{{ $list->user->id_emp ?? $list->id_emp ?? '-' }}"
+                                                        data-score="{{ $list->score }}"
+                                                        data-url="{{ route('assesment.result.update-score', ['assesment' => $assesment->slug, 'id' => $list->id]) }}"
+                                                        data-bs-toggle="tooltip"
+                                                        data-toggle="tooltip"
+                                                        data-bs-placement="top"
+                                                        title="Edit Score"
+                                                        aria-label="Edit Score">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
                                                 <button type="button"
                                                         class="btn btn-sm btn-danger owl-action-btn btn-delete-result"
                                                         data-url="{{ route('assesment.result.destroy', ['assesment' => $assesment->slug, 'id' => $list->id]) }}"
@@ -633,6 +667,9 @@
             </div>
         </div>
     </div>
+
+    {{-- Edit Score Modal --}}
+    @include('main.assesment.partials.modal-edit-score')
 
     {{-- Reusable Delete Confirmation Modal --}}
     <x-shared.delete-confirmation-modal
@@ -808,6 +845,298 @@
                 var url = $(this).data('url');
                 $('#form-delete-result').attr('action', url);
                 $('#modal-delete-result').modal('show');
+            });
+
+            // Edit Score Modal Handler
+            $(document).on('click', '.btn-edit-score', function(e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                var name = $(this).data('name');
+                var idEmp = $(this).data('id-emp');
+                var score = $(this).data('score');
+                var url = $(this).data('url');
+
+                $('#editScoreAlert').addClass('d-none').text('');
+                $('#editScoreInput').removeClass('is-invalid').val(score);
+                $('#editScoreInputError').text('');
+                $('#editScoreParticipantName').text(name);
+                $('#editScoreParticipantId').text(idEmp);
+                $('#editScoreCurrentScoreBadge').text(score);
+                $('#form-edit-score').attr('action', url);
+                $('#form-edit-score').data('target-id', id);
+
+                $('#modal-edit-score').modal('show');
+            });
+
+            function getScoreHistoryTemplate($trigger) {
+                var targetSelector = $trigger.data('target-template');
+                if (targetSelector && $(targetSelector).length) {
+                    return $(targetSelector);
+                }
+                var $closest = $trigger.closest('.score-cell').find('.score-history-popover-template');
+                if ($closest.length) {
+                    return $closest;
+                }
+                return $trigger.find('.score-history-popover-template');
+            }
+
+            // Extend Bootstrap 4 whitelist if present
+            if (typeof $.fn.popover !== 'undefined' && $.fn.popover.Constructor && $.fn.popover.Constructor.Default) {
+                var whiteList = $.fn.popover.Constructor.Default.whiteList || ($.fn.tooltip && $.fn.tooltip.Constructor && $.fn.tooltip.Constructor.Default ? $.fn.tooltip.Constructor.Default.whiteList : null);
+                if (whiteList) {
+                    whiteList.table = ['class', 'style'];
+                    whiteList.thead = ['class', 'style'];
+                    whiteList.tbody = ['class', 'style'];
+                    whiteList.tr = ['class', 'style'];
+                    whiteList.th = ['class', 'style', 'scope', 'width'];
+                    whiteList.td = ['class', 'style', 'colspan', 'rowspan'];
+                    whiteList.span = ['class', 'style'];
+                    whiteList.i = ['class', 'style'];
+                    whiteList.div = ['class', 'style'];
+                }
+            }
+
+            // Extend Bootstrap 5 AllowList if present
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip && bootstrap.Tooltip.Default && bootstrap.Tooltip.Default.allowList) {
+                var bs5AllowList = bootstrap.Tooltip.Default.allowList;
+                bs5AllowList.table = ['class', 'style'];
+                bs5AllowList.thead = ['class', 'style'];
+                bs5AllowList.tbody = ['class', 'style'];
+                bs5AllowList.tr = ['class', 'style'];
+                bs5AllowList.th = ['class', 'style', 'scope', 'width'];
+                bs5AllowList.td = ['class', 'style', 'colspan', 'rowspan'];
+                bs5AllowList.span = ['class', 'style'];
+                bs5AllowList.i = ['class', 'style'];
+                bs5AllowList.div = ['class', 'style'];
+            }
+
+            var scoreHistoryPopoverOptions = {
+                trigger: 'hover focus',
+                placement: 'top',
+                html: true,
+                sanitize: false,
+                title: 'Score History',
+                content: function() {
+                    var $tpl = getScoreHistoryTemplate($(this));
+                    return $tpl.length ? $.trim($tpl.html()) : '<div class="text-muted small text-center py-2">No score changes yet.</div>';
+                },
+                template: '<div class="popover score-history-popover shadow border-0" role="tooltip"><div class="popover-arrow arrow"></div><h3 class="popover-header bg-light border-0 fw-bold py-2"></h3><div class="popover-body p-0"></div></div>',
+                container: 'body',
+                boundary: 'viewport'
+            };
+
+            function disposeScoreHistoryPopover($badge) {
+                var el = $badge[0];
+                if (typeof bootstrap !== 'undefined' && bootstrap.Popover && typeof bootstrap.Popover.getInstance === 'function') {
+                    try {
+                        var inst = bootstrap.Popover.getInstance(el);
+                        if (inst) inst.dispose();
+                    } catch(e) {}
+                }
+                if (typeof $.fn.popover === 'function') {
+                    try { $badge.popover('dispose'); } catch(e) {
+                        try { $badge.popover('destroy'); } catch(err) {}
+                    }
+                }
+            }
+
+            function createScoreHistoryPopover($badge) {
+                var el = $badge[0];
+                disposeScoreHistoryPopover($badge);
+
+                if (typeof bootstrap !== 'undefined' && typeof bootstrap.Popover === 'function') {
+                    try {
+                        return new bootstrap.Popover(el, scoreHistoryPopoverOptions);
+                    } catch(e) {}
+                }
+                if (typeof $.fn.popover === 'function') {
+                    $badge.popover(scoreHistoryPopoverOptions);
+                }
+            }
+
+            // Init score history popovers on score badges
+            function initScoreHistoryPopovers() {
+                $('.score-history-trigger.has-history').each(function() {
+                    var el = this;
+                    var $trigger = $(this);
+
+                    if ($trigger.data('bs.popover') || (typeof bootstrap !== 'undefined' && bootstrap.Popover && typeof bootstrap.Popover.getInstance === 'function' && bootstrap.Popover.getInstance(el))) {
+                        return;
+                    }
+
+                    var $template = getScoreHistoryTemplate($trigger);
+                    var contentHtml = $template.length ? $.trim($template.html()) : '';
+                    if (!contentHtml) {
+                        return;
+                    }
+
+                    createScoreHistoryPopover($trigger);
+                });
+            }
+            initScoreHistoryPopovers();
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                return String(text)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            function renderScoreHistoryPopoverHtml(histories) {
+                if (!histories || histories.length === 0) {
+                    return '<div class="text-muted small text-center py-2">No score changes yet.</div>';
+                }
+
+                var html = '<div class="score-history-popover-card">' +
+                    '<div class="score-history-table-responsive" style="max-height: 260px; overflow-y: auto;">' +
+                    '<table class="table table-sm table-borderless table-striped mb-0 score-history-table align-middle">' +
+                    '<thead>' +
+                        '<tr class="border-bottom text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">' +
+                            '<th class="text-center py-1 px-2" style="width: 35px;">No</th>' +
+                            '<th class="text-start py-1 px-2">Score</th>' +
+                            '<th class="text-start py-1 px-2">Changed By</th>' +
+                            '<th class="text-start py-1 px-2">Date</th>' +
+                        '</tr>' +
+                    '</thead>' +
+                    '<tbody style="font-size: 11.5px;">';
+
+                histories.forEach(function(item, idx) {
+                    var prev = item.previous_score !== null && item.previous_score !== undefined ? item.previous_score : '-';
+                    var seq = idx + 1;
+
+                    html += '<tr>' +
+                        '<td class="text-center text-muted fw-semibold py-1 px-2">' + seq + '</td>' +
+                        '<td class="text-start py-1 px-2 text-nowrap">' +
+                            '<span class="text-secondary">' + prev + '</span> ' +
+                            '<i class="fas fa-arrow-right mx-1 text-muted small" style="font-size: 9px;"></i> ' +
+                            '<span class="fw-bold text-primary">' + item.new_score + '</span>' +
+                        '</td>' +
+                        '<td class="text-start py-1 px-2 text-dark fw-medium" style="max-width: 140px; word-break: break-word;">' +
+                            escapeHtml(item.changed_by) +
+                        '</td>' +
+                        '<td class="text-start text-muted py-1 px-2 text-nowrap">' +
+                            escapeHtml(item.changed_at) +
+                        '</td>' +
+                    '</tr>';
+                });
+
+                html += '</tbody></table></div></div>';
+                return html;
+            }
+
+            // Edit Score Form Submission via AJAX
+            $('#form-edit-score').on('submit', function(e) {
+                e.preventDefault();
+
+                var $form = $(this);
+                var url = $form.attr('action');
+                var targetId = $form.data('target-id');
+                var scoreVal = $('#editScoreInput').val();
+                var $btnSubmit = $('#btnSubmitEditScore');
+                var $btnText = $btnSubmit.find('.btn-text');
+
+                if (scoreVal === '' || isNaN(scoreVal) || Number(scoreVal) < 0 || Number(scoreVal) > 100) {
+                    $('#editScoreInput').addClass('is-invalid');
+                    $('#editScoreInputError').text('Score must be a valid number between 0 and 100.');
+                    return;
+                }
+
+                $('#editScoreInput').removeClass('is-invalid');
+                $('#editScoreAlert').addClass('d-none').text('');
+                $btnSubmit.prop('disabled', true);
+                $btnText.text('Saving...');
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: $form.serialize(),
+                    headers: {
+                        'X-HTTP-Method-Override': 'PUT',
+                        'Accept': 'application/json'
+                    },
+                    success: function(response) {
+                        $btnSubmit.prop('disabled', false);
+                        $btnText.text('Save Score');
+
+                        if (response.status === 'success' || response.status === 200) {
+                            $('#modal-edit-score').modal('hide');
+
+                            var data = response.data;
+                            var row = $('#result-row-' + targetId);
+
+                            if (row.length && data) {
+                                var $scoreBadge = row.find('.score-value');
+                                $scoreBadge.find('.score-number').text(data.score);
+
+                                var resultBadge = '';
+                                if (data.pass) {
+                                    resultBadge = '<span class="badge bg-green-lt text-green"><i class="fas fa-check-circle me-1"></i> Pass</span>';
+                                } else {
+                                    resultBadge = '<span class="badge bg-red-lt text-red"><i class="fas fa-times-circle me-1"></i> Failed</span>';
+                                }
+                                row.find('.result-cell .wrongcheck').html(resultBadge);
+
+                                if (data.updated_at) {
+                                    row.find('.finish-date-cell').text(data.updated_at);
+                                }
+
+                                row.find('.btn-edit-score').data('score', data.score);
+
+                                // Update score history trigger and popover on score badge
+                                if (data.history_count > 0 && data.score_histories) {
+                                    $scoreBadge.addClass('has-history')
+                                               .attr('role', 'button')
+                                               .attr('tabindex', '0');
+
+                                    var popoverHtml = renderScoreHistoryPopoverHtml(data.score_histories);
+                                    var $tpl = getScoreHistoryTemplate($scoreBadge);
+                                    if ($tpl.length) {
+                                        $tpl.html(popoverHtml);
+                                    } else {
+                                        var tplId = 'score-history-tpl-' + targetId;
+                                        $scoreBadge.attr('data-target-template', '#' + tplId);
+                                        $scoreBadge.after('<div id="' + tplId + '" class="d-none score-history-popover-template">' + popoverHtml + '</div>');
+                                    }
+
+                                    createScoreHistoryPopover($scoreBadge);
+                                }
+                            }
+
+                            var alertMsg = response.message || 'Score updated successfully.';
+                            var alertHtml = '<div class="alert alert-important alert-success alert-dismissible fade show shadow-sm mb-3" role="alert">' +
+                                '<div class="d-flex align-items-center">' +
+                                    '<div class="me-2"><i class="fas fa-check-circle"></i></div>' +
+                                    '<div>' + alertMsg + '</div>' +
+                                '</div>' +
+                                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                            '</div>';
+                            $('#dynamicAlertContainer').html(alertHtml);
+                        } else {
+                            $('#editScoreAlert').removeClass('d-none').text(response.message || 'Failed to update score.');
+                        }
+                    },
+                    error: function(xhr) {
+                        $btnSubmit.prop('disabled', false);
+                        $btnText.text('Save Score');
+
+                        var errorMsg = 'An error occurred while saving the score.';
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            var errors = xhr.responseJSON.errors;
+                            if (errors.score && errors.score[0]) {
+                                $('#editScoreInput').addClass('is-invalid');
+                                $('#editScoreInputError').text(errors.score[0]);
+                                return;
+                            }
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+
+                        $('#editScoreAlert').removeClass('d-none').text(errorMsg);
+                    }
+                });
             });
         });
     </script>

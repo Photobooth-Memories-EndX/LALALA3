@@ -35,6 +35,11 @@ class Assesment extends Model
         return $this->hasMany(AssesmentResult::class);
     }
 
+    public function scoreHistories()
+    {
+        return $this->hasMany(AssesmentScoreHistory::class, 'assesment_id')->latest('id');
+    }
+
     public function questions()
     {
         return $this->hasMany(AssesmentQuestion::class);

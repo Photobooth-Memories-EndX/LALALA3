@@ -1119,4 +1119,65 @@
         filter: invert(1) grayscale(100%) brightness(200%);
     }
 
+    /* Score History Popover */
+    .score-history-popover {
+        max-width: 460px !important;
+        border-radius: 12px !important;
+        z-index: 1060;
+    }
+    .score-history-popover .popover-header {
+        font-size: 13px;
+        color: #1e293b;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+    .score-history-popover-card {
+        min-width: 320px;
+        max-width: 440px;
+    }
+    .score-history-table th {
+        font-weight: 600;
+        color: #64748b;
+        background-color: transparent;
+    }
+    .score-history-table td {
+        vertical-align: middle;
+    }
+    .score-history-trigger.has-history {
+        cursor: pointer;
+        transition: all .15s ease;
+    }
+    .score-history-trigger.has-history:hover {
+        filter: brightness(0.92);
+        box-shadow: 0 0 0 2px rgba(32, 107, 196, 0.2);
+    }
+    [data-theme="dark"] .score-history-trigger.has-history:hover,
+    [data-bs-theme="dark"] .score-history-trigger.has-history:hover,
+    body.dark-mode .score-history-trigger.has-history:hover {
+        filter: brightness(1.2);
+        box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3);
+    }
+    [data-theme="dark"] .score-history-popover,
+    [data-bs-theme="dark"] .score-history-popover,
+    body.dark-mode .score-history-popover {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        border: 1px solid var(--tblr-border-color, #25384d) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+    }
+    [data-theme="dark"] .score-history-popover .popover-header,
+    [data-bs-theme="dark"] .score-history-popover .popover-header,
+    body.dark-mode .score-history-popover .popover-header {
+        background-color: var(--tblr-bg-surface-secondary, #1f2d3d) !important;
+        color: #ffffff !important;
+    }
+    [data-theme="dark"] .score-history-table th,
+    [data-bs-theme="dark"] .score-history-table th,
+    body.dark-mode .score-history-table th {
+        color: #94a3b8 !important;
+    }
+    [data-theme="dark"] .score-history-table td,
+    [data-bs-theme="dark"] .score-history-table td,
+    body.dark-mode .score-history-table td {
+        color: #dce6f1 !important;
+    }
 </style>

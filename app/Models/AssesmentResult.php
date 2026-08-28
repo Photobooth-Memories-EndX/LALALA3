@@ -21,4 +21,8 @@ class AssesmentResult extends Model
     {
         return $this->belongsTo(Assesment::class);
     }
+    public function scoreHistories()
+    {
+        return $this->hasMany(AssesmentScoreHistory::class, 'assesment_result_id')->latest('id');
+    }
 }
