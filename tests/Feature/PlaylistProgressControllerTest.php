@@ -360,4 +360,300 @@ class PlaylistProgressControllerTest extends TestCase
         $this->assertSame('1', (string) $pcu->finish);
         $this->assertSame('completed', $pcu->learning_status);
     }
+
+    /**
+     * Test 9 — Playlist Document Timed Pagination: Page Duration 3s Lifecycle (22 -> 23)
+     */
+    public function test_playlist_document_timed_pagination_enforces_timer_and_advances_page(): void
+    {
+        $doc = Content::create([
+            'title'         => 'Playlist Timed Doc 3s',
+            'type'          => 'Document',
+            'duration'      => '00:01:30',
+            'page_duration' => 3,
+            'total_page'    => 30,
+            'active'        => 'Active',
+            'playlistonly'  => 'Y',
+            'has_deadline'  => 0,
+        ]);
+
+        TrainingPlanDetail::create([
+            'trainingplan_id' => $this->playlistA->id,
+            'content_id'      => $doc->id,
+            'content_order'   => 2,
+        ]);
+
+        // Seed user at last_page = 21 (page 22 is allowed next)
+        PlaylistContentUser::create([
+            'user_id'         => $this->user->id,
+            'trainingplan_id' => $this->playlistA->id,
+            'content_id'      => $doc->id,
+            'last_page'       => 21,
+            'total_pages'     => 30,
+            'progress'        => 70,
+            'finish'          => '0',
+            'learning_status' => 'in_progress',
+        ]);
+
+        // 1. Activate page 22 (starts timer)
+        $this->actingAs($this->user)->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id' => $this->playlistA->id,
+            'content_id'      => $doc->id,
+            'type'            => 'document',
+            'active_page'     => 22,
+            'total_pages'     => 30,
+            'status'          => 'in_progress',
+        ]);
+
+        // 2. Insufficient time on page 22 (1s elapsed on 3s page) -> page_completed = false
+        $failResponse = $this->actingAs($this->user)->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id'      => $this->playlistA->id,
+            'content_id'           => $doc->id,
+            'type'                 => 'document',
+            'active_page'          => 22,
+            'completed_page'       => 22,
+            'page_elapsed_seconds' => 1,
+            'total_pages'          => 30,
+            'status'               => 'in_progress',
+        ]);
+
+        $failResponse->assertOk();
+        $failResponse->assertJson([
+            'success'        => true,
+            'page_completed' => false,
+        ]);
+
+        // 3. Complete page 22 with session timer (3s elapsed)
+        $timerKey = 'learning.playlist_doc_page_timer.' . $this->playlistA->id . '.' . $doc->id;
+        $successResponse = $this->actingAs($this->user)->withSession([
+            $timerKey => [
+                'page'       => 22,
+                'started_at' => microtime(true) - 3.5,
+            ],
+        ])->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id'      => $this->playlistA->id,
+            'content_id'           => $doc->id,
+            'type'                 => 'document',
+            'active_page'          => 22,
+            'completed_page'       => 22,
+            'page_elapsed_seconds' => 3,
+            'total_pages'          => 30,
+            'status'               => 'in_progress',
+        ]);
+
+        $successResponse->assertOk();
+        $successResponse->assertJson([
+            'success'        => true,
+            'page_completed' => true,
+            'last_page'      => 22,
+            'allowed_page'   => 23,
+        ]);
+
+        // 4. Move to page 23 and complete it
+        $this->actingAs($this->user)->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id' => $this->playlistA->id,
+            'content_id'      => $doc->id,
+            'type'            => 'document',
+            'active_page'     => 23,
+            'total_pages'     => 30,
+            'status'          => 'in_progress',
+        ]);
+
+        $page23Response = $this->actingAs($this->user)->withSession([
+            $timerKey => [
+                'page'       => 23,
+                'started_at' => microtime(true) - 3.5,
+            ],
+        ])->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id'      => $this->playlistA->id,
+            'content_id'           => $doc->id,
+            'type'                 => 'document',
+            'active_page'          => 23,
+            'completed_page'       => 23,
+            'page_elapsed_seconds' => 3,
+            'total_pages'          => 30,
+            'status'               => 'in_progress',
+        ]);
+
+        $page23Response->assertOk();
+        $page23Response->assertJson([
+            'success'        => true,
+            'page_completed' => true,
+            'last_page'      => 23,
+            'allowed_page'   => 24,
+        ]);
+    }
+
+    /**
+     * Test 10 — Playlist Document Fallback: Derives completedPages from previous progress when last_page is null
+     */
+    public function test_playlist_document_derives_completed_pages_from_previous_progress(): void
+    {
+        $doc = Content::create([
+            'title'         => 'Playlist Timed Doc Progress Fallback',
+            'type'          => 'Document',
+            'duration'      => '00:01:30',
+            'page_duration' => 3,
+            'total_page'    => 30,
+            'active'        => 'Active',
+            'playlistonly'  => 'Y',
+            'has_deadline'  => 0,
+        ]);
+
+        TrainingPlanDetail::create([
+            'trainingplan_id' => $this->playlistA->id,
+            'content_id'      => $doc->id,
+            'content_order'   => 3,
+        ]);
+
+        // User record has progress = 70% but last_page is null/0
+        PlaylistContentUser::create([
+            'user_id'         => $this->user->id,
+            'trainingplan_id' => $this->playlistA->id,
+            'content_id'      => $doc->id,
+            'last_page'       => null,
+            'total_pages'     => 30,
+            'progress'        => 70, // (70 * 30)/100 = 21 completed pages
+            'finish'          => '0',
+            'learning_status' => 'in_progress',
+        ]);
+
+        $timerKey = 'learning.playlist_doc_page_timer.' . $this->playlistA->id . '.' . $doc->id;
+
+        // User attempts to complete page 22 (21 + 1)
+        $response = $this->actingAs($this->user)->withSession([
+            $timerKey => [
+                'page'       => 22,
+                'started_at' => microtime(true) - 3.5,
+            ],
+        ])->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id'      => $this->playlistA->id,
+            'content_id'           => $doc->id,
+            'type'                 => 'document',
+            'active_page'          => 22,
+            'completed_page'       => 22,
+            'page_elapsed_seconds' => 3,
+            'total_pages'          => 30,
+            'status'               => 'in_progress',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'        => true,
+            'page_completed' => true,
+            'last_page'      => 22,
+            'allowed_page'   => 23,
+        ]);
+    }
+
+    /**
+     * Test 11 — Playlist Document: Durations 1s and 2s
+     */
+    public function test_playlist_document_timed_pagination_durations_1s_and_2s(): void
+    {
+        $doc1s = Content::create([
+            'title'         => 'Playlist Timed Doc 1s',
+            'type'          => 'Document',
+            'duration'      => '00:00:30',
+            'page_duration' => 1,
+            'total_page'    => 30,
+            'active'        => 'Active',
+            'playlistonly'  => 'Y',
+            'has_deadline'  => 0,
+        ]);
+
+        TrainingPlanDetail::create([
+            'trainingplan_id' => $this->playlistA->id,
+            'content_id'      => $doc1s->id,
+            'content_order'   => 4,
+        ]);
+
+        $timerKey = 'learning.playlist_doc_page_timer.' . $this->playlistA->id . '.' . $doc1s->id;
+
+        $response = $this->actingAs($this->user)->withSession([
+            $timerKey => [
+                'page'       => 1,
+                'started_at' => microtime(true) - 1.5,
+            ],
+        ])->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id'      => $this->playlistA->id,
+            'content_id'           => $doc1s->id,
+            'type'                 => 'document',
+            'active_page'          => 1,
+            'completed_page'       => 1,
+            'page_elapsed_seconds' => 1,
+            'total_pages'          => 30,
+            'status'               => 'in_progress',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'        => true,
+            'page_completed' => true,
+            'last_page'      => 1,
+            'allowed_page'   => 2,
+        ]);
+    }
+
+    /**
+     * Test 12 — Playlist Document Last Page: Reaching page 30/30 marks completed
+     */
+    public function test_playlist_document_timed_pagination_last_page_completes_content(): void
+    {
+        $doc = Content::create([
+            'title'         => 'Playlist Timed Doc Last Page',
+            'type'          => 'Document',
+            'duration'      => '00:01:30',
+            'page_duration' => 3,
+            'total_page'    => 30,
+            'active'        => 'Active',
+            'playlistonly'  => 'Y',
+            'has_deadline'  => 0,
+        ]);
+
+        TrainingPlanDetail::create([
+            'trainingplan_id' => $this->playlistA->id,
+            'content_id'      => $doc->id,
+            'content_order'   => 5,
+        ]);
+
+        PlaylistContentUser::create([
+            'user_id'         => $this->user->id,
+            'trainingplan_id' => $this->playlistA->id,
+            'content_id'      => $doc->id,
+            'last_page'       => 29,
+            'total_pages'     => 30,
+            'progress'        => 96,
+            'finish'          => '0',
+            'learning_status' => 'in_progress',
+        ]);
+
+        $timerKey = 'learning.playlist_doc_page_timer.' . $this->playlistA->id . '.' . $doc->id;
+
+        $response = $this->actingAs($this->user)->withSession([
+            $timerKey => [
+                'page'       => 30,
+                'started_at' => microtime(true) - 3.5,
+            ],
+        ])->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id'      => $this->playlistA->id,
+            'content_id'           => $doc->id,
+            'type'                 => 'document',
+            'active_page'          => 30,
+            'completed_page'       => 30,
+            'page_elapsed_seconds' => 3,
+            'total_pages'          => 30,
+            'status'               => 'in_progress',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'        => true,
+            'page_completed' => true,
+            'last_page'      => 30,
+            'progress'       => 100,
+            'finish'         => 1,
+            'allowed_page'   => 30,
+        ]);
+    }
 }

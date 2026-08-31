@@ -122,6 +122,10 @@ class PlaylistProgressController extends Controller
                 }
 
                 $completedPages = min((int) ($playlistContentUser->last_page ?? 0), $totalPages);
+                if ($completedPages <= 0 && $previousProgress > 0) {
+                    $completedPages = min($totalPages, (int) floor(($previousProgress * $totalPages) / 100));
+                    $playlistContentUser->last_page = $completedPages;
+                }
                 $allowedPage = min($totalPages, $completedPages + 1);
                 $timerKey = 'learning.playlist_doc_page_timer.' . $trainingplan->id . '.' . $content->id;
 

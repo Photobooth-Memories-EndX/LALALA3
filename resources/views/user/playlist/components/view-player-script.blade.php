@@ -176,6 +176,12 @@
                     // EXISTING PLAYLIST DOCUMENT PAGINATION / SOP LOGIC (100% UNCHANGED)
                     var isTimedDocument = isDocument;
                     var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 30)) }};
+                    @php
+                        $vpInitialLastPage = (int) ($content_user->last_page ?? 0);
+                        if ($vpInitialLastPage <= 0 && (int) ($content_user->progress ?? 0) > 0 && (int) ($content->total_page ?? 0) > 0) {
+                            $vpInitialLastPage = min((int) $content->total_page, (int) floor(((int) $content_user->progress * (int) $content->total_page) / 100));
+                        }
+                    @endphp
                     var playlistPdfReader = new OwlPdfReader({
                         shellId: 'playlist-pdf-shell',
                         viewerSelector: '.playlist-pdfjs-viewer',
@@ -187,7 +193,7 @@
                         readingModeLabelId: 'playlist-pdf-mode-label',
                         pageTimingEnabled: isTimedDocument,
                         pageDuration: documentPageDuration,
-                        completedPages: {{ (int) ($content_user->last_page ?? 0) }},
+                        completedPages: {{ $vpInitialLastPage }},
                         contentCompleted: {{ (int) ($content_user->finish ?? 0) }} === 1,
                         onPageStarted: function(page, totalPages) {
                             return progressTracker.send({
@@ -213,7 +219,7 @@
                             onDocumentReady: function() {
                                 var totalPages = playlistPdfViewer.getPageCount();
 
-                                var lastPage = {{ (int) ($content_user->last_page ?? 0) }};
+                                var lastPage = {{ $vpInitialLastPage }};
 
                                 if (!lastPage) {
                                     var progression = {{ (int) ($content_user->progress ?? 0) }};
