@@ -146,7 +146,7 @@
                 <span class="badge bg-{{ $eventphoto->active == 'Active' ? 'success' : 'warning' }}-lt text-{{ $eventphoto->active == 'Active' ? 'success' : 'warning' }} fs-5">
                     {{ $eventphoto->active }}
                 </span>
-                <a href="{{ route('eventphoto.index') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('manage.eventphoto.index') }}" class="btn btn-outline-secondary">
                     <i class="ti ti-arrow-left me-1"></i>Back
                 </a>
             </div>

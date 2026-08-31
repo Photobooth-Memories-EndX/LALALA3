@@ -109,7 +109,7 @@
                 </div>
             </div>
             <div class="col-auto">
-                <a href="{{ route('eventphoto.index') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('manage.eventphoto.index') }}" class="btn btn-outline-secondary">
                     <i class="ti ti-arrow-left me-1"></i>Back
                 </a>
             </div>

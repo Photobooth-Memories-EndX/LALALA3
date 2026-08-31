@@ -231,7 +231,7 @@ class EventPhotoController extends Controller
                     'active' => 'Active'
                 ]);
         }
-        return redirect()->route('eventphoto.index')->with('success', 'Event created successfully.');
+        return redirect()->route('manage.eventphoto.index')->with('success', 'Event created successfully.');
     }
 
     /**
