@@ -59,6 +59,8 @@ class ContentPlaylistOnlyNavigationTest extends TestCase
         $response->assertStatus(200);
         $html = $response->getContent();
 
+        $expectedDirectUrl = route('content.user.view', $directContent->slug);
+
         $this->assertStringContainsString($directContent->title, $html);
         $this->assertStringContainsString(route('content.user.view', $directContent->slug), $html);
     }
