@@ -23,6 +23,13 @@
     color: var(--tblr-secondary);
     border: 1px dashed var(--tblr-border-color);
 }
+.btn-back {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.btn-back:hover {
+    opacity: 0.8;
+    transform: translateX(-3px);
+}
 </style>
 @endsection
 
@@ -30,6 +37,13 @@
 
 <div class="page-header d-print-none">
     <div class="container-xl">
+        <!-- TOMBOL BACK RATA KIRI ATAS -->
+        <div class="mb-3">
+            <a href="{{ route('manage.news.index') }}" class="btn-back d-inline-flex align-items-center text-decoration-none fw-semibold small" style="color: #0c5b9e !important;">
+                <i class="ti ti-arrow-left me-1 fs-5"></i> Back
+            </a>
+        </div>
+
         <div class="row align-items-center">
             <div class="col">
                 <div class="d-flex align-items-center gap-3">
@@ -41,11 +55,6 @@
                         <div class="text-secondary">Write and publish a new news article</div>
                     </div>
                 </div>
-            </div>
-            <div class="col-auto">
-                <a href="{{ route('manage.news.index') }}" class="btn btn-outline-secondary">
-                    <i class="ti ti-arrow-left me-1"></i>Back
-                </a>
             </div>
         </div>
     </div>
