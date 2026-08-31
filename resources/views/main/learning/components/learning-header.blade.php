@@ -16,7 +16,7 @@
                     <i class="ti ti-table" aria-hidden="true"></i>
                     <span>Open Learning Table</span>
                 </a>
-                <a href="{{ route('manage.dashboard') }}"
+                <a href="{{ route('manage.index') }}"
                    class="btn manage-learning-hero__action manage-learning-hero__action--secondary">
                     <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
                     <span>Back to Dashboard</span>
@@ -49,7 +49,7 @@
                 <i class="ti ti-layout-grid me-1"></i>
                 All Learning
             </a>
-            <a href="{{ route('manage.dashboard') }}" class="btn btn-outline-secondary">
+            <a href="{{ route('manage.index') }}" class="btn btn-outline-secondary">
                 <i class="ti ti-arrow-left me-1"></i>
                 Back
             </a>
