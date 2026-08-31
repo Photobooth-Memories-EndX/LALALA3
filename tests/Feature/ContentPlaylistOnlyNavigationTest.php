@@ -38,13 +38,15 @@ class ContentPlaylistOnlyNavigationTest extends TestCase
     }
 
     /**
-     * TEST 1 — Direct Content (playlistonly = 'N')
+     * CASE 1: playlistonly = N
+     * → card mengarah ke /content/{slug}
+     * → tidak ada badge Playlist
      */
-    public function test_direct_content_renders_standard_card_without_playlist_badge(): void
+    public function test_case_1_direct_content_renders_direct_url_without_playlist_badge(): void
     {
         $directContent = Content::create([
-            'title'             => 'Standard Direct Video',
-            'slug'              => 'standard-direct-video-' . rand(1000, 9999),
+            'title'             => 'Direct Standard Content Video',
+            'slug'              => 'direct-standard-video-' . rand(1000, 9999),
             'type'              => 'Video',
             'classification_id' => $this->classification->id,
             'duration'          => '00:15:00',
@@ -58,58 +60,60 @@ class ContentPlaylistOnlyNavigationTest extends TestCase
         $response->assertStatus(200);
         $html = $response->getContent();
 
+        $expectedDirectUrl = route('content.user.view', $directContent->slug);
+
         $this->assertStringContainsString($directContent->title, $html);
-        $this->assertStringContainsString(route('content.user.view', $directContent->slug), $html);
+        $this->assertStringContainsString($expectedDirectUrl, $html);
         $this->assertStringNotContainsString('badge bg-green text-white', $html);
         $this->assertStringNotContainsString('ti-playlist me-1', $html);
+        $this->assertStringContainsString('Start Learning', $html);
     }
 
     /**
-     * TEST 2 — Playlist Only + No Available Playlist (playlistonly = 'Y', 0 active playlists)
-     * Expected: NO Playlist badge, Direct Content fallback URL, CTA enabled.
+     * CASE 2: playlistonly = Y
+     * → card mengarah ke /content/{slug}
+     * → badge Playlist tetap muncul
      */
-    public function test_orphan_playlist_content_has_no_badge_and_falls_back_to_direct_content(): void
+    public function test_case_2_playlist_only_content_renders_direct_url_and_shows_playlist_badge(): void
     {
-        $orphanContent = Content::create([
-            'title'             => 'Orphan Playlist Doc',
-            'slug'              => 'orphan-playlist-doc-' . rand(1000, 9999),
-            'type'              => 'Document',
+        $playlistContent = Content::create([
+            'title'             => 'Playlist Only General Video',
+            'slug'              => 'playlist-only-general-video-' . rand(1000, 9999),
+            'type'              => 'Video',
             'classification_id' => $this->classification->id,
-            'duration'          => '00:10:00',
-            'page_duration'     => 0,
-            'total_page'        => 5,
+            'duration'          => '00:20:00',
             'active'            => 'Active',
             'playlistonly'      => 'Y',
             'has_deadline'      => 0,
         ]);
 
-        $response = $this->actingAs($this->user)->get(route('content.user.index', ['search' => $orphanContent->title]));
+        $response = $this->actingAs($this->user)->get(route('content.user.index', ['search' => $playlistContent->title]));
 
         $response->assertStatus(200);
         $html = $response->getContent();
 
-        $expectedDirectUrl = route('content.user.view', $orphanContent->slug);
+        $expectedDirectUrl = route('content.user.view', $playlistContent->slug);
 
-        // Badge must NOT appear
-        $this->assertStringNotContainsString('badge bg-green text-white', $html);
-        $this->assertStringNotContainsString('ti-playlist me-1', $html);
-        $this->assertStringNotContainsString('Playlist Only', $html);
+        // Badge Playlist must appear
+        $this->assertStringContainsString('badge bg-green text-white', $html);
+        $this->assertStringContainsString('ti-playlist me-1', $html);
+        $this->assertStringContainsString('Playlist', $html);
 
-        // Direct Content fallback must work with enabled CTA
-        $this->assertStringContainsString('Start Learning', $html);
+        // Target URL must be direct content route
         $this->assertStringContainsString($expectedDirectUrl, $html);
-        $this->assertStringNotContainsString('Playlist Belum Tersedia', $html);
+        $this->assertStringContainsString('Start Learning', $html);
     }
 
     /**
-     * TEST 3 — Playlist Only + One Playlist (playlistonly = 'Y', 1 active playlist)
-     * Expected: Green Playlist badge exists, text is 'Playlist' (not 'Playlist Only'), links directly to playlist.
+     * CASE 3: playlistonly = Y + memiliki 1 playlist
+     * → tetap /content/{slug}
+     * → tidak redirect ke playlist
      */
-    public function test_single_playlist_content_shows_green_playlist_badge_and_links_to_playlist(): void
+    public function test_case_3_playlist_only_with_single_playlist_renders_direct_url(): void
     {
         $playlist = TrainingPlan::create([
-            'title'                  => 'Single Target Playlist',
-            'slug'                   => 'single-target-playlist-' . rand(1000, 9999),
+            'title'                  => 'Single Active Target Playlist',
+            'slug'                   => 'single-active-target-playlist-' . rand(1000, 9999),
             'active'                 => 'Active',
             'total_duration_seconds' => 3600,
             'learning_hours'         => 1.0,
@@ -117,8 +121,8 @@ class ContentPlaylistOnlyNavigationTest extends TestCase
         ]);
 
         $playlistContent = Content::create([
-            'title'             => 'Exclusive Playlist Video 1',
-            'slug'              => 'exclusive-playlist-video-1-' . rand(1000, 9999),
+            'title'             => 'Single Playlist Linked Content',
+            'slug'              => 'single-playlist-linked-content-' . rand(1000, 9999),
             'type'              => 'Video',
             'classification_id' => $this->classification->id,
             'duration'          => '00:20:00',
@@ -138,24 +142,26 @@ class ContentPlaylistOnlyNavigationTest extends TestCase
         $response->assertStatus(200);
         $html = $response->getContent();
 
-        $expectedUrl = route('playlist.user.view', ['slug' => $playlist->slug, 'vidslug' => $playlistContent->slug]);
+        $expectedDirectUrl = route('content.user.view', $playlistContent->slug);
+        $playlistRouteUrl = route('playlist.user.view', ['slug' => $playlist->slug, 'vidslug' => $playlistContent->slug]);
 
-        // Green Playlist badge checks
+        // Badge Playlist must appear
         $this->assertStringContainsString('badge bg-green text-white', $html);
         $this->assertStringContainsString('ti-playlist me-1', $html);
         $this->assertStringContainsString('Playlist', $html);
-        $this->assertStringNotContainsString('Playlist Only', $html);
 
-        // URL check
-        $this->assertStringContainsString($expectedUrl, $html);
-        $this->assertStringNotContainsString(route('content.user.view', $playlistContent->slug), $html);
+        // Card navigation MUST point to direct content, NOT playlist view
+        $this->assertStringContainsString($expectedDirectUrl, $html);
+        $this->assertStringNotContainsString($playlistRouteUrl, $html);
+        $this->assertStringContainsString('Start Learning', $html);
     }
 
     /**
-     * TEST 4 — Playlist Only + Multiple Playlists (playlistonly = 'Y', >= 2 active playlists)
-     * Expected: Green Playlist badge exists, modal selector triggers.
+     * CASE 4: playlistonly = Y + memiliki banyak playlist
+     * → tetap /content/{slug}
+     * → tidak membuka modal selector
      */
-    public function test_multi_playlist_content_shows_green_badge_and_modal_selector(): void
+    public function test_case_4_playlist_only_with_multi_playlist_renders_direct_url_without_modal(): void
     {
         $playlistA = TrainingPlan::create([
             'title'                  => 'Multi Target Playlist A',
@@ -205,47 +211,31 @@ class ContentPlaylistOnlyNavigationTest extends TestCase
         $response->assertStatus(200);
         $html = $response->getContent();
 
-        $modalId = 'modal-select-playlist-' . $multiContent->id;
-        $urlA = route('playlist.user.view', ['slug' => $playlistA->slug, 'vidslug' => $multiContent->slug]);
-        $urlB = route('playlist.user.view', ['slug' => $playlistB->slug, 'vidslug' => $multiContent->slug]);
+        $expectedDirectUrl = route('content.user.view', $multiContent->slug);
 
+        // Badge Playlist must appear
         $this->assertStringContainsString('badge bg-green text-white', $html);
         $this->assertStringContainsString('ti-playlist me-1', $html);
-        $this->assertStringContainsString('data-bs-target="#' . $modalId . '"', $html);
-        $this->assertStringContainsString('Pilih Playlist (2)', $html);
-        $this->assertStringContainsString($urlA, $html);
-        $this->assertStringContainsString($urlB, $html);
-        $this->assertStringNotContainsString(route('content.user.view', $multiContent->slug), $html);
+        $this->assertStringContainsString('Playlist', $html);
+
+        // Target URL must be direct content, no modal trigger
+        $this->assertStringContainsString($expectedDirectUrl, $html);
+        $this->assertStringNotContainsString('modal-select-playlist', $html);
+        $this->assertStringNotContainsString('Pilih Playlist', $html);
+        $this->assertStringContainsString('Start Learning', $html);
     }
 
     /**
-     * TEST 5 — Badge Consistency across Video and Document
+     * CASE 5: playlistonly = Y + tidak memiliki playlist aktif
+     * → tetap /content/{slug}
+     * → tidak menampilkan "Playlist Belum Tersedia"
+     * → badge Playlist tetap muncul
      */
-    public function test_badge_consistency_between_video_and_document(): void
+    public function test_case_5_playlist_only_without_active_playlist_renders_direct_url_and_badge(): void
     {
-        $playlist = TrainingPlan::create([
-            'title'                  => 'Shared Playlist Consistency',
-            'slug'                   => 'shared-playlist-consistency-' . rand(1000, 9999),
-            'active'                 => 'Active',
-            'total_duration_seconds' => 3600,
-            'learning_hours'         => 1.0,
-            'has_deadline'           => 0,
-        ]);
-
-        $videoContent = Content::create([
-            'title'             => 'Consistency Video',
-            'slug'              => 'consistency-video-' . rand(1000, 9999),
-            'type'              => 'Video',
-            'classification_id' => $this->classification->id,
-            'duration'          => '00:10:00',
-            'active'            => 'Active',
-            'playlistonly'      => 'Y',
-            'has_deadline'      => 0,
-        ]);
-
-        $docContent = Content::create([
-            'title'             => 'Consistency Document',
-            'slug'              => 'consistency-doc-' . rand(1000, 9999),
+        $orphanContent = Content::create([
+            'title'             => 'Orphan Playlist Document',
+            'slug'              => 'orphan-playlist-document-' . rand(1000, 9999),
             'type'              => 'Document',
             'classification_id' => $this->classification->id,
             'duration'          => '00:10:00',
@@ -256,34 +246,32 @@ class ContentPlaylistOnlyNavigationTest extends TestCase
             'has_deadline'      => 0,
         ]);
 
-        TrainingPlanDetail::create(['trainingplan_id' => $playlist->id, 'content_id' => $videoContent->id, 'content_order' => 0]);
-        TrainingPlanDetail::create(['trainingplan_id' => $playlist->id, 'content_id' => $docContent->id, 'content_order' => 1]);
+        $response = $this->actingAs($this->user)->get(route('content.user.index', ['search' => $orphanContent->title]));
 
-        $videoRes = $this->actingAs($this->user)->get(route('content.user.index', ['search' => $videoContent->title]));
-        $videoRes->assertStatus(200);
-        $videoHtml = $videoRes->getContent();
+        $response->assertStatus(200);
+        $html = $response->getContent();
 
-        $this->assertStringContainsString('badge bg-green text-white', $videoHtml);
-        $this->assertStringContainsString('ti-playlist me-1', $videoHtml);
-        $this->assertStringNotContainsString('Playlist Only', $videoHtml);
+        $expectedDirectUrl = route('content.user.view', $orphanContent->slug);
 
-        $docRes = $this->actingAs($this->user)->get(route('content.user.index', ['search' => $docContent->title]));
-        $docRes->assertStatus(200);
-        $docHtml = $docRes->getContent();
+        // Badge Playlist appears based on playlistonly = Y
+        $this->assertStringContainsString('badge bg-green text-white', $html);
+        $this->assertStringContainsString('ti-playlist me-1', $html);
+        $this->assertStringContainsString('Playlist', $html);
 
-        $this->assertStringContainsString('badge bg-green text-white', $docHtml);
-        $this->assertStringContainsString('ti-playlist me-1', $docHtml);
-        $this->assertStringNotContainsString('Playlist Only', $docHtml);
+        // Direct Content target URL and CTA enabled
+        $this->assertStringContainsString($expectedDirectUrl, $html);
+        $this->assertStringContainsString('Start Learning', $html);
+        $this->assertStringNotContainsString('Playlist Belum Tersedia', $html);
     }
 
     /**
-     * TEST 6 — Progress Context for Direct Fallback
+     * CASE 6: Badge Consistency across Video and Document
      */
-    public function test_progress_context_for_direct_fallback(): void
+    public function test_badge_consistency_between_video_and_document(): void
     {
-        $orphanContent = Content::create([
-            'title'             => 'Fallback Direct Learning Content 2',
-            'slug'              => 'fallback-direct-learning-content-2-' . rand(1000, 9999),
+        $videoContent = Content::create([
+            'title'             => 'Consistency Check Video',
+            'slug'              => 'consistency-check-video-' . rand(1000, 9999),
             'type'              => 'Video',
             'classification_id' => $this->classification->id,
             'duration'          => '00:10:00',
@@ -292,13 +280,59 @@ class ContentPlaylistOnlyNavigationTest extends TestCase
             'has_deadline'      => 0,
         ]);
 
-        // User views the fallback direct content
-        $viewResponse = $this->actingAs($this->user)->get(route('content.user.view', $orphanContent->slug));
+        $docContent = Content::create([
+            'title'             => 'Consistency Check Document',
+            'slug'              => 'consistency-check-doc-' . rand(1000, 9999),
+            'type'              => 'Document',
+            'classification_id' => $this->classification->id,
+            'duration'          => '00:10:00',
+            'page_duration'     => 0,
+            'total_page'        => 5,
+            'active'            => 'Active',
+            'playlistonly'      => 'Y',
+            'has_deadline'      => 0,
+        ]);
+
+        $videoRes = $this->actingAs($this->user)->get(route('content.user.index', ['search' => $videoContent->title]));
+        $videoRes->assertStatus(200);
+        $videoHtml = $videoRes->getContent();
+
+        $this->assertStringContainsString('badge bg-green text-white', $videoHtml);
+        $this->assertStringContainsString('ti-playlist me-1', $videoHtml);
+        $this->assertStringContainsString(route('content.user.view', $videoContent->slug), $videoHtml);
+
+        $docRes = $this->actingAs($this->user)->get(route('content.user.index', ['search' => $docContent->title]));
+        $docRes->assertStatus(200);
+        $docHtml = $docRes->getContent();
+
+        $this->assertStringContainsString('badge bg-green text-white', $docHtml);
+        $this->assertStringContainsString('ti-playlist me-1', $docHtml);
+        $this->assertStringContainsString(route('content.user.view', $docContent->slug), $docHtml);
+    }
+
+    /**
+     * CASE 7: Progress Context for Direct Content
+     */
+    public function test_progress_context_for_direct_learning(): void
+    {
+        $content = Content::create([
+            'title'             => 'Direct Progress Test Video',
+            'slug'              => 'direct-progress-test-video-' . rand(1000, 9999),
+            'type'              => 'Video',
+            'classification_id' => $this->classification->id,
+            'duration'          => '00:10:00',
+            'active'            => 'Active',
+            'playlistonly'      => 'Y',
+            'has_deadline'      => 0,
+        ]);
+
+        // User views the direct content
+        $viewResponse = $this->actingAs($this->user)->get(route('content.user.view', $content->slug));
         $viewResponse->assertStatus(200);
 
         // User updates progress via direct content endpoint
         $progressResponse = $this->actingAs($this->user)->post(route('content.user.progress.update'), [
-            'content_id'       => $orphanContent->id,
+            'content_id'       => $content->id,
             'type'             => 'video',
             'current_time'     => 120,
             'duration_seconds' => 600,
@@ -309,13 +343,13 @@ class ContentPlaylistOnlyNavigationTest extends TestCase
         // Assert record exists in content_users
         $this->assertDatabaseHas('content_users', [
             'user_id'    => $this->user->id,
-            'content_id' => $orphanContent->id,
+            'content_id' => $content->id,
         ]);
 
         // Assert NO record was created in playlist_content_users
         $this->assertDatabaseMissing('playlist_content_users', [
             'user_id'    => $this->user->id,
-            'content_id' => $orphanContent->id,
+            'content_id' => $content->id,
         ]);
     }
 }

@@ -61,20 +61,7 @@ class ContentUserController extends Controller
             ->orderBy('author', 'asc')
             ->pluck('author');
 
-        $queryContent = Content::with([
-                'classification',
-                'trainingPlans' => fn ($q) => $q->where('trainingplan.active', 'Active')
-                    ->select([
-                        'trainingplan.id',
-                        'trainingplan.title',
-                        'trainingplan.slug',
-                        'trainingplan.thumbnail',
-                        'trainingplan.has_deadline',
-                        'trainingplan.from_date',
-                        'trainingplan.to_date',
-                        'trainingplan.active'
-                    ])
-            ])
+        $queryContent = Content::with(['classification'])
             ->where('active', 'Active')
             ->notExpired($todayDate);
 
