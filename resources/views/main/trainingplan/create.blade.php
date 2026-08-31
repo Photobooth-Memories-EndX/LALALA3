@@ -3,6 +3,16 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}">
     @include('main.trainingplan.components.tomselect-content-style')
+    <style>
+        .btn-back {
+            color: #0c5b9e !important;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .btn-back:hover {
+            opacity: 0.85;
+            transform: translateX(-3px);
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -11,18 +21,18 @@
     {{-- Page Header --}}
     <div class="page-header d-print-none mb-3">
         <div class="container-xl">
+            <!-- TOMBOL BACK RATA KIRI ATAS -->
+            <div class="mb-3">
+                <a href="{{ route('playlist.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
+                    <i class="ti ti-arrow-left me-1 fs-5"></i> Back
+                </a>
+            </div>
+
             <div class="row align-items-center">
                 <div class="col">
                     <div class="page-pretitle">Manage / Playlist</div>
                     <h2 class="owl-page-title mb-1">{{ $title }}</h2>
                     <div class="owl-page-subtitle">Create a new playlist by combining multiple learning materials.</div>
-                </div>
-                <div class="col-auto ms-auto">
-                    <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
-                        <li class="breadcrumb-item"><a href="javascript:;">Manage</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('playlist.index') }}">Playlist</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
-                    </ol>
                 </div>
             </div>
         </div>

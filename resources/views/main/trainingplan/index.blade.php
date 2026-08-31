@@ -6,6 +6,13 @@
     {{-- Page Header --}}
     <div class="page-header d-print-none">
         <div class="container-xl">
+            <!-- TOMBOL BACK KE DASHBOARD MANAGE -->
+            <div class="mb-3">
+                <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
+                    <i class="ti ti-arrow-left me-1 fs-5"></i> Back
+                </a>
+            </div>
+
             <div class="row align-items-center">
                 <div class="col">
                     <div class="d-flex align-items-center gap-3">
@@ -154,71 +161,63 @@
                 </div>
             </div>
 
-            {{-- Filter Card --}}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="ti ti-filter me-2"></i>Filter & Search</h3>
-                </div>
-                <div class="card-body">
-                    <form method="GET" action="{{ route('playlist.index') }}" id="filterForm">
-                        <div class="row g-2">
-                            <div class="col-md-4 col-lg-3">
-                                <label class="form-label small fw-semibold">Search</label>
-                                <input type="text" name="s" value="{{ request('s') }}"
-                                    class="form-control form-control-sm"
-                                    placeholder="Title, slug, URL...">
-                            </div>
-                            <div class="col-md-3 col-lg-2">
-                                <label class="form-label small fw-semibold">Status</label>
-                                <select name="active" class="form-select form-select-sm">
+            <!-- Quick Filter Component -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-3">
+                    <!-- Label Header Quick Filter -->
+                    <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
+                        Quick Filter
+                    </div>
+
+                    <form action="{{ route('playlist.index') }}" method="GET" id="managePlaylistFilterForm">
+                        <div class="row g-2 align-items-center">
+                            <!-- Filter Status -->
+                            <div class="col-6 col-md-auto">
+                                <select name="status" class="form-select rounded-3">
                                     <option value="">All Status</option>
-                                    <option value="Active" @selected(request('active') == 'Active')>Active</option>
-                                    <option value="Inactive" @selected(request('active') == 'Inactive')>Inactive</option>
+                                    <option value="Active" {{ (request('status') == 'Active' || request('active') == 'Active') ? 'selected' : '' }}>Active</option>
+                                    <option value="Inactive" {{ (request('status') == 'Inactive' || request('active') == 'Inactive') ? 'selected' : '' }}>Inactive</option>
+                                    <option value="Draft" {{ request('status') == 'Draft' ? 'selected' : '' }}>Draft</option>
                                 </select>
                             </div>
-                            <div class="col-md-3 col-lg-2">
-                                <label class="form-label small fw-semibold">Deadline</label>
-                                <select name="deadline" class="form-select form-select-sm">
-                                    <option value="">All</option>
-                                    <option value="with" @selected(request('deadline') == 'with')>With Deadline</option>
-                                    <option value="without" @selected(request('deadline') == 'without')>Without Deadline</option>
-                                    <option value="active" @selected(request('deadline') == 'active')>Active Deadline</option>
-                                    <option value="expired" @selected(request('deadline') == 'expired')>Expired</option>
+                            <!-- Filter Year & Month -->
+                            <div class="col-6 col-md-auto">
+                                <select name="year" class="form-select rounded-3">
+                                    <option value="">All Year</option>
+                                    @foreach(range(date('Y'), 2020) as $y)
+                                        <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                    @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-3 col-lg-2">
-                                <label class="form-label small fw-semibold">Thumbnail</label>
-                                <select name="thumbnail" class="form-select form-select-sm">
-                                    <option value="">All</option>
-                                    <option value="with" @selected(request('thumbnail') == 'with')>With Thumbnail</option>
-                                    <option value="without" @selected(request('thumbnail') == 'without')>Without Thumbnail</option>
+                            <div class="col-6 col-md-auto">
+                                <select name="month" class="form-select rounded-3">
+                                    <option value="">All Month</option>
+                                    @foreach(range(1, 12) as $m)
+                                        <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                                            {{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-3 col-lg-2">
-                                <label class="form-label small fw-semibold">Created From</label>
-                                <input type="date" name="created_from" value="{{ request('created_from') }}"
-                                    class="form-control form-control-sm">
+
+                            <!-- Input Search Bar -->
+                            <div class="col-12 col-md">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="ti ti-search text-muted"></i></span>
+                                    <input type="text" name="search" class="form-control border-start-0 rounded-end-3" placeholder="Search playlist..." value="{{ request('search') ?? request('s') }}">
+                                </div>
                             </div>
-                            <div class="col-md-3 col-lg-2">
-                                <label class="form-label small fw-semibold">Created To</label>
-                                <input type="date" name="created_to" value="{{ request('created_to') }}"
-                                    class="form-control form-control-sm">
-                            </div>
-                            <div class="col-md-3 col-lg-2">
-                                <label class="form-label small fw-semibold">Sort By</label>
-                                <select name="sort" class="form-select form-select-sm">
-                                    <option value="" @selected(!request('sort'))>Newest</option>
-                                    <option value="oldest" @selected(request('sort') == 'oldest')>Oldest</option>
-                                    <option value="title" @selected(request('sort') == 'title')>Title A-Z</option>
-                                    <option value="materials" @selected(request('sort') == 'materials')>Most Materials</option>
-                                </select>
-                            </div>
-                            <div class="col-12 d-flex gap-2 justify-content-end mt-1">
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <i class="ti ti-search me-1"></i>Apply Filter
+
+                            <!-- Action Buttons (Search, More Filter, Reset) -->
+                            <div class="col-auto d-flex gap-1">
+                                <button type="submit" class="btn btn-primary rounded-3 px-3" style="background-color: #0c5b9e; border-color: #0c5b9e;" title="Search">
+                                    <i class="ti ti-search"></i>
                                 </button>
-                                <a href="{{ route('playlist.index') }}" class="btn btn-secondary btn-sm">
-                                    <i class="ti ti-x me-1"></i>Reset
+                                <button type="button" class="btn btn-outline-primary rounded-3 px-3" style="border-color: #0c5b9e; color: #0c5b9e;" data-bs-toggle="modal" data-bs-target="#morePlaylistFiltersModal" title="More Filters">
+                                    <i class="ti ti-adjustments-horizontal"></i>
+                                </button>
+                                <a href="{{ route('playlist.index') }}" class="btn btn-outline-primary rounded-3 px-3 btn-quick-reset" style="border-color: #0c5b9e; color: #0c5b9e;" title="Reset Filter">
+                                    <i class="ti ti-refresh"></i>
                                 </a>
                             </div>
                         </div>
@@ -365,6 +364,126 @@
         </div>
     </div>
 
+    <!-- More Filters Modal -->
+    <div class="modal fade" id="morePlaylistFiltersModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                        <i class="ti ti-adjustments-horizontal text-primary"></i> More Filters
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('playlist.index') }}" method="GET">
+                    <div class="modal-body py-3">
+                        <input type="hidden" name="search" value="{{ request('search') ?? request('s') }}">
+                        <input type="hidden" name="status" value="{{ request('status') ?? request('active') }}">
+                        <input type="hidden" name="year" value="{{ request('year') }}">
+                        <input type="hidden" name="month" value="{{ request('month') }}">
+
+                        <!-- Author Dropdown -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small">Author</label>
+                            <select name="author_id" class="form-select rounded-3">
+                                <option value="">All Authors</option>
+                                @foreach($authors ?? [] as $author)
+                                    <option value="{{ $author->id ?? $author }}" {{ (request('author_id') == ($author->id ?? $author) || request('author') == ($author->id ?? $author)) ? 'selected' : '' }}>{{ $author->name ?? $author }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Created Date (dd/mm/yyyy) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar me-1"></i> Created Date</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="text" name="created_from" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('created_from') }}">
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" name="created_to" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('created_to') }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Period Range (dd/mm/yyyy) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar me-1"></i> Period</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="text" name="period_from" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('period_from') }}">
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" name="period_to" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('period_to') }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sort By Dropdown -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small">Sort By</label>
+                            <select name="sort" class="form-select rounded-3">
+                                <option value="">All</option>
+                                <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Newest</option>
+                                <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest</option>
+                                <option value="title_asc" {{ (request('sort') == 'title_asc' || request('sort') == 'title') ? 'selected' : '' }}>Title (A-Z)</option>
+                            </select>
+                        </div>
+
+                        <!-- Sort Views Radio -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small d-block">Sort Views</label>
+                            <div class="d-flex gap-3 align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="sort_views" id="viewDefault" value="" {{ !request('sort_views') ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="viewDefault">Default</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="sort_views" id="viewMost" value="most" {{ request('sort_views') == 'most' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="viewMost">Most Viewed</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="sort_views" id="viewLeast" value="least" {{ request('sort_views') == 'least' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="viewLeast">Least Viewed</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Playlist Duration Radio -->
+                        <div class="mb-2">
+                            <label class="form-label fw-bold text-dark small d-block">Playlist Duration</label>
+                            <div class="d-flex flex-wrap gap-3 align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="duration" id="durAll" value="" {{ !request('duration') ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="durAll">All Durations</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="duration" id="dur10" value="under_10" {{ request('duration') == 'under_10' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="dur10">&lt; 10 Menit</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="duration" id="dur30" value="10_30" {{ request('duration') == '10_30' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="dur30">10 - 30 Menit</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="duration" id="dur60" value="30_60" {{ request('duration') == '30_60' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="dur60">30 - 60 Menit</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="duration" id="durAbove60" value="above_60" {{ request('duration') == 'above_60' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="durAbove60">&gt; 1 Jam</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0 d-flex gap-2">
+                        <a href="{{ route('playlist.index') }}" class="btn btn-outline-secondary rounded-pill flex-fill"><i class="ti ti-refresh me-1"></i> Reset</a>
+                        <button type="submit" class="btn btn-primary rounded-pill flex-fill" style="background-color: #0c5b9e; border-color: #0c5b9e;"><i class="ti ti-check me-1"></i> Apply Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @section('style')
@@ -396,6 +515,31 @@ body.theme-dark .page-body {
 [data-theme="dark"] .card,
 body.theme-dark .card {
     background: var(--tblr-bg-surface, #1f2937);
+}
+.btn-quick-reset {
+    border-color: #0c5b9e !important;
+    color: #0c5b9e !important;
+    background-color: transparent !important;
+    transition: background-color .15s ease-in-out, border-color .15s ease-in-out, color .15s ease-in-out;
+}
+.btn-quick-reset:hover {
+    background-color: #e6f0fa !important;
+    border-color: #0c5b9e !important;
+    color: #0c5b9e !important;
+}
+[data-bs-theme="dark"] .btn-quick-reset:hover i {
+    color: #60a5fa !important;
+}
+[data-bs-theme="dark"] #morePlaylistFiltersModal .text-dark {
+    color: var(--tblr-body-color) !important;
+}
+.btn-back {
+    color: #0c5b9e !important;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.btn-back:hover {
+    opacity: 0.85;
+    transform: translateX(-3px);
 }
 </style>
 @endsection

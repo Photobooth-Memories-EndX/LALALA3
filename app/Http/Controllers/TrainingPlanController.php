@@ -17,8 +17,9 @@ class TrainingPlanController extends Controller
     {
         $query = TrainingPlan::query()->withCount('trainingplandetail');
 
-        if ($request->filled('s')) {
-            $search = $request->s;
+        // Search Filter
+        if ($request->filled('search') || $request->filled('s')) {
+            $search = $request->filled('search') ? $request->search : $request->s;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('slug', 'like', "%{$search}%")
@@ -26,10 +27,87 @@ class TrainingPlanController extends Controller
             });
         }
 
-        if ($request->filled('active')) {
-            $query->where('active', $request->active);
+        // Status Filter
+        if ($request->filled('status') || $request->filled('active')) {
+            $status = $request->filled('status') ? $request->status : $request->active;
+            $query->where('active', $status);
         }
 
+        // Year & Month Filter
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+
+        // Author Filter
+        if ($request->filled('author_id') || $request->filled('author')) {
+            $authorVal = $request->filled('author_id') ? $request->author_id : $request->author;
+            $query->where(function ($q) use ($authorVal) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('trainingplan', 'user_id') && is_numeric($authorVal)) {
+                    $q->where('user_id', $authorVal);
+                }
+                $q->orWhereHas('trainingplandetail.content', function ($cq) use ($authorVal) {
+                    $cq->where('author', $authorVal)->orWhere('author', 'like', "%{$authorVal}%");
+                });
+            });
+        }
+
+        // Created Date Filter
+        if ($request->filled('created_from') && $request->filled('created_to')) {
+            $query->whereBetween('created_at', [
+                $request->created_from . ' 00:00:00',
+                $request->created_to . ' 23:59:59'
+            ]);
+        } elseif ($request->filled('created_from')) {
+            $query->whereDate('created_at', '>=', $request->created_from);
+        } elseif ($request->filled('created_to')) {
+            $query->whereDate('created_at', '<=', $request->created_to);
+        }
+
+        // Period Range (Deadline from/to)
+        if ($request->filled('period_from') && $request->filled('period_to')) {
+            $query->where(function ($q) use ($request) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('trainingplan', 'start_date')) {
+                    $q->whereBetween('start_date', [$request->period_from, $request->period_to]);
+                } else {
+                    $q->whereDate('from_date', '>=', $request->period_from)
+                      ->whereDate('to_date', '<=', $request->period_to);
+                }
+            });
+        } elseif ($request->filled('period_from')) {
+            $query->where(function ($q) use ($request) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('trainingplan', 'start_date')) {
+                    $q->whereDate('start_date', '>=', $request->period_from);
+                } else {
+                    $q->whereDate('from_date', '>=', $request->period_from);
+                }
+            });
+        } elseif ($request->filled('period_to')) {
+            $query->where(function ($q) use ($request) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('trainingplan', 'start_date')) {
+                    $q->whereDate('start_date', '<=', $request->period_to);
+                } else {
+                    $q->whereDate('to_date', '<=', $request->period_to);
+                }
+            });
+        }
+
+        // Duration Filter
+        if ($request->filled('duration') && $request->duration !== 'all') {
+            if ($request->duration === 'under_10' || $request->duration === 'lt10') {
+                $query->where('total_duration_seconds', '<', 600);
+            } elseif ($request->duration === '10_30' || $request->duration === '10-30') {
+                $query->whereBetween('total_duration_seconds', [600, 1800]);
+            } elseif ($request->duration === '30_60' || $request->duration === '30-60') {
+                $query->whereBetween('total_duration_seconds', [1800, 3600]);
+            } elseif ($request->duration === 'above_60' || $request->duration === 'gt60') {
+                $query->where('total_duration_seconds', '>', 3600);
+            }
+        }
+
+        // Deadline Filter
         if ($request->filled('deadline')) {
             if ($request->deadline === 'with') {
                 $query->where('has_deadline', 1);
@@ -47,6 +125,7 @@ class TrainingPlanController extends Controller
             }
         }
 
+        // Thumbnail Filter
         if ($request->filled('thumbnail')) {
             if ($request->thumbnail === 'with') {
                 $query->whereNotNull('thumbnail')->where('thumbnail', '!=', '');
@@ -57,30 +136,49 @@ class TrainingPlanController extends Controller
             }
         }
 
-        if ($request->filled('created_from')) {
-            $query->whereDate('created_at', '>=', $request->created_from);
+        // Sort Views Filter
+        if ($request->sort_views === 'most') {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('trainingplan', 'views')) {
+                $query->orderBy('views', 'desc');
+            }
+        } elseif ($request->sort_views === 'least') {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('trainingplan', 'views')) {
+                $query->orderBy('views', 'asc');
+            }
         }
 
-        if ($request->filled('created_to')) {
-            $query->whereDate('created_at', '<=', $request->created_to);
-        }
-
+        // Sort By Filter
         switch ($request->get('sort')) {
             case 'oldest':
                 $query->oldest();
                 break;
             case 'title':
-                $query->orderBy('title');
+            case 'title_asc':
+                $query->orderBy('title', 'asc');
                 break;
             case 'materials':
                 $query->orderByDesc('trainingplandetail_count');
                 break;
+            case 'newest':
             default:
-                $query->latest();
+                if (!$request->filled('sort_views')) {
+                    $query->latest();
+                }
                 break;
         }
 
         $trainingplans = $query->paginate(10)->withQueryString();
+
+        $authors = Content::whereNotNull('author')
+            ->where('author', '!=', '')
+            ->distinct()
+            ->orderBy('author')
+            ->pluck('author')
+            ->map(fn($a) => (object)['id' => $a, 'name' => $a]);
+
+        if ($authors->isEmpty()) {
+            $authors = \App\Models\User::orderBy('name')->get(['id', 'name']);
+        }
 
         $totalTrainingPlan   = TrainingPlan::count();
         $activeTrainingPlan  = TrainingPlan::where('active', 'Active')->count();
@@ -94,6 +192,7 @@ class TrainingPlanController extends Controller
         return view('main.trainingplan.index', [
             'title'               => 'Training Plan Management',
             'trainingplans'       => $trainingplans,
+            'authors'             => $authors,
             'totalTrainingPlan'   => $totalTrainingPlan,
             'activeTrainingPlan'  => $activeTrainingPlan,
             'inactiveTrainingPlan' => $inactiveTrainingPlan,
