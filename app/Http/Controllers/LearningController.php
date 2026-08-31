@@ -102,4 +102,108 @@ class LearningController extends Controller
             default       => abort(404),
         };
     }
+
+    /**
+     * Apply common Learning filters (from_date, to_date, program_type, progress_range, duration).
+     */
+    public function applyFilters($query, \Illuminate\Http\Request $request)
+    {
+        $fromDate = $request->input('from_date') ?? $request->input('date_from');
+        $toDate = $request->input('to_date') ?? $request->input('date_to');
+
+        if (filled($fromDate) && filled($toDate)) {
+            $query->whereBetween('content_users.created_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
+        } elseif (filled($fromDate)) {
+            $query->whereDate('content_users.created_at', '>=', $fromDate);
+        } elseif (filled($toDate)) {
+            $query->whereDate('content_users.created_at', '<=', $toDate);
+        }
+
+        $programType = $request->input('program_type') ?? $request->input('program');
+        if (filled($programType) && $programType !== 'all') {
+            if ($programType === 'mandatory') {
+                $query->where(function ($q) {
+                    $q->where('content_users.status', 'mandatory');
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('content_users', 'is_mandatory')) {
+                        $q->orWhere('content_users.is_mandatory', 1);
+                    }
+                });
+            } elseif ($programType === 'optional') {
+                $query->where(function ($q) {
+                    $q->where('content_users.status', 'optional');
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('content_users', 'is_mandatory')) {
+                        $q->orWhere('content_users.is_mandatory', 0);
+                    }
+                });
+            } else {
+                $query->where('content_users.status', $programType);
+            }
+        }
+
+        if ($request->filled('progress_range') && $request->progress_range !== 'all') {
+            $progressVal = str_replace([' ', '%'], '', (string) $request->progress_range);
+            switch ($progressVal) {
+                case '0':
+                    $query->where(function ($q) {
+                        $q->where('content_users.progress', 0)->orWhereNull('content_users.progress');
+                    });
+                    break;
+                case '1-25':
+                    $query->whereBetween('content_users.progress', [1, 25]);
+                    break;
+                case '26-50':
+                    $query->whereBetween('content_users.progress', [26, 50]);
+                    break;
+                case '51-75':
+                    $query->whereBetween('content_users.progress', [51, 75]);
+                    break;
+                case '76-99':
+                    $query->whereBetween('content_users.progress', [76, 99]);
+                    break;
+                case '100':
+                    $query->where('content_users.progress', 100);
+                    break;
+            }
+        }
+
+        if ($request->filled('duration') && $request->duration !== 'all') {
+            $durationInput = strtolower(trim((string) $request->duration));
+            $durationRange = match ($durationInput) {
+                'lt10', 'under_10', '< 10 minutes', '<10min', '<10' => [null, 600, false, true],
+                '10-30', '10_30', '10 - 30 minutes', '10-30min' => [600, 1800, true, false],
+                '30-60', '30_60', '30 - 60 minutes', '30-60min' => [1800, 3600, false, false],
+                'gt60', 'above_60', '> 1 hour', '>1hour', '>60', '>60min' => [3600, null, false, false],
+                default => null,
+            };
+
+            if ($durationRange !== null) {
+                [$minimum, $maximum, $includeMinimum, $excludeMaximum] = $durationRange;
+                $isSqlite = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite';
+                if (!$isSqlite) {
+                    $durationInSeconds = "CASE
+                        WHEN content.duration IS NULL OR TRIM(content.duration) = '' THEN NULL
+                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 1 THEN
+                            CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 60
+                            + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
+                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2 THEN
+                            CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 3600
+                            + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(content.duration, ':', 2), ':', -1) AS UNSIGNED) * 60
+                            + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
+                        ELSE NULL
+                    END";
+
+                    $query->whereHas('content', function ($contentQ) use ($durationInSeconds, $minimum, $maximum, $includeMinimum, $excludeMaximum) {
+                        if ($minimum !== null) {
+                            $contentQ->whereRaw($durationInSeconds . ($includeMinimum ? ' >= ?' : ' > ?'), [$minimum]);
+                        }
+                        if ($maximum !== null) {
+                            $contentQ->whereRaw($durationInSeconds . ($excludeMaximum ? ' < ?' : ' <= ?'), [$maximum]);
+                        }
+                    });
+                }
+            }
+        }
+
+        return $query;
+    }
 }

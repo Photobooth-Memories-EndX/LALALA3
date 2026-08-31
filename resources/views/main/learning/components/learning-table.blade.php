@@ -12,7 +12,6 @@
                         <th>Duration</th>
                         <th>Date</th>
                         <th>Progress</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody></tbody>

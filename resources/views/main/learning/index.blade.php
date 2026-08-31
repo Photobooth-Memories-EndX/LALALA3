@@ -3,6 +3,14 @@
 @section('content')
 <div class="page-body manage-learning-page">
     <div class="container-xl">
+        <!-- TOMBOL BACK RATA KIRI ATAS -->
+        <div class="mb-3">
+            <a href="{{ route('manage.index') }}" class="btn-back mb-3 d-inline-flex align-items-center gap-1 text-decoration-none">
+                <i class="ti ti-arrow-left"></i>
+                <span>Back</span>
+            </a>
+        </div>
+
         @include('main.learning.components.learning-header', ['variant' => 'dashboard'])
 
         <div class="row row-deck g-3 mb-4">
@@ -145,6 +153,16 @@
 
     .manage-learning-page .stat-card-rate {
         background: linear-gradient(180deg, #fff0f0 0%, #ffffff 100%);
+    }
+
+    .btn-back {
+        color: #0c5b9e !important;
+        font-weight: 500;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .btn-back:hover {
+        opacity: 0.85;
+        transform: translateX(-3px);
     }
 </style>
 @endsection

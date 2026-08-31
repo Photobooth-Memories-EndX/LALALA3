@@ -383,12 +383,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:learning_management'], function () {
+        Route::get('learning/search-employees', [LearningManageController::class, 'searchEmployees'])->name('learning.manage.search-employees');
         Route::get('learning/datatable', [LearningManageController::class, 'datatable'])->name('learning.manage.datatable');
         Route::get('learning', [LearningManageController::class, 'index'])->name('learning.manage.index');
         Route::get('learning/all', [LearningManageController::class, 'all'])->name('learning.manage.all');
         Route::get('learning/category/{slug}', [LearningManageController::class, 'category'])->name('learning.manage.category');
         Route::get('learning/content/{slug}', [LearningManageController::class, 'content'])->name('learning.manage.content');
-        Route::get('learning/download', [DownloadController::class, 'learningdownload'])->name('manage.learning.download');
+        Route::get('learning/download', [LearningManageController::class, 'download'])->name('manage.learning.download');
     });
 
     Route::group(['middleware' => 'mpermission:learning_hours_management'], function () {
