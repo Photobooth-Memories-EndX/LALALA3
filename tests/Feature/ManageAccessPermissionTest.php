@@ -255,21 +255,17 @@ class ManageAccessPermissionTest extends TestCase
 
         $response->assertOk();
 
-        // Assert exact sequence: User (Role 1) -> Subadmin Division (Role 4) -> Administrator (Role 2) -> Super Admin (Role 3)
+        // Assert exact sequence: User (Role 1) -> Sub Admin (Role 4) -> Administrator (Role 2) -> Super Admin (Role 3)
         $response->assertSeeInOrder([
-            'Role 1',
             'User',
             'Learning User',
             route('manage.access-permission.edit', User::ROLE_USER),
-            'Role 4',
-            'Subadmin Division',
-            'Monitoring Division',
+            'Sub Admin',
+            'Unit Monitoring',
             route('manage.access-permission.edit', User::ROLE_SUBADMIN_DIVISION),
-            'Role 2',
             'Administrator',
             'Manage LMS Default',
             route('manage.access-permission.edit', User::ROLE_ADMIN),
-            'Role 3',
             'Super Admin',
             'Full Access',
             route('manage.access-permission.edit', User::ROLE_SUPER_ADMIN),

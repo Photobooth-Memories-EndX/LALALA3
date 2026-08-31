@@ -45,12 +45,12 @@ class ManageRoleTest extends TestCase
         $response->assertOk();
         $response->assertSee('Edit User Organization');
 
-        // Verify exact order in dropdown: User (1) -> Subadmin Division (4) -> Administrator (2) -> Super Admin (3)
+        // Verify exact order in dropdown: User (1) -> Sub Admin (4) -> Administrator (2) -> Super Admin (3)
         $response->assertSeeInOrder([
             '<option value="1"',
             'User',
             '<option value="4"',
-            'Subadmin Division',
+            'Sub Admin',
             '<option value="2"',
             'Administrator',
             '<option value="3"',

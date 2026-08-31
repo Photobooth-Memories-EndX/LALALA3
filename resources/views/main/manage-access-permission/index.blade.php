@@ -64,7 +64,7 @@
                                         </span>
                                     @elseif ($role === \App\Models\User::ROLE_SUBADMIN_DIVISION)
                                         <span class="badge bg-yellow-lt">
-                                            Monitoring Division
+                                            Unit Monitoring
                                         </span>
                                     @else
                                         <span class="badge bg-secondary-lt">

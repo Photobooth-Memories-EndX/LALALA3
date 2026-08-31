@@ -127,7 +127,7 @@ public function canManageLms()
             static::ROLE_USER               => 'User',
             static::ROLE_ADMIN              => 'Administrator',
             static::ROLE_SUPER_ADMIN        => 'Super Admin',
-            static::ROLE_SUBADMIN_DIVISION  => 'Subadmin Division',
+            static::ROLE_SUBADMIN_DIVISION  => 'Sub Admin',
         ];
     }
 
