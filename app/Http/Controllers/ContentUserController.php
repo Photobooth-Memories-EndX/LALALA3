@@ -63,10 +63,6 @@ class ContentUserController extends Controller
 
         $queryContent = Content::with(['classification'])
             ->where('active', 'Active')
-            ->where(function ($query) {
-                $query->where('playlistonly', 'N')
-                    ->orWhereNull('playlistonly');
-            })
             ->notExpired($todayDate);
 
         if ($filterSearch) {
