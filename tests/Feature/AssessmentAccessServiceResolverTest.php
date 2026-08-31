@@ -133,12 +133,13 @@ class AssessmentAccessServiceResolverTest extends TestCase
             'batch'           => 1,
         ]);
 
-        // Historical 100% in content_users
-        ContentUser::create([
-            'user_id'    => $this->userA->id,
-            'content_id' => $content->id,
-            'progress'   => 100,
-            'finish'     => '1',
+        // Playlist 100% in playlist_content_users
+        PlaylistContentUser::create([
+            'user_id'         => $this->userA->id,
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $content->id,
+            'progress'        => 100,
+            'finish'          => '1',
         ]);
 
         $this->assertNull($this->service->denialReason($assessment, $this->userA));
@@ -361,7 +362,7 @@ class AssessmentAccessServiceResolverTest extends TestCase
 
         $assessment = Assesment::create(['title' => 'F1 Ass', 'slug' => 'f1-ass-' . rand(1000, 9999), 'type' => 'trainingplan', 'trainingplan_id' => $plan->id, 'status' => 'OK', 'passing_grade' => 70, 'batch' => 1]);
 
-        ContentUser::create(['user_id' => $this->userA->id, 'content_id' => $content->id, 'progress' => 100, 'finish' => '1']);
+        PlaylistContentUser::create(['user_id' => $this->userA->id, 'trainingplan_id' => $plan->id, 'content_id' => $content->id, 'progress' => 100, 'finish' => '1']);
 
         $this->assertNull($this->service->denialReason($assessment, $this->userA));
     }

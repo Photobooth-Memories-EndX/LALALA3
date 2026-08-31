@@ -65,9 +65,10 @@ class OngoingPlaylistServiceResolverTest extends TestCase
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c2->id, 'content_order' => 1]);
 
-        // Historical 50% on C1 in content_users (Category A)
-        ContentUser::create([
+        // Playlist progress in playlist_content_users
+        PlaylistContentUser::create([
             'user_id'         => $this->userA->id,
+            'trainingplan_id' => $plan->id,
             'content_id'      => $c1->id,
             'progress'        => 50,
             'finish'          => '0',
@@ -241,9 +242,10 @@ class OngoingPlaylistServiceResolverTest extends TestCase
         $c = Content::create(['title' => 'Hist Comp Content', 'slug' => 'hist-comp-c-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'Y']);
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c->id, 'content_order' => 0]);
 
-        // Historical 100% in content_users (Category A)
-        ContentUser::create([
+        // Playlist 100% in playlist_content_users
+        PlaylistContentUser::create([
             'user_id'         => $this->userA->id,
+            'trainingplan_id' => $plan->id,
             'content_id'      => $c->id,
             'progress'        => 100,
             'finish'          => '1',
