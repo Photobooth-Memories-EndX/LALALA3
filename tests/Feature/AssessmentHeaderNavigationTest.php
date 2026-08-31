@@ -125,6 +125,6 @@ class AssessmentHeaderNavigationTest extends TestCase
         $response->assertSee('assessment-breadcrumb', false);
         $response->assertSee('Back');
         $response->assertSee('Assessment Management');
-        $response->assertSee(route('manage.dashboard'));
+        $response->assertSee(route('manage.index'));
     }
 }

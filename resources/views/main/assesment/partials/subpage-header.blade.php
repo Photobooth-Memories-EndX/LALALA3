@@ -104,7 +104,7 @@
 
             <div class="assessment-breadcrumb">
                 <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
-                    <li class="breadcrumb-item"><a href="{{ route('manage.dashboard') }}">Manage</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('manage.index') }}">Manage</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('assesment.index') }}">Assessment</a></li>
                     @if (isset($breadcrumb))
                         @if (is_array($breadcrumb))

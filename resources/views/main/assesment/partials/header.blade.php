@@ -4,7 +4,7 @@
         {{-- Top Navigation Row: Back Button (Left) and Breadcrumb (Right) --}}
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <div class="assessment-back">
-                <a href="{{ route('manage.dashboard') }}" class="assessment-back-link">
+                <a href="{{ route('manage.index') }}" class="assessment-back-link">
                     <i class="ti ti-arrow-left me-1" aria-hidden="true"></i>
                     Back
                 </a>
@@ -12,7 +12,7 @@
 
             <div class="assessment-breadcrumb">
                 <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
-                    <li class="breadcrumb-item"><a href="{{ route('manage.dashboard') }}">Manage</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('manage.index') }}">Manage</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Assessment</li>
                 </ol>
             </div>
