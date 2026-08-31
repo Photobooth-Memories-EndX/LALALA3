@@ -13,19 +13,21 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('assesment_score_histories', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('assesment_result_id')->constrained('assesment_results')->onDelete('cascade');
-            $table->foreignId('assesment_id')->constrained('assesments')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('changed_by_user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->double('previous_score', 8, 2)->nullable();
-            $table->double('new_score', 8, 2);
-            $table->timestamps();
+        if (!Schema::hasTable('assesment_score_histories')) {
+            Schema::create('assesment_score_histories', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('assesment_result_id')->constrained('assesment_results')->onDelete('cascade');
+                $table->foreignId('assesment_id')->constrained('assesments')->onDelete('cascade');
+                $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+                $table->foreignId('changed_by_user_id')->nullable()->constrained('users')->nullOnDelete();
+                $table->double('previous_score', 8, 2)->nullable();
+                $table->double('new_score', 8, 2);
+                $table->timestamps();
 
-            $table->index(['assesment_result_id', 'created_at']);
-            $table->index('assesment_id');
-        });
+                $table->index(['assesment_result_id', 'created_at']);
+                $table->index('assesment_id');
+            });
+        }
     }
 
     /**
