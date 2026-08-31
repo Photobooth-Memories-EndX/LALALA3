@@ -7,6 +7,7 @@ use App\Models\ContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Services\CertificateEligibilityService;
+use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningHourService;
 use App\Support\DurationFormatter;
 use Illuminate\Support\Carbon;
@@ -158,24 +159,50 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
 
     private function completedPlaylists(int $userId): Collection
     {
-        return TrainingPlan::query()->with(['trainingplandetail.content'])
-            ->select('trainingplan.id', 'trainingplan.title', 'trainingplan.total_duration_seconds')
-            ->whereExists(fn ($q) => $q->from('trainingplandetail')->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')->where('content_users.user_id', $userId)->where('content_users.finish', '1'))
-            ->selectSub(TrainingPlanDetail::selectRaw('COUNT(*)')->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id'), 'total_items')
-            ->selectSub(ContentUser::selectRaw('COUNT(*)')->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')->where('content_users.user_id', $userId)->where('content_users.finish', '1'), 'finished_items')
-            ->selectSub(ContentUser::selectRaw('MAX(content_users.updated_at)')->join('trainingplandetail', 'trainingplandetail.content_id', '=', 'content_users.content_id')->whereColumn('trainingplandetail.trainingplan_id', 'trainingplan.id')->where('content_users.user_id', $userId)->where('content_users.finish', '1'), 'last_finished_at')
-            ->get()->filter(fn ($p) => (int) $p->total_items > 0 && (int) $p->finished_items >= (int) $p->total_items)->values();
+        return app(CompletedPlaylistService::class)->forUser($userId);
     }
 
     private function certificateContext($user, CertificateEligibilityService $service): array
     {
-        $settings = CertificateSetting::with(['content:id,title', 'trainingPlan.trainingplandetail', 'assessment:id,title'])
-            ->where('is_active', 1)->where(function ($q) use ($user) {
-                $q->where(function ($w) use ($user) { $w->where('certificate_type', 'content')->whereExists(fn ($s) => $s->from('content_users')->whereColumn('content_users.content_id', 'certificate_settings.content_id')->where('content_users.user_id', $user->id)->whereRaw('content_users.progress >= COALESCE(certificate_settings.minimum_progress, 0)')); })
-                    ->orWhere(function ($w) use ($user) { $w->where('certificate_type', 'playlist')->whereExists(fn ($s) => $s->from('trainingplandetail')->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')->whereColumn('trainingplandetail.trainingplan_id', 'certificate_settings.trainingplan_id')->where('content_users.user_id', $user->id)); });
-            })->get();
+        $userId = (int) $user->id;
 
-        return ['content' => $settings->where('certificate_type', 'content')->keyBy('content_id'), 'playlist' => $settings->where('certificate_type', 'playlist')->keyBy('trainingplan_id'), 'results' => $service->checkMany($settings, $user)];
+        $settings = CertificateSetting::with(['content:id,title', 'trainingPlan.trainingplandetail', 'assessment:id,title'])
+            ->where('is_active', 1)
+            ->where(function ($q) use ($userId) {
+                $q->where(function ($w) use ($userId) {
+                    $w->where('certificate_type', 'content')
+                        ->whereExists(fn ($s) => $s->from('content_users')
+                            ->whereColumn('content_users.content_id', 'certificate_settings.content_id')
+                            ->where('content_users.user_id', $userId)
+                            ->whereRaw('content_users.progress >= COALESCE(certificate_settings.minimum_progress, 0)'));
+                })
+                ->orWhere(function ($w) use ($userId) {
+                    $w->where('certificate_type', 'playlist')
+                        ->where(function ($pw) use ($userId) {
+                            $pw->whereExists(fn ($s) => $s->from('playlist_content_users')
+                                ->whereColumn('playlist_content_users.trainingplan_id', 'certificate_settings.trainingplan_id')
+                                ->where('playlist_content_users.user_id', $userId))
+                            ->orWhereExists(fn ($s) => $s->from('trainingplandetail')
+                                ->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')
+                                ->whereColumn('trainingplandetail.trainingplan_id', 'certificate_settings.trainingplan_id')
+                                ->where('content_users.user_id', $userId));
+                        });
+                })
+                ->orWhere(function ($w) use ($userId) {
+                    $w->where('certificate_type', 'global')
+                        ->whereExists(fn ($s) => $s->from('assesment_results')
+                            ->whereColumn('assesment_results.assesment_id', 'certificate_settings.assessment_id')
+                            ->where('assesment_results.user_id', $userId)
+                            ->where('assesment_results.final', 1));
+                });
+            })
+            ->get();
+
+        return [
+            'content'  => $settings->where('certificate_type', 'content')->keyBy('content_id'),
+            'playlist' => $settings->where('certificate_type', 'playlist')->keyBy('trainingplan_id'),
+            'results'  => $service->checkMany($settings, $user),
+        ];
     }
 
     private function contentRow(ContentUser $cu, array $cert, LearningHourService $hours, bool $playlistChild = false): array
