@@ -384,6 +384,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:learning_management'], function () {
         Route::get('learning/search-employees', [LearningManageController::class, 'searchEmployees'])->name('learning.manage.search-employees');
+        Route::get('learning/search-titles', [LearningManageController::class, 'searchTitles'])->name('learning.manage.search-titles');
         Route::get('learning/datatable', [LearningManageController::class, 'datatable'])->name('learning.manage.datatable');
         Route::get('learning', [LearningManageController::class, 'index'])->name('learning.manage.index');
         Route::get('learning/all', [LearningManageController::class, 'all'])->name('learning.manage.all');

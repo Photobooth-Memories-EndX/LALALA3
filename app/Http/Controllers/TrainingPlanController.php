@@ -190,7 +190,7 @@ class TrainingPlanController extends Controller
         $totalMaterials      = TrainingPlanDetail::count();
 
         return view('main.trainingplan.index', [
-            'title'               => 'Training Plan Management',
+            'title'               => 'Playlist Management',
             'trainingplans'       => $trainingplans,
             'authors'             => $authors,
             'totalTrainingPlan'   => $totalTrainingPlan,

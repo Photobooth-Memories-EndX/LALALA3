@@ -136,6 +136,19 @@ class ManageLearningTest extends TestCase
         $responseWithTerm->assertJsonStructure(['results']);
     }
 
+    public function test_authenticated_admin_can_search_titles_for_live_dropdown(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        $response = $this->actingAs($user)->getJson('/manage/learning/search-titles?q=');
+        $response->assertStatus(200);
+        $response->assertJsonStructure(['results']);
+
+        $responseWithTerm = $this->actingAs($user)->getJson('/manage/learning/search-titles?q=safety');
+        $responseWithTerm->assertStatus(200);
+        $responseWithTerm->assertJsonStructure(['results']);
+    }
+
     public function test_authenticated_admin_can_download_filtered_learning_export(): void
     {
         $user = User::where('role', '2')->first() ?? User::first();
@@ -169,5 +182,53 @@ class ManageLearningTest extends TestCase
         $this->assertEquals(1, $json['draw']);
         $this->assertArrayHasKey('recordsTotal', $json);
         $this->assertArrayHasKey('data', $json);
+    }
+
+    public function test_datatable_filtering_by_employee_id(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=10&employee_id=' . $user->id);
+        $response->assertStatus(200);
+
+        $json = $response->json();
+        $this->assertEquals(1, $json['draw']);
+        $this->assertArrayHasKey('recordsTotal', $json);
+        $this->assertArrayHasKey('data', $json);
+    }
+
+    public function test_datatable_filtering_by_learning_title(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=10&learning_title=safety');
+        $response->assertStatus(200);
+
+        $json = $response->json();
+        $this->assertEquals(1, $json['draw']);
+        $this->assertArrayHasKey('recordsTotal', $json);
+        $this->assertArrayHasKey('data', $json);
+    }
+
+    public function test_datatable_filtering_by_both_employee_and_learning_title(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        $response = $this->actingAs($user)->getJson('/manage/learning/datatable?draw=1&start=0&length=10&employee_id=' . $user->id . '&learning_title=test');
+        $response->assertStatus(200);
+
+        $json = $response->json();
+        $this->assertEquals(1, $json['draw']);
+        $this->assertArrayHasKey('recordsTotal', $json);
+        $this->assertArrayHasKey('data', $json);
+    }
+
+    public function test_download_export_with_employee_and_learning_title(): void
+    {
+        $user = User::where('role', '2')->first() ?? User::first();
+
+        $response = $this->actingAs($user)->get('/manage/learning/download?employee_id=' . $user->id . '&learning_title=safety&status=all');
+        $response->assertStatus(200);
+        $this->assertTrue($response->headers->get('content-type') === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || $response->headers->has('content-disposition'));
     }
 }

@@ -176,12 +176,33 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
             $query->whereHas('content', fn ($q) => $q->where('slug', $contentSlug));
         }
 
+        // Filter by Employee ID / NIP / Name
+        $employeeParam = $this->filters['employee_id'] ?? ($this->filters['user_id'] ?? ($this->filters['employee'] ?? null));
+        if (filled($employeeParam) && $employeeParam !== 'all') {
+            if (is_numeric($employeeParam)) {
+                $query->where('content_users.user_id', $employeeParam);
+            } else {
+                $query->whereHas('user', function ($userQuery) use ($employeeParam) {
+                    $userQuery->where('name', 'like', '%' . $employeeParam . '%')
+                        ->orWhere('id_emp', 'like', '%' . $employeeParam . '%');
+                });
+            }
+        }
+
+        // Filter by Learning Title
+        $learningTitleParam = $this->filters['learning_title'] ?? ($this->filters['title'] ?? ($this->filters['content_title'] ?? null));
+        if (filled($learningTitleParam)) {
+            $query->whereHas('content', function ($contentQuery) use ($learningTitleParam) {
+                $contentQuery->where('title', 'like', '%' . $learningTitleParam . '%');
+            });
+        }
+
         $searchParam = $this->filters['search'] ?? '';
         $search = is_array($searchParam)
             ? trim((string) ($searchParam['value'] ?? ''))
             : trim((string) $searchParam);
 
-        if ($search !== '') {
+        if ($search !== '' && !filled($employeeParam) && !filled($learningTitleParam)) {
             $query->where(function ($q) use ($search) {
                 $q->where('content_users.status', 'like', '%' . $search . '%')
                     ->orWhereHas('user', function ($userQuery) use ($search) {

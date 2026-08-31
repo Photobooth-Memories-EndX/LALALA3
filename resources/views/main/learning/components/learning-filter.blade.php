@@ -2,7 +2,9 @@
     $currentStatus = request('status', 'all');
     $currentYear = request('year', 'all');
     $currentEntries = (int) ($entries ?? 25);
-    $currentSearch = $search ?? '';
+    $currentEmployeeId = request('employee_id') ?? request('user_id');
+    $currentEmployeeText = request('employee_text') ?? ($currentEmployeeId ? ($employeeName ?? $currentEmployeeId) : '');
+    $currentLearningTitle = request('learning_title') ?? request('title');
     $routeSlug = request()->segment(4);
 @endphp
 
@@ -26,18 +28,27 @@
             <input type="hidden" id="filter-progress-range" name="progress_range" value="{{ request('progress_range', 'all') }}">
             <input type="hidden" id="filter-duration" name="duration" value="{{ request('duration', 'all') }}">
 
-            <div class="row g-2 align-items-center">
-                <!-- Live Search Dropdown -->
-                <div class="col-12 col-md-4 col-lg-3">
-                    <select class="form-select" id="learn-search" name="search" data-placeholder="Search employee, NIP, or title...">
-                        @if ($currentSearch)
-                            <option value="{{ $currentSearch }}" selected>{{ $currentSearch }}</option>
+            <div class="d-flex align-items-center gap-2 flex-nowrap overflow-x-auto pb-1" style="scrollbar-width: thin;">
+                <!-- 1. Employee Search Dropdown (Select2 AJAX) -->
+                <div class="flex-fill" style="min-width: 180px; max-width: 240px;">
+                    <select class="form-select" id="learn-employee" name="employee_id" data-placeholder="Search employee or NIP...">
+                        @if ($currentEmployeeId)
+                            <option value="{{ $currentEmployeeId }}" selected>{{ $currentEmployeeText ?: $currentEmployeeId }}</option>
                         @endif
                     </select>
                 </div>
 
-                <!-- Status Dropdown -->
-                <div class="col-6 col-md-auto">
+                <!-- 2. Learning Title Search Dropdown (Select2 AJAX) -->
+                <div class="flex-fill" style="min-width: 180px; max-width: 240px;">
+                    <select class="form-select" id="learn-title" name="learning_title" data-placeholder="Search learning title...">
+                        @if ($currentLearningTitle)
+                            <option value="{{ $currentLearningTitle }}" selected>{{ $currentLearningTitle }}</option>
+                        @endif
+                    </select>
+                </div>
+
+                <!-- 3. Status Dropdown -->
+                <div style="min-width: 120px; flex-shrink: 0;">
                     <select class="form-select rounded-3" id="learn-status" name="status">
                         <option value="all" {{ $currentStatus === 'all' ? 'selected' : '' }}>All Status</option>
                         <option value="finished" {{ ($currentStatus === 'finished' || $currentStatus === 'finish' || $currentStatus === '1') ? 'selected' : '' }}>Finished</option>
@@ -46,8 +57,8 @@
                     </select>
                 </div>
 
-                <!-- Year Dropdown -->
-                <div class="col-6 col-md-auto">
+                <!-- 4. Year Dropdown -->
+                <div style="min-width: 105px; flex-shrink: 0;">
                     <select class="form-select rounded-3" id="learn-year" name="year">
                         <option value="all" {{ $currentYear === 'all' ? 'selected' : '' }}>All Year</option>
                         @foreach ($years as $year)
@@ -56,8 +67,8 @@
                     </select>
                 </div>
 
-                <!-- Entries Dropdown -->
-                <div class="col-6 col-md-auto">
+                <!-- 5. Entries Dropdown -->
+                <div style="min-width: 115px; flex-shrink: 0;">
                     <select class="form-select rounded-3" id="learn-entries" name="entries">
                         @foreach ([10, 25, 50, 100] as $option)
                             <option value="{{ $option }}" {{ $currentEntries === $option ? 'selected' : '' }}>{{ $option }} Entries</option>
@@ -65,22 +76,26 @@
                     </select>
                 </div>
 
-                <!-- Action Buttons (Apply Filter, Reset, More Filters, Download) -->
-                <div class="col-12 col-md d-flex flex-wrap gap-1 justify-content-md-end mt-2 mt-md-0">
-                    <button type="button" id="btn-apply-filter" class="btn btn-primary rounded-3 px-3" style="background-color: #0c5b9e; border-color: #0c5b9e;" title="Apply Filter">
-                        <i class="ti ti-search me-1"></i> Apply Filter
-                    </button>
-                    <button type="button" id="btn-more-filters" class="btn btn-outline-primary rounded-3 px-3 position-relative btn-more-filters" data-bs-toggle="modal" data-bs-target="#moreLearningFiltersModal" title="More Filters">
-                        <i class="ti ti-adjustments-horizontal me-1"></i> More Filters
-                        <span id="activeFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
-                    </button>
-                    <button type="button" id="btn-reset-filter" class="btn btn-outline-primary rounded-3 px-3 btn-quick-reset" style="border-color: #0c5b9e; color: #0c5b9e;" title="Reset Filter">
-                        <i class="ti ti-refresh me-1"></i> Reset
-                    </button>
-                    <button type="button" id="btn-download-export" class="btn btn-success rounded-3 px-3 btn-download" title="Download Excel">
-                        <i class="ti ti-download me-1"></i> Download
-                    </button>
-                </div>
+                <!-- 6. Icon Button: Apply Filter -->
+                <button type="button" id="btn-apply-filter" class="btn btn-primary rounded-3 px-3 flex-shrink-0" style="background-color: #0c5b9e; border-color: #0c5b9e;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
+                    <i class="ti ti-search"></i>
+                </button>
+
+                <!-- 7. Icon Button: More Filters -->
+                <button type="button" id="btn-more-filters" class="btn btn-outline-primary rounded-3 px-3 position-relative btn-more-filters flex-shrink-0" data-bs-toggle="modal" data-bs-target="#moreLearningFiltersModal" title="More Filters">
+                    <i class="ti ti-adjustments-horizontal"></i>
+                    <span id="activeFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
+                </button>
+
+                <!-- 8. Icon Button: Reset -->
+                <button type="button" id="btn-reset-filter" class="btn btn-outline-primary rounded-3 px-3 btn-quick-reset flex-shrink-0" style="border-color: #0c5b9e; color: #0c5b9e;" data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
+                    <i class="ti ti-refresh"></i>
+                </button>
+
+                <!-- 9. Button: Download -->
+                <button type="button" id="btn-download-export" class="btn btn-success rounded-3 px-3 btn-download flex-shrink-0" title="Download Excel">
+                    <i class="ti ti-download me-1"></i> Download
+                </button>
             </div>
         </form>
     </div>

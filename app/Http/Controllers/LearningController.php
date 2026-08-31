@@ -204,6 +204,23 @@ class LearningController extends Controller
             }
         }
 
+        if ($request->filled('employee_id') && $request->employee_id !== 'all') {
+            if (is_numeric($request->employee_id)) {
+                $query->where('content_users.user_id', $request->employee_id);
+            } else {
+                $query->whereHas('user', function ($uq) use ($request) {
+                    $uq->where('name', 'like', '%' . $request->employee_id . '%')
+                       ->orWhere('id_emp', 'like', '%' . $request->employee_id . '%');
+                });
+            }
+        }
+
+        if ($request->filled('learning_title')) {
+            $query->whereHas('content', function ($cq) use ($request) {
+                $cq->where('title', 'like', '%' . $request->learning_title . '%');
+            });
+        }
+
         return $query;
     }
 }

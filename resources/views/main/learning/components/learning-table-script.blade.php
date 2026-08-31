@@ -7,12 +7,12 @@
         const initialSearch = @json($search ?? '');
         const defaultEntries = @json((int) ($entries ?? 25));
 
-        // ── 1. Initialize Live Search Dropdown (Select2 AJAX) ─────────────
+        // ── 1. Initialize Employee Search Dropdown (Select2 AJAX) ─────────────
         if ($.fn.select2) {
-            $('#learn-search').select2({
+            $('#learn-employee').select2({
                 theme: 'bootstrap-5',
                 allowClear: true,
-                placeholder: $('#learn-search').data('placeholder') || 'Search employee, NIP, or title...',
+                placeholder: $('#learn-employee').data('placeholder') || 'Search employee or NIP...',
                 width: '100%',
                 ajax: {
                     url: "{{ route('learning.manage.search-employees') }}",
@@ -44,6 +44,51 @@
                 },
                 minimumInputLength: 0
             });
+
+            // ── 1b. Initialize Learning Title Search Dropdown (Select2 AJAX) ─────────────
+            $('#learn-title').select2({
+                theme: 'bootstrap-5',
+                allowClear: true,
+                placeholder: $('#learn-title').data('placeholder') || 'Search learning title...',
+                width: '100%',
+                ajax: {
+                    url: "{{ route('learning.manage.search-titles') }}",
+                    dataType: 'json',
+                    delay: 300,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                    },
+                    data: function (params) {
+                        return {
+                            _token: '{{ csrf_token() }}',
+                            q: params.term || '',
+                            page: params.page || 1
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results || []
+                        };
+                    },
+                    cache: true
+                },
+                templateResult: function (item) {
+                    if (!item.id) return item.text;
+                    return $('<span>').text(item.text);
+                },
+                templateSelection: function (item) {
+                    return item.text || item.id;
+                },
+                minimumInputLength: 0
+            });
+        }
+
+        // Initialize Bootstrap tooltips
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
         }
 
         // ── 2. Initialize DataTable ───────────────────────────────────────
@@ -71,7 +116,9 @@
                 },
                 data: function (d) {
                     d._token = '{{ csrf_token() }}';
-                    d.search = $('#learn-search').val() || '';
+                    d.employee_id = $('#learn-employee').val() || '';
+                    d.learning_title = $('#learn-title').val() || '';
+                    d.search = $('#learn-title').val() || '';
                     d.status = $('#learn-status').val();
                     d.year = $('#learn-year').val();
                     d.classification_slug = $('#classification-slug').val();
@@ -152,7 +199,20 @@
 
         // ── 3. Quick Filter Event Listeners ───────────────────────────────
         $('#btn-apply-filter').on('click', function () {
+            updateUrlParams({
+                employee_id: $('#learn-employee').val() || null,
+                learning_title: $('#learn-title').val() || null,
+                status: $('#learn-status').val() !== 'all' ? $('#learn-status').val() : null,
+                year: $('#learn-year').val() !== 'all' ? $('#learn-year').val() : null,
+            });
             learningTable.ajax.reload(null, true);
+        });
+
+        $('#learn-title').on('keypress', function (e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#btn-apply-filter').trigger('click');
+            }
         });
 
         $('#learn-entries').on('change', function () {
@@ -231,11 +291,18 @@
 
         // ── 5. Full Filter Reset Event ────────────────────────────────────
         $('#btn-reset-filter').on('click', function () {
-            // Reset Select2 live search
-            if ($.fn.select2 && $('#learn-search').data('select2')) {
-                $('#learn-search').val(null).trigger('change');
+            // Reset Select2 employee search
+            if ($.fn.select2 && $('#learn-employee').data('select2')) {
+                $('#learn-employee').val(null).trigger('change');
             } else {
-                $('#learn-search').val('');
+                $('#learn-employee').val('');
+            }
+
+            // Reset Learning Title Select2
+            if ($.fn.select2 && $('#learn-title').data('select2')) {
+                $('#learn-title').val(null).trigger('change');
+            } else {
+                $('#learn-title').val('');
             }
 
             // Reset Quick Filter dropdowns
@@ -268,8 +335,11 @@
             e.preventDefault();
             const params = new URLSearchParams();
 
-            const searchVal = $('#learn-search').val();
-            if (searchVal) params.append('search', searchVal);
+            const empVal = $('#learn-employee').val();
+            if (empVal) params.append('employee_id', empVal);
+
+            const titleVal = $('#learn-title').val();
+            if (titleVal) params.append('learning_title', titleVal);
 
             const statusVal = $('#learn-status').val();
             if (statusVal && statusVal !== 'all') params.append('status', statusVal);

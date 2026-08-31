@@ -173,7 +173,28 @@ class LearningDatatableService
             });
         }
 
-        if ($request->filled('search')) {
+        // Filter by Employee ID / NIP / Name
+        $employeeParam = $request->input('employee_id') ?? ($request->input('user_id') ?? $request->input('employee'));
+        if (filled($employeeParam) && $employeeParam !== 'all') {
+            if (is_numeric($employeeParam)) {
+                $query->where('content_users.user_id', $employeeParam);
+            } else {
+                $query->whereHas('user', function ($userQuery) use ($employeeParam) {
+                    $userQuery->where('name', 'like', '%' . $employeeParam . '%')
+                        ->orWhere('id_emp', 'like', '%' . $employeeParam . '%');
+                });
+            }
+        }
+
+        // Filter by Learning Title
+        $learningTitleParam = $request->input('learning_title') ?? ($request->input('title') ?? $request->input('content_title'));
+        if (filled($learningTitleParam)) {
+            $query->whereHas('content', function ($contentQuery) use ($learningTitleParam) {
+                $contentQuery->where('title', 'like', '%' . $learningTitleParam . '%');
+            });
+        }
+
+        if ($request->filled('search') && !filled($employeeParam) && !filled($learningTitleParam)) {
             $searchParam = $request->input('search');
             $customSearch = is_array($searchParam)
                 ? trim((string) ($searchParam['value'] ?? ''))

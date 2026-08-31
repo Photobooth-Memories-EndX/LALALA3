@@ -150,46 +150,44 @@ class LearningManageController extends Controller
         $term = trim((string) ($request->input('q') ?? $request->input('search', '')));
         $results = [];
 
-        if ($term === '') {
-            $users = User::select('id', 'name', 'id_emp')
-                ->whereNotNull('name')
-                ->where('name', '!=', '')
-                ->limit(10)
-                ->get();
+        $query = User::select('id', 'name', 'id_emp')
+            ->whereNotNull('name')
+            ->where('name', '!=', '');
 
-            foreach ($users as $user) {
-                $nip = $user->id_emp ? " (NIP: {$user->id_emp})" : '';
-                $results[] = [
-                    'id' => $user->name,
-                    'text' => $user->name . $nip,
-                ];
-            }
-
-            return response()->json(['results' => $results]);
-        }
-
-        // Search Users by Name or NIP
-        $users = User::select('id', 'name', 'id_emp')
-            ->where(function ($q) use ($term) {
+        if ($term !== '') {
+            $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
                   ->orWhere('id_emp', 'like', "%{$term}%");
-            })
-            ->limit(10)
-            ->get();
+            });
+        }
+
+        $users = $query->limit(20)->get();
 
         foreach ($users as $user) {
             $nip = $user->id_emp ? " (NIP: {$user->id_emp})" : '';
             $results[] = [
-                'id' => $user->name,
+                'id' => $user->id,
                 'text' => $user->name . $nip,
             ];
         }
 
-        // Search Content by Title
-        $contents = Content::select('id', 'title')
-            ->where('title', 'like', "%{$term}%")
-            ->limit(10)
-            ->get();
+        return response()->json(['results' => $results]);
+    }
+
+    public function searchTitles(Request $request)
+    {
+        $term = trim((string) ($request->input('q') ?? $request->input('search', '')));
+        $results = [];
+
+        $query = Content::select('id', 'title')
+            ->whereNotNull('title')
+            ->where('title', '!=', '');
+
+        if ($term !== '') {
+            $query->where('title', 'like', "%{$term}%");
+        }
+
+        $contents = $query->distinct()->limit(20)->get();
 
         foreach ($contents as $content) {
             $results[] = [
@@ -198,7 +196,7 @@ class LearningManageController extends Controller
             ];
         }
 
-        return response()->json(['results' => array_slice($results, 0, 20)]);
+        return response()->json(['results' => $results]);
     }
 
     public function download(Request $request)
