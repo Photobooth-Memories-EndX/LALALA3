@@ -54,6 +54,27 @@ class ContentRepositoryDataQualityTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::connection('content_repo_testing')->create('user_access_permissions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('module_key');
+            $table->timestamps();
+        });
+
+        Schema::connection('content_repo_testing')->create('role_access_permissions', function (Blueprint $table) {
+            $table->id();
+            $table->integer('role');
+            $table->string('module_key');
+            $table->timestamps();
+        });
+
+        Schema::connection('content_repo_testing')->create('comments', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('content_id')->nullable();
+            $table->string('type')->default('content');
+            $table->timestamps();
+        });
+
         Schema::connection('content_repo_testing')->create('classification', function (Blueprint $table) {
             $table->id();
             $table->string('classification_name');

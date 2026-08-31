@@ -22,108 +22,203 @@ class ContentController extends Controller
         $sevenDaysFromToday = $today->copy()->addDays(7)->toDateString();
         $thirtyDaysFromToday = $today->copy()->addDays(30)->toDateString();
 
-        if ($request->filled('s')) {
-            $search = $request->s;
+        // Search Filter
+        $search = $request->s ?: $request->search;
+        if (filled($search)) {
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('author', 'like', "%{$search}%");
+                $q->where('content.title', 'like', "%{$search}%")
+                  ->orWhere('content.description', 'like', "%{$search}%")
+                  ->orWhere('content.author', 'like', "%{$search}%");
             });
         }
 
+        // Type Filter
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $query->where('content.type', $request->type);
         }
 
-        if ($request->filled('classification_id')) {
-            $query->where('classification_id', $request->classification_id);
+        // Classification Filter
+        $classificationId = $request->classification_id ?: $request->classification;
+        if (filled($classificationId)) {
+            $query->where('content.classification_id', $classificationId);
         }
 
-        if ($request->filled('active')) {
-            $query->where('active', $request->active);
+        // Status (Active/Inactive) Filter
+        $status = $request->active ?: $request->status;
+        if (filled($status) && $status !== 'all') {
+            $query->where('content.active', $status);
         }
 
-        if ($request->filled('exam')) {
-            $query->where('exam', $request->exam);
+        // Author Filter
+        if ($request->filled('author')) {
+            $query->where('content.author', $request->author);
         }
 
-        if ($request->filled('playlistonly')) {
-            $query->where('playlistonly', $request->playlistonly);
-        }
-
-        if ($request->filled('deadline')) {
-            if ($request->deadline === 'with') {
-                $query->where('has_deadline', 1);
-            } elseif ($request->deadline === 'without') {
-                $query->where(function ($q) {
-                    $q->whereNull('has_deadline')->orWhere('has_deadline', 0);
-                });
-            } elseif ($request->deadline === 'expired') {
-                $query->where('has_deadline', 1)
-                      ->whereDate('to_date', '<', $todayDate);
-            } elseif ($request->deadline === 'active') {
-                $query->where('has_deadline', 1)
-                      ->whereDate('from_date', '<=', $todayDate)
-                      ->whereDate('to_date', '>=', $todayDate);
+        // Exam Filter (OK / NOT / Yes / No)
+        $exam = $request->exam;
+        if (filled($exam) && $exam !== 'all') {
+            if (in_array(strtoupper($exam), ['OK', 'YES', '1', 'Y'])) {
+                $query->where('content.exam', 'OK');
+            } elseif (in_array(strtoupper($exam), ['NOT', 'NO', '0', 'N'])) {
+                $query->where('content.exam', 'NOT');
             }
         }
 
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('content.date', [$request->date_from, $request->date_to]);
-        } elseif ($request->filled('date_from')) {
-            $query->whereDate('content.date', '>=', $request->date_from);
-        } elseif ($request->filled('date_to')) {
-            $query->whereDate('content.date', '<=', $request->date_to);
+        // Playlist Only Filter (Y / N / Yes / No)
+        $playlistOnlyFilter = $request->playlistonly ?? $request->playlist;
+        if (filled($playlistOnlyFilter) && $playlistOnlyFilter !== 'all') {
+            if (in_array(strtoupper($playlistOnlyFilter), ['Y', 'YES', '1'])) {
+                $query->where('content.playlistonly', 'Y');
+            } elseif (in_array(strtoupper($playlistOnlyFilter), ['N', 'NO', '0'])) {
+                $query->where(function ($q) {
+                    $q->where('content.playlistonly', 'N')->orWhereNull('content.playlistonly');
+                });
+            }
         }
 
-        if ($request->filled('deadline_from_date') && $request->filled('deadline_to_date')) {
-            $query->whereBetween('content.date', [
-                $request->deadline_from_date,
-                $request->deadline_to_date,
-            ]);
-        } elseif ($request->filled('deadline_from_date')) {
-            $query->whereDate('content.date', '>=', $request->deadline_from_date);
-        } elseif ($request->filled('deadline_to_date')) {
-            $query->whereDate('content.date', '<=', $request->deadline_to_date);
+        // Year & Month Filter
+        if ($request->filled('month')) {
+            $query->whereMonth('content.created_at', (int) $request->month);
+            if ($request->filled('year')) {
+                $query->whereYear('content.created_at', (int) $request->year);
+            }
+        } elseif ($request->filled('year')) {
+            $query->whereYear('content.created_at', (int) $request->year);
         }
 
-        if ($request->filled('created_from_date')) {
-            $query->whereDate('content.created_at', '>=', $request->created_from_date);
+        // Created Date Filter (From Date / To Date)
+        $createdFrom = $request->created_from_date ?: $request->created_from;
+        $createdTo = $request->created_to_date ?: $request->created_to;
+        if (filled($createdFrom)) {
+            $query->whereDate('content.created_at', '>=', $createdFrom);
+        }
+        if (filled($createdTo)) {
+            $query->whereDate('content.created_at', '<=', $createdTo);
         }
 
-        if ($request->filled('created_to_date')) {
-            $query->whereDate('content.created_at', '<=', $request->created_to_date);
+        // Period Filter (From Date / To Date on content.date)
+        $periodFrom = $request->deadline_from_date ?: ($request->period_from ?: $request->date_from);
+        $periodTo = $request->deadline_to_date ?: ($request->period_to ?: $request->date_to);
+        if (filled($periodFrom) && filled($periodTo)) {
+            $query->whereBetween('content.date', [$periodFrom, $periodTo]);
+        } elseif (filled($periodFrom)) {
+            $query->whereDate('content.date', '>=', $periodFrom);
+        } elseif (filled($periodTo)) {
+            $query->whereDate('content.date', '<=', $periodTo);
         }
 
+        // Updated Date Filter
         if ($request->filled('updated_from_date')) {
             $query->whereDate('content.updated_at', '>=', $request->updated_from_date);
         }
-
         if ($request->filled('updated_to_date')) {
             $query->whereDate('content.updated_at', '<=', $request->updated_to_date);
         }
 
-        switch ($request->get('deadline_status')) {
-            case 'expired':
-                $query->whereDate('content.date', '<', $todayDate);
-                break;
-            case 'today':
-                $query->whereDate('content.date', $todayDate);
-                break;
-            case 'less_than_7_days':
-                $query->whereDate('content.date', '>', $todayDate)
-                    ->whereDate('content.date', '<=', $sevenDaysFromToday);
-                break;
-            case 'less_than_30_days':
-                $query->whereDate('content.date', '>', $todayDate)
-                    ->whereDate('content.date', '<=', $thirtyDaysFromToday);
-                break;
-            case 'more_than_30_days':
-                $query->whereDate('content.date', '>', $thirtyDaysFromToday);
-                break;
+        // Deadline Status Filter
+        $deadlineStatus = $request->deadline_status ?: $request->deadline;
+        if (filled($deadlineStatus) && $deadlineStatus !== 'all') {
+            switch ($deadlineStatus) {
+                case 'expired':
+                    $query->whereDate('content.date', '<', $todayDate);
+                    break;
+                case 'today':
+                    $query->whereDate('content.date', $todayDate);
+                    break;
+                case 'less_than_7_days':
+                    $query->whereDate('content.date', '>', $todayDate)
+                        ->whereDate('content.date', '<=', $sevenDaysFromToday);
+                    break;
+                case 'less_than_30_days':
+                    $query->whereDate('content.date', '>', $todayDate)
+                        ->whereDate('content.date', '<=', $thirtyDaysFromToday);
+                    break;
+                case 'more_than_30_days':
+                    $query->whereDate('content.date', '>', $thirtyDaysFromToday);
+                    break;
+                case 'with':
+                    $query->where('content.has_deadline', 1);
+                    break;
+                case 'without':
+                    $query->where(function ($q) {
+                        $q->whereNull('content.has_deadline')->orWhere('content.has_deadline', 0);
+                    });
+                    break;
+                case 'active':
+                    $query->where('content.has_deadline', 1)
+                          ->whereDate('content.from_date', '<=', $todayDate)
+                          ->whereDate('content.to_date', '>=', $todayDate);
+                    break;
+            }
         }
 
-        switch ($request->get('sort')) {
+        // Duration Filter
+        $durationFilter = $request->get('duration');
+        if (filled($durationFilter) && $durationFilter !== 'all') {
+            $durationRange = match ($durationFilter) {
+                'lt10', 'under_10' => [null, 600, false, true],
+                '10-30', '10_30' => [600, 1800, true, false],
+                '30-60', '30_60' => [1800, 3600, false, false],
+                'gt60', 'above_60' => [3600, null, false, false],
+                default => null,
+            };
+
+            if ($durationRange !== null) {
+                [$minimum, $maximum, $includeMinimum, $excludeMaximum] = $durationRange;
+                $isSqlite = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite';
+                if (!$isSqlite) {
+                    $durationInSeconds = "CASE
+                        WHEN content.duration IS NULL OR TRIM(content.duration) = '' THEN NULL
+                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 1 THEN
+                            CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 60
+                            + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
+                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2 THEN
+                            CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 3600
+                            + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(content.duration, ':', 2), ':', -1) AS UNSIGNED) * 60
+                            + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
+                        ELSE NULL
+                    END";
+
+                    if ($minimum !== null) {
+                        $query->whereRaw(
+                            $durationInSeconds . ($includeMinimum ? ' >= ?' : ' > ?'),
+                            [$minimum]
+                        );
+                    }
+
+                    if ($maximum !== null) {
+                        $query->whereRaw(
+                            $durationInSeconds . ($excludeMaximum ? ' < ?' : ' <= ?'),
+                            [$maximum]
+                        );
+                    }
+                }
+            }
+        }
+
+        // Learning Hour Filter
+        $lhFilter = $request->get('learning_hour');
+        if (filled($lhFilter) && $lhFilter !== 'all') {
+            if ($lhFilter === 'lt1h') {
+                $query->where('content.learning_hours', '<', 1);
+            } elseif ($lhFilter === '1-3h') {
+                $query->where('content.learning_hours', '>=', 1)->where('content.learning_hours', '<=', 3);
+            } elseif ($lhFilter === 'gt3h') {
+                $query->where('content.learning_hours', '>', 3);
+            }
+        }
+
+        // Sort Views (Radio in Modal)
+        $viewOrder = $request->view_order ?? $request->sort_views;
+        if ($viewOrder === 'most_viewed' || $viewOrder === 'most') {
+            $query->orderBy('content.views', 'desc');
+        } elseif ($viewOrder === 'least_viewed' || $viewOrder === 'least') {
+            $query->orderBy('content.views', 'asc');
+        }
+
+        // Sort By Filter
+        $sort = $request->get('sort');
+        switch ($sort) {
             case 'oldest_course':
             case 'oldest':
                 $query->orderBy('content.created_at', 'asc');
@@ -135,10 +230,19 @@ class ContentController extends Controller
                 $query->orderBy('content.updated_at', 'asc');
                 break;
             case 'newest_course':
+            case 'newest':
                 $query->orderBy('content.created_at', 'desc');
                 break;
             case 'views':
                 $query->orderBy('content.views', 'desc');
+                break;
+            case 'asc':
+            case 'title_asc':
+                $query->orderBy('content.title', 'asc');
+                break;
+            case 'desc':
+            case 'title_desc':
+                $query->orderBy('content.title', 'desc');
                 break;
             case 'title':
                 $query->orderBy('content.title');
@@ -165,6 +269,12 @@ class ContentController extends Controller
 
         $types           = Content::whereNotNull('type')->distinct()->orderBy('type')->pluck('type');
         $classifications = Classification::orderBy('classification_name')->get();
+        $authors         = Content::select('author')
+                            ->whereNotNull('author')
+                            ->where('author', '!=', '')
+                            ->distinct()
+                            ->orderBy('author', 'asc')
+                            ->pluck('author');
 
         $totalContent   = Content::count();
         $activeContent  = Content::where('active', 'Active')->count();
@@ -178,6 +288,7 @@ class ContentController extends Controller
             'contents'        => $contents,
             'types'           => $types,
             'classifications' => $classifications,
+            'authors'         => $authors,
             'totalContent'    => $totalContent,
             'activeContent'   => $activeContent,
             'inactiveContent' => $inactiveContent,

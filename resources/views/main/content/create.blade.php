@@ -15,18 +15,18 @@
     <div class="page-header d-print-none mb-3">
         <div class="container-xl">
             <div style="max-width: 1100px; margin: 0 auto;">
+                <!-- TOMBOL BACK RATA KIRI ATAS -->
+                <div class="mb-3">
+                    <a href="{{ route('content.index') }}" class="btn-back mb-3 d-inline-flex align-items-center gap-1 text-decoration-none">
+                        <i class="ti ti-arrow-left"></i>
+                        <span>Back</span>
+                    </a>
+                </div>
+
                 <div class="row align-items-center">
                     <div class="col">
-                        <div class="page-pretitle">Manage / Content</div>
                         <h2 class="owl-page-title mb-1">{{ $title }}</h2>
                         <div class="owl-page-subtitle">Complete the form below to add new content.</div>
-                    </div>
-                    <div class="col-auto ms-auto">
-                        <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
-                            <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('content.index') }}">Content</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
-                        </ol>
                     </div>
                 </div>
             </div>
@@ -221,4 +221,17 @@
             OwlPreview.initFile(myDropzone);
         }
     </script>
+@endsection
+
+@section('style')
+<style>
+.btn-back {
+    color: #0c5b9e !important;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.btn-back:hover {
+    opacity: 0.85;
+    transform: translateX(-3px);
+}
+</style>
 @endsection
