@@ -16,4 +16,8 @@ return [
     'minimum'        => 0.0,
     'chunk_size'     => 200,
     'log_channel'    => env('LEARNING_HOURS_LOG_CHANNEL', 'single'),
+
+    'playlist_content_user' => [
+        'chunk_size' => (int) env('LEARNING_HOURS_PLAYLIST_CHUNK_SIZE', 500),
+    ],
 ];

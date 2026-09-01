@@ -94,6 +94,7 @@ class PlaylistProgressController extends Controller
             'trainingplan_id' => $trainingplan->id,
             'content_id'      => $content->id,
         ]);
+        $playlistContentUser->setRelation('content', $content);
 
         $previousProgress = (int) $playlistContentUser->progress;
         $computed = null;

@@ -169,16 +169,13 @@ class ContentUserLearningHourManagementService
             ];
         }
 
-        $progress = (int) ($record->progress ?? 0);
-        $isFinished = $record->isFinished();
-
-        if ($isFinished) {
-            $userHours = (float) $masterHours;
-        } elseif ($progress > 0) {
-            $userHours = round((float) $masterHours * ($progress / 100), 1);
-        } else {
-            $userHours = 0.0;
-        }
+        $calculator = app(ActualLearningHourCalculator::class);
+        $userHours = $calculator->calculateFromTracking(
+            $record->current_time,
+            $record->finish,
+            $record->progress,
+            $content->duration ?? $record->duration_seconds
+        );
 
         if (!$force && $record->learning_hour !== null && abs((float) $record->learning_hour - $userHours) < 0.0001) {
             return [

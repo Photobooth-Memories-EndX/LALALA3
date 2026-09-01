@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Services\Learning\LearningHourService;
+use App\Services\LearningHours\ActualLearningHourCalculator;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -36,7 +36,7 @@ class PlaylistContentUser extends Model
         'total_pages'      => 'integer',
         'current_time'     => 'integer',
         'duration_seconds' => 'integer',
-        'learning_hour'    => 'decimal:1',
+        'learning_hour'    => 'decimal:4',
         'completed_at'     => 'datetime',
     ];
 
@@ -49,38 +49,36 @@ class PlaylistContentUser extends Model
     }
 
     /**
-     * Model boot hooks to ensure learning_hour and completed_at are calculated and persisted.
+     * Model boot hooks to ensure completed_at and learning_hour are updated safely
+     * WITHOUT executing any database queries (0 N+1).
      */
     protected static function booted(): void
     {
         static::saving(function (PlaylistContentUser $record) {
-            $isFinished = $record->isFinished();
-
             // Set completed_at on completion if not already set (immutable once set)
-            if ($isFinished && $record->completed_at === null) {
+            if ($record->isFinished() && $record->completed_at === null) {
                 $record->completed_at = now();
             }
 
-            // Calculate user learning_hour based on content master learning_hours and progress
-            $content = $record->relationLoaded('content') ? $record->content : $record->content()->first();
-            if ($content) {
-                $masterHours = $content->learning_hours;
-                if ($masterHours === null && !empty($content->duration)) {
-                    $masterHours = app(LearningHourService::class)->calculate($content->duration);
-                }
+            // Calculate actual learning_hour without executing any database query.
+            // Content duration is read from loaded relation or the record's duration_seconds column.
+            // If relation is not loaded, NEVER call $record->content()->first() to prevent N+1.
+            $contentDuration = null;
+            if ($record->relationLoaded('content')) {
+                $contentDuration = $record->content?->duration;
+            }
+            $contentDuration = $contentDuration ?? $record->duration_seconds;
 
-                if ($masterHours !== null) {
-                    $masterFloat = (float) $masterHours;
-                    $progress = (int) ($record->progress ?? 0);
-
-                    if ($isFinished) {
-                        $record->learning_hour = $masterFloat;
-                    } elseif ($progress > 0) {
-                        $record->learning_hour = round($masterFloat * ($progress / 100), 1);
-                    } else {
-                        $record->learning_hour = 0.0;
-                    }
-                }
+            // If current_time > 0 OR we have contentDuration, or record is in progress/unfinished:
+            // Calculate learning_hour in-memory via pure calculator.
+            if ((int) $record->current_time > 0 || $contentDuration !== null || !$record->isFinished()) {
+                $calculator = app(ActualLearningHourCalculator::class);
+                $record->learning_hour = $calculator->calculateFromTracking(
+                    $record->current_time,
+                    $record->finish,
+                    $record->progress,
+                    $contentDuration
+                );
             }
         });
     }
