@@ -214,6 +214,10 @@ class PlaylistUserController extends Controller
             ]
         );
 
+        if ((empty($content_user->last_page) || (int) $content_user->last_page === 0) && !empty($resolvedCurrent->lastPage)) {
+            $content_user->last_page = (int) $resolvedCurrent->lastPage;
+        }
+
         // Recompute in-memory active duration and learning hours for the view
         $activeDurationSeconds = $content_all->filter(fn ($item) => $item->content?->active === 'Active')->sum(function ($item) {
             return \App\Support\DurationFormatter::toSeconds($item->content?->duration) ?? 0;

@@ -13,7 +13,7 @@
             </div>
 
             <div class="d-flex gap-2">
-                <a href="{{ route('manage.dashboard') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('manage.index') }}" class="btn btn-outline-secondary">
                     <i class="ti ti-arrow-left me-1"></i> Back to Dashboard
                 </a>
             </div>
