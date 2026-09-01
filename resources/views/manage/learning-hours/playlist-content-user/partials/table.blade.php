@@ -23,10 +23,10 @@
                         <th>Content Title</th>
                         <th>Type</th>
                         <th style="min-width: 110px;">Progress</th>
-                        {{-- <th>Current Time</th> --}}
+                        <th>Current Time</th>
                         <th>Duration</th>
                         <th class="text-nowrap">Actual Learning Hour</th>
-                        {{-- <th class="text-nowrap">Master Learning Hour</th> --}}
+                        <th class="text-nowrap">Master Learning Hour</th>
                         <th>Calculation Source</th>
                         <th>Status</th>
                         <th>Completed At</th>

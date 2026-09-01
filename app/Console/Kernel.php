@@ -15,7 +15,27 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $playlistSchedule = config('learning_hours.playlist_content_user.schedule', []);
+        $enabled = (bool) ($playlistSchedule['enabled'] ?? true);
+
+        if ($enabled) {
+            $time = (string) ($playlistSchedule['time'] ?? '00:00');
+            $timezone = (string) ($playlistSchedule['timezone'] ?? 'Asia/Jakarta');
+
+            $schedule->command('learning-hours:calculate-playlist-content-users')
+                ->dailyAt($time)
+                ->timezone($timezone)
+                ->withoutOverlapping(60)
+                ->runInBackground()
+                ->before(function () {
+                    \Illuminate\Support\Facades\Log::channel(config('learning_hours.log_channel', 'single'))
+                        ->info('Learning Hour Playlist scheduler started.');
+                })
+                ->after(function () {
+                    \Illuminate\Support\Facades\Log::channel(config('learning_hours.log_channel', 'single'))
+                        ->info('Learning Hour Playlist calculation dispatched.');
+                });
+        }
     }
 
     /**

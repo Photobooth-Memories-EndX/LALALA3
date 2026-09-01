@@ -185,11 +185,19 @@
 
             @if(auth()->user()->canAccessManageModule('learning_hours_management'))
                 @include('main.manage.components.admin-menu-card', [
-                    'title' => 'Learning Hour Management',
-                    'description' => 'Manage and calculate learning hours for Content User records.',
+                    'title' => 'Content User Learning Hours',
+                    'description' => 'Manage and calculate canonical learning hours for Content User records.',
                     'url' => route('manage.learning-hours.content-user.index'),
-                    'button' => 'Manage Learning Hours',
-                    'icon' => 'ti ti-clock-check'
+                    'button' => 'Manage Content Users',
+                    'icon' => 'ti ti-file-text'
+                ])
+
+                @include('main.manage.components.admin-menu-card', [
+                    'title' => 'Playlist Content User Learning Hours',
+                    'description' => 'Inspect and synchronize actual watched learning hours for Playlist Content User records.',
+                    'url' => route('manage.learning-hours.playlist-content-user.index'),
+                    'button' => 'Manage Playlist Records',
+                    'icon' => 'ti ti-playlist'
                 ])
             @endif
 

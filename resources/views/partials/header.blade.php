@@ -113,6 +113,16 @@
                                 <a class="dropdown-item" href="{{ url('manage/question-bank') }}"><i class="ti ti-help-circle me-2"></i> Question Bank</a>
                                 <a class="dropdown-item" href="{{ url('manage/playlist') }}"><i class="ti ti-list-check me-2"></i> Playlist</a>
                                 <a class="dropdown-item" href="{{ url('manage/eventphoto') }}"><i class="ti ti-camera me-2"></i> Event Gallery</a>
+                                @if (auth()->user()->canAccessManageModule('learning_hours_management'))
+                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-header">Learning Hours</div>
+                                    <a class="dropdown-item {{ request()->routeIs('manage.learning-hours.content-user.*') ? 'active' : '' }}" href="{{ route('manage.learning-hours.content-user.index') }}">
+                                        <i class="ti ti-file-text me-2"></i> Content User
+                                    </a>
+                                    <a class="dropdown-item {{ request()->routeIs('manage.learning-hours.playlist-content-user.*') ? 'active' : '' }}" href="{{ route('manage.learning-hours.playlist-content-user.index') }}">
+                                        <i class="ti ti-playlist me-2"></i> Playlist Content User
+                                    </a>
+                                @endif
                             </div>
                         </li>
                     @endif

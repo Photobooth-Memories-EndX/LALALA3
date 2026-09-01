@@ -19,7 +19,8 @@ class CalculatePlaylistContentUserLearningHoursCommand extends Command
                             {--playlist= : Specific Training Plan (Playlist) ID}
                             {--user= : Specific User ID}
                             {--content= : Specific Content ID}
-                            {--limit= : Maximum records to process}';
+                            {--limit= : Maximum records to process}
+                            {--queue : Dispatch calculation to background queue}';
 
     /**
      * The console command description.
@@ -65,6 +66,21 @@ class CalculatePlaylistContentUserLearningHoursCommand extends Command
             $this->line("Limit      : {$limit} records");
         }
         $this->newLine();
+
+        if ($this->option('queue')) {
+            \App\Jobs\CalculatePlaylistContentUserLearningHoursJob::dispatch([
+                'chunk_size'  => $chunkSize,
+                'dry_run'     => $isDryRun,
+                'force'       => $force,
+                'playlist_id' => $playlistId,
+                'user_id'     => $userId,
+                'content_id'  => $contentId,
+                'max_records' => $limit,
+            ]);
+
+            $this->info('Successfully dispatched Learning Hour Playlist calculation job to background queue.');
+            return self::SUCCESS;
+        }
 
         $this->line('Starting batch execution...');
 
