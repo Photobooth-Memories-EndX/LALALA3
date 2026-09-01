@@ -299,6 +299,19 @@ class TrainingPlanController extends Controller
 
             DB::commit();
             $addmessage = $request->action == "publish" ? " and published" : "";
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'   => 200,
+                    'message'  => 'Playlist successfully saved' . $addmessage,
+                    'redirect' => route('playlist.index')
+                ]);
+            }
+
+            if ($request->action === 'draft') {
+                return to_route('playlist.index')->with('success', 'Playlist saved as draft successfully.');
+            }
+
             return to_route('playlist.edit', $trainingplan->slug)->with('success', 'Playlist successfully saved ' . $addmessage);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -405,8 +418,18 @@ class TrainingPlanController extends Controller
 
                     DB::commit();
 
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'status'   => 200,
+                            'message'  => 'Playlist unpublished successfully',
+                            'redirect' => route('playlist.index')
+                        ]);
+                    }
+
                     session()->flash('success', 'Playlist updated successfully');
                     return redirect()->route('playlist.edit', $trainingplan->slug);
+                } else if ($request->action == "draft") {
+                    $trainingplan->active = "Inactive";
                 }
 
                 $trainingplan->save();
@@ -434,6 +457,18 @@ class TrainingPlanController extends Controller
             app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
             app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
             DB::commit();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'   => 200,
+                    'message'  => 'Playlist updated successfully',
+                    'redirect' => route('playlist.index')
+                ]);
+            }
+
+            if ($request->action === 'draft') {
+                return to_route('playlist.index')->with('success', 'Playlist saved as draft successfully.');
+            }
 
             session()->flash('success', 'Playlist updated successfully');
             return redirect()->route('playlist.edit', $trainingplan->slug);
