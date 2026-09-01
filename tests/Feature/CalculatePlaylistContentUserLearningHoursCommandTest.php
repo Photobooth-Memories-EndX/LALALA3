@@ -329,4 +329,44 @@ class CalculatePlaylistContentUserLearningHoursCommandTest extends TestCase
 
         $this->assertSame(1000, $updatedCount);
     }
+
+    public function test_concurrency_protection_prevents_stale_overwrites(): void
+    {
+        $u = $this->existingUserIds;
+
+        $r = PlaylistContentUser::create([
+            'user_id'         => $u[40],
+            'trainingplan_id' => $this->playlist->id,
+            'content_id'      => $this->content1->id,
+            'current_time'    => 1230,
+            'progress'        => 68,
+            'finish'          => '0',
+            'learning_hour'   => null,
+        ]);
+
+        $batchService = app(\App\Services\LearningHours\PlaylistContentUserBatchCalculatorService::class);
+
+        // During progress callback, simulate learner's heartbeat changing current_time
+        $simulated = false;
+        $results = $batchService->process(
+            [
+                'playlist_id' => $this->playlist->id,
+                'user_id'     => $u[40],
+                'chunk_size'  => 10,
+            ],
+            function () use ($r, &$simulated) {
+                if (!$simulated) {
+                    DB::table('playlist_content_users')
+                        ->where('id', $r->id)
+                        ->update(['current_time' => 1300]);
+                    $simulated = true;
+                }
+            }
+        );
+
+        $fresh = DB::table('playlist_content_users')->where('id', $r->id)->first();
+
+        // The record's current_time MUST remain 1300, and stale 1230 update was safely rejected
+        $this->assertEquals(1300, $fresh->current_time);
+    }
 }

@@ -47,7 +47,7 @@ class CalculatePlaylistContentUserLearningHoursCommand extends Command
         $this->info('======================================================================');
         $this->info(' BATCH CALCULATE ACTUAL LEARNING HOURS: PLAYLIST CONTENT USERS');
         $this->info('======================================================================');
-        $this->line('Mode       : ' . ($isDryRun ? '<comment>DRY RUN (Preview Only)</comment>' : '<fg=green;options=bold>LIVE EXECUTION</>'));
+        $this->line('Mode       : ' . ($isDryRun ? '<comment>DRY RUN (Preview Only - No DB Writes)</comment>' : '<fg=green;options=bold>LIVE EXECUTION</>'));
         $this->line("Batch Size : {$chunkSize}");
         if ($force) {
             $this->line('Force Mode : <comment>Enabled (overwrites matching values)</comment>');
@@ -68,6 +68,8 @@ class CalculatePlaylistContentUserLearningHoursCommand extends Command
 
         $this->line('Starting batch execution...');
 
+        $lastLoggedBatch = 0;
+
         $results = $batchService->process(
             [
                 'chunk_size'  => $chunkSize,
@@ -78,18 +80,49 @@ class CalculatePlaylistContentUserLearningHoursCommand extends Command
                 'content_id'  => $contentId,
                 'max_records' => $limit,
             ],
-            function (int $batchNumber, int $processedInBatch, int $totalProcessed, array $stats) {
-                $this->line(sprintf(
-                    'Batch #%d processed: %d records (Total: %d | Updated: %d | Skipped: %d | Missing: %d)',
-                    $batchNumber,
-                    $processedInBatch,
-                    $totalProcessed,
-                    $stats['updated'],
-                    $stats['skipped'],
-                    $stats['missing_content']
-                ));
+            function (int $batchNumber, int $processedInBatch, int $totalProcessed, array $stats) use (&$lastLoggedBatch) {
+                // Log every 5 batches or first 5 batches to avoid console flood
+                if ($batchNumber <= 5 || $batchNumber % 10 === 0) {
+                    $this->line(sprintf(
+                        'Batch #%d processed: %d records (Total: %d | Updated: %d | Skipped: %d | Fallback: %d | Zero: %d)',
+                        $batchNumber,
+                        $processedInBatch,
+                        $totalProcessed,
+                        $stats['updated'],
+                        $stats['skipped'],
+                        $stats['historical_fallback'],
+                        $stats['zero']
+                    ));
+                    $lastLoggedBatch = $batchNumber;
+                }
             }
         );
+
+        if ($results['batch_count'] > $lastLoggedBatch) {
+            $this->line(sprintf('Final Batch #%d completed.', $results['batch_count']));
+        }
+
+        // Show sample table (especially helpful in dry-run)
+        if (!empty($results['samples'])) {
+            $this->newLine();
+            $this->info('SAMPLE CALCULATED RECORDS (Max 10):');
+            $sampleRows = [];
+            foreach ($results['samples'] as $s) {
+                $sampleRows[] = [
+                    $s['id'],
+                    $s['current_time'] . 's',
+                    $s['finish'],
+                    $s['progress'] . '%',
+                    $s['existing_hour'] ?? 'NULL',
+                    $s['calculated_hour'],
+                    $s['rule'],
+                ];
+            }
+            $this->table(
+                ['ID', 'Current Time', 'Finish', 'Progress', 'Existing LH', 'Calculated LH', 'Rule Applied'],
+                $sampleRows
+            );
+        }
 
         $this->newLine();
         $this->info('======================================================================');
@@ -101,10 +134,15 @@ class CalculatePlaylistContentUserLearningHoursCommand extends Command
                 ['Total Scanned', number_format($results['total_scanned'])],
                 ['Total Updated', number_format($results['total_updated'])],
                 ['Total Skipped (Already Accurate)', number_format($results['total_skipped'])],
-                ['Missing Content Fallbacks', number_format($results['missing_content'])],
+                ['Historical Duration Fallbacks', number_format($results['total_historical_fallback'])],
+                ['Unfinished / Zero Hours', number_format($results['total_zero'])],
+                ['Missing Content Fallbacks', number_format($results['total_missing_content'])],
+                ['Concurrent Changes Protected', number_format($results['total_concurrent_changed'])],
+                ['Total Failed Records', number_format($results['total_failed'])],
                 ['Total Batches Executed', number_format($results['batch_count'])],
-                ['Elapsed Duration', $results['duration_seconds'] . ' seconds'],
-                ['Mode', $isDryRun ? 'DRY RUN' : 'COMMITTED TO DATABASE'],
+                ['Total Runtime', $results['duration_seconds'] . ' seconds'],
+                ['Average Batch Runtime', $results['average_batch_runtime'] . ' seconds/batch'],
+                ['Execution Mode', $isDryRun ? 'DRY RUN (No DB mutations)' : 'COMMITTED TO DATABASE'],
             ]
         );
 

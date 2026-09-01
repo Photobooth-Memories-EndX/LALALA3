@@ -50,6 +50,7 @@ use App\Http\Controllers\ManageAccessPermissionController;
 use App\Http\Controllers\PlaylistDebugController;
 use App\Http\Controllers\PlaylistCertificateDebugController;
 use App\Http\Controllers\Manage\LearningHours\ContentUserLearningHourController;
+use App\Http\Controllers\Manage\LearningHours\PlaylistContentUserLearningHourController;
 
 /*
 |--------------------------------------------------------------------------
@@ -399,6 +400,12 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::post('/recalculate-selected', [ContentUserLearningHourController::class, 'recalculateSelected'])->name('recalculate-selected');
             Route::post('/batch/start', [ContentUserLearningHourController::class, 'startBatch'])->name('batch.start');
             Route::post('/batch/process', [ContentUserLearningHourController::class, 'processBatch'])->name('batch.process');
+        });
+
+        Route::prefix('learning-hours/playlist-content-user')->name('manage.learning-hours.playlist-content-user.')->group(function () {
+            Route::get('/', [PlaylistContentUserLearningHourController::class, 'index'])->name('index');
+            Route::get('/datatable', [PlaylistContentUserLearningHourController::class, 'datatable'])->name('datatable');
+            Route::get('/statistics', [PlaylistContentUserLearningHourController::class, 'statistics'])->name('statistics');
         });
     });
 });
