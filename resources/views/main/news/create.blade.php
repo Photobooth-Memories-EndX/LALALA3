@@ -158,9 +158,11 @@
             <div class="row mt-3">
                 <div class="col-12">
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{{ route('manage.news.index') }}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="ti ti-send me-1"></i>Publish News
+                        <button type="submit" class="btn btn-success" name="action" value="draft">
+                            <i class="ti ti-device-floppy me-1"></i>Save as Draft
+                        </button>
+                        <button type="submit" class="btn btn-primary" name="action" value="publish">
+                            <i class="ti ti-send me-1"></i>Save & Publish
                         </button>
                     </div>
                 </div>

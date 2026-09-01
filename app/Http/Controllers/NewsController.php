@@ -198,6 +198,8 @@ class NewsController extends Controller
 
         $news->status = 'approved';
 
+        $news->active = ($request->input('action') === 'draft' || $request->input('action') === 'save') ? 'Inactive' : 'Active';
+
         $news->description = $request->description;
 
         if ($request->hasFile('image')) {
@@ -278,6 +280,12 @@ class NewsController extends Controller
 
         $news->description = $request->description;
 
+        if ($request->input('action') === 'publish') {
+            $news->active = 'Active';
+        } elseif ($request->input('action') === 'unpublish' || $request->input('action') === 'draft') {
+            $news->active = 'Inactive';
+        }
+
         if ($request->hasFile('image')) {
 
             $src =
@@ -314,6 +322,20 @@ class NewsController extends Controller
         }
 
         $news->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'News saved successfully.',
+                'redirect' => route('manage.news.index')
+            ]);
+        }
+
+        if ($request->input('action') === 'unpublish') {
+            return redirect()
+                ->route('news.edit', $news->slug)
+                ->with('success', 'News article successfully unpublished.');
+        }
 
         return redirect()
             ->route('manage.news.index')

@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('assesment_score_histories', function (Blueprint $table) {
+        if (!Schema::hasTable('assesment_score_histories')) {
+            Schema::create('assesment_score_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('assesment_result_id')->constrained('assesment_results')->onDelete('cascade');
             $table->foreignId('assesment_id')->constrained('assesments')->onDelete('cascade');
@@ -26,6 +27,7 @@ return new class extends Migration
             $table->index(['assesment_result_id', 'created_at']);
             $table->index('assesment_id');
         });
+        }
     }
 
     /**

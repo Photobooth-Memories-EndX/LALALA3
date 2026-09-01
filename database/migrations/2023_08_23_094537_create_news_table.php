@@ -21,6 +21,7 @@ return new class extends Migration
             $table->longtext('description');
             $table->string('image', 255)->nullable();
             $table->integer('views')->default(0);
+            $table->enum('active', ['Active', 'Inactive'])->default('Active');
             $table->timestamps();
         });
     }
