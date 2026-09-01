@@ -23,7 +23,7 @@
 @endphp
 
 @if ($isPlaylist && $url)
-    <a href="{{ $url }}" class="badge {{ $class }} learning-record-badge record-playlist-link"><i class="ti ti-playlist me-1" aria-hidden="true"></i>{{ \App\Support\ContentTypeHelper::label($type) }}</a>
+    <a href="{{ $url }}" class="badge {{ $class }} learning-record-type-badge record-playlist-link"><i class="ti ti-playlist me-1" aria-hidden="true"></i>{{ \App\Support\ContentTypeHelper::label($type) }}</a>
 @else
-    <span class="badge {{ $class }} learning-record-badge">@if ($isPlaylist)<i class="ti ti-playlist me-1" aria-hidden="true"></i>@endif{{ \App\Support\ContentTypeHelper::label($type) }}</span>
+    <span class="badge {{ $class }} learning-record-type-badge">@if ($isPlaylist)<i class="ti ti-playlist me-1" aria-hidden="true"></i>@endif{{ \App\Support\ContentTypeHelper::label($type) }}</span>
 @endif

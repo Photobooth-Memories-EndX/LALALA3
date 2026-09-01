@@ -36,16 +36,16 @@
     // Kolom tabel; 'sort' = key data-sort-* pada baris (learning-record.js),
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
-        ['label' => 'No',             'width' => '4%'],
-        ['label' => 'Course',        'width' => '23%', 'sort' => 'title',          'type' => 'text'],
-        ['label' => 'Type',           'width' => '9%',  'sort' => 'type',           'type' => 'text'],
-        ['label' => 'Classification', 'width' => '10%', 'sort' => 'classification', 'type' => 'text'],
-        ['label' => 'Duration',       'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
-        ['label' => 'Learning Hour',  'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
-        ['label' => 'Progress',       'width' => '9%',  'sort' => 'progress',       'type' => 'number'],
-        ['label' => 'Date Time',    'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
-        ['label' => 'Assessment Score',     'width' => '10%',  'sort' => 'score',          'type' => 'number'],
-        ['label' => 'Certificate',    'width' => '11%'],
+        ['label' => 'No',               'width' => '4%'],
+        ['label' => 'Course',           'width' => '22%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Category',         'width' => '9%',  'sort' => 'category',       'type' => 'text'],
+        ['label' => 'Classification',   'width' => '11%', 'sort' => 'classification', 'type' => 'text'],
+        ['label' => 'Duration',         'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
+        ['label' => 'Learning Hour',    'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
+        ['label' => 'Progress',         'width' => '8%',  'sort' => 'progress',       'type' => 'number'],
+        ['label' => 'Date Time',        'width' => '11%', 'sort' => 'finish',         'type' => 'text'],
+        ['label' => 'Assessment Score', 'width' => '9%',  'sort' => 'score',          'type' => 'number'],
+        ['label' => 'Certificate',      'width' => '10%'],
     ];
 @endphp
 
@@ -67,6 +67,28 @@
     white-space: nowrap !important;
     box-sizing: border-box !important;
     max-width: 100% !important;
+}
+/* Compact Learning Record Type Badges (Video, Document, Playlist) under Title */
+.learning-record-type-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    min-height: 20px !important;
+    min-width: unset !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    text-decoration: none !important;
+}
+.learning-record-type-badge.record-playlist-link:hover {
+    opacity: 0.85;
+    text-decoration: none !important;
 }
 .learning-classification-badge {
     display: inline-flex !important;

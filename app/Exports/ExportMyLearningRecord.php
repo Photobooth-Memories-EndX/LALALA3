@@ -92,7 +92,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             '',
             '',
             DurationFormatter::fromSeconds($durationSeconds),
-            $hours->value($learningHours) ,
+            $hours->value($learningHours),
             '',
             '',
             '',
@@ -105,7 +105,19 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
 
     public function headings(): array
     {
-        return ['No', 'Type', 'Title', 'Classification', 'Duration', 'Learning Hour', 'Learning Progress', 'Start Date', 'Finish Date', 'Assessment Score', 'Certificate'];
+        return [
+            'No',
+            'Course',
+            'Category',
+            'Classification',
+            'Duration',
+            'Learning Hour',
+            'Learning Progress',
+            'Start Date',
+            'Finish Date',
+            'Assessment Score',
+            'Certificate',
+        ];
     }
 
     public function styles(Worksheet $sheet): array
@@ -125,10 +137,9 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
                 $sheet->getStyle('A' . $row . ':K' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($item['type'] === 'Playlist' ? 'EDEDED' : 'FFFFFF');
                 $row += 1 + count($item['children'] ?? []);
                 if (!empty($item['children'])) {
-                    $sheet->getStyle('C' . ($row - count($item['children'])) . ':K' . ($row - 1))->getAlignment()->setIndent(1);
+                    $sheet->getStyle('B' . ($row - count($item['children'])) . ':K' . ($row - 1))->getAlignment()->setIndent(1);
                 }
             }
-
 
             $summaryRow = $sheet->getHighestRow();
             $sheet->getStyle('A' . $summaryRow . ':K' . $summaryRow)->applyFromArray([
@@ -210,15 +221,37 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         $content = $cu->content;
         $setting = $cert['content']->get($content->id);
         $result = $setting ? ($cert['results'][$setting->id] ?? null) : null;
-        $learningHourBucket = $hours->bucket($content->duration);
+        $learningHoursVal = ($content->learning_hours !== null && $content->learning_hours !== '')
+            ? (float) $content->learning_hours
+            : (float) $hours->bucket($content->duration);
 
-        return ['type' => $playlistChild ? 'Content' : ($content->type ?? 'Content'), 'title' => $content->title ?? '-', 'classification' => optional($content->classification)->classification_name ?? '-', 'duration' => DurationFormatter::format($content->duration), 'learning_hour' => $hours->value($learningHourBucket), 'progress' => (int) ($cu->progress ?? 0) . '%', 'start_date' => optional($cu->created_at)->format('Y-m-d H:i') ?? '', 'finish_date' => (int) $cu->finish === 1 ? (optional($cu->updated_at)->format('Y-m-d H:i') ?? '') : '', 'score' => $result?->score() ?? '', 'certificate' => ($result?->eligible ?? false) ? 'Ready' : '', 'date' => $cu->updated_at, 'duration_seconds' => DurationFormatter::toSeconds($content->duration) ?? -1, 'learning_hour_value' => $hours->value($learningHourBucket), 'learning_status' => (string) ($cu->learning_status ?? ''), 'playlist_ids' => $content->trainingPlans->pluck('id')->map(fn ($id) => (string) $id)->all(), 'children' => []];
+        return [
+            'category'            => 'Content',
+            'type'                => $playlistChild ? 'Content' : ($content->type ?? 'Content'),
+            'title'               => $content->title ?? '-',
+            'classification'      => optional($content->classification)->classification_name ?? '-',
+            'duration'            => DurationFormatter::formatForLearningRecord($content->duration),
+            'learning_hour'       => $hours->value($learningHoursVal),
+            'progress'            => (int) ($cu->progress ?? 0) . '%',
+            'start_date'          => optional($cu->created_at)->format('Y-m-d H:i') ?? '',
+            'finish_date'         => (int) $cu->finish === 1 ? (optional($cu->updated_at)->format('Y-m-d H:i') ?? '') : '',
+            'score'               => $result?->score() ?? '',
+            'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',
+            'date'                => $cu->updated_at,
+            'duration_seconds'    => DurationFormatter::toSeconds($content->duration) ?? -1,
+            'learning_hour_value' => $learningHoursVal,
+            'learning_status'     => (string) ($cu->learning_status ?? ''),
+            'playlist_ids'        => $content->trainingPlans->pluck('id')->map(fn ($id) => (string) $id)->all(),
+            'children'            => [],
+        ];
     }
 
     private function playlistRows(TrainingPlan $plan, Collection $contentUsers, array $cert, LearningHourService $hours): array
     {
         $seconds = (int) ($plan->total_duration_seconds ?? 0);
-        $learningHourBucket = $hours->bucketFromSeconds($seconds);
+        $learningHoursVal = ($plan->learning_hours !== null && $plan->learning_hours !== '')
+            ? (float) $plan->learning_hours
+            : (float) $hours->bucketFromSeconds($seconds);
         $setting = $cert['playlist']->get($plan->id);
         $result = $setting ? ($cert['results'][$setting->id] ?? null) : null;
         $children = $plan->trainingplandetail->sortBy('content_order')
@@ -229,12 +262,41 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             ->all();
         $startDate = collect($children)->pluck('start_date')->filter()->min();
 
-        return ['type' => 'Playlist', 'title' => $plan->title ?? '-', 'classification' => 'Playlist', 'duration' => DurationFormatter::fromSeconds($seconds), 'learning_hour' => $hours->value($learningHourBucket), 'progress' => '100%', 'start_date' => $startDate ?? '', 'finish_date' => $plan->last_finished_at ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i') : '', 'score' => $result?->score() ?? '', 'certificate' => ($result?->eligible ?? false) ? 'Ready' : '', 'date' => $plan->last_finished_at, 'duration_seconds' => $seconds, 'learning_hour_value' => $hours->value($learningHourBucket), 'children' => $children, 'playlist_id' => $plan->id];
+        return [
+            'category'            => 'Playlist',
+            'type'                => 'Playlist',
+            'title'               => $plan->title ?? '-',
+            'classification'      => '-',
+            'duration'            => DurationFormatter::fromSeconds($seconds),
+            'learning_hour'       => $hours->value($learningHoursVal),
+            'progress'            => '100%',
+            'start_date'          => $startDate ?? '',
+            'finish_date'         => $plan->last_finished_at ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i') : '',
+            'score'               => $result?->score() ?? '',
+            'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',
+            'date'                => $plan->last_finished_at,
+            'duration_seconds'    => $seconds,
+            'learning_hour_value' => $learningHoursVal,
+            'children'            => $children,
+            'playlist_id'         => $plan->id,
+        ];
     }
 
     private function excelRow(array $row, $number): array
     {
-        return [$number, $row['type'], $row['title'], $row['classification'], $row['duration'], $row['learning_hour'], $row['progress'], $row['start_date'], $row['finish_date'], $row['score'], $row['certificate'] === 'Ready' ? 'Available' : 'Not Available'];
+        return [
+            $number,
+            $row['title'],
+            $row['category'],
+            $row['classification'],
+            $row['duration'],
+            $row['learning_hour'],
+            $row['progress'],
+            $row['start_date'],
+            $row['finish_date'],
+            $row['score'],
+            $row['certificate'] === 'Ready' ? 'Available' : 'Not Available',
+        ];
     }
 
     private function applyFilters(Collection $rows): Collection

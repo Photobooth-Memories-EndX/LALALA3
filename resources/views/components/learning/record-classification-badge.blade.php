@@ -1,7 +1,11 @@
 @props(['row'])
 
-@if ($row['row_kind'] === 'playlist')
-    <span class="badge bg-secondary-lt text-secondary learning-record-badge learning-classification-badge">Playlist</span>
+@php
+    $classification = trim((string) ($row['classification'] ?? ''));
+@endphp
+
+@if ($classification === '' || $classification === '-')
+    <span class="text-muted">-</span>
 @else
     @php
         $colors = [
@@ -15,9 +19,10 @@
             'Quality'               => 'bg-cyan-lt text-cyan',
             'IT'                    => 'bg-azure-lt text-azure',
             'Security'              => 'bg-dark-lt text-dark',
+            'Language'              => 'bg-teal-lt text-teal',
+            'General'               => 'bg-secondary-lt text-secondary',
         ];
 
-        $classification = $row['classification'] ?? '';
         $badgeColor = $colors[$classification] ?? null;
 
         if (! $badgeColor) {

@@ -187,14 +187,15 @@ class LearningRecordController extends Controller
         $sort = (string) request('record_sort', '');
         $direction = (string) request('record_sort_direction', 'asc');
         $sortKeys = [
-            'title' => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
-            'type' => fn (array $row) => mb_strtolower((string) ($row['type'] ?? '')),
+            'title'          => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
+            'category'       => fn (array $row) => mb_strtolower((string) ($row['category'] ?? '')),
+            'type'           => fn (array $row) => mb_strtolower((string) ($row['type'] ?? '')),
             'classification' => fn (array $row) => mb_strtolower((string) ($row['classification'] ?? '')),
-            'duration' => fn (array $row) => (float) ($row['duration_sort'] ?? -1),
-            'learning-hour' => fn (array $row) => (float) ($row['learning_hour_bucket'] ?? -1),
-            'progress' => fn (array $row) => (float) ($row['progress'] ?? -1),
-            'finish' => fn (array $row) => (string) ($row['finish_date'] ?? ''),
-            'score' => fn (array $row) => (float) ($row['score'] ?? -1),
+            'duration'       => fn (array $row) => (float) ($row['duration_sort'] ?? -1),
+            'learning-hour'  => fn (array $row) => (float) ($row['learning_hour_bucket'] ?? -1),
+            'progress'       => fn (array $row) => (float) ($row['progress'] ?? -1),
+            'finish'         => fn (array $row) => (string) ($row['finish_date'] ?? ''),
+            'score'          => fn (array $row) => (float) ($row['score'] ?? -1),
         ];
 
         if (isset($sortKeys[$sort]) && in_array($direction, ['asc', 'desc'], true)) {
@@ -479,10 +480,13 @@ class LearningRecordController extends Controller
             $playlists = $content->relationLoaded('trainingPlans')
                 ? $content->trainingPlans
                 : collect();
-            $learningHourBucket = $this->learningHourService->bucket($content->duration);
+            $learningHoursVal = ($content->learning_hours !== null && $content->learning_hours !== '')
+                ? (float) $content->learning_hours
+                : (float) $this->learningHourService->bucket($content->duration);
 
             return [
                 'row_kind'        => 'content',
+                'category'        => 'Content',
                 'title'           => $content->title ?? '-',
                 'slug'            => $content->slug,
                 'playlist_url'    => null,
@@ -494,9 +498,9 @@ class LearningRecordController extends Controller
                 'classification'  => $content->classification->classification_name ?? '-',
                 'duration'        => DurationFormatter::formatForLearningRecord($content->duration),
                 'duration_sort'   => DurationFormatter::toSeconds($content->duration) ?? -1,
-                'learning_hour'   => $this->learningHourService->formatHours($learningHourBucket),
-                'learning_hour_bucket' => $learningHourBucket,
-                'learning_hour_value'  => $this->learningHourService->value($learningHourBucket),
+                'learning_hour'   => $this->learningHourService->formatHours($learningHoursVal),
+                'learning_hour_bucket' => $learningHoursVal,
+                'learning_hour_value'  => $this->learningHourService->value($learningHoursVal),
                 'progress'        => (int) ($cu->progress ?? 0),
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
@@ -569,10 +573,13 @@ class LearningRecordController extends Controller
 
             $firstSlug = $firstContentSlugs->get($plan->id);
             $durationSeconds = (int) ($plan->total_duration_seconds ?? 0);
-            $learningHourBucket = $this->learningHourService->bucketFromSeconds($durationSeconds);
+            $learningHoursVal = ($plan->learning_hours !== null && $plan->learning_hours !== '')
+                ? (float) $plan->learning_hours
+                : (float) $this->learningHourService->bucketFromSeconds($durationSeconds);
 
             return [
                 'row_kind'        => 'playlist',
+                'category'        => 'Playlist',
                 'title'           => $plan->title ?? '-',
                 'slug'            => null,
                 // Link badge Playlist di kolom Type (route lama, tanpa route baru).
@@ -583,12 +590,12 @@ class LearningRecordController extends Controller
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],
                 'type'            => 'Playlist',
-                'classification'  => 'Playlist',
+                'classification'  => '-',
                 'duration'        => $this->formatDurationSeconds($durationSeconds),
                 'duration_sort'   => $durationSeconds,
-                'learning_hour'   => $this->learningHourService->formatHours($learningHourBucket),
-                'learning_hour_bucket' => $learningHourBucket,
-                'learning_hour_value'  => $this->learningHourService->value($learningHourBucket),
+                'learning_hour'   => $this->learningHourService->formatHours($learningHoursVal),
+                'learning_hour_bucket' => $learningHoursVal,
+                'learning_hour_value'  => $this->learningHourService->value($learningHoursVal),
                 'progress'        => 100,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'start_date'      => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',

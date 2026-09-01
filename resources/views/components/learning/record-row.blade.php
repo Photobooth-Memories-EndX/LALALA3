@@ -35,6 +35,7 @@
 
 <tr class="record-row"
     data-kind="{{ $row['row_kind'] }}"
+    data-category="{{ $row['category'] }}"
     data-search="{{ mb_strtolower($searchText) }}"
     data-type="{{ $row['type'] }}"
     data-classification="{{ $row['classification'] }}"
@@ -48,6 +49,7 @@
     {{-- Nilai sorting client-side (learning-record.js) — teks di-lowercase agar
          urutan tidak terpengaruh kapitalisasi. --}}
     data-sort-title="{{ mb_strtolower($row['title']) }}"
+    data-sort-category="{{ mb_strtolower($row['category']) }}"
     data-sort-type="{{ mb_strtolower($row['type']) }}"
     data-sort-classification="{{ mb_strtolower($row['classification']) }}"
     data-sort-duration="{{ $row['duration_sort'] ?? -1 }}"
@@ -60,7 +62,13 @@
 
     <td><x-learning.record-title-cell :row="$row" /></td>
 
-    <td><x-learning.record-type-badge :type="$row['type']" :url="$row['playlist_url'] ?? null" /></td>
+    <td class="learning-record-category">
+        @if (($row['category'] ?? '') === 'Playlist')
+            <span class="badge bg-green-lt text-green learning-record-badge">Playlist</span>
+        @else
+            <span class="badge bg-blue-lt text-blue learning-record-badge">Content</span>
+        @endif
+    </td>
 
     <td><x-learning.record-classification-badge :row="$row" /></td>
 
