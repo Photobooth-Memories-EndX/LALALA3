@@ -24,6 +24,7 @@ return new class extends Migration
                 $table->unsignedInteger('total_pages')->nullable();
                 $table->integer('current_time')->default(0);
                 $table->integer('duration_seconds')->nullable();
+                $table->decimal('learning_hour', 6, 1)->nullable();
                 $table->string('learning_status', 20)->default('not_started');
                 $table->enum('finish', ['0', '1'])->default('0');
                 $table->timestamps();
