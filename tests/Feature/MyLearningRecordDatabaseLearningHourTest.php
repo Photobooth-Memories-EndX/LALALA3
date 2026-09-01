@@ -241,11 +241,12 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $export = new ExportMyLearningRecord();
         $array = $export->array();
 
-        // 1. Headings check: 11 columns
+        // 1. Headings check: 12 columns
         $headings = $array[0];
         $this->assertEquals([
             'No',
             'Course',
+            'Type',
             'Category',
             'Classification',
             'Duration',
@@ -262,10 +263,11 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $contentRow = $rows->firstWhere(1, 'Export Test Course');
 
         $this->assertNotNull($contentRow);
-        $this->assertEquals('Content', $contentRow[2]); // Category
-        $this->assertEquals('Safety & Environment', $contentRow[3]); // Classification
-        $this->assertEquals('0.5', $contentRow[5]); // Learning Hour
-        $this->assertEquals('100%', $contentRow[6]); // Progress
+        $this->assertEquals('Document', $contentRow[2]); // Type
+        $this->assertEquals('Content', $contentRow[3]); // Category
+        $this->assertEquals('Safety & Environment', $contentRow[4]); // Classification
+        $this->assertEquals('0.5', $contentRow[6]); // Learning Hour
+        $this->assertEquals('100%', $contentRow[7]); // Progress
     }
 
     /**
@@ -339,8 +341,9 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
 
         $html = $response->getContent();
 
-        // 1. Check Table Headers: 10 columns
+        // 1. Check Table Headers: 11 columns
         $this->assertStringContainsString('Course', $html);
+        $this->assertStringContainsString('Type', $html);
         $this->assertStringContainsString('Category', $html);
         $this->assertStringContainsString('Classification', $html);
         $this->assertStringContainsString('Duration', $html);
@@ -350,16 +353,13 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $this->assertStringContainsString('Assessment Score', $html);
         $this->assertStringContainsString('Certificate', $html);
 
-        // 2. Check that Type is rendered as compact badge under Course title
+        // 2. Check that Type is rendered as compact badge in TYPE column
         $this->assertStringContainsString('HTML Rendered Course', $html);
         $this->assertStringContainsString('learning-record-type-badge', $html);
         $this->assertStringContainsString('Video', $html);
 
-        // 3. Confirm Optional and Mandatory badges are REMOVED from the Course column
-        $this->assertStringNotContainsString('<span class="badge bg-danger-lt text-danger learning-record-badge">Mandatory</span>', $html);
-        $this->assertStringNotContainsString('<span class="badge bg-secondary-lt text-secondary learning-record-badge">Optional</span>', $html);
-        $this->assertStringNotContainsString('>Mandatory<', $html);
-        $this->assertStringNotContainsString('>Optional<', $html);
+        // 3. Confirm Mandatory badge is restored in the Course column
+        $this->assertStringContainsString('Mandatory', $html);
 
         // 4. Check Category column displays Content
         $this->assertStringContainsString('learning-record-category', $html);
@@ -505,8 +505,7 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         // Check Classification separation
         $this->assertStringContainsString('Safety &amp; Environment', $html);
 
-        // Check NO Optional/Mandatory in HTML
-        $this->assertStringNotContainsString('>Mandatory<', $html);
-        $this->assertStringNotContainsString('>Optional<', $html);
+        // Check Optional is present
+        $this->assertStringContainsString('Optional', $html);
     }
 }

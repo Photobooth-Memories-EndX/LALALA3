@@ -62,7 +62,11 @@
 
     <td><x-learning.record-title-cell :row="$row" /></td>
 
-    <td class="learning-record-category">
+    <td class="learning-record-type text-center">
+        <x-learning.record-type-badge :type="$row['type']" :url="$row['playlist_url'] ?? null" />
+    </td>
+
+    <td class="learning-record-category text-center">
         @if (($row['category'] ?? '') === 'Playlist')
             <span class="badge bg-green-lt text-green learning-record-badge">Playlist</span>
         @else

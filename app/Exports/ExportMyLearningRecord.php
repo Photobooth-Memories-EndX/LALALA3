@@ -91,6 +91,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             '',
             '',
             '',
+            '',
             DurationFormatter::fromSeconds($durationSeconds),
             $hours->value($learningHours),
             '',
@@ -108,6 +109,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         return [
             'No',
             'Course',
+            'Type',
             'Category',
             'Classification',
             'Duration',
@@ -130,19 +132,19 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         return [AfterSheet::class => function (AfterSheet $event) {
             $sheet = $event->sheet->getDelegate();
             $sheet->freezePane('A2');
-            $sheet->getStyle('A1:K1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('A1:K' . max(1, $sheet->getHighestRow()))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle('A1:L1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A1:L' . max(1, $sheet->getHighestRow()))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
             $row = 2;
             foreach ($this->rows as $item) {
-                $sheet->getStyle('A' . $row . ':K' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($item['type'] === 'Playlist' ? 'EDEDED' : 'FFFFFF');
+                $sheet->getStyle('A' . $row . ':L' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($item['type'] === 'Playlist' ? 'EDEDED' : 'FFFFFF');
                 $row += 1 + count($item['children'] ?? []);
                 if (!empty($item['children'])) {
-                    $sheet->getStyle('B' . ($row - count($item['children'])) . ':K' . ($row - 1))->getAlignment()->setIndent(1);
+                    $sheet->getStyle('B' . ($row - count($item['children'])) . ':L' . ($row - 1))->getAlignment()->setIndent(1);
                 }
             }
 
             $summaryRow = $sheet->getHighestRow();
-            $sheet->getStyle('A' . $summaryRow . ':K' . $summaryRow)->applyFromArray([
+            $sheet->getStyle('A' . $summaryRow . ':L' . $summaryRow)->applyFromArray([
                 'font' => ['bold' => true],
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
@@ -155,7 +157,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
                     ],
                 ],
             ]);
-            $sheet->getStyle('E' . $summaryRow . ':F' . $summaryRow)
+            $sheet->getStyle('F' . $summaryRow . ':G' . $summaryRow)
                 ->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         }];
@@ -287,6 +289,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         return [
             $number,
             $row['title'],
+            $row['type'],
             $row['category'],
             $row['classification'],
             $row['duration'],

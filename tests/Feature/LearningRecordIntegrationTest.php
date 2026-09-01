@@ -262,9 +262,10 @@ class LearningRecordIntegrationTest extends TestCase
 
         $this->assertNotNull($playlistRow, 'Playlist completed via PCU must appear in export array.');
         $this->assertEquals('Playlist', $playlistRow[2]);
-        $this->assertEquals('-', $playlistRow[3]);
-        $this->assertEquals('100%', $playlistRow[6]);
-        $this->assertEquals('Available', $playlistRow[10]);
+        $this->assertEquals('Playlist', $playlistRow[3]);
+        $this->assertEquals('-', $playlistRow[4]);
+        $this->assertEquals('100%', $playlistRow[7]);
+        $this->assertEquals('Available', $playlistRow[11]);
     }
 
     /**
@@ -293,9 +294,10 @@ class LearningRecordIntegrationTest extends TestCase
 
         $this->assertNotNull($playlistRow, 'Multi-module completed playlist must appear in export array.');
         $this->assertEquals('Playlist', $playlistRow[2]);
-        $this->assertEquals('-', $playlistRow[3]);
-        $this->assertEquals('100%', $playlistRow[6]);
-        $this->assertEquals('Available', $playlistRow[10]);
+        $this->assertEquals('Playlist', $playlistRow[3]);
+        $this->assertEquals('-', $playlistRow[4]);
+        $this->assertEquals('100%', $playlistRow[7]);
+        $this->assertEquals('Available', $playlistRow[11]);
     }
 
     /**

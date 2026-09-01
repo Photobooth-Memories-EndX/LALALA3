@@ -1,5 +1,12 @@
 @props(['row'])
 
+@php
+    $subtitleLower = strtolower((string) ($row['subtitle'] ?? ''));
+    $learningProgram = str_contains($subtitleLower, 'mandatory')
+        ? 'mandatory'
+        : (str_contains($subtitleLower, 'optional') ? 'optional' : '');
+@endphp
+
 <div class="learning-record-course-cell position-relative">
     <div class="learning-record-title mb-1">
         @if ($row['slug'])
@@ -24,6 +31,13 @@
             </span>
         @endif
     </div>
+
+    {{-- Program: Optional / Mandatory (Plain text, no badge/pill/border/background) --}}
+    @if ($learningProgram === 'mandatory')
+        <div class="learning-record-program text-muted small mt-1">Mandatory</div>
+    @elseif ($learningProgram === 'optional')
+        <div class="learning-record-program text-muted small mt-1">Optional</div>
+    @endif
 
     {{-- Template Hover Preview --}}
     <div class="d-none course-preview-template">
@@ -59,10 +73,5 @@
                 </div>
             </div>
         @endif
-    </div>
-
-    <div class="d-flex align-items-center mt-1">
-        {{-- Type Badge: Video / Document / Playlist (Compact) --}}
-        <x-learning.record-type-badge :type="$row['type']" :url="$row['playlist_url'] ?? null" />
     </div>
 </div>

@@ -37,15 +37,16 @@
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
         ['label' => 'No',               'width' => '4%'],
-        ['label' => 'Course',           'width' => '22%', 'sort' => 'title',          'type' => 'text'],
-        ['label' => 'Category',         'width' => '9%',  'sort' => 'category',       'type' => 'text'],
-        ['label' => 'Classification',   'width' => '11%', 'sort' => 'classification', 'type' => 'text'],
+        ['label' => 'Course',           'width' => '24%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Type',             'width' => '8%',  'sort' => 'type',           'type' => 'text'],
+        ['label' => 'Category',         'width' => '8%',  'sort' => 'category',       'type' => 'text'],
+        ['label' => 'Classification',   'width' => '10%', 'sort' => 'classification', 'type' => 'text'],
         ['label' => 'Duration',         'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
         ['label' => 'Learning Hour',    'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
-        ['label' => 'Progress',         'width' => '8%',  'sort' => 'progress',       'type' => 'number'],
-        ['label' => 'Date Time',        'width' => '11%', 'sort' => 'finish',         'type' => 'text'],
-        ['label' => 'Assessment Score', 'width' => '9%',  'sort' => 'score',          'type' => 'number'],
-        ['label' => 'Certificate',      'width' => '10%'],
+        ['label' => 'Progress',         'width' => '7%',  'sort' => 'progress',       'type' => 'number'],
+        ['label' => 'Date Time',        'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
+        ['label' => 'Assessment Score', 'width' => '8%',  'sort' => 'score',          'type' => 'number'],
+        ['label' => 'Certificate',      'width' => '8%'],
     ];
 @endphp
 
@@ -107,6 +108,45 @@
     line-height: 1.18 !important;
     border-radius: 999px !important;
     box-sizing: border-box !important;
+}
+
+/* Table Horizontal Scroll & Full Course Title Readability */
+.learning-record-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100% !important;
+}
+.learning-record-table {
+    min-width: 1280px !important;
+    width: 100% !important;
+}
+.learning-record-course-cell {
+    min-width: 280px;
+    white-space: normal !important;
+}
+.learning-record-title {
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.4 !important;
+}
+.learning-record-link {
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    text-decoration: none;
+    display: inline;
+}
+.learning-record-link:hover {
+    text-decoration: underline;
+}
+.learning-record-program {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.3;
+    margin-top: 3px;
+    display: block;
 }
 
 /* Learning Record Course Hover Popup */
@@ -432,7 +472,7 @@
                         <x-learning.record-row :row="$row" :index="$loop->iteration" />
                     @empty
                         <tr id="recordEmptyRow">
-                            <td colspan="10" class="text-center text-muted py-4">
+                            <td colspan="11" class="text-center text-muted py-4">
                                 No completed learning found.
                             </td>
                         </tr>
@@ -441,7 +481,7 @@
                     @if ($rows->isNotEmpty())
                         {{-- Ditampilkan jQuery saat kombinasi filter tidak menghasilkan baris. --}}
                         <tr id="recordNoMatchRow" class="d-none">
-                            <td colspan="10" class="text-center text-muted py-4">
+                            <td colspan="11" class="text-center text-muted py-4">
                                 No records match your search or filter.
                             </td>
                         </tr>

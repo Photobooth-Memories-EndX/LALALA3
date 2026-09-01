@@ -83,6 +83,9 @@ class MyLearningRecordCourseHoverPreviewTest extends TestCase
         // 3. Hover preview template contains title inside course-preview-content
         $this->assertStringContainsString('course-preview-content', $html);
         $this->assertStringContainsString('Direct Video Machine Learning', $html);
+
+        // 4. Mandatory badge displayed under Course Title
+        $this->assertStringContainsString('Mandatory', $html);
     }
 
     /**
@@ -126,9 +129,8 @@ class MyLearningRecordCourseHoverPreviewTest extends TestCase
         $this->assertStringContainsString('learning-record-type-badge', $html);
         $this->assertStringContainsString('Document', $html);
 
-        // CASE 13: Optional / Mandatory badges NOT displayed
-        $this->assertStringNotContainsString('>Optional<', $html);
-        $this->assertStringNotContainsString('>Mandatory<', $html);
+        // CASE 13: Optional badge displayed under Course Title
+        $this->assertStringContainsString('Optional', $html);
     }
 
     /**
@@ -286,4 +288,163 @@ class MyLearningRecordCourseHoverPreviewTest extends TestCase
         // For 5 playlists, there are only batched queries on trainingplandetail (<= 5 queries in total across the entire page load, never 5+ queries scaling with playlists).
         $this->assertLessThanOrEqual(5, $tpdQueries, 'trainingplandetail queries must be batched, not N+1 per playlist.');
     }
+
+    /**
+     * Comprehensive Test for Phase Revisi Struktur 11 Kolom:
+     * 1. Course title tampil.
+     * 2. Optional tampil.
+     * 3. Mandatory tampil.
+     * 4. Type Video tampil pada kolom TYPE.
+     * 5. Type Document tampil pada kolom TYPE.
+     * 6. Type Playlist tampil pada kolom TYPE.
+     * 7. Category Content untuk Video.
+     * 8. Category Content untuk Document.
+     * 9. Category Playlist untuk Playlist.
+     * 10. Classification tetap benar.
+     * 11. Filter Type tetap bekerja (data-type attribute).
+     * 12. Filter Category tetap bekerja (data-category attribute).
+     * 13. Filter Classification tetap bekerja (data-classification attribute).
+     * 14. Learning Hour tetap benar.
+     * 15. Progress Direct Content tidak berubah.
+     * 16. Progress Playlist tidak berubah.
+     * 17. Tidak ada database mutation.
+     */
+    public function test_revisi_struktur_11_kolom_type_category_classification_dan_program_badge(): void
+    {
+        $customClass = Classification::firstOrCreate(
+            ['classification_name' => 'Tech Special Class'],
+            ['slug' => 'tech-special-class']
+        );
+
+        // 1. Create Video Content (Mandatory)
+        $video = Content::create([
+            'title'             => 'Video 11-Col Course',
+            'slug'              => 'video-11c-' . rand(1000, 9999),
+            'type'              => 'Video',
+            'classification_id' => $customClass->id,
+            'duration'          => '00:30:00',
+            'learning_hours'    => 0.5,
+            'active'            => 'Active',
+            'playlistonly'      => 'N',
+        ]);
+        ContentUser::create([
+            'user_id'    => $this->user->id,
+            'content_id' => $video->id,
+            'progress'   => 100,
+            'finish'     => '1',
+            'status'     => 'mandatory',
+        ]);
+
+        // 2. Create Document Content (Optional)
+        $doc = Content::create([
+            'title'             => 'Doc 11-Col Course',
+            'slug'              => 'doc-11c-' . rand(1000, 9999),
+            'type'              => 'Document',
+            'classification_id' => $customClass->id,
+            'duration'          => '00:45:00',
+            'learning_hours'    => 0.75,
+            'active'            => 'Active',
+            'playlistonly'      => 'N',
+        ]);
+        ContentUser::create([
+            'user_id'    => $this->user->id,
+            'content_id' => $doc->id,
+            'progress'   => 100,
+            'finish'     => '1',
+            'status'     => 'optional',
+        ]);
+
+        // 3. Create Playlist
+        $plan = TrainingPlan::create([
+            'title'                  => 'Playlist 11-Col Track',
+            'slug'                   => 'plan-11c-' . rand(1000, 9999),
+            'active'                 => 'Active',
+            'total_duration_seconds' => 3600,
+            'learning_hours'         => 1.0,
+        ]);
+        $planContent = Content::create([
+            'title'             => 'Plan Member Content',
+            'slug'              => 'pmc-' . rand(1000, 9999),
+            'type'              => 'Video',
+            'classification_id' => $customClass->id,
+            'active'            => 'Active',
+            'playlistonly'      => 'Y',
+        ]);
+        TrainingPlanDetail::create([
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $planContent->id,
+            'content_order'   => 1,
+        ]);
+        PlaylistContentUser::create([
+            'user_id'         => $this->user->id,
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $planContent->id,
+            'progress'        => 100,
+            'finish'          => '1',
+        ]);
+
+        // Count DB records before request
+        $cuBefore = ContentUser::count();
+        $pcuBefore = PlaylistContentUser::count();
+        $cBefore = Content::count();
+        $tpBefore = TrainingPlan::count();
+
+        $this->actingAs($this->user);
+
+        $response = $this->get(route('user.learning.dashboard.partial', ['tab' => 'record']));
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+
+        // 1. Course titles tampil
+        $this->assertStringContainsString('Video 11-Col Course', $html);
+        $this->assertStringContainsString('Doc 11-Col Course', $html);
+        $this->assertStringContainsString('Playlist 11-Col Track', $html);
+
+        // 2 & 3. Optional & Mandatory tampil sebagai plain text (tanpa badge/pill/border)
+        $this->assertStringContainsString('<div class="learning-record-program text-muted small mt-1">Mandatory</div>', $html);
+        $this->assertStringContainsString('<div class="learning-record-program text-muted small mt-1">Optional</div>', $html);
+        $this->assertStringNotContainsString('bg-danger-lt text-danger learning-record-badge">Mandatory', $html);
+        $this->assertStringNotContainsString('bg-secondary-lt text-secondary learning-record-badge">Optional', $html);
+
+        // Horizontal scroll and table styling check
+        $this->assertStringContainsString('learning-record-scroll', $html);
+        $this->assertStringContainsString('min-width: 1280px', $html);
+
+        // 4, 5, 6. Type Video, Document, Playlist tampil pada kolom TYPE
+        $this->assertStringContainsString('<td class="learning-record-type text-center">', $html);
+        $this->assertStringContainsString('learning-record-type-badge">Video</span>', $html);
+        $this->assertStringContainsString('learning-record-type-badge">Document</span>', $html);
+        $this->assertStringContainsString('learning-record-type-badge record-playlist-link"', $html);
+
+        // 7, 8, 9. Category Content untuk Video/Doc, Playlist untuk Playlist
+        $this->assertStringContainsString('<span class="badge bg-blue-lt text-blue learning-record-badge">Content</span>', $html);
+        $this->assertStringContainsString('<span class="badge bg-green-lt text-green learning-record-badge">Playlist</span>', $html);
+
+        // 10. Classification tetap benar
+        $this->assertStringContainsString('Tech Special Class', $html);
+
+        // 11, 12, 13. Data attributes untuk filter JavaScript
+        $this->assertStringContainsString('data-type="Video"', $html);
+        $this->assertStringContainsString('data-type="Document"', $html);
+        $this->assertStringContainsString('data-type="Playlist"', $html);
+        $this->assertStringContainsString('data-category="Content"', $html);
+        $this->assertStringContainsString('data-category="Playlist"', $html);
+        $this->assertStringContainsString('data-classification="Tech Special Class"', $html);
+
+        // 14. Learning Hour tetap benar
+        $this->assertStringContainsString('0.5 h', $html);
+        $this->assertStringContainsString('0.8 h', $html);
+        $this->assertStringContainsString('1 h', $html);
+
+        // 15 & 16. Progress Direct Content & Playlist tetap 100%
+        $this->assertStringContainsString('100%', $html);
+
+        // 17. Database safety - zero mutation
+        $this->assertEquals($cuBefore, ContentUser::count(), 'Zero mutation on content_users');
+        $this->assertEquals($pcuBefore, PlaylistContentUser::count(), 'Zero mutation on playlist_content_users');
+        $this->assertEquals($cBefore, Content::count(), 'Zero mutation on content');
+        $this->assertEquals($tpBefore, TrainingPlan::count(), 'Zero mutation on trainingplan');
+    }
 }
+
