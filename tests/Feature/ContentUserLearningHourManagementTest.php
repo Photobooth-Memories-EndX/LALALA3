@@ -130,4 +130,65 @@ class ContentUserLearningHourManagementTest extends TestCase
         $response->assertSee('Learning Hour Management');
         $response->assertSee(route('manage.learning-hours.content-user.index'));
     }
+
+    public function test_get_statistics_returns_accurate_metrics_without_sql_error(): void
+    {
+        $service = app(\App\Services\LearningHours\ContentUserLearningHourManagementService::class);
+        $stats = $service->getStatistics();
+
+        $this->assertIsArray($stats);
+        $this->assertArrayHasKey('total', $stats);
+        $this->assertArrayHasKey('calculated', $stats);
+        $this->assertArrayHasKey('remaining', $stats);
+        $this->assertArrayHasKey('failed', $stats);
+        $this->assertArrayHasKey('percentage', $stats);
+
+        $this->assertGreaterThanOrEqual(0, $stats['total']);
+        $this->assertGreaterThanOrEqual(0, $stats['calculated']);
+        $this->assertGreaterThanOrEqual(0, $stats['remaining']);
+        $this->assertGreaterThanOrEqual(0, $stats['failed']);
+
+        // Verify total equals calculated + remaining + failed
+        $this->assertEquals($stats['total'], $stats['calculated'] + $stats['remaining'] + $stats['failed']);
+
+        if ($stats['total'] > 0) {
+            $expectedPercentage = round(($stats['calculated'] / $stats['total']) * 100, 1);
+            $this->assertEquals($expectedPercentage, $stats['percentage']);
+        }
+    }
+
+    public function test_no_query_accesses_content_users_learning_hours_column(): void
+    {
+        $admin = User::where('role', User::ROLE_ADMIN)->first() ?? User::first();
+        $executedQueries = [];
+
+        DB::listen(function ($query) use (&$executedQueries) {
+            $executedQueries[] = $query->sql;
+        });
+
+        // 1. Visit main management page
+        $this->actingAs($admin)->get('/manage/learning-hours/content-user')->assertStatus(200);
+
+        // 2. Fetch statistics
+        $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/statistics')->assertStatus(200);
+
+        // 3. Fetch datatable records
+        $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10')->assertStatus(200);
+
+        // 4. Fetch filtered datatable
+        $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10&learning_hours_status=calculated')->assertStatus(200);
+        $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10&learning_hours_status=uncalculated')->assertStatus(200);
+
+        // Verify that NO query accesses `content_users`.`learning_hours` or content_users.learning_hours
+        foreach ($executedQueries as $sql) {
+            $this->assertFalse(
+                (bool) preg_match('/`?content_users`?\s*\.\s*`?learning_hours`?/i', $sql),
+                "Found query accessing content_users.learning_hours: {$sql}"
+            );
+            $this->assertFalse(
+                (bool) preg_match('/select\s+count\(\*\)\s+as\s+aggregate\s+from\s+`?content_users`?\s+where\s+`?learning_hours`?/i', $sql),
+                "Found invalid aggregate query on content_users.learning_hours: {$sql}"
+            );
+        }
+    }
 }

@@ -56,19 +56,20 @@ class ContentUserLearningHourManagementService
             ];
         }
 
-        $duration = $contentUser->content->duration;
+        $content = $contentUser->content;
+        $duration = $content->duration;
         $calculatedHours = $this->calculateFromDuration($duration);
 
-        if (!$force && $contentUser->learning_hours !== null && abs((float) $contentUser->learning_hours - $calculatedHours) < 0.0001) {
+        if (!$force && $content->learning_hours !== null && abs((float) $content->learning_hours - $calculatedHours) < 0.0001) {
             return [
                 'success' => true,
                 'updated' => false,
-                'learning_hours' => (float) $contentUser->learning_hours,
+                'learning_hours' => (float) $content->learning_hours,
                 'message' => 'Learning hours already up to date.',
             ];
         }
 
-        $contentUser->forceFill([
+        $content->forceFill([
             'learning_hours' => $calculatedHours,
         ])->saveQuietly();
 
@@ -138,7 +139,9 @@ class ContentUserLearningHourManagementService
         $query = ContentUser::query();
 
         if ($type === 'all_remaining') {
-            $query->whereNull('learning_hours');
+            $query->whereHas('content', function ($q) {
+                $q->whereNull('learning_hours');
+            });
         }
 
         $totalRecords = $query->count();
@@ -191,7 +194,9 @@ class ContentUserLearningHourManagementService
         }
 
         if ($batch->type === 'all_remaining') {
-            $query->whereNull('learning_hours');
+            $query->whereHas('content', function ($q) {
+                $q->whereNull('learning_hours');
+            });
         }
 
         $chunk = $query->limit($chunkSize)->get();
@@ -221,20 +226,20 @@ class ContentUserLearningHourManagementService
             $lastId = $item->id;
             $chunkProcessed++;
 
-            if (!$item->content) {
+            if (!$item->content || empty($item->content->duration)) {
                 $chunkFailed++;
                 continue;
             }
 
             $calculatedHours = $this->calculateFromDuration($item->content->duration);
             $key = (string) $calculatedHours;
-            $groups[$key][] = $item->id;
+            $groups[$key][] = $item->content->id;
         }
 
         DB::beginTransaction();
         try {
-            foreach ($groups as $hoursVal => $ids) {
-                ContentUser::whereIn('id', $ids)->update(['learning_hours' => (float) $hoursVal]);
+            foreach ($groups as $hoursVal => $contentIds) {
+                \App\Models\Content::whereIn('id', array_unique($contentIds))->update(['learning_hours' => (float) $hoursVal]);
             }
             DB::commit();
         } catch (\Throwable $e) {
@@ -284,18 +289,24 @@ class ContentUserLearningHourManagementService
     public function getStatistics(): array
     {
         $total = ContentUser::count();
-        $calculated = ContentUser::whereNotNull('learning_hours')->count();
-        $remaining = ContentUser::whereNull('learning_hours')->count();
+        $calculated = ContentUser::whereHas('content', function ($q) {
+            $q->whereNotNull('learning_hours');
+        })->count();
         
         // Count failed (records where content is null or content duration is empty)
-        $failed = ContentUser::whereNull('learning_hours')
-            ->where(function ($q) {
-                $q->whereDoesntHave('content')
-                    ->orWhereHas('content', function ($cq) {
-                        $cq->whereNull('duration')->orWhere('duration', '');
-                    });
-            })
-            ->count();
+        $failed = ContentUser::where(function ($q) {
+            $q->whereDoesntHave('content')
+                ->orWhereHas('content', function ($cq) {
+                    $cq->whereNull('duration')->orWhere('duration', '');
+                });
+        })->count();
+
+        // Remaining records needing calculation (content exists with valid duration, but learning_hours is null)
+        $remaining = ContentUser::whereHas('content', function ($q) {
+            $q->whereNull('learning_hours')
+                ->whereNotNull('duration')
+                ->where('duration', '!=', '');
+        })->count();
 
         $percentage = $total > 0 ? round(($calculated / $total) * 100, 1) : 0.0;
 
@@ -317,7 +328,7 @@ class ContentUserLearningHourManagementService
             ->with([
                 'user:id,name,id_emp,ssohash,role',
                 'content' => function ($q) {
-                    $q->select('id', 'title', 'type', 'duration', 'slug', 'classification_id')
+                    $q->select('id', 'title', 'type', 'duration', 'slug', 'classification_id', 'learning_hours')
                         ->with('classification:id,classification_name,slug');
                 },
             ])
@@ -340,9 +351,16 @@ class ContentUserLearningHourManagementService
 
         if ($request->filled('learning_hours_status') && $request->learning_hours_status !== 'all') {
             if ($request->learning_hours_status === 'calculated') {
-                $query->whereNotNull('content_users.learning_hours');
+                $query->whereHas('content', function ($q) {
+                    $q->whereNotNull('learning_hours');
+                });
             } elseif ($request->learning_hours_status === 'uncalculated') {
-                $query->whereNull('content_users.learning_hours');
+                $query->where(function ($q) {
+                    $q->whereDoesntHave('content')
+                        ->orWhereHas('content', function ($cq) {
+                            $cq->whereNull('learning_hours');
+                        });
+                });
             }
         }
 

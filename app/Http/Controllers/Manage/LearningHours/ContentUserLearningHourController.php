@@ -43,6 +43,24 @@ class ContentUserLearningHourController extends Controller
             ->filter(function ($query) use ($request) {
                 $this->applyGlobalSearch($query, $request);
             })
+            ->orderColumn('learning_hours_badge', function ($query, $order) {
+                $query->orderBy(
+                    \App\Models\Content::select('learning_hours')->whereColumn('content.id', 'content_users.content_id'),
+                    $order
+                );
+            })
+            ->orderColumn('learning_hours', function ($query, $order) {
+                $query->orderBy(
+                    \App\Models\Content::select('learning_hours')->whereColumn('content.id', 'content_users.content_id'),
+                    $order
+                );
+            })
+            ->orderColumn('content.learning_hours', function ($query, $order) {
+                $query->orderBy(
+                    \App\Models\Content::select('learning_hours')->whereColumn('content.id', 'content_users.content_id'),
+                    $order
+                );
+            })
             ->addColumn('checkbox', function (ContentUser $row) {
                 return '<input type="checkbox" class="form-check-input record-checkbox" value="' . $row->id . '">';
             })
@@ -239,7 +257,6 @@ class ContentUserLearningHourController extends Controller
 
         $query->where(function ($q) use ($search) {
             $q->where('content_users.status', 'like', '%' . $search . '%')
-                ->orWhere('content_users.learning_hours', 'like', '%' . $search . '%')
                 ->orWhereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', '%' . $search . '%')
                         ->orWhere('id_emp', 'like', '%' . $search . '%');
@@ -247,7 +264,8 @@ class ContentUserLearningHourController extends Controller
                 ->orWhereHas('content', function ($contentQuery) use ($search) {
                     $contentQuery->where('title', 'like', '%' . $search . '%')
                         ->orWhere('type', 'like', '%' . $search . '%')
-                        ->orWhere('duration', 'like', '%' . $search . '%');
+                        ->orWhere('duration', 'like', '%' . $search . '%')
+                        ->orWhere('learning_hours', 'like', '%' . $search . '%');
                 });
         });
     }

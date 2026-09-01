@@ -51,6 +51,8 @@ class LearningRecordController extends Controller
         $completedPlaylists = $this->completedPlaylistService->forUser($userId);
         $completedContents  = $this->getCompletedContents($userId);
         $cert               = $this->certificateContext($eligibilityService);
+        $playlistContents   = $this->playlistContentsData($completedPlaylists);
+        $firstContentSlugs  = $playlistContents->map(fn ($items) => $items->first()?->slug);
 
         // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
         // sebagai antrean prioritas: baris yang siap Generate Certificate
@@ -63,8 +65,9 @@ class LearningRecordController extends Controller
                 $cert,
                 // Slug content pertama tiap playlist — untuk link badge Playlist
                 // (route playlist.user.view butuh pasangan slug playlist + content).
-                $this->playlistFirstContentSlug($completedPlaylists),
-                $completedContents
+                $firstContentSlugs,
+                $completedContents,
+                $playlistContents
             )
         )->sortBy([
             ['cert_priority', 'asc'],
@@ -516,6 +519,7 @@ class LearningRecordController extends Controller
                 'cert_priority'   => $certPriority,
                 'cert_action_url' => route('certificate.generate', $cu->id),
                 'cert_is_form'    => false,
+                'playlist_items'  => [],
             ];
         })->values();
     }
@@ -547,6 +551,36 @@ class LearningRecordController extends Controller
     }
 
     /**
+     * Seluruh content tiap playlist terurut berdasarkan content_order — satu batch query
+     * untuk seluruh playlist selesai (0 N+1).
+     *
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Support\Collection>
+     */
+    private function playlistContentsData(Collection $playlists): Collection
+    {
+        $planIds = $playlists->pluck('id')->all();
+
+        if (empty($planIds)) {
+            return collect();
+        }
+
+        return DB::table('trainingplandetail as tpd')
+            ->join('content as c', 'c.id', '=', 'tpd.content_id')
+            ->whereIn('tpd.trainingplan_id', $planIds)
+            ->whereNull('c.deleted_at')
+            ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
+            ->get([
+                'tpd.trainingplan_id as plan_id',
+                'c.id as content_id',
+                'c.title as title',
+                'c.slug as slug',
+                'c.type as type',
+                'tpd.content_order as content_order',
+            ])
+            ->groupBy('plan_id');
+    }
+
+    /**
      * Normalisasi Playlist selesai menjadi baris tabel dengan struktur kolom
      * yang sama seperti baris Content.
      */
@@ -554,10 +588,13 @@ class LearningRecordController extends Controller
         Collection $playlists,
         array $cert,
         Collection $firstContentSlugs,
-        Collection $contentUsers
+        Collection $contentUsers,
+        ?Collection $allPlaylistContents = null
     ): Collection
     {
-        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers) {
+        $allPlaylistContents = $allPlaylistContents ?? $this->playlistContentsData($playlists);
+
+        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
             $eligible    = $eligibility?->eligible ?? false;
@@ -571,7 +608,21 @@ class LearningRecordController extends Controller
                 ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i:s')
                 : '';
 
-            $firstSlug = $firstContentSlugs->get($plan->id);
+            $planContents = $allPlaylistContents->get($plan->id, collect());
+            $firstSlug = $firstContentSlugs->get($plan->id) ?? $planContents->first()?->slug;
+
+            $playlistItems = $planContents->map(function ($item) use ($plan) {
+                return [
+                    'content_id' => $item->content_id,
+                    'title'      => $item->title ?? '-',
+                    'slug'       => $item->slug,
+                    'type'       => $item->type ?? 'Content',
+                    'url'        => ($plan->slug && $item->slug)
+                        ? route('playlist.user.view', [$plan->slug, $item->slug])
+                        : null,
+                ];
+            })->values()->all();
+
             $durationSeconds = (int) ($plan->total_duration_seconds ?? 0);
             $learningHoursVal = ($plan->learning_hours !== null && $plan->learning_hours !== '')
                 ? (float) $plan->learning_hours
@@ -586,6 +637,7 @@ class LearningRecordController extends Controller
                 'playlist_url'    => ($plan->slug && $firstSlug)
                     ? route('playlist.user.view', [$plan->slug, $firstSlug])
                     : null,
+                'playlist_items'  => $playlistItems,
                 'subtitle'        => (int) $plan->finished_items . ' / ' . (int) $plan->total_items . ' content selesai',
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],

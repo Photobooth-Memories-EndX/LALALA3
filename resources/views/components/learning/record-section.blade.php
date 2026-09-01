@@ -109,6 +109,86 @@
     box-sizing: border-box !important;
 }
 
+/* Learning Record Course Hover Popup */
+.learning-record-hover-popup {
+    position: absolute;
+    z-index: 9999;
+    background: #ffffff;
+    border: 1px solid #dce1e7;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    max-width: 380px;
+    min-width: 240px;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: #1e293b;
+    pointer-events: auto;
+}
+.course-preview-popover {
+    padding: 12px 14px;
+}
+.course-preview-popover.course-preview-content {
+    padding: 10px 14px;
+}
+.course-preview-header {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.course-preview-content .course-preview-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+.course-preview-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+}
+.course-preview-body {
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.course-preview-body::-webkit-scrollbar {
+    width: 5px;
+}
+.course-preview-body::-webkit-scrollbar-track {
+    background: #f8fafc;
+    border-radius: 4px;
+}
+.course-preview-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.course-preview-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+.course-preview-playlist-list {
+    margin: 0;
+    padding-left: 20px;
+}
+.course-preview-playlist-item {
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+.course-preview-playlist-item:hover {
+    background-color: #f1f5f9;
+}
+.course-preview-playlist-link {
+    color: #206bc4;
+    text-decoration: none;
+    font-size: 0.8125rem;
+    display: block;
+    word-break: break-word;
+}
+.course-preview-playlist-link:hover {
+    color: #1a569d;
+    text-decoration: underline;
+}
+
 /* Certificate Action Buttons */
 .btn-learning-certificate,
 .btn-learning-certificate-disabled {

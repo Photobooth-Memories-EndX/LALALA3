@@ -742,6 +742,99 @@ function initLearningRecord() {
         render();
     });
 
+    // ── Course Hover Preview (Popup) ─────────────────────────────────────────
+
+    function initCourseHoverPreview() {
+        var $popup = $('#learningRecordCoursePopup');
+        if (!$popup.length) {
+            $popup = $('<div id="learningRecordCoursePopup" class="learning-record-hover-popup" style="display:none;"></div>').appendTo('body');
+        }
+
+        var hideTimer = null;
+
+        function showPopup(trigger) {
+            clearTimeout(hideTimer);
+            var $trigger = $(trigger);
+            var $cell = $trigger.closest('.learning-record-course-cell');
+            var $template = $cell.find('.course-preview-template');
+
+            if (!$template.length) {
+                return;
+            }
+
+            var htmlContent = $.trim($template.html());
+            if (!htmlContent) {
+                return;
+            }
+
+            $popup.html(htmlContent).stop(true, true).css({ display: 'block', opacity: 0 });
+
+            var rect = trigger.getBoundingClientRect();
+            var popupWidth = $popup.outerWidth();
+            var popupHeight = $popup.outerHeight();
+            var viewportWidth = $(window).width();
+            var viewportHeight = $(window).height();
+
+            // Calculate left position (aligned with trigger, constrained within viewport)
+            var left = rect.left + window.scrollX;
+            if (left + popupWidth > viewportWidth - 16) {
+                left = Math.max(16, viewportWidth - popupWidth - 16 + window.scrollX);
+            }
+
+            // Calculate top position: prefer below trigger, if bottom overflows, display above
+            var spaceBelow = viewportHeight - rect.bottom;
+            var top;
+            if (spaceBelow < popupHeight + 12 && rect.top > popupHeight + 12) {
+                top = rect.top + window.scrollY - popupHeight - 6;
+            } else {
+                top = rect.bottom + window.scrollY + 6;
+            }
+
+            $popup.css({
+                top: top + 'px',
+                left: left + 'px'
+            }).animate({ opacity: 1 }, 120);
+        }
+
+        function scheduleHide() {
+            hideTimer = setTimeout(function () {
+                $popup.stop(true, true).fadeOut(120, function () {
+                    $popup.empty();
+                });
+            }, 250); // 250ms grace period allows seamless movement from trigger to popup
+        }
+
+        $table.off('.coursePreview', '.course-preview-trigger')
+            .on('mouseenter.coursePreview', '.course-preview-trigger', function () {
+                showPopup(this);
+            })
+            .on('mouseleave.coursePreview', '.course-preview-trigger', function () {
+                scheduleHide();
+            });
+
+        $popup.off('.coursePreview')
+            .on('mouseenter.coursePreview', function () {
+                clearTimeout(hideTimer);
+            })
+            .on('mouseleave.coursePreview', function () {
+                scheduleHide();
+            });
+
+        $(window).off('scroll.coursePreview resize.coursePreview').on('scroll.coursePreview resize.coursePreview', function () {
+            if ($popup.is(':visible')) {
+                clearTimeout(hideTimer);
+                $popup.hide().empty();
+            }
+        });
+
+        $(document).off('keydown.coursePreview').on('keydown.coursePreview', function (e) {
+            if (e.key === 'Escape') {
+                clearTimeout(hideTimer);
+                $popup.hide().empty();
+            }
+        });
+    }
+
     restoreRecordFiltersFromUrl();
     applyModeVisibility(false);
     updateFilterBadge();
@@ -750,5 +843,6 @@ function initLearningRecord() {
         updateSortIcons();
     }
     updateExportUrl();
+    initCourseHoverPreview();
     render();
 }

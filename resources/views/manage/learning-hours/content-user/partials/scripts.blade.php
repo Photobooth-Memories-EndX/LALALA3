@@ -35,7 +35,7 @@ $(function () {
             { data: 'content_title', name: 'content.title' },
             { data: 'content_type', name: 'content.type' },
             { data: 'duration', name: 'content.duration' },
-            { data: 'learning_hours_badge', name: 'learning_hours' },
+            { data: 'learning_hours_badge', name: 'content.learning_hours' },
             { data: 'status_badge', name: 'status' },
             { data: 'calculated_date', name: 'updated_at' },
             { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
