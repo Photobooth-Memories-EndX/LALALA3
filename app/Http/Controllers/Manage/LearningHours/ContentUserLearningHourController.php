@@ -25,10 +25,20 @@ class ContentUserLearningHourController extends Controller
     {
         $statistics = $this->service->getStatistics();
         $classifications = Classification::orderBy('classification_name')->get();
+        $years = ContentUser::whereNotNull('completed_at')
+            ->selectRaw('DISTINCT YEAR(completed_at) as year')
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->toArray();
+
+        if (empty($years)) {
+            $years = [2026, 2025, 2024, 2023];
+        }
 
         return view('manage.learning-hours.content-user.index', [
             'statistics' => $statistics,
             'classifications' => $classifications,
+            'years' => $years,
         ]);
     }
 
@@ -43,24 +53,11 @@ class ContentUserLearningHourController extends Controller
             ->filter(function ($query) use ($request) {
                 $this->applyGlobalSearch($query, $request);
             })
-            ->orderColumn('learning_hours_badge', function ($query, $order) {
-                $query->orderBy(
-                    \App\Models\Content::select('learning_hours')->whereColumn('content.id', 'content_users.content_id'),
-                    $order
-                );
-            })
-            ->orderColumn('learning_hours', function ($query, $order) {
-                $query->orderBy(
-                    \App\Models\Content::select('learning_hours')->whereColumn('content.id', 'content_users.content_id'),
-                    $order
-                );
-            })
-            ->orderColumn('content.learning_hours', function ($query, $order) {
-                $query->orderBy(
-                    \App\Models\Content::select('learning_hours')->whereColumn('content.id', 'content_users.content_id'),
-                    $order
-                );
-            })
+            ->orderColumn('learning_hours_badge', 'content_users.learning_hours $1')
+            ->orderColumn('learning_hours', 'content_users.learning_hours $1')
+            ->orderColumn('progress_bar', 'content_users.progress $1')
+            ->orderColumn('progress', 'content_users.progress $1')
+            ->orderColumn('completed_at', 'content_users.completed_at $1')
             ->addColumn('checkbox', function (ContentUser $row) {
                 return '<input type="checkbox" class="form-check-input record-checkbox" value="' . $row->id . '">';
             })
@@ -114,6 +111,17 @@ class ContentUserLearningHourController extends Controller
             ->addColumn('duration', function (ContentUser $row) {
                 return e(DurationFormatter::format($row->content->duration ?? null));
             })
+            ->addColumn('progress_bar', function (ContentUser $row) {
+                $p = (int) ($row->progress ?? 0);
+                $barColor = $p >= 100 ? 'bg-success' : ($p > 0 ? 'bg-primary' : 'bg-secondary');
+
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 100px;">'
+                    . '<div class="progress flex-grow-1" style="height: 6px;">'
+                    . '<div class="progress-bar ' . $barColor . '" style="width: ' . $p . '%"></div>'
+                    . '</div>'
+                    . '<span class="small text-muted font-monospace">' . $p . '%</span>'
+                    . '</div>';
+            })
             ->addColumn('learning_hours_badge', function (ContentUser $row) {
                 if ($row->learning_hours === null) {
                     return '<span class="badge bg-yellow-lt text-yellow"><i class="ti ti-clock-pause me-1"></i> Not Calculated</span>';
@@ -123,14 +131,17 @@ class ContentUserLearningHourController extends Controller
                     . e($this->service->formatHours((float) $row->learning_hours))
                     . '</span>';
             })
+            ->addColumn('completed_at', function (ContentUser $row) {
+                return $row->completed_at ? $row->completed_at->format('d M Y H:i') : '-';
+            })
+            ->addColumn('year', function (ContentUser $row) {
+                return $row->completed_at ? $row->completed_at->format('Y') : '-';
+            })
             ->addColumn('status_badge', function (ContentUser $row) {
                 $status = $row->status ?? 'optional';
                 $color = $status === 'mandatory' ? 'red' : 'blue';
 
                 return '<span class="badge bg-' . $color . '-lt text-' . $color . '">' . e(ucfirst($status)) . '</span>';
-            })
-            ->addColumn('calculated_date', function (ContentUser $row) {
-                return optional($row->updated_at)->format('d M Y H:i') ?? '-';
             })
             ->addColumn('action', function (ContentUser $row) {
                 return '<button type="button" class="btn btn-sm btn-outline-primary btn-recalculate-single rounded-pill" data-id="' . $row->id . '">'
@@ -142,11 +153,12 @@ class ContentUserLearningHourController extends Controller
                 'employee',
                 'content_title',
                 'content_type',
+                'progress_bar',
                 'learning_hours_badge',
                 'status_badge',
                 'action',
             ])
-            ->make(true);
+            ->toJson();
     }
 
     /**
@@ -257,6 +269,8 @@ class ContentUserLearningHourController extends Controller
 
         $query->where(function ($q) use ($search) {
             $q->where('content_users.status', 'like', '%' . $search . '%')
+                ->orWhere('content_users.learning_hours', 'like', '%' . $search . '%')
+                ->orWhere('content_users.progress', 'like', '%' . $search . '%')
                 ->orWhereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', '%' . $search . '%')
                         ->orWhere('id_emp', 'like', '%' . $search . '%');
@@ -264,8 +278,7 @@ class ContentUserLearningHourController extends Controller
                 ->orWhereHas('content', function ($contentQuery) use ($search) {
                     $contentQuery->where('title', 'like', '%' . $search . '%')
                         ->orWhere('type', 'like', '%' . $search . '%')
-                        ->orWhere('duration', 'like', '%' . $search . '%')
-                        ->orWhere('learning_hours', 'like', '%' . $search . '%');
+                        ->orWhere('duration', 'like', '%' . $search . '%');
                 });
         });
     }

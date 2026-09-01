@@ -39,7 +39,17 @@
                 </select>
             </div>
 
-            <div class="col-md-6 col-lg-4 d-flex flex-wrap gap-2 justify-content-md-end">
+            <div class="col-md-3 col-lg-2">
+                <label class="form-label small fw-bold text-muted text-uppercase">Completion Year</label>
+                <select class="form-select" id="filter-year" name="year">
+                    <option value="all" selected>All Years</option>
+                    @foreach($years as $y)
+                        <option value="{{ $y }}">{{ $y }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="col-md-6 col-lg-2 d-flex flex-wrap gap-2 justify-content-md-end ms-auto">
                 <button type="button" id="btn-apply-filters" class="btn btn-primary">
                     <i class="ti ti-adjustments-horizontal me-1"></i> Apply Filter
                 </button>

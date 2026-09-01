@@ -18,7 +18,7 @@ $(function () {
             [25, 50, 100, 250],
             [25, 50, 100, 250]
         ],
-        order: [[8, 'desc']], // order by updated_at by default
+        order: [[8, 'desc']], // order by completed_at by default
         ajax: {
             url: "{{ route('manage.learning-hours.content-user.datatable') }}",
             data: function (d) {
@@ -26,6 +26,7 @@ $(function () {
                 d.status = $('#filter-status').val();
                 d.content_type = $('#filter-type').val();
                 d.classification_slug = $('#filter-classification').val();
+                d.year = $('#filter-year').val();
             }
         },
         columns: [
@@ -35,9 +36,11 @@ $(function () {
             { data: 'content_title', name: 'content.title' },
             { data: 'content_type', name: 'content.type' },
             { data: 'duration', name: 'content.duration' },
-            { data: 'learning_hours_badge', name: 'content.learning_hours' },
-            { data: 'status_badge', name: 'status' },
-            { data: 'calculated_date', name: 'updated_at' },
+            { data: 'progress_bar', name: 'content_users.progress' },
+            { data: 'learning_hours_badge', name: 'content_users.learning_hours' },
+            { data: 'completed_at', name: 'content_users.completed_at' },
+            { data: 'year', name: 'content_users.completed_at', orderable: false, searchable: false },
+            { data: 'status_badge', name: 'content_users.status' },
             { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
         ],
         language: {
@@ -55,7 +58,7 @@ $(function () {
         }
     });
 
-    // Checkbox selection
+    // Check All Checkbox
     $('#check-all').on('change', function () {
         const isChecked = $(this).is(':checked');
         $('.record-checkbox').each(function () {
@@ -101,6 +104,7 @@ $(function () {
         $('#filter-status').val('all');
         $('#filter-type').val('all');
         $('#filter-classification').val('all');
+        $('#filter-year').val('all');
         selectedIds.clear();
         updateBulkButtons();
         table.search('').draw();

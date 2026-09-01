@@ -34,9 +34,11 @@
                         <th>Content Title</th>
                         <th>Type</th>
                         <th>Duration</th>
-                        <th>Learning Hours</th>
+                        <th style="min-width: 120px;">Progress</th>
+                        <th>User Learning Hours</th>
+                        <th>Completed At</th>
+                        <th>Year</th>
                         <th>Status</th>
-                        <th>Updated At</th>
                         <th style="width: 100px;" class="text-center">Action</th>
                     </tr>
                 </thead>

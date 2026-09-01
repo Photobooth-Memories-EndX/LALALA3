@@ -157,38 +157,121 @@ class ContentUserLearningHourManagementTest extends TestCase
         }
     }
 
-    public function test_no_query_accesses_content_users_learning_hours_column(): void
+    public function test_migrations_added_learning_hours_and_completed_at_columns(): void
+    {
+        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('content_users', 'learning_hours'));
+        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('content_users', 'completed_at'));
+    }
+
+    public function test_hybrid_learning_hours_calculation_rules(): void
+    {
+        $content = Content::whereNotNull('learning_hours')->where('learning_hours', '>', 0)->first();
+        $this->assertNotNull($content);
+
+        $user = User::first();
+        $masterHours = (float) $content->learning_hours;
+
+        // 1. Completed user gets full master hours and completed_at is set
+        $completedCu = new ContentUser([
+            'user_id' => $user->id,
+            'content_id' => $content->id,
+            'progress' => 100,
+            'finish' => '1',
+        ]);
+        $completedCu->save();
+        $this->assertEquals($masterHours, (float) $completedCu->learning_hours);
+        $this->assertNotNull($completedCu->completed_at);
+
+        // 2. completed_at is immutable once set
+        $origCompletedAt = $completedCu->completed_at;
+        $completedCu->progress = 100;
+        $completedCu->save();
+        $this->assertEquals($origCompletedAt->toDateTimeString(), $completedCu->completed_at->toDateTimeString());
+
+        // 3. Partial progress gets proportional hours
+        $partialCu = new ContentUser([
+            'user_id' => $user->id,
+            'content_id' => $content->id,
+            'progress' => 50,
+            'finish' => '0',
+        ]);
+        $partialCu->save();
+        $expectedPartial = round($masterHours * 0.5, 1);
+        $this->assertEquals($expectedPartial, (float) $partialCu->learning_hours);
+        $this->assertNull($partialCu->completed_at);
+
+        // 4. Zero progress gets 0.0
+        $zeroCu = new ContentUser([
+            'user_id' => $user->id,
+            'content_id' => $content->id,
+            'progress' => 0,
+            'finish' => '0',
+        ]);
+        $zeroCu->save();
+        $this->assertEquals(0.0, (float) $zeroCu->learning_hours);
+        $this->assertNull($zeroCu->completed_at);
+
+        // Clean up test rows
+        $completedCu->delete();
+        $partialCu->delete();
+        $zeroCu->delete();
+    }
+
+    public function test_datatable_filters_by_year_2024_2025_2026(): void
     {
         $admin = User::where('role', User::ROLE_ADMIN)->first() ?? User::first();
-        $executedQueries = [];
 
-        DB::listen(function ($query) use (&$executedQueries) {
-            $executedQueries[] = $query->sql;
-        });
-
-        // 1. Visit main management page
-        $this->actingAs($admin)->get('/manage/learning-hours/content-user')->assertStatus(200);
-
-        // 2. Fetch statistics
-        $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/statistics')->assertStatus(200);
-
-        // 3. Fetch datatable records
-        $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10')->assertStatus(200);
-
-        // 4. Fetch filtered datatable
-        $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10&learning_hours_status=calculated')->assertStatus(200);
-        $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10&learning_hours_status=uncalculated')->assertStatus(200);
-
-        // Verify that NO query accesses `content_users`.`learning_hours` or content_users.learning_hours
-        foreach ($executedQueries as $sql) {
-            $this->assertFalse(
-                (bool) preg_match('/`?content_users`?\s*\.\s*`?learning_hours`?/i', $sql),
-                "Found query accessing content_users.learning_hours: {$sql}"
-            );
-            $this->assertFalse(
-                (bool) preg_match('/select\s+count\(\*\)\s+as\s+aggregate\s+from\s+`?content_users`?\s+where\s+`?learning_hours`?/i', $sql),
-                "Found invalid aggregate query on content_users.learning_hours: {$sql}"
-            );
+        // 1. Filter year 2024
+        $resp2024 = $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10&year=2024');
+        $resp2024->assertStatus(200);
+        $data2024 = $resp2024->json('data');
+        if (!empty($data2024)) {
+            $this->assertEquals('2024', $data2024[0]['year']);
         }
+
+        // 2. Filter year 2025
+        $resp2025 = $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10&year=2025');
+        $resp2025->assertStatus(200);
+        $data2025 = $resp2025->json('data');
+        if (!empty($data2025)) {
+            $this->assertEquals('2025', $data2025[0]['year']);
+        }
+
+        // 3. Filter year 2026
+        $resp2026 = $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10&year=2026');
+        $resp2026->assertStatus(200);
+        $data2026 = $resp2026->json('data');
+        if (!empty($data2026)) {
+            $this->assertEquals('2026', $data2026[0]['year']);
+        }
+    }
+
+    public function test_datatable_sort_and_search_on_learning_hours(): void
+    {
+        $admin = User::where('role', User::ROLE_ADMIN)->first() ?? User::first();
+
+        // Sorting by learning_hours column
+        $sortResp = $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10&order[0][column]=7&order[0][dir]=desc&columns[7][data]=learning_hours');
+        $sortResp->assertStatus(200);
+        $this->assertNotEmpty($sortResp->json('data'));
+
+        // Search by learning_hours number
+        $searchResp = $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=10&search[value]=0.5');
+        $searchResp->assertStatus(200);
+        $this->assertNotEmpty($searchResp->json('data'));
+    }
+
+    public function test_database_integrity_and_orphan_preservation(): void
+    {
+        $total = DB::table('content_users')->count();
+        $this->assertEquals(165768, $total);
+
+        // Orphan count matches expectations (records with soft-deleted content)
+        $orphanCount = ContentUser::whereDoesntHave('content')->count();
+        $this->assertEquals(36, $orphanCount);
+
+        // All orphans have null learning_hours and null completed_at
+        $orphansWithHours = ContentUser::whereDoesntHave('content')->whereNotNull('learning_hours')->count();
+        $this->assertEquals(0, $orphansWithHours);
     }
 }
