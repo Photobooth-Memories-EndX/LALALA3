@@ -22,6 +22,7 @@ $(function () {
         ajax: {
             url: "{{ route('manage.learning-hours.content-user.datatable') }}",
             data: function (d) {
+                d.source = $('#filter-source').val();
                 d.learning_hours_status = $('#filter-lh-status').val();
                 d.status = $('#filter-status').val();
                 d.content_type = $('#filter-type').val();
@@ -100,6 +101,7 @@ $(function () {
 
     $('#btn-reset-filters').on('click', function () {
         $('#filter-form')[0].reset();
+        $('#filter-source').val('direct');
         $('#filter-lh-status').val('all');
         $('#filter-status').val('all');
         $('#filter-type').val('all');
@@ -134,7 +136,8 @@ $(function () {
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',
-                ids: ids
+                ids: ids,
+                context: $('#filter-source').val()
             },
             success: function (res) {
                 if (res.success) {
@@ -170,6 +173,7 @@ $(function () {
     // Recalculate Single Row
     $(document).on('click', '.btn-recalculate-single', function () {
         const id = $(this).data('id');
+        const context = $(this).data('context') || $('#filter-source').val();
         const $btn = $(this);
         const originalHtml = $btn.html();
 
@@ -180,7 +184,8 @@ $(function () {
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',
-                ids: [id]
+                ids: [id],
+                context: context
             },
             success: function (res) {
                 if (res.success) {
@@ -193,6 +198,18 @@ $(function () {
             },
             complete: function () {
                 $btn.prop('disabled', false).html(originalHtml);
+            }
+        });
+    });
+
+    // Source Filter Change
+    $('#filter-source').on('change', function () {
+        selectedIds.clear();
+        updateBulkButtons();
+        table.ajax.reload();
+        $.get("{{ route('manage.learning-hours.content-user.statistics') }}", { source: $(this).val() }, function (res) {
+            if (res.success && res.statistics) {
+                updateStatsUI(res.statistics);
             }
         });
     });

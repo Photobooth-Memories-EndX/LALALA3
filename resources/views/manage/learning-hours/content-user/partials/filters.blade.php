@@ -2,6 +2,14 @@
     <div class="card-body p-4">
         <form id="filter-form" class="row g-3 align-items-end" onsubmit="return false;">
             <div class="col-md-3 col-lg-2">
+                <label class="form-label small fw-bold text-muted text-uppercase">Source</label>
+                <select class="form-select" id="filter-source" name="source">
+                    <option value="direct" selected>Direct Content</option>
+                    <option value="playlist">Playlist Content</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 col-lg-2">
                 <label class="form-label small fw-bold text-muted text-uppercase">Calculation Status</label>
                 <select class="form-select" id="filter-lh-status" name="learning_hours_status">
                     <option value="all" selected>All Records</option>

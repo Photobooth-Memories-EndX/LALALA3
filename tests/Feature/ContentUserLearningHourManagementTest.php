@@ -274,4 +274,60 @@ class ContentUserLearningHourManagementTest extends TestCase
         $orphansWithHours = ContentUser::whereDoesntHave('content')->whereNotNull('learning_hours')->count();
         $this->assertEquals(0, $orphansWithHours);
     }
+
+    public function test_playlist_content_user_calculation_and_persistence(): void
+    {
+        $admin = User::where('role', User::ROLE_ADMIN)->first() ?? User::first();
+        $pcu = \App\Models\PlaylistContentUser::where('progress', '>', 0)->first();
+        $this->assertNotNull($pcu);
+
+        // Clear learning_hour
+        DB::table('playlist_content_users')->where('id', $pcu->id)->update(['learning_hour' => null, 'completed_at' => null]);
+
+        $response = $this->actingAs($admin)->postJson('/manage/learning-hours/content-user/recalculate-selected', [
+            'ids' => [$pcu->id],
+            'context' => 'playlist',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('success', true);
+
+        $fromDb = DB::table('playlist_content_users')->where('id', $pcu->id)->first();
+        $this->assertNotNull($fromDb->learning_hour);
+        $this->assertGreaterThanOrEqual(0, (float) $fromDb->learning_hour);
+        if ((int) $fromDb->progress >= 100 || (string) $fromDb->finish === '1') {
+            $this->assertNotNull($fromDb->completed_at);
+        }
+    }
+
+    public function test_mass_assignment_on_both_models(): void
+    {
+        // 1. ContentUser allows learning_hours and completed_at
+        $cu = new ContentUser();
+        $cu->fill([
+            'learning_hours' => 2.5,
+            'completed_at' => now(),
+        ]);
+        $this->assertEquals(2.5, (float) $cu->learning_hours);
+        $this->assertNotNull($cu->completed_at);
+
+        // 2. PlaylistContentUser allows learning_hour and completed_at
+        $pcu = new \App\Models\PlaylistContentUser();
+        $pcu->fill([
+            'learning_hour' => 1.5,
+            'completed_at' => now(),
+        ]);
+        $this->assertEquals(1.5, (float) $pcu->learning_hour);
+        $this->assertNotNull($pcu->completed_at);
+    }
+
+    public function test_datatable_handles_playlist_source(): void
+    {
+        $admin = User::where('role', User::ROLE_ADMIN)->first() ?? User::first();
+
+        $response = $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=5&source=playlist');
+        $response->assertStatus(200);
+        $this->assertArrayHasKey('recordsTotal', $response->json());
+        $this->assertEquals(244523, $response->json('recordsTotal'));
+    }
 }
