@@ -51,6 +51,7 @@ use App\Http\Controllers\PlaylistDebugController;
 use App\Http\Controllers\PlaylistCertificateDebugController;
 use App\Http\Controllers\Manage\LearningHours\ContentUserLearningHourController;
 use App\Http\Controllers\Manage\LearningHours\PlaylistContentUserLearningHourController;
+use App\Http\Controllers\Manage\LearningHours\LearningHoursLandingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -392,6 +393,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:learning_hours_management'], function () {
+        Route::get('learning-hours', [LearningHoursLandingController::class, 'index'])->name('manage.learning-hours.index');
+
         Route::prefix('learning-hours/content-user')->name('manage.learning-hours.content-user.')->group(function () {
             Route::get('/', [ContentUserLearningHourController::class, 'index'])->name('index');
             Route::get('/datatable', [ContentUserLearningHourController::class, 'datatable'])->name('datatable');

@@ -190,6 +190,8 @@ class ContentUserLearningHourManagementService
             'learning_hour' => $userHours,
         ];
 
+        $isFinished = ((string) $record->finish === '1' || (int) $record->progress >= 100);
+
         if ($isFinished && $record->completed_at === null) {
             $updateData['completed_at'] = now();
         }
