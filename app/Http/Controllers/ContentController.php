@@ -505,12 +505,17 @@ class ContentController extends Controller
                 return to_route('content.edit', $slug)->with('success', 'Content successfully saved')->with('warning', 'Cannot publish because content doesn\'t have media.');
             }
         } else {
-
             $addmessage = "";
         }
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'Content successfully saved' . $addmessage,
+                'redirect' => route('content.index')
+            ]);
+        }
 
-        //
         return to_route('content.index')->with('success', 'Content successfully saved' . $addmessage . '');
     }
     public function destroy(Content $content)
@@ -535,9 +540,16 @@ class ContentController extends Controller
             ?: ($content->exists ? $content : Content::findOrFail($request->id));
 
         if ($targetContent->isPublished()) {
-            if ($request->action === 'unpublish') {
+            if ($request->action === 'unpublish' || $request->action === 'draft') {
                 $targetContent->active = 'Inactive';
                 $targetContent->save();
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'status'   => 200,
+                        'message'  => 'Content successfully saved as draft.',
+                        'redirect' => route('content.index')
+                    ]);
+                }
                 return to_route('content.edit', $targetContent->slug)->with('success', 'Content successfully unpublished');
             }
 
@@ -715,6 +727,18 @@ class ContentController extends Controller
             ]);
 
         app(\App\Services\PlaylistDurationService::class)->refreshForContent((int) $targetId);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => $message,
+                'redirect' => route('content.index')
+            ]);
+        }
+
+        if ($request->action === 'draft') {
+            return to_route('content.index')->with('success', 'Content saved as draft successfully.');
+        }
 
         return to_route('content.edit', $targetContent->slug)->with('success', $message)->with($redir, $redirmessage);
     }

@@ -242,7 +242,7 @@
             </div>
             <div class="modal-body py-3">
                 <p class="text-dark mb-0" style="color: #212529 !important; font-size: 0.95rem; line-height: 1.5;">
-                    Are you sure you want to leave? Any unsaved changes will be saved as a draft automatically, or you can stay to finish editing.
+                  Are you sure you want to leave? Any unsaved changes will be lost, or you can stay to finish editing.
                 </p>
             </div>
             <div class="modal-footer border-0 pt-0 d-flex justify-content-between align-items-center">
