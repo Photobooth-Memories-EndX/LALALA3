@@ -79,11 +79,14 @@
             <input type="hidden" name="sort" value="{{ $filters['sort'] }}" data-gallery-sort>
 
             <div class="gallery-filter-search">
-                <label class="visually-hidden" for="gallery-search">Search gallery by title</label>
-                <div class="input-icon">
-                    <span class="input-icon-addon" aria-hidden="true"><i class="ti ti-search"></i></span>
-                    <input id="gallery-search" type="search" name="q" value="{{ $filters['q'] }}"
-                        class="form-control" placeholder="Search by title..." autocomplete="off">
+                <label class="visually-hidden" for="gallery-search-input">Search gallery by title</label>
+                <div class="position-relative gallery-search-container flex-grow-1">
+                    <div class="input-icon">
+                        <span class="input-icon-addon" aria-hidden="true"><i class="ti ti-search"></i></span>
+                        <input id="gallery-search-input" type="search" name="q" value="{{ $filters['q'] }}"
+                            class="form-control" placeholder="Search by title..." autocomplete="off">
+                    </div>
+                    <div id="gallery-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1" style="display: none; max-height: 280px; overflow-y: auto; z-index: 1050;"></div>
                 </div>
             </div>
             <div class="gallery-filter-actions">

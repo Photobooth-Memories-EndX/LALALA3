@@ -7,11 +7,68 @@ use App\Models\Comment;
 use App\Models\EventPhoto;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class GalleryUserController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for active published event photo galleries.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) $request->get('q', ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $galleries = EventPhoto::where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('category', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('uploader', 'LIKE', "%{$rawQuery}%");
+            })
+            ->where(function ($q) {
+                // Ensure active status condition is handled properly
+                $q->where('active', 'Active')
+                  ->orWhere('active', 1)
+                  ->orWhereNull('active');
+            })
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
+        $results = $galleries->map(function ($gallery) {
+            $photosArr = $gallery->photos ? (json_decode($gallery->photos, true) ?? []) : [];
+            $photoCount = is_array($photosArr) ? count($photosArr) : 0;
+
+            return [
+                'id'          => $gallery->id,
+                'title'       => $gallery->title,
+                'name'        => $gallery->title,
+                'slug'        => $gallery->slug,
+                'photo_count' => $photoCount,
+                'category'    => $gallery->category,
+                'event_date'  => $gallery->eventdate ? \Carbon\Carbon::parse($gallery->eventdate)->format('d M Y') : null,
+                'views'       => $gallery->views ?? 0,
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
     public function index(GalleryFilterRequest $request): View|JsonResponse
     {
         $filters = $this->normalizedFilters($request->validated());
@@ -144,7 +201,16 @@ class GalleryUserController extends Controller
     private function applyFilters(Builder $query, array $filters): void
     {
         if ($filters['q'] !== '') {
-            $query->where('title', 'like', '%' . $filters['q'] . '%');
+            $rawQ = $filters['q'];
+            $qNorm = str_replace("'", "’", $rawQ);
+            $qOrig = str_replace("’", "'", $rawQ);
+
+            $query->where(function ($q) use ($rawQ, $qNorm, $qOrig) {
+                $q->where('title', 'LIKE', "%{$rawQ}%")
+                  ->orWhere('title', 'LIKE', "%{$qNorm}%")
+                  ->orWhere('title', 'LIKE', "%{$qOrig}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQ}%");
+            });
         }
 
         if ($filters['uploader']) {

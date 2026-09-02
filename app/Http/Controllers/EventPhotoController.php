@@ -3,11 +3,68 @@
 namespace App\Http\Controllers;
 
 use App\Models\EventPhoto;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 
 class EventPhotoController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for active published event photo galleries.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) $request->get('q', ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $galleries = EventPhoto::where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('category', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('uploader', 'LIKE', "%{$rawQuery}%");
+            })
+            ->where(function ($q) {
+                // Ensure active status condition is handled properly
+                $q->where('active', 'Active')
+                  ->orWhere('active', 1)
+                  ->orWhereNull('active');
+            })
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
+        $results = $galleries->map(function ($gallery) {
+            $photosArr = $gallery->photos ? (json_decode($gallery->photos, true) ?? []) : [];
+            $photoCount = is_array($photosArr) ? count($photosArr) : 0;
+
+            return [
+                'id'          => $gallery->id,
+                'title'       => $gallery->title,
+                'name'        => $gallery->title,
+                'slug'        => $gallery->slug,
+                'photo_count' => $photoCount,
+                'category'    => $gallery->category,
+                'event_date'  => $gallery->eventdate ? \Carbon\Carbon::parse($gallery->eventdate)->format('d M Y') : null,
+                'views'       => $gallery->views ?? 0,
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
     /**
      * Display a listing of the resource.
      *

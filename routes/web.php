@@ -186,8 +186,10 @@ Route::get('/assessment-hub', [AssesmentUserController::class, 'index'])->middle
 | Gallery User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/gallery/search-autocomplete', [GalleryUserController::class, 'autocomplete'])->middleware('auth')->name('user.gallery.autocomplete');
 Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
     Route::get('/', [GalleryUserController::class, 'index'])->name('gallery.user.index');
+    Route::get('/search-autocomplete', [GalleryUserController::class, 'autocomplete'])->name('gallery.user.autocomplete');
     Route::get('/{slug}', [GalleryUserController::class, 'view'])->name('gallery.user.view');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storeeventphoto'])->name('gallery.comment.store');
 });
