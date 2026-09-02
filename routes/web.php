@@ -213,6 +213,11 @@ Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
+    Route::get('/user/certificate/search-autocomplete', [CertificateController::class, 'autocomplete'])
+        ->name('user.certificate.autocomplete');
+    Route::get('/certificate/search-autocomplete', [CertificateController::class, 'autocomplete'])
+        ->name('certificate.autocomplete');
+
     Route::get('/certificate/generate/{contentUser}', [UserCertificateController::class, 'generate'])
         ->name('certificate.generate');
 

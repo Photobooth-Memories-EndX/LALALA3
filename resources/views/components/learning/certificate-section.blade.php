@@ -86,12 +86,19 @@
                     </div>
 
                     <div class="certificate-toolbar-search">
-                        <label class="visually-hidden" for="certificateSearch">Search certificates</label>
-                        <div class="input-icon">
-                            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                            <input type="search" class="form-control" id="certificateSearch"
-                                   placeholder="Certificate number, credential, participant, target or type..."
-                                   value="{{ request('certificate_search') }}" autocomplete="off">
+                        <label class="visually-hidden" for="certificate-search-input">Search certificates</label>
+                        <div class="position-relative certificate-search-container flex-grow-1">
+                            <div class="input-icon">
+                                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                <input type="text"
+                                       class="form-control"
+                                       id="certificate-search-input"
+                                       name="certificate_search"
+                                       placeholder="Certificate number, credential, participant, target or type..."
+                                       value="{{ request('certificate_search') }}"
+                                       autocomplete="off">
+                            </div>
+                            <div id="certificate-search-results" class="dropdown-menu shadow-sm w-100 overflow-auto position-absolute mt-1" style="display: none; max-height: 300px; z-index: 1050;"></div>
                         </div>
                     </div>
 
