@@ -322,9 +322,18 @@
         });
 
         // =========================================================================
-        // Bulk Duplicate Assessments Handlers
+        // Bulk Duplicate Assessments Handlers (with Assessment ↔ Content Mapping)
         // =========================================================================
         let previewXhr = null;
+        let playlistContentsXhr = null;
+        let activeSourcesXhr = null;
+        let cachedActiveSources = null;
+        let currentPlaylistContents = [];
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return $('<div>').text(text).html();
+        }
 
         function updateBulkSelectionState() {
             let checkedBoxes = $('.assessment-select-checkbox:checked');
@@ -366,7 +375,220 @@
             $('#bulk_mode_all').prop('checked', true);
         });
 
-        function fetchBulkPreview() {
+        function getCurrentSelectedSources() {
+            let sources = [];
+            $('.assessment-select-checkbox:checked').each(function () {
+                let $cb = $(this);
+                sources.push({
+                    id: parseInt($cb.val()),
+                    title: $cb.data('title') || ('Assessment ' + $cb.val()),
+                    content_id: parseInt($cb.data('content-id')) || null,
+                    content_title: $cb.data('content-title') || ('Content ' + $cb.data('content-id'))
+                });
+            });
+            return sources;
+        }
+
+        function getCurrentContentMapping() {
+            let mapping = {};
+            $('.bulk-content-select').each(function () {
+                let aId = $(this).data('assessment-id');
+                let cId = $(this).val();
+                if (aId && cId) {
+                    mapping[aId] = parseInt(cId);
+                }
+            });
+            return mapping;
+        }
+
+        function validateMapping() {
+            let counts = {};
+            let hasDuplicates = false;
+            let totalSelects = 0;
+
+            $('.bulk-content-select').each(function () {
+                totalSelects++;
+                let cId = $(this).val();
+                if (cId) {
+                    counts[cId] = (counts[cId] || 0) + 1;
+                    if (counts[cId] > 1) {
+                        hasDuplicates = true;
+                    }
+                }
+            });
+
+            $('.bulk-content-select').each(function () {
+                let cId = $(this).val();
+                if (cId && counts[cId] > 1) {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            if (hasDuplicates) {
+                $('#bulkMappingErrorAlert').removeClass('d-none');
+                $('#bulkMappingErrorMessage').text('Each Content can only be assigned to one Assessment.');
+                $('#btnSubmitBulkDuplicate').prop('disabled', true);
+                return false;
+            } else {
+                $('#bulkMappingErrorAlert').addClass('d-none');
+                return true;
+            }
+        }
+
+        function renderMappingTable(sources, availableContents, preservedMapping) {
+            let $tbody = $('#bulkMappingTbody');
+            $tbody.empty();
+
+            if (!sources || sources.length === 0) {
+                $tbody.append('<tr><td colspan="3" class="text-center text-muted py-3">No assessments selected.</td></tr>');
+                return;
+            }
+
+            sources.forEach(function (source, idx) {
+                let selectedContentId = (preservedMapping && preservedMapping[source.id])
+                    ? preservedMapping[source.id]
+                    : null;
+
+                if (!selectedContentId && source.content_id) {
+                    let match = availableContents.find(function (c) { return c.id == source.content_id; });
+                    if (match) {
+                        selectedContentId = match.id;
+                    }
+                }
+
+                if (!selectedContentId && availableContents[idx]) {
+                    selectedContentId = availableContents[idx].id;
+                }
+
+                let optionsHtml = '';
+                availableContents.forEach(function (c) {
+                    let isSelected = (selectedContentId == c.id) ? 'selected' : '';
+                    optionsHtml += '<option value="' + c.id + '" ' + isSelected + '>' + escapeHtml(c.title) + '</option>';
+                });
+
+                let rowHtml = `
+                    <tr data-assessment-id="${source.id}">
+                        <td class="text-center text-muted fw-bold">${idx + 1}</td>
+                        <td>
+                            <div class="fw-semibold text-dark text-truncate" style="max-width: 220px;" title="${escapeHtml(source.title)}">
+                                ${escapeHtml(source.title)}
+                            </div>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm bulk-content-select" data-assessment-id="${source.id}">
+                                ${optionsHtml}
+                            </select>
+                        </td>
+                    </tr>
+                `;
+                $tbody.append(rowHtml);
+            });
+
+            validateMapping();
+        }
+
+        function refreshMappingAndPreview() {
+            let mode = $('input[name="bulk_selection_mode"]:checked').val();
+            let targetContext = $('input[name="bulk_target_context"]:checked').val();
+            let trainingplanId = $('#bulk_playlist_id').val();
+            let preservedMapping = getCurrentContentMapping();
+
+            if (targetContext === 'playlist') {
+                if (!trainingplanId) {
+                    $('#bulkMappingPlaylistNotice').removeClass('d-none');
+                    $('#bulkMappingTableWrapper').addClass('d-none');
+                    $('#bulkMappingTbody').empty();
+                    $('#previewTotal').text('-');
+                    $('#previewWillCreate').text('-');
+                    $('#previewAlreadyExists').text('-');
+                    $('#bulkPreviewNotice').text('Please select a target playlist to calculate preview.');
+                    $('#btnSubmitBulkDuplicate').prop('disabled', true);
+                    return;
+                }
+
+                $('#bulkMappingPlaylistNotice').addClass('d-none');
+                $('#bulkMappingTableWrapper').removeClass('d-none');
+                $('#bulkMappingLoading').removeClass('d-none');
+
+                if (playlistContentsXhr) playlistContentsXhr.abort();
+
+                playlistContentsXhr = $.ajax({
+                    type: 'GET',
+                    url: '/manage/assesment/playlist/' + trainingplanId + '/contents',
+                    dataType: 'json',
+                    success: function (res) {
+                        $('#bulkMappingLoading').addClass('d-none');
+                        currentPlaylistContents = res.contents || [];
+
+                        resolveSources(mode, function (sources) {
+                            renderMappingTable(sources, currentPlaylistContents, preservedMapping);
+                            if (validateMapping()) {
+                                fetchBulkPreview(sources, getCurrentContentMapping());
+                            }
+                        });
+                    },
+                    error: function () {
+                        $('#bulkMappingLoading').addClass('d-none');
+                        $('#bulkMappingTbody').html('<tr><td colspan="3" class="text-center text-danger py-3">Failed to load playlist contents.</td></tr>');
+                    }
+                });
+
+                return;
+            }
+
+            $('#bulkMappingPlaylistNotice').addClass('d-none');
+            $('#bulkMappingTableWrapper').removeClass('d-none');
+
+            resolveSources(mode, function (sources) {
+                let contentMap = {};
+                sources.forEach(function (s) {
+                    if (s.content_id && !contentMap[s.content_id]) {
+                        contentMap[s.content_id] = {
+                            id: s.content_id,
+                            title: s.content_title || ('Content ' + s.content_id)
+                        };
+                    }
+                });
+                let directContents = Object.values(contentMap);
+
+                renderMappingTable(sources, directContents, preservedMapping);
+                if (validateMapping()) {
+                    fetchBulkPreview(sources, getCurrentContentMapping());
+                }
+            });
+        }
+
+        function resolveSources(mode, callback) {
+            if (mode === 'selected') {
+                callback(getCurrentSelectedSources());
+            } else {
+                if (cachedActiveSources) {
+                    callback(cachedActiveSources);
+                } else {
+                    $('#bulkMappingLoading').removeClass('d-none');
+                    if (activeSourcesXhr) activeSourcesXhr.abort();
+
+                    activeSourcesXhr = $.ajax({
+                        type: 'GET',
+                        url: "{{ route('assesment.bulk-duplicate.sources') }}",
+                        dataType: 'json',
+                        success: function (res) {
+                            $('#bulkMappingLoading').addClass('d-none');
+                            cachedActiveSources = res.sources || [];
+                            callback(cachedActiveSources);
+                        },
+                        error: function () {
+                            $('#bulkMappingLoading').addClass('d-none');
+                            callback([]);
+                        }
+                    });
+                }
+            }
+        }
+
+        function fetchBulkPreview(sources, mapping) {
             let mode = $('input[name="bulk_selection_mode"]:checked').val();
             let targetContext = $('input[name="bulk_target_context"]:checked').val();
             let trainingplanId = $('#bulk_playlist_id').val();
@@ -380,12 +602,14 @@
                 return;
             }
 
-            let selectedIds = [];
-            $('.assessment-select-checkbox:checked').each(function () {
-                selectedIds.push(parseInt($(this).val()));
-            });
+            if (!sources) {
+                sources = (mode === 'selected') ? getCurrentSelectedSources() : (cachedActiveSources || []);
+            }
+            if (!mapping) {
+                mapping = getCurrentContentMapping();
+            }
 
-            if (mode === 'selected' && selectedIds.length === 0) {
+            if (mode === 'selected' && sources.length === 0) {
                 $('#previewTotal').text('0');
                 $('#previewWillCreate').text('0');
                 $('#previewAlreadyExists').text('0');
@@ -394,12 +618,15 @@
                 return;
             }
 
+            let sourceIds = sources.map(function (s) { return s.id; });
+
             let payload = {
                 _token: "{{ csrf_token() }}",
                 target_context: targetContext,
                 trainingplan_id: targetContext === 'playlist' ? trainingplanId : null,
                 select_all: (mode === 'all_active') ? 1 : 0,
-                source_ids: (mode === 'all_active') ? [] : selectedIds
+                source_ids: sourceIds,
+                content_mapping: mapping
             };
 
             if (previewXhr) {
@@ -437,7 +664,7 @@
                             $('#bulkPreviewNotice').text('Existing assessments will remain unchanged. ' + data.will_be_created + ' new assessment copy(ies) will be created.');
                         }
 
-                        if (data.will_be_created > 0) {
+                        if (data.will_be_created > 0 && validateMapping()) {
                             $('#btnSubmitBulkDuplicate').prop('disabled', false);
                         } else {
                             $('#btnSubmitBulkDuplicate').prop('disabled', true);
@@ -459,7 +686,7 @@
         }
 
         $(document).on('change', 'input[name="bulk_selection_mode"]', function () {
-            fetchBulkPreview();
+            refreshMappingAndPreview();
         });
 
         $(document).on('change', 'input[name="bulk_target_context"]', function () {
@@ -470,25 +697,35 @@
                 $('#bulkPlaylistSelectWrapper').addClass('d-none');
                 $('#bulk_playlist_id').val('');
             }
-            fetchBulkPreview();
+            refreshMappingAndPreview();
         });
 
         $(document).on('change', '#bulk_playlist_id', function () {
             if ($(this).val()) {
                 $('#bulkPlaylistError').addClass('d-none');
             }
-            fetchBulkPreview();
+            refreshMappingAndPreview();
+        });
+
+        $(document).on('change', '.bulk-content-select', function () {
+            if (validateMapping()) {
+                fetchBulkPreview(null, getCurrentContentMapping());
+            }
         });
 
         $('#modalBulkDuplicateAssessment').on('show.bs.modal', function () {
             updateBulkSelectionState();
-            fetchBulkPreview();
+            refreshMappingAndPreview();
         });
 
         $('#btnSubmitBulkDuplicate').on('click', function (e) {
             e.preventDefault();
             let $btn = $(this);
             if ($btn.data('submitting') === true) return;
+
+            if (!validateMapping()) {
+                return;
+            }
 
             let mode = $('input[name="bulk_selection_mode"]:checked').val();
             let targetContext = $('input[name="bulk_target_context"]:checked').val();
@@ -500,22 +737,23 @@
                 return;
             }
 
-            let selectedIds = [];
-            $('.assessment-select-checkbox:checked').each(function () {
-                selectedIds.push(parseInt($(this).val()));
-            });
+            let sources = (mode === 'selected') ? getCurrentSelectedSources() : (cachedActiveSources || []);
+            let selectedIds = sources.map(function (s) { return s.id; });
 
             if (mode === 'selected' && selectedIds.length === 0) {
                 showToast('Please select at least one active Content Assessment.', 'danger');
                 return;
             }
 
+            let mapping = getCurrentContentMapping();
+
             let payload = {
                 _token: "{{ csrf_token() }}",
                 target_context: targetContext,
                 trainingplan_id: targetContext === 'playlist' ? trainingplanId : null,
                 select_all: (mode === 'all_active') ? 1 : 0,
-                source_ids: (mode === 'all_active') ? [] : selectedIds
+                source_ids: selectedIds,
+                content_mapping: mapping
             };
 
             $btn.data('submitting', true).prop('disabled', true);
@@ -553,6 +791,7 @@
                         $('#bulkResultDetails').html(detailsHtml);
                         $('#bulkExecutionResults').removeClass('d-none');
                         $('#bulkPreviewSection').addClass('d-none');
+                        $('#bulkMappingSection').addClass('d-none');
                     }
 
                     showToast(res.message || 'Duplication completed.', 'success');
@@ -583,11 +822,14 @@
         $('#modalBulkDuplicateAssessment').on('hidden.bs.modal', function () {
             $('#bulkExecutionResults').addClass('d-none');
             $('#bulkPreviewSection').removeClass('d-none');
+            $('#bulkMappingSection').removeClass('d-none');
+            $('#bulkMappingErrorAlert').addClass('d-none');
             $('#bulkPlaylistError').addClass('d-none');
             $('#bulkPlaylistSelectWrapper').addClass('d-none');
             $('#bulk_playlist_id').val('');
             $('#bulk_target_content').prop('checked', true);
             $('#bulk_mode_selected').prop('checked', true);
+            currentPlaylistContents = [];
 
             let $btn = $('#btnSubmitBulkDuplicate');
             $btn.data('submitting', false).prop('disabled', false);

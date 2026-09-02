@@ -91,8 +91,12 @@ class AssessmentDuplicateService
                         throw new \InvalidArgumentException("Invalid content_for context: {$overrides['content_for']}. Must be 'content' or 'playlist'.");
                     }
                 }
-                // Guarantee content_id is preserved exactly as original
-                $newAssesment->content_id = $assesment->content_id;
+                // If content_id override is explicitly supplied, use it; otherwise preserve source content_id
+                if (isset($overrides['content_id']) && !empty($overrides['content_id'])) {
+                    $newAssesment->content_id = (int) $overrides['content_id'];
+                } else {
+                    $newAssesment->content_id = $assesment->content_id;
+                }
             } elseif (isset($overrides['content_for'])) {
                 throw new \InvalidArgumentException('Only content assessments can have content context overrides.');
             }

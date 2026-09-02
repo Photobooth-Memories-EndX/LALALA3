@@ -559,11 +559,12 @@ class AssesmentController extends Controller
     public function previewBulkDuplicate(Request $request, AssessmentBulkDuplicateService $bulkService)
     {
         $validated = $request->validate([
-            'target_context'  => 'required|in:content,playlist',
-            'trainingplan_id' => 'required_if:target_context,playlist|nullable|integer|exists:trainingplan,id',
-            'select_all'      => 'nullable|boolean',
-            'source_ids'      => 'required_without:select_all|nullable|array',
-            'source_ids.*'    => 'integer',
+            'target_context'   => 'required|in:content,playlist',
+            'trainingplan_id'  => 'required_if:target_context,playlist|nullable|integer|exists:trainingplan,id',
+            'select_all'       => 'nullable|boolean',
+            'source_ids'       => 'required_without:select_all|nullable|array',
+            'source_ids.*'     => 'integer',
+            'content_mapping'  => 'nullable|array',
         ]);
 
         $isSelectAll = $request->boolean('select_all');
@@ -575,9 +576,19 @@ class AssesmentController extends Controller
             ]);
         }
 
+        if (!empty($request->input('content_mapping'))) {
+            $mappingValues = array_values(array_filter($request->input('content_mapping')));
+            if (count($mappingValues) !== count(array_unique($mappingValues))) {
+                throw ValidationException::withMessages([
+                    'content_mapping' => 'Each Content can only be assigned to one Assessment.',
+                ]);
+            }
+        }
+
         $options = [
             'target_context'  => $validated['target_context'],
             'trainingplan_id' => !empty($validated['trainingplan_id']) ? (int) $validated['trainingplan_id'] : null,
+            'content_mapping' => $request->input('content_mapping', []),
         ];
 
         try {
@@ -611,11 +622,12 @@ class AssesmentController extends Controller
     public function bulkDuplicate(Request $request, AssessmentBulkDuplicateService $bulkService)
     {
         $validated = $request->validate([
-            'target_context'  => 'required|in:content,playlist',
-            'trainingplan_id' => 'required_if:target_context,playlist|nullable|integer|exists:trainingplan,id',
-            'select_all'      => 'nullable|boolean',
-            'source_ids'      => 'required_without:select_all|nullable|array',
-            'source_ids.*'    => 'integer',
+            'target_context'   => 'required|in:content,playlist',
+            'trainingplan_id'  => 'required_if:target_context,playlist|nullable|integer|exists:trainingplan,id',
+            'select_all'       => 'nullable|boolean',
+            'source_ids'       => 'required_without:select_all|nullable|array',
+            'source_ids.*'     => 'integer',
+            'content_mapping'  => 'nullable|array',
         ]);
 
         $isSelectAll = $request->boolean('select_all');
@@ -627,9 +639,19 @@ class AssesmentController extends Controller
             ]);
         }
 
+        if (!empty($request->input('content_mapping'))) {
+            $mappingValues = array_values(array_filter($request->input('content_mapping')));
+            if (count($mappingValues) !== count(array_unique($mappingValues))) {
+                throw ValidationException::withMessages([
+                    'content_mapping' => 'Each Content can only be assigned to one Assessment.',
+                ]);
+            }
+        }
+
         $options = [
             'target_context'  => $validated['target_context'],
             'trainingplan_id' => !empty($validated['trainingplan_id']) ? (int) $validated['trainingplan_id'] : null,
+            'content_mapping' => $request->input('content_mapping', []),
         ];
 
         try {
@@ -679,5 +701,47 @@ class AssesmentController extends Controller
 
             return redirect()->back()->with('danger', 'An unexpected error occurred during bulk duplication.');
         }
+    }
+
+    public function getPlaylistContents($id)
+    {
+        $trainingplan = TrainingPlan::findOrFail($id);
+        $contents = $trainingplan->contents()
+            ->select('content.id', 'content.title')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id'    => $item->id,
+                    'title' => $item->title,
+                ];
+            });
+
+        return response()->json([
+            'success'  => true,
+            'contents' => $contents,
+        ]);
+    }
+
+    public function getActiveContentSources()
+    {
+        $sources = Assesment::where('type', 'content')
+            ->where('status', 'OK')
+            ->with('contents:id,title')
+            ->orderBy('title', 'asc')
+            ->get()
+            ->map(function ($a) {
+                $content = $a->contents->first();
+                return [
+                    'id'            => $a->id,
+                    'title'         => $a->title,
+                    'content_id'    => $a->content_id,
+                    'content_title' => $content ? $content->title : ('Content ' . $a->content_id),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'sources' => $sources,
+        ]);
     }
 }

@@ -498,4 +498,171 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
         $response->assertSee('assessment-select-checkbox', false);
         $response->assertSee('assessment-select-checkbox-disabled', false);
     }
+
+    public function test_duplicate_many_with_content_mapping_reassigns_content_id(): void
+    {
+        $a1 = Assesment::create([
+            'title'       => 'Mapping Test A1 ' . Str::random(5),
+            'type'        => 'content',
+            'content_id'  => $this->content1->id,
+            'content_for' => 'content',
+            'status'      => 'OK',
+        ]);
+
+        $a2 = Assesment::create([
+            'title'       => 'Mapping Test A2 ' . Str::random(5),
+            'type'        => 'content',
+            'content_id'  => $this->content2->id,
+            'content_for' => 'content',
+            'status'      => 'OK',
+        ]);
+
+        // Swap mapping: A1 -> content2, A2 -> content1
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('assesment.bulk-duplicate'), [
+                'target_context'   => 'content',
+                'source_ids'       => [$a1->id, $a2->id],
+                'content_mapping'  => [
+                    $a1->id => $this->content2->id,
+                    $a2->id => $this->content1->id,
+                ],
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'data'    => [
+                'total'   => 2,
+                'success' => 2,
+            ],
+        ]);
+
+        $created = $response->json('data.created_items');
+        $newA1 = Assesment::findOrFail($created[0]['new_assessment_id']);
+        $newA2 = Assesment::findOrFail($created[1]['new_assessment_id']);
+
+        $this->assertSame($this->content2->id, (int) $newA1->content_id);
+        $this->assertSame($this->content1->id, (int) $newA2->content_id);
+    }
+
+    public function test_preview_with_content_mapping_uses_mapped_content_for_idempotency(): void
+    {
+        // Pre-create active assessment for content2 in playlist
+        Assesment::create([
+            'title'           => 'Existing Content2 In Playlist ' . Str::random(5),
+            'type'            => 'content',
+            'content_id'      => $this->content2->id,
+            'content_for'     => 'playlist',
+            'trainingplan_id' => $this->playlist->id,
+            'status'          => 'OK',
+        ]);
+
+        // Source assessment A1 is originally for content1
+        $a1 = Assesment::create([
+            'title'       => 'Source A1 ' . Str::random(5),
+            'type'        => 'content',
+            'content_id'  => $this->content1->id,
+            'content_for' => 'content',
+            'status'      => 'OK',
+        ]);
+
+        // Map A1 -> content2 (which already exists in playlist)
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('assesment.bulk-duplicate.preview'), [
+                'target_context'   => 'playlist',
+                'trainingplan_id'  => $this->playlist->id,
+                'source_ids'       => [$a1->id],
+                'content_mapping'  => [
+                    $a1->id => $this->content2->id,
+                ],
+            ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'data'    => [
+                'total'           => 1,
+                'will_be_created' => 0,
+                'already_exists'  => 1,
+            ],
+        ]);
+    }
+
+    public function test_duplicate_content_mapping_is_rejected_with_validation_error(): void
+    {
+        $a1 = Assesment::create([
+            'title'       => 'DupMap A1 ' . Str::random(5),
+            'type'        => 'content',
+            'content_id'  => $this->content1->id,
+            'content_for' => 'content',
+            'status'      => 'OK',
+        ]);
+
+        $a2 = Assesment::create([
+            'title'       => 'DupMap A2 ' . Str::random(5),
+            'type'        => 'content',
+            'content_id'  => $this->content2->id,
+            'content_for' => 'content',
+            'status'      => 'OK',
+        ]);
+
+        // Both mapped to content1 (duplicate content mapping)
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('assesment.bulk-duplicate'), [
+                'target_context'   => 'content',
+                'source_ids'       => [$a1->id, $a2->id],
+                'content_mapping'  => [
+                    $a1->id => $this->content1->id,
+                    $a2->id => $this->content1->id,
+                ],
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['content_mapping']);
+    }
+
+    public function test_get_playlist_contents_endpoint_returns_contents_for_playlist(): void
+    {
+        // Attach content1 to playlist
+        $this->playlist->contents()->attach($this->content1->id, ['content_order' => 1]);
+
+        $response = $this->actingAs($this->admin)
+            ->getJson(route('assesment.playlist.contents', $this->playlist->id));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success'  => true,
+            'contents' => [
+                [
+                    'id'    => $this->content1->id,
+                    'title' => $this->content1->title,
+                ],
+            ],
+        ]);
+    }
+
+    public function test_get_active_content_sources_endpoint_returns_active_content_assessments(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->getJson(route('assesment.bulk-duplicate.sources'));
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'success',
+            'sources' => [
+                '*' => ['id', 'title', 'content_id', 'content_title'],
+            ],
+        ]);
+    }
+
+    public function test_modal_renders_assessment_content_mapping_section(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('assesment.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Assessment Content Mapping', false);
+        $response->assertSee('bulkMappingTable', false);
+        $response->assertSee('bulkMappingTbody', false);
+        $response->assertSee('Please select a Playlist above to load and map its contents.', false);
+    }
 }

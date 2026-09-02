@@ -34,6 +34,7 @@ class AssessmentBulkDuplicateService
 
         // Track content_ids to prevent within-batch duplicates during preview
         $previewProcessedContentIds = [];
+        $contentMapping = $options['content_mapping'] ?? [];
 
         foreach ($sourceIds as $id) {
             $assessment = $assessments->get($id);
@@ -68,13 +69,17 @@ class AssessmentBulkDuplicateService
                 continue;
             }
 
+            $targetContentId = isset($contentMapping[$id]) && !empty($contentMapping[$id])
+                ? (int) $contentMapping[$id]
+                : (int) $assessment->content_id;
+
             // Check playlist idempotency if target is playlist
             if ($targetContext === 'playlist') {
-                $contentId = (int) $assessment->content_id;
+                $contentId = $targetContentId;
                 if (in_array($contentId, $previewProcessedContentIds, true) || $this->isAlreadyInPlaylist($contentId, (int) $trainingplanId)) {
                     $alreadyExists[] = [
                         'source_assessment_id' => $assessment->id,
-                        'content_id'           => $assessment->content_id,
+                        'content_id'           => $targetContentId,
                         'title'                => $assessment->title,
                         'reason'               => 'ALREADY_EXISTS',
                     ];
@@ -85,7 +90,7 @@ class AssessmentBulkDuplicateService
 
             $willBeCreated[] = [
                 'source_assessment_id' => $assessment->id,
-                'content_id'           => $assessment->content_id,
+                'content_id'           => $targetContentId,
                 'title'                => $assessment->title,
             ];
         }
@@ -140,6 +145,7 @@ class AssessmentBulkDuplicateService
 
         // Track content_ids duplicated during this batch run to prevent within-batch duplicates
         $batchProcessedContentIds = [];
+        $contentMapping = $options['content_mapping'] ?? [];
 
         foreach ($sourceIds as $id) {
             $assessment = $assessments->get($id);
@@ -174,14 +180,18 @@ class AssessmentBulkDuplicateService
                 continue;
             }
 
+            $targetContentId = isset($contentMapping[$id]) && !empty($contentMapping[$id])
+                ? (int) $contentMapping[$id]
+                : (int) $assessment->content_id;
+
             // Playlist idempotency check
             if ($targetContext === 'playlist') {
-                $contentId = (int) $assessment->content_id;
+                $contentId = $targetContentId;
 
                 if (in_array($contentId, $batchProcessedContentIds, true) || $this->isAlreadyInPlaylist($contentId, (int) $trainingplanId)) {
                     $skippedItems[] = [
                         'source_assessment_id' => $assessment->id,
-                        'content_id'           => $assessment->content_id,
+                        'content_id'           => $targetContentId,
                         'title'                => $assessment->title,
                         'reason'               => 'ALREADY_EXISTS',
                     ];
@@ -190,10 +200,14 @@ class AssessmentBulkDuplicateService
             }
 
             try {
-                $duplicated = $this->duplicateService->duplicate($assessment, $overrides);
+                $itemOverrides = array_merge($overrides, [
+                    'content_id' => $targetContentId,
+                ]);
 
-                if ($targetContext === 'playlist' && $assessment->content_id) {
-                    $batchProcessedContentIds[] = (int) $assessment->content_id;
+                $duplicated = $this->duplicateService->duplicate($assessment, $itemOverrides);
+
+                if ($targetContext === 'playlist' && $targetContentId) {
+                    $batchProcessedContentIds[] = $targetContentId;
                 }
 
                 $createdItems[] = [

@@ -48,6 +48,7 @@
                    value="{{ $list->id }}"
                    data-title="{{ $list->title }}"
                    data-content-id="{{ $list->content_id }}"
+                   data-content-title="{{ $list->content->title ?? ($list->contents->first()->title ?? 'Content ' . $list->content_id) }}"
                    data-type="{{ $list->type }}"
                    data-content-for="{{ $list->content_for }}"
                    data-trainingplan-id="{{ $list->trainingplan_id ?? '' }}"

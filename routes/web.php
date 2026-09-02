@@ -309,6 +309,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::match(['get', 'post'], 'assesment/{assesment}/duplicate', [AssesmentQuestionController::class, 'clone'])->name('assesment.duplicate');
         Route::get('assesmentresult', [AssesmentResultController::class, 'index'])->name('assesment.result.all');
         Route::get('assesment/result/{slug}', [AssesmentResultController::class, 'result'])->name('assesment.result.result');
+        Route::get('assesment/bulk-duplicate/sources', [AssesmentController::class, 'getActiveContentSources'])->name('assesment.bulk-duplicate.sources');
+        Route::get('assesment/playlist/{id}/contents', [AssesmentController::class, 'getPlaylistContents'])->name('assesment.playlist.contents');
         Route::post('assesment/bulk-duplicate/preview', [AssesmentController::class, 'previewBulkDuplicate'])->name('assesment.bulk-duplicate.preview');
         Route::post('assesment/bulk-duplicate', [AssesmentController::class, 'bulkDuplicate'])->name('assesment.bulk-duplicate');
         Route::post('assesment/changestatus', [AssesmentController::class, 'changestatus'])->name('assesment.changestatus');

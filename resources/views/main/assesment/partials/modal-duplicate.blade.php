@@ -149,7 +149,40 @@
                     </div>
                 </div>
 
-                {{-- Section 3: Live Preview Box --}}
+                {{-- Section 3: Assessment Content Mapping --}}
+                <div class="mb-3" id="bulkMappingSection">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-0">Assessment Content Mapping</label>
+                        <span id="bulkMappingLoading" class="spinner-border spinner-border-sm text-primary d-none" role="status"></span>
+                    </div>
+
+                    {{-- Playlist Waiting Notice (shown when Playlist Content chosen but no playlist selected) --}}
+                    <div id="bulkMappingPlaylistNotice" class="alert alert-info py-2 px-3 small d-none mb-2">
+                        <i class="fas fa-info-circle me-1"></i> Please select a Playlist above to load and map its contents.
+                    </div>
+
+                    {{-- Validation Error Alert inside mapping section --}}
+                    <div id="bulkMappingErrorAlert" class="alert alert-danger py-2 px-3 small d-none mb-2">
+                        <i class="fas fa-exclamation-triangle me-1"></i> <span id="bulkMappingErrorMessage">Each Content can only be assigned to one Assessment.</span>
+                    </div>
+
+                    <div class="table-responsive border rounded-3 bg-white" style="max-height: 220px; overflow-y: auto;" id="bulkMappingTableWrapper">
+                        <table class="table table-sm table-hover align-middle mb-0" id="bulkMappingTable">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th class="text-center" style="width: 45px;">No.</th>
+                                    <th style="min-width: 170px;">Assessment</th>
+                                    <th style="min-width: 170px;">Content</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulkMappingTbody">
+                                {{-- Dynamically populated --}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {{-- Section 4: Live Preview Box --}}
                 <div id="bulkPreviewSection" class="mb-3">
                     <div class="p-3 bg-light rounded-3 border">
                         <div class="d-flex justify-content-between align-items-center mb-2">

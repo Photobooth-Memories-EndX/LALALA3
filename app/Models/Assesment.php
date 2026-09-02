@@ -55,6 +55,11 @@ class Assesment extends Model
         return $this->hasMany(Content::class, 'id', 'content_id');
     }
 
+    public function content()
+    {
+        return $this->belongsTo(Content::class, 'content_id');
+    }
+
     public function trainingplan()
     {
         return $this->belongsTo(TrainingPlan::class, 'trainingplan_id', 'id')->withTrashed()->withDefault();
