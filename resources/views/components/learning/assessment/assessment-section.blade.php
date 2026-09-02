@@ -88,15 +88,19 @@
                     </div>
 
                     <div class="assessment-toolbar-search">
-                        <label class="visually-hidden" for="assessmentSearch">Search assessments</label>
-                        <div class="input-icon">
-                            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                            <input type="search"
-                                   class="form-control"
-                                   id="assessmentSearch"
-                                   placeholder="Search assessment..."
-                                   value="{{ request('assessment_search') }}"
-                                   autocomplete="off">
+                        <label class="visually-hidden" for="assessment-search-input">Search assessments</label>
+                        <div class="position-relative assessment-search-container flex-grow-1">
+                            <div class="input-icon">
+                                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                <input type="text"
+                                       class="form-control"
+                                       id="assessment-search-input"
+                                       name="assessment_search"
+                                       placeholder="Search assessment..."
+                                       value="{{ request('assessment_search') }}"
+                                       autocomplete="off">
+                            </div>
+                            <div id="assessment-search-results" class="dropdown-menu shadow-sm w-100 overflow-auto position-absolute mt-1" style="display: none; max-height: 300px; z-index: 1050;"></div>
                         </div>
                     </div>
 

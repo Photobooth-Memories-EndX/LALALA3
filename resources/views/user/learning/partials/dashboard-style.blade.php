@@ -131,14 +131,16 @@
     }
 
     /*
-     * Live Autocomplete Dropdown Search for Ongoing Learning
+     * Live Autocomplete Dropdown Search for Ongoing & Assessment Learning
      */
-    .search-ongoing-container {
+    .search-ongoing-container,
+    .assessment-search-container {
         position: relative;
         width: 100%;
     }
 
-    #ongoing-search-results {
+    #ongoing-search-results,
+    #assessment-search-results {
         position: absolute;
         top: 100%;
         left: 0;
@@ -151,18 +153,22 @@
         background: #ffffff;
     }
 
-    #ongoing-search-results .dropdown-item {
+    #ongoing-search-results .dropdown-item,
+    #assessment-search-results .dropdown-item {
         padding: .6rem .85rem;
         transition: background-color .15s ease;
         text-decoration: none;
     }
 
     #ongoing-search-results .dropdown-item:hover,
-    #ongoing-search-results .dropdown-item:focus {
+    #ongoing-search-results .dropdown-item:focus,
+    #assessment-search-results .dropdown-item:hover,
+    #assessment-search-results .dropdown-item:focus {
         background-color: rgba(15, 94, 156, .08);
     }
 
-    #ongoing-search-results .dropdown-item:not(:last-child) {
+    #ongoing-search-results .dropdown-item:not(:last-child),
+    #assessment-search-results .dropdown-item:not(:last-child) {
         border-bottom: 1px solid rgba(0, 0, 0, .05);
     }
 
@@ -743,31 +749,43 @@
     }
 
     [data-bs-theme="dark"] #ongoing-search-results,
-    body.dark-mode #ongoing-search-results {
+    [data-bs-theme="dark"] #assessment-search-results,
+    body.dark-mode #ongoing-search-results,
+    body.dark-mode #assessment-search-results {
         background: #152235;
         border-color: rgba(255, 255, 255, 0.08);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     }
 
     [data-bs-theme="dark"] #ongoing-search-results .dropdown-item,
-    body.dark-mode #ongoing-search-results .dropdown-item {
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item,
+    body.dark-mode #ongoing-search-results .dropdown-item,
+    body.dark-mode #assessment-search-results .dropdown-item {
         color: #f1f5f9;
     }
 
     [data-bs-theme="dark"] #ongoing-search-results .dropdown-item:not(:last-child),
-    body.dark-mode #ongoing-search-results .dropdown-item:not(:last-child) {
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item:not(:last-child),
+    body.dark-mode #ongoing-search-results .dropdown-item:not(:last-child),
+    body.dark-mode #assessment-search-results .dropdown-item:not(:last-child) {
         border-bottom-color: rgba(255, 255, 255, 0.06);
     }
 
     [data-bs-theme="dark"] #ongoing-search-results .dropdown-item:hover,
     [data-bs-theme="dark"] #ongoing-search-results .dropdown-item:focus,
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item:hover,
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item:focus,
     body.dark-mode #ongoing-search-results .dropdown-item:hover,
-    body.dark-mode #ongoing-search-results .dropdown-item:focus {
+    body.dark-mode #ongoing-search-results .dropdown-item:focus,
+    body.dark-mode #assessment-search-results .dropdown-item:hover,
+    body.dark-mode #assessment-search-results .dropdown-item:focus {
         background: rgba(106, 174, 214, 0.14);
     }
 
     [data-bs-theme="dark"] #ongoing-search-results .dropdown-item .text-dark,
-    body.dark-mode #ongoing-search-results .dropdown-item .text-dark {
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item .text-dark,
+    body.dark-mode #ongoing-search-results .dropdown-item .text-dark,
+    body.dark-mode #assessment-search-results .dropdown-item .text-dark {
         color: #f1f5f9 !important;
     }
 </style>

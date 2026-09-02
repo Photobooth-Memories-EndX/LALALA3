@@ -163,8 +163,10 @@ Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
 | Assessment User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/assessment/search-autocomplete', [AssesmentUserController::class, 'autocomplete'])->middleware('auth')->name('user.assessment.autocomplete');
 Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
     Route::get('/', [AssesmentUserController::class, 'index'])->name('assesment.user.index');
+    Route::get('/search-autocomplete', [AssesmentUserController::class, 'autocomplete'])->name('assesment.user.autocomplete');
 
     Route::group(['middleware' => 'prevent-back-button'], function () {
         Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
