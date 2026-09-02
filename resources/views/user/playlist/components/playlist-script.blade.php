@@ -96,7 +96,7 @@
                 (($('#playlistStatusFilter').val() || '') !== '' && $('#playlistStatusFilter').val() !== 'all') ||
                 (($('#playlistMonthFilter').val() || '') !== '' && $('#playlistMonthFilter').val() !== 'all') ||
                 (($('#playlistYearFilter').val() || '') !== '' && $('#playlistYearFilter').val() !== 'all') ||
-                Boolean(($('#playlistSearch').val() || '').trim());
+                Boolean(($('#playlist-search-input, #playlistSearch').val() || '').trim());
 
             if (activeModalCount > 0) {
                 $('#playlistMoreFiltersCount').text(activeModalCount).removeClass('d-none');
@@ -109,7 +109,7 @@
         }
 
         function filterPlaylist() {
-            const keyword = ($('#playlistSearch').val() || '').trim().toLowerCase();
+            const keyword = ($('#playlist-search-input, #playlistSearch').val() || '').trim().toLowerCase();
             const status = $('#playlistStatusFilter').val();
             const month = $('#playlistMonthFilter').val();
             const year = $('#playlistYearFilter').val();
@@ -234,18 +234,106 @@
             updateFilterState();
         }
 
-        // Event listeners
-        $('#playlistSearch').on('input', function () {
-            filterPlaylist();
-        });
+        function escapePlaylistHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
+        // ── Live Autocomplete Search for Playlist Filter ────────────────────────
+        function initPlaylistAutocomplete() {
+            var searchInput = document.getElementById('playlist-search-input') || document.getElementById('playlistSearch');
+            var searchResults = document.getElementById('playlist-search-results');
+            var debounceTimer = null;
+
+            if (!searchInput || !searchResults) return;
+
+            $(searchInput).on('input', function () {
+                var value = $.trim(this.value);
+                clearTimeout(debounceTimer);
+
+                // Filter local items immediately
+                filterPlaylist();
+
+                if (value.length < 1) {
+                    searchResults.style.display = 'none';
+                    searchResults.innerHTML = '';
+                    return;
+                }
+
+                debounceTimer = setTimeout(function () {
+                    fetch('/playlist/search-autocomplete?q=' + encodeURIComponent(value), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data || data.length === 0) {
+                            searchResults.innerHTML = '<div class="dropdown-item text-muted small py-2 px-3">No playlists found</div>';
+                        } else {
+                            var html = '';
+                            data.forEach(function (item) {
+                                var countLabel = (item.total_contents || 0) + ' ' + (item.total_contents === 1 ? 'Content' : 'Contents');
+                                var hoursLabel = item.learning_hours ? item.learning_hours + ' hrs' : '';
+
+                                var subDetails = [];
+                                subDetails.push(countLabel);
+                                if (hoursLabel) subDetails.push(hoursLabel);
+
+                                html += '<a href="#" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle playlist-search-item" data-title="' + escapePlaylistHtml(item.title) + '">' +
+                                    '<div class="d-flex align-items-center justify-content-between mb-1">' +
+                                        '<span class="text-dark small fw-semibold text-truncate me-2">' + escapePlaylistHtml(item.title) + '</span>' +
+                                        '<span class="badge bg-teal-lt text-teal small flex-shrink-0">PLAYLIST</span>' +
+                                    '</div>' +
+                                    '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.join(' &bull; ') + '</div>' +
+                                '</a>';
+                            });
+                            searchResults.innerHTML = html;
+                        }
+                        searchResults.style.display = 'block';
+                    })
+                    .catch(function () {
+                        searchResults.style.display = 'none';
+                    });
+                }, 250);
+            });
+
+            $(searchInput).on('focus', function () {
+                if ($.trim(this.value).length >= 1 && searchResults.children.length > 0) {
+                    searchResults.style.display = 'block';
+                }
+            });
+
+            $(document).on('click', '.playlist-search-item', function (event) {
+                event.preventDefault();
+                var title = String($(this).data('title') || '');
+                $('#playlist-search-input, #playlistSearch').val(title);
+                if (searchResults) searchResults.style.display = 'none';
+                filterPlaylist();
+            });
+
+            document.addEventListener('click', function (e) {
+                if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+
+        initPlaylistAutocomplete();
+
+        // Event listeners
         $('#playlistSearchAction, #playlistApplyFilter, #playlistApplyMoreFilters').on('click', function () {
             filterPlaylist();
         });
 
-        $('#playlistSearch').on('keydown', function (event) {
+        $('#playlist-search-input, #playlistSearch').on('keydown', function (event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
+                var searchResults = document.getElementById('playlist-search-results');
+                if (searchResults) searchResults.style.display = 'none';
                 filterPlaylist();
             }
         });
@@ -264,7 +352,12 @@
         });
 
         function resetAllFilters() {
-            $('#playlistSearch').val('');
+            $('#playlist-search-input, #playlistSearch').val('');
+            var searchResults = document.getElementById('playlist-search-results');
+            if (searchResults) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+            }
             $('#playlistStatusFilter, #playlistMonthFilter, #playlistYearFilter').val('');
             $('#playlistFilterAuthor, #playlistFilterDeadlineFromDate, #playlistFilterDeadlineToDate, #playlistFilterCreatedFromDate, #playlistFilterCreatedToDate').val('').attr('type', 'text');
             $('#playlistFilterSort').val('all');

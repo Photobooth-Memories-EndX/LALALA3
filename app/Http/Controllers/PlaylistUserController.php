@@ -13,6 +13,7 @@ use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Services\CertificateEligibilityService;
 use App\Services\Learning\LearningProgressResolver;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -23,6 +24,48 @@ class PlaylistUserController extends Controller
 {
     public function __construct(private LearningProgressResolver $resolver)
     {
+    }
+
+    /**
+     * AJAX live autocomplete search for active published playlists.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->get('q', ''));
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        $keyword = '%' . $query . '%';
+
+        $playlists = TrainingPlan::withCount([
+                'trainingplandetail as total_contents' => function ($q) {
+                    $q->whereHas('content', fn ($cq) => $cq->where('active', 'Active'));
+                }
+            ])
+            ->where('active', 'Active')
+            ->whereHas('trainingplandetail.content', fn ($q) => $q->where('active', 'Active'))
+            ->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', $keyword)
+                    ->orWhere('slug', 'like', $keyword)
+                    ->orWhere('url_link', 'like', $keyword)
+                    ->orWhereHas('trainingplandetail.content', fn ($cq) => $cq->where('title', 'like', $keyword));
+            })
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
+        $results = $playlists->map(function ($playlist) {
+            return [
+                'id'             => $playlist->id,
+                'title'          => $playlist->title,
+                'slug'           => $playlist->slug,
+                'total_contents' => (int) ($playlist->total_contents ?? 0),
+                'learning_hours' => $playlist->learning_hours,
+            ];
+        });
+
+        return response()->json($results->values());
     }
 
     public function index()

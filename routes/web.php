@@ -147,8 +147,10 @@ Route::group(['prefix' => 'news', 'middleware' => 'auth'], function () {
 | Content User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/content/search-autocomplete', [ContentUserController::class, 'autocomplete'])->middleware('auth')->name('user.content.autocomplete');
 Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
     Route::get('/', [ContentUserController::class, 'index'])->name('content.user.index');
+    Route::get('/search-autocomplete', [ContentUserController::class, 'autocomplete'])->name('content.user.autocomplete');
     Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
     Route::post('progress/update', [ContentUserController::class, 'updateProgress'])->name('content.user.progress.update');
     Route::put('progress/{slug}', [ContentUserController::class, 'progress'])->name('content.user.progress');
@@ -193,8 +195,10 @@ Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
 | Playlist User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/playlist/search-autocomplete', [PlaylistUserController::class, 'autocomplete'])->middleware('auth')->name('user.playlist.autocomplete');
 Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
     Route::get('/', [PlaylistUserController::class, 'index'])->name('playlist.user.index');
+    Route::get('/search-autocomplete', [PlaylistUserController::class, 'autocomplete'])->name('playlist.user.autocomplete');
     Route::post('/progress/update', [PlaylistProgressController::class, 'updateProgress'])->name('playlist.user.progress.update');
     Route::post('/{trainingplan}/debug-state', [PlaylistDebugController::class, 'update'])
         ->name('playlist.debug.update');
