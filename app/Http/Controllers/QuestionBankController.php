@@ -32,6 +32,14 @@ class QuestionBankController extends Controller
         $questionBank->created_date = $request->input('created_date');
         $questionBank->save();
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => $request->title . " has already successfully created in the question bank.",
+                'redirect' => route('question.bank.index')
+            ]);
+        }
+
         return redirect()->route('question.bank.index')->with('success',  $request->title . " has already successfully created in the question bank.");
     }
 
@@ -54,6 +62,14 @@ class QuestionBankController extends Controller
         $questionBank->title        = $request->title;
         $questionBank->created_date = $request->created_date;
         $questionBank->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => "Question Bank has already successfully updated.",
+                'redirect' => route('question.bank.index')
+            ]);
+        }
 
         return redirect()->route('question.bank.index')->with('warning',  "Question Bank has already successfully updated.");
     }

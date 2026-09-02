@@ -189,16 +189,19 @@ class EventPhotoController extends Controller
      */
     public function store(Request $request)
     {
+        $isDraft = $request->input('action') === 'draft' || $request->input('action') === 'save';
+
         $request->validate([
-            'title' => 'required',
+            'title' => $isDraft ? 'nullable|string|max:255' : 'required',
             'category' => 'nullable|string|max:255',
         ]);
         $eventphoto = new EventPhoto();
 
-        $eventphoto->title = $request->input('title');
+        $eventphoto->title = $request->input('title') ?: 'Draft Gallery Event ' . date('Y-m-d H:i');
         $eventphoto->category = $request->input('category');
         $eventphoto->status = 'approved';
-        $eventphoto->eventdate = $request->input('eventdate');
+        $eventphoto->active = ($request->input('action') === 'publish') ? 'Active' : 'Inactive';
+        $eventphoto->eventdate = $request->input('eventdate') ?: date('Y-m-d');
 
         $eventphoto->likes = '0';
         $eventphoto->views = '0';
@@ -219,18 +222,23 @@ class EventPhotoController extends Controller
                 $arraydoc[] = $doc;
                 File::move(public_path('storage/gallery/tmp') . '/' . $doc, public_path('storage/gallery/photo/' . $newid . '') . '/' . $doc);
             }
-            EventPhoto::where('id', $newid)
-                ->update([
-                    'thumbnail' => $arraydoc[0],
-                    'photos' => json_encode($arraydoc)
-                ]);
+            if (!empty($arraydoc)) {
+                EventPhoto::where('id', $newid)
+                    ->update([
+                        'thumbnail' => $arraydoc[0],
+                        'photos' => json_encode($arraydoc)
+                    ]);
+            }
         }
-        if ($request->action == 'publish') {
-            EventPhoto::where('id', $newid)
-                ->update([
-                    'active' => 'Active'
-                ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'Event created successfully.',
+                'redirect' => route('manage.eventphoto.index')
+            ]);
         }
+
         return redirect()->route('manage.eventphoto.index')->with('success', 'Event created successfully.');
     }
 

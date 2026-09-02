@@ -3,24 +3,34 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
     <link href="{{ asset('css/bootstrap-toggle.min.css') }}" rel="stylesheet">
+    <style>
+        .btn-back {
+            color: #0c5b9e !important;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .btn-back:hover {
+            opacity: 0.85;
+            transform: translateX(-3px);
+        }
+    </style>
 @endpush
 
 @section('content')
-    <div class="page-header d-print-none">
+    <div class="page-header d-print-none mb-3">
         <div class="container-xl">
+            <!-- TOMBOL BACK RATA KIRI ATAS -->
+            <div class="mb-3">
+                <a href="{{ route('assesment.index') }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none">
+                    <i class="ti ti-arrow-left"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+
             <div class="row g-2 align-items-center">
                 <div class="col">
                     <h2 class="page-title">
                         Manage Question Bank
                     </h2>
-                </div>
-                <div class="col-auto ms-auto d-print-none">
-                    <div class="d-flex">
-                        <ol class="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-                            <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                            <li class="breadcrumb-item active" aria-current="page"><a href="#">Question Bank</a></li>
-                        </ol>
-                    </div>
                 </div>
             </div>
         </div>

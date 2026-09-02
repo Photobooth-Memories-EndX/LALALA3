@@ -175,52 +175,43 @@ class NewsController extends Controller
      */
     public function store(Request $request)
     {
+        $isDraft = $request->input('action') === 'draft' || $request->input('action') === 'save';
+
         $request->validate([
-
-            'title'       => 'required',
-
+            'title'       => $isDraft ? 'nullable|string|max:255' : 'required|string|max:255',
             'category'    => 'nullable|string|max:255',
-
-            'description' => 'required',
-
-            'image'       =>
-                'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-
+            'description' => $isDraft ? 'nullable' : 'required',
+            'image'       => $isDraft ? 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048' : 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $news = new News();
-
         $news->user_id = auth()->id();
-
-        $news->title = $request->title;
-
+        $news->title = $request->input('title') ?: 'Draft News ' . date('Y-m-d H:i');
         $news->category = $request->category;
-
         $news->status = 'approved';
-
-        $news->active = ($request->input('action') === 'draft' || $request->input('action') === 'save') ? 'Inactive' : 'Active';
-
-        $news->description = $request->description;
+        $news->active = $isDraft ? 'Inactive' : 'Active';
+        $news->description = $request->input('description') ?? '';
 
         if ($request->hasFile('image')) {
-
             $file = $request->file('image');
-
-            $extension =
-                $file->getClientOriginalExtension();
-
-            $filename =
-                time() . '.' . $extension;
-
+            $extension = $file->getClientOriginalExtension();
+            $filename = time() . '.' . $extension;
             $file->move(
                 public_path('storage/news'),
                 $filename
             );
-
             $news->image = $filename;
         }
 
         $news->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'News created successfully.',
+                'redirect' => route('manage.news.index')
+            ]);
+        }
 
         return redirect()
             ->route('manage.news.index')
