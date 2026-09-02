@@ -134,6 +134,9 @@
             <table class="table table-hover table-vcenter owl-table mb-0" id="MyTable">
                 <thead>
                     <tr>
+                        <th class="text-center" style="width: 40px;">
+                            <input type="checkbox" id="checkAllAssessments" class="form-check-input" title="Select all eligible visible assessments" data-toggle="tooltip">
+                        </th>
                         <th class="text-center" style="width: 50px;">No</th>
                         <th>Assessment</th>
                         <th class="text-center" style="width: 100px;">Type</th>

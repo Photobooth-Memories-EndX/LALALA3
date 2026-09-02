@@ -333,4 +333,99 @@ class AssessmentDuplicateServiceTest extends TestCase
         $duplicated->delete();
         $original->delete();
     }
+
+    public function test_duplicate_assessment_with_zero_questions_succeeds(): void
+    {
+        $original = Assesment::create([
+            'title'           => 'Unit Zero Questions ' . uniqid(),
+            'type'            => 'content',
+            'content_id'      => 45,
+            'content_for'     => 'content',
+            'trainingplan_id' => null,
+            'status'          => 'OK',
+            'passing_grade'   => 80,
+        ]);
+
+        $duplicated = $this->service->duplicate($original);
+
+        $this->assertNotEquals($original->id, $duplicated->id);
+        $this->assertSame(0, AssesmentQuestion::where('assesment_id', $duplicated->id)->count());
+        $this->assertSame(0, AssesmentQuestionBank::where('assesment_id', $duplicated->id)->count());
+        $this->assertSame(80, (int) $duplicated->passing_grade);
+
+        $duplicated->delete();
+        $original->delete();
+    }
+
+    public function test_duplicate_trainingplan_with_content_overrides_throws_exception(): void
+    {
+        $tp = Assesment::create([
+            'title'           => 'Unit TP Override ' . uniqid(),
+            'type'            => 'trainingplan',
+            'trainingplan_id' => 10,
+            'status'          => 'OK',
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        try {
+            $this->service->duplicate($tp, [
+                'content_for'     => 'playlist',
+                'trainingplan_id' => 10,
+            ]);
+        } finally {
+            $tp->delete();
+        }
+    }
+
+    public function test_duplicate_playlist_content_without_trainingplan_id_throws_exception(): void
+    {
+        $original = Assesment::create([
+            'title'       => 'Unit Missing TP ID ' . uniqid(),
+            'type'        => 'content',
+            'content_id'  => 45,
+            'content_for' => 'content',
+            'status'      => 'OK',
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        try {
+            $this->service->duplicate($original, [
+                'content_for' => 'playlist',
+                // trainingplan_id missing
+            ]);
+        } finally {
+            $original->delete();
+        }
+    }
+
+    public function test_transaction_rollback_leaves_no_partial_records(): void
+    {
+        $countBefore = Assesment::count();
+
+        $original = Assesment::create([
+            'title'       => 'Unit Rollback Test ' . uniqid(),
+            'type'        => 'content',
+            'content_id'  => 45,
+            'content_for' => 'content',
+            'status'      => 'OK',
+        ]);
+
+        // Attempt duplicate with invalid content_for to trigger exception inside transaction
+        try {
+            $this->service->duplicate($original, [
+                'content_for' => 'invalid_context',
+            ]);
+            $this->fail('Expected exception was not thrown');
+        } catch (\InvalidArgumentException $e) {
+            // Expected
+        }
+
+        // Clean up original
+        $original->delete();
+
+        // Count must be back to exactly countBefore
+        $this->assertSame($countBefore, Assesment::count());
+    }
 }

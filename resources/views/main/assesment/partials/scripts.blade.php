@@ -321,6 +321,281 @@
             $submitBtn.find('i').attr('class', 'fas fa-copy mr-1 me-1');
         });
 
+        // =========================================================================
+        // Bulk Duplicate Assessments Handlers
+        // =========================================================================
+        let previewXhr = null;
+
+        function updateBulkSelectionState() {
+            let checkedBoxes = $('.assessment-select-checkbox:checked');
+            let count = checkedBoxes.length;
+            let totalEligible = $('.assessment-select-checkbox').length;
+
+            $('#bulkSelectedCountBadge').text(count);
+
+            let $checkAll = $('#checkAllAssessments');
+            if (totalEligible > 0 && count === totalEligible) {
+                $checkAll.prop('checked', true).prop('indeterminate', false);
+            } else if (count > 0 && count < totalEligible) {
+                $checkAll.prop('checked', false).prop('indeterminate', true);
+            } else {
+                $checkAll.prop('checked', false).prop('indeterminate', false);
+            }
+
+            let $bulkBtn = $('#btnOpenBulkDuplicate');
+            if (count > 0) {
+                $bulkBtn.prop('disabled', false).removeClass('disabled');
+                $('#bulkDuplicateBtnText').text('Bulk Duplicate (' + count + ')');
+            } else {
+                $bulkBtn.prop('disabled', true).addClass('disabled');
+                $('#bulkDuplicateBtnText').text('Bulk Duplicate');
+            }
+        }
+
+        $(document).on('change', '#checkAllAssessments', function () {
+            let isChecked = $(this).is(':checked');
+            $('.assessment-select-checkbox').prop('checked', isChecked);
+            updateBulkSelectionState();
+        });
+
+        $(document).on('change', '.assessment-select-checkbox', function () {
+            updateBulkSelectionState();
+        });
+
+        $(document).on('click', '.btn-open-bulk-all', function () {
+            $('#bulk_mode_all').prop('checked', true);
+        });
+
+        function fetchBulkPreview() {
+            let mode = $('input[name="bulk_selection_mode"]:checked').val();
+            let targetContext = $('input[name="bulk_target_context"]:checked').val();
+            let trainingplanId = $('#bulk_playlist_id').val();
+
+            if (targetContext === 'playlist' && !trainingplanId) {
+                $('#previewTotal').text('-');
+                $('#previewWillCreate').text('-');
+                $('#previewAlreadyExists').text('-');
+                $('#bulkPreviewNotice').text('Please select a target playlist to calculate preview.');
+                $('#btnSubmitBulkDuplicate').prop('disabled', true);
+                return;
+            }
+
+            let selectedIds = [];
+            $('.assessment-select-checkbox:checked').each(function () {
+                selectedIds.push(parseInt($(this).val()));
+            });
+
+            if (mode === 'selected' && selectedIds.length === 0) {
+                $('#previewTotal').text('0');
+                $('#previewWillCreate').text('0');
+                $('#previewAlreadyExists').text('0');
+                $('#bulkPreviewNotice').text('No active assessments are currently selected. Please select at least one assessment or choose "All Active Content Assessments".');
+                $('#btnSubmitBulkDuplicate').prop('disabled', true);
+                return;
+            }
+
+            let payload = {
+                _token: "{{ csrf_token() }}",
+                target_context: targetContext,
+                trainingplan_id: targetContext === 'playlist' ? trainingplanId : null,
+                select_all: (mode === 'all_active') ? 1 : 0,
+                source_ids: (mode === 'all_active') ? [] : selectedIds
+            };
+
+            if (previewXhr) {
+                previewXhr.abort();
+            }
+
+            $('#bulkPreviewLoading').removeClass('d-none');
+            $('#bulkPlaylistError').addClass('d-none');
+
+            previewXhr = $.ajax({
+                type: 'POST',
+                url: "{{ route('assesment.bulk-duplicate.preview') }}",
+                data: payload,
+                dataType: 'json',
+                success: function (res) {
+                    $('#bulkPreviewLoading').addClass('d-none');
+                    if (res.success && res.data) {
+                        let data = res.data;
+                        $('#previewTotal').text(data.total);
+                        $('#previewWillCreate').text(data.will_be_created);
+                        $('#previewAlreadyExists').text(data.already_exists);
+
+                        if (targetContext === 'playlist') {
+                            if (data.will_be_created > 0 && data.already_exists > 0) {
+                                $('#bulkPreviewNotice').html(
+                                    '<strong>' + data.will_be_created + '</strong> new assessment(s) will be created. ' +
+                                    '<strong>' + data.already_exists + '</strong> existing assessment(s) in this playlist will be skipped.'
+                                );
+                            } else if (data.will_be_created > 0) {
+                                $('#bulkPreviewNotice').text('All ' + data.will_be_created + ' assessment(s) will be created in the target playlist.');
+                            } else {
+                                $('#bulkPreviewNotice').text('All selected content already has active assessments in this playlist. No new records will be created.');
+                            }
+                        } else {
+                            $('#bulkPreviewNotice').text('Existing assessments will remain unchanged. ' + data.will_be_created + ' new assessment copy(ies) will be created.');
+                        }
+
+                        if (data.will_be_created > 0) {
+                            $('#btnSubmitBulkDuplicate').prop('disabled', false);
+                        } else {
+                            $('#btnSubmitBulkDuplicate').prop('disabled', true);
+                        }
+                    }
+                },
+                error: function (xhr) {
+                    $('#bulkPreviewLoading').addClass('d-none');
+                    if (xhr.statusText === 'abort') return;
+
+                    let msg = 'Failed to load preview.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    $('#bulkPreviewNotice').text(msg);
+                    $('#btnSubmitBulkDuplicate').prop('disabled', true);
+                }
+            });
+        }
+
+        $(document).on('change', 'input[name="bulk_selection_mode"]', function () {
+            fetchBulkPreview();
+        });
+
+        $(document).on('change', 'input[name="bulk_target_context"]', function () {
+            let val = $(this).val();
+            if (val === 'playlist') {
+                $('#bulkPlaylistSelectWrapper').removeClass('d-none');
+            } else {
+                $('#bulkPlaylistSelectWrapper').addClass('d-none');
+                $('#bulk_playlist_id').val('');
+            }
+            fetchBulkPreview();
+        });
+
+        $(document).on('change', '#bulk_playlist_id', function () {
+            if ($(this).val()) {
+                $('#bulkPlaylistError').addClass('d-none');
+            }
+            fetchBulkPreview();
+        });
+
+        $('#modalBulkDuplicateAssessment').on('show.bs.modal', function () {
+            updateBulkSelectionState();
+            fetchBulkPreview();
+        });
+
+        $('#btnSubmitBulkDuplicate').on('click', function (e) {
+            e.preventDefault();
+            let $btn = $(this);
+            if ($btn.data('submitting') === true) return;
+
+            let mode = $('input[name="bulk_selection_mode"]:checked').val();
+            let targetContext = $('input[name="bulk_target_context"]:checked').val();
+            let trainingplanId = $('#bulk_playlist_id').val();
+
+            if (targetContext === 'playlist' && !trainingplanId) {
+                $('#bulkPlaylistError').removeClass('d-none');
+                $('#bulk_playlist_id').focus();
+                return;
+            }
+
+            let selectedIds = [];
+            $('.assessment-select-checkbox:checked').each(function () {
+                selectedIds.push(parseInt($(this).val()));
+            });
+
+            if (mode === 'selected' && selectedIds.length === 0) {
+                showToast('Please select at least one active Content Assessment.', 'danger');
+                return;
+            }
+
+            let payload = {
+                _token: "{{ csrf_token() }}",
+                target_context: targetContext,
+                trainingplan_id: targetContext === 'playlist' ? trainingplanId : null,
+                select_all: (mode === 'all_active') ? 1 : 0,
+                source_ids: (mode === 'all_active') ? [] : selectedIds
+            };
+
+            $btn.data('submitting', true).prop('disabled', true);
+            $btn.find('i').attr('class', 'fas fa-spinner fa-spin mr-1 me-1');
+            $btn.find('.btn-text').text('Duplicating...');
+            $('#btnCancelBulkDuplicate').prop('disabled', true);
+
+            $.ajax({
+                type: 'POST',
+                url: "{{ route('assesment.bulk-duplicate') }}",
+                data: payload,
+                dataType: 'json',
+                success: function (res) {
+                    $btn.data('submitting', false);
+                    $btn.find('i').attr('class', 'fas fa-check mr-1 me-1');
+                    $btn.find('.btn-text').text('Completed');
+                    $('#btnCancelBulkDuplicate').prop('disabled', false).text('Close');
+
+                    if (res.data) {
+                        let data = res.data;
+                        let detailsHtml = 'Created: <strong>' + data.success + '</strong> | Skipped: <strong>' + data.skipped + '</strong> | Failed: <strong>' + data.failed + '</strong>';
+
+                        if (data.created_items && data.created_items.length > 0) {
+                            detailsHtml += '<ul class="mt-2 mb-0 ps-3 small">';
+                            data.created_items.slice(0, 5).forEach(function (item) {
+                                detailsHtml += '<li>' + (item.title || ('ID ' + item.new_assessment_id)) + '</li>';
+                            });
+                            if (data.created_items.length > 5) {
+                                detailsHtml += '<li>...and ' + (data.created_items.length - 5) + ' more</li>';
+                            }
+                            detailsHtml += '</ul>';
+                        }
+
+                        $('#bulkResultMessage').text(res.message || 'Duplication completed.');
+                        $('#bulkResultDetails').html(detailsHtml);
+                        $('#bulkExecutionResults').removeClass('d-none');
+                        $('#bulkPreviewSection').addClass('d-none');
+                    }
+
+                    showToast(res.message || 'Duplication completed.', 'success');
+
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 1800);
+                },
+                error: function (xhr) {
+                    $btn.data('submitting', false).prop('disabled', false);
+                    $btn.find('i').attr('class', 'fas fa-copy mr-1 me-1');
+                    $btn.find('.btn-text').text('Duplicate Assessments');
+                    $('#btnCancelBulkDuplicate').prop('disabled', false);
+
+                    let errMsg = 'An unexpected error occurred during bulk duplication.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        let errs = Object.values(xhr.responseJSON.errors).flat();
+                        errMsg = errs.join(' ');
+                    }
+
+                    showToast(errMsg, 'danger');
+                }
+            });
+        });
+
+        $('#modalBulkDuplicateAssessment').on('hidden.bs.modal', function () {
+            $('#bulkExecutionResults').addClass('d-none');
+            $('#bulkPreviewSection').removeClass('d-none');
+            $('#bulkPlaylistError').addClass('d-none');
+            $('#bulkPlaylistSelectWrapper').addClass('d-none');
+            $('#bulk_playlist_id').val('');
+            $('#bulk_target_content').prop('checked', true);
+            $('#bulk_mode_selected').prop('checked', true);
+
+            let $btn = $('#btnSubmitBulkDuplicate');
+            $btn.data('submitting', false).prop('disabled', false);
+            $btn.find('i').attr('class', 'fas fa-copy mr-1 me-1');
+            $btn.find('.btn-text').text('Duplicate Assessments');
+            $('#btnCancelBulkDuplicate').prop('disabled', false).text('Cancel');
+        });
+
     });
 
     function copyAssessmentLink(text, button) {

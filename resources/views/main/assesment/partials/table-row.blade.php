@@ -37,6 +37,31 @@
 @endphp
 
 <tr>
+    @php
+        $isEligible = ($list->type === 'content' && $list->status === 'OK');
+    @endphp
+    <td class="text-center">
+        @if ($isEligible)
+            <input type="checkbox"
+                   class="form-check-input assessment-select-checkbox"
+                   name="selected_assessments[]"
+                   value="{{ $list->id }}"
+                   data-title="{{ $list->title }}"
+                   data-content-id="{{ $list->content_id }}"
+                   data-type="{{ $list->type }}"
+                   data-content-for="{{ $list->content_for }}"
+                   data-trainingplan-id="{{ $list->trainingplan_id ?? '' }}"
+                   title="Select for duplicate"
+                   data-toggle="tooltip">
+        @else
+            <input type="checkbox"
+                   class="form-check-input assessment-select-checkbox-disabled"
+                   disabled
+                   title="{{ $list->type !== 'content' ? 'Only Content assessments can be duplicated' : 'Inactive assessments cannot be duplicated' }}"
+                   data-toggle="tooltip">
+        @endif
+    </td>
+
     <td class="text-center text-muted">
         {{ $iteration }}
     </td>

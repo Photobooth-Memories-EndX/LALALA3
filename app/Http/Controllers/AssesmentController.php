@@ -8,8 +8,11 @@ use App\Models\AssesmentAssigned;
 use App\Models\AssesmentQuestionBank;
 use App\Models\QuestionBank;
 use App\Models\TrainingPlan;
+use App\Services\AssessmentBulkDuplicateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class AssesmentController extends Controller
 {
@@ -213,6 +216,7 @@ class AssesmentController extends Controller
             ->withQueryString();
 
         $trainingplans = TrainingPlan::latest()->get();
+        $totalActiveContentCount = Assesment::where('type', 'content')->where('status', 'OK')->count();
 
         return view('main.assesment.index', compact(
             'assesment',
@@ -224,7 +228,8 @@ class AssesmentController extends Controller
             'questionBankFilters',
             'durationFilters',
             'sortOptions',
-            'trainingplans'
+            'trainingplans',
+            'totalActiveContentCount'
         ));
     }
 
@@ -549,5 +554,130 @@ class AssesmentController extends Controller
 
         session()->flash('danger', $assignedUser->assigned_description . ' was successfully removed from the list of assigned users!');
         return redirect()->back();
+    }
+
+    public function previewBulkDuplicate(Request $request, AssessmentBulkDuplicateService $bulkService)
+    {
+        $validated = $request->validate([
+            'target_context'  => 'required|in:content,playlist',
+            'trainingplan_id' => 'required_if:target_context,playlist|nullable|integer|exists:trainingplan,id',
+            'select_all'      => 'nullable|boolean',
+            'source_ids'      => 'required_without:select_all|nullable|array',
+            'source_ids.*'    => 'integer',
+        ]);
+
+        $isSelectAll = $request->boolean('select_all');
+        $sourceIds   = (array) $request->input('source_ids', []);
+
+        if (!$isSelectAll && empty($sourceIds)) {
+            throw ValidationException::withMessages([
+                'source_ids' => 'At least one assessment must be selected when select_all is not enabled.',
+            ]);
+        }
+
+        $options = [
+            'target_context'  => $validated['target_context'],
+            'trainingplan_id' => !empty($validated['trainingplan_id']) ? (int) $validated['trainingplan_id'] : null,
+        ];
+
+        try {
+            if ($isSelectAll) {
+                $previewData = $bulkService->previewAllActive($options);
+            } else {
+                $previewData = $bulkService->preview(array_map('intval', $sourceIds), $options);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => $previewData,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('Preview bulk duplicate failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred during preview.',
+            ], 500);
+        }
+    }
+
+    public function bulkDuplicate(Request $request, AssessmentBulkDuplicateService $bulkService)
+    {
+        $validated = $request->validate([
+            'target_context'  => 'required|in:content,playlist',
+            'trainingplan_id' => 'required_if:target_context,playlist|nullable|integer|exists:trainingplan,id',
+            'select_all'      => 'nullable|boolean',
+            'source_ids'      => 'required_without:select_all|nullable|array',
+            'source_ids.*'    => 'integer',
+        ]);
+
+        $isSelectAll = $request->boolean('select_all');
+        $sourceIds   = (array) $request->input('source_ids', []);
+
+        if (!$isSelectAll && empty($sourceIds)) {
+            throw ValidationException::withMessages([
+                'source_ids' => 'At least one assessment must be selected when select_all is not enabled.',
+            ]);
+        }
+
+        $options = [
+            'target_context'  => $validated['target_context'],
+            'trainingplan_id' => !empty($validated['trainingplan_id']) ? (int) $validated['trainingplan_id'] : null,
+        ];
+
+        try {
+            if ($isSelectAll) {
+                $result = $bulkService->duplicateAllActive($options);
+            } else {
+                $result = $bulkService->duplicateMany(array_map('intval', $sourceIds), $options);
+            }
+
+            $message = "{$result['success']} assessment(s) duplicated successfully.";
+            if ($result['skipped'] > 0) {
+                $message .= " {$result['skipped']} assessment(s) skipped.";
+            }
+            if ($result['failed'] > 0) {
+                $message .= " {$result['failed']} assessment(s) failed.";
+            }
+
+            if ($request->expectsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => $result['failed'] === 0,
+                    'message' => $message,
+                    'data'    => $result,
+                ]);
+            }
+
+            return redirect()->route('assesment.index')->with('success', $message);
+        } catch (\InvalidArgumentException $e) {
+            if ($request->expectsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->back()->with('danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Bulk duplicate execution failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            if ($request->expectsJson() || $request->isJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An unexpected error occurred during bulk duplication. Please check system logs.',
+                ], 500);
+            }
+
+            return redirect()->back()->with('danger', 'An unexpected error occurred during bulk duplication.');
+        }
     }
 }

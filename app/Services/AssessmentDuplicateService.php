@@ -79,17 +79,22 @@ class AssessmentDuplicateService
             if ($assesment->type === 'content') {
                 if (isset($overrides['content_for'])) {
                     if ($overrides['content_for'] === 'playlist') {
+                        if (empty($overrides['trainingplan_id'])) {
+                            throw new \InvalidArgumentException('trainingplan_id is required when duplicating to playlist context.');
+                        }
                         $newAssesment->content_for     = 'playlist';
-                        $newAssesment->trainingplan_id = $overrides['trainingplan_id'] ?? null;
+                        $newAssesment->trainingplan_id = (int) $overrides['trainingplan_id'];
                     } elseif ($overrides['content_for'] === 'content') {
                         $newAssesment->content_for     = 'content';
                         $newAssesment->trainingplan_id = null;
+                    } else {
+                        throw new \InvalidArgumentException("Invalid content_for context: {$overrides['content_for']}. Must be 'content' or 'playlist'.");
                     }
                 }
                 // Guarantee content_id is preserved exactly as original
                 $newAssesment->content_id = $assesment->content_id;
-            } elseif (isset($overrides['content_for']) && $overrides['content_for'] === 'playlist') {
-                throw new \InvalidArgumentException('Only content assessments can be duplicated as playlist content.');
+            } elseif (isset($overrides['content_for'])) {
+                throw new \InvalidArgumentException('Only content assessments can have content context overrides.');
             }
 
             $newAssesment->save();
