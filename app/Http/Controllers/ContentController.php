@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Content;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\Classification;
 use App\Models\ContentUser;
@@ -14,6 +15,55 @@ use Illuminate\Support\Facades\Log;
 
 class ContentController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for content repository (Content Management).
+     */
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('s') ?? $request->get('search') ?? ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $contents = Content::with('classification')
+            ->where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('content.title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('content.title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('content.title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('content.description', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('content.author', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('content.slug', 'LIKE', "%{$rawQuery}%");
+            })
+            ->latest('content.id')
+            ->limit(10)
+            ->get();
+
+        $results = $contents->map(function ($item) {
+            return [
+                'id'             => $item->id,
+                'title'          => $item->title,
+                'name'           => $item->title,
+                'type'           => $item->type,
+                'type_label'     => \App\Support\ContentTypeHelper::label($item->type),
+                'slug'           => $item->slug,
+                'author'         => $item->author,
+                'active'         => $item->active,
+                'classification' => $item->classification->classification_name ?? null,
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
     public function index(Request $request)
     {
         $query = Content::query()->with('classification')->withCount('allComments');
