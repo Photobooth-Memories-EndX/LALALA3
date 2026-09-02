@@ -3,19 +3,78 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classification;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ClassificationController extends Controller
 {
     /**
+     * AJAX live autocomplete search for Category Management.
+     */
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $categories = Classification::where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('classification_name', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('classification_name', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('classification_name', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%");
+            })
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        $results = $categories->map(function ($item) {
+            return [
+                'id'                  => $item->id,
+                'title'               => $item->classification_name,
+                'name'                => $item->classification_name,
+                'classification_name' => $item->classification_name,
+                'slug'                => $item->slug,
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
+    /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $classification = Classification::all();
-        return view('main.classification.index', compact('classification'));
+        $query = Classification::query();
+
+        $search = trim((string) ($request->get('search') ?? $request->get('s') ?? ''));
+        if ($search !== '') {
+            $queryNormalized = str_replace("'", "’", $search);
+            $queryOriginal = str_replace("’", "'", $search);
+            $query->where(function ($q) use ($search, $queryNormalized, $queryOriginal) {
+                $q->where('classification_name', 'LIKE', "%{$search}%")
+                  ->orWhere('classification_name', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('classification_name', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $classification = $query->latest('id')->get();
+        $totalCategories = Classification::count();
+
+        return view('main.classification.index', compact('classification', 'totalCategories'));
     }
 
     /**
@@ -46,7 +105,15 @@ class ClassificationController extends Controller
 
         $classification->save();
 
-        return to_route('classification.index')->with('success', 'Category created successfully.');
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'Category created successfully.',
+                'redirect' => route('manage.classification.index')
+            ]);
+        }
+
+        return to_route('manage.classification.index')->with('success', 'Category created successfully.');
     }
 
     /**
@@ -85,7 +152,16 @@ class ClassificationController extends Controller
         ]);
 
         $classification->update($request->all());
-        return to_route('classification.index')->with('success', 'Category updated successfully.');
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'Category updated successfully.',
+                'redirect' => route('manage.classification.index')
+            ]);
+        }
+
+        return to_route('manage.classification.index')->with('success', 'Category updated successfully.');
     }
 
     /**
@@ -97,7 +173,7 @@ class ClassificationController extends Controller
     public function destroy(Classification $classification)
     {
         $classification->delete();
-        return redirect()->route('classification.index')
+        return redirect()->route('manage.classification.index')
             ->with('success', 'Category deleted successfully');
     }
 }

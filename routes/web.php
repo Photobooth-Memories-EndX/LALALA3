@@ -309,7 +309,16 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:category_classification'], function () {
-        Route::resource('classification', ClassificationController::class);
+        Route::get('classification/search-autocomplete', [ClassificationController::class, 'autocompleteSearch'])->name('manage.classification.autocomplete');
+        Route::resource('classification', ClassificationController::class)->names([
+            'index' => 'manage.classification.index',
+            'create' => 'manage.classification.create',
+            'store' => 'manage.classification.store',
+            'show' => 'manage.classification.show',
+            'edit' => 'manage.classification.edit',
+            'update' => 'manage.classification.update',
+            'destroy' => 'manage.classification.destroy',
+        ]);
     });
 
     Route::group(['middleware' => 'mpermission:assessment_management'], function () {
