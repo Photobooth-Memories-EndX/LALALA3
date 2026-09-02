@@ -5,10 +5,49 @@ namespace App\Http\Controllers;
 use App\Models\News;
 use App\Models\Comment;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NewsUserController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for published news items.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->get('q', ''));
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        $keyword = '%' . $query . '%';
+
+        $news = News::with('user')
+            ->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', $keyword)
+                  ->orWhere('description', 'like', $keyword)
+                  ->orWhereHas('user', function ($uq) use ($keyword) {
+                      $uq->where('name', 'like', $keyword);
+                  });
+            })
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
+        $results = $news->map(function ($item) {
+            return [
+                'id'         => $item->id,
+                'title'      => $item->title,
+                'slug'       => $item->slug,
+                'author'     => $item->user->name ?? null,
+                'created_at' => $item->created_at ? $item->created_at->format('d M Y') : null,
+                'views'      => $item->views ?? 0,
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
     public function index()
     {
         $search     = request('search');

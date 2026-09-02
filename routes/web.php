@@ -136,8 +136,10 @@ Route::group(['prefix' => 'page'], function () {
 | News User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/news/search-autocomplete', [NewsUserController::class, 'autocomplete'])->middleware('auth')->name('user.news.autocomplete');
 Route::group(['prefix' => 'news', 'middleware' => 'auth'], function () {
     Route::get('/', [NewsUserController::class, 'index'])->name('news.user.index');
+    Route::get('/search-autocomplete', [NewsUserController::class, 'autocomplete'])->name('news.user.autocomplete');
     Route::get('/{slug}', [NewsUserController::class, 'view'])->name('news.user.view');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storenews'])->name('news.comment.store');
 });

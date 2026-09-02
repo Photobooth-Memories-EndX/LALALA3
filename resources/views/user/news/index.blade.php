@@ -55,15 +55,18 @@
 
                             <div class="fast-filter-toolbar owl-news-filter-toolbar">
                             <div class="record-toolbar-search owl-news-filter-search">
-                                <label class="visually-hidden" for="owl-search-input">Search news</label>
-                                <div class="input-icon">
-                                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                                    <input type="search" id="owl-search-input" name="search"
-                                           class="form-control"
-                                           placeholder="Search news title, description or author..."
-                                           value="{{ request('search') }}"
-                                           aria-label="Search news"
-                                           autocomplete="off">
+                                <label class="visually-hidden" for="news-search-input">Search news</label>
+                                <div class="position-relative news-search-container flex-grow-1">
+                                    <div class="input-icon">
+                                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                        <input type="search" id="news-search-input" name="search"
+                                               class="form-control"
+                                               placeholder="Search news title, description or author..."
+                                               value="{{ request('search') }}"
+                                               aria-label="Search news"
+                                               autocomplete="off">
+                                    </div>
+                                    <div id="news-search-results" class="dropdown-menu shadow-sm w-100 overflow-auto position-absolute mt-1" style="display: none; max-height: 300px; z-index: 1050;"></div>
                                 </div>
                             </div>
 
@@ -399,25 +402,116 @@
         document.getElementById('owlNewsClientEmpty')?.classList.toggle('d-none', visibleCount > 0);
     }
 
+    function escapeNewsHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     document.addEventListener('DOMContentLoaded', function(){
         // Initialize dark mode
         initDarkMode();
 
-        // Search functionality (Instant Auto-Submit with 400ms debounce)
-        var searchInput = document.getElementById('owl-search-input');
-        if(searchInput){
-            var form = searchInput.closest('form');
-            var submitForm = debounce(function(){ if(form) form.submit(); }, 400);
-            searchInput.addEventListener('input', submitForm);
-            searchInput.addEventListener('keyup', submitForm);
-            document.addEventListener('keydown', function(e){
-                if(e.key === '/' && document.activeElement.tagName.toLowerCase() !== 'input'){
+        // ── Live Autocomplete Search for News Filter ────────────────────────────
+        function initNewsAutocomplete() {
+            var searchInput = document.getElementById('news-search-input') || document.getElementById('owl-search-input');
+            var searchResults = document.getElementById('news-search-results');
+            var form = searchInput ? searchInput.closest('form') : null;
+            var debounceTimer = null;
+            var submitTimer = null;
+
+            if (!searchInput || !searchResults) return;
+
+            searchInput.addEventListener('input', function () {
+                var value = this.value.trim();
+                clearTimeout(debounceTimer);
+                clearTimeout(submitTimer);
+
+                if (value.length < 1) {
+                    searchResults.style.display = 'none';
+                    searchResults.innerHTML = '';
+                    submitTimer = setTimeout(function () {
+                        if (form) form.submit();
+                    }, 400);
+                    return;
+                }
+
+                debounceTimer = setTimeout(function () {
+                    fetch('/news/search-autocomplete?q=' + encodeURIComponent(value), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        if (!data || data.length === 0) {
+                            searchResults.innerHTML = '<div class="dropdown-item text-muted small py-2 px-3">No news found</div>';
+                        } else {
+                            var html = '';
+                            data.forEach(function (item) {
+                                var subDetails = [];
+                                if (item.author) subDetails.push('By: ' + escapeNewsHtml(item.author));
+                                if (item.created_at) subDetails.push(escapeNewsHtml(item.created_at));
+                                if (item.views !== undefined) subDetails.push(escapeNewsHtml(item.views) + ' views');
+
+                                html += '<a href="#" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle news-search-item" data-title="' + escapeNewsHtml(item.title) + '">' +
+                                    '<div class="d-flex align-items-center justify-content-between mb-1">' +
+                                        '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeNewsHtml(item.title) + '</span>' +
+                                        '<span class="badge bg-primary-lt text-primary small flex-shrink-0">NEWS</span>' +
+                                    '</div>' +
+                                    (subDetails.length > 0 ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.join(' &bull; ') + '</div>' : '') +
+                                '</a>';
+                            });
+                            searchResults.innerHTML = html;
+                        }
+                        searchResults.style.display = 'block';
+                    })
+                    .catch(function () {
+                        searchResults.style.display = 'none';
+                    });
+                }, 250);
+            });
+
+            searchInput.addEventListener('focus', function () {
+                if (this.value.trim().length >= 1 && searchResults.children.length > 0) {
+                    searchResults.style.display = 'block';
+                }
+            });
+
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    searchResults.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                var target = e.target.closest('.news-search-item');
+                if (target) {
+                    e.preventDefault();
+                    var title = target.getAttribute('data-title') || '';
+                    searchInput.value = title;
+                    searchResults.style.display = 'none';
+                    if (form) form.submit();
+                    return;
+                }
+
+                if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === '/' && document.activeElement.tagName.toLowerCase() !== 'input') {
                     e.preventDefault();
                     searchInput.focus();
                     searchInput.select();
                 }
             });
         }
+
+        initNewsAutocomplete();
 
         function syncNewsQuickFilter(filter, value) {
             var capitalizedFilter = filter.charAt(0).toUpperCase() + filter.slice(1);
