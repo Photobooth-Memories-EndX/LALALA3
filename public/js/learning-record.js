@@ -742,7 +742,7 @@ function initLearningRecord() {
         render();
     });
 
-    // ── Course Hover Preview (Popup) ─────────────────────────────────────────
+    // ── Category Hover/Click Preview (Popup) ────────────────────────────────
 
     function initCourseHoverPreview() {
         var $popup = $('#learningRecordCoursePopup');
@@ -755,8 +755,11 @@ function initLearningRecord() {
         function showPopup(trigger) {
             clearTimeout(hideTimer);
             var $trigger = $(trigger);
-            var $cell = $trigger.closest('.learning-record-course-cell');
+            var $cell = $trigger.closest('.learning-record-category');
             var $template = $cell.find('.course-preview-template');
+            if (!$template.length) {
+                $template = $trigger.closest('tr').find('.course-preview-template');
+            }
 
             if (!$template.length) {
                 return;
@@ -767,6 +770,7 @@ function initLearningRecord() {
                 return;
             }
 
+            $popup.data('activeTrigger', trigger);
             $popup.html(htmlContent).stop(true, true).css({ display: 'block', opacity: 0 });
 
             var rect = trigger.getBoundingClientRect();
@@ -796,41 +800,60 @@ function initLearningRecord() {
             }).animate({ opacity: 1 }, 120);
         }
 
+        function hidePopup() {
+            clearTimeout(hideTimer);
+            $popup.data('activeTrigger', null);
+            $popup.stop(true, true).fadeOut(120, function () {
+                $popup.empty();
+            });
+        }
+
         function scheduleHide() {
             hideTimer = setTimeout(function () {
-                $popup.stop(true, true).fadeOut(120, function () {
-                    $popup.empty();
-                });
+                hidePopup();
             }, 250); // 250ms grace period allows seamless movement from trigger to popup
         }
 
-        $table.off('.coursePreview', '.course-preview-trigger')
-            .on('mouseenter.coursePreview', '.course-preview-trigger', function () {
+        $table.off('.categoryPreview')
+            .on('mouseenter.categoryPreview', '.category-preview-trigger', function () {
                 showPopup(this);
             })
-            .on('mouseleave.coursePreview', '.course-preview-trigger', function () {
+            .on('mouseleave.categoryPreview', '.category-preview-trigger', function () {
                 scheduleHide();
+            })
+            .on('click.categoryPreview', '.category-preview-trigger', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if ($popup.is(':visible') && $popup.data('activeTrigger') === this) {
+                    hidePopup();
+                } else {
+                    showPopup(this);
+                }
             });
 
-        $popup.off('.coursePreview')
-            .on('mouseenter.coursePreview', function () {
+        $popup.off('.categoryPreview')
+            .on('mouseenter.categoryPreview', function () {
                 clearTimeout(hideTimer);
             })
-            .on('mouseleave.coursePreview', function () {
+            .on('mouseleave.categoryPreview', function () {
                 scheduleHide();
             });
 
-        $(window).off('scroll.coursePreview resize.coursePreview').on('scroll.coursePreview resize.coursePreview', function () {
-            if ($popup.is(':visible')) {
-                clearTimeout(hideTimer);
-                $popup.hide().empty();
+        $(document).off('click.categoryPreviewDoc').on('click.categoryPreviewDoc', function (e) {
+            if ($popup.is(':visible') && !$(e.target).closest('#learningRecordCoursePopup, .category-preview-trigger').length) {
+                hidePopup();
             }
         });
 
-        $(document).off('keydown.coursePreview').on('keydown.coursePreview', function (e) {
+        $(window).add('.learning-record-scroll').off('scroll.categoryPreview resize.categoryPreview').on('scroll.categoryPreview resize.categoryPreview', function () {
+            if ($popup.is(':visible')) {
+                hidePopup();
+            }
+        });
+
+        $(document).off('keydown.categoryPreview').on('keydown.categoryPreview', function (e) {
             if (e.key === 'Escape') {
-                clearTimeout(hideTimer);
-                $popup.hide().empty();
+                hidePopup();
             }
         });
     }

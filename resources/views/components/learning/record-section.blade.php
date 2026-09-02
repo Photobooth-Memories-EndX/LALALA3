@@ -149,6 +149,17 @@
     display: block;
 }
 
+/* Category Preview Trigger */
+.category-preview-trigger {
+    cursor: pointer !important;
+    user-select: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+.category-preview-trigger:hover {
+    opacity: 0.9;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+}
+
 /* Learning Record Course Hover Popup */
 .learning-record-hover-popup {
     position: absolute;
@@ -168,7 +179,7 @@
     padding: 12px 14px;
 }
 .course-preview-popover.course-preview-content {
-    padding: 10px 14px;
+    padding: 12px 14px;
 }
 .course-preview-header {
     margin-bottom: 8px;

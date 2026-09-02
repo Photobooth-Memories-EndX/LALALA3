@@ -76,16 +76,21 @@ class MyLearningRecordCourseHoverPreviewTest extends TestCase
         $this->assertStringContainsString('href="' . $expectedUrl . '"', $html);
         $this->assertStringNotContainsString('/playlist/' . $video->slug, $html);
 
-        // 2. Hover trigger exists
-        $this->assertStringContainsString('course-preview-trigger', $html);
+        // 2. Category trigger exists, Course title is strictly for redirect (NOT a popup trigger)
+        $this->assertStringContainsString('category-preview-trigger', $html);
         $this->assertStringContainsString('data-preview-kind="content"', $html);
+        $this->assertStringNotContainsString('course-preview-trigger', $html);
 
         // 3. Hover preview template contains title inside course-preview-content
         $this->assertStringContainsString('course-preview-content', $html);
         $this->assertStringContainsString('Direct Video Machine Learning', $html);
+        $this->assertStringContainsString('Type:', $html);
+        $this->assertStringContainsString('Video', $html);
+        $this->assertStringContainsString('Classification:', $html);
+        $this->assertStringContainsString('Technology &amp; Science', $html);
 
-        // 4. Mandatory badge displayed under Course Title
-        $this->assertStringContainsString('Mandatory', $html);
+        // 4. Mandatory badge displayed under Course Title as plain text
+        $this->assertStringContainsString('<div class="learning-record-program text-muted small mt-1">Mandatory</div>', $html);
     }
 
     /**
@@ -122,15 +127,18 @@ class MyLearningRecordCourseHoverPreviewTest extends TestCase
         $expectedUrl = route('content.user.view', $doc->slug);
         $this->assertStringContainsString('href="' . $expectedUrl . '"', $html);
 
-        // Template contains document title
+        // Template contains document title, type, and classification
         $this->assertStringContainsString('Direct Document Architecture Guide', $html);
-
-        // CASE 12: Document compact badge present
-        $this->assertStringContainsString('learning-record-type-badge', $html);
+        $this->assertStringContainsString('Type:', $html);
         $this->assertStringContainsString('Document', $html);
+        $this->assertStringContainsString('Classification:', $html);
+        $this->assertStringContainsString('Technology &amp; Science', $html);
 
-        // CASE 13: Optional badge displayed under Course Title
-        $this->assertStringContainsString('Optional', $html);
+        // CASE 12: Document compact badge present in TYPE column
+        $this->assertStringContainsString('learning-record-type-badge', $html);
+
+        // CASE 13: Optional badge displayed under Course Title as plain text
+        $this->assertStringContainsString('<div class="learning-record-program text-muted small mt-1">Optional</div>', $html);
     }
 
     /**
@@ -417,9 +425,10 @@ class MyLearningRecordCourseHoverPreviewTest extends TestCase
         $this->assertStringContainsString('learning-record-type-badge">Document</span>', $html);
         $this->assertStringContainsString('learning-record-type-badge record-playlist-link"', $html);
 
-        // 7, 8, 9. Category Content untuk Video/Doc, Playlist untuk Playlist
-        $this->assertStringContainsString('<span class="badge bg-blue-lt text-blue learning-record-badge">Content</span>', $html);
-        $this->assertStringContainsString('<span class="badge bg-green-lt text-green learning-record-badge">Playlist</span>', $html);
+        // 7, 8, 9. Category Content untuk Video/Doc, Playlist untuk Playlist (dengan category-preview-trigger)
+        $this->assertStringContainsString('category-preview-trigger', $html);
+        $this->assertStringContainsString('badge bg-blue-lt text-blue learning-record-badge category-preview-trigger', $html);
+        $this->assertStringContainsString('badge bg-green-lt text-green learning-record-badge category-preview-trigger', $html);
 
         // 10. Classification tetap benar
         $this->assertStringContainsString('Tech Special Class', $html);
@@ -445,6 +454,54 @@ class MyLearningRecordCourseHoverPreviewTest extends TestCase
         $this->assertEquals($pcuBefore, PlaylistContentUser::count(), 'Zero mutation on playlist_content_users');
         $this->assertEquals($cBefore, Content::count(), 'Zero mutation on content');
         $this->assertEquals($tpBefore, TrainingPlan::count(), 'Zero mutation on trainingplan');
+    }
+
+    /**
+     * PROMPT TEST: Title is strictly for redirect (NO popup trigger on title),
+     * while Category label is the popup trigger.
+     */
+    public function test_title_is_link_only_and_category_is_popup_trigger(): void
+    {
+        $plan = TrainingPlan::create([
+            'title'                  => 'Coke Plant : Moving Machine (MM) 2025',
+            'slug'                   => 'coke-plant-mm-2025-' . rand(1000, 9999),
+            'active'                 => 'Active',
+            'total_duration_seconds' => 3600,
+            'learning_hours'         => 1.0,
+        ]);
+
+        $m1 = Content::create(['title' => 'MM A - Pusher Car Operation', 'slug' => 'mm-a-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'duration' => '00:12:00', 'learning_hours' => 0.2, 'active' => 'Active', 'playlistonly' => 'Y']);
+        $m2 = Content::create(['title' => 'MM B - Transfer Car Operation', 'slug' => 'mm-b-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'duration' => '00:12:00', 'learning_hours' => 0.2, 'active' => 'Active', 'playlistonly' => 'Y']);
+
+        TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $m1->id, 'content_order' => 1]);
+        TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $m2->id, 'content_order' => 2]);
+
+        PlaylistContentUser::create(['user_id' => $this->user->id, 'trainingplan_id' => $plan->id, 'content_id' => $m1->id, 'progress' => 100, 'finish' => '1']);
+        PlaylistContentUser::create(['user_id' => $this->user->id, 'trainingplan_id' => $plan->id, 'content_id' => $m2->id, 'progress' => 100, 'finish' => '1']);
+
+        $this->actingAs($this->user);
+        $response = $this->get(route('user.learning.dashboard.partial', ['tab' => 'record']));
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+
+        // 1. Course Title link points to playlist view URL and has NO popup trigger
+        $expectedPlaylistViewUrl = route('playlist.user.view', [$plan->slug, $m1->slug]);
+        $this->assertStringContainsString('href="' . $expectedPlaylistViewUrl . '"', $html);
+
+        // Verify Title link does NOT have popup trigger classes or attributes
+        $this->assertStringNotContainsString('learning-record-link fw-semibold category-preview-trigger', $html);
+        $this->assertStringNotContainsString('learning-record-link fw-semibold course-preview-trigger', $html);
+        $this->assertStringNotContainsString('data-bs-toggle="popover"', $html);
+
+        // 2. Category badge has category-preview-trigger
+        $this->assertStringContainsString('badge bg-green-lt text-green learning-record-badge category-preview-trigger', $html);
+
+        // 3. Category cell contains the popup template with all modules in order
+        $this->assertStringContainsString('MM A - Pusher Car Operation', $html);
+        $this->assertStringContainsString('MM B - Transfer Car Operation', $html);
+        $this->assertStringContainsString(route('playlist.user.view', [$plan->slug, $m1->slug]), $html);
+        $this->assertStringContainsString(route('playlist.user.view', [$plan->slug, $m2->slug]), $html);
     }
 }
 

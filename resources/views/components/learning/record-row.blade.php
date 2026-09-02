@@ -66,12 +66,76 @@
         <x-learning.record-type-badge :type="$row['type']" :url="$row['playlist_url'] ?? null" />
     </td>
 
-    <td class="learning-record-category text-center">
+    <td class="learning-record-category text-center position-relative">
         @if (($row['category'] ?? '') === 'Playlist')
-            <span class="badge bg-green-lt text-green learning-record-badge">Playlist</span>
+            <span class="badge bg-green-lt text-green learning-record-badge category-preview-trigger"
+                  role="button"
+                  tabindex="0"
+                  data-preview-kind="playlist"
+                  data-preview-title="{{ $row['title'] }}"
+                  title="Click/hover to preview playlist contents">Playlist</span>
         @else
-            <span class="badge bg-blue-lt text-blue learning-record-badge">Content</span>
+            <span class="badge bg-blue-lt text-blue learning-record-badge category-preview-trigger"
+                  role="button"
+                  tabindex="0"
+                  data-preview-kind="content"
+                  data-preview-title="{{ $row['title'] }}"
+                  title="Click/hover to preview content info">Content</span>
         @endif
+
+        {{-- Template Hover/Click Preview --}}
+        <div class="d-none course-preview-template">
+            @if ($row['row_kind'] === 'playlist')
+                <div class="course-preview-popover course-preview-playlist">
+                    <div class="course-preview-header">
+                        <div class="course-preview-title">{{ $row['title'] }}</div>
+                    </div>
+                    <div class="course-preview-body">
+                        @if (!empty($row['playlist_items']))
+                            <ol class="course-preview-playlist-list mb-0">
+                                @foreach ($row['playlist_items'] as $item)
+                                    <li class="course-preview-playlist-item">
+                                        @if (!empty($item['url']))
+                                            <a href="{{ $item['url'] }}" class="course-preview-playlist-link">
+                                                {{ $item['title'] }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">{{ $item['title'] }}</span>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ol>
+                        @else
+                            <div class="text-muted small">No content in this playlist.</div>
+                        @endif
+                    </div>
+                </div>
+            @else
+                <div class="course-preview-popover course-preview-content">
+                    <div class="course-preview-header">
+                        <div class="course-preview-title">{{ $row['title'] }}</div>
+                    </div>
+                    <div class="course-preview-body">
+                        <div class="course-preview-info d-flex flex-column gap-1 pt-1">
+                            @if (!empty($row['type']))
+                                <div class="course-preview-item d-flex align-items-center gap-2">
+                                    <span class="text-muted small">Type:</span>
+                                    <x-learning.record-type-badge :type="$row['type']" />
+                                </div>
+                            @endif
+                            @if (!empty($row['classification']) && $row['classification'] !== '-')
+                                <div class="course-preview-item d-flex align-items-center gap-2">
+                                    <span class="text-muted small">Classification:</span>
+                                    <span class="badge bg-secondary-lt text-secondary learning-record-badge">
+                                        {{ $row['classification'] }}
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
     </td>
 
     <td><x-learning.record-classification-badge :row="$row" /></td>
