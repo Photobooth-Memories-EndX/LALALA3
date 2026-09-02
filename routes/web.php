@@ -409,6 +409,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('/', [PlaylistContentUserLearningHourController::class, 'index'])->name('index');
             Route::get('/datatable', [PlaylistContentUserLearningHourController::class, 'datatable'])->name('datatable');
             Route::get('/statistics', [PlaylistContentUserLearningHourController::class, 'statistics'])->name('statistics');
+            Route::post('/calculate', [PlaylistContentUserLearningHourController::class, 'calculate'])->name('calculate');
         });
     });
 });

@@ -136,7 +136,7 @@ class UnifiedLearningHoursPermissionTest extends TestCase
     public function test_sidebar_active_state_behavior(): void
     {
         RoleAccessPermission::updateOrCreate(
-            ['role' => User::ROLE_ADMIN, 'module_key' => 'learning_hours_management'],
+            ['role' => $this->admin->role, 'module_key' => 'learning_hours_management'],
             ['can_access' => true]
         );
 

@@ -7,10 +7,12 @@ use App\Models\Classification;
 use App\Models\PlaylistContentUser;
 use App\Models\TrainingPlan;
 use App\Services\Learning\LearningHourService;
+use App\Services\LearningHours\ManualPlaylistContentUserLearningHourService;
 use App\Services\LearningHours\PlaylistContentUserLearningHourManagementService;
 use App\Support\DurationFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 
 class PlaylistContentUserLearningHourController extends Controller
@@ -210,5 +212,70 @@ class PlaylistContentUserLearningHourController extends Controller
     public function statistics(): JsonResponse
     {
         return response()->json($this->service->getStatistics());
+    }
+
+    /**
+     * Manual bulk calculation for Playlist Content User Learning Hours.
+     */
+    public function calculate(Request $request, ManualPlaylistContentUserLearningHourService $manualService): JsonResponse
+    {
+        $validated = $request->validate([
+            'mode'                => 'required|in:all,filtered',
+            'dry_run'             => 'nullable|boolean',
+            'force'               => 'nullable|boolean',
+            'trainingplan_id'     => 'nullable',
+            'calculation_source'  => 'nullable|in:all,actual,historical,zero',
+            'finish_status'       => 'nullable|in:all,completed,in_progress',
+            'content_type'        => 'nullable|in:all,Video,Document,YouTube',
+            'classification_slug' => 'nullable|string',
+            'year'                => 'nullable',
+            'min_hour'            => 'nullable|numeric|min:0',
+            'max_hour'            => 'nullable|numeric|min:0',
+        ]);
+
+        try {
+            $criteria = [
+                'mode'                => $validated['mode'],
+                'trainingplan_id'     => $request->input('trainingplan_id'),
+                'calculation_source'  => $request->input('calculation_source'),
+                'finish_status'       => $request->input('finish_status'),
+                'content_type'        => $request->input('content_type'),
+                'classification_slug' => $request->input('classification_slug'),
+                'year'                => $request->input('year'),
+                'min_hour'            => $request->input('min_hour'),
+                'max_hour'            => $request->input('max_hour'),
+            ];
+
+            $options = [
+                'dry_run'    => $request->boolean('dry_run'),
+                'force'      => $request->boolean('force'),
+                'admin_id'   => Auth::id(),
+                'admin_name' => Auth::user()?->name,
+            ];
+
+            $result = $manualService->calculate($criteria, $options);
+            $statistics = $this->service->getStatistics();
+
+            $message = $result['dry_run']
+                ? "Dry run completed: {$result['total_scanned']} scanned, {$result['total_updated']} would update, {$result['total_skipped']} already accurate."
+                : "Bulk calculation completed: {$result['total_updated']} updated, {$result['total_skipped']} skipped, {$result['total_failed']} failed.";
+
+            return response()->json([
+                'success'    => true,
+                'message'    => $message,
+                'summary'    => $result,
+                'statistics' => $statistics,
+            ]);
+        } catch (\RuntimeException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 423); // 423 Locked
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bulk calculation failed: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

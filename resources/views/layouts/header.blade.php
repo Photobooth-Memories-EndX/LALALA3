@@ -153,26 +153,6 @@
                     </li>
                 @endif
 
-                {{-- Learning Hours Management --}}
-                @if (auth()->user()->canAccessManageModule('learning_hours_management'))
-                    <li class="nav-item dropdown {{ request()->routeIs('manage.learning-hours.*') ? 'active' : '' }}">
-                        <a class="nav-link dropdown-toggle" href="#sidebar-learning-hours" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="{{ request()->routeIs('manage.learning-hours.*') ? 'true' : 'false' }}">
-                            <span class="nav-link-icon"><i class="ti ti-clock-check"></i></span>
-                            <span class="nav-link-title">Learning Hours</span>
-                        </a>
-                        <div class="dropdown-menu {{ request()->routeIs('manage.learning-hours.*') ? 'show' : '' }}">
-                            <a class="dropdown-item {{ request()->routeIs('manage.learning-hours.content-user.*') ? 'active' : '' }}" href="{{ route('manage.learning-hours.content-user.index') }}">
-                                <span class="nav-link-icon"><i class="ti ti-file-text me-1"></i></span>
-                                Content User
-                            </a>
-                            <a class="dropdown-item {{ request()->routeIs('manage.learning-hours.playlist-content-user.*') ? 'active' : '' }}" href="{{ route('manage.learning-hours.playlist-content-user.index') }}">
-                                <span class="nav-link-icon"><i class="ti ti-playlist me-1"></i></span>
-                                Playlist Content User
-                            </a>
-                        </div>
-                    </li>
-                @endif
-
             </ul>
 
             {{-- Sidebar Footer: Logout fixed at bottom-left --}}

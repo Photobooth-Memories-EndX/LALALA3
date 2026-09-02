@@ -13,6 +13,7 @@ $(function () {
         pageLength: 20,
         lengthMenu: [20, 50, 100],
         order: [[8, 'desc']], // Default order by Actual Learning Hour (Numeric)
+        autoWidth: false,
         ajax: {
             url: datatableUrl,
             type: 'GET',
@@ -76,6 +77,137 @@ $(function () {
 
     $('#btn-refresh-table').on('click', function () {
         table.ajax.reload(null, false);
+    });
+
+    // Bulk Calculate Modal Handlers
+    const calculateUrl = "{{ route('manage.learning-hours.playlist-content-user.calculate') }}";
+    const $calcModal = $('#modal-bulk-calculate');
+    const calcModalInstance = (typeof bootstrap !== 'undefined' && bootstrap.Modal)
+        ? new bootstrap.Modal(document.getElementById('modal-bulk-calculate'))
+        : null;
+
+    $('#btn-bulk-calculate').on('click', function () {
+        $('#calc-confirm-state').removeClass('d-none');
+        $('#calc-loading-state').addClass('d-none');
+        $('#calc-result-state').addClass('d-none');
+        $('#calc-dry-run').prop('checked', false);
+        $('#calc-force').prop('checked', false);
+        $('#calc-mode-all').prop('checked', true);
+
+        if (calcModalInstance) {
+            calcModalInstance.show();
+        } else {
+            $calcModal.modal('show');
+        }
+    });
+
+    $('#btn-start-calculate').on('click', function () {
+        const mode = $('input[name="calc_mode"]:checked').val() || 'all';
+        const dryRun = $('#calc-dry-run').is(':checked') ? 1 : 0;
+        const force = $('#calc-force').is(':checked') ? 1 : 0;
+
+        const payload = {
+            _token: '{{ csrf_token() }}',
+            mode: mode,
+            dry_run: dryRun,
+            force: force,
+        };
+
+        if (mode === 'filtered') {
+            payload.trainingplan_id = $('#filter-playlist').val();
+            payload.calculation_source = $('#filter-calculation-source').val();
+            payload.finish_status = $('#filter-finish-status').val();
+            payload.content_type = $('#filter-type').val();
+            payload.classification_slug = $('#filter-classification').val();
+            payload.year = $('#filter-year').val();
+            payload.min_hour = $('#filter-min-hour').val();
+            payload.max_hour = $('#filter-max-hour').val();
+        }
+
+        // Switch to Loading State
+        $('#calc-confirm-state').addClass('d-none');
+        $('#calc-loading-state').removeClass('d-none');
+        $('#calc-result-state').addClass('d-none');
+        $calcModal.find('.btn-close').prop('disabled', true);
+        $('#btn-bulk-calculate').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Calculating...');
+
+        $.ajax({
+            url: calculateUrl,
+            method: 'POST',
+            data: payload,
+            success: function (res) {
+                if (res.success && res.summary) {
+                    const s = res.summary;
+                    $('#res-mode').text(s.mode === 'all' ? 'All Records' : 'Filtered Records');
+                    $('#res-dry-run').html(s.dry_run ? '<span class="badge bg-azure-lt text-azure">YES (Preview Only)</span>' : '<span class="badge bg-green-lt text-green">NO (Database Updated)</span>');
+                    $('#res-scanned').text(Number(s.total_scanned).toLocaleString());
+                    $('#res-updated').text(Number(s.total_updated).toLocaleString());
+                    $('#res-skipped').text(Number(s.total_skipped).toLocaleString());
+                    $('#res-concurrency-skipped').text(Number(s.total_concurrency_skipped || s.total_concurrent_changed || 0).toLocaleString());
+                    $('#res-fallback').text(Number(s.total_historical_fallback).toLocaleString());
+                    $('#res-batches').text(Number(s.total_batches).toLocaleString());
+                    $('#res-failed').text(Number(s.total_failed).toLocaleString());
+                    $('#res-duration').text(s.duration_seconds + 's');
+
+                    $('#calc-result-alert').text(res.message);
+                    if (s.dry_run) {
+                        $('#calc-result-title').html('<i class="ti ti-info-circle me-1"></i> Dry Run Completed');
+                        $('#calc-result-alert').removeClass('alert-success bg-success-lt').addClass('alert-info bg-info-lt');
+                    } else {
+                        $('#calc-result-title').html('<i class="ti ti-circle-check me-1"></i> Bulk Calculation Completed');
+                        $('#calc-result-alert').removeClass('alert-info bg-info-lt').addClass('alert-success bg-success-lt');
+                    }
+
+                    // Update Top Summary Cards if returned
+                    if (res.statistics) {
+                        const st = res.statistics;
+                        $('#stat-total-records').text(Number(st.total_records).toLocaleString());
+                        $('#stat-total-hours').text(Number(st.total_learning_hours).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' h');
+                        $('#stat-actual-tracking').text(Number(st.actual_tracking_count).toLocaleString());
+                        $('#stat-historical-fallback').text(Number(st.historical_fallback_count).toLocaleString());
+                    }
+
+                    // Switch to Result State
+                    $('#calc-loading-state').addClass('d-none');
+                    $('#calc-result-state').removeClass('d-none');
+
+                    // Refresh table
+                    table.ajax.reload(null, false);
+                } else {
+                    alert(res.message || 'Bulk calculation encountered an error.');
+                    $('#calc-loading-state').addClass('d-none');
+                    $('#calc-confirm-state').removeClass('d-none');
+                }
+            },
+            error: function (xhr) {
+                const msg = xhr.responseJSON?.message || 'Calculation request failed. Please check network/server logs.';
+                alert(msg);
+                $('#calc-loading-state').addClass('d-none');
+                $('#calc-confirm-state').removeClass('d-none');
+            },
+            complete: function () {
+                $calcModal.find('.btn-close').prop('disabled', false);
+                $('#btn-bulk-calculate').prop('disabled', false).html('<i class="ti ti-calculator me-1"></i> Bulk Calculate Learning Hours');
+            }
+        });
+    });
+
+    function initTooltips() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+    }
+
+    initTooltips();
+    table.on('draw', function () {
+        initTooltips();
+    });
+
+    $(window).on('resize', function () {
+        table.columns.adjust();
     });
 });
 </script>
