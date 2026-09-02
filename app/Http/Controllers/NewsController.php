@@ -4,10 +4,64 @@ namespace App\Http\Controllers;
 
 use App\Models\News;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NewsController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for News Management (All News Articles).
+     */
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $news = News::with('user')
+            ->where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('description', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('category', 'LIKE', "%{$rawQuery}%")
+                  ->orWhereHas('user', function ($uq) use ($rawQuery) {
+                      $uq->where('name', 'LIKE', "%{$rawQuery}%");
+                  });
+            })
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        $results = $news->map(function ($item) {
+            return [
+                'id'         => $item->id,
+                'title'      => $item->title,
+                'name'       => $item->title,
+                'slug'       => $item->slug,
+                'active'     => $item->active ?? $item->status,
+                'status'     => $item->status ?? $item->active,
+                'category'   => $item->category,
+                'author'     => $item->user->name ?? null,
+                'created_at' => $item->created_at ? $item->created_at->format('d M Y') : null,
+                'views'      => (int) ($item->views ?? 0),
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
     /**
      * Display a listing of the resource.
      */

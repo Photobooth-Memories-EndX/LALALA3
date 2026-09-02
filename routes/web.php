@@ -298,6 +298,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:news_announcement'], function () {
+        Route::get('news/search-autocomplete', [NewsController::class, 'autocompleteSearch'])->name('manage.news.autocomplete');
         Route::resource('news', NewsController::class);
         Route::get('news', [NewsController::class, 'index'])->name('manage.news.index');
         Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
