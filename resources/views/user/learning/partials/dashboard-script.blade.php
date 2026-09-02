@@ -125,6 +125,7 @@
             initLearningAssessment();
             initLearningCertificate();
             initLearningRecord();
+            initOngoingSearchAutocomplete();
         })
         .catch(function () {
             _activeTab = null;
@@ -133,6 +134,96 @@
             );
         });
     }
+
+    // ── Live Autocomplete Search for Ongoing Learning ───────────────────────────
+    function initOngoingSearchAutocomplete() {
+        var searchInput = document.getElementById('ongoing-search-input');
+        var searchResults = document.getElementById('ongoing-search-results');
+        var debounceTimer = null;
+
+        if (!searchInput || !searchResults) return;
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getOngoingMode() {
+            if (_ongoingMode === 'playlist') return 'playlist';
+            var modeInput = document.querySelector('input[name="ongoing_mode"]');
+            if (modeInput && modeInput.value === 'playlist') return 'playlist';
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('ongoing_mode') || 'content';
+        }
+
+        searchInput.addEventListener('input', function () {
+            var query = this.value.trim();
+
+            clearTimeout(debounceTimer);
+
+            if (query.length < 1) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            debounceTimer = setTimeout(function () {
+                var mode = getOngoingMode();
+                fetch('/user/learning/ongoing/search-autocomplete?q=' + encodeURIComponent(query) + '&mode=' + encodeURIComponent(mode), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function (response) {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (!data || data.length === 0) {
+                        searchResults.innerHTML = '<div class="dropdown-item text-muted small py-2 px-3">No ongoing learning found</div>';
+                    } else {
+                        var html = '';
+                        data.forEach(function (item) {
+                            var badgeType = item.type === 'playlist' ? 'bg-teal-lt text-teal' : 'bg-primary-lt text-primary';
+                            var typeLabel = item.type ? escapeHtml(item.type.toUpperCase()) : 'CONTENT';
+
+                            html += '<a href="' + escapeHtml(item.url) + '" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle ongoing-search-item" data-title="' + escapeHtml(item.title) + '">' +
+                                '<div class="d-flex align-items-center justify-content-between mb-1">' +
+                                    '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeHtml(item.title) + '</span>' +
+                                    (item.progress !== undefined ? '<span class="badge ' + badgeType + ' small flex-shrink-0">' + item.progress + '%</span>' : '') +
+                                '</div>' +
+                                '<div class="d-flex align-items-center justify-content-between text-muted" style="font-size: 0.75rem;">' +
+                                    '<span class="text-truncate">' + escapeHtml(item.category || '') + '</span>' +
+                                    '<span class="badge bg-secondary-lt text-secondary" style="font-size: 0.65rem;">' + typeLabel + '</span>' +
+                                '</div>' +
+                            '</a>';
+                        });
+                        searchResults.innerHTML = html;
+                    }
+                    searchResults.style.display = 'block';
+                })
+                .catch(function () {
+                    searchResults.style.display = 'none';
+                });
+            }, 250);
+        });
+
+        // Show dropdown again on focus if query exists
+        searchInput.addEventListener('focus', function () {
+            if (this.value.trim().length >= 1 && searchResults.children.length > 0) {
+                searchResults.style.display = 'block';
+            }
+        });
+    }
+
+    // Hide dropdown menu when clicking outside search container
+    document.addEventListener('click', function (e) {
+        var searchInput = document.getElementById('ongoing-search-input');
+        var searchResults = document.getElementById('ongoing-search-results');
+        if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
 
     // ── Quick dropdown filters Learning On Going (Type / Status / Year / Month) ──
     // Terapkan pilihan via AJAX (tanpa reload halaman): perbarui query string di URL

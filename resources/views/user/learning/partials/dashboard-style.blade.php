@@ -130,6 +130,42 @@
         transform: translateY(.25rem) !important;
     }
 
+    /*
+     * Live Autocomplete Dropdown Search for Ongoing Learning
+     */
+    .search-ongoing-container {
+        position: relative;
+        width: 100%;
+    }
+
+    #ongoing-search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1085;
+        max-height: 300px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+        padding: .35rem 0;
+        border: 1px solid rgba(0, 0, 0, .08);
+        background: #ffffff;
+    }
+
+    #ongoing-search-results .dropdown-item {
+        padding: .6rem .85rem;
+        transition: background-color .15s ease;
+        text-decoration: none;
+    }
+
+    #ongoing-search-results .dropdown-item:hover,
+    #ongoing-search-results .dropdown-item:focus {
+        background-color: rgba(15, 94, 156, .08);
+    }
+
+    #ongoing-search-results .dropdown-item:not(:last-child) {
+        border-bottom: 1px solid rgba(0, 0, 0, .05);
+    }
+
     /* Tombol Filter/Reset sejajar & sama tinggi dengan input di baris filter */
     .learning-filter-actions .btn {
         min-height: 42px;
@@ -704,6 +740,35 @@
         background: #6AAED6;
         border-color: #6AAED6;
         color: #fff;
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results,
+    body.dark-mode #ongoing-search-results {
+        background: #152235;
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item,
+    body.dark-mode #ongoing-search-results .dropdown-item {
+        color: #f1f5f9;
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item:not(:last-child),
+    body.dark-mode #ongoing-search-results .dropdown-item:not(:last-child) {
+        border-bottom-color: rgba(255, 255, 255, 0.06);
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item:hover,
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item:focus,
+    body.dark-mode #ongoing-search-results .dropdown-item:hover,
+    body.dark-mode #ongoing-search-results .dropdown-item:focus {
+        background: rgba(106, 174, 214, 0.14);
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item .text-dark,
+    body.dark-mode #ongoing-search-results .dropdown-item .text-dark {
+        color: #f1f5f9 !important;
     }
 </style>
 @endsection

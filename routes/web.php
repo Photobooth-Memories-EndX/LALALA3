@@ -100,6 +100,8 @@ Route::middleware(['auth'])->group(function () {
     // Learning On Going — dua mode terpisah (fragment AJAX): Content & Playlist.
     Route::get('/my-learning/content', [LearningOngoingController::class, 'content'])->name('user.learning.ongoing.content');
     Route::get('/my-learning/playlist', [LearningOngoingController::class, 'playlist'])->name('user.learning.ongoing.playlist');
+    Route::get('/user/learning/ongoing/search-autocomplete', [LearningOngoingController::class, 'autocomplete'])->name('user.learning.ongoing.autocomplete');
+    Route::get('/my-learning/ongoing/search-autocomplete', [LearningOngoingController::class, 'autocomplete'])->name('user.learning.ongoing.autocomplete.alias');
 
     // My Learning monitoring (role 3/4): tabel user scope + detail profile.
     Route::get('/my-learning/monitoring-user-datatable', [LearningMonitoringController::class, 'monitoringUserDatatable'])

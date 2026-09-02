@@ -143,17 +143,21 @@
                     </div>
 
                     <div class="ongoing-toolbar-search">
-                        <div class="input-icon">
-                            <span class="input-icon-addon">
-                                <i class="ti ti-search" aria-hidden="true"></i>
-                            </span>
-                            <input type="text"
-                                   name="ongoing_search"
-                                   id="ongoing_search"
-                                   value="{{ request('ongoing_search') }}"
-                                   class="form-control"
-                                   aria-label="Search playlists"
-                                   placeholder="Search playlists...">
+                        <div class="position-relative search-ongoing-container w-100">
+                            <div class="input-icon">
+                                <span class="input-icon-addon">
+                                    <i class="ti ti-search" aria-hidden="true"></i>
+                                </span>
+                                <input type="text"
+                                       name="ongoing_search"
+                                       id="ongoing-search-input"
+                                       value="{{ request('ongoing_search') }}"
+                                       class="form-control"
+                                       aria-label="Search playlists"
+                                       placeholder="Search playlists..."
+                                       autocomplete="off">
+                            </div>
+                            <div id="ongoing-search-results" class="dropdown-menu shadow-sm w-100 overflow-auto position-absolute mt-1" style="display: none; max-height: 300px; z-index: 1050;"></div>
                         </div>
                     </div>
 
