@@ -486,6 +486,8 @@ class HomeUserController extends Controller
             $assessmentStatus = 'active';
             $statusMessage = null;
 
+            $isBypassUser = $user && in_array((int) ($user->role ?? $user->role_id ?? 0), [2, 3], true);
+
             if ($reason === AssessmentAccessService::REASON_INACTIVE) {
                 $assessmentStatus = 'inactive';
                 $statusMessage = 'This assessment is currently inactive and cannot be started.';
@@ -501,6 +503,11 @@ class HomeUserController extends Controller
                 $canStart = true;
                 $showResult = false;
                 $actionType = 'continue';
+            } elseif ($isBypassUser) {
+                // Admin / Super Admin (Role 2 & 3): Unlimited QA re-attempts (Never blocked by previous completed results)
+                $canStart = true;
+                $showResult = false;
+                $actionType = 'start';
             } elseif ($isGlobal && $userAttempts >= 1) {
                 // Global assessment: 1 attempt per batch completed -> Show Result Modal
                 $showResult = true;

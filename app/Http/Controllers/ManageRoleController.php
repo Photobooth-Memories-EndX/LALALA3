@@ -10,12 +10,12 @@ class ManageRoleController extends Controller
 {
     /**
      * Role yang boleh di-set lewat Manage Role.
-     * Super Admin (3) sengaja TIDAK termasuk: hanya boleh ada satu Super Admin.
      */
     private const ASSIGNABLE_ROLES = [
-        User::ROLE_USER,               // 1 - User / Employee
-        User::ROLE_ADMIN,              // 2 - Admin Training
-        User::ROLE_SUBADMIN_DIVISION,  // 4 - Subadmin Division
+        User::ROLE_USER,               // 1 - User
+        User::ROLE_SUBADMIN_DIVISION,  // 4 - Subadmin Division / Sub Admin
+        User::ROLE_ADMIN,              // 2 - Administrator / Admin
+        User::ROLE_SUPER_ADMIN,        // 3 - Super Admin
     ];
 
     /**
@@ -103,7 +103,7 @@ class ManageRoleController extends Controller
         'team'        => ['nullable', 'string', 'max:255'],
         'id_org_unit' => ['nullable', 'string'],
     ], [
-        'role.in' => 'Role tidak valid. Super Admin tidak dapat diberikan melalui halaman ini.',
+        'role.in' => 'Role yang dipilih tidak valid.',
     ]);
 
     if ($user->id === Auth::id()) {

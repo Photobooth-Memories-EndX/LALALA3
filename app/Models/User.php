@@ -124,10 +124,10 @@ public function canManageLms()
     public static function roles()
     {
         return [
+            static::ROLE_USER               => 'User',
             static::ROLE_ADMIN              => 'Administrator',
             static::ROLE_SUPER_ADMIN        => 'Super Admin',
-            static::ROLE_USER               => 'User',
-            static::ROLE_SUBADMIN_DIVISION  => 'Subadmin Division',
+            static::ROLE_SUBADMIN_DIVISION  => 'Sub Admin',
         ];
     }
 
@@ -183,10 +183,6 @@ public function canManageLms()
 
     public function canAccessManageModule(string $moduleKey): bool
     {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
-
         $userPermission = $this->accessPermissions()
             ->where('module_key', $moduleKey)
             ->first();
@@ -203,7 +199,7 @@ public function canManageLms()
             return (bool) $rolePermission->can_access;
         }
 
-        return $this->isAdmin();
+        return $this->isAdmin() || $this->isSuperAdmin();
     }
 
     public function news()
@@ -219,6 +215,11 @@ public function canManageLms()
     public function contentUsers()
     {
         return $this->hasMany(ContentUser::class);
+    }
+
+    public function playlistContentUsers()
+    {
+        return $this->hasMany(PlaylistContentUser::class, 'user_id');
     }
 
     public function comments()

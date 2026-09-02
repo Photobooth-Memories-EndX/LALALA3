@@ -8,6 +8,13 @@ use Illuminate\Http\Request;
 
 class ManageAccessPermissionController extends Controller
 {
+    private const ROLE_DISPLAY_ORDER = [
+        User::ROLE_USER,
+        User::ROLE_SUBADMIN_DIVISION,
+        User::ROLE_ADMIN,
+        User::ROLE_SUPER_ADMIN,
+    ];
+
     private array $modules = [
         'admin_management'           => 'Admin Management',
         'user_management'            => 'User Management',
@@ -29,7 +36,7 @@ class ManageAccessPermissionController extends Controller
     public function index()
     {
         return view('main.manage-access-permission.index', [
-            'roles' => User::roles(),
+            'roles' => $this->orderedRoles(),
             'modules' => $this->modules,
             'permissions' => RoleAccessPermission::all()
                 ->groupBy('role')
@@ -56,12 +63,6 @@ class ManageAccessPermissionController extends Controller
     {
         abort_if(!array_key_exists($role, User::roles()), 404);
 
-        if ($role === User::ROLE_SUPER_ADMIN) {
-            return redirect()
-                ->route('manage.access-permission.index')
-                ->with('warning', 'Super Admin selalu memiliki full access.');
-        }
-
         $selectedModules = $request->input('permissions', []);
 
         foreach ($this->modules as $moduleKey => $label) {
@@ -79,5 +80,14 @@ class ManageAccessPermissionController extends Controller
         return redirect()
             ->route('manage.access-permission.index')
             ->with('success', 'Access permission role berhasil diperbarui.');
+    }
+
+    private function orderedRoles(): array
+    {
+        $roles = User::roles();
+
+        return collect(self::ROLE_DISPLAY_ORDER)
+            ->mapWithKeys(fn ($role) => [$role => $roles[$role] ?? $role])
+            ->toArray();
     }
 }

@@ -65,6 +65,23 @@ class RoleAccessPermissionSeeder extends Seeder
 
         /*
         |--------------------------------------------------------------------------
+        | ROLE 3 - SUPER ADMIN
+        |--------------------------------------------------------------------------
+        */
+        foreach ($modules as $module) {
+            RoleAccessPermission::updateOrCreate(
+                [
+                    'role' => User::ROLE_SUPER_ADMIN,
+                    'module_key' => $module,
+                ],
+                [
+                    'can_access' => true,
+                ]
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
         | ROLE 4 - SUBADMIN DIVISION
         |--------------------------------------------------------------------------
         */

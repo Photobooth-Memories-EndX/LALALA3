@@ -2,7 +2,7 @@
     $content = $content ?? null;
     $mode = $mode ?? ($content ? 'edit' : 'create');
     $stepNumber = $stepNumber ?? 1;
-    $isPublished = $content && $content->active === 'Active';
+    $isPublished = $isPublished ?? ($content && $content->isPublished());
 @endphp
 
 <div class="card owl-main-card mb-3">

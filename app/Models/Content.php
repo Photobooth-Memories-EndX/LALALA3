@@ -51,6 +51,11 @@ class Content extends Model
         return $this->hasMany(ContentUser::class);
     }
 
+    public function playlistContentUsers()
+    {
+        return $this->hasMany(PlaylistContentUser::class, 'content_id');
+    }
+
     /**
      * Playlist (Training Plan) yang memuat content ini.
      * Dipakai untuk eager-load badge "Playlist" di kartu Learning On Going
@@ -104,6 +109,16 @@ class Content extends Model
     public function isNotStarted(): bool
     {
         return (bool) $this->has_deadline && $this->from_date && now()->toDateString() < $this->from_date->format('Y-m-d');
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->active === 'Active';
+    }
+
+    public function isUnpublished(): bool
+    {
+        return $this->active !== 'Active';
     }
 
     public function isAccessibleByDeadline(): bool

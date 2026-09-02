@@ -2,6 +2,7 @@
     $content = $content ?? null;
     $mode = $mode ?? ($content && $content->exists ? 'edit' : 'create');
     $isEdit = ($mode === 'edit' && $content && $content->exists);
+    $isLocked = $isLocked ?? ($content && $content->isPublished());
 
     $showContentDeadline = old('has_deadline') !== null
         ? (bool) old('has_deadline')
@@ -31,13 +32,15 @@
                            id="learning_hours"
                            value="{{ $learningHoursVal }}"
                            readonly
-                           autocomplete="off">
+                           autocomplete="off"
+                           {{ $isLocked ? 'disabled' : '' }}>
                 </div>
                 <div class="col-12 col-sm-5 col-md-4">
                     <button type="button"
                             class="btn btn-outline-primary w-100"
                             id="btn-sync-content-lh"
-                            data-url="{{ route('content.synchronize-learning-hours', $content->slug ?? $content->id) }}">
+                            data-url="{{ route('content.synchronize-learning-hours', $content->slug ?? $content->id) }}"
+                            {{ $isLocked ? 'disabled' : '' }}>
                         <i class="ti ti-refresh me-1 icon-sync"></i>
                         <span class="btn-text">Synchronize</span>
                     </button>
@@ -82,7 +85,8 @@
             </span>
             <input class="form-control" placeholder="Select a date"
                 id="datepicker-icon-prepend" name="date"
-                value="{{ old('date', $content?->date ?? date('Y-m-d')) }}" required>
+                value="{{ old('date', $content?->date ?? date('Y-m-d')) }}"
+                {{ $isLocked ? 'disabled' : 'required' }}>
         </div>
     </div>
 </div>
@@ -94,7 +98,8 @@
             <input type="hidden" name="has_deadline" value="0">
             <input class="form-check-input" type="checkbox" id="has_deadline_content"
                 name="has_deadline" value="1"
-                @checked($showContentDeadline)>
+                @checked($showContentDeadline)
+                {{ $isLocked ? 'disabled' : '' }}>
             <span class="form-check-label fw-medium">Set Deadline?</span>
         </label>
         <small class="form-hint d-block mt-1">Optional. If enabled, specify the date range.</small>
@@ -104,12 +109,14 @@
             <div class="col-md-6">
                 <label class="form-label" for="content_from_date">From Date</label>
                 <input type="date" class="form-control" name="from_date" id="content_from_date"
-                    value="{{ old('from_date', $content?->from_date ? $content->from_date->format('Y-m-d') : '') }}">
+                    value="{{ old('from_date', $content?->from_date ? $content->from_date->format('Y-m-d') : '') }}"
+                    {{ $isLocked ? 'disabled' : '' }}>
             </div>
             <div class="col-md-6">
                 <label class="form-label" for="content_to_date">To Date</label>
                 <input type="date" class="form-control" name="to_date" id="content_to_date"
-                    value="{{ old('to_date', $content?->to_date ? $content->to_date->format('Y-m-d') : '') }}">
+                    value="{{ old('to_date', $content?->to_date ? $content->to_date->format('Y-m-d') : '') }}"
+                    {{ $isLocked ? 'disabled' : '' }}>
             </div>
         </div>
     </div>

@@ -675,14 +675,21 @@ class LearningRecordController extends Controller
                                 ->whereRaw('content_users.progress >= COALESCE(certificate_settings.minimum_progress, 0)');
                         });
                 })
-                // Playlist: user punya aktivitas pada minimal satu content playlist.
+                // Playlist: user punya aktivitas pada minimal satu content playlist (PCU atau CU).
                 ->orWhere(function ($w) use ($userId) {
                     $w->where('certificate_type', 'playlist')
-                        ->whereExists(function ($s) use ($userId) {
-                            $s->from('trainingplandetail')
-                                ->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')
-                                ->whereColumn('trainingplandetail.trainingplan_id', 'certificate_settings.trainingplan_id')
-                                ->where('content_users.user_id', $userId);
+                        ->where(function ($pw) use ($userId) {
+                            $pw->whereExists(function ($s) use ($userId) {
+                                $s->from('playlist_content_users')
+                                    ->whereColumn('playlist_content_users.trainingplan_id', 'certificate_settings.trainingplan_id')
+                                    ->where('playlist_content_users.user_id', $userId);
+                            })
+                            ->orWhereExists(function ($s) use ($userId) {
+                                $s->from('trainingplandetail')
+                                    ->join('content_users', 'content_users.content_id', '=', 'trainingplandetail.content_id')
+                                    ->whereColumn('trainingplandetail.trainingplan_id', 'certificate_settings.trainingplan_id')
+                                    ->where('content_users.user_id', $userId);
+                            });
                         });
                 })
                 // Global: user punya hasil assessment final pada assessment tsb.

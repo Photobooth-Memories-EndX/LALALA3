@@ -1,22 +1,27 @@
 @php
     $isEdit = isset($assesment) && $assesment;
+    $totalBankCount = isset($assessmentQuestionBanks) ? (is_countable($assessmentQuestionBanks) ? count($assessmentQuestionBanks) : $assessmentQuestionBanks->count()) : (isset($assesmentQuestionBanks) ? count($assesmentQuestionBanks) : (isset($assessment->questionBanks) ? $assessment->questionBanks->count() : (isset($assesment->assessment_question_banks) ? $assesment->assessment_question_banks->count() : (isset($questionBanks) ? count($questionBanks) : 0))));
 @endphp
 
 <div class="owl-section-block mb-4 pt-3 border-top">
     <div class="owl-section-header mb-3 pb-2 border-bottom">
-        <div class="d-flex align-items-center w-100">
-            <span class="owl-section-number me-2">4</span>
-            <h3 class="owl-section-title mb-0 fw-bold">Question Bank List</h3>
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <div class="d-flex align-items-center">
+                    <span class="owl-section-number me-2">4</span>
+                    <h3 class="owl-section-title mb-0 fw-bold">Question Bank List</h3>
+                </div>
+                <div class="text-muted small ms-4 ps-1 mt-1">
+                    Summary of question banks attached and question quotas.
+                </div>
+            </div>
             @if ($isEdit)
-                <div class="ms-auto">
-                    <span class="badge bg-primary-lt text-primary fw-bold">
-                        Total: {{ $assessmentQuestionBanks->count() ?? 0 }} Bank
+                <div>
+                    <span class="badge bg-primary-lt text-primary fw-bold px-3 py-2 rounded-3" style="font-size: 0.85rem;">
+                        Total: {{ $totalBankCount }} Bank
                     </span>
                 </div>
             @endif
-        </div>
-        <div class="text-muted small ms-4 ps-1">
-            Summary of question banks attached and question quotas.
         </div>
     </div>
 
@@ -81,12 +86,31 @@
                     @endforelse
                 </tbody>
                 @isset($assessmentQuestionBanks)
-                    <tfoot>
-                        <tr class="fw-bold">
-                            <td colspan="3" class="text-end">Total Assessment Questions</td>
-                            <td class="text-center">
-                                <span class="badge bg-primary-lt text-primary">{{ $totalQuestions }}</span>
+                    <tfoot class="bg-light fw-bold">
+                        <tr>
+                            <!-- Kolom No (Kosong) -->
+                            <td></td>
+
+                            <!-- Label Total (Rata Kiri) -->
+                            <td class="text-start fw-bold fs-3">
+                                Total Assessment Questions
                             </td>
+
+                            <!-- Total Soal yang Tersedia di Bank (Badge Biru) -->
+                            <td class="text-center">
+                                <span class="badge bg-blue-lt text-blue fw-bold px-3 py-2 rounded-pill" style="font-size: 0.85rem;">
+                                    {{ $totalQuestionsInBank ?? (isset($assessmentQuestionBanks) ? $assessmentQuestionBanks->sum(function($aqb) { return isset($aqb->question_bank->questions) ? count($aqb->question_bank->questions) : 0; }) : 0) }}
+                                </span>
+                            </td>
+
+                            <!-- Total Soal yang Digunakan (Disamakan 100% dengan Badge Used: bg-green-lt text-green) -->
+                            <td class="text-center">
+                                <span class="badge bg-green-lt text-green fw-bold px-3 py-2 rounded-pill" id="totalUsedQuestionsBadge" style="font-size: 0.85rem;">
+                                    {{ $totalAssessmentQuestions ?? ($totalQuestions ?? 0) }}
+                                </span>
+                            </td>
+
+                            <!-- Kolom Action (Kosong) -->
                             <td></td>
                         </tr>
                     </tfoot>

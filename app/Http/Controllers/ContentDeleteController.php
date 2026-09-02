@@ -14,13 +14,22 @@ class ContentDeleteController extends Controller
         // $news = News::select('id', 'image')->where('slug', $slug)->first();
         $content = Content::findBySlug($slug);
 
-        $src = 'storage/files/content/' . $content->id . '/' . $content->slug;
-        if (File::exists(public_path($src)) && !is_dir($src)) {
-            File::delete(public_path($src));
+        if ($content && $content->isPublished()) {
+            return response()->json([
+                'error' => 'Cannot delete media while content is published. Please unpublish the content first.',
+                'status' => 422
+            ], 422);
         }
 
-        $content->file = '';
-        $content->save();
+        if ($content) {
+            $src = 'storage/files/content/' . $content->id . '/' . $content->slug;
+            if (File::exists(public_path($src)) && !is_dir($src)) {
+                File::delete(public_path($src));
+            }
+
+            $content->file = '';
+            $content->save();
+        }
 
         return response()->json(['success' => 'Content deleted successfully', 'status' => 200]);
     }
@@ -28,6 +37,13 @@ class ContentDeleteController extends Controller
     public function deletethumbajax($slug)
     {
         $content = Content::findBySlug($slug);
+
+        if ($content && $content->isPublished()) {
+            return response()->json([
+                'error' => 'Cannot delete thumbnail while content is published. Please unpublish the content first.',
+                'status' => 422
+            ], 422);
+        }
 
         if ($content) {
             $src = 'storage/files/content/' . $content->id . '/thumb.jpg';

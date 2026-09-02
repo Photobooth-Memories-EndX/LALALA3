@@ -6,6 +6,76 @@
        PAGE HEADER
     ========================== */
 
+    .assessment-page-header {
+        margin-bottom: 1.25rem !important;
+        padding-top: 0.5rem;
+    }
+
+    .assessment-back-link,
+    .assessment-page-header .assessment-back a {
+        display: inline-flex;
+        align-items: center;
+        color: var(--tblr-primary, #206bc4) !important;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none !important;
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        transition: color 0.15s ease-in-out;
+        cursor: pointer;
+    }
+
+    .assessment-back-link:hover,
+    .assessment-page-header .assessment-back a:hover {
+        color: var(--tblr-primary-dark, #185294) !important;
+        text-decoration: underline !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .assessment-back-link i,
+    .assessment-page-header .assessment-back a i {
+        font-size: 1rem;
+        transition: transform 0.15s ease-in-out;
+    }
+
+    .assessment-back-link:hover i,
+    .assessment-page-header .assessment-back a:hover i {
+        transform: translateX(-2px);
+    }
+
+    [data-bs-theme="dark"] .assessment-back-link,
+    [data-theme="dark"] .assessment-back-link,
+    body.dark-mode .assessment-back-link,
+    body.theme-dark .assessment-back-link,
+    [data-bs-theme="dark"] .assessment-page-header .assessment-back a,
+    [data-theme="dark"] .assessment-page-header .assessment-back a,
+    body.dark-mode .assessment-page-header .assessment-back a,
+    body.theme-dark .assessment-page-header .assessment-back a {
+        color: #60a5fa !important;
+    }
+
+    [data-bs-theme="dark"] .assessment-back-link:hover,
+    [data-theme="dark"] .assessment-back-link:hover,
+    body.dark-mode .assessment-back-link:hover,
+    body.theme-dark .assessment-back-link:hover,
+    [data-bs-theme="dark"] .assessment-page-header .assessment-back a:hover,
+    [data-theme="dark"] .assessment-page-header .assessment-back a:hover,
+    body.dark-mode .assessment-page-header .assessment-back a:hover,
+    body.theme-dark .assessment-page-header .assessment-back a:hover {
+        color: #93c5fd !important;
+    }
+
+    .assessment-page-header .breadcrumb {
+        font-size: 0.85rem;
+        margin-bottom: 0;
+    }
+
     .owl-page-title {
         font-size: 1.35rem;
         font-weight: 700;
@@ -305,6 +375,20 @@
         border-radius: 14px;
         padding: .5rem;
         box-shadow: 0 10px 30px rgba(15, 23, 42, .15);
+    }
+
+    .owl-dropdown-menu .dropdown-header {
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #8a8d8f;
+    }
+
+    .owl-dropdown-menu .dropdown-divider {
+        margin: 4px 0;
+        border-top: 1px solid rgba(0, 0, 0, .08);
     }
 
     .owl-dropdown-menu .dropdown-item {
@@ -656,6 +740,30 @@
         min-width: 115px;
     }
 
+    .assessment-filter-field-batch {
+        min-width: 110px;
+    }
+
+    .assessment-filter-field-result {
+        min-width: 115px;
+    }
+
+    .assessment-filter-field-team {
+        min-width: 120px;
+    }
+
+    .assessment-filter-field-department {
+        min-width: 130px;
+    }
+
+    .assessment-filter-field-score {
+        min-width: 120px;
+    }
+
+    .assessment-filter-field-date {
+        min-width: 135px;
+    }
+
     .assessment-filter-control {
         width: 100%;
         min-width: 0;
@@ -746,8 +854,59 @@
         box-shadow: 0 4px 12px rgba(5, 80, 125, .22);
     }
 
+    .assessment-filter-action-btn.btn-success,
+    .assessment-filter-action-btn.btn-success:hover,
+    .assessment-filter-action-btn.btn-success:focus,
+    .assessment-filter-action-btn.btn-success:active,
+    .assessment-filter-action-btn.btn-success:visited,
+    .assessment-filter-action-btn.btn-success:focus-visible,
+    #resultDownloadAction,
+    #resultDownloadAction:hover,
+    #resultDownloadAction:focus,
+    #resultDownloadAction:active,
+    #resultDownloadAction:visited,
+    #resultDownloadAction:focus-visible {
+        --tblr-btn-bg: #2fb344 !important;
+        --tblr-btn-border-color: #2fb344 !important;
+        --tblr-btn-hover-bg: #2fb344 !important;
+        --tblr-btn-hover-border-color: #2fb344 !important;
+        --tblr-btn-active-bg: #2fb344 !important;
+        --tblr-btn-active-border-color: #2fb344 !important;
+        --tblr-btn-color: #ffffff !important;
+        --tblr-btn-hover-color: #ffffff !important;
+        --tblr-btn-active-color: #ffffff !important;
+        --bs-btn-bg: #2fb344 !important;
+        --bs-btn-border-color: #2fb344 !important;
+        --bs-btn-hover-bg: #2fb344 !important;
+        --bs-btn-hover-border-color: #2fb344 !important;
+        --bs-btn-active-bg: #2fb344 !important;
+        --bs-btn-active-border-color: #2fb344 !important;
+        --bs-btn-color: #ffffff !important;
+        --bs-btn-hover-color: #ffffff !important;
+        --bs-btn-active-color: #ffffff !important;
+        background-color: #2fb344 !important;
+        background: #2fb344 !important;
+        border-color: #2fb344 !important;
+        color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
+    .assessment-filter-action-btn.btn-success > i,
+    .assessment-filter-action-btn.btn-success:hover > i,
+    .assessment-filter-action-btn.btn-success:focus > i,
+    .assessment-filter-action-btn.btn-success:active > i,
+    #resultDownloadAction > i,
+    #resultDownloadAction:hover > i,
+    #resultDownloadAction:focus > i,
+    #resultDownloadAction:active > i {
+        color: #ffffff !important;
+    }
+
     /* Responsive Filter Toolbar */
-    @media (max-width: 1199.98px) {
+    @media (max-width: 991.98px) {
         .assessment-filter-toolbar {
             flex-wrap: wrap;
             gap: 8px;
@@ -756,7 +915,13 @@
         .assessment-filter-field-year,
         .assessment-filter-field-month,
         .assessment-filter-field-type,
-        .assessment-filter-field-status {
+        .assessment-filter-field-status,
+        .assessment-filter-field-batch,
+        .assessment-filter-field-result,
+        .assessment-filter-field-team,
+        .assessment-filter-field-department,
+        .assessment-filter-field-score,
+        .assessment-filter-field-date {
             flex: 1 1 calc(25% - 8px);
             min-width: 110px;
         }
@@ -775,7 +940,13 @@
         .assessment-filter-field-year,
         .assessment-filter-field-month,
         .assessment-filter-field-type,
-        .assessment-filter-field-status {
+        .assessment-filter-field-status,
+        .assessment-filter-field-batch,
+        .assessment-filter-field-result,
+        .assessment-filter-field-team,
+        .assessment-filter-field-department,
+        .assessment-filter-field-score,
+        .assessment-filter-field-date {
             flex: 1 1 calc(50% - 8px);
             min-width: 120px;
         }
@@ -795,7 +966,13 @@
         .assessment-filter-field-year,
         .assessment-filter-field-month,
         .assessment-filter-field-type,
-        .assessment-filter-field-status {
+        .assessment-filter-field-status,
+        .assessment-filter-field-batch,
+        .assessment-filter-field-result,
+        .assessment-filter-field-team,
+        .assessment-filter-field-department,
+        .assessment-filter-field-score,
+        .assessment-filter-field-date {
             flex: 1 1 100%;
             min-width: 100%;
         }
@@ -885,4 +1062,122 @@
         border-color: #182433 !important;
     }
 
+    /* Duplicate Assessment Modal */
+    #modalDuplicateAssessment .modal-content {
+        border-radius: 16px !important;
+        border: 0;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+    }
+
+    #modalDuplicateAssessment .modal-header {
+        padding: 1.25rem 1.5rem 0.5rem;
+    }
+
+    #modalDuplicateAssessment .modal-body {
+        padding: 0.75rem 1.5rem 1.25rem;
+    }
+
+    #modalDuplicateAssessment .modal-footer {
+        padding: 1rem 1.5rem 1.25rem;
+        border-top: 1px solid var(--tblr-border-color, #e5e7eb) !important;
+    }
+
+    #modalDuplicateAssessment .duplicate-target-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .modal-content,
+    body.dark-mode #modalDuplicateAssessment .modal-content {
+        background-color: #182433 !important;
+        color: #dce6f1 !important;
+        border: 1px solid #25384d !important;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .modal-header,
+    [data-bs-theme="dark"] #modalDuplicateAssessment .modal-footer,
+    body.dark-mode #modalDuplicateAssessment .modal-header,
+    body.dark-mode #modalDuplicateAssessment .modal-footer {
+        background-color: #1f2d3d !important;
+        border-color: #25384d !important;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .duplicate-target-box,
+    body.dark-mode #modalDuplicateAssessment .duplicate-target-box {
+        background-color: #1f2d3d !important;
+        border-color: #25384d !important;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .duplicate-target-title,
+    body.dark-mode #modalDuplicateAssessment .duplicate-target-title {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] #modalDuplicateAssessment .btn-close,
+    body.dark-mode #modalDuplicateAssessment .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    /* Score History Popover */
+    .score-history-popover {
+        max-width: 460px !important;
+        border-radius: 12px !important;
+        z-index: 1060;
+    }
+    .score-history-popover .popover-header {
+        font-size: 13px;
+        color: #1e293b;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+    .score-history-popover-card {
+        min-width: 320px;
+        max-width: 440px;
+    }
+    .score-history-table th {
+        font-weight: 600;
+        color: #64748b;
+        background-color: transparent;
+    }
+    .score-history-table td {
+        vertical-align: middle;
+    }
+    .score-history-trigger.has-history {
+        cursor: pointer;
+        transition: all .15s ease;
+    }
+    .score-history-trigger.has-history:hover {
+        filter: brightness(0.92);
+        box-shadow: 0 0 0 2px rgba(32, 107, 196, 0.2);
+    }
+    [data-theme="dark"] .score-history-trigger.has-history:hover,
+    [data-bs-theme="dark"] .score-history-trigger.has-history:hover,
+    body.dark-mode .score-history-trigger.has-history:hover {
+        filter: brightness(1.2);
+        box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3);
+    }
+    [data-theme="dark"] .score-history-popover,
+    [data-bs-theme="dark"] .score-history-popover,
+    body.dark-mode .score-history-popover {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        border: 1px solid var(--tblr-border-color, #25384d) !important;
+        color: var(--tblr-body-color, #dce6f1) !important;
+    }
+    [data-theme="dark"] .score-history-popover .popover-header,
+    [data-bs-theme="dark"] .score-history-popover .popover-header,
+    body.dark-mode .score-history-popover .popover-header {
+        background-color: var(--tblr-bg-surface-secondary, #1f2d3d) !important;
+        color: #ffffff !important;
+    }
+    [data-theme="dark"] .score-history-table th,
+    [data-bs-theme="dark"] .score-history-table th,
+    body.dark-mode .score-history-table th {
+        color: #94a3b8 !important;
+    }
+    [data-theme="dark"] .score-history-table td,
+    [data-bs-theme="dark"] .score-history-table td,
+    body.dark-mode .score-history-table td {
+        color: #dce6f1 !important;
+    }
 </style>

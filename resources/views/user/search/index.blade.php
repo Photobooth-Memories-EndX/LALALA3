@@ -93,6 +93,10 @@
     font-size: .78rem;
     color: var(--tblr-muted);
 }
+[data-bs-theme="dark"] .pagination .page-link.text-dark,
+[data-bs-theme="dark"] h4.text-dark {
+    color: var(--tblr-body-color) !important;
+}
 </style>
 @endsection
 
@@ -178,37 +182,21 @@
             {{-- ── RIGHT: Results ───────────────────────────────────── --}}
             <div class="col-12 col-md-9">
 
-                {{-- Search box --}}
-                <div class="card mb-3">
-                    <div class="card-body py-2">
-                        <form action="{{ route('search', $searchtype) }}" method="get"
-                              autocomplete="off" novalidate>
-                            <div class="input-icon">
-                                <span class="input-icon-addon">
-                                    <i class="ti ti-search"></i>
-                                </span>
-                                <input type="text" name="s" class="form-control"
-                                       placeholder="Search…" value="{{ $keyword }}">
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
                 {{-- Results label --}}
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h3 class="mb-0">
+                    <h4 class="fw-bold mb-0 text-dark">
                         @if ($searchtype === 'all')      All Results
                         @elseif ($searchtype === 'content')    Content
                         @elseif ($searchtype === 'news')       News
                         @elseif ($searchtype === 'eventphoto') Gallery
                         @elseif ($searchtype === 'playlist')   Playlist
                         @endif
-                    </h3>
-                    <span class="text-muted small">{{ $result->count() }} result(s)</span>
+                    </h4>
+                    <span class="text-muted small">{{ $results->total() }} result(s)</span>
                 </div>
 
                 {{-- Empty state --}}
-                @if ($result->isEmpty())
+                @if ($results->isEmpty())
                     <div class="card">
                         <div class="card-body search-modern-empty">
                             <i class="ti ti-search-off d-block mb-2"></i>
@@ -225,7 +213,7 @@
                 {{-- Result grid --}}
                 @else
                     <div class="row row-cards g-3">
-                        @foreach ($result as $list)
+                        @foreach ($results as $list)
                             @php
                                 $datediff = round((time() - strtotime($list->created_at)) / 86400);
                                 if ($datediff === 0) {
@@ -388,6 +376,42 @@
 
                         @endforeach
                     </div>{{-- /row --}}
+
+                    <!-- Custom Pagination Links -->
+                    <div class="d-flex align-items-center justify-content-end gap-3 mt-4 pt-3 border-top">
+                        <!-- Info Showing -->
+                        <div class="text-muted small">
+                            Showing <strong>{{ $results->firstItem() ?? 0 }}</strong> to <strong>{{ $results->lastItem() ?? 0 }}</strong> of <strong>{{ $results->total() }}</strong> results
+                        </div>
+
+                        <!-- Custom Pagination Links -->
+                        <nav aria-label="Search pagination">
+                            <ul class="pagination pagination-md mb-0 align-items-center gap-1">
+                                {{-- Previous Page Link --}}
+                                @if ($results->onFirstPage())
+                                    <li class="page-item disabled"><span class="page-link border-0 text-muted">&lsaquo;</span></li>
+                                @else
+                                    <li class="page-item"><a class="page-link border-0 text-dark" href="{{ $results->previousPageUrl() }}">&lsaquo;</a></li>
+                                @endif
+
+                                {{-- Pagination Elements --}}
+                                @foreach ($results->getUrlRange(1, $results->lastPage()) as $page => $url)
+                                    @if ($page == $results->currentPage())
+                                        <li class="page-item active"><span class="page-link rounded-3 fw-bold" style="background-color: #0c5b9e; border-color: #0c5b9e; color: #fff;">{{ $page }}</span></li>
+                                    @else
+                                        <li class="page-item"><a class="page-link border-0 rounded-3 text-dark fw-semibold" href="{{ $url }}">{{ $page }}</a></li>
+                                    @endif
+                                @endforeach
+
+                                {{-- Next Page Link --}}
+                                @if ($results->hasMorePages())
+                                    <li class="page-item"><a class="page-link border-0 text-dark" href="{{ $results->nextPageUrl() }}">&rsaquo;</a></li>
+                                @else
+                                    <li class="page-item disabled"><span class="page-link border-0 text-muted">&rsaquo;</span></li>
+                                @endif
+                            </ul>
+                        </nav>
+                    </div>
                 @endif
 
             </div>{{-- /col-md-9 --}}

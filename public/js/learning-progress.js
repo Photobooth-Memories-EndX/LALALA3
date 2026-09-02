@@ -11,6 +11,7 @@
         this.url = options.url;
         this.csrf = options.csrf;
         this.contentId = options.contentId;
+        this.trainingPlanId = options.trainingPlanId || options.trainingplanId || null;
         this.type = options.type; // 'video' | 'document'
         this.onUpdate = options.onUpdate || function () {};
 
@@ -33,6 +34,10 @@
 
         var self = this;
         var data = { content_id: this.contentId, type: this.type };
+
+        if (this.trainingPlanId) {
+            data.trainingplan_id = this.trainingPlanId;
+        }
 
         for (var key in payload) {
             if (Object.prototype.hasOwnProperty.call(payload, key) && payload[key] !== null && payload[key] !== undefined) {

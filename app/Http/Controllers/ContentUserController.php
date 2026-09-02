@@ -19,7 +19,7 @@ class ContentUserController extends Controller
 
     public function index(Request $request, LearningAnalyticsService $analyticsService)
     {
-        $filterSearch = $request->s;
+        $filterSearch = $request->s ?: $request->search;
         $filterType = $request->type;
         $filterClassification = $request->classification;
         $filterDateOrder = $request->date_order ?? 'newest';
@@ -61,9 +61,12 @@ class ContentUserController extends Controller
             ->orderBy('author', 'asc')
             ->pluck('author');
 
-        $queryContent = Content::with('classification')
-            ->where('playlistonly', 'N')
+        $queryContent = Content::with(['classification'])
             ->where('active', 'Active')
+            ->where(function ($query) {
+                $query->where('playlistonly', 'N')
+                    ->orWhereNull('playlistonly');
+            })
             ->notExpired($todayDate);
 
         if ($filterSearch) {
@@ -406,8 +409,8 @@ class ContentUserController extends Controller
                 $contentUser->total_pages = $totalPages;
             }
 
-            if ($content->type === 'Document' && $totalPages > 0) {
-                $pageDuration = max(1, min(300, (int) ($content->page_duration ?: 30)));
+            if ($content->type === 'Document' && (int) $content->page_duration > 0 && $totalPages > 0) {
+                $pageDuration = max(1, min(300, (int) $content->page_duration));
                 $officialDuration = $totalPages * $pageDuration;
                 $officialDurationValue = DurationFormatter::fromSeconds($officialDuration);
 
@@ -429,19 +432,23 @@ class ContentUserController extends Controller
                     $computed = 100;
                     $pageCompleted = true;
                     $allowedPage = $totalPages;
-                    $request->session()->forget($timerKey);
+                    if ($request->hasSession()) {
+                        $request->session()->forget($timerKey);
+                    }
                 } else {
                     $activePage = min((int) ($validated['active_page'] ?? 0), $totalPages);
                     $completedPage = min((int) ($validated['completed_page'] ?? 0), $totalPages);
 
                     if ($activePage === $allowedPage && $activePage > $completedPages) {
-                        $timer = $request->session()->get($timerKey);
+                        $timer = $request->hasSession() ? $request->session()->get($timerKey) : null;
 
                         if (!is_array($timer) || (int) ($timer['page'] ?? 0) !== $activePage) {
-                            $request->session()->put($timerKey, [
-                                'page' => $activePage,
-                                'started_at' => microtime(true),
-                            ]);
+                            if ($request->hasSession()) {
+                                $request->session()->put($timerKey, [
+                                    'page' => $activePage,
+                                    'started_at' => microtime(true),
+                                ]);
+                            }
                         }
                     }
 
@@ -449,7 +456,7 @@ class ContentUserController extends Controller
                         if ($completedPage <= $completedPages) {
                             $pageCompleted = true;
                         } elseif ($completedPage === $allowedPage) {
-                            $timer = $request->session()->get($timerKey, []);
+                            $timer = $request->hasSession() ? $request->session()->get($timerKey, []) : [];
                             $serverElapsed = (int) ($timer['page'] ?? 0) === $completedPage
                                 ? max(0, microtime(true) - (float) ($timer['started_at'] ?? microtime(true)))
                                 : 0;
@@ -462,7 +469,9 @@ class ContentUserController extends Controller
                                 $computed = ($completedPages / $totalPages) * 100;
                                 $pageCompleted = true;
                                 $allowedPage = min($totalPages, $completedPages + 1);
-                                $request->session()->forget($timerKey);
+                                if ($request->hasSession()) {
+                                    $request->session()->forget($timerKey);
+                                }
                             } else {
                                 $pageCompleted = false;
                                 $remainingSeconds = max(1, (int) ceil(max(
@@ -480,7 +489,25 @@ class ContentUserController extends Controller
                         $computed = ($completedPages / $totalPages) * 100;
                     }
                 }
+            } elseif ($content->type === 'Document' && (int) $content->page_duration === 0) {
+                // NEW SCROLL MODE LOGIC
+                $lastPage = (int) ($validated['last_page'] ?? $validated['completed_page'] ?? $validated['active_page'] ?? 0);
+                $currentHighest = (int) ($contentUser->last_page ?? 0);
+
+                if ($lastPage > 0) {
+                    $newLastPage = $totalPages > 0 ? min(max($lastPage, $currentHighest), $totalPages) : max($lastPage, $currentHighest);
+                    $contentUser->last_page = $newLastPage;
+                    $pageCompleted = true;
+                    $allowedPage = $totalPages > 0 ? min($totalPages, $newLastPage + 1) : $newLastPage;
+
+                    if ($totalPages > 0) {
+                        $computed = ($newLastPage / $totalPages) * 100;
+                    }
+                } elseif ($totalPages > 0 && $currentHighest > 0) {
+                    $computed = ($currentHighest / $totalPages) * 100;
+                }
             } else {
+                // EXISTING NON-DOCUMENT / FALLBACK LOGIC
                 $lastPage = (int) ($validated['last_page'] ?? 0);
 
                 if ($lastPage > 0) {

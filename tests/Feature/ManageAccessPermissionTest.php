@@ -232,4 +232,193 @@ class ManageAccessPermissionTest extends TestCase
         $this->assertFalse($regularUser->canAccessManageModule('learning_hours_management'));
         $this->assertTrue($this->superAdmin->canAccessManageModule('learning_hours_management'));
     }
+
+    public function test_super_admin_can_access_index_and_sees_atur_permission_for_all_roles(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->get(route('manage.access-permission.index'));
+
+        $response->assertOk();
+        $response->assertSee('Manage Access Permission');
+        $response->assertDontSee('Tidak perlu diatur');
+
+        foreach (User::roles() as $roleId => $roleName) {
+            $response->assertSee(route('manage.access-permission.edit', $roleId));
+            $response->assertSee($roleName);
+        }
+    }
+
+    public function test_access_permission_index_displays_roles_in_correct_order(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->get(route('manage.access-permission.index'));
+
+        $response->assertOk();
+
+        // Assert exact sequence: User (Role 1) -> Sub Admin (Role 4) -> Administrator (Role 2) -> Super Admin (Role 3)
+        $response->assertSeeInOrder([
+            'User',
+            'Learning User',
+            route('manage.access-permission.edit', User::ROLE_USER),
+            'Sub Admin',
+            'Unit Monitoring',
+            route('manage.access-permission.edit', User::ROLE_SUBADMIN_DIVISION),
+            'Administrator',
+            'Manage LMS Default',
+            route('manage.access-permission.edit', User::ROLE_ADMIN),
+            'Super Admin',
+            'Full Access',
+            route('manage.access-permission.edit', User::ROLE_SUPER_ADMIN),
+        ]);
+    }
+
+    public function test_super_admin_can_access_edit_for_super_admin_role(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->get(route('manage.access-permission.edit', User::ROLE_SUPER_ADMIN));
+
+        $response->assertOk();
+        $response->assertSee('Edit Access Permission');
+        $response->assertSee('Role 3');
+        $response->assertSee('Super Admin');
+        $response->assertSee('Configure Manage LMS modules for the <strong>Super Admin</strong> role.', false);
+        $response->assertSee('Save Permissions');
+    }
+
+    public function test_super_admin_can_update_super_admin_role_permissions(): void
+    {
+        $response = $this->actingAs($this->superAdmin)
+            ->put(route('manage.access-permission.update', User::ROLE_SUPER_ADMIN), [
+                'permissions' => [
+                    'admin_management',
+                    'learning_hours_management',
+                ],
+            ]);
+
+        $response->assertRedirect(route('manage.access-permission.index'));
+        $response->assertSessionHas('success', 'Access permission role berhasil diperbarui.');
+
+        $adminMgmt = RoleAccessPermission::where('role', User::ROLE_SUPER_ADMIN)
+            ->where('module_key', 'admin_management')
+            ->first();
+        $contentRepo = RoleAccessPermission::where('role', User::ROLE_SUPER_ADMIN)
+            ->where('module_key', 'content_repository')
+            ->first();
+
+        $this->assertNotNull($adminMgmt);
+        $this->assertTrue((bool) $adminMgmt->can_access);
+        $this->assertNotNull($contentRepo);
+        $this->assertFalse((bool) $contentRepo->can_access);
+    }
+
+    public function test_super_admin_module_authorization_reflects_saved_role_access_permissions(): void
+    {
+        $superAdminUser = $this->createTestUser(User::ROLE_SUPER_ADMIN);
+
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_SUPER_ADMIN, 'module_key' => 'content_repository'],
+            ['can_access' => false]
+        );
+
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_SUPER_ADMIN, 'module_key' => 'admin_management'],
+            ['can_access' => true]
+        );
+
+        // When explicitly false, canAccessManageModule must return false
+        $this->assertFalse($superAdminUser->canAccessManageModule('content_repository'));
+
+        // When explicitly true, canAccessManageModule must return true
+        $this->assertTrue($superAdminUser->canAccessManageModule('admin_management'));
+
+        // When not set in DB for unconfigured modules, fallback is true for Super Admin
+        $this->assertTrue($superAdminUser->canAccessManageModule('non_configured_module_key'));
+    }
+
+    public function test_super_admin_is_not_locked_out_when_all_lms_modules_are_disabled(): void
+    {
+        $modules = [
+            'admin_management', 'user_management', 'learning_management',
+            'content_repository', 'category_classification', 'assessment_management',
+            'question_bank', 'playlist_learning_path', 'learning_hours_management',
+            'playlist_debug_tools', 'news_announcement', 'page_management',
+            'event_documentation', 'certificate_setting', 'monitoring',
+        ];
+
+        foreach ($modules as $module) {
+            RoleAccessPermission::updateOrCreate(
+                ['role' => User::ROLE_SUPER_ADMIN, 'module_key' => $module],
+                ['can_access' => false]
+            );
+        }
+
+        // Super Admin can still access permission management index & edit
+        $indexResponse = $this->actingAs($this->superAdmin)
+            ->get(route('manage.access-permission.index'));
+        $indexResponse->assertOk();
+
+        $editResponse = $this->actingAs($this->superAdmin)
+            ->get(route('manage.access-permission.edit', User::ROLE_SUPER_ADMIN));
+        $editResponse->assertOk();
+
+        // Super Admin can restore permissions
+        $updateResponse = $this->actingAs($this->superAdmin)
+            ->put(route('manage.access-permission.update', User::ROLE_SUPER_ADMIN), [
+                'permissions' => ['content_repository'],
+            ]);
+        $updateResponse->assertRedirect(route('manage.access-permission.index'));
+
+        $this->assertTrue($this->superAdmin->canAccessManageModule('content_repository'));
+    }
+
+    public function test_unauthorized_users_cannot_access_or_update_permissions(): void
+    {
+        $admin = $this->createTestUser(User::ROLE_ADMIN);
+        $user = $this->createTestUser(User::ROLE_USER);
+        $subadmin = $this->createTestUser(User::ROLE_SUBADMIN_DIVISION);
+
+        // Guest redirect
+        $this->get(route('manage.access-permission.index'))
+            ->assertRedirect(route('loginpage'));
+
+        // Admin (2) forbidden
+        $this->actingAs($admin)->get(route('manage.access-permission.index'))->assertForbidden();
+        $this->actingAs($admin)->get(route('manage.access-permission.edit', User::ROLE_ADMIN))->assertForbidden();
+        $this->actingAs($admin)->put(route('manage.access-permission.update', User::ROLE_ADMIN), [])->assertForbidden();
+
+        // User (1) forbidden
+        $this->actingAs($user)->get(route('manage.access-permission.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('manage.access-permission.edit', User::ROLE_USER))->assertForbidden();
+        $this->actingAs($user)->put(route('manage.access-permission.update', User::ROLE_USER), [])->assertForbidden();
+
+        // Subadmin (4) forbidden
+        $this->actingAs($subadmin)->get(route('manage.access-permission.index'))->assertForbidden();
+        $this->actingAs($subadmin)->get(route('manage.access-permission.edit', User::ROLE_SUBADMIN_DIVISION))->assertForbidden();
+        $this->actingAs($subadmin)->put(route('manage.access-permission.update', User::ROLE_SUBADMIN_DIVISION), [])->assertForbidden();
+    }
+
+    public function test_saving_super_admin_permissions_does_not_affect_other_roles(): void
+    {
+        RoleAccessPermission::updateOrCreate(
+            ['role' => User::ROLE_ADMIN, 'module_key' => 'content_repository'],
+            ['can_access' => true]
+        );
+
+        // Update Super Admin to have content_repository = false
+        $this->actingAs($this->superAdmin)
+            ->put(route('manage.access-permission.update', User::ROLE_SUPER_ADMIN), [
+                'permissions' => ['admin_management'],
+            ]);
+
+        $adminPermission = RoleAccessPermission::where('role', User::ROLE_ADMIN)
+            ->where('module_key', 'content_repository')
+            ->first();
+
+        $superAdminPermission = RoleAccessPermission::where('role', User::ROLE_SUPER_ADMIN)
+            ->where('module_key', 'content_repository')
+            ->first();
+
+        $this->assertTrue((bool) $adminPermission->can_access);
+        $this->assertFalse((bool) $superAdminPermission->can_access);
+    }
 }

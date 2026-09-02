@@ -31,7 +31,7 @@
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Role ID</th>
+                            {{-- <th>Role ID</th> --}}
                             <th>Role Name</th>
                             <th>Default Access</th>
                             <th class="w-1">Action</th>
@@ -43,11 +43,11 @@
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
 
-                                <td>
+                                {{-- <td>
                                     <span class="badge bg-blue-lt">
                                         Role {{ $role }}
                                     </span>
-                                </td>
+                                </td> --}}
 
                                 <td class="fw-bold">
                                     {{ $roleName }}
@@ -64,7 +64,7 @@
                                         </span>
                                     @elseif ($role === \App\Models\User::ROLE_SUBADMIN_DIVISION)
                                         <span class="badge bg-yellow-lt">
-                                            Monitoring Division
+                                            Unit Monitoring
                                         </span>
                                     @else
                                         <span class="badge bg-secondary-lt">
@@ -74,16 +74,10 @@
                                 </td>
 
                                 <td>
-                                    @if ($role === \App\Models\User::ROLE_SUPER_ADMIN)
-                                        <span class="text-muted small">
-                                            Tidak perlu diatur
-                                        </span>
-                                    @else
-                                        <a href="{{ route('manage.access-permission.edit', $role) }}"
-                                           class="btn btn-sm btn-primary">
-                                            Atur Permission
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('manage.access-permission.edit', $role) }}"
+                                       class="btn btn-sm btn-primary">
+                                        Settings Permission
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach

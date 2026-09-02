@@ -8,7 +8,8 @@
     function updatePageTitle(val) {
         const titleEl = document.getElementById('dynamic_page_title');
         if (titleEl) {
-            titleEl.textContent = val && val.trim() !== '' ? val : 'New Assessment';
+            const fallback = titleEl.getAttribute('data-default-title') || 'Create Assessment';
+            titleEl.textContent = val && val.trim() !== '' ? val : fallback;
         }
     }
 

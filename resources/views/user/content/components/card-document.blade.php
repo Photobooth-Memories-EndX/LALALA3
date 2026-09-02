@@ -48,14 +48,26 @@
     $learningHoursText = $learningHoursDisplay . ' ' . ($learningHoursNum == 1 ? 'Hour' : 'Hours');
 
     $authorName = $item->author ?? 'Training Team';
+
+    $isPlaylistOnly = ($item->playlistonly ?? 'N') === 'Y';
+    $cardUrl = route('content.user.view', $item->slug);
 @endphp
 
 <div class="card content-card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
     <div class="position-relative">
+        {{-- Temporary deployment hide: Playlist badge hidden on All Content --}}
+        {{--
+        @if ($isPlaylistOnly)
+            <span class="badge bg-green text-white position-absolute top-0 start-0 m-3 shadow-sm" style="pointer-events: none; z-index: 2;">
+                <i class="ti ti-playlist me-1"></i>Playlist
+            </span>
+        @endif
+        --}}
+
         @if ($isExpired)
             <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
         @else
-            <a href="{{ route('content.user.view', $item->slug) }}" class="d-block text-decoration-none text-reset">
+            <a href="{{ $cardUrl }}" class="d-block text-decoration-none text-reset">
                 <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
             </a>
         @endif
@@ -73,7 +85,7 @@
                 </span>
                 <span class="text-muted">&bull;</span>
                 <span>
-                    <i class="ti ti-clock me-1"></i>{{ \App\Support\DurationFormatter::format($item->duration, 'Self-paced') }}
+                    <i class="ti ti-clock me-1"></i>{{ ($item->duration === '00:00:00' || (int) ($item->page_duration ?? 30) === 0) ? 'Self-paced' : \App\Support\DurationFormatter::format($item->duration) }}
                 </span>
             </div>
 
@@ -81,7 +93,7 @@
                 @if ($isExpired)
                     <span title="{{ $item->title }}">{{ $item->title }}</span>
                 @else
-                    <a href="{{ route('content.user.view', $item->slug) }}"
+                    <a href="{{ $cardUrl }}"
                        class="text-reset text-decoration-none"
                        title="{{ $item->title }}">
                         {{ $item->title }}
@@ -137,7 +149,7 @@
                     Akses Expired
                 </button>
             @else
-                <a href="{{ route('content.user.view', $item->slug) }}"
+                <a href="{{ $cardUrl }}"
                    class="btn btn-primary w-100 rounded-pill">
                     <i class="ti ti-player-play me-1"></i>
                     Start Learning

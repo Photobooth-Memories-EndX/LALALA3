@@ -28,7 +28,7 @@
                     <span class="overview-meta-separator">&bull;</span>
                     <span>
                         <i class="far fa-clock me-1"></i>
-                        {{ \App\Support\DurationFormatter::format($content->duration) }}
+                        {{ ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0) ? 'Self-paced' : \App\Support\DurationFormatter::format($content->duration) }}
                     </span>
                 </div>
             </div>

@@ -1,0 +1,79 @@
+/**
+ * OWL LMS - Document Scroll Mode Styles
+ * Isolated stylesheet for continuous vertical PDF reading mode.
+ */
+
+.owl-pdf-reader.owl-pdf-scroll-mode {
+    --owl-pdf-viewport-max: 920px;
+}
+
+.owl-pdf-reader.owl-pdf-scroll-mode .owl-pdf-viewer {
+    overflow-y: auto !important;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Continuous vertical page flow in scroll mode */
+.owl-pdf-reader.owl-pdf-scroll-mode .owl-pdf-viewer .pdfpage {
+    display: block !important;
+    margin: 16px auto !important;
+    background: #ffffff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Subtle active highlight on current page in viewport */
+.owl-pdf-reader.owl-pdf-scroll-mode .owl-pdf-viewer .pdfpage.owl-pdf-page-active {
+    box-shadow: 0 0 0 2px #05507D, 0 8px 24px rgba(0, 0, 0, 0.16) !important;
+}
+
+/* Self-paced badge styling */
+.pdf-page-navigation .pdf-tb-stat-self-paced {
+    color: #05507D !important;
+    background: rgba(5, 80, 125, 0.1) !important;
+    border: 1px solid rgba(5, 80, 125, 0.25) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 6px;
+}
+
+.pdf-page-navigation .pdf-tb-stat-self-paced strong {
+    color: #05507D !important;
+}
+
+/* Admin Document Metadata scroll mode notice */
+.document-scroll-mode-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(32, 107, 196, 0.08);
+    border: 1px solid rgba(32, 107, 196, 0.2);
+    color: #05507D;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-stat-self-paced,
+body.dark-mode .pdf-page-navigation .pdf-tb-stat-self-paced {
+    color: #93c5fd !important;
+    background: rgba(32, 107, 196, 0.2) !important;
+    border-color: rgba(147, 197, 253, 0.35) !important;
+}
+
+body[data-bs-theme="dark"] .pdf-page-navigation .pdf-tb-stat-self-paced strong,
+body.dark-mode .pdf-page-navigation .pdf-tb-stat-self-paced strong {
+    color: #bfdbfe !important;
+}
+
+body[data-bs-theme="dark"] .document-scroll-mode-notice,
+body.dark-mode .document-scroll-mode-notice {
+    background: rgba(32, 107, 196, 0.16);
+    border-color: rgba(147, 197, 253, 0.25);
+    color: #93c5fd;
+}

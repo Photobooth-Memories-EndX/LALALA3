@@ -61,6 +61,44 @@
     justify-content: center;
     border: 1px solid var(--tblr-border-color);
 }
+[data-bs-theme="dark"] #moreFiltersModal .text-dark {
+    color: var(--tblr-body-color) !important;
+}
+.btn-quick-reset,
+.btn-news-filter-reset {
+    border-color: #0c5b9e !important;
+    color: #0c5b9e !important;
+    background-color: transparent !important;
+    transition: background-color .15s ease-in-out, border-color .15s ease-in-out, color .15s ease-in-out;
+}
+.btn-quick-reset:hover,
+.btn-news-filter-reset:hover {
+    background-color: #e6f0fa !important;
+    border-color: #0c5b9e !important;
+    color: #0c5b9e !important;
+}
+.btn-quick-reset:hover i,
+.btn-news-filter-reset:hover i {
+    color: #0c5b9e !important;
+}
+[data-bs-theme="dark"] .btn-quick-reset:hover,
+[data-bs-theme="dark"] .btn-news-filter-reset:hover {
+    background-color: rgba(12, 91, 158, 0.25) !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+}
+[data-bs-theme="dark"] .btn-quick-reset:hover i,
+[data-bs-theme="dark"] .btn-news-filter-reset:hover i {
+    color: #60a5fa !important;
+}
+.btn-back {
+    color: #0c5b9e !important;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.btn-back:hover {
+    opacity: 0.85;
+    transform: translateX(-3px);
+}
 </style>
 @endsection
 
@@ -68,6 +106,13 @@
 
 <div class="page-header d-print-none">
     <div class="container-xl">
+        <!-- TOMBOL BACK KE DASHBOARD MANAGE -->
+        <div class="mb-3">
+            <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
+                <i class="ti ti-arrow-left me-1 fs-5"></i> Back
+            </a>
+        </div>
+
         <div class="row align-items-center">
             <div class="col">
                 <div class="d-flex align-items-center gap-3">
@@ -153,52 +198,80 @@
             </div>
         </div>
 
-        {{-- Table Card --}}
-        <div class="card shadow-sm">
-            <div class="card-header">
-                <h3 class="card-title">List News</h3>
-            </div>
+        {{-- Quick Filter Component --}}
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-3">
+                <!-- LABEL QUICK FILTER -->
+                <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
+                    Quick Filter
+                </div>
 
-            <div class="card-body border-bottom py-3">
-                <form method="GET" action="{{ route('news.index') }}" id="newsFilterForm">
+                <form action="{{ route('manage.news.index') }}" method="GET" id="manageNewsFilterForm">
                     <div class="row g-2 align-items-center">
-                        <div class="col-md-2">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="text-nowrap text-secondary small">Show</span>
-                                <select name="show" id="newsShow" class="form-select form-select-sm"
-                                        onchange="document.getElementById('newsFilterForm').submit()">
-                                    <option value="10"  {{ ($show ?? 25) == 10  ? 'selected' : '' }}>10</option>
-                                    <option value="25"  {{ ($show ?? 25) == 25  ? 'selected' : '' }}>25</option>
-                                    <option value="50"  {{ ($show ?? 25) == 50  ? 'selected' : '' }}>50</option>
-                                    <option value="100" {{ ($show ?? 25) == 100 ? 'selected' : '' }}>100</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <select name="author" id="newsAuthorFilter" class="form-select form-select-sm"
-                                    onchange="document.getElementById('newsFilterForm').submit()">
-                                <option value="">All Authors</option>
-                                @foreach($authors as $author)
-                                    <option value="{{ $author->id }}"
-                                            {{ request('author') == $author->id ? 'selected' : '' }}>
-                                        {{ $author->name }}
+                        <!-- Quick Filter Dropdowns -->
+                        <div class="col-6 col-md-auto">
+                            <select name="month" class="form-select rounded-3" onchange="document.getElementById('manageNewsFilterForm').submit()">
+                                <option value="">Month: All</option>
+                                @foreach(range(1, 12) as $m)
+                                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                                        {{ date('F', mktime(0, 0, 0, $m, 1)) }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-5">
-                            <input type="text" name="search" id="newsSearch"
-                                   class="form-control form-control-sm"
-                                   placeholder="Search news title or author..."
-                                   value="{{ request('search') }}">
+                        <div class="col-6 col-md-auto">
+                            <select name="year" class="form-select rounded-3" onchange="document.getElementById('manageNewsFilterForm').submit()">
+                                <option value="">Year: All</option>
+                                @foreach(range(date('Y'), 2020) as $y)
+                                    <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary btn-sm w-100">
-                                <i class="ti ti-search me-1"></i>Search
-                            </button>
+                        <div class="col-6 col-md-auto">
+                            <select name="views" class="form-select rounded-3" onchange="document.getElementById('manageNewsFilterForm').submit()">
+                                <option value="">Views: All Views</option>
+                                <option value="most" {{ (request('views') == 'most' || request('views') == 'most_viewed') ? 'selected' : '' }}>Most Viewed</option>
+                                <option value="least" {{ (request('views') == 'least' || request('views') == 'least_viewed') ? 'selected' : '' }}>Least Viewed</option>
+                            </select>
+                        </div>
+                        <!-- TAMBAHAN: STATUS FILTER (Approved, Pending, Rejected) -->
+                        <div class="col-6 col-md-auto">
+                            <select name="status" class="form-select rounded-3" onchange="document.getElementById('manageNewsFilterForm').submit()">
+                                <option value="">Status: All</option>
+                                <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="rejected" {{ (request('status') == 'rejected' || request('status') == 'reject') ? 'selected' : '' }}>Rejected</option>
+                            </select>
+                        </div>
+
+                        <!-- Search Bar -->
+                        <div class="col-12 col-md">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="ti ti-search text-muted"></i></span>
+                                <input type="text" name="search" id="newsSearch" class="form-control border-start-0 rounded-end-3" placeholder="Search news title, description or author..." value="{{ request('search') }}">
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="col-auto d-flex gap-1">
+                            <button type="submit" class="btn btn-primary rounded-3 px-3" title="Search"><i class="ti ti-search"></i></button>
+                            <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-toggle="modal" data-bs-target="#moreFiltersModal" title="More Filters"><i class="ti ti-adjustments-horizontal"></i></button>
+                            <a href="{{ route('manage.news.index') }}" 
+                               class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center justify-content-center btn-quick-reset" 
+                               style="border-color: #0c5b9e !important; color: #0c5b9e !important; background-color: transparent;" 
+                               title="Reset Filter">
+                                <i class="ti ti-refresh" style="font-size: 1.1rem; color: #0c5b9e !important;"></i>
+                            </a>
                         </div>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        {{-- Table Card --}}
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h3 class="card-title">List News</h3>
             </div>
 
             <div id="newsTableWrapper">
@@ -257,7 +330,7 @@
                                         $statusBadge = match($statusVal) {
                                             'approved' => 'bg-success-lt text-success',
                                             'pending'  => 'bg-warning-lt text-warning',
-                                            'reject'   => 'bg-danger-lt text-danger',
+                                            'reject', 'rejected' => 'bg-danger-lt text-danger',
                                             default    => 'bg-secondary-lt text-secondary'
                                         };
                                     @endphp
@@ -331,15 +404,90 @@
     </div>
 </div>
 
+{{-- More Filters Modal --}}
+<div class="modal fade" id="moreFiltersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                    <i class="ti ti-adjustments-horizontal text-primary"></i> More Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('manage.news.index') }}" method="GET">
+                <div class="modal-body py-3">
+                    <!-- Input tersembunyi untuk mempertahankan nilai Quick Filter saat ini -->
+                    <input type="hidden" name="search" value="{{ request('search') }}">
+                    <input type="hidden" name="status" value="{{ request('status') }}">
+                    <input type="hidden" name="month" value="{{ request('month') }}">
+                    <input type="hidden" name="year" value="{{ request('year') }}">
+                    <input type="hidden" name="views" value="{{ request('views') }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small">Author</label>
+                        <select name="author_id" class="form-select rounded-3">
+                            <option value="">All Authors</option>
+                            @foreach($authors as $author)
+                                <option value="{{ $author->id }}" {{ (request('author_id') == $author->id || request('author') == $author->id) ? 'selected' : '' }}>{{ $author->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark small">Category / Topic</label>
+                            <select name="category_id" class="form-select rounded-3">
+                                <option value="">All Categories</option>
+                                @foreach($categories as $cat)
+                                    @php
+                                        $catVal = is_object($cat) ? ($cat->id ?? $cat->name) : $cat;
+                                        $catName = is_object($cat) ? $cat->name : $cat;
+                                    @endphp
+                                    <option value="{{ $catVal }}" {{ (request('category_id') == $catVal || request('category') == $catVal) ? 'selected' : '' }}>{{ $catName }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-dark small">Sort by</label>
+                            <select name="sort" class="form-select rounded-3">
+                                <option value="newest" {{ request('sort', 'newest') == 'newest' ? 'selected' : '' }}>Newest</option>
+                                <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Oldest</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar me-1"></i> Period</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="text" name="from_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('from_date', request('date_from')) }}">
+                            </div>
+                            <div class="col-6">
+                                <input type="text" name="to_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('to_date', request('date_to')) }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 d-flex gap-2">
+                    <a href="{{ route('manage.news.index') }}" class="btn btn-outline-secondary rounded-pill flex-fill"><i class="ti ti-refresh me-1"></i> Reset</a>
+                    <button type="submit" class="btn btn-primary rounded-pill flex-fill"><i class="ti ti-check me-1"></i> Apply Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('script')
 <script>
 var newsSearchTimer;
-document.getElementById('newsSearch').addEventListener('keyup', function() {
-    clearTimeout(newsSearchTimer);
-    var form = document.getElementById('newsFilterForm');
-    newsSearchTimer = setTimeout(function() { form.submit(); }, 450);
-});
+var newsSearchInput = document.getElementById('newsSearch');
+if (newsSearchInput) {
+    newsSearchInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') return;
+        clearTimeout(newsSearchTimer);
+        var form = document.getElementById('manageNewsFilterForm');
+        newsSearchTimer = setTimeout(function() { if (form) form.submit(); }, 450);
+    });
+}
 </script>
 @endsection

@@ -22,108 +22,203 @@ class ContentController extends Controller
         $sevenDaysFromToday = $today->copy()->addDays(7)->toDateString();
         $thirtyDaysFromToday = $today->copy()->addDays(30)->toDateString();
 
-        if ($request->filled('s')) {
-            $search = $request->s;
+        // Search Filter
+        $search = $request->s ?: $request->search;
+        if (filled($search)) {
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('author', 'like', "%{$search}%");
+                $q->where('content.title', 'like', "%{$search}%")
+                  ->orWhere('content.description', 'like', "%{$search}%")
+                  ->orWhere('content.author', 'like', "%{$search}%");
             });
         }
 
+        // Type Filter
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $query->where('content.type', $request->type);
         }
 
-        if ($request->filled('classification_id')) {
-            $query->where('classification_id', $request->classification_id);
+        // Classification Filter
+        $classificationId = $request->classification_id ?: $request->classification;
+        if (filled($classificationId)) {
+            $query->where('content.classification_id', $classificationId);
         }
 
-        if ($request->filled('active')) {
-            $query->where('active', $request->active);
+        // Status (Active/Inactive) Filter
+        $status = $request->active ?: $request->status;
+        if (filled($status) && $status !== 'all') {
+            $query->where('content.active', $status);
         }
 
-        if ($request->filled('exam')) {
-            $query->where('exam', $request->exam);
+        // Author Filter
+        if ($request->filled('author')) {
+            $query->where('content.author', $request->author);
         }
 
-        if ($request->filled('playlistonly')) {
-            $query->where('playlistonly', $request->playlistonly);
-        }
-
-        if ($request->filled('deadline')) {
-            if ($request->deadline === 'with') {
-                $query->where('has_deadline', 1);
-            } elseif ($request->deadline === 'without') {
-                $query->where(function ($q) {
-                    $q->whereNull('has_deadline')->orWhere('has_deadline', 0);
-                });
-            } elseif ($request->deadline === 'expired') {
-                $query->where('has_deadline', 1)
-                      ->whereDate('to_date', '<', $todayDate);
-            } elseif ($request->deadline === 'active') {
-                $query->where('has_deadline', 1)
-                      ->whereDate('from_date', '<=', $todayDate)
-                      ->whereDate('to_date', '>=', $todayDate);
+        // Exam Filter (OK / NOT / Yes / No)
+        $exam = $request->exam;
+        if (filled($exam) && $exam !== 'all') {
+            if (in_array(strtoupper($exam), ['OK', 'YES', '1', 'Y'])) {
+                $query->where('content.exam', 'OK');
+            } elseif (in_array(strtoupper($exam), ['NOT', 'NO', '0', 'N'])) {
+                $query->where('content.exam', 'NOT');
             }
         }
 
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('content.date', [$request->date_from, $request->date_to]);
-        } elseif ($request->filled('date_from')) {
-            $query->whereDate('content.date', '>=', $request->date_from);
-        } elseif ($request->filled('date_to')) {
-            $query->whereDate('content.date', '<=', $request->date_to);
+        // Playlist Only Filter (Y / N / Yes / No)
+        $playlistOnlyFilter = $request->playlistonly ?? $request->playlist;
+        if (filled($playlistOnlyFilter) && $playlistOnlyFilter !== 'all') {
+            if (in_array(strtoupper($playlistOnlyFilter), ['Y', 'YES', '1'])) {
+                $query->where('content.playlistonly', 'Y');
+            } elseif (in_array(strtoupper($playlistOnlyFilter), ['N', 'NO', '0'])) {
+                $query->where(function ($q) {
+                    $q->where('content.playlistonly', 'N')->orWhereNull('content.playlistonly');
+                });
+            }
         }
 
-        if ($request->filled('deadline_from_date') && $request->filled('deadline_to_date')) {
-            $query->whereBetween('content.date', [
-                $request->deadline_from_date,
-                $request->deadline_to_date,
-            ]);
-        } elseif ($request->filled('deadline_from_date')) {
-            $query->whereDate('content.date', '>=', $request->deadline_from_date);
-        } elseif ($request->filled('deadline_to_date')) {
-            $query->whereDate('content.date', '<=', $request->deadline_to_date);
+        // Year & Month Filter
+        if ($request->filled('month')) {
+            $query->whereMonth('content.created_at', (int) $request->month);
+            if ($request->filled('year')) {
+                $query->whereYear('content.created_at', (int) $request->year);
+            }
+        } elseif ($request->filled('year')) {
+            $query->whereYear('content.created_at', (int) $request->year);
         }
 
-        if ($request->filled('created_from_date')) {
-            $query->whereDate('content.created_at', '>=', $request->created_from_date);
+        // Created Date Filter (From Date / To Date)
+        $createdFrom = $request->created_from_date ?: $request->created_from;
+        $createdTo = $request->created_to_date ?: $request->created_to;
+        if (filled($createdFrom)) {
+            $query->whereDate('content.created_at', '>=', $createdFrom);
+        }
+        if (filled($createdTo)) {
+            $query->whereDate('content.created_at', '<=', $createdTo);
         }
 
-        if ($request->filled('created_to_date')) {
-            $query->whereDate('content.created_at', '<=', $request->created_to_date);
+        // Period Filter (From Date / To Date on content.date)
+        $periodFrom = $request->deadline_from_date ?: ($request->period_from ?: $request->date_from);
+        $periodTo = $request->deadline_to_date ?: ($request->period_to ?: $request->date_to);
+        if (filled($periodFrom) && filled($periodTo)) {
+            $query->whereBetween('content.date', [$periodFrom, $periodTo]);
+        } elseif (filled($periodFrom)) {
+            $query->whereDate('content.date', '>=', $periodFrom);
+        } elseif (filled($periodTo)) {
+            $query->whereDate('content.date', '<=', $periodTo);
         }
 
+        // Updated Date Filter
         if ($request->filled('updated_from_date')) {
             $query->whereDate('content.updated_at', '>=', $request->updated_from_date);
         }
-
         if ($request->filled('updated_to_date')) {
             $query->whereDate('content.updated_at', '<=', $request->updated_to_date);
         }
 
-        switch ($request->get('deadline_status')) {
-            case 'expired':
-                $query->whereDate('content.date', '<', $todayDate);
-                break;
-            case 'today':
-                $query->whereDate('content.date', $todayDate);
-                break;
-            case 'less_than_7_days':
-                $query->whereDate('content.date', '>', $todayDate)
-                    ->whereDate('content.date', '<=', $sevenDaysFromToday);
-                break;
-            case 'less_than_30_days':
-                $query->whereDate('content.date', '>', $todayDate)
-                    ->whereDate('content.date', '<=', $thirtyDaysFromToday);
-                break;
-            case 'more_than_30_days':
-                $query->whereDate('content.date', '>', $thirtyDaysFromToday);
-                break;
+        // Deadline Status Filter
+        $deadlineStatus = $request->deadline_status ?: $request->deadline;
+        if (filled($deadlineStatus) && $deadlineStatus !== 'all') {
+            switch ($deadlineStatus) {
+                case 'expired':
+                    $query->whereDate('content.date', '<', $todayDate);
+                    break;
+                case 'today':
+                    $query->whereDate('content.date', $todayDate);
+                    break;
+                case 'less_than_7_days':
+                    $query->whereDate('content.date', '>', $todayDate)
+                        ->whereDate('content.date', '<=', $sevenDaysFromToday);
+                    break;
+                case 'less_than_30_days':
+                    $query->whereDate('content.date', '>', $todayDate)
+                        ->whereDate('content.date', '<=', $thirtyDaysFromToday);
+                    break;
+                case 'more_than_30_days':
+                    $query->whereDate('content.date', '>', $thirtyDaysFromToday);
+                    break;
+                case 'with':
+                    $query->where('content.has_deadline', 1);
+                    break;
+                case 'without':
+                    $query->where(function ($q) {
+                        $q->whereNull('content.has_deadline')->orWhere('content.has_deadline', 0);
+                    });
+                    break;
+                case 'active':
+                    $query->where('content.has_deadline', 1)
+                          ->whereDate('content.from_date', '<=', $todayDate)
+                          ->whereDate('content.to_date', '>=', $todayDate);
+                    break;
+            }
         }
 
-        switch ($request->get('sort')) {
+        // Duration Filter
+        $durationFilter = $request->get('duration');
+        if (filled($durationFilter) && $durationFilter !== 'all') {
+            $durationRange = match ($durationFilter) {
+                'lt10', 'under_10' => [null, 600, false, true],
+                '10-30', '10_30' => [600, 1800, true, false],
+                '30-60', '30_60' => [1800, 3600, false, false],
+                'gt60', 'above_60' => [3600, null, false, false],
+                default => null,
+            };
+
+            if ($durationRange !== null) {
+                [$minimum, $maximum, $includeMinimum, $excludeMaximum] = $durationRange;
+                $isSqlite = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite';
+                if (!$isSqlite) {
+                    $durationInSeconds = "CASE
+                        WHEN content.duration IS NULL OR TRIM(content.duration) = '' THEN NULL
+                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 1 THEN
+                            CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 60
+                            + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
+                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2 THEN
+                            CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 3600
+                            + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(content.duration, ':', 2), ':', -1) AS UNSIGNED) * 60
+                            + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
+                        ELSE NULL
+                    END";
+
+                    if ($minimum !== null) {
+                        $query->whereRaw(
+                            $durationInSeconds . ($includeMinimum ? ' >= ?' : ' > ?'),
+                            [$minimum]
+                        );
+                    }
+
+                    if ($maximum !== null) {
+                        $query->whereRaw(
+                            $durationInSeconds . ($excludeMaximum ? ' < ?' : ' <= ?'),
+                            [$maximum]
+                        );
+                    }
+                }
+            }
+        }
+
+        // Learning Hour Filter
+        $lhFilter = $request->get('learning_hour');
+        if (filled($lhFilter) && $lhFilter !== 'all') {
+            if ($lhFilter === 'lt1h') {
+                $query->where('content.learning_hours', '<', 1);
+            } elseif ($lhFilter === '1-3h') {
+                $query->where('content.learning_hours', '>=', 1)->where('content.learning_hours', '<=', 3);
+            } elseif ($lhFilter === 'gt3h') {
+                $query->where('content.learning_hours', '>', 3);
+            }
+        }
+
+        // Sort Views (Radio in Modal)
+        $viewOrder = $request->view_order ?? $request->sort_views;
+        if ($viewOrder === 'most_viewed' || $viewOrder === 'most') {
+            $query->orderBy('content.views', 'desc');
+        } elseif ($viewOrder === 'least_viewed' || $viewOrder === 'least') {
+            $query->orderBy('content.views', 'asc');
+        }
+
+        // Sort By Filter
+        $sort = $request->get('sort');
+        switch ($sort) {
             case 'oldest_course':
             case 'oldest':
                 $query->orderBy('content.created_at', 'asc');
@@ -135,10 +230,19 @@ class ContentController extends Controller
                 $query->orderBy('content.updated_at', 'asc');
                 break;
             case 'newest_course':
+            case 'newest':
                 $query->orderBy('content.created_at', 'desc');
                 break;
             case 'views':
                 $query->orderBy('content.views', 'desc');
+                break;
+            case 'asc':
+            case 'title_asc':
+                $query->orderBy('content.title', 'asc');
+                break;
+            case 'desc':
+            case 'title_desc':
+                $query->orderBy('content.title', 'desc');
                 break;
             case 'title':
                 $query->orderBy('content.title');
@@ -165,6 +269,12 @@ class ContentController extends Controller
 
         $types           = Content::whereNotNull('type')->distinct()->orderBy('type')->pluck('type');
         $classifications = Classification::orderBy('classification_name')->get();
+        $authors         = Content::select('author')
+                            ->whereNotNull('author')
+                            ->where('author', '!=', '')
+                            ->distinct()
+                            ->orderBy('author', 'asc')
+                            ->pluck('author');
 
         $totalContent   = Content::count();
         $activeContent  = Content::where('active', 'Active')->count();
@@ -178,6 +288,7 @@ class ContentController extends Controller
             'contents'        => $contents,
             'types'           => $types,
             'classifications' => $classifications,
+            'authors'         => $authors,
             'totalContent'    => $totalContent,
             'activeContent'   => $activeContent,
             'inactiveContent' => $inactiveContent,
@@ -268,7 +379,25 @@ class ContentController extends Controller
         Log::info('ContentController@store called', ['user_id' => auth()->id(), 'payload' => $request->all()]);
 
         $request->validate([
-            'page_duration' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:300'],
+            'require_page_duration' => ['nullable'],
+            'page_duration' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->type === 'Document') {
+                        $requireDuration = $request->has('require_page_duration')
+                            ? $request->boolean('require_page_duration')
+                            : true;
+
+                        if ($requireDuration) {
+                            if ($value === null || $value === '' || (int) $value < 1) {
+                                $fail('Page Duration must be at least 1 second when duration is enabled.');
+                            } elseif ((int) $value > 300) {
+                                $fail('The page duration must not be greater than 300.');
+                            }
+                        }
+                    }
+                },
+            ],
             'document_total_pages' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'duration' => ['nullable', function ($attribute, $value, $fail) {
                 if (!DurationFormatter::isValid($value)) {
@@ -278,7 +407,7 @@ class ContentController extends Controller
             'learning_hours' => [
                 'required',
                 'numeric',
-                'min:1',
+                'min:0',
                 function ($attribute, $value, $fail) {
                     if (fmod((float) $value * 2, 1.0) !== 0.0) {
                         $fail('Learning Hours must be in increments of 0.5.');
@@ -295,23 +424,35 @@ class ContentController extends Controller
             $ytid = null;
         }
         $hasDeadline = $request->boolean('has_deadline');
-        $pageDuration = $request->type === 'Document' ? (int) $request->page_duration : 30;
-        $documentTotalPages = $request->type === 'Document' ? (int) $request->document_total_pages : 0;
-        $duration = $documentTotalPages > 0
-            ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
-            : DurationFormatter::normalize($request->duration);
+
+        if ($request->type === 'Document') {
+            $requireDuration = $request->has('require_page_duration')
+                ? $request->boolean('require_page_duration')
+                : ((int) ($request->page_duration ?? 30) > 0);
+            $pageDuration = $requireDuration ? max(1, (int) $request->page_duration) : 0;
+            $documentTotalPages = (int) $request->document_total_pages;
+            $duration = ($documentTotalPages > 0 && $pageDuration > 0)
+                ? DurationFormatter::fromSeconds($documentTotalPages * $pageDuration)
+                : ($requireDuration ? DurationFormatter::normalize($request->duration) : '00:00:00');
+        } else {
+            $pageDuration = 30;
+            $documentTotalPages = 0;
+            $duration = DurationFormatter::normalize($request->duration);
+        }
+
         $learningHours = (float) $request->input('learning_hours');
         $newcontent = new Content([
             'title'            => $request->title,
             'type'             => $request->type,
             'classification_id' => $request->classification,
-            'date'             => $request->date,
-            'author'           => $request->author,
+            'date'             => $request->date ?? now()->toDateString(),
+            'author'           => $request->author ?? '',
             'duration'         => $duration,
             'learning_hours'   => $learningHours,
             'page_duration'    => $pageDuration,
-            'description'      => $request->description,
-            'playlistonly'     => $request->playlistonly,
+            'total_page'       => $documentTotalPages,
+            'description'      => $request->description ?? '',
+            'playlistonly'     => ($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N',
             'link'             => $ytid,
             'has_deadline'     => $hasDeadline,
             'from_date'        => $hasDeadline ? $request->from_date : null,
@@ -390,8 +531,39 @@ class ContentController extends Controller
     }
     public function update(Request $request, Content $content)
     {
+        $targetContent = ($request->filled('contentid') ? Content::find($request->contentid) : null)
+            ?: ($content->exists ? $content : Content::findOrFail($request->id));
+
+        if ($targetContent->isPublished()) {
+            if ($request->action === 'unpublish') {
+                $targetContent->active = 'Inactive';
+                $targetContent->save();
+                return to_route('content.edit', $targetContent->slug)->with('success', 'Content successfully unpublished');
+            }
+
+            return to_route('content.edit', $targetContent->slug)->with('warning', 'Cannot modify content while it is published. Please unpublish this content first before making changes.');
+        }
+
         $request->validate([
-            'page_duration' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:300'],
+            'require_page_duration' => ['nullable'],
+            'page_duration' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($request, $content) {
+                    if ($request->type === 'Document') {
+                        $requireDuration = $request->has('require_page_duration')
+                            ? $request->boolean('require_page_duration')
+                            : ((int) ($request->page_duration ?? $content->page_duration ?? 30) > 0);
+
+                        if ($requireDuration) {
+                            if ($value === null || $value === '' || (int) $value < 1) {
+                                $fail('Page Duration must be at least 1 second when duration is enabled.');
+                            } elseif ((int) $value > 300) {
+                                $fail('The page duration must not be greater than 300.');
+                            }
+                        }
+                    }
+                },
+            ],
             'total_page' => ['nullable', 'required_if:type,Document', 'integer', 'min:1', 'max:100000'],
             'duration' => ['nullable', function ($attribute, $value, $fail) {
                 if (!DurationFormatter::isValid($value)) {
@@ -462,9 +634,12 @@ class ContentController extends Controller
             }
         }
 
-        $getcontent = Content::firstWhere('id', $request->contentid);
+        $targetContent = ($request->filled('contentid') ? Content::find($request->contentid) : null)
+            ?: ($content->exists ? $content : Content::findOrFail($request->id));
+        $targetId = $targetContent->id;
+
         if ($request->action == "publish") {
-            if ($getcontent->file) {
+            if ($targetContent->file) {
                 $message = "Content successfully saved and published";
                 $active = "Active";
                 $redir = "-";
@@ -486,7 +661,7 @@ class ContentController extends Controller
             $redir = "-";
             $redirmessage = "-";
         } else if ($request->action == "update") {
-            $active = $getcontent->active;
+            $active = $targetContent->active;
             $message = "Content successfully updated ";
             $redir = "-";
             $redirmessage = "-";
@@ -495,29 +670,43 @@ class ContentController extends Controller
             $message = "Content successfully unpublished ";
             $redir = "-";
             $redirmessage = "-";
+        } else {
+            $active = $targetContent->active ?? 'Active';
+            $message = "Content successfully updated ";
+            $redir = "-";
+            $redirmessage = "-";
         }
         $hasDeadlineUpdate = $request->boolean('has_deadline');
-        $pageDuration = $request->type === 'Document'
-            ? (int) $request->page_duration
-            : (int) ($getcontent->page_duration ?: 30);
-        $totalPage = $request->type === 'Document'
-            ? (int) $request->total_page
-            : (int) ($getcontent->total_page ?: 0);
-        $duration = DurationFormatter::normalize($request->duration);
+
+        if ($request->type === 'Document') {
+            $requireDuration = $request->has('require_page_duration')
+                ? filter_var($request->require_page_duration, FILTER_VALIDATE_BOOLEAN)
+                : ((int) ($request->page_duration ?? $targetContent->page_duration ?? 30) > 0);
+            $pageDuration = $requireDuration ? max(1, (int) $request->page_duration) : 0;
+            $totalPage = (int) $request->total_page;
+            $duration = ($pageDuration > 0 && $totalPage > 0)
+                ? DurationFormatter::fromSeconds($totalPage * $pageDuration)
+                : ($requireDuration ? DurationFormatter::normalize($request->duration) : '00:00:00');
+        } else {
+            $pageDuration = (int) ($targetContent->page_duration ?: 30);
+            $totalPage = (int) ($targetContent->total_page ?: 0);
+            $duration = DurationFormatter::normalize($request->duration);
+        }
+
         $learningHours = app(\App\Services\LearningHours\LearningHourConverterService::class)->convert($duration);
-        Content::where('id', $request->contentid)
+        Content::where('id', $targetId)
             ->update([
                 'title'            => $request->title,
                 'type'             => $request->type,
                 'classification_id' => $request->classification,
-                'date'             => $request->date,
-                'author'           => $request->author,
+                'date'             => $request->date ?? ($targetContent->date ?? now()->toDateString()),
+                'author'           => $request->author ?? ($targetContent->author ?? ''),
                 'duration'         => $duration,
                 'learning_hours'   => $learningHours,
                 'page_duration'    => $pageDuration,
                 'total_page'       => $totalPage,
-                'description'      => $request->description,
-                'playlistonly'     => $request->playlistonly,
+                'description'      => $request->description ?? ($targetContent->description ?? ''),
+                'playlistonly'     => $request->has('playlistonly') ? (($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N') : ($targetContent->playlistonly ?? 'N'),
                 'active'           => $active,
                 'link'             => $ytid,
                 'has_deadline'     => $hasDeadlineUpdate,
@@ -525,24 +714,31 @@ class ContentController extends Controller
                 'to_date'          => $hasDeadlineUpdate ? $request->to_date : null,
             ]);
 
-        app(\App\Services\PlaylistDurationService::class)->refreshForContent((int) $request->contentid);
+        app(\App\Services\PlaylistDurationService::class)->refreshForContent((int) $targetId);
 
-        return to_route('content.edit', $getcontent->slug)->with('success', $message)->with($redir, $redirmessage);
+        return to_route('content.edit', $targetContent->slug)->with('success', $message)->with($redir, $redirmessage);
     }
     public function assign(Request $request)
     {
+        $targetContent = Content::where('id', $request->content_id)->orWhere('slug', $request->slug)->first();
+        if ($targetContent && $targetContent->isPublished()) {
+            return to_route('content.edit', $request->slug)->with('warning', 'Cannot assign employee while content is published. Please unpublish this content first.');
+        }
+
         $employee = $request->employee;
-        foreach ($employee as $id) {
-            $contentuser = ContentUser::where('content_id', $request->content_id)->firstWhere('user_id', $id);
-            if ($contentuser) {
-                // $arrayexist[] = $contentuser->progress;
-                $content_user = ContentUser::where('id', $contentuser->id)->Update([
-                    'status' => 'mandatory'
-                ]);
-            } else {
-                $content_user = ContentUser::Create([
-                    'user_id' => $id, 'content_id' => $request->content_id, 'status' => 'mandatory'
-                ]);
+        if (!empty($employee) && is_array($employee)) {
+            foreach ($employee as $id) {
+                $contentuser = ContentUser::where('content_id', $request->content_id)->firstWhere('user_id', $id);
+                if ($contentuser) {
+                    // $arrayexist[] = $contentuser->progress;
+                    $content_user = ContentUser::where('id', $contentuser->id)->Update([
+                        'status' => 'mandatory'
+                    ]);
+                } else {
+                    $content_user = ContentUser::Create([
+                        'user_id' => $id, 'content_id' => $request->content_id, 'status' => 'mandatory'
+                    ]);
+                }
             }
         }
         return to_route('content.edit', $request->slug)->with('success', 'Content successfully assigned');
@@ -550,6 +746,13 @@ class ContentController extends Controller
 
     public function synchronizeLearningHours(Request $request, Content $content, \App\Services\LearningHours\ContentLearningHourService $service): \Illuminate\Http\JsonResponse
     {
+        if ($content->isPublished()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot synchronize learning hours while content is published. Please unpublish first.'
+            ], 422);
+        }
+
         $result = $service->syncSingleContent($content, $request->all());
 
         return response()->json($result->toArray());
@@ -576,7 +779,7 @@ class ContentController extends Controller
                 'file_url' => $fileUrl,
                 'file_exists' => !empty($filePath) && file_exists($filePath),
                 'total_page' => (int) ($item->total_page ?? 0),
-                'page_duration' => (int) ($item->page_duration ?: 30),
+                'page_duration' => (int) ($item->page_duration ?? 0),
             ];
         });
 
@@ -595,6 +798,13 @@ class ContentController extends Controller
         ]);
 
         $content = Content::findOrFail($validated['id']);
+
+        if ($content->isPublished()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot update total page while content is published. Please unpublish first.',
+            ], 422);
+        }
 
         if ($content->type !== 'Document') {
             return response()->json([

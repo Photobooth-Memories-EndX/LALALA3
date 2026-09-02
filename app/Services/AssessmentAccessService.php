@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\Assesment;
 use App\Models\AssesmentResult;
+use App\Models\Content;
 use App\Models\ContentUser;
+use App\Models\TrainingPlanDetail;
 use App\Models\User;
+use App\Services\Learning\LearningProgressResolver;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -19,7 +22,11 @@ final class AssessmentAccessService
     public const REASON_MAX_ATTEMPTS = 'max_attempts';
     public const REASON_PASSED = 'passed';
 
-    public function denialReason(Assesment $assessment, User $user, ?Carbon $now = null): ?string
+    public function __construct(private LearningProgressResolver $resolver)
+    {
+    }
+
+    public function denialReason(Assesment $assessment, User $user, ?Carbon $now = null, ?int $trainingPlanId = null): ?string
     {
         // DEBUG ONLY:
         // Role 2 = Admin
@@ -94,15 +101,9 @@ final class AssessmentAccessService
             }
         }
 
-        // 5. Content progress check
-        if ($assessment->type === 'content' && $assessment->content_id) {
-            $learning = ContentUser::where('user_id', $user->id)
-                ->where('content_id', $assessment->content_id)
-                ->first();
-
-            if (!$learning || !$learning->meetsAssessmentProgressRequirement()) {
-                return self::REASON_PROGRESS;
-            }
+        // 5. Content / Playlist progress check via LearningProgressResolver
+        if ($this->isProgressRequirementUnmet($assessment, $user, $trainingPlanId)) {
+            return self::REASON_PROGRESS;
         }
 
         // 6. Passed check
@@ -127,7 +128,7 @@ final class AssessmentAccessService
         return null;
     }
 
-    public function denialReasonForSubmitting(Assesment $assessment, User $user, ?Carbon $now = null): ?string
+    public function denialReasonForSubmitting(Assesment $assessment, User $user, ?Carbon $now = null, ?int $trainingPlanId = null): ?string
     {
         if ($this->isAssessmentDebugBypass($user)) {
             return null;
@@ -148,16 +149,84 @@ final class AssessmentAccessService
             return null;
         }
 
-        return $this->denialReason($assessment, $user, $now);
+        return $this->denialReason($assessment, $user, $now, $trainingPlanId);
     }
 
-    public function authorize(Assesment $assessment, User $user): void
+    public function authorize(Assesment $assessment, User $user, ?int $trainingPlanId = null): void
     {
-        $reason = $this->denialReason($assessment, $user);
+        $reason = $this->denialReason($assessment, $user, null, $trainingPlanId);
 
         if ($reason !== null) {
             throw new AccessDeniedHttpException($this->message($reason));
         }
+    }
+
+    /**
+     * Check if progress requirement for this assessment is unmet.
+     */
+    private function isProgressRequirementUnmet(Assesment $assessment, User $user, ?int $contextTrainingPlanId = null): bool
+    {
+        // A. Playlist Assessment (type = trainingplan or has trainingplan_id without content_id)
+        if ($assessment->type === 'trainingplan' || ($assessment->trainingplan_id && !$assessment->content_id)) {
+            $planId = $assessment->trainingplan_id ?? $contextTrainingPlanId;
+            if (!$planId) {
+                return false;
+            }
+
+            $contentIds = TrainingPlanDetail::where('trainingplan_id', $planId)
+                ->whereHas('content', fn ($q) => $q->where('active', 'Active'))
+                ->pluck('content_id');
+
+            if ($contentIds->isEmpty()) {
+                return false;
+            }
+
+            $resolvedBatch = $this->resolver->resolvePlaylistBatch((int) $user->id, (int) $planId, $contentIds);
+            $finishedCount = $resolvedBatch->filter(fn ($r) => $r->isFinished())->count();
+
+            return $finishedCount < $contentIds->count();
+        }
+
+        // B. Content Assessment
+        if ($assessment->type === 'content' && $assessment->content_id) {
+            $planId = $assessment->trainingplan_id ?? $contextTrainingPlanId;
+
+            if ($planId) {
+                // Evaluated in explicit Playlist context
+                $resolved = $this->resolver->resolvePlaylist((int) $user->id, (int) $planId, (int) $assessment->content_id);
+                return !$resolved->isFinished() && $resolved->progress < ContentUser::ASSESSMENT_REQUIRED_PROGRESS;
+            }
+
+            // Check if content is playlist-only or single active playlist (Category A)
+            $content = $assessment->relationLoaded('contents')
+                ? $assessment->contents->first()
+                : Content::find($assessment->content_id);
+
+            $isPlaylistOnly = $content && ($content->playlistonly === 'Y' || (int) ($content->playlist_only ?? 0) === 1);
+
+            if ($isPlaylistOnly) {
+                $activePlanIds = TrainingPlanDetail::where('content_id', $assessment->content_id)
+                    ->whereHas('trainingplan', fn ($q) => $q->where('active', 'Active'))
+                    ->pluck('trainingplan_id');
+
+                if ($activePlanIds->count() === 1) {
+                    // Category A: Deterministic single active playlist
+                    $resolved = $this->resolver->resolvePlaylist((int) $user->id, (int) $activePlanIds->first(), (int) $assessment->content_id);
+                    return !$resolved->isFinished() && $resolved->progress < ContentUser::ASSESSMENT_REQUIRED_PROGRESS;
+                }
+
+                if ($activePlanIds->count() > 1) {
+                    // Category B: Ambiguous multi-playlist without context
+                    return true;
+                }
+            }
+
+            // Direct Content context
+            $resolved = $this->resolver->resolveDirect((int) $user->id, (int) $assessment->content_id);
+            return !$resolved->isFinished() && $resolved->progress < ContentUser::ASSESSMENT_REQUIRED_PROGRESS;
+        }
+
+        return false;
     }
 
     public function denialReasonForViewingResult(Assesment $assessment, User $user): ?string

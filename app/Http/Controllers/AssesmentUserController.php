@@ -130,9 +130,16 @@
             if ($hasAccessPeriod && $hasTimeLimit && $assesment_result_draft) {
                 $periodDeadline    = \Illuminate\Support\Carbon::parse($assesment->todate);
                 $timeLimitDeadline = $assesment_result_draft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
-                $effectiveDeadline = $periodDeadline->min($timeLimitDeadline);
+                if ($isBypassUser && now()->format('Y-m-d H:i:s') > $periodDeadline->format('Y-m-d H:i:s')) {
+                    $effectiveDeadline = $timeLimitDeadline;
+                } else {
+                    $effectiveDeadline = $periodDeadline->min($timeLimitDeadline);
+                }
             } elseif ($hasAccessPeriod) {
-                $effectiveDeadline = \Illuminate\Support\Carbon::parse($assesment->todate);
+                $periodDeadline = \Illuminate\Support\Carbon::parse($assesment->todate);
+                if (!$isBypassUser || now()->format('Y-m-d H:i:s') <= $periodDeadline->format('Y-m-d H:i:s')) {
+                    $effectiveDeadline = $periodDeadline;
+                }
             } elseif ($hasTimeLimit && $assesment_result_draft) {
                 $effectiveDeadline = $assesment_result_draft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
             }
@@ -277,6 +284,7 @@
             });
 
             $isExpiredAutoSubmit = $request->boolean('is_expired');
+            $isBypassUser = in_array((int) (auth()->user()->role ?? auth()->user()->role_id), [2, 3], true);
             if (!$isExpiredAutoSubmit && $activeDraft) {
                 $hasAccessPeriod = $assesment->hasAccessPeriod() && !empty($assesment->todate);
                 $hasTimeLimit    = $assesment->hasTimeLimit();
@@ -285,9 +293,16 @@
                 if ($hasAccessPeriod && $hasTimeLimit) {
                     $periodDeadline    = \Illuminate\Support\Carbon::parse($assesment->todate);
                     $timeLimitDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
-                    $effectiveDeadline = $periodDeadline->min($timeLimitDeadline);
+                    if ($isBypassUser && now()->format('Y-m-d H:i:s') > $periodDeadline->format('Y-m-d H:i:s')) {
+                        $effectiveDeadline = $timeLimitDeadline;
+                    } else {
+                        $effectiveDeadline = $periodDeadline->min($timeLimitDeadline);
+                    }
                 } elseif ($hasAccessPeriod) {
-                    $effectiveDeadline = \Illuminate\Support\Carbon::parse($assesment->todate);
+                    $periodDeadline = \Illuminate\Support\Carbon::parse($assesment->todate);
+                    if (!$isBypassUser || now()->format('Y-m-d H:i:s') <= $periodDeadline->format('Y-m-d H:i:s')) {
+                        $effectiveDeadline = $periodDeadline;
+                    }
                 } elseif ($hasTimeLimit) {
                     $effectiveDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
                 }
@@ -327,6 +342,23 @@
             if ($assesmentResultId) {
                 $assesment_result = AssesmentResult::where('id', $assesmentResultId)
                     ->where('user_id', auth()->id())
+                    ->first();
+            }
+
+            if (!$assesment_result) {
+                $assesment_result = AssesmentResult::where('user_id', auth()->id())
+                    ->where('assesment_id', $assesment->id)
+                    ->where('batch', $assesment->batch)
+                    ->where('final', 1)
+                    ->latest('id')
+                    ->first();
+            }
+
+            if (!$assesment_result) {
+                $assesment_result = AssesmentResult::where('user_id', auth()->id())
+                    ->where('assesment_id', $assesment->id)
+                    ->where('final', 1)
+                    ->latest('id')
                     ->first();
             }
 

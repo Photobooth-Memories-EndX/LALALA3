@@ -13,7 +13,7 @@
     $pdfPreviousButtonId = $previousButtonId ?? 'pdf-previous-page';
     $pdfNextButtonId = $nextButtonId ?? 'pdf-next-page';
     $pdfShowPageTiming = (bool) ($showPageTiming ?? false);
-    $pdfPageDuration = max(1, (int) ($pageDuration ?? 30));
+    $pdfPageDuration = isset($pageDuration) ? (int) $pageDuration : 30;
 @endphp
 
 <div class="pdf-toolbar {{ $pdfToolbarClass }}" id="{{ $pdfToolbarId }}" role="toolbar" aria-label="PDF Controls">
@@ -106,7 +106,7 @@
             <strong class="pageno pdf-tb-pageno">-- / --</strong>
         </span>
 
-        @if ($pdfShowPageTiming)
+        @if ($pdfShowPageTiming && $pdfPageDuration > 0)
             <div class="pdf-tb-reading-timing"
                  data-page-duration="{{ $pdfPageDuration }}"
                  aria-label="PDF minimum page reading time">
@@ -117,6 +117,16 @@
                 <span class="pdf-tb-reading-stat pdf-tb-stat-countdown">
                     <span class="pdf-tb-stat-label">Next Page In</span>
                     <strong><span class="pdf-tb-remaining-time-value">{{ $pdfPageDuration }}</span> sec</strong>
+                </span>
+            </div>
+        @elseif ($pdfShowPageTiming && $pdfPageDuration === 0)
+            <div class="pdf-tb-reading-timing is-scroll-mode"
+                 data-page-duration="0"
+                 aria-label="PDF self-paced reading mode">
+                <span class="pdf-tb-reading-stat pdf-tb-stat-self-paced">
+                    <i class="ti ti-flame text-primary" aria-hidden="true"></i>
+                    <span class="pdf-tb-stat-label">Mode</span>
+                    <strong>Self-paced</strong>
                 </span>
             </div>
         @endif

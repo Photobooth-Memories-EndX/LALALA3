@@ -2,6 +2,7 @@
     $content = $content ?? null;
     $mode = $mode ?? ($content ? 'edit' : 'create');
     $stepNumber = $stepNumber ?? 3;
+    $isLocked = $isLocked ?? ($content && $content->isPublished());
 
     // Existing Content File Data (Edit Mode)
     $existingFileName = null;
@@ -223,6 +224,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                                         </svg>
                                         <span class="d-none d-sm-inline ms-1">Download</span>
                                     </a>
+                                    @if (!$isLocked)
                                     <a href="#" class="btn btn-outline-danger btn-sm px-2 py-1 btn-remove-content" data-url="{{ route('contentdelete.deletecontentajax', $content->slug) }}" title="Remove File">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -234,6 +236,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                                         </svg>
                                         <span class="d-none d-sm-inline ms-1">Remove</span>
                                     </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -243,7 +246,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                 <label class="form-label fw-semibold mb-1">
                     {{ ($mode === 'edit' && $hasExistingFile) ? 'Replace Content File' : 'Content File' }}
                 </label>
-                <div class="dropzone compact-dropzone" id="document-dropzone">
+                <div class="dropzone compact-dropzone {{ $isLocked ? 'is-locked' : '' }}" id="document-dropzone">
                     <div class="dz-message m-0 d-flex align-items-center gap-2">
                         <span class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-1" style="height: 36px; pointer-events: none;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-upload" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -254,7 +257,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                             </svg>
                             <span>Choose File</span>
                         </span>
-                        <span class="text-muted small">or drop file here</span>
+                        <span class="text-muted small">{{ $isLocked ? '(Upload locked while published)' : 'or drop file here' }}</span>
                     </div>
                     <div class="fallback"></div>
                 </div>
@@ -295,6 +298,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                                         </svg>
                                         <span class="d-none d-sm-inline ms-1">Download</span>
                                     </a>
+                                    @if (!$isLocked)
                                     <a href="#" class="btn btn-outline-danger btn-sm px-2 py-1 btn-remove-thumb" data-url="{{ (isset($content) && !empty($content->slug)) ? route('contentdelete.deletethumbajax', $content->slug) : '' }}" title="Remove Thumbnail">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -306,6 +310,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                                         </svg>
                                         <span class="d-none d-sm-inline ms-1">Remove</span>
                                     </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -315,7 +320,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                 <label class="form-label fw-semibold mb-1" id="label-thumbnail-file">
                     {{ ($mode === 'edit' && $hasExistingThumb) ? 'Replace Thumbnail' : 'Thumbnail' }}
                 </label>
-                <div class="dropzone compact-dropzone" id="thumbnail-dropzone">
+                <div class="dropzone compact-dropzone {{ $isLocked ? 'is-locked' : '' }}" id="thumbnail-dropzone">
                     <div class="dz-message m-0 d-flex align-items-center gap-2">
                         <span class="btn btn-outline-secondary btn-sm px-3 d-inline-flex align-items-center gap-1" style="height: 36px; pointer-events: none;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-photo-plus" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -329,7 +334,7 @@ body.dark-mode .compact-dropzone .dz-preview {
                             </svg>
                             <span>Choose Thumbnail</span>
                         </span>
-                        <span class="text-muted small">or drop file here</span>
+                        <span class="text-muted small">{{ $isLocked ? '(Upload locked while published)' : 'or drop file here' }}</span>
                     </div>
                     <div class="fallback"></div>
                 </div>

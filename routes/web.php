@@ -28,6 +28,7 @@ use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\GalleryUserController;
 use App\Http\Controllers\ProfileUserController;
 use App\Http\Controllers\PlaylistUserController;
+use App\Http\Controllers\PlaylistProgressController;
 use App\Http\Controllers\TrainingPlanController;
 use App\Http\Controllers\AssesmentUserController;
 use App\Http\Controllers\ContentDeleteController;
@@ -86,6 +87,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/mycomment', [ProfileController::class, 'comment'])->name('user.comment');
 
     Route::get('/search/{searchtype}', [SearchController::class, 'index'])->name('search');
+    Route::get('/api/search-autocomplete', [SearchController::class, 'autocomplete'])->name('api.search.autocomplete');
 
     Route::get('/change-password', [ProfileController::class, 'changePassword'])->name('user.changepassword');
     Route::post('/change-password', [ProfileController::class, 'updatePassword'])->name('user.updatepassword');
@@ -189,6 +191,7 @@ Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
 */
 Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
     Route::get('/', [PlaylistUserController::class, 'index'])->name('playlist.user.index');
+    Route::post('/progress/update', [PlaylistProgressController::class, 'updateProgress'])->name('playlist.user.progress.update');
     Route::post('/{trainingplan}/debug-state', [PlaylistDebugController::class, 'update'])
         ->name('playlist.debug.update');
     Route::delete('/{trainingplan}/debug-state', [PlaylistDebugController::class, 'reset'])
@@ -243,7 +246,7 @@ Route::get('/certificate/verify/{credentialId}', [UserCertificateController::cla
 */
 Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
-    Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
+    Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
 
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);
@@ -278,6 +281,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:news_announcement'], function () {
         Route::resource('news', NewsController::class);
+        Route::get('news', [NewsController::class, 'index'])->name('manage.news.index');
         Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
     });
 
@@ -297,7 +301,10 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::put('assessment/{id_assessment_question_bank}/update', [AssesmentQuestionBankController::class, 'update'])->name('assessment.update.question.bank');
         Route::get('assessment/{id_assessment_question_bank}/delete', [AssesmentQuestionBankController::class, 'delete'])->name('assessment.delete.question.bank');
         Route::get('assesment/{assesment}/result', [AssesmentQuestionController::class, 'result'])->name('assesment.result');
-        Route::get('assesment/{assesment}/clone', [AssesmentQuestionController::class, 'clone'])->name('assesment.clone');
+        Route::delete('assesment/{assesment}/result/{id}', [AssesmentQuestionController::class, 'destroyResult'])->name('assesment.result.destroy');
+        Route::match(['put', 'patch', 'post'], 'assesment/{assesment}/result/{id}/score', [AssesmentQuestionController::class, 'updateScore'])->name('assesment.result.update-score');
+        Route::match(['get', 'post'], 'assesment/{assesment}/clone', [AssesmentQuestionController::class, 'clone'])->name('assesment.clone');
+        Route::match(['get', 'post'], 'assesment/{assesment}/duplicate', [AssesmentQuestionController::class, 'clone'])->name('assesment.duplicate');
         Route::get('assesmentresult', [AssesmentResultController::class, 'index'])->name('assesment.result.all');
         Route::get('assesment/result/{slug}', [AssesmentResultController::class, 'result'])->name('assesment.result.result');
         Route::post('assesment/changestatus', [AssesmentController::class, 'changestatus'])->name('assesment.changestatus');
@@ -367,6 +374,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:event_documentation'], function () {
         Route::resource('eventphoto', EventPhotoController::class);
+        Route::get('eventphoto', [EventPhotoController::class, 'index'])->name('manage.eventphoto.index');
         Route::post('eventphoto/create/upload', [EventPhotoController::class, 'uploadfileajax'])->name('eventphoto.uploadfileajax');
         Route::get('eventphoto/create/upload/delete', [EventPhotoController::class, 'deletefileajax'])->name('eventphoto.deletefileajax');
         Route::post('eventphoto/delete', [EventPhotoController::class, 'deleteImage'])->name('eventphoto.deleteImage');
