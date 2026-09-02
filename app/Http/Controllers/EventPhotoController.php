@@ -19,7 +19,7 @@ class EventPhotoController extends Controller
 
     public function autocompleteSearch(Request $request): JsonResponse
     {
-        $rawQuery = trim((string) $request->get('q', ''));
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
         if (empty($rawQuery)) {
             return response()->json([]);
         }
@@ -36,13 +36,7 @@ class EventPhotoController extends Controller
                   ->orWhere('category', 'LIKE', "%{$rawQuery}%")
                   ->orWhere('uploader', 'LIKE', "%{$rawQuery}%");
             })
-            ->where(function ($q) {
-                // Ensure active status condition is handled properly
-                $q->where('active', 'Active')
-                  ->orWhere('active', 1)
-                  ->orWhereNull('active');
-            })
-            ->latest('created_at')
+            ->latest('id')
             ->limit(10)
             ->get();
 
@@ -55,10 +49,13 @@ class EventPhotoController extends Controller
                 'title'       => $gallery->title,
                 'name'        => $gallery->title,
                 'slug'        => $gallery->slug,
+                'active'      => $gallery->active ?? $gallery->status,
+                'status'      => $gallery->status ?? $gallery->active,
                 'photo_count' => $photoCount,
                 'category'    => $gallery->category,
+                'uploader'    => $gallery->uploader,
                 'event_date'  => $gallery->eventdate ? \Carbon\Carbon::parse($gallery->eventdate)->format('d M Y') : null,
-                'views'       => $gallery->views ?? 0,
+                'views'       => (int) ($gallery->views ?? 0),
             ];
         });
 

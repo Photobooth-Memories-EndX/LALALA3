@@ -86,6 +86,64 @@
     opacity: 0.85;
     transform: translateX(-3px);
 }
+.manage-eventphoto-search-container {
+    position: relative;
+    width: 100%;
+}
+#manage-eventphoto-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1085;
+    max-height: 280px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+    padding: .35rem 0;
+    border: 1px solid rgba(0, 0, 0, .08);
+    background: #ffffff;
+}
+#manage-eventphoto-search-results .dropdown-item {
+    padding: .6rem .85rem;
+    transition: background-color .15s ease;
+    text-decoration: none;
+}
+#manage-eventphoto-search-results .dropdown-item:hover,
+#manage-eventphoto-search-results .dropdown-item:focus {
+    background-color: rgba(15, 94, 156, .08);
+}
+#manage-eventphoto-search-results .dropdown-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+[data-bs-theme="dark"] #manage-eventphoto-search-results,
+body.dark-mode #manage-eventphoto-search-results,
+body.theme-dark #manage-eventphoto-search-results {
+    background: #1f2937;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+[data-bs-theme="dark"] #manage-eventphoto-search-results .dropdown-item,
+body.dark-mode #manage-eventphoto-search-results .dropdown-item,
+body.theme-dark #manage-eventphoto-search-results .dropdown-item {
+    color: #f8fafc;
+}
+[data-bs-theme="dark"] #manage-eventphoto-search-results .dropdown-item:not(:last-child),
+body.dark-mode #manage-eventphoto-search-results .dropdown-item:not(:last-child),
+body.theme-dark #manage-eventphoto-search-results .dropdown-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+[data-bs-theme="dark"] #manage-eventphoto-search-results .dropdown-item:hover,
+[data-bs-theme="dark"] #manage-eventphoto-search-results .dropdown-item:focus,
+body.dark-mode #manage-eventphoto-search-results .dropdown-item:hover,
+body.dark-mode #manage-eventphoto-search-results .dropdown-item:focus,
+body.theme-dark #manage-eventphoto-search-results .dropdown-item:hover,
+body.theme-dark #manage-eventphoto-search-results .dropdown-item:focus {
+    background: rgba(106, 174, 214, 0.16);
+}
+[data-bs-theme="dark"] #manage-eventphoto-search-results .dropdown-item .text-dark,
+body.dark-mode #manage-eventphoto-search-results .dropdown-item .text-dark,
+body.theme-dark #manage-eventphoto-search-results .dropdown-item .text-dark {
+    color: #f8fafc !important;
+}
 </style>
 @endsection
 
@@ -232,9 +290,12 @@
 
                         <!-- Search Bar Input -->
                         <div class="col-12 col-md">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="ti ti-search text-muted"></i></span>
-                                <input type="text" name="search" id="gallerySearchInput" class="form-control border-start-0 rounded-end-3" placeholder="Search by title..." value="{{ request('search') }}">
+                            <div class="position-relative manage-eventphoto-search-container flex-grow-1">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="ti ti-search text-muted"></i></span>
+                                    <input type="text" name="search" id="manage-eventphoto-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Search by title..." value="{{ request('search') }}" autocomplete="off">
+                                </div>
+                                <div id="manage-eventphoto-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1" style="display: none; max-height: 280px; overflow-y: auto; z-index: 1050;"></div>
                             </div>
                         </div>
 
@@ -460,15 +521,110 @@
 
 @section('script')
 <script>
-var gallerySearchTimer;
-var gallerySearchInput = document.getElementById('gallerySearchInput');
-if (gallerySearchInput) {
-    gallerySearchInput.addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') return;
-        clearTimeout(gallerySearchTimer);
-        var form = document.getElementById('manageGalleryFilterForm');
-        gallerySearchTimer = setTimeout(function() { if (form) form.submit(); }, 450);
-    });
-}
+document.addEventListener('DOMContentLoaded', function () {
+    function initManageEventPhotoAutocomplete() {
+        var searchInput = document.getElementById('manage-eventphoto-search-input') || document.querySelector('input[name="search"]');
+        var searchResults = document.getElementById('manage-eventphoto-search-results');
+        var form = document.getElementById('manageGalleryFilterForm') || searchInput?.closest('form');
+        var debounceTimer = null;
+
+        if (!searchInput || !searchResults) return;
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        searchInput.addEventListener('input', function () {
+            var query = this.value.trim();
+            clearTimeout(debounceTimer);
+
+            if (query.length < 1) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            debounceTimer = setTimeout(function () {
+                fetch('/manage/eventphoto/search-autocomplete?q=' + encodeURIComponent(query), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(function (data) {
+                    searchResults.innerHTML = '';
+                    if (data && data.length > 0) {
+                        data.forEach(function (item) {
+                            var a = document.createElement('a');
+                            a.className = 'dropdown-item py-2 px-3 text-wrap border-bottom-subtle manage-eventphoto-search-item';
+                            a.href = '#';
+
+                            var titleText = item.title || item.name || '';
+                            var photoCount = item.photo_count !== undefined ? item.photo_count : null;
+                            var subDetails = [];
+                            if (photoCount !== null) {
+                                subDetails.push(photoCount + ' ' + (photoCount === 1 ? 'Photo' : 'Photos'));
+                            }
+                            if (item.category) subDetails.push(item.category);
+                            if (item.event_date) subDetails.push(item.event_date);
+                            if (item.status) subDetails.push('Status: ' + item.status);
+
+                            a.innerHTML = '<div class="d-flex align-items-center justify-content-between mb-1">' +
+                                    '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeHtml(titleText) + '</span>' +
+                                    '<span class="badge bg-purple-lt text-purple small flex-shrink-0">GALLERY</span>' +
+                                '</div>' +
+                                (subDetails.length > 0 ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.map(escapeHtml).join(' &bull; ') + '</div>' : '');
+
+                            a.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                searchInput.value = titleText;
+                                searchResults.style.display = 'none';
+                                if (form) {
+                                    if (typeof form.requestSubmit === 'function') {
+                                        form.requestSubmit();
+                                    } else {
+                                        form.submit();
+                                    }
+                                }
+                            });
+                            searchResults.appendChild(a);
+                        });
+                        searchResults.style.display = 'block';
+                    } else {
+                        searchResults.innerHTML = '<div class="dropdown-item text-muted disabled py-2 px-3">No event found</div>';
+                        searchResults.style.display = 'block';
+                    }
+                })
+                .catch(function () {
+                    searchResults.style.display = 'none';
+                });
+            }, 250);
+        });
+
+        searchInput.addEventListener('focus', function () {
+            if (this.value.trim().length >= 1 && searchResults.children.length > 0) {
+                searchResults.style.display = 'block';
+            }
+        });
+
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+
+    initManageEventPhotoAutocomplete();
+});
 </script>
 @endsection
