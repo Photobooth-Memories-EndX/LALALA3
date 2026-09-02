@@ -350,6 +350,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:question_bank'], function () {
+        Route::get('question-bank/search-autocomplete', [QuestionBankController::class, 'autocompleteSearch'])->name('manage.question.bank.autocomplete');
         Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question.bank.index');
         Route::get('question-bank/create', [QuestionBankController::class, 'create'])->name('question.bank.create');
         Route::post('question-bank/store', [QuestionBankController::class, 'store'])->name('question.bank.store');
