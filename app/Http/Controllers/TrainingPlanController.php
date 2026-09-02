@@ -15,6 +15,50 @@ use Illuminate\Support\Str;
 class TrainingPlanController extends Controller
 {
     /**
+     * AJAX live autocomplete search for Playlist Management (All Playlists / Training Plans).
+     */
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $playlists = TrainingPlan::withCount('trainingplandetail as total_contents')
+            ->where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('url_link', 'LIKE', "%{$rawQuery}%")
+                  ->orWhereHas('trainingplandetail.content', function ($cq) use ($rawQuery) {
+                      $cq->where('title', 'LIKE', "%{$rawQuery}%");
+                  });
+            })
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        $results = $playlists->map(function ($item) {
+            return [
+                'id'             => $item->id,
+                'title'          => $item->title,
+                'name'           => $item->title,
+                'slug'           => $item->slug,
+                'active'         => $item->active,
+                'total_contents' => (int) ($item->total_contents ?? 0),
+                'learning_hours' => $item->learning_hours,
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
+    /**
      * AJAX live autocomplete search for active published playlists.
      */
     public function autocomplete(Request $request): JsonResponse
