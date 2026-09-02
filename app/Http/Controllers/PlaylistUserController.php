@@ -250,7 +250,8 @@ class PlaylistUserController extends Controller
         $contentAssessmentProgress = $certificateEligibility->contentAssessmentProgress(
             $content_all->pluck('content_id'),
             Auth::user(),
-            $playlistCertificateSetting
+            $playlistCertificateSetting,
+            (int) $trainingplan->id
         );
         $assessmentsByContent = $contentAssessmentProgress['assessmentsByContent'];
 

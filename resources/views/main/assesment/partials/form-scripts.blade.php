@@ -19,10 +19,12 @@
 
         const type = typeEl.value;
 
-        const contentWrapper  = $('#content_id_wrapper');
-        const tpWrapper       = $('#trainingplan_id_wrapper');
-        const contentSelect   = $('#content_id');
-        const tpSelect        = $('#trainingplan_id');
+        const contentForWrapper = $('#content_for_wrapper');
+        const contentWrapper    = $('#content_id_wrapper');
+        const tpWrapper         = $('#trainingplan_id_wrapper');
+        const tpLabel           = $('#trainingplan_id_label');
+        const contentSelect     = $('#content_id');
+        const tpSelect          = $('#trainingplan_id');
 
         const timeLimitSecWrapper = $('#time_limit_section_wrapper');
         const remedialSecWrapper  = $('#remedial_section_wrapper');
@@ -32,12 +34,21 @@
         const sectionSubtitle     = $('#period-timer-section-subtitle');
 
         if (type === 'content') {
+            contentForWrapper.removeClass('d-none');
             contentWrapper.removeClass('d-none');
-            tpWrapper.addClass('d-none');
             if (contentSelect.length) contentSelect.attr('required', 'required');
-            if (tpSelect.length) {
-                tpSelect.removeAttr('required');
-                tpSelect.val('').change();
+
+            const contentFor = $('input[name="content_for"]:checked').val() || 'content';
+
+            if (contentFor === 'playlist') {
+                tpWrapper.removeClass('d-none');
+                if (tpLabel.length) tpLabel.text('Playlist');
+                if (tpSelect.length) tpSelect.attr('required', 'required');
+            } else {
+                tpWrapper.addClass('d-none');
+                if (tpSelect.length) {
+                    tpSelect.removeAttr('required');
+                }
             }
 
             timeLimitSecWrapper.removeClass('d-none');
@@ -56,8 +67,10 @@
 
             toggleTimeLimit(document.getElementById('timer'));
         } else if (type === 'trainingplan') {
+            contentForWrapper.addClass('d-none');
             contentWrapper.addClass('d-none');
             tpWrapper.removeClass('d-none');
+            if (tpLabel.length) tpLabel.text('Training Plan');
             if (contentSelect.length) {
                 contentSelect.removeAttr('required');
                 contentSelect.val('').change();
@@ -80,6 +93,7 @@
 
             toggleTimeLimit(document.getElementById('timer'));
         } else if (type === 'global') {
+            contentForWrapper.addClass('d-none');
             contentWrapper.addClass('d-none');
             tpWrapper.addClass('d-none');
             if (contentSelect.length) {
@@ -100,15 +114,15 @@
                 remedialHint.text('Global Assessment allows 1 attempt per batch.');
             }
             if (sectionTitle.length) sectionTitle.text('Access Period');
-            if (sectionSubtitle.length) sectionSubtitle.text('Schedule window configuration.');
+            if (sectionSubtitle.length) sectionSubtitle.text('Schedule window for Global Assessment.');
+
+            toggleTimeLimit(null);
         } else {
+            contentForWrapper.addClass('d-none');
             contentWrapper.addClass('d-none');
             tpWrapper.addClass('d-none');
             if (contentSelect.length) contentSelect.removeAttr('required');
             if (tpSelect.length) tpSelect.removeAttr('required');
-            timeLimitSecWrapper.removeClass('d-none');
-            remedialSecWrapper.removeClass('d-none');
-            if (remedialInput.length) remedialInput.prop('disabled', false);
         }
     }
 
@@ -141,6 +155,9 @@
     }
 
     $(document).ready(function() {
+        $(document).on('change', 'input[name="content_for"]', function() {
+            updateAssessmentTypeConfiguration();
+        });
         updateAssessmentTypeConfiguration();
         toggleAccessPeriod(document.getElementById('has_access_period'));
     });

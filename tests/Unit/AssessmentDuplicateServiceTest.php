@@ -189,4 +189,148 @@ class AssessmentDuplicateServiceTest extends TestCase
         AssesmentQuestionBank::where('assesment_id', $original->id)->delete();
         $original->delete();
     }
+
+    public function test_duplicate_content_as_direct_content(): void
+    {
+        $original = Assesment::create([
+            'title'           => 'Unit Direct Test ' . uniqid(),
+            'type'            => 'content',
+            'content_id'      => 45,
+            'content_for'     => 'content',
+            'trainingplan_id' => null,
+            'status'          => 'OK',
+        ]);
+
+        $duplicated = $this->service->duplicate($original, [
+            'content_for' => 'content',
+        ]);
+
+        $this->assertNotEquals($original->id, $duplicated->id);
+        $this->assertSame('content', $duplicated->type);
+        $this->assertSame('content', $duplicated->content_for);
+        $this->assertNull($duplicated->trainingplan_id);
+        $this->assertSame(45, (int) $duplicated->content_id);
+
+        // Original remains untouched
+        $original->refresh();
+        $this->assertSame('content', $original->content_for);
+        $this->assertNull($original->trainingplan_id);
+
+        $duplicated->delete();
+        $original->delete();
+    }
+
+    public function test_duplicate_content_as_playlist_content(): void
+    {
+        $original = Assesment::create([
+            'title'           => 'Unit Playlist Test ' . uniqid(),
+            'type'            => 'content',
+            'content_id'      => 45,
+            'content_for'     => 'content',
+            'trainingplan_id' => null,
+            'status'          => 'OK',
+        ]);
+
+        $duplicated = $this->service->duplicate($original, [
+            'content_for'     => 'playlist',
+            'trainingplan_id' => 10,
+        ]);
+
+        $this->assertNotEquals($original->id, $duplicated->id);
+        $this->assertSame('content', $duplicated->type);
+        $this->assertSame('playlist', $duplicated->content_for);
+        $this->assertSame(10, (int) $duplicated->trainingplan_id);
+        $this->assertSame(45, (int) $duplicated->content_id);
+
+        // Original remains untouched
+        $original->refresh();
+        $this->assertSame('content', $original->content_for);
+        $this->assertNull($original->trainingplan_id);
+
+        $duplicated->delete();
+        $original->delete();
+    }
+
+    public function test_duplicate_existing_playlist_content_to_another_playlist(): void
+    {
+        $original = Assesment::create([
+            'title'           => 'Unit Repath Test ' . uniqid(),
+            'type'            => 'content',
+            'content_id'      => 45,
+            'content_for'     => 'playlist',
+            'trainingplan_id' => 10,
+            'status'          => 'OK',
+        ]);
+
+        $duplicated = $this->service->duplicate($original, [
+            'content_for'     => 'playlist',
+            'trainingplan_id' => 20,
+        ]);
+
+        $this->assertSame('playlist', $duplicated->content_for);
+        $this->assertSame(20, (int) $duplicated->trainingplan_id);
+        $this->assertSame(45, (int) $duplicated->content_id);
+
+        // Original remains bound to Playlist 10
+        $original->refresh();
+        $this->assertSame(10, (int) $original->trainingplan_id);
+
+        $duplicated->delete();
+        $original->delete();
+    }
+
+    public function test_duplicate_non_content_with_playlist_override_throws_exception(): void
+    {
+        $global = Assesment::create([
+            'title'  => 'Unit Global Override ' . uniqid(),
+            'type'   => 'global',
+            'status' => 'OK',
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        try {
+            $this->service->duplicate($global, [
+                'content_for'     => 'playlist',
+                'trainingplan_id' => 10,
+            ]);
+        } finally {
+            $global->delete();
+        }
+    }
+
+    public function test_duplicate_does_not_copy_results_histories_or_assignments(): void
+    {
+        $original = Assesment::create([
+            'title'   => 'Unit Results Safety ' . uniqid(),
+            'type'    => 'content',
+            'content_id' => 45,
+            'status'  => 'OK',
+        ]);
+
+        // Add dummy result to original
+        $result = AssesmentResult::create([
+            'assesment_id' => $original->id,
+            'user_id'      => 1,
+            'batch'        => '1',
+            'user_answer'  => [],
+            'score'        => 90,
+            'pass'         => 1,
+            'final'        => 1,
+        ]);
+
+        $duplicated = $this->service->duplicate($original);
+
+        // Check duplicated assessment results count is strictly 0
+        $this->assertSame(0, AssesmentResult::where('assesment_id', $duplicated->id)->count());
+        $this->assertSame(0, AssesmentAssigned::where('assesment_id', $duplicated->id)->count());
+
+        // Original still has its result
+        $this->assertSame(1, AssesmentResult::where('assesment_id', $original->id)->count());
+
+        // Cleanup
+        $result->delete();
+        $duplicated->delete();
+        $original->delete();
+    }
 }

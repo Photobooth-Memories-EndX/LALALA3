@@ -1,3 +1,7 @@
+@php
+    $modalPlaylists = $trainingplans ?? \App\Models\TrainingPlan::latest()->get();
+@endphp
+
 <div class="modal fade" id="modalDuplicateAssessment" tabindex="-1" aria-labelledby="modalDuplicateAssessmentLabel" aria-hidden="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
         <form id="formDuplicateAssessment" method="POST" action="" class="modal-content rounded-4 border-0 shadow">
@@ -20,6 +24,38 @@
                     <div class="text-muted small mb-1">Assessment Target:</div>
                     <div class="fw-bold text-dark duplicate-target-title" id="duplicateAssessmentTitle" style="word-break: break-word;">
                         -
+                    </div>
+                </div>
+
+                {{-- Context selection: Only shown when type === 'content' --}}
+                <div id="duplicateContextSection" class="d-none mb-3">
+                    <label class="form-label fw-bold small text-muted text-uppercase mb-2">Target Context</label>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="target_context" id="duplicate_target_content" value="content" checked>
+                            <label class="form-check-label text-dark fw-medium" for="duplicate_target_content">
+                                Direct Content Assessment
+                            </label>
+                            <div class="text-muted small">Assessment akan digunakan pada halaman Direct Content.</div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="target_context" id="duplicate_target_playlist" value="playlist">
+                            <label class="form-check-label text-dark fw-medium" for="duplicate_target_playlist">
+                                Playlist Content Assessment
+                            </label>
+                            <div class="text-muted small">Assessment akan diduplikasi khusus untuk materi di dalam Playlist tertentu.</div>
+                        </div>
+                    </div>
+
+                    <div id="duplicatePlaylistSelectWrapper" class="d-none mb-2">
+                        <label class="form-label fw-bold small required" for="duplicate_trainingplan_id">Select Playlist</label>
+                        <select name="trainingplan_id" id="duplicate_trainingplan_id" class="form-select form-control">
+                            <option value="">-- Choose Playlist --</option>
+                            @foreach ($modalPlaylists as $pl)
+                                <option value="{{ $pl->id }}">{{ $pl->title }}</option>
+                            @endforeach
+                        </select>
+                        <div class="invalid-feedback" id="duplicatePlaylistError">Pilih Playlist tujuan untuk ujian ini.</div>
                     </div>
                 </div>
 

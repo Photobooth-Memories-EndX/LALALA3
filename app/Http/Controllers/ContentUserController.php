@@ -272,7 +272,12 @@ class ContentUserController extends Controller
             'content_id' => $content->id
         ]);
 
-        $queryAssessment = Assesment::query()->where('type', 'content');
+        $queryAssessment = Assesment::query()
+            ->where('type', 'content')
+            ->where(function ($q) {
+                $q->where('content_for', 'content')
+                  ->orWhereNull('content_for');
+            });
 
         $assesment = $queryAssessment
             ->where('content_id', $content->id)

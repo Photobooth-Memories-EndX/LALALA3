@@ -63,16 +63,35 @@ class AssessmentDuplicateService
     /**
      * Duplicate assessment with all configuration, question banks, and questions.
      * Historical results, attempts, assigned users, and unique codes are not copied.
+     * Optional overrides allow specifying target context (e.g. content_for, trainingplan_id) for type = 'content'.
      */
-    public function duplicate(Assesment $assesment): Assesment
+    public function duplicate(Assesment $assesment, array $overrides = []): Assesment
     {
-        return DB::transaction(function () use ($assesment) {
+        return DB::transaction(function () use ($assesment, $overrides) {
             $newAssesment = $assesment->replicate();
             $newAssesment->title       = $this->generateDuplicateTitle($assesment->title);
             $newAssesment->slug        = null; // Handled by Spatie Sluggable
             $newAssesment->unique_code = null;
             $newAssesment->created_at  = Carbon::now();
             $newAssesment->updated_at  = Carbon::now();
+
+            // Apply context overrides for type = content
+            if ($assesment->type === 'content') {
+                if (isset($overrides['content_for'])) {
+                    if ($overrides['content_for'] === 'playlist') {
+                        $newAssesment->content_for     = 'playlist';
+                        $newAssesment->trainingplan_id = $overrides['trainingplan_id'] ?? null;
+                    } elseif ($overrides['content_for'] === 'content') {
+                        $newAssesment->content_for     = 'content';
+                        $newAssesment->trainingplan_id = null;
+                    }
+                }
+                // Guarantee content_id is preserved exactly as original
+                $newAssesment->content_id = $assesment->content_id;
+            } elseif (isset($overrides['content_for']) && $overrides['content_for'] === 'playlist') {
+                throw new \InvalidArgumentException('Only content assessments can be duplicated as playlist content.');
+            }
+
             $newAssesment->save();
 
             // Clone Question Banks and linked questions

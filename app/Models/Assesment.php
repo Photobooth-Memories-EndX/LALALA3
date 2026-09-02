@@ -64,6 +64,11 @@ class Assesment extends Model
 
     protected $casts = [
         'has_access_period' => 'boolean',
+        'content_for'       => 'string',
+    ];
+
+    protected $attributes = [
+        'content_for' => 'content',
     ];
 
     public function hasAccessPeriod(): bool

@@ -212,6 +212,8 @@ class AssesmentController extends Controller
             ->paginate($entries)
             ->withQueryString();
 
+        $trainingplans = TrainingPlan::latest()->get();
+
         return view('main.assesment.index', compact(
             'assesment',
             'years',
@@ -221,7 +223,8 @@ class AssesmentController extends Controller
             'questionUsedFilters',
             'questionBankFilters',
             'durationFilters',
-            'sortOptions'
+            'sortOptions',
+            'trainingplans'
         ));
     }
 
@@ -234,25 +237,54 @@ class AssesmentController extends Controller
 
     public function store(Request $request)
     {
-        $isGlobal        = $request->input('type') === 'global';
+        $type            = $request->input('type');
+        $isGlobal        = $type === 'global';
+        $contentFor      = $type === 'content'
+            ? ($request->input('content_for') === 'playlist' ? 'playlist' : 'content')
+            : 'content';
         $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
         $hasTimeLimit    = !$isGlobal && in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
 
-        $request->validate([
+        $rules = [
             'title'              => 'required',
             'unique_code'        => 'nullable|max:8|alpha_dash|unique:assesments,unique_code',
-            'type'               => 'required',
+            'type'               => 'required|in:content,trainingplan,global',
+            'content_for'        => 'nullable|in:content,playlist',
             'fromdate'           => $hasAccessPeriod ? 'required' : 'nullable',
             'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
             'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
             'passing_grade'      => 'required',
             'total_remedials'    => $isGlobal ? 'nullable' : 'required',
-        ]);
+        ];
+
+        if ($type === 'content') {
+            $rules['content_id'] = 'required';
+            if ($contentFor === 'playlist') {
+                $rules['trainingplan_id'] = 'required';
+            }
+        } elseif ($type === 'trainingplan') {
+            $rules['trainingplan_id'] = 'required';
+        }
+
+        $request->validate($rules);
 
         $assesment = new Assesment();
-        $assesment->type               = $request->input('type');
-        $assesment->content_id         = $request->input('type') === 'content' ? $request->input('content_id') : null;
-        $assesment->trainingplan_id    = $request->input('type') === 'trainingplan' ? $request->input('trainingplan_id') : null;
+        $assesment->type = $type;
+
+        if ($type === 'content') {
+            $assesment->content_for     = $contentFor;
+            $assesment->content_id      = $request->input('content_id');
+            $assesment->trainingplan_id = ($contentFor === 'playlist') ? $request->input('trainingplan_id') : null;
+        } elseif ($type === 'trainingplan') {
+            $assesment->content_for     = 'content';
+            $assesment->content_id      = null;
+            $assesment->trainingplan_id = $request->input('trainingplan_id');
+        } else {
+            $assesment->content_for     = 'content';
+            $assesment->content_id      = null;
+            $assesment->trainingplan_id = null;
+        }
+
         $assesment->title              = $request->input('title');
         $assesment->unique_code        = $request->input('unique_code');
         $assesment->passing_grade      = $request->input('passing_grade');
@@ -295,24 +327,53 @@ class AssesmentController extends Controller
 
     public function update(Request $request, Assesment $assesment)
     {
-        $isGlobal        = $request->input('type') === 'global';
+        $type            = $request->input('type');
+        $isGlobal        = $type === 'global';
+        $contentFor      = $type === 'content'
+            ? ($request->input('content_for') === 'playlist' ? 'playlist' : 'content')
+            : 'content';
         $hasAccessPeriod = $request->boolean('has_access_period') || in_array($request->input('has_access_period'), ['1', 'y', 'yes', true], true);
         $hasTimeLimit    = !$isGlobal && in_array($request->input('timer'), ['1', 'y', 'yes', true], true);
 
-        $request->validate([
+        $rules = [
             'title'              => 'required',
             'unique_code'        => 'nullable|max:8|alpha_dash|unique:assesments,unique_code,' . $assesment->id,
-            'type'               => 'required',
+            'type'               => 'required|in:content,trainingplan,global',
+            'content_for'        => 'nullable|in:content,playlist',
             'fromdate'           => $hasAccessPeriod ? 'required' : 'nullable',
             'todate'             => $hasAccessPeriod ? 'required' : 'nullable',
             'time_limit_minutes' => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
             'passing_grade'      => 'required',
             'total_remedials'    => $isGlobal ? 'nullable' : 'required',
-        ]);
+        ];
 
-        $assesment->type               = $request->input('type');
-        $assesment->content_id         = $request->input('type') === 'content' ? $request->input('content_id') : null;
-        $assesment->trainingplan_id    = $request->input('type') === 'trainingplan' ? $request->input('trainingplan_id') : null;
+        if ($type === 'content') {
+            $rules['content_id'] = 'required';
+            if ($contentFor === 'playlist') {
+                $rules['trainingplan_id'] = 'required';
+            }
+        } elseif ($type === 'trainingplan') {
+            $rules['trainingplan_id'] = 'required';
+        }
+
+        $request->validate($rules);
+
+        $assesment->type = $type;
+
+        if ($type === 'content') {
+            $assesment->content_for     = $contentFor;
+            $assesment->content_id      = $request->input('content_id');
+            $assesment->trainingplan_id = ($contentFor === 'playlist') ? $request->input('trainingplan_id') : null;
+        } elseif ($type === 'trainingplan') {
+            $assesment->content_for     = 'content';
+            $assesment->content_id      = null;
+            $assesment->trainingplan_id = $request->input('trainingplan_id');
+        } else {
+            $assesment->content_for     = 'content';
+            $assesment->content_id      = null;
+            $assesment->trainingplan_id = null;
+        }
+
         $assesment->title              = $request->input('title');
         $assesment->unique_code        = $request->input('unique_code');
         $assesment->passing_grade      = $request->input('passing_grade');

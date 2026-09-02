@@ -91,7 +91,8 @@ class CertificateEligibilityService
     public function contentAssessmentProgress(
         Collection $contentIds,
         User $user,
-        ?CertificateSetting $setting = null
+        ?CertificateSetting $setting = null,
+        ?int $trainingPlanId = null
     ): array
     {
         $contentIds = $contentIds->filter()->unique()->values();
@@ -105,13 +106,18 @@ class CertificateEligibilityService
             ];
         }
 
-        $assessments = Assesment::query()
-            ->select(['id', 'content_id', 'title', 'type', 'slug', 'batch', 'fromdate', 'todate', 'passing_grade', 'total_remedials', 'unique_code'])
+        $query = Assesment::query()
+            ->select(['id', 'content_id', 'trainingplan_id', 'title', 'type', 'content_for', 'slug', 'batch', 'fromdate', 'todate', 'passing_grade', 'total_remedials', 'unique_code'])
             ->where('type', 'content')
             ->where('status', '!=', 'NOT')
-            ->whereIn('content_id', $contentIds)
-            ->orderBy('id')
-            ->get();
+            ->whereIn('content_id', $contentIds);
+
+        if ($trainingPlanId !== null) {
+            $query->where('content_for', 'playlist')
+                  ->where('trainingplan_id', $trainingPlanId);
+        }
+
+        $assessments = $query->orderBy('id')->get();
 
         // Preserve the former first-assessment behaviour with an explicit,
         // deterministic rule while retaining every active assessment above
@@ -237,7 +243,7 @@ class CertificateEligibilityService
             'learnings'              => $learnings,
             'playlistProgressByPlan' => $playlistProgressByPlan,
             'assessmentsByContent'   => $assessments->filter(fn ($a) => $a->content_id)->groupBy('content_id'),
-            'assessmentsByPlaylist'  => $assessments->filter(fn ($a) => $a->trainingplan_id)->groupBy('trainingplan_id'),
+            'assessmentsByPlaylist'  => $assessments->filter(fn ($a) => $a->trainingplan_id && $a->type === 'trainingplan')->groupBy('trainingplan_id'),
             'results'                => $results,
         ];
     }
@@ -277,9 +283,12 @@ class CertificateEligibilityService
             );
         }
 
+        $contentAssessments = $context['assessmentsByContent']->get($setting->content_id, collect())
+            ->filter(fn ($a) => ($a->content_for ?? 'content') === 'content');
+
         return $this->passAssessmentGate(
             $setting,
-            $context['assessmentsByContent']->get($setting->content_id, collect()),
+            $contentAssessments,
             $context,
             $learning
         );
@@ -308,7 +317,8 @@ class CertificateEligibilityService
         }
 
         foreach ($contentIds as $contentId) {
-            $contentAssessments = $context['assessmentsByContent']->get($contentId, collect());
+            $contentAssessments = $context['assessmentsByContent']->get($contentId, collect())
+                ->filter(fn ($a) => ($a->content_for ?? 'content') === 'playlist' && (int) $a->trainingplan_id === (int) $setting->trainingplan_id);
 
             if ($contentAssessments->isEmpty()) {
                 continue;

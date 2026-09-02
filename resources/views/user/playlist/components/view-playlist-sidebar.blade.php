@@ -183,7 +183,7 @@
                             </div>
                         </a>
 
-                        @if ($lessonAssessment)
+                        @if ($lessonAssessment && ($lessonAssessment->type ?? '') === 'content' && ($lessonAssessment->content_for ?? '') === 'playlist' && (int)($lessonAssessment->trainingplan_id ?? 0) === (int)($playlist->id ?? 0))
                             @php
                                 $contentBatchDisplay = !empty($lessonAssessment->batch) && $lessonAssessment->batch !== '-'
                                     ? (str_contains(strtolower((string)$lessonAssessment->batch), 'batch') ? $lessonAssessment->batch : 'Batch ' . $lessonAssessment->batch)

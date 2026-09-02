@@ -11,7 +11,7 @@
 
     $typeLabels = [
         'trainingplan' => 'Playlist',
-        'content' => 'Content',
+        'content' => ($list->content_for === 'playlist') ? 'Content (Playlist)' : 'Content',
         'global' => 'Global',
     ];
     $typeLabel = $typeLabels[$list->type] ?? ucwords($list->type ?? '');

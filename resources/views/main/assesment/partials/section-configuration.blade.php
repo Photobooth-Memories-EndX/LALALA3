@@ -1,6 +1,7 @@
 @php
     $isEdit = isset($assesment) && $assesment;
     $type = old('type', $isEdit ? $assesment->type : '');
+    $contentFor = old('content_for', $isEdit ? ($assesment->content_for ?? 'content') : 'content');
     $titleVal = old('title', $isEdit ? $assesment->title : '');
     $contentId = old('content_id', $isEdit ? $assesment->content_id : '');
     $trainingplanId = old('trainingplan_id', $isEdit ? $assesment->trainingplan_id : '');
@@ -36,9 +37,27 @@
         </div>
     </div>
 
+    {{-- Conditional: Content For (Only for type = content) --}}
+    <div class="mb-3 {{ ($type == 'content') ? '' : 'd-none' }}" id="content_for_wrapper">
+        <label class="form-label required">Content For</label>
+        <div class="d-flex gap-3">
+            <label class="form-check form-check-inline mb-0">
+                <input class="form-check-input content-for-radio" type="radio" name="content_for" id="content_for_content" value="content" {{ ($contentFor === 'content') ? 'checked' : '' }} onchange="updateAssessmentTypeConfiguration();">
+                <span class="form-check-label">Content</span>
+            </label>
+            <label class="form-check form-check-inline mb-0">
+                <input class="form-check-input content-for-radio" type="radio" name="content_for" id="content_for_playlist" value="playlist" {{ ($contentFor === 'playlist') ? 'checked' : '' }} onchange="updateAssessmentTypeConfiguration();">
+                <span class="form-check-label">Playlist</span>
+            </label>
+        </div>
+        <div class="form-text text-muted small mt-1">
+            Pilih <strong>Content</strong> untuk ujian Direct Content, atau <strong>Playlist</strong> jika ujian ditampilkan khusus pada materi di Playlist.
+        </div>
+    </div>
+
     {{-- Conditional Selects --}}
     <div class="mb-3 {{ ($type == 'content') ? '' : 'd-none' }}" id="content_id_wrapper">
-        <label class="form-label">Learning Content</label>
+        <label class="form-label required">Learning Content</label>
         <x-select name="content_id" id="content_id">
             <option value="">-choose-</option>
             @foreach ($contents as $item)
@@ -47,8 +66,8 @@
         </x-select>
     </div>
 
-    <div class="mb-3 {{ ($type == 'trainingplan') ? '' : 'd-none' }}" id="trainingplan_id_wrapper">
-        <label class="form-label">Training Plan</label>
+    <div class="mb-3 {{ ($type == 'trainingplan' || ($type == 'content' && $contentFor == 'playlist')) ? '' : 'd-none' }}" id="trainingplan_id_wrapper">
+        <label class="form-label required" id="trainingplan_id_label">{{ ($type == 'content' && $contentFor == 'playlist') ? 'Playlist' : 'Training Plan' }}</label>
         <x-select name="trainingplan_id" id="trainingplan_id">
             <option value="">-choose-</option>
             @foreach ($trainingplan as $item)

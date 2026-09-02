@@ -342,6 +342,7 @@
             if ($assesmentResultId) {
                 $assesment_result = AssesmentResult::where('id', $assesmentResultId)
                     ->where('user_id', auth()->id())
+                    ->where('assesment_id', $assesment->id)
                     ->first();
             }
 
