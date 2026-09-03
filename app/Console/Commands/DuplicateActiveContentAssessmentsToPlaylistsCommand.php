@@ -61,8 +61,8 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommand extends Command
             $isDryRun = true;
         }
 
-        // 1. Audit & Query all Content assessments (content_for = 'content')
-        $allContentAssessments = Assesment::where('content_for', 'content')->get();
+        // 1. Audit & Query all Content assessments (assasment_content_for = 'content')
+        $allContentAssessments = Assesment::where('assasment_content_for', 'content')->get();
 
         $inactiveAssessments = $allContentAssessments->filter(function ($a) {
             return $a->status !== 'OK' && !empty($a->content_id);
@@ -130,7 +130,7 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommand extends Command
                 $tpTitle = $trainingPlan ? $trainingPlan->title : 'UNKNOWN PLAYLIST';
 
                 // Check if a playlist assessment already exists for (trainingplan_id, content_id)
-                $existingPlaylistAssessment = Assesment::where('content_for', 'playlist')
+                $existingPlaylistAssessment = Assesment::where('assasment_content_for', 'playlist')
                     ->where('trainingplan_id', $tpId)
                     ->where('content_id', $contentId)
                     ->first();
@@ -256,7 +256,7 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommand extends Command
                             }
 
                             // Concurrency idempotency check inside transaction lock
-                            $concurrencyCheck = Assesment::where('content_for', 'playlist')
+                            $concurrencyCheck = Assesment::where('assasment_content_for', 'playlist')
                                 ->where('trainingplan_id', $item['trainingplan_id'])
                                 ->where('content_id', $item['content_id'])
                                 ->lockForUpdate()
@@ -287,11 +287,11 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommand extends Command
                             }
 
                             $newAssessment = $duplicateService->duplicate($source, [
-                                'title'            => $source->title,
-                                'content_id'       => (int) $item['content_id'],
-                                'content_for'      => 'playlist',
-                                'trainingplan_id'  => (int) $item['trainingplan_id'],
-                                'preserve_is_used' => true,
+                                'title'                 => $source->title,
+                                'content_id'            => (int) $item['content_id'],
+                                'assasment_content_for' => 'playlist',
+                                'trainingplan_id'       => (int) $item['trainingplan_id'],
+                                'preserve_is_used'      => true,
                             ]);
 
                             // If new assessment is incomplete (because source was incomplete shell), repair it immediately
@@ -309,7 +309,7 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommand extends Command
                                 throw new \RuntimeException("Post-duplication verification failed: New assessment was not created for target content #{$item['content_id']}.");
                             }
 
-                            if ($newAssessment->content_for !== 'playlist' ||
+                            if ($newAssessment->assasment_content_for !== 'playlist' ||
                                 (int) $newAssessment->trainingplan_id !== (int) $item['trainingplan_id'] ||
                                 (int) $newAssessment->content_id !== (int) $item['content_id']) {
                                 throw new \RuntimeException("Post-duplication verification failed: New assessment #{$newAssessment->id} attributes mismatch.");
@@ -317,7 +317,7 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommand extends Command
 
                             // Source assessment remains untouched
                             $sourceCheck = Assesment::find($srcId);
-                            if (!$sourceCheck || $sourceCheck->content_for !== 'content' || (int) $sourceCheck->content_id !== (int) $item['content_id']) {
+                            if (!$sourceCheck || $sourceCheck->assasment_content_for !== 'content' || (int) $sourceCheck->content_id !== (int) $item['content_id']) {
                                 throw new \RuntimeException("Post-duplication verification failed: Source assessment #{$srcId} was modified!");
                             }
 
@@ -381,7 +381,7 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommand extends Command
         // 2. Check if active source assessment for same content has linked QuestionBank
         if ($assessment->content_id) {
             $source = Assesment::where('content_id', $assessment->content_id)
-                ->where('content_for', 'content')
+                ->where('assasment_content_for', 'content')
                 ->where('status', 'OK')
                 ->first();
             if ($source && $source->assessment_question_banks()->count() > 0) {
@@ -575,7 +575,7 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommand extends Command
             if (isset($item['new_assessment']) && $item['new_assessment']) {
                 $this->newLine();
                 $this->line("New Assessment ID : #{$item['new_assessment']->id}");
-                $this->line("content_for       : {$item['new_assessment']->content_for}");
+                $this->line("assasment_content_for : {$item['new_assessment']->assasment_content_for}");
                 $this->line("trainingplan_id   : {$item['new_assessment']->trainingplan_id}");
                 $this->line("content_id        : {$item['new_assessment']->content_id}");
             }

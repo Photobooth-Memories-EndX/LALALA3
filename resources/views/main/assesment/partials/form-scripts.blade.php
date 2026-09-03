@@ -102,7 +102,7 @@
             contentForWrapper.removeClass('d-none');
             contentWrapper.removeClass('d-none');
 
-            const contentFor = $('input[name="content_for"]:checked').val() || 'content';
+            const contentFor = $('input[name="assasment_content_for"]:checked').val() || 'content';
 
             if (contentFor === 'playlist') {
                 tpWrapper.removeClass('d-none');
@@ -235,7 +235,7 @@
     $(document).ready(function() {
         initAssessmentSelect2();
 
-        $(document).on('change', 'input[name="content_for"]', function() {
+        $(document).on('change', 'input[name="assasment_content_for"]', function() {
             updateAssessmentTypeConfiguration(false);
         });
 
@@ -244,7 +244,7 @@
             if (opts && opts.silent) return;
 
             const type = $('#assessment_type').val();
-            const contentFor = $('input[name="content_for"]:checked').val() || 'content';
+            const contentFor = $('input[name="assasment_content_for"]:checked').val() || 'content';
 
             if (type !== 'content' || contentFor !== 'playlist') {
                 return;

@@ -134,8 +134,8 @@ class AssessmentResultDuplicationServiceTest extends TestCase
 
         // Duplicate source structure using existing AssessmentDuplicateService
         $duplicate = $this->duplicateService->duplicate($source, [
-            'content_for'      => 'content',
-            'preserve_is_used' => true,
+            'assasment_content_for' => 'content',
+            'preserve_is_used'      => true,
         ]);
 
         return [$source, $duplicate, [$r1, $r2, $r3], [$q1, $q2]];
@@ -357,8 +357,8 @@ class AssessmentResultDuplicationServiceTest extends TestCase
         ]);
 
         $duplicate = $this->duplicateService->duplicate($source, [
-            'content_for'      => 'content',
-            'preserve_is_used' => true,
+            'assasment_content_for' => 'content',
+            'preserve_is_used'      => true,
         ]);
 
         $mapping = $this->service->buildQuestionMapping($source->id, $duplicate->id);
@@ -431,8 +431,8 @@ class AssessmentResultDuplicationServiceTest extends TestCase
         ]);
 
         $duplicate = $this->duplicateService->duplicate($source, [
-            'content_for'      => 'content',
-            'preserve_is_used' => true,
+            'assasment_content_for' => 'content',
+            'preserve_is_used'      => true,
         ]);
 
         $mapping = $this->service->buildQuestionMapping($source->id, $duplicate->id);

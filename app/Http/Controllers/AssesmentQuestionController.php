@@ -366,13 +366,13 @@ class AssesmentQuestionController extends Controller
 
                 if ($validated['target_context'] === 'playlist') {
                     $overrides = [
-                        'content_for'     => 'playlist',
-                        'trainingplan_id' => (int) $validated['trainingplan_id'],
+                        'assasment_content_for' => 'playlist',
+                        'trainingplan_id'       => (int) $validated['trainingplan_id'],
                     ];
                 } else {
                     $overrides = [
-                        'content_for'     => 'content',
-                        'trainingplan_id' => null,
+                        'assasment_content_for' => 'content',
+                        'trainingplan_id'       => null,
                     ];
                 }
             } elseif ($request->filled('trainingplan_id')) {
@@ -381,8 +381,8 @@ class AssesmentQuestionController extends Controller
                 ];
                 $validated = $request->validate($rules);
                 $overrides = [
-                    'content_for'     => 'playlist',
-                    'trainingplan_id' => (int) $validated['trainingplan_id'],
+                    'assasment_content_for' => 'playlist',
+                    'trainingplan_id'       => (int) $validated['trainingplan_id'],
                 ];
             }
         } else {

@@ -271,7 +271,7 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
                 $stats['trainingplan_detail_found']++;
             }
 
-            $currentContentFor = $assessment ? ($assessment->content_for ?? 'NULL') : 'NOT FOUND';
+            $currentContentFor = $assessment ? ($assessment->assasment_content_for ?? 'NULL') : 'NOT FOUND';
             $currentTpId       = $assessment ? ($assessment->trainingplan_id ?? 'NULL') : 'NOT FOUND';
 
             // Audit questions, question banks, and options
@@ -290,7 +290,7 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
             }
 
             // Check if playlist assessment already exists for this (trainingplan_id, content_id)
-            $existingPlaylistAssessment = Assesment::where('content_for', 'playlist')
+            $existingPlaylistAssessment = Assesment::where('assasment_content_for', 'playlist')
                 ->where('trainingplan_id', $tpId)
                 ->where('content_id', $cId)
                 ->first();
@@ -315,10 +315,10 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
                 $itemStatus = 'mismatch';
                 $statusDescription = 'CONFLICT / SKIPPED: TrainingPlanDetail not found in target playlist';
                 $hasFatalValidationIssue = true;
-            } elseif ($assessment->content_for === 'playlist') {
+            } elseif ($assessment->assasment_content_for === 'playlist') {
                 $stats['conflict']++;
                 $itemStatus = 'conflict';
-                $statusDescription = "CONFLICT / SKIPPED: Source Assessment #{$aId} already has content_for = 'playlist'";
+                $statusDescription = "CONFLICT / SKIPPED: Source Assessment #{$aId} already has assasment_content_for = 'playlist'";
                 $hasFatalValidationIssue = true;
             } elseif ($existingPlaylistAssessment !== null) {
                 $stats['already_exists']++;
@@ -378,12 +378,12 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
                             throw new \RuntimeException("Validation failed inside transaction for Assessment ID {$valItem['aId']}: Content mismatch or record missing.");
                         }
 
-                        if ($sourceAssessment->content_for !== 'content') {
-                            throw new \RuntimeException("Validation failed inside transaction for Assessment ID {$valItem['aId']}: Source assessment content_for is '{$sourceAssessment->content_for}', expected 'content'.");
+                        if ($sourceAssessment->assasment_content_for !== 'content') {
+                            throw new \RuntimeException("Validation failed inside transaction for Assessment ID {$valItem['aId']}: Source assessment assasment_content_for is '{$sourceAssessment->assasment_content_for}', expected 'content'.");
                         }
 
                         // Concurrency idempotency check inside transaction
-                        $concurrencyCheck = Assesment::where('content_for', 'playlist')
+                        $concurrencyCheck = Assesment::where('assasment_content_for', 'playlist')
                             ->where('trainingplan_id', $valItem['tpId'])
                             ->where('content_id', $valItem['cId'])
                             ->lockForUpdate()
@@ -405,20 +405,20 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
                         // Perform Duplication using central AssessmentDuplicateService
                         // 1. Clones assessment configuration and preserves original title
                         // 2. Links to existing target content_id (does NOT duplicate content)
-                        // 3. Sets content_for = 'playlist' and trainingplan_id = $valItem['tpId']
+                        // 3. Sets assasment_content_for = 'playlist' and trainingplan_id = $valItem['tpId']
                         // 4. Clones questions, options, and question banks, preserving is_used flags
                         $newAssessment = $duplicateService->duplicate($sourceAssessment, [
-                            'title'            => $sourceAssessment->title,
-                            'content_id'       => (int) $valItem['cId'],
-                            'content_for'      => 'playlist',
-                            'trainingplan_id'  => (int) $valItem['tpId'],
-                            'preserve_is_used' => true,
+                            'title'                 => $sourceAssessment->title,
+                            'content_id'            => (int) $valItem['cId'],
+                            'assasment_content_for' => 'playlist',
+                            'trainingplan_id'       => (int) $valItem['tpId'],
+                            'preserve_is_used'      => true,
                         ]);
 
                         // Step 16: STRICT POST-DUPLICATION VERIFICATION (READ → VALIDATE → DUPLICATE → VERIFY → COMMIT)
                         // AC-01: Source assessment remains untouched
                         $sourceCheck = Assesment::find($valItem['aId']);
-                        if (!$sourceCheck || $sourceCheck->content_for !== 'content' || (int) $sourceCheck->content_id !== (int) $valItem['cId']) {
+                        if (!$sourceCheck || $sourceCheck->assasment_content_for !== 'content' || (int) $sourceCheck->content_id !== (int) $valItem['cId']) {
                             throw new \RuntimeException("Post-duplication verification failed: Original Assessment #{$valItem['aId']} was modified!");
                         }
 
@@ -427,7 +427,7 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
                             throw new \RuntimeException("Post-duplication verification failed: New Assessment was not created for target #{$valItem['aId']}.");
                         }
 
-                        if ($newAssessment->content_for !== 'playlist' || (int) $newAssessment->trainingplan_id !== (int) $valItem['tpId'] || (int) $newAssessment->content_id !== (int) $valItem['cId']) {
+                        if ($newAssessment->assasment_content_for !== 'playlist' || (int) $newAssessment->trainingplan_id !== (int) $valItem['tpId'] || (int) $newAssessment->content_id !== (int) $valItem['cId']) {
                             throw new \RuntimeException("Post-duplication verification failed: New Assessment #{$newAssessment->id} attributes mismatch.");
                         }
 
@@ -519,7 +519,7 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
             if (isset($v['new_assessment']) && $v['new_assessment']) {
                 $this->newLine();
                 $this->line("New Assessment ID : {$v['new_assessment']->id}");
-                $this->line("content_for       : {$v['new_assessment']->content_for}");
+                $this->line("assasment_content_for : {$v['new_assessment']->assasment_content_for}");
                 $this->line("trainingplan_id   : {$v['new_assessment']->trainingplan_id}");
                 $this->line("content_id        : {$v['new_assessment']->content_id}");
             }

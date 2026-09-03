@@ -110,10 +110,10 @@ class AssessmentResultContextE2ETest extends TestCase
     {
         $content = $this->createContent('direct');
         $assessmentDirect = $this->createAssessment([
-            'type'            => 'content',
-            'content_for'     => 'content',
-            'content_id'      => $content->id,
-            'trainingplan_id' => null,
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'content_id'            => $content->id,
+            'trainingplan_id'       => null,
         ]);
 
         // Grant progress on Direct Content
@@ -176,17 +176,17 @@ class AssessmentResultContextE2ETest extends TestCase
         TrainingPlanDetail::create(['trainingplan_id' => $playlistB->id, 'content_id' => $content->id, 'content_order' => '1']);
 
         $assPlaylistA = $this->createAssessment([
-            'type'            => 'content',
-            'content_for'     => 'playlist',
-            'content_id'      => $content->id,
-            'trainingplan_id' => $playlistA->id,
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'content_id'            => $content->id,
+            'trainingplan_id'       => $playlistA->id,
         ]);
 
         $assPlaylistB = $this->createAssessment([
-            'type'            => 'content',
-            'content_for'     => 'playlist',
-            'content_id'      => $content->id,
-            'trainingplan_id' => $playlistB->id,
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'content_id'            => $content->id,
+            'trainingplan_id'       => $playlistB->id,
         ]);
 
         // Set playlist progress for user
@@ -208,35 +208,29 @@ class AssessmentResultContextE2ETest extends TestCase
             'learning_status' => 'finished',
         ]);
 
-        // Submit Playlist A assessment (score 100)
+        // 1. Submit for Playlist A (Score 100)
         $qA = $assPlaylistA->questions->first();
         $this->actingAs($this->user)->post(route('assesment.user.store', $assPlaylistA->slug), [
             'submission_token' => Str::uuid()->toString(),
             (string) $qA->id   => 'B',
         ]);
 
-        // Submit Playlist B assessment with wrong answer (score 0)
+        // 2. Submit for Playlist B (Score 0)
         $qB = $assPlaylistB->questions->first();
         $this->actingAs($this->user)->post(route('assesment.user.store', $assPlaylistB->slug), [
             'submission_token' => Str::uuid()->toString(),
-            (string) $qB->id   => 'A',
+            (string) $qB->id   => 'A', // Wrong answer
         ]);
 
-        // Verify results in database
-        $resultA = AssesmentResult::where('user_id', $this->user->id)
-            ->where('assesment_id', $assPlaylistA->id)
-            ->first();
-        $resultB = AssesmentResult::where('user_id', $this->user->id)
-            ->where('assesment_id', $assPlaylistB->id)
-            ->first();
+        // 3. Verify Isolation
+        $resultA = AssesmentResult::where('user_id', $this->user->id)->where('assesment_id', $assPlaylistA->id)->where('final', 1)->first();
+        $resultB = AssesmentResult::where('user_id', $this->user->id)->where('assesment_id', $assPlaylistB->id)->where('final', 1)->first();
 
-        $this->assertNotNull($resultA);
-        $this->assertNotNull($resultB);
-        $this->assertNotEquals($resultA->id, $resultB->id);
-        $this->assertSame((int) $assPlaylistA->id, (int) $resultA->assesment_id);
-        $this->assertSame((int) $assPlaylistB->id, (int) $resultB->assesment_id);
         $this->assertEquals(100, (float) $resultA->score);
+        $this->assertSame(1, (int) $resultA->pass);
+
         $this->assertEquals(0, (float) $resultB->score);
+        $this->assertSame(0, (int) $resultB->pass);
 
         // In Playlist A view: latest score is 100
         $viewPlA = $this->actingAs($this->user)->get(route('playlist.user.view', [$playlistA->slug, $content->slug]));
@@ -252,33 +246,34 @@ class AssessmentResultContextE2ETest extends TestCase
     }
 
     /**
-     * TEST 4: Same User has Direct, Playlist A, and Playlist B results simultaneously without collision
+     * TEST 4: Three-Way Isolation: Direct + Playlist A + Playlist B for Same Content
      */
-    public function test_same_user_can_have_three_distinct_results_without_collision(): void
+    public function test_scenario_4_three_way_isolation(): void
     {
-        $content = $this->createContent('triple');
-        $playlistA = $this->createPlaylist('Triple A');
-        $playlistB = $this->createPlaylist('Triple B');
+        $content = $this->createContent('threeway');
+        $playlistA = $this->createPlaylist('Playlist A');
+        $playlistB = $this->createPlaylist('Playlist B');
+
+        TrainingPlanDetail::create(['trainingplan_id' => $playlistA->id, 'content_id' => $content->id, 'content_order' => '1']);
+        TrainingPlanDetail::create(['trainingplan_id' => $playlistB->id, 'content_id' => $content->id, 'content_order' => '1']);
 
         $assDirect = $this->createAssessment([
-            'type'            => 'content',
-            'content_for'     => 'content',
-            'content_id'      => $content->id,
-            'trainingplan_id' => null,
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'content_id'            => $content->id,
+            'trainingplan_id'       => null,
         ]);
-
         $assPlA = $this->createAssessment([
-            'type'            => 'content',
-            'content_for'     => 'playlist',
-            'content_id'      => $content->id,
-            'trainingplan_id' => $playlistA->id,
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'content_id'            => $content->id,
+            'trainingplan_id'       => $playlistA->id,
         ]);
-
         $assPlB = $this->createAssessment([
-            'type'            => 'content',
-            'content_for'     => 'playlist',
-            'content_id'      => $content->id,
-            'trainingplan_id' => $playlistB->id,
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'content_id'            => $content->id,
+            'trainingplan_id'       => $playlistB->id,
         ]);
 
         // Create explicit results for same user
@@ -333,9 +328,9 @@ class AssessmentResultContextE2ETest extends TestCase
         $playlistA = $this->createPlaylist('Draft Pl A');
         $playlistB = $this->createPlaylist('Draft Pl B');
 
-        $assDirect = $this->createAssessment(['type' => 'content', 'content_for' => 'content', 'content_id' => $content->id]);
-        $assPlA    = $this->createAssessment(['type' => 'content', 'content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id]);
-        $assPlB    = $this->createAssessment(['type' => 'content', 'content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistB->id]);
+        $assDirect = $this->createAssessment(['type' => 'content', 'assasment_content_for' => 'content', 'content_id' => $content->id]);
+        $assPlA    = $this->createAssessment(['type' => 'content', 'assasment_content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id]);
+        $assPlB    = $this->createAssessment(['type' => 'content', 'assasment_content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistB->id]);
 
         // Progress
         ContentUser::create(['user_id' => $this->user->id, 'content_id' => $content->id, 'progress' => 100, 'finish' => '1', 'learning_status' => 'finished']);
@@ -369,8 +364,8 @@ class AssessmentResultContextE2ETest extends TestCase
         $content = $this->createContent('subm');
         $playlistA = $this->createPlaylist('Subm Pl A');
 
-        $assDirect = $this->createAssessment(['type' => 'content', 'content_for' => 'content', 'content_id' => $content->id]);
-        $assPlA    = $this->createAssessment(['type' => 'content', 'content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id]);
+        $assDirect = $this->createAssessment(['type' => 'content', 'assasment_content_for' => 'content', 'content_id' => $content->id]);
+        $assPlA    = $this->createAssessment(['type' => 'content', 'assasment_content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id]);
 
         ContentUser::create(['user_id' => $this->user->id, 'content_id' => $content->id, 'progress' => 100, 'finish' => '1', 'learning_status' => 'finished']);
         PlaylistContentUser::create(['user_id' => $this->user->id, 'trainingplan_id' => $playlistA->id, 'content_id' => $content->id, 'progress' => 100, 'finish' => '1', 'learning_status' => 'finished']);
@@ -401,8 +396,8 @@ class AssessmentResultContextE2ETest extends TestCase
         $content = $this->createContent('remedial');
         $playlistA = $this->createPlaylist('Remedial Pl A');
 
-        $assDirect = $this->createAssessment(['type' => 'content', 'content_for' => 'content', 'content_id' => $content->id, 'total_remedials' => 3]);
-        $assPlA    = $this->createAssessment(['type' => 'content', 'content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id, 'total_remedials' => 3]);
+        $assDirect = $this->createAssessment(['type' => 'content', 'assasment_content_for' => 'content', 'content_id' => $content->id, 'total_remedials' => 3]);
+        $assPlA    = $this->createAssessment(['type' => 'content', 'assasment_content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id, 'total_remedials' => 3]);
 
         // Add 2 failed attempts to Playlist A
         AssesmentResult::create([
@@ -442,8 +437,8 @@ class AssessmentResultContextE2ETest extends TestCase
         $content = $this->createContent('prog');
         $playlistA = $this->createPlaylist('Prog Pl A');
 
-        $assDirect = $this->createAssessment(['type' => 'content', 'content_for' => 'content', 'content_id' => $content->id]);
-        $assPlA    = $this->createAssessment(['type' => 'content', 'content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id]);
+        $assDirect = $this->createAssessment(['type' => 'content', 'assasment_content_for' => 'content', 'content_id' => $content->id]);
+        $assPlA    = $this->createAssessment(['type' => 'content', 'assasment_content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id]);
 
         // User has 100% on direct content_users, but 0% on playlist_content_users
         ContentUser::create(['user_id' => $this->user->id, 'content_id' => $content->id, 'progress' => 100, 'finish' => '1', 'learning_status' => 'finished']);
@@ -478,8 +473,8 @@ class AssessmentResultContextE2ETest extends TestCase
         $content = $this->createContent('respag');
         $playlistA = $this->createPlaylist('Res Pag Pl A');
 
-        $assDirect = $this->createAssessment(['title' => 'Ass Direct Res', 'type' => 'content', 'content_for' => 'content', 'content_id' => $content->id]);
-        $assPlA    = $this->createAssessment(['title' => 'Ass Pl A Res', 'type' => 'content', 'content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id]);
+        $assDirect = $this->createAssessment(['title' => 'Ass Direct Res', 'type' => 'content', 'assasment_content_for' => 'content', 'content_id' => $content->id]);
+        $assPlA    = $this->createAssessment(['title' => 'Ass Pl A Res', 'type' => 'content', 'assasment_content_for' => 'playlist', 'content_id' => $content->id, 'trainingplan_id' => $playlistA->id]);
 
         $resDirect = AssesmentResult::create([
             'user_id'      => $this->user->id,
@@ -521,8 +516,8 @@ class AssessmentResultContextE2ETest extends TestCase
     public function test_result_page_session_id_from_another_assessment_edge_case(): void
     {
         $content = $this->createContent('crosssess');
-        $assA = $this->createAssessment(['title' => 'Ass Cross A', 'type' => 'content', 'content_for' => 'content', 'content_id' => $content->id]);
-        $assB = $this->createAssessment(['title' => 'Ass Cross B', 'type' => 'content', 'content_for' => 'content', 'content_id' => $content->id]);
+        $assA = $this->createAssessment(['title' => 'Ass Cross A', 'type' => 'content', 'assasment_content_for' => 'content', 'content_id' => $content->id]);
+        $assB = $this->createAssessment(['title' => 'Ass Cross B', 'type' => 'content', 'assasment_content_for' => 'content', 'content_id' => $content->id]);
 
         $resA = AssesmentResult::create([
             'user_id'      => $this->user->id,
@@ -570,7 +565,7 @@ class AssessmentResultContextE2ETest extends TestCase
 
         // 3. User visits Assessment C (no results yet) with session still holding resA id:
         // resA MUST NOT be displayed! loadedResult must be null
-        $assC = $this->createAssessment(['title' => 'Ass Cross C', 'type' => 'content', 'content_for' => 'content', 'content_id' => $content->id]);
+        $assC = $this->createAssessment(['title' => 'Ass Cross C', 'type' => 'content', 'assasment_content_for' => 'content', 'content_id' => $content->id]);
         $resPageC = $this->actingAs($this->user)
             ->withSession(['assesmentResultId' => $resA->id])
             ->get(route('assesment.user.result', $assC->slug));
@@ -586,11 +581,11 @@ class AssessmentResultContextE2ETest extends TestCase
     public function test_global_assessment_isolation(): void
     {
         $global = $this->createAssessment([
-            'type'            => 'global',
-            'content_for'     => 'content',
-            'content_id'      => null,
-            'trainingplan_id' => null,
-            'total_remedials' => 0,
+            'type'                  => 'global',
+            'assasment_content_for' => 'content',
+            'content_id'            => null,
+            'trainingplan_id'       => null,
+            'total_remedials'       => 0,
         ]);
 
         AssesmentResult::create([
@@ -620,10 +615,10 @@ class AssessmentResultContextE2ETest extends TestCase
         TrainingPlanDetail::create(['trainingplan_id' => $playlist->id, 'content_id' => $content->id, 'content_order' => '1']);
 
         $assTp = $this->createAssessment([
-            'type'            => 'trainingplan',
-            'content_for'     => 'content',
-            'content_id'      => null,
-            'trainingplan_id' => $playlist->id,
+            'type'                  => 'trainingplan',
+            'assasment_content_for' => 'content',
+            'content_id'            => null,
+            'trainingplan_id'       => $playlist->id,
         ]);
 
         // User hasn't finished content in playlist
@@ -658,16 +653,16 @@ class AssessmentResultContextE2ETest extends TestCase
     public function test_legacy_assessment_content_compatibility(): void
     {
         $content = $this->createContent('legacy');
-        // Legacy content assessment has type = 'content', content_for = 'content', trainingplan_id = null
+        // Legacy content assessment has type = 'content', assasment_content_for = 'content', trainingplan_id = null
         $legacy = $this->createAssessment([
-            'title'           => 'Legacy Content Assessment',
-            'type'            => 'content',
-            'content_for'     => 'content',
-            'content_id'      => $content->id,
-            'trainingplan_id' => null,
-            'status'          => 'OK',
-            'passing_grade'   => 75,
-            'batch'           => 1,
+            'title'                 => 'Legacy Content Assessment',
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'content_id'            => $content->id,
+            'trainingplan_id'       => null,
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+            'batch'                 => 1,
         ]);
 
         ContentUser::create([

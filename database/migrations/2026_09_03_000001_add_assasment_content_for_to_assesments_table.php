@@ -14,8 +14,8 @@ return new class extends Migration
     public function up()
     {
         Schema::table('assesments', function (Blueprint $table) {
-            if (!Schema::hasColumn('assesments', 'content_for')) {
-                $table->enum('content_for', ['content', 'playlist'])->default('content')->after('type');
+            if (!Schema::hasColumn('assesments', 'assasment_content_for')) {
+                $table->enum('assasment_content_for', ['content', 'playlist'])->default('content')->after('type');
             }
         });
     }
@@ -28,8 +28,8 @@ return new class extends Migration
     public function down()
     {
         Schema::table('assesments', function (Blueprint $table) {
-            if (Schema::hasColumn('assesments', 'content_for')) {
-                $table->dropColumn('content_for');
+            if (Schema::hasColumn('assesments', 'assasment_content_for')) {
+                $table->dropColumn('assasment_content_for');
             }
         });
     }

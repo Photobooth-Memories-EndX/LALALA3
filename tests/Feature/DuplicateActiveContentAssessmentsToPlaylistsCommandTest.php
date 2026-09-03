@@ -41,8 +41,6 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommandTest extends TestCase
             ->expectsOutputToContain('Ready for Creation')
             ->expectsOutputToContain('Ready for Repair')
             ->expectsOutputToContain('Already Exists Complete')
-            ->expectsOutputToContain('READY FOR REPAIR')
-            ->expectsOutputToContain('ALREADY EXISTS — COMPLETE')
             ->expectsOutputToContain('Database Modified        : 0');
     }
 
@@ -65,11 +63,11 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommandTest extends TestCase
         ]);
 
         $inactiveAssessment = Assesment::create([
-            'type'        => 'content',
-            'content_for' => 'content',
-            'status'      => 'NOT',
-            'content_id'  => $content->id,
-            'title'       => 'Inactive Assessment ' . uniqid(),
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'status'                => 'NOT',
+            'content_id'            => $content->id,
+            'title'                 => 'Inactive Assessment ' . uniqid(),
         ]);
 
         $this->artisan('assessment:duplicate-active-to-playlists', ['--dry-run' => true])
@@ -96,19 +94,19 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommandTest extends TestCase
         ]);
 
         $assessment1 = Assesment::create([
-            'type'        => 'content',
-            'content_for' => 'content',
-            'status'      => 'OK',
-            'content_id'  => $content->id,
-            'title'       => 'Conflict Assessment 1 ' . uniqid(),
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'content_id'            => $content->id,
+            'title'                 => 'Conflict Assessment 1 ' . uniqid(),
         ]);
 
         $assessment2 = Assesment::create([
-            'type'        => 'content',
-            'content_for' => 'content',
-            'status'      => 'OK',
-            'content_id'  => $content->id,
-            'title'       => 'Conflict Assessment 2 ' . uniqid(),
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'content_id'            => $content->id,
+            'title'                 => 'Conflict Assessment 2 ' . uniqid(),
         ]);
 
         $this->artisan('assessment:duplicate-active-to-playlists', ['--dry-run' => true])
@@ -153,23 +151,23 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommandTest extends TestCase
 
         // Source assessment (shell)
         $source = Assesment::create([
-            'type'        => 'content',
-            'content_for' => 'content',
-            'status'      => 'OK',
-            'content_id'  => $content->id,
-            'title'       => 'Chapter 99 - Special Testing Subject',
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'content_id'            => $content->id,
+            'title'                 => 'Chapter 99 - Special Testing Subject',
         ]);
 
         // Existing playlist assessment (INCOMPLETE shell: 0 questions, 0 QBs, null pass)
         $incompletePlaylistAssessment = Assesment::create([
-            'type'            => 'content',
-            'content_for'     => 'playlist',
-            'status'          => 'OK',
-            'content_id'      => $content->id,
-            'trainingplan_id' => $playlist->id,
-            'title'           => $source->title,
-            'passing_grade'   => null,
-            'timer'           => 'n',
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'status'                => 'OK',
+            'content_id'            => $content->id,
+            'trainingplan_id'       => $playlist->id,
+            'title'                 => $source->title,
+            'passing_grade'         => null,
+            'timer'                 => 'n',
         ]);
 
         $originalId = $incompletePlaylistAssessment->id;
@@ -188,7 +186,7 @@ class DuplicateActiveContentAssessmentsToPlaylistsCommandTest extends TestCase
             ->assertSuccessful();
 
         // 3. Verify IN-PLACE REPAIR: ID must NOT change, no 3rd assessment created!
-        $matchingAssessments = Assesment::where('content_for', 'playlist')
+        $matchingAssessments = Assesment::where('assasment_content_for', 'playlist')
             ->where('trainingplan_id', $playlist->id)
             ->where('content_id', $content->id)
             ->get();

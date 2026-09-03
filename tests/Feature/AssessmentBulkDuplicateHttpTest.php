@@ -186,11 +186,11 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
     public function test_single_source_request_reaches_service_and_returns_success(): void
     {
         $assessment = Assesment::create([
-            'title'       => 'HTTP Test Single ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'HTTP Test Single ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -216,7 +216,7 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
         $newAssessment = Assesment::findOrFail($newId);
 
         $this->assertSame('content', $newAssessment->type);
-        $this->assertSame('playlist', $newAssessment->content_for);
+        $this->assertSame('playlist', $newAssessment->assasment_content_for);
         $this->assertSame($this->playlist->id, (int) $newAssessment->trainingplan_id);
         $this->assertSame($this->content1->id, (int) $newAssessment->content_id);
     }
@@ -224,19 +224,19 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
     public function test_multiple_source_request_reaches_service_and_returns_summary(): void
     {
         $a1 = Assesment::create([
-            'title'       => 'HTTP Multi 1 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'HTTP Multi 1 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $a2 = Assesment::create([
-            'title'       => 'HTTP Multi 2 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content2->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'HTTP Multi 2 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content2->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -276,11 +276,11 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
     public function test_preview_selected_returns_json(): void
     {
         $a1 = Assesment::create([
-            'title'       => 'HTTP Prev 1 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'HTTP Prev 1 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -373,11 +373,11 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
     public function test_inactive_source_does_not_get_duplicated(): void
     {
         $inactive = Assesment::create([
-            'title'       => 'HTTP Inactive ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'NOT',
+            'title'                 => 'HTTP Inactive ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'NOT',
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -403,20 +403,20 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
     {
         // Pre-create an active assessment in playlist
         Assesment::create([
-            'title'           => 'Existing In Playlist ' . Str::random(5),
-            'type'            => 'content',
-            'content_id'      => $this->content1->id,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $this->playlist->id,
-            'status'          => 'OK',
+            'title'                 => 'Existing In Playlist ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlist->id,
+            'status'                => 'OK',
         ]);
 
         $source = Assesment::create([
-            'title'       => 'Source Assessment ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Source Assessment ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $response = $this->actingAs($this->admin)
@@ -471,19 +471,19 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
     public function test_assessment_index_renders_checkbox_eligible_for_active_content_and_disabled_for_others(): void
     {
         $activeContent = Assesment::create([
-            'title'       => 'Active Content ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Active Content ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $inactiveContent = Assesment::create([
-            'title'       => 'Inactive Content ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'NOT',
+            'title'                 => 'Inactive Content ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'NOT',
         ]);
 
         $global = Assesment::create([
@@ -502,19 +502,19 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
     public function test_duplicate_many_with_content_mapping_reassigns_content_id(): void
     {
         $a1 = Assesment::create([
-            'title'       => 'Mapping Test A1 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Mapping Test A1 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $a2 = Assesment::create([
-            'title'       => 'Mapping Test A2 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content2->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Mapping Test A2 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content2->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         // Swap mapping: A1 -> content2, A2 -> content1
@@ -549,21 +549,21 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
     {
         // Pre-create active assessment for content2 in playlist
         Assesment::create([
-            'title'           => 'Existing Content2 In Playlist ' . Str::random(5),
-            'type'            => 'content',
-            'content_id'      => $this->content2->id,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $this->playlist->id,
-            'status'          => 'OK',
+            'title'                 => 'Existing Content2 In Playlist ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content2->id,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlist->id,
+            'status'                => 'OK',
         ]);
 
         // Source assessment A1 is originally for content1
         $a1 = Assesment::create([
-            'title'       => 'Source A1 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Source A1 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         // Map A1 -> content2 (which already exists in playlist)
@@ -591,19 +591,19 @@ class AssessmentBulkDuplicateHttpTest extends TestCase
     public function test_duplicate_content_mapping_is_rejected_with_validation_error(): void
     {
         $a1 = Assesment::create([
-            'title'       => 'DupMap A1 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'DupMap A1 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $a2 = Assesment::create([
-            'title'       => 'DupMap A2 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content2->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'DupMap A2 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content2->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         // Both mapped to content1 (duplicate content mapping)

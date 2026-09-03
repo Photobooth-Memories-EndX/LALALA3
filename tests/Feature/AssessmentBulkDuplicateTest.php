@@ -85,12 +85,12 @@ class AssessmentBulkDuplicateTest extends TestCase
     public function test_duplicate_single_active_content_assessment_to_playlist(): void
     {
         $assessment = Assesment::create([
-            'title'         => 'Direct Source ' . Str::random(5),
-            'type'          => 'content',
-            'content_id'    => $this->content1->id,
-            'content_for'   => 'content',
-            'status'        => 'OK',
-            'passing_grade' => 75,
+            'title'                 => 'Direct Source ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'passing_grade'         => 75,
         ]);
 
         $qb = QuestionBank::first();
@@ -134,7 +134,7 @@ class AssessmentBulkDuplicateTest extends TestCase
 
         $this->assertNotEquals($assessment->id, $newAssessment->id);
         $this->assertSame('content', $newAssessment->type);
-        $this->assertSame('playlist', $newAssessment->content_for);
+        $this->assertSame('playlist', $newAssessment->assasment_content_for);
         $this->assertSame($this->playlist1->id, (int) $newAssessment->trainingplan_id);
         $this->assertSame($this->content1->id, (int) $newAssessment->content_id);
         $this->assertSame(75, (int) $newAssessment->passing_grade);
@@ -146,26 +146,26 @@ class AssessmentBulkDuplicateTest extends TestCase
 
         // Source assessment unchanged
         $assessment->refresh();
-        $this->assertSame('content', $assessment->content_for);
+        $this->assertSame('content', $assessment->assasment_content_for);
         $this->assertNull($assessment->trainingplan_id);
     }
 
     public function test_duplicate_multiple_selected_active_content_assessments_to_playlist(): void
     {
         $a1 = Assesment::create([
-            'title'       => 'Multi Source 1 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Multi Source 1 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $a2 = Assesment::create([
-            'title'       => 'Multi Source 2 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content2->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Multi Source 2 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content2->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $result = $this->bulkService->duplicateMany([$a1->id, $a2->id], [
@@ -239,11 +239,11 @@ class AssessmentBulkDuplicateTest extends TestCase
     public function test_inactive_assessment_is_excluded_from_bulk_duplicate(): void
     {
         $inactive = Assesment::create([
-            'title'       => 'Inactive Content ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'NOT',
+            'title'                 => 'Inactive Content ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'NOT',
         ]);
 
         $result = $this->bulkService->duplicateMany([$inactive->id], [
@@ -260,12 +260,12 @@ class AssessmentBulkDuplicateTest extends TestCase
     public function test_playlist_content_source_can_target_another_playlist(): void
     {
         $source = Assesment::create([
-            'title'           => 'Playlist 1 Content Assessment ' . Str::random(5),
-            'type'            => 'content',
-            'content_id'      => $this->content1->id,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $this->playlist1->id,
-            'status'          => 'OK',
+            'title'                 => 'Playlist 1 Content Assessment ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlist1->id,
+            'status'                => 'OK',
         ]);
 
         $result = $this->bulkService->duplicateMany([$source->id], [
@@ -277,7 +277,7 @@ class AssessmentBulkDuplicateTest extends TestCase
         $newAssessmentId = $result['created_items'][0]['new_assessment_id'];
         $newAssessment = Assesment::findOrFail($newAssessmentId);
 
-        $this->assertSame('playlist', $newAssessment->content_for);
+        $this->assertSame('playlist', $newAssessment->assasment_content_for);
         $this->assertSame($this->playlist2->id, (int) $newAssessment->trainingplan_id);
 
         // Source remains in Playlist 1
@@ -288,11 +288,11 @@ class AssessmentBulkDuplicateTest extends TestCase
     public function test_target_playlist_requires_valid_trainingplan_id(): void
     {
         $assessment = Assesment::create([
-            'title'       => 'Valid Content ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Valid Content ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $this->expectException(\InvalidArgumentException::class);
@@ -307,21 +307,21 @@ class AssessmentBulkDuplicateTest extends TestCase
     {
         // First, create an active playlist assessment for content1 in playlist1
         Assesment::create([
-            'title'           => 'Existing Active PL Assessment ' . Str::random(5),
-            'type'            => 'content',
-            'content_id'      => $this->content1->id,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $this->playlist1->id,
-            'status'          => 'OK',
+            'title'                 => 'Existing Active PL Assessment ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlist1->id,
+            'status'                => 'OK',
         ]);
 
         // Source assessment for same content1
         $source = Assesment::create([
-            'title'       => 'Source Direct Content ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Source Direct Content ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $result = $this->bulkService->duplicateMany([$source->id], [
@@ -339,21 +339,21 @@ class AssessmentBulkDuplicateTest extends TestCase
     {
         // Inactive playlist assessment for content1 in playlist1
         Assesment::create([
-            'title'           => 'Existing Inactive PL Assessment ' . Str::random(5),
-            'type'            => 'content',
-            'content_id'      => $this->content1->id,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $this->playlist1->id,
-            'status'          => 'NOT',
+            'title'                 => 'Existing Inactive PL Assessment ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlist1->id,
+            'status'                => 'NOT',
         ]);
 
         // Source assessment
         $source = Assesment::create([
-            'title'       => 'Source Content ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Source Content ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $result = $this->bulkService->duplicateMany([$source->id], [
@@ -368,11 +368,11 @@ class AssessmentBulkDuplicateTest extends TestCase
     public function test_duplicate_does_not_copy_results_histories_or_assignments(): void
     {
         $source = Assesment::create([
-            'title'       => 'Source With Results ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Source With Results ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $resultRecord = AssesmentResult::create([
@@ -430,11 +430,11 @@ class AssessmentBulkDuplicateTest extends TestCase
         ]);
 
         $source = Assesment::create([
-            'title'       => 'Source Progress Test ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Source Progress Test ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $bulkResult = $this->bulkService->duplicateMany([$source->id], [
@@ -457,19 +457,19 @@ class AssessmentBulkDuplicateTest extends TestCase
     public function test_repeated_bulk_operation_is_idempotent_for_playlist_target(): void
     {
         $a1 = Assesment::create([
-            'title'       => 'Idempotent 1 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Idempotent 1 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $a2 = Assesment::create([
-            'title'       => 'Idempotent 2 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content2->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Idempotent 2 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content2->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         // First run: both should be created
@@ -496,29 +496,29 @@ class AssessmentBulkDuplicateTest extends TestCase
     public function test_preview_accurately_reflects_counts(): void
     {
         $a1 = Assesment::create([
-            'title'       => 'Preview 1 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Preview 1 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         // Create an existing one in playlist for content2
         Assesment::create([
-            'title'           => 'Preview Existing ' . Str::random(5),
-            'type'            => 'content',
-            'content_id'      => $this->content2->id,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $this->playlist1->id,
-            'status'          => 'OK',
+            'title'                 => 'Preview Existing ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content2->id,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlist1->id,
+            'status'                => 'OK',
         ]);
 
         $a2 = Assesment::create([
-            'title'       => 'Preview 2 ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content2->id,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Preview 2 ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content2->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $global = Assesment::create([
@@ -528,11 +528,11 @@ class AssessmentBulkDuplicateTest extends TestCase
         ]);
 
         $inactive = Assesment::create([
-            'title'       => 'Preview Inactive ' . Str::random(5),
-            'type'        => 'content',
-            'content_id'  => $this->content1->id,
-            'content_for' => 'content',
-            'status'      => 'NOT',
+            'title'                 => 'Preview Inactive ' . Str::random(5),
+            'type'                  => 'content',
+            'content_id'            => $this->content1->id,
+            'assasment_content_for' => 'content',
+            'status'                => 'NOT',
         ]);
 
         $preview = $this->bulkService->preview([$a1->id, $a2->id, $global->id, $inactive->id], [

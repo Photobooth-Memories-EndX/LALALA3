@@ -107,13 +107,13 @@ class CertificateEligibilityService
         }
 
         $query = Assesment::query()
-            ->select(['id', 'content_id', 'trainingplan_id', 'title', 'type', 'content_for', 'slug', 'batch', 'fromdate', 'todate', 'passing_grade', 'total_remedials', 'unique_code'])
+            ->select(['id', 'content_id', 'trainingplan_id', 'title', 'type', 'assasment_content_for', 'slug', 'batch', 'fromdate', 'todate', 'passing_grade', 'total_remedials', 'unique_code'])
             ->where('type', 'content')
             ->where('status', '!=', 'NOT')
             ->whereIn('content_id', $contentIds);
 
         if ($trainingPlanId !== null) {
-            $query->where('content_for', 'playlist')
+            $query->where('assasment_content_for', 'playlist')
                   ->where('trainingplan_id', $trainingPlanId);
         }
 
@@ -284,7 +284,7 @@ class CertificateEligibilityService
         }
 
         $contentAssessments = $context['assessmentsByContent']->get($setting->content_id, collect())
-            ->filter(fn ($a) => ($a->content_for ?? 'content') === 'content');
+            ->filter(fn ($a) => ($a->assasment_content_for ?? 'content') === 'content');
 
         return $this->passAssessmentGate(
             $setting,
@@ -318,7 +318,7 @@ class CertificateEligibilityService
 
         foreach ($contentIds as $contentId) {
             $contentAssessments = $context['assessmentsByContent']->get($contentId, collect())
-                ->filter(fn ($a) => ($a->content_for ?? 'content') === 'playlist' && (int) $a->trainingplan_id === (int) $setting->trainingplan_id);
+                ->filter(fn ($a) => ($a->assasment_content_for ?? 'content') === 'playlist' && (int) $a->trainingplan_id === (int) $setting->trainingplan_id);
 
             if ($contentAssessments->isEmpty()) {
                 continue;

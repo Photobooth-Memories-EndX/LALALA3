@@ -54,7 +54,7 @@ class RestoreAssessmentPlaylistRelationsCommandTest extends TestCase
         foreach (RestoreAssessmentPlaylistRelationsCommand::TARGET_MAPPING as $item) {
             $src = Assesment::with(['questions', 'assessment_question_banks'])->find($item['assessment_id']);
             $this->assertNotNull($src, "Source assessment #{$item['assessment_id']} must exist in DB");
-            $this->assertSame('content', $src->content_for, "Source assessment #{$item['assessment_id']} must have content_for = 'content' before execute");
+            $this->assertSame('content', $src->assasment_content_for, "Source assessment #{$item['assessment_id']} must have assasment_content_for = 'content' before execute");
             $this->assertNull($src->trainingplan_id, "Source assessment #{$item['assessment_id']} must have trainingplan_id = NULL before execute");
             $this->assertSame((int) $item['content_id'], (int) $src->content_id);
 
@@ -82,7 +82,7 @@ class RestoreAssessmentPlaylistRelationsCommandTest extends TestCase
 
             // INTEGRITY CHECK: Source Assessment MUST NOT BE MODIFIED
             $this->assertNotNull($srcFresh);
-            $this->assertSame('content', $srcFresh->content_for, "Source Assessment #{$item['assessment_id']} content_for was modified!");
+            $this->assertSame('content', $srcFresh->assasment_content_for, "Source Assessment #{$item['assessment_id']} assasment_content_for was modified!");
             $this->assertNull($srcFresh->trainingplan_id, "Source Assessment #{$item['assessment_id']} trainingplan_id was modified!");
             $this->assertSame((int) $item['content_id'], (int) $srcFresh->content_id);
             $this->assertSame($snap['questions_count'], $srcFresh->questions->count(), "Source Assessment #{$item['assessment_id']} lost questions!");
@@ -90,14 +90,14 @@ class RestoreAssessmentPlaylistRelationsCommandTest extends TestCase
             $this->assertSame($snap['qb_count'], $srcFresh->assessment_question_banks->count(), "Source Assessment #{$item['assessment_id']} lost question banks!");
 
             // DUPLICATE CHECK: New assessment exists with playlist context
-            $newAssessment = Assesment::where('content_for', 'playlist')
+            $newAssessment = Assesment::where('assasment_content_for', 'playlist')
                 ->where('trainingplan_id', $item['trainingplan_id'])
                 ->where('content_id', $item['content_id'])
                 ->first();
 
             $this->assertNotNull($newAssessment, "New playlist assessment was not created for target #{$item['assessment_id']}");
             $this->assertNotEquals($srcFresh->id, $newAssessment->id);
-            $this->assertSame('playlist', $newAssessment->content_for);
+            $this->assertSame('playlist', $newAssessment->assasment_content_for);
             $this->assertSame((int) $item['trainingplan_id'], (int) $newAssessment->trainingplan_id);
             $this->assertSame((int) $item['content_id'], (int) $newAssessment->content_id);
             $this->assertSame($srcFresh->title, $newAssessment->title);

@@ -132,14 +132,14 @@ class AssessmentFormPlaylistFirstTest extends TestCase
     public function test_edit_view_playlist_mode_loads_existing_playlist_and_only_its_contents(): void
     {
         $assessment = Assesment::create([
-            'title'           => 'Existing Playlist Ass ' . Str::random(5),
-            'type'            => 'content',
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $this->playlistA->id,
-            'content_id'      => $this->contentA1->id,
-            'status'          => 'OK',
-            'passing_grade'   => 75,
-            'total_remedials' => 1,
+            'title'                 => 'Existing Playlist Ass ' . Str::random(5),
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlistA->id,
+            'content_id'            => $this->contentA1->id,
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+            'total_remedials'       => 1,
         ]);
 
         $response = $this->actingAs($this->admin)->get(route('assesment.edit', $assessment->slug));
@@ -163,13 +163,13 @@ class AssessmentFormPlaylistFirstTest extends TestCase
     public function test_edit_view_direct_content_mode_loads_global_contents(): void
     {
         $assessment = Assesment::create([
-            'title'           => 'Existing Direct Content Ass ' . Str::random(5),
-            'type'            => 'content',
-            'content_for'     => 'content',
-            'content_id'      => $this->contentA1->id,
-            'status'          => 'OK',
-            'passing_grade'   => 75,
-            'total_remedials' => 1,
+            'title'                 => 'Existing Direct Content Ass ' . Str::random(5),
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'content_id'            => $this->contentA1->id,
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+            'total_remedials'       => 1,
         ]);
 
         $response = $this->actingAs($this->admin)->get(route('assesment.edit', $assessment->slug));
@@ -231,13 +231,13 @@ class AssessmentFormPlaylistFirstTest extends TestCase
     public function test_backend_validation_requires_playlist_when_content_for_is_playlist(): void
     {
         $response = $this->actingAs($this->admin)->post(route('assesment.store'), [
-            'type'              => 'content',
-            'content_for'       => 'playlist',
-            'content_id'        => $this->contentA1->id,
-            'title'             => 'Test Missing Playlist',
-            'passing_grade'     => 75,
-            'total_remedials'   => 1,
-            'has_access_period' => '0',
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'content_id'            => $this->contentA1->id,
+            'title'                 => 'Test Missing Playlist',
+            'passing_grade'         => 75,
+            'total_remedials'       => 1,
+            'has_access_period'     => '0',
         ]);
 
         $response->assertSessionHasErrors(['trainingplan_id']);
@@ -246,13 +246,13 @@ class AssessmentFormPlaylistFirstTest extends TestCase
     public function test_backend_validation_requires_content_when_type_is_content(): void
     {
         $response = $this->actingAs($this->admin)->post(route('assesment.store'), [
-            'type'              => 'content',
-            'content_for'       => 'playlist',
-            'trainingplan_id'   => $this->playlistA->id,
-            'title'             => 'Test Missing Content',
-            'passing_grade'     => 75,
-            'total_remedials'   => 1,
-            'has_access_period' => '0',
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlistA->id,
+            'title'                 => 'Test Missing Content',
+            'passing_grade'         => 75,
+            'total_remedials'       => 1,
+            'has_access_period'     => '0',
         ]);
 
         $response->assertSessionHasErrors(['content_id']);
@@ -261,13 +261,13 @@ class AssessmentFormPlaylistFirstTest extends TestCase
     public function test_backend_validation_does_not_require_playlist_when_content_for_is_content(): void
     {
         $response = $this->actingAs($this->admin)->post(route('assesment.store'), [
-            'type'              => 'content',
-            'content_for'       => 'content',
-            'content_id'        => $this->contentA1->id,
-            'title'             => 'Valid Direct Content ' . Str::random(5),
-            'passing_grade'     => 75,
-            'total_remedials'   => 1,
-            'has_access_period' => '0',
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'content_id'            => $this->contentA1->id,
+            'title'                 => 'Valid Direct Content ' . Str::random(5),
+            'passing_grade'         => 75,
+            'total_remedials'       => 1,
+            'has_access_period'     => '0',
         ]);
 
         $response->assertSessionHasNoErrors();
@@ -278,34 +278,34 @@ class AssessmentFormPlaylistFirstTest extends TestCase
         // 1. Store
         $title = 'Store Test PL ' . Str::random(5);
         $response = $this->actingAs($this->admin)->post(route('assesment.store'), [
-            'type'              => 'content',
-            'content_for'       => 'playlist',
-            'trainingplan_id'   => $this->playlistA->id,
-            'content_id'        => $this->contentA1->id,
-            'title'             => $title,
-            'passing_grade'     => 80,
-            'total_remedials'   => 2,
-            'has_access_period' => '0',
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlistA->id,
+            'content_id'            => $this->contentA1->id,
+            'title'                 => $title,
+            'passing_grade'         => 80,
+            'total_remedials'       => 2,
+            'has_access_period'     => '0',
         ]);
 
         $response->assertSessionHasNoErrors();
         $created = Assesment::where('title', $title)->firstOrFail();
 
         $this->assertEquals('content', $created->type);
-        $this->assertEquals('playlist', $created->content_for);
+        $this->assertEquals('playlist', $created->assasment_content_for);
         $this->assertEquals($this->playlistA->id, (int) $created->trainingplan_id);
         $this->assertEquals($this->contentA1->id, (int) $created->content_id);
 
         // 2. Update to Playlist B with Content B1
         $updateResponse = $this->actingAs($this->admin)->put(route('assesment.update', $created->slug), [
-            'type'              => 'content',
-            'content_for'       => 'playlist',
-            'trainingplan_id'   => $this->playlistB->id,
-            'content_id'        => $this->contentB1->id,
-            'title'             => $title . ' Updated',
-            'passing_grade'     => 85,
-            'total_remedials'   => 3,
-            'has_access_period' => '0',
+            'type'                  => 'content',
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $this->playlistB->id,
+            'content_id'            => $this->contentB1->id,
+            'title'                 => $title . ' Updated',
+            'passing_grade'         => 85,
+            'total_remedials'       => 3,
+            'has_access_period'     => '0',
         ]);
 
         $updateResponse->assertSessionHasNoErrors();
@@ -320,8 +320,8 @@ class AssessmentFormPlaylistFirstTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->withSession([
                 '_old_input' => [
-                    'type'        => 'content',
-                    'content_for' => 'playlist',
+                    'type'                  => 'content',
+                    'assasment_content_for' => 'playlist',
                 ],
             ])
             ->get(route('assesment.create'));
@@ -336,9 +336,9 @@ class AssessmentFormPlaylistFirstTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->withSession([
                 '_old_input' => [
-                    'type'            => 'content',
-                    'content_for'     => 'playlist',
-                    'trainingplan_id' => $this->playlistA->id,
+                    'type'                  => 'content',
+                    'assasment_content_for' => 'playlist',
+                    'trainingplan_id'       => $this->playlistA->id,
                 ],
             ])
             ->get(route('assesment.create'));

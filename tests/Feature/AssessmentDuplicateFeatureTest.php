@@ -100,14 +100,14 @@ class AssessmentDuplicateFeatureTest extends TestCase
             'content_order'   => 1,
         ]);
 
-        // Source assessment has content_for = 'content' and trainingplan_id = null
+        // Source assessment has assasment_content_for = 'content' and trainingplan_id = null
         $original = Assesment::create([
-            'title'           => 'Feature Direct Content Test ' . uniqid(),
-            'status'          => 'OK',
-            'type'            => 'content',
-            'content_id'      => $sourceContent->id,
-            'content_for'     => 'content',
-            'trainingplan_id' => null,
+            'title'                 => 'Feature Direct Content Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => $sourceContent->id,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
         ]);
 
         $contentCountBefore = \App\Models\Content::count();
@@ -122,8 +122,8 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $duplicate = Assesment::where('title', $expectedTitle)->first();
         $this->assertNotNull($duplicate);
         $this->assertSame('content', $duplicate->type);
-        // Required behavior: content_for becomes 'playlist'
-        $this->assertSame('playlist', $duplicate->content_for);
+        // Required behavior: assasment_content_for becomes 'playlist'
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
         // Required behavior: trainingplan_id is resolved from source content's TrainingPlanDetail
         $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
         $this->assertNotNull($duplicate->content_id);
@@ -137,7 +137,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
 
         // Original remains untouched
         $original->refresh();
-        $this->assertSame('content', $original->content_for);
+        $this->assertSame('content', $original->assasment_content_for);
         $this->assertNull($original->trainingplan_id);
         $this->assertSame($sourceContent->id, (int) $original->content_id);
 
@@ -160,12 +160,12 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $tp = \App\Models\TrainingPlan::first();
 
         $original = Assesment::create([
-            'title'           => 'Feature Playlist Test ' . uniqid(),
-            'status'          => 'OK',
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'content',
-            'trainingplan_id' => null,
+            'title'                 => 'Feature Playlist Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
         ]);
 
         $contentCountBefore = \App\Models\Content::count();
@@ -183,7 +183,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $duplicate = Assesment::where('title', $expectedTitle)->first();
         $this->assertNotNull($duplicate);
         $this->assertSame('content', $duplicate->type);
-        $this->assertSame('playlist', $duplicate->content_for);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
         $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
         $this->assertNotNull($duplicate->content_id);
         $this->assertNotEquals(45, (int) $duplicate->content_id);
@@ -196,7 +196,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
 
         // Original remains untouched
         $original->refresh();
-        $this->assertSame('content', $original->content_for);
+        $this->assertSame('content', $original->assasment_content_for);
         $this->assertNull($original->trainingplan_id);
         $this->assertSame(45, (int) $original->content_id);
 
@@ -299,17 +299,17 @@ class AssessmentDuplicateFeatureTest extends TestCase
         ]);
 
         $original = Assesment::create([
-            'title'           => 'Direct Content No Params ' . uniqid(),
-            'status'          => 'OK',
-            'type'            => 'content',
-            'content_id'      => $standaloneContent->id,
-            'content_for'     => 'content',
-            'trainingplan_id' => null,
+            'title'                 => 'Direct Content No Params ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => $standaloneContent->id,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
         ]);
 
         $contentCountBefore = \App\Models\Content::count();
 
-        // Post without target_context parameters: standalone content remains content_for = 'content'
+        // Post without target_context parameters: standalone content remains assasment_content_for = 'content'
         $response = $this->actingAs($admin)
             ->post(route('assesment.duplicate', $original->slug), []);
 
@@ -320,7 +320,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $duplicate = Assesment::where('title', $expectedTitle)->first();
         $this->assertNotNull($duplicate);
         $this->assertSame('content', $duplicate->type);
-        $this->assertSame('content', $duplicate->content_for);
+        $this->assertSame('content', $duplicate->assasment_content_for);
         $this->assertNull($duplicate->trainingplan_id);
         $this->assertNotNull($duplicate->content_id);
         $this->assertNotEquals($standaloneContent->id, (int) $duplicate->content_id);
@@ -330,7 +330,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
 
         // Original remains untouched
         $original->refresh();
-        $this->assertSame('content', $original->content_for);
+        $this->assertSame('content', $original->assasment_content_for);
         $this->assertNull($original->trainingplan_id);
         $this->assertSame($standaloneContent->id, (int) $original->content_id);
 
@@ -351,12 +351,12 @@ class AssessmentDuplicateFeatureTest extends TestCase
 
         // Content 45 belongs to multiple playlists (8, 10)
         $original = Assesment::create([
-            'title'           => 'Multi Playlist Content ' . uniqid(),
-            'status'          => 'OK',
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'content',
-            'trainingplan_id' => null,
+            'title'                 => 'Multi Playlist Content ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
         ]);
 
         // Duplicating without explicit trainingplan_id must be rejected
@@ -378,7 +378,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
 
         $duplicate = Assesment::where('title', $original->title . ' Copy 1')->first();
         $this->assertNotNull($duplicate);
-        $this->assertSame('playlist', $duplicate->content_for);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
         $this->assertSame(10, (int) $duplicate->trainingplan_id);
 
         if ($duplicate) {
@@ -398,12 +398,12 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $tp = \App\Models\TrainingPlan::first();
 
         $original = Assesment::create([
-            'title'           => 'Playlist Assessment Test ' . uniqid(),
-            'status'          => 'OK',
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $tp->id,
+            'title'                 => 'Playlist Assessment Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $tp->id,
         ]);
 
         $contentCountBefore = \App\Models\Content::count();
@@ -421,7 +421,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $duplicate = Assesment::where('title', $expectedTitle)->first();
         $this->assertNotNull($duplicate);
         $this->assertSame('content', $duplicate->type);
-        $this->assertSame('playlist', $duplicate->content_for);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
         $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
         $this->assertNotNull($duplicate->content_id);
         $this->assertNotEquals(45, (int) $duplicate->content_id);
@@ -434,7 +434,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
 
         // Original remains untouched
         $original->refresh();
-        $this->assertSame('playlist', $original->content_for);
+        $this->assertSame('playlist', $original->assasment_content_for);
         $this->assertSame((int) $tp->id, (int) $original->trainingplan_id);
         $this->assertSame(45, (int) $original->content_id);
 
@@ -457,10 +457,10 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $original = Assesment::create([
             'title'           => 'Playlist Standard Modal ' . uniqid(),
             'status'          => 'OK',
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $tp->id,
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $tp->id,
         ]);
 
         $contentCountBefore = \App\Models\Content::count();
@@ -476,7 +476,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $duplicate = Assesment::where('title', $expectedTitle)->first();
         $this->assertNotNull($duplicate);
         $this->assertSame('content', $duplicate->type);
-        $this->assertSame('playlist', $duplicate->content_for);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
         $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
         $this->assertNotNull($duplicate->content_id);
         $this->assertNotEquals(45, (int) $duplicate->content_id);
@@ -498,7 +498,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
 
         // Original remains untouched
         $original->refresh();
-        $this->assertSame('playlist', $original->content_for);
+        $this->assertSame('playlist', $original->assasment_content_for);
         $this->assertSame((int) $tp->id, (int) $original->trainingplan_id);
         $this->assertSame(45, (int) $original->content_id);
 
@@ -527,12 +527,12 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $tp = \App\Models\TrainingPlan::first();
 
         $original = Assesment::create([
-            'title'           => 'Edit Page Retained Test ' . uniqid(),
-            'status'          => 'OK',
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $tp->id,
+            'title'                 => 'Edit Page Retained Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $tp->id,
         ]);
 
         // Duplicate assessment
@@ -553,7 +553,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
         $this->assertNotNull($duplicate->content_id);
         $this->assertNotEquals(45, (int) $duplicate->content_id);
-        $this->assertSame('playlist', $duplicate->content_for);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
 
         // Verify playlist option is selected
         $editResponse->assertSee('value="' . $tp->id . '" selected', false);
@@ -575,13 +575,13 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $tp = \App\Models\TrainingPlan::first();
 
         $original = Assesment::create([
-            'title'           => 'Playlist Questions Test ' . uniqid(),
-            'status'          => 'OK',
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => $tp->id,
-            'passing_grade'   => 85,
+            'title'                 => 'Playlist Questions Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $tp->id,
+            'passing_grade'         => 85,
         ]);
 
         $question = \App\Models\AssesmentQuestion::create([
@@ -600,7 +600,7 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $this->assertNotNull($duplicate);
 
         // Configuration preserved
-        $this->assertSame('playlist', $duplicate->content_for);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
         $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
         $this->assertNotNull($duplicate->content_id);
         $this->assertNotEquals(45, (int) $duplicate->content_id);

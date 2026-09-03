@@ -1,7 +1,7 @@
 @php
     $isEdit = isset($assesment) && $assesment;
     $type = old('type', $isEdit ? $assesment->type : '');
-    $contentFor = old('content_for', $isEdit ? ($assesment->content_for ?? 'content') : 'content');
+    $contentFor = old('assasment_content_for', $isEdit ? ($assesment->assasment_content_for ?? 'content') : 'content');
     $titleVal = old('title', $isEdit ? $assesment->title : '');
     $contentId = old('content_id', $isEdit ? $assesment->content_id : '');
     $trainingplanId = old('trainingplan_id', $isEdit ? $assesment->trainingplan_id : '');
@@ -43,11 +43,11 @@
         <label class="form-label required">Content For</label>
         <div class="d-flex gap-3">
             <label class="form-check form-check-inline mb-0">
-                <input class="form-check-input content-for-radio" type="radio" name="content_for" id="content_for_content" value="content" {{ ($contentFor === 'content') ? 'checked' : '' }} onchange="updateAssessmentTypeConfiguration();">
+                <input class="form-check-input content-for-radio" type="radio" name="assasment_content_for" id="content_for_content" value="content" {{ ($contentFor === 'content') ? 'checked' : '' }} onchange="updateAssessmentTypeConfiguration();">
                 <span class="form-check-label">Content</span>
             </label>
             <label class="form-check form-check-inline mb-0">
-                <input class="form-check-input content-for-radio" type="radio" name="content_for" id="content_for_playlist" value="playlist" {{ ($contentFor === 'playlist') ? 'checked' : '' }} onchange="updateAssessmentTypeConfiguration();">
+                <input class="form-check-input content-for-radio" type="radio" name="assasment_content_for" id="content_for_playlist" value="playlist" {{ ($contentFor === 'playlist') ? 'checked' : '' }} onchange="updateAssessmentTypeConfiguration();">
                 <span class="form-check-label">Playlist</span>
             </label>
         </div>
@@ -56,7 +56,7 @@
         </div>
     </div>
 
-    {{-- Conditional: Playlist / Training Plan (Parent when content_for = playlist, or for type = trainingplan) --}}
+    {{-- Conditional: Playlist / Training Plan (Parent when assasment_content_for = playlist, or for type = trainingplan) --}}
     <div class="mb-3 {{ ($type == 'trainingplan' || ($type == 'content' && $contentFor == 'playlist')) ? '' : 'd-none' }}" id="trainingplan_id_wrapper">
         <label class="form-label required" id="trainingplan_id_label">{{ ($type == 'content' && $contentFor == 'playlist') ? 'Playlist' : 'Training Plan' }}</label>
         <select name="trainingplan_id" id="trainingplan_id" class="form-select form-control select2" data-placeholder="Search playlist...">
@@ -67,7 +67,7 @@
         </select>
     </div>
 
-    {{-- Conditional: Learning Content (Child when content_for = playlist, or direct when content_for = content) --}}
+    {{-- Conditional: Learning Content (Child when assasment_content_for = playlist, or direct when assasment_content_for = content) --}}
     <div class="mb-3 {{ ($type == 'content') ? '' : 'd-none' }}" id="content_id_wrapper">
         <label class="form-label required">Learning Content</label>
         @php

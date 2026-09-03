@@ -173,7 +173,7 @@ class AssessmentDuplicateService
      * For Content Assessment (type = content), a new duplicate Content record is created
      * and linked, unless explicit content_id override is supplied (e.g. Bulk Duplicate).
      * If the source assessment or its content is associated with a playlist (or specified via overrides),
-     * the duplicate becomes a Playlist Assessment (content_for = playlist) with the resolved playlist target,
+     * the duplicate becomes a Playlist Assessment (assasment_content_for = playlist) with the resolved playlist target,
      * and TrainingPlanDetail pivot is ensured idempotently.
      */
     public function duplicate(Assesment $assesment, array $overrides = []): Assesment
@@ -190,26 +190,27 @@ class AssessmentDuplicateService
             $targetTpId = $this->resolveTargetPlaylistId($assesment, $overrides);
 
             // Validate context overrides if supplied
-            if (isset($overrides['content_for'])) {
+            $overrideContext = $overrides['assasment_content_for'] ?? null;
+            if ($overrideContext !== null) {
                 if ($assesment->type !== 'content') {
                     throw new \InvalidArgumentException('Only content assessments can have content context overrides.');
                 }
-                if ($overrides['content_for'] === 'playlist') {
+                if ($overrideContext === 'playlist') {
                     if (empty($targetTpId)) {
                         throw new \InvalidArgumentException('trainingplan_id is required when duplicating to playlist context.');
                     }
-                } elseif ($overrides['content_for'] !== 'content') {
-                    throw new \InvalidArgumentException("Invalid content_for context: {$overrides['content_for']}. Must be 'content' or 'playlist'.");
+                } elseif ($overrideContext !== 'content') {
+                    throw new \InvalidArgumentException("Invalid content context: {$overrideContext}. Must be 'content' or 'playlist'.");
                 }
             }
 
             // Determine target context:
-            // 1. If explicit content_for override is supplied, respect it.
+            // 1. If explicit override is supplied, respect it.
             // 2. If target playlist was resolved (from overrides, source TP, or source content's TrainingPlanDetail),
             //    the duplicated assessment becomes a Playlist Assessment ('playlist').
             // 3. Otherwise (e.g. standalone content not in any playlist), remains 'content'.
-            if (isset($overrides['content_for'])) {
-                $targetContentFor = $overrides['content_for'];
+            if ($overrideContext !== null) {
+                $targetContentFor = $overrideContext;
             } elseif (!empty($targetTpId)) {
                 $targetContentFor = 'playlist';
             } else {
@@ -237,8 +238,8 @@ class AssessmentDuplicateService
                 $newAssesment->content_id = $targetContentId;
 
                 if ($targetContentFor === 'playlist') {
-                    $newAssesment->content_for     = 'playlist';
-                    $newAssesment->trainingplan_id = $targetTpId;
+                    $newAssesment->assasment_content_for = 'playlist';
+                    $newAssesment->trainingplan_id       = $targetTpId;
 
                     // Ensure TrainingPlanDetail pivot exists for (trainingplan_id, content_id) (idempotent)
                     if (!empty($newAssesment->trainingplan_id) && !empty($newAssesment->content_id)) {
@@ -257,18 +258,18 @@ class AssessmentDuplicateService
                     }
                 } else {
                     // Direct Content Assessment
-                    $newAssesment->content_for     = 'content';
-                    $newAssesment->trainingplan_id = null;
+                    $newAssesment->assasment_content_for = 'content';
+                    $newAssesment->trainingplan_id       = null;
                 }
             } elseif ($assesment->type === 'trainingplan') {
-                $newAssesment->content_for     = 'content';
-                $newAssesment->content_id      = null;
-                $newAssesment->trainingplan_id = $targetTpId;
+                $newAssesment->assasment_content_for = 'content';
+                $newAssesment->content_id            = null;
+                $newAssesment->trainingplan_id       = $targetTpId;
             } else {
                 // Global Assessment
-                $newAssesment->content_for     = 'content';
-                $newAssesment->content_id      = null;
-                $newAssesment->trainingplan_id = null;
+                $newAssesment->assasment_content_for = 'content';
+                $newAssesment->content_id            = null;
+                $newAssesment->trainingplan_id       = null;
             }
 
             $newAssesment->save();

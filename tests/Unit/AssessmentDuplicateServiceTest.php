@@ -207,23 +207,23 @@ class AssessmentDuplicateServiceTest extends TestCase
         ]);
 
         $original = Assesment::create([
-            'title'           => 'Unit Content Assessment ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => $sourceContent->id,
-            'content_for'     => 'content',
-            'trainingplan_id' => null,
-            'status'          => 'OK',
+            'title'                 => 'Unit Content Assessment ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => $sourceContent->id,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
+            'status'                => 'OK',
         ]);
 
         $contentCountBefore = \App\Models\Content::count();
 
         // Single duplicate without overrides: source content belongs to Playlist 10,
-        // so duplicated assessment must become content_for = 'playlist' and trainingplan_id = 10
+        // so duplicated assessment must become assasment_content_for = 'playlist' and trainingplan_id = 10
         $duplicated = $this->service->duplicate($original);
 
         $this->assertNotEquals($original->id, $duplicated->id);
         $this->assertSame('content', $duplicated->type);
-        $this->assertSame('playlist', $duplicated->content_for);
+        $this->assertSame('playlist', $duplicated->assasment_content_for);
         $this->assertSame(10, (int) $duplicated->trainingplan_id);
 
         // A new Content record is created
@@ -244,7 +244,7 @@ class AssessmentDuplicateServiceTest extends TestCase
 
         // Original assessment and content remain untouched
         $original->refresh();
-        $this->assertSame('content', $original->content_for);
+        $this->assertSame('content', $original->assasment_content_for);
         $this->assertNull($original->trainingplan_id);
         $this->assertSame($sourceContent->id, (int) $original->content_id);
 
@@ -259,12 +259,12 @@ class AssessmentDuplicateServiceTest extends TestCase
     public function test_duplicate_content_as_playlist_content(): void
     {
         $original = Assesment::create([
-            'title'           => 'Unit Playlist Test ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => 10,
-            'status'          => 'OK',
+            'title'                 => 'Unit Playlist Test ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => 10,
+            'status'                => 'OK',
         ]);
 
         $contentCountBefore = \App\Models\Content::count();
@@ -274,7 +274,7 @@ class AssessmentDuplicateServiceTest extends TestCase
 
         $this->assertNotEquals($original->id, $duplicated->id);
         $this->assertSame('content', $duplicated->type);
-        $this->assertSame('playlist', $duplicated->content_for);
+        $this->assertSame('playlist', $duplicated->assasment_content_for);
         $this->assertSame(10, (int) $duplicated->trainingplan_id);
 
         // A new Content record is created and linked
@@ -293,7 +293,7 @@ class AssessmentDuplicateServiceTest extends TestCase
 
         // Original remains untouched
         $original->refresh();
-        $this->assertSame('playlist', $original->content_for);
+        $this->assertSame('playlist', $original->assasment_content_for);
         $this->assertSame(10, (int) $original->trainingplan_id);
         $this->assertSame(45, (int) $original->content_id);
 
@@ -309,21 +309,21 @@ class AssessmentDuplicateServiceTest extends TestCase
     public function test_duplicate_existing_playlist_content_to_another_playlist(): void
     {
         $original = Assesment::create([
-            'title'           => 'Unit Repath Test ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => 10,
-            'status'          => 'OK',
+            'title'                 => 'Unit Repath Test ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => 10,
+            'status'                => 'OK',
         ]);
 
         // Explicit override specifies target playlist and creates new Content for it
         $duplicated = $this->service->duplicate($original, [
-            'content_for'     => 'playlist',
-            'trainingplan_id' => 20,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => 20,
         ]);
 
-        $this->assertSame('playlist', $duplicated->content_for);
+        $this->assertSame('playlist', $duplicated->assasment_content_for);
         $this->assertSame(20, (int) $duplicated->trainingplan_id);
         $this->assertNotNull($duplicated->content_id);
         $this->assertNotEquals(45, (int) $duplicated->content_id);
@@ -345,20 +345,20 @@ class AssessmentDuplicateServiceTest extends TestCase
     public function test_duplicate_with_explicit_content_id_override_uses_specified_content(): void
     {
         $original = Assesment::create([
-            'title'           => 'Explicit Content Override Test ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'content',
-            'status'          => 'OK',
+            'title'                 => 'Explicit Content Override Test ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $contentCountBefore = \App\Models\Content::count();
 
         // Pass explicit content_id (Bulk Duplicate behavior)
         $duplicated = $this->service->duplicate($original, [
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => 10,
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => 10,
         ]);
 
         $this->assertSame(45, (int) $duplicated->content_id);
@@ -380,8 +380,8 @@ class AssessmentDuplicateServiceTest extends TestCase
 
         try {
             $this->service->duplicate($global, [
-                'content_for'     => 'playlist',
-                'trainingplan_id' => 10,
+                'assasment_content_for' => 'playlist',
+                'trainingplan_id'       => 10,
             ]);
         } finally {
             $global->delete();
@@ -391,12 +391,12 @@ class AssessmentDuplicateServiceTest extends TestCase
     public function test_duplicate_does_not_copy_results_histories_or_assignments(): void
     {
         $original = Assesment::create([
-            'title'           => 'Unit Results Safety ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => 10,
-            'status'          => 'OK',
+            'title'                 => 'Unit Results Safety ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => 10,
+            'status'                => 'OK',
         ]);
 
         // Add dummy result to original
@@ -430,13 +430,13 @@ class AssessmentDuplicateServiceTest extends TestCase
     public function test_duplicate_assessment_with_zero_questions_succeeds(): void
     {
         $original = Assesment::create([
-            'title'           => 'Unit Zero Questions ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => 10,
-            'status'          => 'OK',
-            'passing_grade'   => 80,
+            'title'                 => 'Unit Zero Questions ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => 10,
+            'status'                => 'OK',
+            'passing_grade'         => 80,
         ]);
 
         $duplicated = $this->service->duplicate($original);
@@ -465,8 +465,8 @@ class AssessmentDuplicateServiceTest extends TestCase
 
         try {
             $this->service->duplicate($tp, [
-                'content_for'     => 'playlist',
-                'trainingplan_id' => 10,
+                'assasment_content_for' => 'playlist',
+                'trainingplan_id'       => 10,
             ]);
         } finally {
             $tp->delete();
@@ -476,18 +476,18 @@ class AssessmentDuplicateServiceTest extends TestCase
     public function test_duplicate_playlist_content_without_trainingplan_id_throws_exception(): void
     {
         $original = Assesment::create([
-            'title'       => 'Unit Missing TP ID ' . uniqid(),
-            'type'        => 'content',
-            'content_id'  => 45,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Unit Missing TP ID ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
         $this->expectException(\InvalidArgumentException::class);
 
         try {
             $this->service->duplicate($original, [
-                'content_for' => 'playlist',
+                'assasment_content_for' => 'playlist',
                 // trainingplan_id missing
             ]);
         } finally {
@@ -500,17 +500,17 @@ class AssessmentDuplicateServiceTest extends TestCase
         $countBefore = Assesment::count();
 
         $original = Assesment::create([
-            'title'       => 'Unit Rollback Test ' . uniqid(),
-            'type'        => 'content',
-            'content_id'  => 45,
-            'content_for' => 'content',
-            'status'      => 'OK',
+            'title'                 => 'Unit Rollback Test ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
         ]);
 
-        // Attempt duplicate with invalid content_for to trigger exception inside transaction
+        // Attempt duplicate with invalid assasment_content_for to trigger exception inside transaction
         try {
             $this->service->duplicate($original, [
-                'content_for' => 'invalid_context',
+                'assasment_content_for' => 'invalid_context',
             ]);
             $this->fail('Expected exception was not thrown');
         } catch (\InvalidArgumentException $e) {
@@ -527,12 +527,12 @@ class AssessmentDuplicateServiceTest extends TestCase
     public function test_duplicate_content_assessment_copies_questions_and_question_banks(): void
     {
         $original = Assesment::create([
-            'title'           => 'Unit Questions Content Test ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => 10,
-            'status'          => 'OK',
+            'title'                 => 'Unit Questions Content Test ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => 10,
+            'status'                => 'OK',
         ]);
 
         $question = AssesmentQuestion::create([
@@ -584,12 +584,12 @@ class AssessmentDuplicateServiceTest extends TestCase
     public function test_consecutive_duplications_of_content_assessment_create_distinct_valid_records(): void
     {
         $original = Assesment::create([
-            'title'           => 'Consecutive Test ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'playlist',
-            'trainingplan_id' => 10,
-            'status'          => 'OK',
+            'title'                 => 'Consecutive Test ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => 10,
+            'status'                => 'OK',
         ]);
 
         $dup1 = $this->service->duplicate($original);
@@ -605,8 +605,8 @@ class AssessmentDuplicateServiceTest extends TestCase
         $this->assertNotEquals(45, (int) $dup2->content_id);
         $this->assertNotEquals($dup1->content_id, $dup2->content_id);
 
-        $this->assertSame('playlist', $dup1->content_for);
-        $this->assertSame('playlist', $dup2->content_for);
+        $this->assertSame('playlist', $dup1->assasment_content_for);
+        $this->assertSame('playlist', $dup2->assasment_content_for);
         $this->assertSame(10, (int) $dup1->trainingplan_id);
         $this->assertSame(10, (int) $dup2->trainingplan_id);
 
@@ -624,12 +624,12 @@ class AssessmentDuplicateServiceTest extends TestCase
     {
         // Content 45 belongs to multiple playlists (8, 10)
         $original = Assesment::create([
-            'title'           => 'Unit Ambiguity Test ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'content',
-            'trainingplan_id' => null,
-            'status'          => 'OK',
+            'title'                 => 'Unit Ambiguity Test ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
+            'status'                => 'OK',
         ]);
 
         $this->expectException(\InvalidArgumentException::class);
@@ -654,19 +654,19 @@ class AssessmentDuplicateServiceTest extends TestCase
         ]);
 
         $original = Assesment::create([
-            'title'           => 'Unit Standalone Assessment ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => $standaloneContent->id,
-            'content_for'     => 'content',
-            'trainingplan_id' => null,
-            'status'          => 'OK',
+            'title'                 => 'Unit Standalone Assessment ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => $standaloneContent->id,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
+            'status'                => 'OK',
         ]);
 
         $duplicated = $this->service->duplicate($original);
 
         $this->assertNotEquals($original->id, $duplicated->id);
         $this->assertSame('content', $duplicated->type);
-        $this->assertSame('content', $duplicated->content_for);
+        $this->assertSame('content', $duplicated->assasment_content_for);
         $this->assertNull($duplicated->trainingplan_id);
         $this->assertNotNull($duplicated->content_id);
         $this->assertNotEquals($standaloneContent->id, (int) $duplicated->content_id);
@@ -681,25 +681,25 @@ class AssessmentDuplicateServiceTest extends TestCase
     public function test_duplicate_supports_title_and_preserve_is_used_overrides(): void
     {
         $original = Assesment::create([
-            'title'           => 'Custom Title Original ' . uniqid(),
-            'type'            => 'content',
-            'content_id'      => 45,
-            'content_for'     => 'content',
-            'trainingplan_id' => null,
-            'status'          => 'OK',
+            'title'                 => 'Custom Title Original ' . uniqid(),
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
+            'status'                => 'OK',
         ]);
 
         $duplicated = $this->service->duplicate($original, [
-            'title'            => 'Preserved Exact Title',
-            'content_id'       => 45,
-            'content_for'      => 'playlist',
-            'trainingplan_id'  => 10,
-            'preserve_is_used' => true,
+            'title'                 => 'Preserved Exact Title',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => 10,
+            'preserve_is_used'      => true,
         ]);
 
         $this->assertSame('Preserved Exact Title', $duplicated->title);
         $this->assertSame(45, (int) $duplicated->content_id);
-        $this->assertSame('playlist', $duplicated->content_for);
+        $this->assertSame('playlist', $duplicated->assasment_content_for);
         $this->assertSame(10, (int) $duplicated->trainingplan_id);
 
         $duplicated->delete();

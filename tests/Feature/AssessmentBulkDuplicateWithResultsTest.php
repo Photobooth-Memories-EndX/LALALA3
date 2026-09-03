@@ -96,9 +96,9 @@ class AssessmentBulkDuplicateWithResultsTest extends TestCase
             'title'         => 'Source Assessment With Results ' . Str::random(5),
             'status'        => 'OK',
             'type'          => 'content',
-            'content_id'    => $this->content->id,
-            'content_for'   => 'content',
-            'passing_grade' => 80,
+            'content_id'            => $this->content->id,
+            'assasment_content_for' => 'content',
+            'passing_grade'         => 80,
             'batch'         => 1,
         ]);
 

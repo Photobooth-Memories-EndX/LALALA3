@@ -68,12 +68,12 @@ class Assesment extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'has_access_period' => 'boolean',
-        'content_for'       => 'string',
+        'has_access_period'     => 'boolean',
+        'assasment_content_for' => 'string',
     ];
 
     protected $attributes = [
-        'content_for' => 'content',
+        'assasment_content_for' => 'content',
     ];
 
     public function hasAccessPeriod(): bool

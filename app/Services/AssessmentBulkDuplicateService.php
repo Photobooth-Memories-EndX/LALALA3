@@ -139,8 +139,8 @@ class AssessmentBulkDuplicateService
         $failedItems = [];
 
         $overrides = [
-            'content_for'     => $targetContext,
-            'trainingplan_id' => $targetContext === 'playlist' ? $trainingplanId : null,
+            'assasment_content_for' => $targetContext,
+            'trainingplan_id'       => $targetContext === 'playlist' ? $trainingplanId : null,
         ];
 
         // Track content_ids duplicated during this batch run to prevent within-batch duplicates
@@ -279,7 +279,7 @@ class AssessmentBulkDuplicateService
     public function isAlreadyInPlaylist(int $contentId, int $trainingplanId): bool
     {
         return Assesment::where('type', 'content')
-            ->where('content_for', 'playlist')
+            ->where('assasment_content_for', 'playlist')
             ->where('trainingplan_id', $trainingplanId)
             ->where('content_id', $contentId)
             ->where('status', 'OK')

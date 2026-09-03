@@ -31,7 +31,7 @@
             data-url="{{ route('assesment.clone', $list->slug) }}"
             data-title="{{ $list->title }}"
             data-type="{{ $list->type }}"
-            data-content-for="{{ $list->content_for ?? 'content' }}"
+            data-content-for="{{ $list->assasment_content_for ?? 'content' }}"
             data-trainingplan-id="{{ $list->trainingplan_id ?? '' }}"
             data-toggle="modal"
             data-target="#modalDuplicateAssessment"

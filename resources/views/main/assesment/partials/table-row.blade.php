@@ -11,7 +11,7 @@
 
     $typeLabels = [
         'trainingplan' => 'Playlist',
-        'content' => ($list->content_for === 'playlist') ? 'Content (Playlist)' : 'Content (All Content)',
+        'content' => ($list->assasment_content_for === 'playlist') ? 'Content (Playlist)' : 'Content (All Content)',
         'global' => 'Global',
     ];
     $typeLabel = $typeLabels[$list->type] ?? ucwords($list->type ?? '');
@@ -50,7 +50,7 @@
                    data-content-id="{{ $list->content_id }}"
                    data-content-title="{{ $list->content->title ?? ($list->contents->first()->title ?? 'Content ' . $list->content_id) }}"
                    data-type="{{ $list->type }}"
-                   data-content-for="{{ $list->content_for }}"
+                   data-content-for="{{ $list->assasment_content_for }}"
                    data-trainingplan-id="{{ $list->trainingplan_id ?? '' }}"
                    title="Select for duplicate"
                    data-toggle="tooltip">
