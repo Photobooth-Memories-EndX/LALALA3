@@ -9,6 +9,7 @@ use App\Models\AssesmentQuestionBank;
 use App\Models\QuestionBank;
 use App\Models\TrainingPlan;
 use App\Services\AssessmentBulkDuplicateService;
+use App\Services\AssessmentResultDuplicationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -657,8 +658,11 @@ class AssesmentController extends Controller
         }
     }
 
-    public function bulkDuplicate(Request $request, AssessmentBulkDuplicateService $bulkService)
-    {
+    public function bulkDuplicate(
+        Request $request,
+        AssessmentBulkDuplicateService $bulkService,
+        AssessmentResultDuplicationService $resultDuplicationService
+    ) {
         $validated = $request->validate([
             'target_context'   => 'required|in:content,playlist',
             'trainingplan_id'  => 'required_if:target_context,playlist|nullable|integer|exists:trainingplan,id',
@@ -697,6 +701,11 @@ class AssesmentController extends Controller
                 $result = $bulkService->duplicateAllActive($options);
             } else {
                 $result = $bulkService->duplicateMany(array_map('intval', $sourceIds), $options);
+            }
+
+            // Copy assessment results from source to new duplicated assessments
+            if (!empty($result['created_items'])) {
+                $resultDuplicationService->copyResultsForBatch($result['created_items']);
             }
 
             $message = "{$result['success']} assessment(s) duplicated successfully.";
