@@ -375,6 +375,15 @@ class AssesmentQuestionController extends Controller
                         'trainingplan_id' => null,
                     ];
                 }
+            } elseif ($request->filled('trainingplan_id')) {
+                $rules = [
+                    'trainingplan_id' => 'required|integer|exists:trainingplan,id',
+                ];
+                $validated = $request->validate($rules);
+                $overrides = [
+                    'content_for'     => 'playlist',
+                    'trainingplan_id' => (int) $validated['trainingplan_id'],
+                ];
             }
         } else {
             // Source is global or trainingplan: reject target_context = playlist
@@ -392,6 +401,13 @@ class AssesmentQuestionController extends Controller
                 ->with('success', 'Assessment duplicated successfully.');
         } catch (ValidationException $e) {
             throw $e;
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('Failed to duplicate assessment due to validation error: ' . $e->getMessage(), [
+                'assessment_id' => $assesment->id,
+            ]);
+
+            return redirect()->route('assesment.index')
+                ->with('danger', 'Failed to duplicate assessment. ' . $e->getMessage());
         } catch (\Throwable $e) {
             Log::error('Failed to duplicate assessment: ' . $e->getMessage(), [
                 'assessment_id' => $assesment->id,

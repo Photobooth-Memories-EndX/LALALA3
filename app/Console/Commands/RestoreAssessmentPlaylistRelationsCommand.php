@@ -3,11 +3,13 @@
 namespace App\Console\Commands;
 
 use App\Models\Assesment;
+use App\Models\AssesmentQuestion;
+use App\Models\AssesmentQuestionBank;
 use App\Models\Content;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
+use App\Services\AssessmentDuplicateService;
 use Illuminate\Console\Command;
-
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -20,14 +22,14 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
      */
     protected $signature = 'assessment:restore-playlist-relations
                             {--dry-run : Perform validation and audit simulation without modifying database (read-only)}
-                            {--execute : Perform database updates for the verified 17 assessments}';
+                            {--execute : Perform duplication of verified 17 assessments from content to playlist}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Restore historical assessment playlist relations (supports --dry-run and --execute)';
+    protected $description = 'Duplicate content assessments to playlist assessments for historical relations (supports --dry-run and --execute)';
 
     /**
      * Explicit verified mapping for the 17 historical target items.
@@ -196,7 +198,7 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(): int
+    public function handle(AssessmentDuplicateService $duplicateService): int
     {
         $isExecute = (bool) $this->option('execute');
         $isDryRun  = (bool) $this->option('dry-run');
@@ -206,26 +208,31 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
             $isDryRun = true;
         }
 
+        $this->line('==================================================');
+        $this->line('ASSESSMENT CONTENT → PLAYLIST DUPLICATION');
         if ($isExecute) {
-            $this->line('ASSESSMENT PLAYLIST RELATION RECOVERY — EXECUTE MODE');
+            $this->line('MODE: EXECUTE');
         } else {
-            $this->line('ASSESSMENT PLAYLIST RELATION RECOVERY — DRY RUN');
+            $this->line('MODE: DRY RUN (READ-ONLY)');
         }
+        $this->line('==================================================');
         $this->newLine();
 
         $stats = [
-            'total'             => count(self::TARGET_MAPPING),
-            'assessment_found'  => 0,
-            'content_found'     => 0,
-            'playlist_found'    => 0,
-            'pivot_found'       => 0,
-            'ready_for_update'  => 0,
-            'updated'           => 0,
-            'already_correct'   => 0,
-            'not_found'         => 0,
-            'mismatch'          => 0,
-            'conflict'          => 0,
-            'database_modified' => 0,
+            'total'                     => count(self::TARGET_MAPPING),
+            'source_assessment_found'   => 0,
+            'source_content_found'      => 0,
+            'playlist_found'            => 0,
+            'trainingplan_detail_found' => 0,
+            'ready_for_duplication'     => 0,
+            'duplicated'                => 0,
+            'already_exists'            => 0,
+            'questions_duplicated'      => 0,
+            'child_records_duplicated'  => 0,
+            'not_found'                 => 0,
+            'mismatch'                  => 0,
+            'conflict'                  => 0,
+            'database_modified'         => 0,
         ];
 
         // Step 1: Pre-validation & audit of all items (Pure Read-Only SELECT)
@@ -233,10 +240,10 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
         $hasFatalValidationIssue = false;
 
         foreach (self::TARGET_MAPPING as $item) {
-            $no       = $item['no'];
-            $tpId     = $item['trainingplan_id'];
-            $cId      = $item['content_id'];
-            $aId      = $item['assessment_id'];
+            $no   = $item['no'];
+            $tpId = $item['trainingplan_id'];
+            $cId  = $item['content_id'];
+            $aId  = $item['assessment_id'];
 
             // Query models
             $assessment = Assesment::find($aId);
@@ -252,24 +259,46 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
             $pivotExists      = $tpd !== null;
 
             if ($assessmentExists) {
-                $stats['assessment_found']++;
+                $stats['source_assessment_found']++;
             }
             if ($contentExists) {
-                $stats['content_found']++;
+                $stats['source_content_found']++;
             }
             if ($playlistExists) {
                 $stats['playlist_found']++;
             }
             if ($pivotExists) {
-                $stats['pivot_found']++;
+                $stats['trainingplan_detail_found']++;
             }
 
             $currentContentFor = $assessment ? ($assessment->content_for ?? 'NULL') : 'NOT FOUND';
             $currentTpId       = $assessment ? ($assessment->trainingplan_id ?? 'NULL') : 'NOT FOUND';
 
+            // Audit questions, question banks, and options
+            $questionsCount = 0;
+            $optionsCount   = 0;
+            $qbCount        = 0;
+
+            if ($assessmentExists) {
+                $questionsCount = $assessment->questions()->count();
+                $qbCount        = $assessment->assessment_question_banks()->count();
+                foreach ($assessment->questions as $q) {
+                    if (is_array($q->option)) {
+                        $optionsCount += count($q->option);
+                    }
+                }
+            }
+
+            // Check if playlist assessment already exists for this (trainingplan_id, content_id)
+            $existingPlaylistAssessment = Assesment::where('content_for', 'playlist')
+                ->where('trainingplan_id', $tpId)
+                ->where('content_id', $cId)
+                ->first();
+
             // Validate status
-            $itemStatus = '';
+            $itemStatus        = '';
             $statusDescription = '';
+            $duplicateRequired = false;
 
             if (!$assessmentExists || !$contentExists || !$playlistExists) {
                 $stats['not_found']++;
@@ -286,19 +315,21 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
                 $itemStatus = 'mismatch';
                 $statusDescription = 'CONFLICT / SKIPPED: TrainingPlanDetail not found in target playlist';
                 $hasFatalValidationIssue = true;
-            } elseif (!is_null($assessment->trainingplan_id) && (int) $assessment->trainingplan_id !== (int) $tpId) {
+            } elseif ($assessment->content_for === 'playlist') {
                 $stats['conflict']++;
                 $itemStatus = 'conflict';
-                $statusDescription = "CONFLICT / SKIPPED: Assessment already assigned to different Playlist ID ({$assessment->trainingplan_id})";
+                $statusDescription = "CONFLICT / SKIPPED: Source Assessment #{$aId} already has content_for = 'playlist'";
                 $hasFatalValidationIssue = true;
-            } elseif ((int) $assessment->trainingplan_id === (int) $tpId && $assessment->content_for === 'playlist') {
-                $stats['already_correct']++;
-                $itemStatus = 'already_correct';
-                $statusDescription = 'ALREADY UP TO DATE';
+            } elseif ($existingPlaylistAssessment !== null) {
+                $stats['already_exists']++;
+                $itemStatus = 'already_exists';
+                $statusDescription = "ALREADY EXISTS (Playlist Assessment ID: {$existingPlaylistAssessment->id})";
+                $duplicateRequired = false;
             } else {
-                $stats['ready_for_update']++;
-                $itemStatus = 'ready_for_update';
-                $statusDescription = $isExecute ? 'SUCCESSFULLY RESTORED' : 'READY FOR UPDATE';
+                $stats['ready_for_duplication']++;
+                $itemStatus = 'ready_for_duplication';
+                $statusDescription = 'READY FOR DUPLICATION';
+                $duplicateRequired = true;
             }
 
             $validatedItems[] = [
@@ -312,108 +343,219 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
                 'current_content_for' => $currentContentFor,
                 'current_tp_id'       => $currentTpId,
                 'pivot_exists'        => $pivotExists,
+                'existing_playlist'   => $existingPlaylistAssessment,
+                'duplicate_required'  => $duplicateRequired,
+                'questions_count'     => $questionsCount,
+                'options_count'       => $optionsCount,
+                'qb_count'            => $qbCount,
                 'status'              => $itemStatus,
                 'status_description'  => $statusDescription,
                 'mapping'             => $item,
+                'new_assessment'      => null,
             ];
         }
 
-        // Step 2: Display item results
-        foreach ($validatedItems as $v) {
-            $this->line('--------------------------------------------------');
-            $this->line("#{$v['no']}");
-            $this->line("Assessment ID : {$v['aId']}");
-            $this->line("Assessment   : " . ($v['assessment'] ? $v['assessment']->title : 'NOT FOUND'));
-            $this->line("Content ID   : {$v['cId']}");
-            $this->line("Content      : " . ($v['content'] ? $v['content']->title : $v['mapping']['content_title']));
-            $this->newLine();
-            $this->line('Current:');
-            $this->line("content_for     = {$v['current_content_for']}");
-            $this->line("trainingplan_id = {$v['current_tp_id']}");
-            $this->newLine();
-            $this->line('Target:');
-            $this->line('content_for     = playlist');
-            $this->line("trainingplan_id = {$v['tpId']}");
-            $this->newLine();
-            $this->line('TrainingPlanDetail:');
-            $this->line($v['pivot_exists'] ? 'FOUND' : 'NOT FOUND');
-            $this->newLine();
-            $this->line('Result:');
-            $this->line($v['status_description']);
-            $this->line('--------------------------------------------------');
-            $this->newLine();
-        }
-
-        // Step 3: If in Execute mode, perform updates wrapped in a single DB transaction
+        // Step 2: If in Execute mode, perform atomic duplication wrapped in a single DB transaction
         if ($isExecute) {
             if ($hasFatalValidationIssue) {
                 $this->error('Execution aborted: One or more validation checks failed (Not Found, Mismatch, or Conflict). No records were modified.');
-                $this->printSummary($stats, $isExecute);
+                $this->displayItems($validatedItems);
+                $this->displaySummary($stats, $isExecute);
                 return self::FAILURE;
             }
 
             try {
-                DB::transaction(function () use (&$validatedItems, &$stats) {
+                DB::transaction(function () use (&$validatedItems, &$stats, $duplicateService) {
                     foreach ($validatedItems as &$valItem) {
-                        if ($valItem['status'] === 'ready_for_update') {
-                            $assessment = Assesment::lockForUpdate()->find($valItem['aId']);
-
-                            // Re-verify inside transaction lock
-                            if (!$assessment || (int) $assessment->content_id !== (int) $valItem['cId']) {
-                                throw new \RuntimeException("Validation failed inside transaction for Assessment ID {$valItem['aId']}: Content mismatch or record missing.");
-                            }
-                            if (!is_null($assessment->trainingplan_id) && (int) $assessment->trainingplan_id !== (int) $valItem['tpId']) {
-                                throw new \RuntimeException("Validation failed inside transaction for Assessment ID {$valItem['aId']}: Conflict with different Playlist ID ({$assessment->trainingplan_id}).");
-                            }
-
-                            // Perform update
-                            $assessment->trainingplan_id = (int) $valItem['tpId'];
-                            $assessment->content_for     = 'playlist';
-                            $assessment->save();
-
-                            $stats['updated']++;
-                            $stats['database_modified']++;
+                        if ($valItem['status'] !== 'ready_for_duplication') {
+                            continue;
                         }
+
+                        $sourceAssessment = Assesment::lockForUpdate()->find($valItem['aId']);
+
+                        // Re-verify inside transaction lock
+                        if (!$sourceAssessment || (int) $sourceAssessment->content_id !== (int) $valItem['cId']) {
+                            throw new \RuntimeException("Validation failed inside transaction for Assessment ID {$valItem['aId']}: Content mismatch or record missing.");
+                        }
+
+                        if ($sourceAssessment->content_for !== 'content') {
+                            throw new \RuntimeException("Validation failed inside transaction for Assessment ID {$valItem['aId']}: Source assessment content_for is '{$sourceAssessment->content_for}', expected 'content'.");
+                        }
+
+                        // Concurrency idempotency check inside transaction
+                        $concurrencyCheck = Assesment::where('content_for', 'playlist')
+                            ->where('trainingplan_id', $valItem['tpId'])
+                            ->where('content_id', $valItem['cId'])
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($concurrencyCheck) {
+                            $valItem['status']             = 'already_exists';
+                            $valItem['status_description'] = "ALREADY EXISTS (Playlist Assessment ID: {$concurrencyCheck->id})";
+                            $valItem['existing_playlist']  = $concurrencyCheck;
+                            $valItem['duplicate_required'] = false;
+                            $stats['ready_for_duplication']--;
+                            $stats['already_exists']++;
+                            continue;
+                        }
+
+                        $sourceQuestionsCount = $sourceAssessment->questions()->count();
+                        $sourceQbCount        = $sourceAssessment->assessment_question_banks()->count();
+
+                        // Perform Duplication using central AssessmentDuplicateService
+                        // 1. Clones assessment configuration and preserves original title
+                        // 2. Links to existing target content_id (does NOT duplicate content)
+                        // 3. Sets content_for = 'playlist' and trainingplan_id = $valItem['tpId']
+                        // 4. Clones questions, options, and question banks, preserving is_used flags
+                        $newAssessment = $duplicateService->duplicate($sourceAssessment, [
+                            'title'            => $sourceAssessment->title,
+                            'content_id'       => (int) $valItem['cId'],
+                            'content_for'      => 'playlist',
+                            'trainingplan_id'  => (int) $valItem['tpId'],
+                            'preserve_is_used' => true,
+                        ]);
+
+                        // Step 16: STRICT POST-DUPLICATION VERIFICATION (READ → VALIDATE → DUPLICATE → VERIFY → COMMIT)
+                        // AC-01: Source assessment remains untouched
+                        $sourceCheck = Assesment::find($valItem['aId']);
+                        if (!$sourceCheck || $sourceCheck->content_for !== 'content' || (int) $sourceCheck->content_id !== (int) $valItem['cId']) {
+                            throw new \RuntimeException("Post-duplication verification failed: Original Assessment #{$valItem['aId']} was modified!");
+                        }
+
+                        // AC-02, AC-03, AC-04, AC-05: New assessment exists with playlist configuration
+                        if (!$newAssessment || !$newAssessment->id) {
+                            throw new \RuntimeException("Post-duplication verification failed: New Assessment was not created for target #{$valItem['aId']}.");
+                        }
+
+                        if ($newAssessment->content_for !== 'playlist' || (int) $newAssessment->trainingplan_id !== (int) $valItem['tpId'] || (int) $newAssessment->content_id !== (int) $valItem['cId']) {
+                            throw new \RuntimeException("Post-duplication verification failed: New Assessment #{$newAssessment->id} attributes mismatch.");
+                        }
+
+                        // AC-06: TrainingPlanDetail exists
+                        $pivotExists = TrainingPlanDetail::where('trainingplan_id', $valItem['tpId'])
+                            ->where('content_id', $valItem['cId'])
+                            ->exists();
+                        if (!$pivotExists) {
+                            throw new \RuntimeException("Post-duplication verification failed: TrainingPlanDetail not found for target #{$valItem['aId']}.");
+                        }
+
+                        // AC-07 & AC-08: Child records verification
+                        $newQuestionsCount = $newAssessment->questions()->count();
+                        $newQbCount        = $newAssessment->assessment_question_banks()->count();
+
+                        if ($newQuestionsCount !== $sourceQuestionsCount) {
+                            throw new \RuntimeException("Post-duplication verification failed: Question count mismatch for Assessment #{$valItem['aId']} (source: {$sourceQuestionsCount}, new: {$newQuestionsCount}).");
+                        }
+
+                        if ($newQbCount !== $sourceQbCount) {
+                            throw new \RuntimeException("Post-duplication verification failed: Question bank count mismatch for Assessment #{$valItem['aId']} (source: {$sourceQbCount}, new: {$newQbCount}).");
+                        }
+
+                        // Verify duplicate child records point exclusively to new Assessment and not source
+                        if ($newQuestionsCount > 0) {
+                            $sharedQuestions = AssesmentQuestion::where('assesment_id', $sourceAssessment->id)
+                                ->whereIn('id', $newAssessment->questions()->pluck('id'))
+                                ->exists();
+                            if ($sharedQuestions) {
+                                throw new \RuntimeException("Post-duplication verification failed: Child questions of Assessment #{$valItem['aId']} shared with source!");
+                            }
+                        }
+
+                        // Success
+                        $valItem['new_assessment']     = $newAssessment;
+                        $valItem['status']             = 'duplicated';
+                        $valItem['status_description'] = 'SUCCESSFULLY DUPLICATED';
+
+                        $stats['duplicated']++;
+                        $stats['questions_duplicated']     += $newQuestionsCount;
+                        $stats['child_records_duplicated'] += ($newQuestionsCount + $newQbCount);
+                        $stats['database_modified']        += (1 + $newQuestionsCount + $newQbCount);
                     }
                 });
             } catch (Throwable $e) {
                 $this->error("Database transaction failed and was rolled back: {$e->getMessage()}");
-                $this->printSummary($stats, $isExecute);
+                $this->displayItems($validatedItems);
+                $this->displaySummary($stats, $isExecute);
                 return self::FAILURE;
             }
         }
 
+        // Step 3: Display item results
+        $this->displayItems($validatedItems);
+
         // Step 4: Display summary
-        $this->printSummary($stats, $isExecute);
+        $this->displaySummary($stats, $isExecute);
 
         return self::SUCCESS;
     }
 
     /**
+     * Display detailed item results.
+     */
+    protected function displayItems(array $validatedItems): void
+    {
+        foreach ($validatedItems as $v) {
+            $this->line('--------------------------------------------------');
+            $this->line("#{$v['no']}");
+            $this->line("Source Assessment : {$v['aId']}");
+            $this->line("Title             : " . ($v['assessment'] ? $v['assessment']->title : 'NOT FOUND'));
+            $this->line("Content ID        : {$v['cId']}");
+            $this->line("Content For       : {$v['current_content_for']}");
+            $this->newLine();
+            $this->line("Target Playlist   : " . ($v['tp'] ? $v['tp']->title : $v['mapping']['playlist_name']));
+            $this->line("TrainingPlan ID   : {$v['tpId']}");
+            $this->newLine();
+            $this->line("TrainingPlanDetail: " . ($v['pivot_exists'] ? 'FOUND' : 'NOT FOUND'));
+            $this->newLine();
+            $this->line("Existing Playlist Assessment: " . ($v['existing_playlist'] ? "FOUND (ID: {$v['existing_playlist']->id})" : 'NOT FOUND'));
+            $this->line("Duplicate Required: " . ($v['duplicate_required'] ? 'YES' : 'NO'));
+            $this->newLine();
+            $this->line("Questions         : {$v['questions_count']}");
+            $this->line("Options           : {$v['options_count']}");
+            $this->newLine();
+            $this->line("Result:");
+            $this->line($v['status_description']);
+
+            if (isset($v['new_assessment']) && $v['new_assessment']) {
+                $this->newLine();
+                $this->line("New Assessment ID : {$v['new_assessment']->id}");
+                $this->line("content_for       : {$v['new_assessment']->content_for}");
+                $this->line("trainingplan_id   : {$v['new_assessment']->trainingplan_id}");
+                $this->line("content_id        : {$v['new_assessment']->content_id}");
+            }
+
+            $this->line('--------------------------------------------------');
+            $this->newLine();
+        }
+    }
+
+    /**
      * Print the execution or simulation summary.
      */
-    protected function printSummary(array $stats, bool $isExecute): void
+    protected function displaySummary(array $stats, bool $isExecute): void
     {
         $this->line('==================================================');
         $this->line('SUMMARY');
         $this->line('==================================================');
-        $this->line("Total Target       : {$stats['total']}");
-        $this->line("Assessment Found   : {$stats['assessment_found']}");
-        $this->line("Content Found      : {$stats['content_found']}");
-        $this->line("Playlist Found     : {$stats['playlist_found']}");
-        $this->line("Pivot Found        : {$stats['pivot_found']}");
+        $this->line("Total Target                 : {$stats['total']}");
         $this->newLine();
-        if ($isExecute) {
-            $this->line("Updated            : {$stats['updated']}");
-        } else {
-            $this->line("Ready for Update   : {$stats['ready_for_update']}");
-        }
-        $this->line("Already Correct    : {$stats['already_correct']}");
-        $this->line("Not Found          : {$stats['not_found']}");
-        $this->line("Mismatch           : {$stats['mismatch']}");
-        $this->line("Conflict           : {$stats['conflict']}");
+        $this->line("Source Assessment Found      : {$stats['source_assessment_found']}");
+        $this->line("Source Content Found         : {$stats['source_content_found']}");
+        $this->line("Playlist Found               : {$stats['playlist_found']}");
+        $this->line("TrainingPlanDetail Found     : {$stats['trainingplan_detail_found']}");
         $this->newLine();
-        $this->line("Database Modified  : {$stats['database_modified']}");
+        $this->line("Ready for Duplication        : {$stats['ready_for_duplication']}");
+        $this->line("Duplicated                   : {$stats['duplicated']}");
+        $this->line("Already Exists               : {$stats['already_exists']}");
+        $this->newLine();
+        $this->line("Questions Duplicated         : {$stats['questions_duplicated']}");
+        $this->line("Child Records Duplicated     : {$stats['child_records_duplicated']}");
+        $this->newLine();
+        $this->line("Not Found                    : {$stats['not_found']}");
+        $this->line("Mismatch                     : {$stats['mismatch']}");
+        $this->line("Conflict                     : {$stats['conflict']}");
+        $this->newLine();
+        $this->line("Database Modified            : {$stats['database_modified']}");
         $this->line('==================================================');
     }
 }

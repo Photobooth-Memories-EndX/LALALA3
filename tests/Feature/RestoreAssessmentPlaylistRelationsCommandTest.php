@@ -2,7 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Console\Commands\RestoreAssessmentPlaylistRelationsCommand;
 use App\Models\Assesment;
+use App\Models\AssesmentAssigned;
+use App\Models\AssesmentQuestion;
+use App\Models\AssesmentQuestionBank;
+use App\Models\AssesmentResult;
+use App\Models\AssesmentScoreHistory;
 use App\Models\Content;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
@@ -13,138 +19,146 @@ class RestoreAssessmentPlaylistRelationsCommandTest extends TestCase
 {
     use DatabaseTransactions;
 
-    /**
-     * Test that the dry-run command runs successfully, verifies all 17 targets,
-     * and performs zero database mutations.
-     */
-    public function test_dry_run_reports_ready_for_update_and_makes_zero_modifications(): void
+    public function test_dry_run_is_read_only_and_reports_ready(): void
     {
-        // Snapshot current states of the 17 assessments
-        $targetIds = [326, 325, 324, 260, 262, 263, 264, 265, 266, 177, 178, 179, 180, 181, 182, 183, 184];
-        $initialStates = Assesment::whereIn('id', $targetIds)
-            ->get(['id', 'content_for', 'trainingplan_id', 'updated_at'])
-            ->keyBy('id');
+        $assessmentCountBefore = Assesment::count();
+        $questionCountBefore   = AssesmentQuestion::count();
 
         $this->artisan('assessment:restore-playlist-relations', ['--dry-run' => true])
-            ->expectsOutputToContain('ASSESSMENT PLAYLIST RELATION RECOVERY — DRY RUN')
-            ->expectsOutputToContain('Total Target       : 17')
-            ->expectsOutputToContain('Assessment Found   : 17')
-            ->expectsOutputToContain('Content Found      : 17')
-            ->expectsOutputToContain('Playlist Found     : 17')
-            ->expectsOutputToContain('Pivot Found        : 17')
-            ->expectsOutputToContain('Ready for Update   : 17')
-            ->expectsOutputToContain('Already Correct    : 0')
-            ->expectsOutputToContain('Conflict           : 0')
-            ->expectsOutputToContain('Database Modified  : 0')
-            ->assertSuccessful();
+            ->assertSuccessful()
+            ->expectsOutputToContain('ASSESSMENT CONTENT → PLAYLIST DUPLICATION')
+            ->expectsOutputToContain('MODE: DRY RUN (READ-ONLY)')
+            ->expectsOutputToContain('Ready for Duplication        : 17')
+            ->expectsOutputToContain('Database Modified            : 0');
 
-        // Verify zero mutations occurred
-        $postStates = Assesment::whereIn('id', $targetIds)
-            ->get(['id', 'content_for', 'trainingplan_id', 'updated_at'])
-            ->keyBy('id');
+        $this->assertSame($assessmentCountBefore, Assesment::count());
+        $this->assertSame($questionCountBefore, AssesmentQuestion::count());
+    }
 
-        foreach ($targetIds as $id) {
-            $this->assertEquals(
-                $initialStates[$id]->content_for,
-                $postStates[$id]->content_for,
-                "Assessment ID {$id} content_for was mutated during dry run"
-            );
-            $this->assertEquals(
-                $initialStates[$id]->trainingplan_id,
-                $postStates[$id]->trainingplan_id,
-                "Assessment ID {$id} trainingplan_id was mutated during dry run"
-            );
-            $this->assertEquals(
-                (string) $initialStates[$id]->updated_at,
-                (string) $postStates[$id]->updated_at,
-                "Assessment ID {$id} updated_at was mutated during dry run"
-            );
+    public function test_default_invocation_is_safe_dry_run(): void
+    {
+        $assessmentCountBefore = Assesment::count();
+
+        $this->artisan('assessment:restore-playlist-relations')
+            ->assertSuccessful()
+            ->expectsOutputToContain('MODE: DRY RUN (READ-ONLY)')
+            ->expectsOutputToContain('Database Modified            : 0');
+
+        $this->assertSame($assessmentCountBefore, Assesment::count());
+    }
+
+    public function test_source_assessment_integrity_and_child_isolation_after_execute(): void
+    {
+        // 1. Snapshot source assessments state BEFORE execute
+        $sourceSnapshots = [];
+        foreach (RestoreAssessmentPlaylistRelationsCommand::TARGET_MAPPING as $item) {
+            $src = Assesment::with(['questions', 'assessment_question_banks'])->find($item['assessment_id']);
+            $this->assertNotNull($src, "Source assessment #{$item['assessment_id']} must exist in DB");
+            $this->assertSame('content', $src->content_for, "Source assessment #{$item['assessment_id']} must have content_for = 'content' before execute");
+            $this->assertNull($src->trainingplan_id, "Source assessment #{$item['assessment_id']} must have trainingplan_id = NULL before execute");
+            $this->assertSame((int) $item['content_id'], (int) $src->content_id);
+
+            $sourceSnapshots[$item['assessment_id']] = [
+                'assessment'     => $src,
+                'question_ids'   => $src->questions->pluck('id')->all(),
+                'qb_ids'         => $src->assessment_question_banks->pluck('id')->all(),
+                'questions_count'=> $src->questions->count(),
+                'qb_count'       => $src->assessment_question_banks->count(),
+            ];
+        }
+
+        // 2. Execute command
+        $this->artisan('assessment:restore-playlist-relations', ['--execute' => true])
+            ->assertSuccessful()
+            ->expectsOutputToContain('MODE: EXECUTE')
+            ->expectsOutputToContain('Duplicated                   : 17');
+
+        // 3. Verify AFTER execute
+        foreach (RestoreAssessmentPlaylistRelationsCommand::TARGET_MAPPING as $item) {
+            $snap = $sourceSnapshots[$item['assessment_id']];
+
+            // Re-fetch source assessment fresh from DB
+            $srcFresh = Assesment::with(['questions', 'assessment_question_banks'])->find($item['assessment_id']);
+
+            // INTEGRITY CHECK: Source Assessment MUST NOT BE MODIFIED
+            $this->assertNotNull($srcFresh);
+            $this->assertSame('content', $srcFresh->content_for, "Source Assessment #{$item['assessment_id']} content_for was modified!");
+            $this->assertNull($srcFresh->trainingplan_id, "Source Assessment #{$item['assessment_id']} trainingplan_id was modified!");
+            $this->assertSame((int) $item['content_id'], (int) $srcFresh->content_id);
+            $this->assertSame($snap['questions_count'], $srcFresh->questions->count(), "Source Assessment #{$item['assessment_id']} lost questions!");
+            $this->assertSame($snap['question_ids'], $srcFresh->questions->pluck('id')->all(), "Source Assessment #{$item['assessment_id']} question IDs altered!");
+            $this->assertSame($snap['qb_count'], $srcFresh->assessment_question_banks->count(), "Source Assessment #{$item['assessment_id']} lost question banks!");
+
+            // DUPLICATE CHECK: New assessment exists with playlist context
+            $newAssessment = Assesment::where('content_for', 'playlist')
+                ->where('trainingplan_id', $item['trainingplan_id'])
+                ->where('content_id', $item['content_id'])
+                ->first();
+
+            $this->assertNotNull($newAssessment, "New playlist assessment was not created for target #{$item['assessment_id']}");
+            $this->assertNotEquals($srcFresh->id, $newAssessment->id);
+            $this->assertSame('playlist', $newAssessment->content_for);
+            $this->assertSame((int) $item['trainingplan_id'], (int) $newAssessment->trainingplan_id);
+            $this->assertSame((int) $item['content_id'], (int) $newAssessment->content_id);
+            $this->assertSame($srcFresh->title, $newAssessment->title);
+            $this->assertNull($newAssessment->unique_code);
+
+            // Verified replicated configuration fields
+            $this->assertSame($srcFresh->passing_grade, $newAssessment->passing_grade);
+            $this->assertSame($srcFresh->timer, $newAssessment->timer);
+            $this->assertSame($srcFresh->has_access_period, $newAssessment->has_access_period);
+            $this->assertSame($srcFresh->deadline_type, $newAssessment->deadline_type);
+            $this->assertSame($srcFresh->time_limit_minutes, $newAssessment->time_limit_minutes);
+            $this->assertSame($srcFresh->status, $newAssessment->status);
+            $this->assertSame($srcFresh->batch, $newAssessment->batch);
+            $this->assertSame($srcFresh->total_remedials, $newAssessment->total_remedials);
+
+            // CHILD ISOLATION CHECK: Questions count matches exactly
+            $newQuestions = $newAssessment->questions()->get();
+            $this->assertSame($snap['questions_count'], $newQuestions->count(), "New Assessment #{$newAssessment->id} question count mismatch");
+
+            // Check Question Banks count matches
+            $newQbs = $newAssessment->assessment_question_banks()->get();
+            $this->assertSame($snap['qb_count'], $newQbs->count(), "New Assessment #{$newAssessment->id} question bank count mismatch");
+
+            // For each duplicate question:
+            foreach ($newQuestions as $nQ) {
+                // Must point strictly to NEW assessment ID
+                $this->assertSame((int) $newAssessment->id, (int) $nQ->assesment_id);
+                // Must NOT be in source question IDs
+                $this->assertNotContains($nQ->id, $snap['question_ids']);
+                // Options JSON must be valid and non-empty array if source had options
+                $this->assertIsArray($nQ->option);
+            }
+
+            // USER HISTORY CHECK: New assessment MUST NOT duplicate user execution history
+            $this->assertSame(0, AssesmentResult::where('assesment_id', $newAssessment->id)->count(), "New Assessment #{$newAssessment->id} must not have assessment results");
+            $this->assertSame(0, AssesmentAssigned::where('assesment_id', $newAssessment->id)->count(), "New Assessment #{$newAssessment->id} must not have assigned users");
+            $this->assertSame(0, AssesmentScoreHistory::where('assesment_id', $newAssessment->id)->count(), "New Assessment #{$newAssessment->id} must not have score histories");
         }
     }
 
-    /**
-     * Test idempotency recognition: when an assessment already has target trainingplan_id and content_for = 'playlist'.
-     */
-    public function test_dry_run_identifies_already_up_to_date_records(): void
+    public function test_idempotency_second_run_creates_zero_duplicates(): void
     {
-        // Temporarily simulate item 326 already updated
-        Assesment::where('id', 326)->update([
-            'trainingplan_id' => 32,
-            'content_for' => 'playlist',
-        ]);
+        $assessmentCountBefore = Assesment::count();
 
-        $this->artisan('assessment:restore-playlist-relations', ['--dry-run' => true])
-            ->expectsOutputToContain('#1')
-            ->expectsOutputToContain('ALREADY UP TO DATE')
-            ->expectsOutputToContain('Already Correct    : 1')
-            ->expectsOutputToContain('Ready for Update   : 16')
-            ->assertSuccessful();
-    }
-
-    /**
-     * Test that --execute successfully updates all 17 assessments with content_for = 'playlist'
-     * and the correct trainingplan_id within a database transaction.
-     */
-    public function test_execute_restores_verified_assessments_within_database_transaction(): void
-    {
-        $targetMapping = \App\Console\Commands\RestoreAssessmentPlaylistRelationsCommand::TARGET_MAPPING;
-
+        // Run #1: Duplicates 17 items
         $this->artisan('assessment:restore-playlist-relations', ['--execute' => true])
-            ->expectsOutputToContain('ASSESSMENT PLAYLIST RELATION RECOVERY — EXECUTE MODE')
-            ->expectsOutputToContain('Updated            : 17')
-            ->expectsOutputToContain('Already Correct    : 0')
-            ->expectsOutputToContain('Conflict           : 0')
-            ->expectsOutputToContain('Database Modified  : 17')
-            ->assertSuccessful();
+            ->assertSuccessful()
+            ->expectsOutputToContain('Duplicated                   : 17')
+            ->expectsOutputToContain('Already Exists               : 0');
 
-        // Verify all 17 assessments in the database
-        foreach ($targetMapping as $item) {
-            $assessment = Assesment::find($item['assessment_id']);
-            $this->assertNotNull($assessment);
-            $this->assertSame('playlist', $assessment->content_for, "Assessment ID {$item['assessment_id']} content_for was not updated to playlist");
-            $this->assertSame((int) $item['trainingplan_id'], (int) $assessment->trainingplan_id, "Assessment ID {$item['assessment_id']} trainingplan_id mismatch");
-            $this->assertSame((int) $item['content_id'], (int) $assessment->content_id, "Assessment ID {$item['assessment_id']} content_id was modified unexpectedly");
-        }
-    }
+        $countAfterRun1 = Assesment::count();
+        $this->assertSame($assessmentCountBefore + 17, $countAfterRun1);
 
-    /**
-     * Test that --execute is idempotent: running it a second time makes zero changes
-     * and reports all 17 as ALREADY UP TO DATE.
-     */
-    public function test_execute_is_idempotent(): void
-    {
-        // First execution: updates 17
+        // Run #2: Must NOT duplicate anything, 17 already exist, database modified = 0
         $this->artisan('assessment:restore-playlist-relations', ['--execute' => true])
-            ->expectsOutputToContain('Updated            : 17')
-            ->assertSuccessful();
+            ->assertSuccessful()
+            ->expectsOutputToContain('Duplicated                   : 0')
+            ->expectsOutputToContain('Already Exists               : 17')
+            ->expectsOutputToContain('Database Modified            : 0');
 
-        // Second execution: must detect all 17 already correct, 0 modifications
-        $this->artisan('assessment:restore-playlist-relations', ['--execute' => true])
-            ->expectsOutputToContain('ASSESSMENT PLAYLIST RELATION RECOVERY — EXECUTE MODE')
-            ->expectsOutputToContain('Updated            : 0')
-            ->expectsOutputToContain('Already Correct    : 17')
-            ->expectsOutputToContain('Database Modified  : 0')
-            ->expectsOutputToContain('ALREADY UP TO DATE')
-            ->assertSuccessful();
-    }
-
-    /**
-     * Test that any validation failure aborts execution and makes zero changes (rollback).
-     */
-    public function test_execute_aborts_and_rolls_back_when_validation_fails(): void
-    {
-        // Induce a content mismatch on item 326 using another existing content id (123 instead of 280)
-        Assesment::where('id', 326)->update(['content_id' => 123]);
-
-        // Attempt execute
-        $this->artisan('assessment:restore-playlist-relations', ['--execute' => true])
-            ->expectsOutputToContain('CONFLICT / SKIPPED: Content mismatch')
-            ->expectsOutputToContain('Execution aborted')
-            ->assertFailed();
-
-        // Verify other valid assessments (e.g. ID 325) were NOT updated
-        $assessment325 = Assesment::find(325);
-        $this->assertSame('content', $assessment325->content_for);
-        $this->assertNull($assessment325->trainingplan_id);
+        $countAfterRun2 = Assesment::count();
+        $this->assertSame($countAfterRun1, $countAfterRun2, "Assessment count must not increase on repeated execution");
     }
 }
