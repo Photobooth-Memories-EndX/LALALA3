@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!searchInput || !searchResults) return;
 
+        var listEl = searchResults.querySelector('.autocomplete-list-group') || searchResults;
+        var footerEl = searchResults.querySelector('.search-footer');
         var debounceTimer;
 
         searchInput.addEventListener('input', function () {
@@ -15,7 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (query.length < 1) {
                 searchResults.style.display = 'none';
-                searchResults.innerHTML = '';
+                if (listEl) listEl.innerHTML = '';
+                if (footerEl) footerEl.style.display = 'none';
                 return;
             }
 
@@ -25,12 +28,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                     .then(function (res) { return res.json(); })
                     .then(function (data) {
-                        searchResults.innerHTML = '';
+                        if (listEl) listEl.innerHTML = '';
                         if (data && data.length > 0) {
                             data.forEach(function (item) {
                                 var a = document.createElement('a');
                                 a.className = 'dropdown-item py-2 px-3 text-wrap border-bottom-subtle gallery-search-item';
-                                a.href = '#';
+                                a.href = item.slug ? '/gallery/' + encodeURIComponent(item.slug) : '#';
 
                                 var titleText = item.title || item.name || '';
                                 var photoCount = item.photo_count !== undefined ? item.photo_count : null;
@@ -50,27 +53,42 @@ document.addEventListener('DOMContentLoaded', function () {
                                     '</div>' +
                                     (subDetails.length > 0 ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.map(escapeHtml).join(' &bull; ') + '</div>' : '');
 
-                                a.addEventListener('click', function (e) {
-                                    e.preventDefault();
-                                    searchInput.value = titleText;
-                                    searchResults.style.display = 'none';
+                                if (!item.slug) {
+                                    a.addEventListener('click', function (e) {
+                                        e.preventDefault();
+                                        searchInput.value = titleText;
+                                        searchResults.style.display = 'none';
 
-                                    var form = searchInput.closest('form');
-                                    if (form) {
-                                        if (typeof form.requestSubmit === 'function') {
-                                            form.requestSubmit();
-                                        } else {
-                                            form.submit();
+                                        var form = searchInput.closest('form');
+                                        if (form) {
+                                            if (typeof form.requestSubmit === 'function') {
+                                                form.requestSubmit();
+                                            } else {
+                                                form.submit();
+                                            }
                                         }
-                                    }
-                                });
-                                searchResults.appendChild(a);
+                                    });
+                                }
+                                if (listEl) listEl.appendChild(a);
                             });
-                            searchResults.style.display = 'block';
-                        } else {
-                            searchResults.innerHTML = '<div class="dropdown-item text-muted disabled py-2 px-3">No gallery found</div>';
-                            searchResults.style.display = 'block';
                         }
+
+                        var keyword = searchInput.value.trim();
+                        if (footerEl) {
+                            if (data && data.length > 0) {
+                                footerEl.innerHTML = `
+                                    <a href="/gallery?q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="ti ti-search"></i>
+                                        <span>See all results for "${keyword}"</span>
+                                    </a>
+                                `;
+                                footerEl.style.display = 'block';
+                            } else {
+                                footerEl.innerHTML = '<div class="dropdown-item text-muted disabled py-2">No items found</div>';
+                                footerEl.style.display = 'block';
+                            }
+                        }
+                        searchResults.style.display = 'block';
                     })
                     .catch(function () {
                         searchResults.style.display = 'none';
@@ -79,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         searchInput.addEventListener('focus', function () {
-            if (this.value.trim().length >= 1 && searchResults.children.length > 0) {
+            if (this.value.trim().length >= 1 && ((listEl && listEl.children.length > 0) || (footerEl && footerEl.style.display !== 'none'))) {
                 searchResults.style.display = 'block';
             }
         });

@@ -30,13 +30,17 @@
 
             if (!searchInput || !searchResults) return;
 
+            var listEl = searchResults.querySelector('.autocomplete-list-group') || searchResults;
+            var footerEl = searchResults.querySelector('.search-footer');
+
             $(searchInput).on('input', function () {
                 var value = $.trim(this.value);
                 clearTimeout(debounceTimer);
 
                 if (value.length < 1) {
                     searchResults.style.display = 'none';
-                    searchResults.innerHTML = '';
+                    if (listEl) listEl.innerHTML = '';
+                    if (footerEl) footerEl.style.display = 'none';
                     return;
                 }
 
@@ -49,10 +53,8 @@
                         return response.json();
                     })
                     .then(function (data) {
-                        if (!data || data.length === 0) {
-                            searchResults.innerHTML = '<div class="dropdown-item text-muted small py-2 px-3">No content found</div>';
-                        } else {
-                            var html = '';
+                        var html = '';
+                        if (data && data.length > 0) {
                             data.forEach(function (item) {
                                 var badgeClass = item.type === 'video'
                                     ? 'bg-blue-lt text-blue'
@@ -72,7 +74,23 @@
                                     (subDetails.length > 0 ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.join(' &bull; ') + '</div>' : '') +
                                 '</a>';
                             });
-                            searchResults.innerHTML = html;
+                        }
+                        if (listEl) listEl.innerHTML = html;
+
+                        var keyword = $.trim(searchInput.value);
+                        if (footerEl) {
+                            if (data && data.length > 0) {
+                                footerEl.innerHTML = `
+                                    <a href="/content?q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="ti ti-search"></i>
+                                        <span>See all results for "${keyword}"</span>
+                                    </a>
+                                `;
+                                footerEl.style.display = 'block';
+                            } else {
+                                footerEl.innerHTML = '<div class="dropdown-item text-muted disabled py-2">No items found</div>';
+                                footerEl.style.display = 'block';
+                            }
                         }
                         searchResults.style.display = 'block';
                     })
@@ -83,7 +101,7 @@
             });
 
             $(searchInput).on('focus', function () {
-                if ($.trim(this.value).length >= 1 && searchResults.children.length > 0) {
+                if ($.trim(this.value).length >= 1 && ((listEl && listEl.children.length > 0) || (footerEl && footerEl.style.display !== 'none'))) {
                     searchResults.style.display = 'block';
                 }
             });

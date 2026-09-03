@@ -274,7 +274,7 @@
             </div>
 
             <div class="ongoing-toolbar-search">
-                <div class="position-relative search-ongoing-container w-100">
+                <div class="position-relative search-input-wrapper search-ongoing-container flex-grow-1 w-100">
                     <div class="input-icon">
                         <span class="input-icon-addon">
                             <i class="ti ti-search" aria-hidden="true"></i>
@@ -282,13 +282,16 @@
                         <input type="text"
                                name="ongoing_search"
                                id="ongoing-search-input"
-                               value="{{ request('ongoing_search') }}"
-                               class="form-control"
+                               value="{{ request('ongoing_search', request('q')) }}"
+                               class="form-control module-search-input"
                                aria-label="Search classes or categories"
                                placeholder="Search classes or categories..."
                                autocomplete="off">
                     </div>
-                    <div id="ongoing-search-results" class="dropdown-menu shadow-sm w-100 overflow-auto position-absolute mt-1" style="display: none; max-height: 300px; z-index: 1050;"></div>
+                    <div id="ongoing-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                        <div class="autocomplete-list-group list-group list-group-flush"></div>
+                        <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                    </div>
                 </div>
             </div>
 

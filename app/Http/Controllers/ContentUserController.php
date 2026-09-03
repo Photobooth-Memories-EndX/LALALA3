@@ -73,7 +73,7 @@ class ContentUserController extends Controller
 
     public function index(Request $request, LearningAnalyticsService $analyticsService)
     {
-        $filterSearch = $request->s ?: $request->search;
+        $filterSearch = $request->s ?: ($request->q ?: $request->search);
         $filterType = $request->type;
         $filterClassification = $request->classification;
         $filterDateOrder = $request->date_order ?? 'newest';

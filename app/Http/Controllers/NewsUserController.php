@@ -50,7 +50,7 @@ class NewsUserController extends Controller
 
     public function index()
     {
-        $search     = request('search');
+        $search     = request('search', request('q'));
         $sort       = request('sort', 'latest');
         $author     = request('author');
         $month      = request('month');

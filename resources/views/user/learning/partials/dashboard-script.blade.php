@@ -143,6 +143,9 @@
 
         if (!searchInput || !searchResults) return;
 
+        var listEl = searchResults.querySelector('.autocomplete-list-group') || searchResults;
+        var footerEl = searchResults.querySelector('.search-footer');
+
         function escapeHtml(text) {
             if (!text) return '';
             var div = document.createElement('div');
@@ -165,7 +168,8 @@
 
             if (query.length < 1) {
                 searchResults.style.display = 'none';
-                searchResults.innerHTML = '';
+                if (listEl) listEl.innerHTML = '';
+                if (footerEl) footerEl.style.display = 'none';
                 return;
             }
 
@@ -179,10 +183,8 @@
                     return response.json();
                 })
                 .then(function (data) {
-                    if (!data || data.length === 0) {
-                        searchResults.innerHTML = '<div class="dropdown-item text-muted small py-2 px-3">No ongoing learning found</div>';
-                    } else {
-                        var html = '';
+                    var html = '';
+                    if (data && data.length > 0) {
                         data.forEach(function (item) {
                             var badgeType = item.type === 'playlist' ? 'bg-teal-lt text-teal' : 'bg-primary-lt text-primary';
                             var typeLabel = item.type ? escapeHtml(item.type.toUpperCase()) : 'CONTENT';
@@ -198,7 +200,23 @@
                                 '</div>' +
                             '</a>';
                         });
-                        searchResults.innerHTML = html;
+                    }
+                    if (listEl) listEl.innerHTML = html;
+
+                    var keyword = searchInput.value.trim();
+                    if (footerEl) {
+                        if (data && data.length > 0) {
+                            footerEl.innerHTML = `
+                                <a href="/my-learning?learning_tab=ongoing&q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="ti ti-search"></i>
+                                    <span>See all results for "${keyword}"</span>
+                                </a>
+                            `;
+                            footerEl.style.display = 'block';
+                        } else {
+                            footerEl.innerHTML = '<div class="dropdown-item text-muted disabled py-2">No items found</div>';
+                            footerEl.style.display = 'block';
+                        }
                     }
                     searchResults.style.display = 'block';
                 })
@@ -210,7 +228,7 @@
 
         // Show dropdown again on focus if query exists
         searchInput.addEventListener('focus', function () {
-            if (this.value.trim().length >= 1 && searchResults.children.length > 0) {
+            if (this.value.trim().length >= 1 && ((listEl && listEl.children.length > 0) || (footerEl && footerEl.style.display !== 'none'))) {
                 searchResults.style.display = 'block';
             }
         });

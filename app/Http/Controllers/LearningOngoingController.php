@@ -173,7 +173,7 @@ class LearningOngoingController extends Controller
     private function contentFilterState(): array
     {
         return [
-            'search'        => trim((string) request('ongoing_search')),
+            'search'        => trim((string) request('ongoing_search', request('q', ''))),
             'status'        => request('ongoing_status', 'all'),
             'year'          => request('ongoing_year', 'all'),
             'activity_sort' => request('ongoing_activity_sort', 'newest_activity'),
@@ -208,7 +208,7 @@ class LearningOngoingController extends Controller
     private function playlistFilterState(): array
     {
         return [
-            'search'           => trim((string) request('ongoing_search')),
+            'search'           => trim((string) request('ongoing_search', request('q', ''))),
             'status'           => request('ongoing_status', 'all'),
             'quick_status'     => (string) request('ongoing_quick_status', 'all'),
             'year'             => request('ongoing_year', 'all'),

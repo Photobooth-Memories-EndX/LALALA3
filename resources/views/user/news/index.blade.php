@@ -56,17 +56,20 @@
                             <div class="fast-filter-toolbar owl-news-filter-toolbar">
                             <div class="record-toolbar-search owl-news-filter-search">
                                 <label class="visually-hidden" for="news-search-input">Search news</label>
-                                <div class="position-relative news-search-container flex-grow-1">
+                                <div class="position-relative news-search-container flex-grow-1 search-input-wrapper">
                                     <div class="input-icon">
                                         <span class="input-icon-addon"><i class="ti ti-search"></i></span>
                                         <input type="search" id="news-search-input" name="search"
-                                               class="form-control"
+                                               class="form-control module-search-input"
                                                placeholder="Search news title, description or author..."
-                                               value="{{ request('search') }}"
+                                               value="{{ request('q', request('search')) }}"
                                                aria-label="Search news"
                                                autocomplete="off">
                                     </div>
-                                    <div id="news-search-results" class="dropdown-menu shadow-sm w-100 overflow-auto position-absolute mt-1" style="display: none; max-height: 300px; z-index: 1050;"></div>
+                                    <div id="news-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                                        <div class="autocomplete-list-group list-group list-group-flush"></div>
+                                        <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -423,6 +426,9 @@
 
             if (!searchInput || !searchResults) return;
 
+            var listEl = searchResults.querySelector('.autocomplete-list-group') || searchResults;
+            var footerEl = searchResults.querySelector('.search-footer');
+
             searchInput.addEventListener('input', function () {
                 var value = this.value.trim();
                 clearTimeout(debounceTimer);
@@ -430,7 +436,8 @@
 
                 if (value.length < 1) {
                     searchResults.style.display = 'none';
-                    searchResults.innerHTML = '';
+                    if (listEl) listEl.innerHTML = '';
+                    if (footerEl) footerEl.style.display = 'none';
                     submitTimer = setTimeout(function () {
                         if (form) form.submit();
                     }, 400);
@@ -446,17 +453,17 @@
                         return response.json();
                     })
                     .then(function (data) {
-                        if (!data || data.length === 0) {
-                            searchResults.innerHTML = '<div class="dropdown-item text-muted small py-2 px-3">No news found</div>';
-                        } else {
-                            var html = '';
+                        var html = '';
+                        if (data && data.length > 0) {
                             data.forEach(function (item) {
                                 var subDetails = [];
                                 if (item.author) subDetails.push('By: ' + escapeNewsHtml(item.author));
                                 if (item.created_at) subDetails.push(escapeNewsHtml(item.created_at));
                                 if (item.views !== undefined) subDetails.push(escapeNewsHtml(item.views) + ' views');
 
-                                html += '<a href="#" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle news-search-item" data-title="' + escapeNewsHtml(item.title) + '">' +
+                                var itemUrl = item.slug ? '/news/' + encodeURIComponent(item.slug) : '#';
+
+                                html += '<a href="' + itemUrl + '" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle news-search-item" data-title="' + escapeNewsHtml(item.title) + '">' +
                                     '<div class="d-flex align-items-center justify-content-between mb-1">' +
                                         '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeNewsHtml(item.title) + '</span>' +
                                         '<span class="badge bg-primary-lt text-primary small flex-shrink-0">NEWS</span>' +
@@ -464,7 +471,23 @@
                                     (subDetails.length > 0 ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.join(' &bull; ') + '</div>' : '') +
                                 '</a>';
                             });
-                            searchResults.innerHTML = html;
+                        }
+                        if (listEl) listEl.innerHTML = html;
+
+                        var keyword = searchInput.value.trim();
+                        if (footerEl) {
+                            if (data && data.length > 0) {
+                                footerEl.innerHTML = `
+                                    <a href="/news?q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="ti ti-search"></i>
+                                        <span>See all results for "${keyword}"</span>
+                                    </a>
+                                `;
+                                footerEl.style.display = 'block';
+                            } else {
+                                footerEl.innerHTML = '<div class="dropdown-item text-muted disabled py-2">No items found</div>';
+                                footerEl.style.display = 'block';
+                            }
                         }
                         searchResults.style.display = 'block';
                     })
@@ -475,7 +498,7 @@
             });
 
             searchInput.addEventListener('focus', function () {
-                if (this.value.trim().length >= 1 && searchResults.children.length > 0) {
+                if (this.value.trim().length >= 1 && ((listEl && listEl.children.length > 0) || (footerEl && footerEl.style.display !== 'none'))) {
                     searchResults.style.display = 'block';
                 }
             });
