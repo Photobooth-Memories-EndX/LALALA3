@@ -23,12 +23,11 @@ class GalleryUserController extends Controller
 
     public function autocompleteSearch(Request $request): JsonResponse
     {
-        $rawQuery = trim((string) $request->get('q', ''));
+        $rawQuery = trim((string) $request->get('q', $request->get('search', '')));
         if (empty($rawQuery)) {
             return response()->json([]);
         }
 
-        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
         $queryNormalized = str_replace("'", "’", $rawQuery);
         $queryOriginal = str_replace("’", "'", $rawQuery);
 
@@ -36,12 +35,9 @@ class GalleryUserController extends Controller
                 $q->where('title', 'LIKE', "%{$rawQuery}%")
                   ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
                   ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
-                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%")
-                  ->orWhere('category', 'LIKE', "%{$rawQuery}%")
-                  ->orWhere('uploader', 'LIKE', "%{$rawQuery}%");
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%");
             })
             ->where(function ($q) {
-                // Ensure active status condition is handled properly
                 $q->where('active', 'Active')
                   ->orWhere('active', 1)
                   ->orWhereNull('active');
@@ -51,18 +47,10 @@ class GalleryUserController extends Controller
             ->get();
 
         $results = $galleries->map(function ($gallery) {
-            $photosArr = $gallery->photos ? (json_decode($gallery->photos, true) ?? []) : [];
-            $photoCount = is_array($photosArr) ? count($photosArr) : 0;
-
             return [
-                'id'          => $gallery->id,
-                'title'       => $gallery->title,
-                'name'        => $gallery->title,
-                'slug'        => $gallery->slug,
-                'photo_count' => $photoCount,
-                'category'    => $gallery->category,
-                'event_date'  => $gallery->eventdate ? \Carbon\Carbon::parse($gallery->eventdate)->format('d M Y') : null,
-                'views'       => $gallery->views ?? 0,
+                'id'    => $gallery->id,
+                'title' => $gallery->title,
+                'slug'  => $gallery->slug,
             ];
         });
 

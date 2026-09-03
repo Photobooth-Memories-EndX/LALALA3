@@ -656,4 +656,71 @@
 
 @section('style')
 <link rel="stylesheet" href="{{ asset('css/owl-news.css') }}">
+<style>
+.owl-news-card .owl-card-title {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: #2c3e50;
+    line-height: 1.4 !important;
+    min-height: 2.8rem;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin-bottom: 0.5rem !important;
+}
+.owl-news-card .owl-card-title a,
+.owl-news-card .owl-card-title-link {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: inherit !important;
+    line-height: 1.4 !important;
+}
+[data-bs-theme="dark"] .owl-news-card .owl-card-title,
+body.dark-mode .owl-news-card .owl-card-title {
+    color: #e2e8f0 !important;
+}
+
+/* Global & Module Autocomplete Search Dropdown Containers */
+.dropdown-menu.search-results-dropdown,
+.search-autocomplete-container,
+#news-search-results {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid #e2e8f0 !important;
+    overflow: hidden !important;
+}
+
+/* Scrollable List Container (Where items are rendered) */
+.autocomplete-list-group,
+#news-autocomplete-list {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+}
+
+/* Autocomplete Items */
+#news-search-results .dropdown-item,
+.dropdown-menu .dropdown-item,
+.autocomplete-list-group .dropdown-item {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+#news-search-results .dropdown-item:hover,
+#news-search-results .dropdown-item:focus,
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+    background-color: #f8f9fa !important;
+}
+
+/* Sticky Bottom Footer Area */
+.search-footer,
+#news-search-footer {
+    background-color: #f8f9fa !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+</style>
 @endsection

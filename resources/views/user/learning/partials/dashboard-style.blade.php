@@ -148,16 +148,27 @@
         left: 0;
         z-index: 1085;
         max-height: 300px;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
-        padding: .35rem 0;
-        border: 1px solid rgba(0, 0, 0, .08);
-        background: #ffffff;
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        overflow: hidden !important;
+    }
+
+    .autocomplete-list-group,
+    #ongoing-autocomplete-list,
+    #assessment-autocomplete-list,
+    #certificate-autocomplete-list {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
     }
 
     #ongoing-search-results .dropdown-item,
     #assessment-search-results .dropdown-item,
     #certificate-search-results .dropdown-item {
+        background-color: #ffffff !important;
+        color: #333333 !important;
         padding: .6rem .85rem;
         transition: background-color .15s ease;
         text-decoration: none;
@@ -169,13 +180,21 @@
     #assessment-search-results .dropdown-item:focus,
     #certificate-search-results .dropdown-item:hover,
     #certificate-search-results .dropdown-item:focus {
-        background-color: rgba(15, 94, 156, .08);
+        background-color: #f8f9fa !important;
     }
 
     #ongoing-search-results .dropdown-item:not(:last-child),
     #assessment-search-results .dropdown-item:not(:last-child),
     #certificate-search-results .dropdown-item:not(:last-child) {
         border-bottom: 1px solid rgba(0, 0, 0, .05);
+    }
+
+    .search-footer,
+    #ongoing-search-footer,
+    #assessment-search-footer,
+    #certificate-search-footer {
+        background-color: #f8f9fa !important;
+        border-top: 1px solid #e2e8f0 !important;
     }
 
     /* Tombol Filter/Reset sejajar & sama tinggi dengan input di baris filter */

@@ -80,15 +80,19 @@
 
             <div class="gallery-filter-search">
                 <label class="visually-hidden" for="gallery-search-input">Search gallery by title</label>
-                <div class="position-relative gallery-search-container flex-grow-1 search-input-wrapper">
+                <div class="gallery-search-container position-relative flex-grow-1">
                     <div class="input-icon">
-                        <span class="input-icon-addon" aria-hidden="true"><i class="ti ti-search"></i></span>
-                        <input id="gallery-search-input" type="search" name="q" value="{{ $filters['q'] }}"
-                            class="form-control module-search-input" placeholder="Search by title..." autocomplete="off">
+                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                        <input type="text" id="gallery-search-input" name="q" value="{{ $filters['q'] }}"
+                            class="form-control" placeholder="Search by title..." autocomplete="off">
                     </div>
-                    <div id="gallery-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
-                        <div class="autocomplete-list-group list-group list-group-flush"></div>
-                        <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                    
+                    <div id="gallery-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000; background-color: #ffffff;">
+                        <!-- Container 1: Scrollable List Area (Only items scroll here) -->
+                        <div id="gallery-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                        
+                        <!-- Container 2: Pinned Sticky Footer (Fixed at bottom outside scroll area) -->
+                        <div id="gallery-search-footer" class="border-top bg-light p-2 text-center" style="display: none; background-color: #f8f9fa;"></div>
                     </div>
                 </div>
             </div>

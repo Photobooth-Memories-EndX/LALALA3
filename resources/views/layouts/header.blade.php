@@ -187,7 +187,7 @@
 
                     <div class="position-relative w-100" style="max-width: 450px;">
                         <input type="text"
-                               id="globalSearchInput"
+                               id="header-search-input"
                                name="q"
                                class="form-control rounded-pill px-4"
                                placeholder="Search learning, content, news..."
@@ -195,9 +195,12 @@
                                aria-label="Search in website">
 
                         <!-- DROPDOWN HASIL AUTOCOMPLETE -->
-                        <div id="header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
-                            <div id="search-autocomplete-list" class="list-group list-group-flush"></div>
-                            <div id="search-more-results-footer" class="border-top bg-light p-2 text-center sticky-bottom"></div>
+                        <div id="header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000; background-color: #ffffff;">
+                            <!-- 1. Scrollable List Container (Only items scroll here) -->
+                            <div id="header-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                            
+                            <!-- 2. Sticky/Fixed Footer Container (Always visible at bottom) -->
+                            <div id="header-search-footer" class="border-top bg-light p-2 text-center" style="display: none; position: sticky; bottom: 0; z-index: 2005;"></div>
                         </div>
                     </div>
                 </form>
@@ -401,7 +404,7 @@
 
                         <div class="position-relative w-100">
                             <input type="text"
-                                   id="mobileSearchInput"
+                                   id="mobile-header-search-input"
                                    name="q"
                                    class="form-control rounded-pill px-4"
                                    placeholder="Search learning, content, news..."
@@ -409,9 +412,12 @@
                                    aria-label="Search in website">
 
                             <!-- DROPDOWN HASIL AUTOCOMPLETE -->
-                            <div id="mobile-header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
-                                <div id="mobile-search-autocomplete-list" class="list-group list-group-flush"></div>
-                                <div id="mobile-search-more-results-footer" class="border-top bg-light p-2 text-center sticky-bottom"></div>
+                            <div id="mobile-header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000; background-color: #ffffff;">
+                                <!-- 1. Scrollable List Container (Only items scroll here) -->
+                                <div id="mobile-header-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                                
+                                <!-- 2. Sticky/Fixed Footer Container (Always visible at bottom) -->
+                                <div id="mobile-header-search-footer" class="border-top bg-light p-2 text-center" style="display: none; position: sticky; bottom: 0; z-index: 2005;"></div>
                             </div>
                         </div>
                     </form>
@@ -505,111 +511,173 @@
 [data-bs-theme="dark"] .module-search-dropdown::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
 }
+
+/* Global & Module Autocomplete Search Dropdown Containers */
+.dropdown-menu.search-results-dropdown,
+.search-autocomplete-container,
+#header-search-results,
+#mobile-header-search-results,
+#gallery-search-results,
+#news-search-results,
+#content-search-results,
+#playlist-search-results,
+#ongoing-search-results,
+#assessment-search-results,
+#certificate-search-results {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid #e2e8f0 !important;
+    overflow: hidden !important;
+}
+
+/* Scrollable List Container (Where items are rendered) */
+.autocomplete-list-group,
+#gallery-autocomplete-list,
+#news-autocomplete-list,
+#content-autocomplete-list,
+#playlist-autocomplete-list,
+#ongoing-autocomplete-list,
+#assessment-autocomplete-list,
+#certificate-autocomplete-list,
+#header-autocomplete-list,
+#mobile-header-autocomplete-list,
+#search-autocomplete-list,
+#mobile-search-autocomplete-list {
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    scrollbar-width: thin;
+}
+
+/* Autocomplete Items */
+.dropdown-menu .dropdown-item,
+.autocomplete-list-group .dropdown-item {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus,
+.autocomplete-list-group .dropdown-item:hover,
+.autocomplete-list-group .dropdown-item:focus {
+    background-color: #f8f9fa !important;
+}
+
+/* Sticky Bottom Footer Area */
+.search-footer,
+#gallery-search-footer,
+#news-search-footer,
+#content-search-footer,
+#playlist-search-footer,
+#ongoing-search-footer,
+#assessment-search-footer,
+#certificate-search-footer,
+#header-search-footer,
+#mobile-header-search-footer,
+#search-more-results-footer,
+#mobile-search-more-results-footer {
+    position: sticky !important;
+    bottom: 0 !important;
+    background-color: #f8f9fa !important;
+    border-top: 1px solid #e2e8f0 !important;
+    z-index: 2005 !important;
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    function initAutocomplete(inputId, dropdownId, listId, footerId) {
-        const searchInput = document.getElementById(inputId);
-        const searchDropdown = document.getElementById(dropdownId);
-        const autocompleteList = document.getElementById(listId || 'search-autocomplete-list');
-        const moreFooter = (footerId && document.getElementById(footerId)) ? document.getElementById(footerId) : document.getElementById('search-more-results-footer');
-        let debounceTimer = null;
+    function handleAutocomplete(inputId, resultsId, listId, footerId, endpoint, searchUrl) {
+        const input = document.getElementById(inputId);
+        const results = document.getElementById(resultsId);
+        const list = document.getElementById(listId);
+        const footer = document.getElementById(footerId);
 
-        if (!searchInput || !searchDropdown || !autocompleteList || !moreFooter) return;
+        if (!input || !results || !list || !footer) return;
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        searchInput.addEventListener('input', function() {
+        let timer;
+        input.addEventListener('input', function(e) {
+            if (e.target && e.target.id !== inputId) return;
+            clearTimeout(timer);
             const query = this.value.trim();
 
-            clearTimeout(debounceTimer);
-
-            // Sembunyikan jika kosong
             if (query.length < 1) {
-                searchDropdown.style.display = 'none';
-                autocompleteList.innerHTML = '';
-                moreFooter.style.display = 'none';
+                results.style.display = 'none';
+                list.innerHTML = '';
+                footer.innerHTML = '';
+                footer.style.display = 'none';
                 return;
             }
 
-            // Debounce 250ms agar efisien
-            debounceTimer = setTimeout(() => {
-                fetch(`/api/search-autocomplete?q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
+            timer = setTimeout(() => {
+                fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
                     .then(data => {
-                        if (!data || data.length === 0) {
-                            autocompleteList.innerHTML = `<div class="dropdown-item text-muted small py-2 px-3 text-center">Tidak ada hasil ditemukan</div>`;
-                            moreFooter.style.display = 'none';
-                        } else {
-                            let html = '';
+                        list.innerHTML = '';
+                        footer.innerHTML = '';
+
+                        if (data && data.length > 0) {
                             data.forEach(item => {
+                                const a = document.createElement('a');
+                                a.className = 'dropdown-item py-2 px-3 text-wrap d-flex align-items-center justify-content-between border-bottom-subtle';
+                                a.href = item.url || `${searchUrl}?q=${encodeURIComponent(item.title)}`;
                                 const badgeClass = item.type === 'Playlist' ? 'bg-purple-subtle text-purple' : 'bg-light text-secondary';
-                                const itemUrl = item.url || `/search?q=${encodeURIComponent(item.title)}`;
-                                item.url = itemUrl;
-
-                                html += `
-                                    <a href="${item.url}" class="dropdown-item py-2 d-flex align-items-center justify-content-between gap-2 border-bottom-subtle">
-                                        <span class="text-truncate">${escapeHtml(item.title)}</span>
-                                        <span class="badge ${badgeClass} text-uppercase ms-2 flex-shrink-0" style="font-size: 10px;">${escapeHtml(item.type || 'Content')}</span>
-                                    </a>
+                                a.innerHTML = `
+                                    <span class="text-truncate fw-normal">${item.title}</span>
+                                    <span class="badge ${badgeClass} text-uppercase ms-2 flex-shrink-0" style="font-size: 10px;">${item.type || 'CONTENT'}</span>
                                 `;
+                                list.appendChild(a);
                             });
-                            autocompleteList.innerHTML = html;
 
-                            const keyword = searchInput.value.trim();
-                            if (data.length > 0) {
-                                moreFooter.innerHTML = `
-                                    <a href="/search?q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
-                                        <i class="ti ti-search"></i>
-                                        <span>See all results for "${keyword}"</span>
-                                    </a>
-                                `;
-                                moreFooter.style.display = 'block';
-                            } else {
-                                moreFooter.style.display = 'none';
-                            }
+                            footer.innerHTML = `
+                                <a href="${searchUrl}?q=${encodeURIComponent(query)}" class="dropdown-item fw-semibold text-primary py-1 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="ti ti-search"></i>
+                                    <span>See all results for "${query}"</span>
+                                </a>
+                            `;
+                            footer.style.display = 'block';
+                            results.style.display = 'block';
+                        } else {
+                            list.innerHTML = `<div class="dropdown-item text-muted disabled py-2 px-3">No results found</div>`;
+                            footer.style.display = 'none';
+                            results.style.display = 'block';
                         }
-                        searchDropdown.style.display = 'block';
                     })
-                    .catch(err => {
-                        searchDropdown.style.display = 'none';
+                    .catch(() => {
+                        results.style.display = 'none';
                     });
             }, 250);
         });
 
-        // Penanganan tekan Enter pada input search
-        searchInput.addEventListener('keydown', function(e) {
+        // Close dropdown on click outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !results.contains(e.target)) {
+                results.style.display = 'none';
+            }
+        });
+
+        // Enter key submission
+        input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const query = this.value.trim();
                 if (query.length > 0) {
-                    window.location.href = `/search?q=${encodeURIComponent(query)}`;
+                    window.location.href = `${searchUrl}?q=${encodeURIComponent(query)}`;
                 }
             }
         });
 
-        // Sembunyikan dropdown jika pengguna mengklik di luar area search
-        document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
-                searchDropdown.style.display = 'none';
-            }
-        });
-
-        // Munculkan kembali jika input diklik lagi & ada teks
-        searchInput.addEventListener('focus', function() {
-            if (this.value.trim().length >= 1 && autocompleteList.children.length > 0) {
-                searchDropdown.style.display = 'block';
+        // Re-open on focus if query present
+        input.addEventListener('focus', function() {
+            if (this.value.trim().length >= 1 && list.children.length > 0) {
+                results.style.display = 'block';
             }
         });
     }
 
-    initAutocomplete('globalSearchInput', 'header-search-results', 'search-autocomplete-list', 'search-more-results-footer');
-    initAutocomplete('mobileSearchInput', 'mobile-header-search-results', 'mobile-search-autocomplete-list', 'mobile-search-more-results-footer');
+    handleAutocomplete('header-search-input', 'header-search-results', 'header-autocomplete-list', 'header-search-footer', '/api/search-autocomplete', '/search');
+    handleAutocomplete('mobile-header-search-input', 'mobile-header-search-results', 'mobile-header-autocomplete-list', 'mobile-header-search-footer', '/api/search-autocomplete', '/search');
 });
 </script>

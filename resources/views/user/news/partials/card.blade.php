@@ -37,8 +37,8 @@
         {{-- BODY --}}
         <div class="card-body d-flex flex-column flex-grow-1 p-3">
 
-            <h5 class="card-title line-clamp-2 mb-2 owl-card-title" title="{{ $item->title ?? '' }}" style="min-height: 2.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
-                <a href="{{ route('news.user.view', array_merge(['slug' => $item->slug], request()->query())) }}" class="owl-card-title-link text-reset text-decoration-none fw-bold" title="{{ $item->title ?? '' }}">
+            <h5 class="card-title line-clamp-2 mb-2 owl-card-title fw-semibold" title="{{ $item->title ?? '' }}" style="font-size: 0.95rem; font-weight: 600; color: #2c3e50; line-height: 1.4; min-height: 2.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                <a href="{{ route('news.user.view', array_merge(['slug' => $item->slug], request()->query())) }}" class="owl-card-title-link text-reset text-decoration-none fw-semibold" title="{{ $item->title ?? '' }}">
                     {{ $item->title ?? '-' }}
                 </a>
             </h5>

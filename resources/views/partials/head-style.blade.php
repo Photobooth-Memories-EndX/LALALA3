@@ -687,6 +687,80 @@
             font-size: 1rem !important;
         }
     }
+
+    /* Global & Module Autocomplete Search Dropdown Containers */
+    .dropdown-menu.search-results-dropdown,
+    .search-autocomplete-container,
+    #header-search-results,
+    #mobile-header-search-results,
+    #gallery-search-results,
+    #news-search-results,
+    #content-search-results,
+    #playlist-search-results,
+    #ongoing-search-results,
+    #assessment-search-results,
+    #certificate-search-results {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+        border: 1px solid #e2e8f0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Scrollable List Container (Where items are rendered) */
+    .autocomplete-list-group,
+    #header-autocomplete-list,
+    #mobile-header-autocomplete-list,
+    #gallery-autocomplete-list,
+    #news-autocomplete-list,
+    #content-autocomplete-list,
+    #playlist-autocomplete-list,
+    #ongoing-autocomplete-list,
+    #assessment-autocomplete-list,
+    #certificate-autocomplete-list,
+    #search-autocomplete-list,
+    #mobile-search-autocomplete-list {
+        max-height: 280px !important;
+        overflow-y: auto !important;
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        scrollbar-width: thin;
+    }
+
+    /* Autocomplete Items */
+    .dropdown-menu .dropdown-item,
+    .autocomplete-list-group .dropdown-item {
+        background-color: #ffffff !important;
+        color: #333333 !important;
+    }
+
+    .dropdown-menu .dropdown-item:hover,
+    .dropdown-menu .dropdown-item:focus,
+    .autocomplete-list-group .dropdown-item:hover,
+    .autocomplete-list-group .dropdown-item:focus {
+        background-color: #f8f9fa !important;
+    }
+
+    /* Sticky Bottom Footer Area */
+    .search-footer,
+    #header-search-footer,
+    #mobile-header-search-footer,
+    #gallery-search-footer,
+    #news-search-footer,
+    #content-search-footer,
+    #playlist-search-footer,
+    #ongoing-search-footer,
+    #assessment-search-footer,
+    #certificate-search-footer,
+    #search-more-results-footer,
+    #mobile-search-more-results-footer {
+        position: sticky !important;
+        bottom: 0 !important;
+        background-color: #f8f9fa !important;
+        border-top: 1px solid #e2e8f0 !important;
+        z-index: 2005 !important;
+    }
 </style>
 
 {{-- Select2 --}}

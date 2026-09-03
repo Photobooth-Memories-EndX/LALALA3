@@ -430,14 +430,16 @@ button, input, select, textarea {
 }
 
 .owl-card-title {
-    font-size: 1.25rem;
+    font-size: 0.95rem;
     line-height: 1.4;
-    font-weight: 700;
+    font-weight: 600;
+    color: #2c3e50;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    margin-bottom: 1rem;
+    text-overflow: ellipsis;
+    margin-bottom: 0.5rem;
 }
 
 .owl-card-excerpt {
@@ -2525,5 +2527,46 @@ body.dark-mode #news-search-results .dropdown-item .text-dark {
         min-width: 100%;
         flex: 1 1 100%;
     }
+}
+
+/* Global & Module Autocomplete Search Dropdown Containers */
+.dropdown-menu.search-results-dropdown,
+.search-autocomplete-container,
+#news-search-results {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid #e2e8f0 !important;
+    overflow: hidden !important;
+}
+
+/* Scrollable List Container (Where items are rendered) */
+.autocomplete-list-group,
+#news-autocomplete-list {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+}
+
+/* Autocomplete Items */
+#news-search-results .dropdown-item,
+.dropdown-menu .dropdown-item,
+.autocomplete-list-group .dropdown-item {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+#news-search-results .dropdown-item:hover,
+#news-search-results .dropdown-item:focus,
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+    background-color: #f8f9fa !important;
+}
+
+/* Sticky Bottom Footer Area */
+.search-footer,
+#news-search-footer {
+    background-color: #f8f9fa !important;
+    border-top: 1px solid #e2e8f0 !important;
 }
 
