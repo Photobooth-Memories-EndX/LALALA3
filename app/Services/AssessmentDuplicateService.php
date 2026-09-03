@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Assesment;
 use App\Models\AssesmentQuestion;
 use App\Models\AssesmentQuestionBank;
+use App\Models\TrainingPlanDetail;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -63,8 +64,9 @@ class AssessmentDuplicateService
     /**
      * Duplicate assessment with all configuration, question banks, and questions.
      * Historical results, attempts, assigned users, and unique codes are not copied.
-     * For single duplicate, Playlist and Content assignments are unassigned (content_id = null, trainingplan_id = null)
-     * so that the duplicated assessment starts clean without carrying over previous assignments.
+     * For Playlist Assessment (content_for = playlist with trainingplan_id), playlist and content
+     * relations are preserved and TrainingPlanDetail pivot is ensured idempotently.
+     * For Direct Content Assessment (content_for = content), content_id remains unassigned.
      * Optional overrides allow specifying target context/content (e.g. Bulk Duplicate with mapping).
      */
     public function duplicate(Assesment $assesment, array $overrides = []): Assesment
@@ -91,22 +93,63 @@ class AssessmentDuplicateService
                 }
             }
 
-            // Handle assignment fields (content_id, trainingplan_id, content_for):
-            // 1. If explicit content_id override is supplied (e.g. Bulk Duplicate with mapping):
-            if (isset($overrides['content_id']) && !empty($overrides['content_id'])) {
-                $newAssesment->content_id      = (int) $overrides['content_id'];
-                $newAssesment->content_for     = $overrides['content_for'] ?? ($assesment->content_for ?? 'content');
-                $newAssesment->trainingplan_id = isset($overrides['trainingplan_id']) && !empty($overrides['trainingplan_id'])
-                    ? (int) $overrides['trainingplan_id']
-                    : null;
-            } else {
-                // 2. Single Duplicate: unassign Content and Playlist so the duplicate is completely clean.
-                // Do not copy content_id, trainingplan_id, or create new Content/TrainingPlanDetail.
+            // Determine if source assessment is a Playlist Assessment
+            $isSourcePlaylist = ($assesment->type === 'content')
+                && (($assesment->content_for ?? 'content') === 'playlist')
+                && !empty($assesment->trainingplan_id);
+
+            // Determine target context
+            $targetContentFor = $overrides['content_for'] ?? ($isSourcePlaylist ? 'playlist' : 'content');
+
+            if ($assesment->type === 'content') {
+                if ($targetContentFor === 'playlist') {
+                    $newAssesment->content_for     = 'playlist';
+                    $newAssesment->trainingplan_id = isset($overrides['trainingplan_id']) && !empty($overrides['trainingplan_id'])
+                        ? (int) $overrides['trainingplan_id']
+                        : ($isSourcePlaylist ? (int) $assesment->trainingplan_id : null);
+
+                    if (isset($overrides['content_id']) && !empty($overrides['content_id'])) {
+                        $newAssesment->content_id = (int) $overrides['content_id'];
+                    } elseif ($isSourcePlaylist && !empty($assesment->content_id)) {
+                        $newAssesment->content_id = (int) $assesment->content_id;
+                    } else {
+                        $newAssesment->content_id = null;
+                    }
+
+                    // Ensure TrainingPlanDetail pivot exists for (trainingplan_id, content_id) (idempotent)
+                    if (!empty($newAssesment->trainingplan_id) && !empty($newAssesment->content_id)) {
+                        $pivotExists = TrainingPlanDetail::where('trainingplan_id', $newAssesment->trainingplan_id)
+                            ->where('content_id', $newAssesment->content_id)
+                            ->exists();
+
+                        if (!$pivotExists) {
+                            $maxOrder = (int) TrainingPlanDetail::where('trainingplan_id', $newAssesment->trainingplan_id)->max('content_order');
+                            TrainingPlanDetail::create([
+                                'trainingplan_id' => $newAssesment->trainingplan_id,
+                                'content_id'      => $newAssesment->content_id,
+                                'content_order'   => (string) ($maxOrder + 1),
+                            ]);
+                        }
+                    }
+                } else {
+                    // Direct Content Assessment
+                    $newAssesment->content_for     = 'content';
+                    $newAssesment->trainingplan_id = null;
+                    $newAssesment->content_id      = isset($overrides['content_id']) && !empty($overrides['content_id'])
+                        ? (int) $overrides['content_id']
+                        : null;
+                }
+            } elseif ($assesment->type === 'trainingplan') {
+                $newAssesment->content_for     = 'content';
                 $newAssesment->content_id      = null;
                 $newAssesment->trainingplan_id = isset($overrides['trainingplan_id']) && !empty($overrides['trainingplan_id'])
                     ? (int) $overrides['trainingplan_id']
-                    : null;
-                $newAssesment->content_for     = $overrides['content_for'] ?? 'content';
+                    : (int) $assesment->trainingplan_id;
+            } else {
+                // Global Assessment
+                $newAssesment->content_for     = 'content';
+                $newAssesment->content_id      = null;
+                $newAssesment->trainingplan_id = null;
             }
 
             $newAssesment->save();

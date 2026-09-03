@@ -236,19 +236,27 @@ class AssessmentDuplicateServiceTest extends TestCase
         ]);
 
         $contentCountBefore = \App\Models\Content::count();
-        $detailCountBefore  = \App\Models\TrainingPlanDetail::count();
 
-        // Single duplicate without overrides: unassigns playlist and content
+        // Single duplicate without overrides: preserves playlist and content
         $duplicated = $this->service->duplicate($original);
 
         $this->assertNotEquals($original->id, $duplicated->id);
         $this->assertSame('content', $duplicated->type);
-        $this->assertNull($duplicated->content_id);
-        $this->assertNull($duplicated->trainingplan_id);
+        $this->assertSame('playlist', $duplicated->content_for);
+        $this->assertSame(10, (int) $duplicated->trainingplan_id);
+        $this->assertSame(45, (int) $duplicated->content_id);
 
-        // No new Content or TrainingPlanDetail is created
+        // No new Content record is created
         $this->assertSame($contentCountBefore, \App\Models\Content::count());
-        $this->assertSame($detailCountBefore, \App\Models\TrainingPlanDetail::count());
+
+        // TrainingPlanDetail is ensured for (10, 45)
+        $this->assertTrue(\App\Models\TrainingPlanDetail::where('trainingplan_id', 10)->where('content_id', 45)->exists());
+
+        // Test idempotency: duplicating again does not create duplicate pivot
+        $pivotCountBefore = \App\Models\TrainingPlanDetail::where('trainingplan_id', 10)->where('content_id', 45)->count();
+        $duplicated2 = $this->service->duplicate($original);
+        $pivotCountAfter = \App\Models\TrainingPlanDetail::where('trainingplan_id', 10)->where('content_id', 45)->count();
+        $this->assertSame($pivotCountBefore, $pivotCountAfter);
 
         // Original remains untouched
         $original->refresh();
@@ -256,6 +264,7 @@ class AssessmentDuplicateServiceTest extends TestCase
         $this->assertSame(10, (int) $original->trainingplan_id);
         $this->assertSame(45, (int) $original->content_id);
 
+        $duplicated2->delete();
         $duplicated->delete();
         $original->delete();
     }
@@ -271,7 +280,7 @@ class AssessmentDuplicateServiceTest extends TestCase
             'status'          => 'OK',
         ]);
 
-        // Explicit override without content_id specifies target playlist but leaves content unassigned
+        // Explicit override specifies target playlist and preserves content relation
         $duplicated = $this->service->duplicate($original, [
             'content_for'     => 'playlist',
             'trainingplan_id' => 20,
@@ -279,7 +288,10 @@ class AssessmentDuplicateServiceTest extends TestCase
 
         $this->assertSame('playlist', $duplicated->content_for);
         $this->assertSame(20, (int) $duplicated->trainingplan_id);
-        $this->assertNull($duplicated->content_id);
+        $this->assertSame(45, (int) $duplicated->content_id);
+
+        // TrainingPlanDetail is ensured in target playlist 20
+        $this->assertTrue(\App\Models\TrainingPlanDetail::where('trainingplan_id', 20)->where('content_id', 45)->exists());
 
         // Original remains bound to Playlist 10 and original content 45
         $original->refresh();

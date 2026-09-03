@@ -8,6 +8,9 @@ use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use Illuminate\Console\Command;
 
+use Illuminate\Support\Facades\DB;
+use Throwable;
+
 class RestoreAssessmentPlaylistRelationsCommand extends Command
 {
     /**
@@ -15,14 +18,16 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'assessment:restore-playlist-relations {--dry-run : Perform validation and audit simulation (read-only)}';
+    protected $signature = 'assessment:restore-playlist-relations
+                            {--dry-run : Perform validation and audit simulation without modifying database (read-only)}
+                            {--execute : Perform database updates for the verified 17 assessments}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Dry-run validation and audit for restoring historical assessment playlist relations';
+    protected $description = 'Restore historical assessment playlist relations (supports --dry-run and --execute)';
 
     /**
      * Explicit verified mapping for the 17 historical target items.
@@ -193,7 +198,19 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
      */
     public function handle(): int
     {
-        $this->line('ASSESSMENT PLAYLIST RELATION RECOVERY — DRY RUN');
+        $isExecute = (bool) $this->option('execute');
+        $isDryRun  = (bool) $this->option('dry-run');
+
+        // Safe default: if --execute is not specified, run in safe dry-run mode
+        if (!$isExecute) {
+            $isDryRun = true;
+        }
+
+        if ($isExecute) {
+            $this->line('ASSESSMENT PLAYLIST RELATION RECOVERY — EXECUTE MODE');
+        } else {
+            $this->line('ASSESSMENT PLAYLIST RELATION RECOVERY — DRY RUN');
+        }
         $this->newLine();
 
         $stats = [
@@ -203,6 +220,7 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
             'playlist_found'    => 0,
             'pivot_found'       => 0,
             'ready_for_update'  => 0,
+            'updated'           => 0,
             'already_correct'   => 0,
             'not_found'         => 0,
             'mismatch'          => 0,
@@ -210,13 +228,17 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
             'database_modified' => 0,
         ];
 
+        // Step 1: Pre-validation & audit of all items (Pure Read-Only SELECT)
+        $validatedItems = [];
+        $hasFatalValidationIssue = false;
+
         foreach (self::TARGET_MAPPING as $item) {
             $no       = $item['no'];
             $tpId     = $item['trainingplan_id'];
             $cId      = $item['content_id'];
             $aId      = $item['assessment_id'];
 
-            // Query models (Pure Read-Only SELECT)
+            // Query models
             $assessment = Assesment::find($aId);
             $content    = Content::find($cId);
             $tp         = TrainingPlan::find($tpId);
@@ -245,53 +267,133 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
             $currentContentFor = $assessment ? ($assessment->content_for ?? 'NULL') : 'NOT FOUND';
             $currentTpId       = $assessment ? ($assessment->trainingplan_id ?? 'NULL') : 'NOT FOUND';
 
+            // Validate status
+            $itemStatus = '';
+            $statusDescription = '';
+
+            if (!$assessmentExists || !$contentExists || !$playlistExists) {
+                $stats['not_found']++;
+                $itemStatus = 'not_found';
+                $statusDescription = 'CONFLICT / SKIPPED: Required record (Assessment, Content, or Playlist) not found';
+                $hasFatalValidationIssue = true;
+            } elseif ((int) $assessment->content_id !== (int) $cId) {
+                $stats['mismatch']++;
+                $itemStatus = 'mismatch';
+                $statusDescription = "CONFLICT / SKIPPED: Content mismatch (Assessment content_id: {$assessment->content_id} != {$cId})";
+                $hasFatalValidationIssue = true;
+            } elseif (!$pivotExists) {
+                $stats['mismatch']++;
+                $itemStatus = 'mismatch';
+                $statusDescription = 'CONFLICT / SKIPPED: TrainingPlanDetail not found in target playlist';
+                $hasFatalValidationIssue = true;
+            } elseif (!is_null($assessment->trainingplan_id) && (int) $assessment->trainingplan_id !== (int) $tpId) {
+                $stats['conflict']++;
+                $itemStatus = 'conflict';
+                $statusDescription = "CONFLICT / SKIPPED: Assessment already assigned to different Playlist ID ({$assessment->trainingplan_id})";
+                $hasFatalValidationIssue = true;
+            } elseif ((int) $assessment->trainingplan_id === (int) $tpId && $assessment->content_for === 'playlist') {
+                $stats['already_correct']++;
+                $itemStatus = 'already_correct';
+                $statusDescription = 'ALREADY UP TO DATE';
+            } else {
+                $stats['ready_for_update']++;
+                $itemStatus = 'ready_for_update';
+                $statusDescription = $isExecute ? 'SUCCESSFULLY RESTORED' : 'READY FOR UPDATE';
+            }
+
+            $validatedItems[] = [
+                'no'                  => $no,
+                'aId'                 => $aId,
+                'cId'                 => $cId,
+                'tpId'                => $tpId,
+                'assessment'          => $assessment,
+                'content'             => $content,
+                'tp'                  => $tp,
+                'current_content_for' => $currentContentFor,
+                'current_tp_id'       => $currentTpId,
+                'pivot_exists'        => $pivotExists,
+                'status'              => $itemStatus,
+                'status_description'  => $statusDescription,
+                'mapping'             => $item,
+            ];
+        }
+
+        // Step 2: Display item results
+        foreach ($validatedItems as $v) {
             $this->line('--------------------------------------------------');
-            $this->line("#{$no}");
-            $this->line("Assessment ID : {$aId}");
-            $this->line("Assessment   : " . ($assessment ? $assessment->title : 'NOT FOUND'));
-            $this->line("Content ID   : {$cId}");
-            $this->line("Content      : " . ($content ? $content->title : $item['content_title']));
+            $this->line("#{$v['no']}");
+            $this->line("Assessment ID : {$v['aId']}");
+            $this->line("Assessment   : " . ($v['assessment'] ? $v['assessment']->title : 'NOT FOUND'));
+            $this->line("Content ID   : {$v['cId']}");
+            $this->line("Content      : " . ($v['content'] ? $v['content']->title : $v['mapping']['content_title']));
             $this->newLine();
             $this->line('Current:');
-            $this->line("content_for     = {$currentContentFor}");
-            $this->line("trainingplan_id = {$currentTpId}");
+            $this->line("content_for     = {$v['current_content_for']}");
+            $this->line("trainingplan_id = {$v['current_tp_id']}");
             $this->newLine();
             $this->line('Target:');
             $this->line('content_for     = playlist');
-            $this->line("trainingplan_id = {$tpId}");
+            $this->line("trainingplan_id = {$v['tpId']}");
             $this->newLine();
             $this->line('TrainingPlanDetail:');
-            $this->line($pivotExists ? 'FOUND' : 'NOT FOUND');
+            $this->line($v['pivot_exists'] ? 'FOUND' : 'NOT FOUND');
             $this->newLine();
-
-            // Result determination
-            $result = '';
-            if (!$assessmentExists || !$contentExists || !$playlistExists) {
-                $stats['not_found']++;
-                $result = 'CONFLICT / SKIPPED: Required record (Assessment, Content, or Playlist) not found';
-            } elseif ((int) $assessment->content_id !== (int) $cId) {
-                $stats['mismatch']++;
-                $result = "CONFLICT / SKIPPED: Content mismatch (Assessment content_id: {$assessment->content_id} != {$cId})";
-            } elseif (!$pivotExists) {
-                $stats['mismatch']++;
-                $result = 'CONFLICT / SKIPPED: TrainingPlanDetail not found in target playlist';
-            } elseif (!is_null($assessment->trainingplan_id) && (int) $assessment->trainingplan_id !== (int) $tpId) {
-                $stats['conflict']++;
-                $result = "CONFLICT / SKIPPED: Assessment already assigned to different Playlist ID ({$assessment->trainingplan_id})";
-            } elseif ((int) $assessment->trainingplan_id === (int) $tpId && $assessment->content_for === 'playlist') {
-                $stats['already_correct']++;
-                $result = 'ALREADY UP TO DATE';
-            } else {
-                $stats['ready_for_update']++;
-                $result = 'READY FOR UPDATE';
-            }
-
             $this->line('Result:');
-            $this->line($result);
+            $this->line($v['status_description']);
             $this->line('--------------------------------------------------');
             $this->newLine();
         }
 
+        // Step 3: If in Execute mode, perform updates wrapped in a single DB transaction
+        if ($isExecute) {
+            if ($hasFatalValidationIssue) {
+                $this->error('Execution aborted: One or more validation checks failed (Not Found, Mismatch, or Conflict). No records were modified.');
+                $this->printSummary($stats, $isExecute);
+                return self::FAILURE;
+            }
+
+            try {
+                DB::transaction(function () use (&$validatedItems, &$stats) {
+                    foreach ($validatedItems as &$valItem) {
+                        if ($valItem['status'] === 'ready_for_update') {
+                            $assessment = Assesment::lockForUpdate()->find($valItem['aId']);
+
+                            // Re-verify inside transaction lock
+                            if (!$assessment || (int) $assessment->content_id !== (int) $valItem['cId']) {
+                                throw new \RuntimeException("Validation failed inside transaction for Assessment ID {$valItem['aId']}: Content mismatch or record missing.");
+                            }
+                            if (!is_null($assessment->trainingplan_id) && (int) $assessment->trainingplan_id !== (int) $valItem['tpId']) {
+                                throw new \RuntimeException("Validation failed inside transaction for Assessment ID {$valItem['aId']}: Conflict with different Playlist ID ({$assessment->trainingplan_id}).");
+                            }
+
+                            // Perform update
+                            $assessment->trainingplan_id = (int) $valItem['tpId'];
+                            $assessment->content_for     = 'playlist';
+                            $assessment->save();
+
+                            $stats['updated']++;
+                            $stats['database_modified']++;
+                        }
+                    }
+                });
+            } catch (Throwable $e) {
+                $this->error("Database transaction failed and was rolled back: {$e->getMessage()}");
+                $this->printSummary($stats, $isExecute);
+                return self::FAILURE;
+            }
+        }
+
+        // Step 4: Display summary
+        $this->printSummary($stats, $isExecute);
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Print the execution or simulation summary.
+     */
+    protected function printSummary(array $stats, bool $isExecute): void
+    {
         $this->line('==================================================');
         $this->line('SUMMARY');
         $this->line('==================================================');
@@ -301,7 +403,11 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
         $this->line("Playlist Found     : {$stats['playlist_found']}");
         $this->line("Pivot Found        : {$stats['pivot_found']}");
         $this->newLine();
-        $this->line("Ready for Update   : {$stats['ready_for_update']}");
+        if ($isExecute) {
+            $this->line("Updated            : {$stats['updated']}");
+        } else {
+            $this->line("Ready for Update   : {$stats['ready_for_update']}");
+        }
         $this->line("Already Correct    : {$stats['already_correct']}");
         $this->line("Not Found          : {$stats['not_found']}");
         $this->line("Mismatch           : {$stats['mismatch']}");
@@ -309,7 +415,5 @@ class RestoreAssessmentPlaylistRelationsCommand extends Command
         $this->newLine();
         $this->line("Database Modified  : {$stats['database_modified']}");
         $this->line('==================================================');
-
-        return self::SUCCESS;
     }
 }

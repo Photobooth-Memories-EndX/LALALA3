@@ -80,4 +80,71 @@ class RestoreAssessmentPlaylistRelationsCommandTest extends TestCase
             ->expectsOutputToContain('Ready for Update   : 16')
             ->assertSuccessful();
     }
+
+    /**
+     * Test that --execute successfully updates all 17 assessments with content_for = 'playlist'
+     * and the correct trainingplan_id within a database transaction.
+     */
+    public function test_execute_restores_verified_assessments_within_database_transaction(): void
+    {
+        $targetMapping = \App\Console\Commands\RestoreAssessmentPlaylistRelationsCommand::TARGET_MAPPING;
+
+        $this->artisan('assessment:restore-playlist-relations', ['--execute' => true])
+            ->expectsOutputToContain('ASSESSMENT PLAYLIST RELATION RECOVERY — EXECUTE MODE')
+            ->expectsOutputToContain('Updated            : 17')
+            ->expectsOutputToContain('Already Correct    : 0')
+            ->expectsOutputToContain('Conflict           : 0')
+            ->expectsOutputToContain('Database Modified  : 17')
+            ->assertSuccessful();
+
+        // Verify all 17 assessments in the database
+        foreach ($targetMapping as $item) {
+            $assessment = Assesment::find($item['assessment_id']);
+            $this->assertNotNull($assessment);
+            $this->assertSame('playlist', $assessment->content_for, "Assessment ID {$item['assessment_id']} content_for was not updated to playlist");
+            $this->assertSame((int) $item['trainingplan_id'], (int) $assessment->trainingplan_id, "Assessment ID {$item['assessment_id']} trainingplan_id mismatch");
+            $this->assertSame((int) $item['content_id'], (int) $assessment->content_id, "Assessment ID {$item['assessment_id']} content_id was modified unexpectedly");
+        }
+    }
+
+    /**
+     * Test that --execute is idempotent: running it a second time makes zero changes
+     * and reports all 17 as ALREADY UP TO DATE.
+     */
+    public function test_execute_is_idempotent(): void
+    {
+        // First execution: updates 17
+        $this->artisan('assessment:restore-playlist-relations', ['--execute' => true])
+            ->expectsOutputToContain('Updated            : 17')
+            ->assertSuccessful();
+
+        // Second execution: must detect all 17 already correct, 0 modifications
+        $this->artisan('assessment:restore-playlist-relations', ['--execute' => true])
+            ->expectsOutputToContain('ASSESSMENT PLAYLIST RELATION RECOVERY — EXECUTE MODE')
+            ->expectsOutputToContain('Updated            : 0')
+            ->expectsOutputToContain('Already Correct    : 17')
+            ->expectsOutputToContain('Database Modified  : 0')
+            ->expectsOutputToContain('ALREADY UP TO DATE')
+            ->assertSuccessful();
+    }
+
+    /**
+     * Test that any validation failure aborts execution and makes zero changes (rollback).
+     */
+    public function test_execute_aborts_and_rolls_back_when_validation_fails(): void
+    {
+        // Induce a content mismatch on item 326 using another existing content id (123 instead of 280)
+        Assesment::where('id', 326)->update(['content_id' => 123]);
+
+        // Attempt execute
+        $this->artisan('assessment:restore-playlist-relations', ['--execute' => true])
+            ->expectsOutputToContain('CONFLICT / SKIPPED: Content mismatch')
+            ->expectsOutputToContain('Execution aborted')
+            ->assertFailed();
+
+        // Verify other valid assessments (e.g. ID 325) were NOT updated
+        $assessment325 = Assesment::find(325);
+        $this->assertSame('content', $assessment325->content_for);
+        $this->assertNull($assessment325->trainingplan_id);
+    }
 }
