@@ -109,9 +109,20 @@ class QuestionBankController extends Controller
         }
 
         $totalQuestionBank = QuestionBank::count();
+        $totalQuestions = \App\Models\Question::count();
+        $avgQuestions = $totalQuestionBank > 0 ? round($totalQuestions / $totalQuestionBank, 1) : 0;
+        $activeQuestionBank = $totalQuestionBank; // Question banks are active once created
         $questionBanks = $query->paginate(15)->withQueryString();
+        $showingCount = $questionBanks->total();
 
-        return view('main.question_bank.index', compact('questionBanks', 'totalQuestionBank'));
+        return view('main.question_bank.index', compact(
+            'questionBanks',
+            'totalQuestionBank',
+            'totalQuestions',
+            'avgQuestions',
+            'activeQuestionBank',
+            'showingCount'
+        ));
     }
 
     public function create() 

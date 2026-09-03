@@ -4,41 +4,42 @@
     @include('main.monitoring.components.style')
 
     {{-- Page Header --}}
-    <div class="page-header d-print-none">
+    <div class="page-header d-print-none mb-3">
         <div class="container-xl">
-            <!-- TOMBOL BACK KE DASHBOARD MANAGE -->
+            <!-- Back Navigation Link -->
             <div class="mb-3">
-                <a href="{{ route('manage.index') }}" class="btn-back mb-3 d-inline-flex align-items-center gap-1 text-decoration-none">
-                    <i class="ti ti-arrow-left"></i>
-                    <span>Back</span>
+                <a href="{{ url('/manage') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1">
+                    <i class="ti ti-arrow-left fs-3"></i><span>Back</span>
                 </a>
             </div>
 
-            <div class="row align-items-center">
-                <div class="col">
+            <!-- Content Management Hero Header Box -->
+            <div class="card border-0 shadow-sm p-4 mb-4 rounded-3 bg-white">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="avatar avatar-lg bg-primary-lt">
-                            <i class="ti ti-books fs-2"></i>
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
+                             style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
+                            <i class="ti ti-books" style="font-size: 2rem !important;"></i>
                         </div>
                         <div>
-                            <h2 class="page-title mb-1">Content Management</h2>
-                            <div class="text-secondary">Manage learning materials, videos, documents, assessments, and playlist content.</div>
+                            <h2 class="h3 fw-bold mb-1 text-dark">Content Management</h2>
+                            <p class="text-muted small mb-0">Manage learning materials, videos, documents, assessments, and playlist content.</p>
                         </div>
                     </div>
-                </div>
-                <div class="col-auto d-flex gap-2">
-                    <form action="{{ route('learning-hours.sync') }}" method="POST" class="d-inline">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-primary" onclick="return confirm('Synchronize all Learning Hours?')">
-                            <i class="ti ti-refresh me-1"></i>Sync Learning Hours
+                    <div class="flex-shrink-0 d-flex align-items-center gap-2">
+                        <form action="{{ route('learning-hours.sync') }}" method="POST" class="d-inline mb-0">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-primary px-3 py-2 fw-semibold" onclick="return confirm('Synchronize all Learning Hours?')">
+                                <i class="ti ti-refresh me-1"></i>Sync Learning Hours
+                            </button>
+                        </form>
+                        <button type="button" id="btnSyncPdfTotalPage" class="btn btn-outline-primary px-3 py-2 fw-semibold">
+                            <i class="ti ti-file-description me-1"></i>Sync Total Page PDF
                         </button>
-                    </form>
-                    <button type="button" id="btnSyncPdfTotalPage" class="btn btn-outline-primary">
-                        <i class="ti ti-file-description me-1"></i>Sync Total Page PDF
-                    </button>
-                    <a href="{{ route('content.create') }}" class="btn btn-primary">
-                        <i class="ti ti-plus me-1"></i>Add Content
-                    </a>
+                        <a href="{{ route('content.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
+                            <i class="ti ti-plus fs-2"></i><span>Add Content</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -63,141 +64,71 @@
             @endif
 
             {{-- Stat Cards --}}
-<div class="row row-cards mb-4">
-
-    {{-- Total Content --}}
-    <div class="col-12 col-md-6 col-xl-4">
-        <div class="card admin-gallery-stat h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-secondary text-uppercase fw-bold small mb-2">
-                            Total Content
-                        </div>
-                        <div class="display-6 fw-bold">
-                            {{ number_format($totalContent) }}
-                        </div>
-                    </div>
-
-                    <span class="avatar avatar-lg bg-primary-lt">
-                        <i class="ti ti-books fs-2"></i>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Active --}}
-    <div class="col-12 col-md-6 col-xl-4">
-        <div class="card admin-gallery-stat h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-secondary text-uppercase fw-bold small mb-2">
-                            Active
-                        </div>
-                        <div class="display-6 fw-bold text-success">
-                            {{ number_format($activeContent) }}
+            <div class="row g-3 mb-4">
+                <!-- Card 1: Total Content -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
+                                <i class="ti ti-books fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Content</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($totalContent ?? 0) }}</div>
+                            </div>
                         </div>
                     </div>
-
-                    <span class="avatar avatar-lg bg-success-lt">
-                        <i class="ti ti-circle-check fs-2"></i>
-                    </span>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    {{-- Inactive --}}
-    <div class="col-12 col-md-6 col-xl-4">
-        <div class="card admin-gallery-stat h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-secondary text-uppercase fw-bold small mb-2">
-                            Inactive
-                        </div>
-                        <div class="display-6 fw-bold text-warning">
-                            {{ number_format($inactiveContent) }}
+                <!-- Card 2: Active -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
+                                <i class="ti ti-check fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Active</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($activeContent ?? 0) }}</div>
+                            </div>
                         </div>
                     </div>
-
-                    <span class="avatar avatar-lg bg-warning-lt">
-                        <i class="ti ti-circle-x fs-2"></i>
-                    </span>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    {{-- Playlist Only --}}
-    <div class="col-12 col-md-6 col-xl-4">
-        <div class="card admin-gallery-stat h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-secondary text-uppercase fw-bold small mb-2">
-                            Playlist
-                        </div>
-                        <div class="display-6 fw-bold text-purple">
-                            {{ number_format($playlistOnly) }}
+                <!-- Card 3: Inactive -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #e63946; color: #ffffff;">
+                                <i class="ti ti-x fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Inactive</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($inactiveContent ?? 0) }}</div>
+                            </div>
                         </div>
                     </div>
-
-                    <span class="avatar avatar-lg bg-purple-lt">
-                        <i class="ti ti-playlist fs-2"></i>
-                    </span>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    {{-- With Deadline --}}
-    <div class="col-12 col-md-6 col-xl-4">
-        <div class="card admin-gallery-stat h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-secondary text-uppercase fw-bold small mb-2">
-                            With Deadline
-                        </div>
-                        <div class="display-6 fw-bold text-info">
-                            {{ number_format($withDeadline) }}
+                <!-- Card 4: Playlist Only -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #0284c7; color: #ffffff;">
+                                <i class="ti ti-playlist fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Playlist Content</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($playlistOnly ?? 0) }}</div>
+                            </div>
                         </div>
                     </div>
-
-                    <span class="avatar avatar-lg bg-info-lt">
-                        <i class="ti ti-clock fs-2"></i>
-                    </span>
                 </div>
             </div>
-        </div>
-    </div>
-
-    {{-- Total Views --}}
-    <div class="col-12 col-md-6 col-xl-4">
-        <div class="card admin-gallery-stat h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="text-secondary text-uppercase fw-bold small mb-2">
-                            Total Views
-                        </div>
-                        <div class="display-6 fw-bold text-azure">
-                            {{ number_format($totalViews) }}
-                        </div>
-                    </div>
-
-                    <span class="avatar avatar-lg bg-azure-lt">
-                        <i class="ti ti-eye fs-2"></i>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
 
             {{-- Quick Filter Card --}}
             <div class="card border-0 shadow-sm rounded-4 mb-4">

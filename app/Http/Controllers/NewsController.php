@@ -184,6 +184,8 @@ class NewsController extends Controller
         */
         $totalNews = News::count();
         $totalAuthor = News::distinct('user_id')->count();
+        $totalAuthors = $totalAuthor;
+        $thisMonthCount = News::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
 
         $authors = User::whereHas('news')
             ->orderBy('name')
@@ -213,7 +215,9 @@ class NewsController extends Controller
                 'categories',
                 'show',
                 'totalNews',
-                'totalAuthor'
+                'totalAuthor',
+                'totalAuthors',
+                'thisMonthCount'
             )
         );
     }

@@ -13,50 +13,66 @@
 
         @include('main.learning.components.learning-header', ['variant' => 'dashboard'])
 
-        <div class="row row-deck g-3 mb-4">
-            <div class="col-md-6 col-xl-3">
-                <div class="card stat-card stat-card-total border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="text-uppercase small text-muted fw-semibold">Total Learning</div>
-                        <div class="d-flex align-items-end justify-content-between mt-3">
-                            <div class="display-6 mb-0">{{ number_format($totalLearning) }}</div>
-                            <i class="ti ti-stack-2 fs-1 text-primary opacity-50"></i>
+        <div class="row g-3 mb-4">
+            <!-- Card 1: Total Learning -->
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
+                            <i class="ti ti-stack-2 fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Learning</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($totalLearning ?? 0) }}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6 col-xl-3">
-                <div class="card stat-card stat-card-ongoing border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="text-uppercase small text-muted fw-semibold">Ongoing</div>
-                        <div class="d-flex align-items-end justify-content-between mt-3">
-                            <div class="display-6 mb-0">{{ number_format($ongoing) }}</div>
-                            <i class="ti ti-progress fs-1 text-warning opacity-50"></i>
+            <!-- Card 2: Ongoing -->
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #f59e0b; color: #ffffff;">
+                            <i class="ti ti-progress fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Ongoing</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($ongoing ?? 0) }}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6 col-xl-3">
-                <div class="card stat-card stat-card-finished border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="text-uppercase small text-muted fw-semibold">Finished</div>
-                        <div class="d-flex align-items-end justify-content-between mt-3">
-                            <div class="display-6 mb-0">{{ number_format($finish) }}</div>
-                            <i class="ti ti-circle-check fs-1 text-success opacity-50"></i>
+            <!-- Card 3: Finished -->
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
+                            <i class="ti ti-circle-check fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Finished</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($finish ?? 0) }}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6 col-xl-3">
-                <div class="card stat-card stat-card-rate border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="text-uppercase small text-muted fw-semibold">Completion Rate</div>
-                        <div class="d-flex align-items-end justify-content-between mt-3">
-                            <div class="display-6 mb-0">{{ number_format($completionRate, 1) }}%</div>
-                            <i class="ti ti-chart-pie-2 fs-1 text-danger opacity-50"></i>
+            <!-- Card 4: Completion Rate -->
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #0284c7; color: #ffffff;">
+                            <i class="ti ti-chart-pie-2 fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Completion Rate</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($completionRate ?? 0, 1) }}%</div>
                         </div>
                     </div>
                 </div>

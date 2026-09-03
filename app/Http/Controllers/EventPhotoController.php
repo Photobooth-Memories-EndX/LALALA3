@@ -211,6 +211,8 @@ class EventPhotoController extends Controller
             ];
         });
 
+        $draftCount = $draftEvent;
+
         return view(
             'main.gallery.index',
             compact(
@@ -219,6 +221,7 @@ class EventPhotoController extends Controller
                 'totalEvent',
                 'activeEvent',
                 'draftEvent',
+                'draftCount',
                 'totalPhotos',
                 'uploaders',
                 'categories'

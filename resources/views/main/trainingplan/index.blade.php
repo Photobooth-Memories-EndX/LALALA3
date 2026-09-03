@@ -4,37 +4,41 @@
     @include('main.monitoring.components.style')
 
     {{-- Page Header --}}
-    <div class="page-header d-print-none">
+    <div class="page-header d-print-none mb-3">
         <div class="container-xl">
-            <!-- TOMBOL BACK KE DASHBOARD MANAGE -->
+            <!-- Back Navigation Link -->
             <div class="mb-3">
-                <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
-                    <i class="ti ti-arrow-left me-1 fs-5"></i> Back
+                <a href="{{ url('/manage') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1">
+                    <i class="ti ti-arrow-left fs-3"></i>
+                    <span>Back</span>
                 </a>
             </div>
 
-            <div class="row align-items-center">
-                <div class="col">
+            <!-- Playlist Management Hero Header Box (Matching Content Management) -->
+            <div class="card border-0 shadow-sm p-4 mb-4 rounded-3 bg-white">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                    <!-- Left Group: Large Icon Box + Title & Description -->
                     <div class="d-flex align-items-center gap-3">
-                        <div class="avatar avatar-lg bg-primary-lt">
-                            <i class="ti ti-playlist fs-2"></i>
+                        <!-- Playlist Icon Box (Equal size to Content: 72px x 72px) -->
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
+                             style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
+                            <i class="ti ti-playlist fs-1" style="font-size: 2rem !important;"></i>
                         </div>
+
+                        <!-- Title & Subtitle -->
                         <div>
-                            <h2 class="page-title mb-1">Playlist Management</h2>
-                            <div class="text-secondary">Manage learning playlists, content order, thumbnails, and training deadlines.</div>
+                            <h2 class="h3 fw-bold mb-1 text-dark">Playlist Management</h2>
+                            <p class="text-muted small mb-0">Manage learning playlists, content order, thumbnails, and training deadlines.</p>
                         </div>
                     </div>
-                </div>
-                <div class="col-auto d-flex gap-2">
-                    <form action="{{ route('learning-hours.sync') }}" method="POST" class="d-inline">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-primary" onclick="return confirm('Synchronize all Learning Hours?')">
-                            <i class="ti ti-refresh me-1"></i>Synchronize
-                        </button>
-                    </form>
-                    <a href="{{ route('playlist.create') }}" class="btn btn-primary">
-                        <i class="ti ti-plus me-1"></i>Add Playlist
-                    </a>
+
+                    <!-- Right Group: Action Button -->
+                    <div class="flex-shrink-0">
+                        <a href="{{ route('manage.playlist.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
+                            <i class="ti ti-plus fs-2"></i>
+                            <span>Add Playlist</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -68,93 +72,66 @@
             @endif
 
             {{-- Stat Cards --}}
-            <div class="row row-cards mb-4">
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Total Playlist</div>
-                                    <div class="display-6 fw-bold">{{ number_format($totalTrainingPlan) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-primary-lt">
-                                    <i class="ti ti-playlist fs-2"></i>
-                                </span>
+            <div class="row g-3 mb-4">
+                <!-- Card 1: Total Playlist -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
+                                <i class="ti ti-playlist fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Playlist</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($totalTrainingPlan ?? 0) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Active</div>
-                                    <div class="display-6 fw-bold text-success">{{ number_format($activeTrainingPlan) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-success-lt">
-                                    <i class="ti ti-circle-check fs-2"></i>
-                                </span>
+
+                <!-- Card 2: Active -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
+                                <i class="ti ti-check fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Active</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($activeTrainingPlan ?? 0) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Inactive</div>
-                                    <div class="display-6 fw-bold text-warning">{{ number_format($inactiveTrainingPlan) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-warning-lt">
-                                    <i class="ti ti-circle-x fs-2"></i>
-                                </span>
+
+                <!-- Card 3: Inactive -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #e63946; color: #ffffff;">
+                                <i class="ti ti-x fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Inactive</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($inactiveTrainingPlan ?? 0) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">With Deadline</div>
-                                    <div class="display-6 fw-bold text-info">{{ number_format($withDeadline) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-info-lt">
-                                    <i class="ti ti-clock fs-2"></i>
-                                </span>
+
+                <!-- Card 4: Total Materials -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #0284c7; color: #ffffff;">
+                                <i class="ti ti-books fs-2"></i>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Expired Deadline</div>
-                                    <div class="display-6 fw-bold text-danger">{{ number_format($expiredDeadline) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-danger-lt">
-                                    <i class="ti ti-calendar-x fs-2"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Total Materials</div>
-                                    <div class="display-6 fw-bold text-azure">{{ number_format($totalMaterials) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-azure-lt">
-                                    <i class="ti ti-books fs-2"></i>
-                                </span>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Materials</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($totalMaterials ?? 0) }}</div>
                             </div>
                         </div>
                     </div>

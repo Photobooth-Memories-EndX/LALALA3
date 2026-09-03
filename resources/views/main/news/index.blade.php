@@ -167,31 +167,33 @@ body.theme-dark #manage-news-search-results .dropdown-item .text-dark {
 
 @section('content')
 
-<div class="page-header d-print-none">
+<div class="page-header d-print-none mb-3">
     <div class="container-xl">
-        <!-- TOMBOL BACK KE DASHBOARD MANAGE -->
+        <!-- Back Navigation Link -->
         <div class="mb-3">
-            <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
-                <i class="ti ti-arrow-left me-1 fs-5"></i> Back
+            <a href="{{ url('/manage') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1">
+                <i class="ti ti-arrow-left fs-3"></i><span>Back</span>
             </a>
         </div>
 
-        <div class="row align-items-center">
-            <div class="col">
+        <!-- News Management Hero Header Box -->
+        <div class="card border-0 shadow-sm p-4 mb-4 rounded-3 bg-white">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="avatar avatar-lg bg-blue-lt">
-                        <i class="ti ti-news fs-2"></i>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
+                         style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
+                        <i class="ti ti-news" style="font-size: 2rem !important;"></i>
                     </div>
                     <div>
-                        <h2 class="page-title mb-1">News Management</h2>
-                        <div class="text-secondary">Manage company learning news and announcements</div>
+                        <h2 class="h3 fw-bold mb-1 text-dark">News Management</h2>
+                        <p class="text-muted small mb-0">Manage company learning news, articles, and announcements.</p>
                     </div>
                 </div>
-            </div>
-            <div class="col-auto">
-                <a href="{{ route('news.create') }}" class="btn btn-primary">
-                    <i class="ti ti-plus me-1"></i>Add News
-                </a>
+                <div class="flex-shrink-0">
+                    <a href="{{ route('news.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
+                        <i class="ti ti-plus fs-2"></i><span>Add News</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -203,58 +205,51 @@ body.theme-dark #manage-news-search-results .dropdown-item .text-dark {
         <x-alert type="success" />
         <x-alert type="warning" />
 
-        {{-- Statistics --}}
-        <div class="row row-cards mb-4">
-            <div class="col-sm-6 col-xl-3">
-                <div class="card admin-news-stat">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-fill">
-                                <div class="text-secondary text-uppercase fw-bold small mb-1">Total News</div>
-                                <div class="display-6 fw-bold">{{ $totalNews ?? 0 }}</div>
-                            </div>
-                            <span class="avatar bg-blue-lt ms-3"><i class="ti ti-news"></i></span>
+        <!-- News Management 3-Column Stats Cards Grid -->
+        <div class="row g-3 mb-4">
+            <!-- Card 1: Total News -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #003b6d; color: #ffffff;">
+                            <i class="ti ti-news fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total News</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ $totalNews ?? 0 }}</div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card admin-news-stat">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-fill">
-                                <div class="text-secondary text-uppercase fw-bold small mb-1">Total Authors</div>
-                                <div class="display-6 fw-bold text-purple">{{ $totalAuthor ?? 0 }}</div>
-                            </div>
-                            <span class="avatar bg-purple-lt ms-3"><i class="ti ti-users"></i></span>
+
+            <!-- Card 2: Total Authors -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
+                            <i class="ti ti-users fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Authors</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ $totalAuthors ?? ($totalAuthor ?? 0) }}</div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card admin-news-stat">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-fill">
-                                <div class="text-secondary text-uppercase fw-bold small mb-1">This Month</div>
-                                <div class="display-6 fw-bold text-success">
-                                    {{ isset($totalNews) ? \App\Models\News::whereMonth('created_at', now()->month)->count() : 0 }}
-                                </div>
-                            </div>
-                            <span class="avatar bg-success-lt ms-3"><i class="ti ti-calendar-stats"></i></span>
+
+            <!-- Card 3: This Month -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #e63946; color: #ffffff;">
+                            <i class="ti ti-calendar-event fs-2"></i>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card admin-news-stat">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-fill">
-                                <div class="text-secondary text-uppercase fw-bold small mb-1">Showing</div>
-                                <div class="display-6 fw-bold text-info">{{ $news->count() }}</div>
-                            </div>
-                            <span class="avatar bg-info-lt ms-3"><i class="ti ti-list"></i></span>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">This Month</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ $thisMonthCount ?? (isset($totalNews) ? \App\Models\News::whereMonth('created_at', now()->month)->count() : 0) }}</div>
                         </div>
                     </div>
                 </div>

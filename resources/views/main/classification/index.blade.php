@@ -4,33 +4,37 @@
 
 <div class="page-header d-print-none mb-3">
     <div class="container-xl">
-        <!-- Back Button to Manage Dashboard -->
+        <!-- Back Navigation Link -->
         <div class="mb-3">
-            <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none">
-                <i class="ti ti-arrow-left"></i>
-                <span>Back</span>
+            <a href="{{ url('/manage') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1">
+                <i class="ti ti-arrow-left fs-3"></i><span>Back</span>
             </a>
         </div>
 
-        <div class="row g-2 align-items-center">
-            <div class="col">
+        <!-- Category Management Hero Header Box -->
+        <div class="card border-0 shadow-sm p-4 mb-4 rounded-3 bg-white">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <!-- Left Group: Icon Box + Title & Subtitle -->
                 <div class="d-flex align-items-center gap-3">
-                    <div class="avatar avatar-lg bg-primary-lt">
-                        <i class="ti ti-category fs-2"></i>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
+                         style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
+                        <i class="ti ti-category-2" style="font-size: 2rem !important;"></i>
                     </div>
+
+                    <!-- Title & Subtitle -->
                     <div>
-                        <h2 class="page-title mb-1">
-                            Manage Category
-                        </h2>
-                        <div class="text-secondary">Manage OWL LMS learning categories for content organization, classification, and reporting.</div>
+                        <h2 class="h3 fw-bold mb-1 text-dark">Category Management</h2>
+                        <p class="text-muted small mb-0">Manage OWL LMS learning categories for content organization, classification, and reporting.</p>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-auto ms-auto d-print-none">
-                <a href="{{ route('manage.classification.create') }}" class="btn btn-primary">
-                    <i class="ti ti-plus me-1"></i> Add Category
-                </a>
+                <!-- Right Group: Primary Action Button -->
+                <div class="flex-shrink-0">
+                    <a href="{{ route('manage.classification.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" 
+                       style="background-color: #003b6d; border-color: #003b6d;">
+                        <i class="ti ti-plus fs-2"></i><span>Add Category</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -42,42 +46,13 @@
         <x-alert type="success" />
         <x-alert type="warning" />
 
-        {{-- HERO WITH TOTAL CATEGORIES STAT INSIDE --}}
-        <div class="card category-hero border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
-            <div class="card-body p-4">
-                <div class="row align-items-center g-3">
-                    <div class="col-lg-8">
-                        <div class="text-muted text-uppercase small fw-semibold mb-1">
-                            Learning Management
-                        </div>
-
-                        <h1 class="mb-2">
-                            Category Management
-                        </h1>
-
-                        <div class="text-muted">
-                            Manage OWL LMS learning categories for content organization, classification, and reporting.
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4 text-lg-end">
-                        <div class="d-inline-flex align-items-center gap-3 bg-white bg-opacity-75 p-3 rounded-4 border shadow-sm text-start">
-                            <span class="avatar avatar-md bg-primary-lt text-primary rounded-circle">
-                                <i class="ti ti-category fs-2"></i>
-                            </span>
-                            <div>
-                                <div class="text-muted small fw-semibold text-uppercase">Total Categories</div>
-                                <div class="h2 mb-0 fw-bold">{{ count($classification) }} <span class="fs-4 text-muted fw-normal">Categories</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- SEARCH & ENTRIES TOOLBAR --}}
+        {{-- SEARCH & ENTRIES TOOLBAR (Quick Filter) --}}
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-body p-3">
+                <!-- Label Header Quick Filter -->
+                <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
+                    Quick Filter
+                </div>
                 <form action="{{ route('manage.classification.index') }}" method="GET" id="manageCategoryFilterForm">
                     <div class="d-flex align-items-center gap-2">
                         <!-- Relocated Entries Dropdown -->

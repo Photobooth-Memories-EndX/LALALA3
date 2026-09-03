@@ -75,8 +75,17 @@ class ClassificationController extends Controller
 
         $classification = $query->latest('id')->get();
         $totalCategories = Classification::count();
+        $activeCategories = $totalCategories; // All created categories are active
+        $totalAssignedContent = \App\Models\Content::whereNotNull('classification_id')->count();
+        $avgContent = $totalCategories > 0 ? round($totalAssignedContent / $totalCategories, 1) : 0;
 
-        return view('main.classification.index', compact('classification', 'totalCategories'));
+        return view('main.classification.index', compact(
+            'classification',
+            'totalCategories',
+            'activeCategories',
+            'totalAssignedContent',
+            'avgContent'
+        ));
     }
 
     /**

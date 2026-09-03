@@ -109,37 +109,31 @@
 @section('content')
     <div class="page-header d-print-none mb-3">
         <div class="container-xl">
-            <!-- TOMBOL BACK RATA KIRI ATAS KE DASHBOARD MANAGE -->
+            <!-- Back Navigation Link -->
             <div class="mb-3">
-                <a href="{{ route('manage.index') }}" class="btn-back mb-3 d-inline-flex align-items-center gap-1 text-decoration-none">
-                    <i class="ti ti-arrow-left"></i>
-                    <span>Back</span>
+                <a href="{{ url('/manage') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1">
+                    <i class="ti ti-arrow-left fs-3"></i><span>Back</span>
                 </a>
             </div>
 
-            <div class="row g-2 align-items-center">
-                <div class="col">
+            <!-- Question Bank Management Hero Header Box -->
+            <div class="card border-0 shadow-sm p-4 mb-4 rounded-3 bg-white">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="avatar avatar-lg bg-primary-lt">
-                            <i class="ti ti-help fs-2"></i>
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
+                             style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
+                            <i class="ti ti-help" style="font-size: 2rem !important;"></i>
                         </div>
                         <div>
-                            <h2 class="page-title mb-1">
-                                Manage Question Bank
-                            </h2>
-                            <div class="text-secondary">Manage assessment question repositories, questions, and templates.</div>
+                            <h2 class="h3 fw-bold mb-1 text-dark">Question Bank Management</h2>
+                            <p class="text-muted small mb-0">Manage assessment question repositories, questions, and templates.</p>
                         </div>
                     </div>
-                </div>
-                <div class="col-auto">
-                    <a href="{{ route('question.bank.create') }}" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                            <path d="M12 5l0 14"></path>
-                            <path d="M5 12l14 0"></path>
-                        </svg>
-                        Add Question Bank
-                    </a>
+                    <div class="flex-shrink-0">
+                        <a href="{{ route('question.bank.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
+                            <i class="ti ti-plus fs-2"></i><span>Add Question Bank</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,6 +145,41 @@
             <x-alert type='success' />
             <x-alert type='warning' />
             <x-alert type='danger' />
+
+            <!-- Question Bank 2-Column Stats Cards Grid -->
+            <div class="row g-3 mb-4">
+                <!-- Card 1: Total Question Bank -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #003b6d; color: #ffffff;">
+                                <i class="ti ti-help-circle fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Question Bank</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ $totalQuestionBank ?? count($questionBanks ?? []) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Total Questions -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #e63946; color: #ffffff;">
+                                <i class="ti ti-file-text fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Questions</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ $totalQuestions ?? 0 }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {{-- Quick Filter Component --}}
             <div class="card border-0 shadow-sm rounded-4 mb-4">
