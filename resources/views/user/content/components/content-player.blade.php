@@ -68,6 +68,8 @@
                         'pageDuration' => $pageDurationVal,
                         'isScrollMode' => $isScrollMode,
                         'showPagination' => !$isScrollMode,
+                        'totalPages' => (int) ($content->total_page ?? 0),
+                        'currentPage' => (int) ($content_user->last_page ?? 1),
                     ])
 
                     {{-- PDF VIEWER --}}

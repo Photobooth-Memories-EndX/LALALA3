@@ -67,6 +67,8 @@
                             'pageDuration' => $playlistPageDurationVal,
                             'isScrollMode' => $isPlaylistScrollMode,
                             'showPagination' => !$isPlaylistScrollMode,
+                            'totalPages' => (int) ($content->total_page ?? 0),
+                            'currentPage' => (int) ($content_user->last_page ?? 1),
                         ])
                         <div class="playlist-pdf-reader-stage owl-pdf-reader-stage">
                             <div class="pdfjs-viewer playlist-pdfjs-viewer owl-pdf-viewer"></div>

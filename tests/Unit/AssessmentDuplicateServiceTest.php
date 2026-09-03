@@ -201,20 +201,24 @@ class AssessmentDuplicateServiceTest extends TestCase
             'status'          => 'OK',
         ]);
 
-        $duplicated = $this->service->duplicate($original, [
-            'content_for' => 'content',
-        ]);
+        $contentCountBefore = \App\Models\Content::count();
+
+        // Single duplicate without overrides
+        $duplicated = $this->service->duplicate($original);
 
         $this->assertNotEquals($original->id, $duplicated->id);
         $this->assertSame('content', $duplicated->type);
-        $this->assertSame('content', $duplicated->content_for);
+        $this->assertNull($duplicated->content_id);
         $this->assertNull($duplicated->trainingplan_id);
-        $this->assertSame(45, (int) $duplicated->content_id);
 
-        // Original remains untouched
+        // No new Content record is created
+        $this->assertSame($contentCountBefore, \App\Models\Content::count());
+
+        // Original assessment and content remain untouched
         $original->refresh();
         $this->assertSame('content', $original->content_for);
         $this->assertNull($original->trainingplan_id);
+        $this->assertSame(45, (int) $original->content_id);
 
         $duplicated->delete();
         $original->delete();
@@ -226,26 +230,31 @@ class AssessmentDuplicateServiceTest extends TestCase
             'title'           => 'Unit Playlist Test ' . uniqid(),
             'type'            => 'content',
             'content_id'      => 45,
-            'content_for'     => 'content',
-            'trainingplan_id' => null,
+            'content_for'     => 'playlist',
+            'trainingplan_id' => 10,
             'status'          => 'OK',
         ]);
 
-        $duplicated = $this->service->duplicate($original, [
-            'content_for'     => 'playlist',
-            'trainingplan_id' => 10,
-        ]);
+        $contentCountBefore = \App\Models\Content::count();
+        $detailCountBefore  = \App\Models\TrainingPlanDetail::count();
+
+        // Single duplicate without overrides: unassigns playlist and content
+        $duplicated = $this->service->duplicate($original);
 
         $this->assertNotEquals($original->id, $duplicated->id);
         $this->assertSame('content', $duplicated->type);
-        $this->assertSame('playlist', $duplicated->content_for);
-        $this->assertSame(10, (int) $duplicated->trainingplan_id);
-        $this->assertSame(45, (int) $duplicated->content_id);
+        $this->assertNull($duplicated->content_id);
+        $this->assertNull($duplicated->trainingplan_id);
+
+        // No new Content or TrainingPlanDetail is created
+        $this->assertSame($contentCountBefore, \App\Models\Content::count());
+        $this->assertSame($detailCountBefore, \App\Models\TrainingPlanDetail::count());
 
         // Original remains untouched
         $original->refresh();
-        $this->assertSame('content', $original->content_for);
-        $this->assertNull($original->trainingplan_id);
+        $this->assertSame('playlist', $original->content_for);
+        $this->assertSame(10, (int) $original->trainingplan_id);
+        $this->assertSame(45, (int) $original->content_id);
 
         $duplicated->delete();
         $original->delete();
@@ -262,6 +271,7 @@ class AssessmentDuplicateServiceTest extends TestCase
             'status'          => 'OK',
         ]);
 
+        // Explicit override without content_id specifies target playlist but leaves content unassigned
         $duplicated = $this->service->duplicate($original, [
             'content_for'     => 'playlist',
             'trainingplan_id' => 20,
@@ -269,11 +279,38 @@ class AssessmentDuplicateServiceTest extends TestCase
 
         $this->assertSame('playlist', $duplicated->content_for);
         $this->assertSame(20, (int) $duplicated->trainingplan_id);
-        $this->assertSame(45, (int) $duplicated->content_id);
+        $this->assertNull($duplicated->content_id);
 
-        // Original remains bound to Playlist 10
+        // Original remains bound to Playlist 10 and original content 45
         $original->refresh();
         $this->assertSame(10, (int) $original->trainingplan_id);
+        $this->assertSame(45, (int) $original->content_id);
+
+        $duplicated->delete();
+        $original->delete();
+    }
+
+    public function test_duplicate_with_explicit_content_id_override_uses_specified_content(): void
+    {
+        $original = Assesment::create([
+            'title'           => 'Explicit Content Override Test ' . uniqid(),
+            'type'            => 'content',
+            'content_id'      => 45,
+            'content_for'     => 'content',
+            'status'          => 'OK',
+        ]);
+
+        $contentCountBefore = \App\Models\Content::count();
+
+        // Pass explicit content_id (Bulk Duplicate behavior)
+        $duplicated = $this->service->duplicate($original, [
+            'content_id'      => 45,
+            'content_for'     => 'playlist',
+            'trainingplan_id' => 10,
+        ]);
+
+        $this->assertSame(45, (int) $duplicated->content_id);
+        $this->assertSame($contentCountBefore, \App\Models\Content::count());
 
         $duplicated->delete();
         $original->delete();

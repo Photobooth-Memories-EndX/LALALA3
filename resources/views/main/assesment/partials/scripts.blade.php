@@ -204,47 +204,14 @@
 
         $('#modalDuplicateAssessment').on('show.bs.modal', function (event) {
             let button = $(event.relatedTarget);
-            let type = '';
-            let contentFor = 'content';
-            let trainingplanId = '';
 
             if (button && button.length && button.data('url')) {
                 let url = button.data('url');
                 let title = button.data('title');
-                type = button.data('type') || '';
-                contentFor = button.data('content-for') || 'content';
-                trainingplanId = button.data('trainingplan-id') || '';
 
                 $('#formDuplicateAssessment').attr('action', url);
                 $('#duplicateAssessmentTitle').text(title || '-');
             }
-
-            // Only show context selection for type === 'content'
-            if (type === 'content') {
-                $('#duplicateContextSection').removeClass('d-none');
-                $('#duplicate_target_content').prop('disabled', false);
-                $('#duplicate_target_playlist').prop('disabled', false);
-
-                // If source assessment was already for playlist, pre-select playlist target
-                if (contentFor === 'playlist' && trainingplanId) {
-                    $('#duplicate_target_playlist').prop('checked', true);
-                    $('#duplicatePlaylistSelectWrapper').removeClass('d-none');
-                    $('#duplicate_trainingplan_id').val(trainingplanId);
-                } else {
-                    $('#duplicate_target_content').prop('checked', true);
-                    $('#duplicatePlaylistSelectWrapper').addClass('d-none');
-                    $('#duplicate_trainingplan_id').val('');
-                }
-            } else {
-                $('#duplicateContextSection').addClass('d-none');
-                $('#duplicatePlaylistSelectWrapper').addClass('d-none');
-                $('#duplicate_trainingplan_id').val('');
-                // Disable context inputs so they are not submitted for global/trainingplan
-                $('#duplicate_target_content').prop('disabled', true);
-                $('#duplicate_target_playlist').prop('disabled', true);
-            }
-
-            $('#duplicate_trainingplan_id').removeClass('is-invalid');
 
             let $submitBtn = $('#btnSubmitDuplicate');
             let $cancelBtn = $('#btnCancelDuplicate');
@@ -254,40 +221,10 @@
             $submitBtn.find('i').attr('class', 'fas fa-copy mr-1 me-1');
         });
 
-        // Toggle playlist select on target context radio change
-        $(document).on('change', 'input[name="target_context"]', function () {
-            let val = $(this).val();
-            if (val === 'playlist') {
-                $('#duplicatePlaylistSelectWrapper').removeClass('d-none');
-            } else {
-                $('#duplicatePlaylistSelectWrapper').addClass('d-none');
-                $('#duplicate_trainingplan_id').val('').removeClass('is-invalid'); // clear stale value
-            }
-        });
-
-        $('#duplicate_trainingplan_id').on('change', function () {
-            if ($(this).val()) {
-                $(this).removeClass('is-invalid');
-            }
-        });
-
-        // Prevent double submission & show loading indicator with client-side validation
+        // Prevent double submission & show loading indicator
         $('#formDuplicateAssessment').on('submit', function (e) {
             let $submitBtn = $('#btnSubmitDuplicate');
             let $cancelBtn = $('#btnCancelDuplicate');
-
-            // Validate playlist selection if playlist context is chosen
-            if ($('#duplicateContextSection').is(':visible')) {
-                let targetContext = $('input[name="target_context"]:checked').val();
-                if (targetContext === 'playlist') {
-                    let plVal = $('#duplicate_trainingplan_id').val();
-                    if (!plVal) {
-                        e.preventDefault();
-                        $('#duplicate_trainingplan_id').addClass('is-invalid').focus();
-                        return false;
-                    }
-                }
-            }
 
             if ($submitBtn.data('submitting') === true) {
                 e.preventDefault();
@@ -307,12 +244,6 @@
         });
 
         $('#modalDuplicateAssessment').on('hidden.bs.modal', function () {
-            $('#duplicateContextSection').addClass('d-none');
-            $('#duplicatePlaylistSelectWrapper').addClass('d-none');
-            $('#duplicate_trainingplan_id').val('').removeClass('is-invalid');
-            $('#duplicate_target_content').prop('checked', true).prop('disabled', false);
-            $('#duplicate_target_playlist').prop('disabled', false);
-
             let $submitBtn = $('#btnSubmitDuplicate');
             let $cancelBtn = $('#btnCancelDuplicate');
             $submitBtn.data('submitting', false).prop('disabled', false).removeClass('disabled');

@@ -23,6 +23,13 @@
     $pdfShowPagination = isset($showPagination)
         ? (bool) $showPagination
         : !$pdfIsScrollMode;
+    $pdfTotalPages = isset($totalPages)
+        ? (int) $totalPages
+        : (isset($content->total_page) ? (int) $content->total_page : null);
+    $pdfCurrentPage = isset($currentPage)
+        ? (int) $currentPage
+        : (isset($content_user->last_page) && (int) $content_user->last_page > 0 ? (int) $content_user->last_page : 1);
+    $pdfInitialPageno = ($pdfTotalPages && $pdfTotalPages > 0) ? "{$pdfCurrentPage} / {$pdfTotalPages}" : "-- / --";
 @endphp
 
 <div class="pdf-toolbar {{ $pdfToolbarClass }}" id="{{ $pdfToolbarId }}" role="toolbar" aria-label="PDF Controls">
@@ -96,8 +103,8 @@
     </div>
 </div>
 
-@if ($pdfShowPagination)
-<nav class="pdf-page-navigation" aria-label="PDF page navigation">
+<nav class="pdf-page-navigation {{ $pdfIsScrollMode ? 'is-scroll-mode' : '' }}" aria-label="PDF page navigation">
+    @if ($pdfShowPagination)
     <button type="button"
             class="btn btn-primary pdf-page-navigation-btn pdf-page-navigation-previous"
             id="{{ $pdfPreviousButtonId }}"
@@ -109,14 +116,15 @@
         <i class="ti ti-chevron-left" aria-hidden="true"></i>
         <span>Previous</span>
     </button>
+    @endif
 
     <div class="pdf-page-navigation-status" aria-live="polite">
         <span class="pdf-tb-reading-stat pdf-tb-stat-page">
             <span class="pdf-tb-stat-label">Page</span>
-            <strong class="pageno pdf-tb-pageno">-- / --</strong>
+            <strong class="pageno pdf-tb-pageno">{{ $pdfInitialPageno }}</strong>
         </span>
 
-        @if ($pdfShowPageTiming && $pdfPageDuration > 0)
+        @if ($pdfShowPagination && $pdfShowPageTiming && $pdfPageDuration > 0)
             <div class="pdf-tb-reading-timing"
                  data-page-duration="{{ $pdfPageDuration }}"
                  aria-label="PDF minimum page reading time">
@@ -129,7 +137,7 @@
                     <strong><span class="pdf-tb-remaining-time-value">{{ $pdfPageDuration }}</span> sec</strong>
                 </span>
             </div>
-        @elseif ($pdfShowPageTiming && $pdfPageDuration === 0)
+        @elseif ($pdfShowPagination && $pdfShowPageTiming && $pdfPageDuration === 0)
             <div class="pdf-tb-reading-timing is-scroll-mode"
                  data-page-duration="0"
                  aria-label="PDF self-paced reading mode">
@@ -142,6 +150,7 @@
         @endif
     </div>
 
+    @if ($pdfShowPagination)
     <button type="button"
             class="btn btn-primary pdf-page-navigation-btn pdf-page-navigation-next"
             id="{{ $pdfNextButtonId }}"
@@ -153,5 +162,5 @@
         <span>Next</span>
         <i class="ti ti-chevron-right" aria-hidden="true"></i>
     </button>
+    @endif
 </nav>
-@endif

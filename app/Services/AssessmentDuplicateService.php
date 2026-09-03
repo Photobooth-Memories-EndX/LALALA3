@@ -13,11 +13,11 @@ class AssessmentDuplicateService
     /**
      * Extract base title by stripping trailing " Copy N".
      */
-    public function extractBaseTitle(?string $title): string
+    public function extractBaseTitle(?string $title, string $default = 'Assessment'): string
     {
         $clean = trim((string) $title);
         if ($clean === '') {
-            return 'Assessment';
+            return $default;
         }
 
         $base = preg_replace('/\s+Copy\s+\d+$/i', '', $clean);
@@ -30,7 +30,7 @@ class AssessmentDuplicateService
      */
     public function generateDuplicateTitle(?string $originalTitle): string
     {
-        $baseTitle = $this->extractBaseTitle($originalTitle);
+        $baseTitle = $this->extractBaseTitle($originalTitle, 'Assessment');
 
         // Escape % and _ for SQL LIKE queries
         $escapedBase = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $baseTitle);
@@ -63,7 +63,9 @@ class AssessmentDuplicateService
     /**
      * Duplicate assessment with all configuration, question banks, and questions.
      * Historical results, attempts, assigned users, and unique codes are not copied.
-     * Optional overrides allow specifying target context (e.g. content_for, trainingplan_id) for type = 'content'.
+     * For single duplicate, Playlist and Content assignments are unassigned (content_id = null, trainingplan_id = null)
+     * so that the duplicated assessment starts clean without carrying over previous assignments.
+     * Optional overrides allow specifying target context/content (e.g. Bulk Duplicate with mapping).
      */
     public function duplicate(Assesment $assesment, array $overrides = []): Assesment
     {
@@ -75,30 +77,36 @@ class AssessmentDuplicateService
             $newAssesment->created_at  = Carbon::now();
             $newAssesment->updated_at  = Carbon::now();
 
-            // Apply context overrides for type = content
-            if ($assesment->type === 'content') {
-                if (isset($overrides['content_for'])) {
-                    if ($overrides['content_for'] === 'playlist') {
-                        if (empty($overrides['trainingplan_id'])) {
-                            throw new \InvalidArgumentException('trainingplan_id is required when duplicating to playlist context.');
-                        }
-                        $newAssesment->content_for     = 'playlist';
-                        $newAssesment->trainingplan_id = (int) $overrides['trainingplan_id'];
-                    } elseif ($overrides['content_for'] === 'content') {
-                        $newAssesment->content_for     = 'content';
-                        $newAssesment->trainingplan_id = null;
-                    } else {
-                        throw new \InvalidArgumentException("Invalid content_for context: {$overrides['content_for']}. Must be 'content' or 'playlist'.");
+            // Validate context overrides if supplied
+            if (isset($overrides['content_for'])) {
+                if ($assesment->type !== 'content') {
+                    throw new \InvalidArgumentException('Only content assessments can have content context overrides.');
+                }
+                if ($overrides['content_for'] === 'playlist') {
+                    if (empty($overrides['trainingplan_id'])) {
+                        throw new \InvalidArgumentException('trainingplan_id is required when duplicating to playlist context.');
                     }
+                } elseif ($overrides['content_for'] !== 'content') {
+                    throw new \InvalidArgumentException("Invalid content_for context: {$overrides['content_for']}. Must be 'content' or 'playlist'.");
                 }
-                // If content_id override is explicitly supplied, use it; otherwise preserve source content_id
-                if (isset($overrides['content_id']) && !empty($overrides['content_id'])) {
-                    $newAssesment->content_id = (int) $overrides['content_id'];
-                } else {
-                    $newAssesment->content_id = $assesment->content_id;
-                }
-            } elseif (isset($overrides['content_for'])) {
-                throw new \InvalidArgumentException('Only content assessments can have content context overrides.');
+            }
+
+            // Handle assignment fields (content_id, trainingplan_id, content_for):
+            // 1. If explicit content_id override is supplied (e.g. Bulk Duplicate with mapping):
+            if (isset($overrides['content_id']) && !empty($overrides['content_id'])) {
+                $newAssesment->content_id      = (int) $overrides['content_id'];
+                $newAssesment->content_for     = $overrides['content_for'] ?? ($assesment->content_for ?? 'content');
+                $newAssesment->trainingplan_id = isset($overrides['trainingplan_id']) && !empty($overrides['trainingplan_id'])
+                    ? (int) $overrides['trainingplan_id']
+                    : null;
+            } else {
+                // 2. Single Duplicate: unassign Content and Playlist so the duplicate is completely clean.
+                // Do not copy content_id, trainingplan_id, or create new Content/TrainingPlanDetail.
+                $newAssesment->content_id      = null;
+                $newAssesment->trainingplan_id = isset($overrides['trainingplan_id']) && !empty($overrides['trainingplan_id'])
+                    ? (int) $overrides['trainingplan_id']
+                    : null;
+                $newAssesment->content_for     = $overrides['content_for'] ?? 'content';
             }
 
             $newAssesment->save();

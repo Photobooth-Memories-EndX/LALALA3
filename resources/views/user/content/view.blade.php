@@ -785,6 +785,7 @@
                     viewerSelector: '.content-pdfjs-viewer',
                     completedPages: {{ (int) ($content_user->last_page ?? 0) }},
                     contentCompleted: {{ (int) ($content_user->finish ?? 0) }} === 1,
+                    totalPages: {{ (int) ($content->total_page ?? 0) }},
                     onPageProgress: function(readPage, totalPages) {
                         updateDocumentProgressUi(readPage, totalPages);
                         progressTracker.sendDebounced({

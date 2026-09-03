@@ -464,15 +464,18 @@ class DocumentScrollModeTest extends TestCase
         $response->assertSee('owl-pdf-scroll-mode');
         $response->assertSee('data-reading-mode="scroll"', false);
 
-        // Previous, Next, page indicator, and navigation container must NOT be present in UI
-        $response->assertDontSee('pdf-page-navigation');
+        // Previous and Next must NOT be present in UI
         $response->assertDontSee('pdf-previous-page');
         $response->assertDontSee('pdf-next-page');
         $response->assertDontSee('data-pdf-nav="previous"', false);
         $response->assertDontSee('data-pdf-nav="next"', false);
-        $response->assertDontSee('pdf-tb-stat-page');
-        $response->assertDontSee('pdf-tb-pageno');
-        $response->assertDontSee('pdf-page-navigation-status');
+
+        // Page indicator MUST be present in UI
+        $response->assertSee('pdf-page-navigation');
+        $response->assertSee('pdf-page-navigation-status');
+        $response->assertSee('pdf-tb-stat-page');
+        $response->assertSee('pdf-tb-pageno');
+        $response->assertSee('1 / 30');
     }
 
     /**
@@ -612,14 +615,19 @@ class DocumentScrollModeTest extends TestCase
         $response->assertOk();
         $response->assertSee('owl-pdf-scroll-mode');
         $response->assertSee('data-reading-mode="scroll"', false);
-        $response->assertDontSee('pdf-page-navigation');
+
+        // Previous and Next must NOT be present in UI
         $response->assertDontSee('id="playlist-pdf-previous-page"', false);
         $response->assertDontSee('id="playlist-pdf-next-page"', false);
         $response->assertDontSee('data-pdf-nav="previous"', false);
         $response->assertDontSee('data-pdf-nav="next"', false);
-        $response->assertDontSee('pdf-tb-stat-page');
-        $response->assertDontSee('pdf-tb-pageno');
-        $response->assertDontSee('pdf-page-navigation-status');
+
+        // Page indicator MUST be present in UI
+        $response->assertSee('pdf-page-navigation');
+        $response->assertSee('pdf-page-navigation-status');
+        $response->assertSee('pdf-tb-stat-page');
+        $response->assertSee('pdf-tb-pageno');
+        $response->assertSee('1 / 20');
     }
 
     /**
@@ -666,5 +674,70 @@ class DocumentScrollModeTest extends TestCase
         $response->assertSee('pdf-tb-stat-page');
         $response->assertSee('pdf-tb-pageno');
         $response->assertSee('data-page-duration="5"', false);
+    }
+
+    /**
+     * Test 18 — JAVASCRIPT CONTROLLER: DocumentScrollMode updates page indicator dynamically
+     */
+    public function test_document_scroll_mode_updates_page_indicator_dynamically(): void
+    {
+        $jsFilePath = json_encode(str_replace('\\', '/', base_path('public/js/document-scroll-mode.js')));
+        $nodeScript = <<<JS
+const DocumentScrollMode = require({$jsFilePath});
+
+let labels = [
+    { textContent: '-- / --' }
+];
+
+let mockShell = {
+    querySelectorAll: (selector) => {
+        if (selector.includes('pageno') || selector.includes('pdf-tb-pageno')) {
+            return labels;
+        }
+        return [];
+    },
+    querySelector: () => null,
+    classList: { remove: () => {}, add: () => {} }
+};
+
+let scrollReader = new DocumentScrollMode({
+    shellId: 'test-shell',
+    totalPages: 30,
+    completedPages: 1
+});
+
+scrollReader.getShell = () => mockShell;
+
+// Initial indicator update
+scrollReader.updatePageLabel(1, 30);
+if (labels[0].textContent !== '1 / 30') {
+    console.error('Initial failed:', labels[0].textContent);
+    process.exit(1);
+}
+
+// User scrolls to page 9
+scrollReader.updatePageLabel(9, 30);
+if (labels[0].textContent !== '9 / 30') {
+    console.error('Page 9 update failed:', labels[0].textContent);
+    process.exit(1);
+}
+
+// User scrolls to page 30
+scrollReader.updatePageLabel(30, 30);
+if (labels[0].textContent !== '30 / 30') {
+    console.error('Page 30 update failed:', labels[0].textContent);
+    process.exit(1);
+}
+
+console.log('SUCCESS');
+JS;
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'dsm_test_') . '.js';
+        file_put_contents($tempFile, $nodeScript);
+
+        $output = shell_exec('node ' . escapeshellarg($tempFile));
+        @unlink($tempFile);
+
+        $this->assertStringContainsString('SUCCESS', (string) $output);
     }
 }
