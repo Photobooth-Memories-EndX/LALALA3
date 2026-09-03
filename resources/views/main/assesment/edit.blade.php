@@ -213,8 +213,12 @@
     @include('main.assesment.partials.form-scripts')
 
     <script>
-        $('.select2').select2({
-            theme: 'bootstrap-5',
+        $('select.select2').not('#trainingplan_id, #content_id').each(function() {
+            if (!$(this).hasClass('select2-hidden-accessible')) {
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                });
+            }
         });
 
         $('#btn-submit-form-update-assessment').on('click', function() {

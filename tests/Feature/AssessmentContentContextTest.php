@@ -493,4 +493,120 @@ class AssessmentContentContextTest extends TestCase
 
         $this->assertEquals($countBefore, AssesmentResult::count());
     }
+
+    /**
+     * TEST 13: Assessment Management / Assessment List renders "All Content" for direct content,
+     * while preserving "Content (Playlist)", "Playlist", and "Global" labels.
+     * Database attributes (type, content_for) remain untouched.
+     */
+    public function test_13_assessment_management_list_renders_all_content_and_existing_labels(): void
+    {
+        $playlist = TrainingPlan::create([
+            'title'  => 'Label Test Playlist ' . rand(1000, 9999),
+            'slug'   => 'label-tp-' . rand(1000, 9999),
+            'active' => 'Active',
+        ]);
+
+        $content = Content::create([
+            'title'             => 'Label Test Content ' . rand(1000, 9999),
+            'slug'              => 'label-cnt-' . rand(1000, 9999),
+            'type'              => 'Video',
+            'classification_id' => $this->classification->id,
+            'active'            => 'Active',
+        ]);
+
+        // 1. type=content + content_for=content -> "All Content"
+        $directContentAssessment = Assesment::create([
+            'title'         => 'Direct Content Assessment Label Test',
+            'slug'          => 'dir-cnt-lbl-' . rand(1000, 9999),
+            'type'          => 'content',
+            'content_for'   => 'content',
+            'content_id'    => $content->id,
+            'status'        => 'OK',
+            'passing_grade' => 80,
+            'batch'         => 1,
+        ]);
+
+        // 2. type=content + content_for=playlist -> "Content (Playlist)"
+        $playlistContentAssessment = Assesment::create([
+            'title'           => 'Playlist Content Assessment Label Test',
+            'slug'            => 'pl-cnt-lbl-' . rand(1000, 9999),
+            'type'            => 'content',
+            'content_for'     => 'playlist',
+            'content_id'      => $content->id,
+            'trainingplan_id' => $playlist->id,
+            'status'          => 'OK',
+            'passing_grade'   => 80,
+            'batch'           => 1,
+        ]);
+
+        // 3. type=global -> "Global"
+        $globalAssessment = Assesment::create([
+            'title'         => 'Global Assessment Label Test',
+            'slug'          => 'global-lbl-' . rand(1000, 9999),
+            'type'          => 'global',
+            'status'        => 'OK',
+            'passing_grade' => 80,
+            'batch'         => 1,
+        ]);
+
+        // 4. type=trainingplan -> "Playlist"
+        $trainingplanAssessment = Assesment::create([
+            'title'           => 'Trainingplan Assessment Label Test',
+            'slug'            => 'tp-lbl-' . rand(1000, 9999),
+            'type'            => 'trainingplan',
+            'trainingplan_id' => $playlist->id,
+            'status'          => 'OK',
+            'passing_grade'   => 80,
+            'batch'           => 1,
+        ]);
+
+        // Verify individual row rendering
+        $directRowHtml = view('main.assesment.partials.table-row', [
+            'list'      => $directContentAssessment,
+            'iteration' => 1,
+        ])->render();
+        $this->assertStringContainsString('Content (All Content)', $directRowHtml);
+        $this->assertStringNotContainsString('Content (Playlist)', $directRowHtml);
+
+        // Ensure badge text specifically
+        $this->assertMatchesRegularExpression('/<span class="owl-badge owl-badge-blue">\s*Content \(All Content\)\s*<\/span>/', $directRowHtml);
+
+        $playlistRowHtml = view('main.assesment.partials.table-row', [
+            'list'      => $playlistContentAssessment,
+            'iteration' => 2,
+        ])->render();
+        $this->assertStringContainsString('Content (Playlist)', $playlistRowHtml);
+        $this->assertMatchesRegularExpression('/<span class="owl-badge owl-badge-blue">\s*Content \(Playlist\)\s*<\/span>/', $playlistRowHtml);
+
+        $globalRowHtml = view('main.assesment.partials.table-row', [
+            'list'      => $globalAssessment,
+            'iteration' => 3,
+        ])->render();
+        $this->assertStringContainsString('Global', $globalRowHtml);
+        $this->assertMatchesRegularExpression('/<span class="owl-badge owl-badge-green">\s*Global\s*<\/span>/', $globalRowHtml);
+
+        $trainingplanRowHtml = view('main.assesment.partials.table-row', [
+            'list'      => $trainingplanAssessment,
+            'iteration' => 4,
+        ])->render();
+        $this->assertStringContainsString('Playlist', $trainingplanRowHtml);
+        $this->assertMatchesRegularExpression('/<span class="owl-badge owl-badge-purple">\s*Playlist\s*<\/span>/', $trainingplanRowHtml);
+
+        // Verify HTTP GET /manage/assessment (route 'assesment.index')
+        $response = $this->actingAs($this->admin)->get(route('assesment.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Content (All Content)');
+        $response->assertSee('Content (Playlist)');
+        $response->assertSee('Global');
+        $response->assertSee('Playlist');
+
+        // Verify database fields remain unchanged
+        $this->assertSame('content', $directContentAssessment->fresh()->type);
+        $this->assertSame('content', $directContentAssessment->fresh()->content_for);
+        $this->assertSame('content', $playlistContentAssessment->fresh()->type);
+        $this->assertSame('playlist', $playlistContentAssessment->fresh()->content_for);
+        $this->assertSame('global', $globalAssessment->fresh()->type);
+        $this->assertSame('trainingplan', $trainingplanAssessment->fresh()->type);
+    }
 }

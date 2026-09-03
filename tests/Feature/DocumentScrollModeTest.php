@@ -438,4 +438,233 @@ class DocumentScrollModeTest extends TestCase
         $this->assertSame('00:00:00', $content->duration);
         $this->assertEquals(0.0, (float) $content->learning_hours);
     }
+
+    /**
+     * Test 12 — VIEW UI: Document with page_duration = 0 renders Scroll Mode without Previous/Next buttons
+     */
+    public function test_content_view_renders_scroll_mode_without_pagination_controls_when_page_duration_is_zero(): void
+    {
+        $content = Content::create([
+            'title'             => 'Scroll Mode UI Test',
+            'type'              => 'Document',
+            'classification_id' => $this->classification->id,
+            'total_page'        => 30,
+            'page_duration'     => 0,
+            'duration'          => '00:00:00',
+            'learning_hours'    => 0.0,
+            'active'            => 'Active',
+            'slug'              => 'scroll-mode-ui-test',
+            'file'              => json_encode(['test-document.pdf']),
+        ]);
+
+        $response = $this->get(route('content.user.view', $content->slug));
+
+        $response->assertOk();
+        // PDF viewer must be in scroll mode
+        $response->assertSee('owl-pdf-scroll-mode');
+        $response->assertSee('data-reading-mode="scroll"', false);
+
+        // Previous, Next, page indicator, and navigation container must NOT be present in UI
+        $response->assertDontSee('pdf-page-navigation');
+        $response->assertDontSee('pdf-previous-page');
+        $response->assertDontSee('pdf-next-page');
+        $response->assertDontSee('data-pdf-nav="previous"', false);
+        $response->assertDontSee('data-pdf-nav="next"', false);
+        $response->assertDontSee('pdf-tb-stat-page');
+        $response->assertDontSee('pdf-tb-pageno');
+        $response->assertDontSee('pdf-page-navigation-status');
+    }
+
+    /**
+     * Test 13 — VIEW UI: Document with page_duration = 3 renders Pagination Mode with Previous/Next buttons
+     */
+    public function test_content_view_renders_pagination_mode_with_controls_when_page_duration_is_three(): void
+    {
+        $content = Content::create([
+            'title'             => 'Pagination Mode UI Test 3s',
+            'type'              => 'Document',
+            'classification_id' => $this->classification->id,
+            'total_page'        => 30,
+            'page_duration'     => 3,
+            'duration'          => '00:01:30',
+            'learning_hours'    => 0.1,
+            'active'            => 'Active',
+            'slug'              => 'pagination-mode-ui-test-3s',
+            'file'              => json_encode(['test-document.pdf']),
+        ]);
+
+        $response = $this->get(route('content.user.view', $content->slug));
+
+        $response->assertOk();
+        // PDF viewer must be in pagination mode
+        $response->assertSee('owl-pdf-single-page');
+        $response->assertSee('data-reading-mode="pagination"', false);
+
+        // Previous, Next, page indicator, and minimum duration must be visible
+        $response->assertSee('pdf-page-navigation');
+        $response->assertSee('pdf-previous-page');
+        $response->assertSee('pdf-next-page');
+        $response->assertSee('data-pdf-nav="previous"', false);
+        $response->assertSee('data-pdf-nav="next"', false);
+        $response->assertSee('pdf-tb-stat-page');
+        $response->assertSee('pdf-tb-pageno');
+        $response->assertSee('data-page-duration="3"', false);
+    }
+
+    /**
+     * Test 14 — VIEW UI: Document with page_duration = 10 renders Pagination Mode with Previous/Next buttons
+     */
+    public function test_content_view_renders_pagination_mode_with_controls_when_page_duration_is_ten(): void
+    {
+        $content = Content::create([
+            'title'             => 'Pagination Mode UI Test 10s',
+            'type'              => 'Document',
+            'classification_id' => $this->classification->id,
+            'total_page'        => 15,
+            'page_duration'     => 10,
+            'duration'          => '00:02:30',
+            'learning_hours'    => 0.1,
+            'active'            => 'Active',
+            'slug'              => 'pagination-mode-ui-test-10s',
+            'file'              => json_encode(['test-document.pdf']),
+        ]);
+
+        $response = $this->get(route('content.user.view', $content->slug));
+
+        $response->assertOk();
+        // PDF viewer must be in pagination mode
+        $response->assertSee('owl-pdf-single-page');
+        $response->assertSee('data-reading-mode="pagination"', false);
+
+        // Navigation controls and page indicator must be present
+        $response->assertSee('pdf-page-navigation');
+        $response->assertSee('pdf-previous-page');
+        $response->assertSee('pdf-next-page');
+        $response->assertSee('pdf-tb-stat-page');
+        $response->assertSee('pdf-tb-pageno');
+        $response->assertSee('data-page-duration="10"', false);
+    }
+
+    /**
+     * Test 15 — VIEW UI: SOP/Regulation always renders Pagination Mode with Previous/Next buttons
+     */
+    public function test_content_view_renders_sop_regulation_in_pagination_mode(): void
+    {
+        $content = Content::create([
+            'title'             => 'SOP Content UI Test',
+            'type'              => 'SOP/Regulation',
+            'classification_id' => $this->classification->id,
+            'total_page'        => 10,
+            'page_duration'     => 0,
+            'duration'          => '00:05:00',
+            'learning_hours'    => 0.1,
+            'active'            => 'Active',
+            'slug'              => 'sop-content-ui-test',
+            'file'              => json_encode(['test-sop.pdf']),
+        ]);
+
+        $response = $this->get(route('content.user.view', $content->slug));
+
+        $response->assertOk();
+        // SOP must always use pagination mode
+        $response->assertSee('owl-pdf-single-page');
+        $response->assertSee('data-reading-mode="pagination"', false);
+        $response->assertSee('pdf-page-navigation');
+        $response->assertSee('pdf-previous-page');
+        $response->assertSee('pdf-next-page');
+    }
+
+    /**
+     * Test 16 — PLAYLIST VIEW UI: Chapter with page_duration = 0 renders Scroll Mode without Previous/Next buttons
+     */
+    public function test_playlist_chapter_view_renders_scroll_mode_without_pagination_controls(): void
+    {
+        $playlist = \App\Models\TrainingPlan::create([
+            'title'                  => 'Playlist Scroll Test',
+            'slug'                   => 'playlist-scroll-test-' . rand(1000, 9999),
+            'active'                 => 'Active',
+            'total_duration_seconds' => 3600,
+            'learning_hours'         => 1.0,
+            'has_deadline'           => 0,
+        ]);
+
+        $content = Content::create([
+            'title'             => 'Playlist Doc Scroll Mode',
+            'type'              => 'Document',
+            'classification_id' => $this->classification->id,
+            'total_page'        => 20,
+            'page_duration'     => 0,
+            'duration'          => '00:00:00',
+            'learning_hours'    => 0.0,
+            'active'            => 'Active',
+            'slug'              => 'playlist-doc-scroll-mode',
+            'file'              => json_encode(['chapter-doc.pdf']),
+        ]);
+
+        \App\Models\TrainingPlanDetail::create([
+            'trainingplan_id' => $playlist->id,
+            'content_id'      => $content->id,
+            'content_order'   => 0,
+        ]);
+
+        $response = $this->get(route('playlist.user.view', [$playlist->slug, $content->slug]));
+
+        $response->assertOk();
+        $response->assertSee('owl-pdf-scroll-mode');
+        $response->assertSee('data-reading-mode="scroll"', false);
+        $response->assertDontSee('pdf-page-navigation');
+        $response->assertDontSee('id="playlist-pdf-previous-page"', false);
+        $response->assertDontSee('id="playlist-pdf-next-page"', false);
+        $response->assertDontSee('data-pdf-nav="previous"', false);
+        $response->assertDontSee('data-pdf-nav="next"', false);
+        $response->assertDontSee('pdf-tb-stat-page');
+        $response->assertDontSee('pdf-tb-pageno');
+        $response->assertDontSee('pdf-page-navigation-status');
+    }
+
+    /**
+     * Test 17 — PLAYLIST VIEW UI: Chapter with page_duration > 0 renders Pagination Mode with Previous/Next buttons
+     */
+    public function test_playlist_chapter_view_renders_pagination_mode_with_controls(): void
+    {
+        $playlist = \App\Models\TrainingPlan::create([
+            'title'                  => 'Playlist Paging Test',
+            'slug'                   => 'playlist-paging-test-' . rand(1000, 9999),
+            'active'                 => 'Active',
+            'total_duration_seconds' => 3600,
+            'learning_hours'         => 1.0,
+            'has_deadline'           => 0,
+        ]);
+
+        $content = Content::create([
+            'title'             => 'Playlist Doc Paging Mode',
+            'type'              => 'Document',
+            'classification_id' => $this->classification->id,
+            'total_page'        => 20,
+            'page_duration'     => 5,
+            'duration'          => '00:01:40',
+            'learning_hours'    => 0.1,
+            'active'            => 'Active',
+            'slug'              => 'playlist-doc-paging-mode',
+            'file'              => json_encode(['chapter-doc.pdf']),
+        ]);
+
+        \App\Models\TrainingPlanDetail::create([
+            'trainingplan_id' => $playlist->id,
+            'content_id'      => $content->id,
+            'content_order'   => 0,
+        ]);
+
+        $response = $this->get(route('playlist.user.view', [$playlist->slug, $content->slug]));
+
+        $response->assertOk();
+        $response->assertSee('owl-pdf-single-page');
+        $response->assertSee('data-reading-mode="pagination"', false);
+        $response->assertSee('pdf-page-navigation');
+        $response->assertSee('playlist-pdf-previous-page');
+        $response->assertSee('playlist-pdf-next-page');
+        $response->assertSee('pdf-tb-stat-page');
+        $response->assertSee('pdf-tb-pageno');
+        $response->assertSee('data-page-duration="5"', false);
+    }
 }

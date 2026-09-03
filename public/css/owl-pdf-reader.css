@@ -96,6 +96,32 @@
     border-radius: 0 0 1rem 1rem;
 }
 
+.owl-pdf-scroll-mode .pdf-page-navigation,
+.owl-pdf-scroll-mode .pdf-page-navigation-status,
+.owl-pdf-scroll-mode .pdf-tb-stat-page,
+.owl-pdf-scroll-mode .pdf-tb-pageno,
+.owl-pdf-scroll-mode .pageno,
+.owl-pdf-scroll-mode [data-pdf-nav],
+.owl-pdf-scroll-mode .pdf-page-navigation-btn,
+.owl-pdf-scroll-mode .pdf-page-indicator,
+.owl-pdf-scroll-mode .pdf-page-counter,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-navigation,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-navigation-status,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-tb-stat-page,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-tb-pageno,
+.owl-pdf-reader[data-reading-mode="scroll"] .pageno,
+.owl-pdf-reader[data-reading-mode="scroll"] [data-pdf-nav],
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-navigation-btn,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-indicator,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-counter {
+    display: none !important;
+}
+
+.owl-pdf-scroll-mode .owl-pdf-reader-stage,
+.owl-pdf-reader[data-reading-mode="scroll"] .owl-pdf-reader-stage {
+    border-radius: 0 0 1rem 1rem;
+}
+
 .pdf-page-navigation-status,
 .pdf-page-navigation .pdf-tb-reading-timing {
     display: flex;

@@ -296,6 +296,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:assessment_management'], function () {
+        Route::get('assessment/add', [AssesmentController::class, 'create'])->name('assessment.add');
         Route::resource('assesment', AssesmentController::class);
         Route::post('assessment/{assessment}/store-question-bank', [AssesmentQuestionBankController::class, 'storeAssessmentQuestionBank'])->name('assessment.store.question.bank');
         Route::get('assessment/{id_assessment_question_bank}/syncronize-questions', [AssesmentQuestionBankController::class, 'syncronizeQuestions'])->name('assessment.syncronize.question.bank');
@@ -311,6 +312,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('assesment/result/{slug}', [AssesmentResultController::class, 'result'])->name('assesment.result.result');
         Route::get('assesment/bulk-duplicate/sources', [AssesmentController::class, 'getActiveContentSources'])->name('assesment.bulk-duplicate.sources');
         Route::get('assesment/playlist/{id}/contents', [AssesmentController::class, 'getPlaylistContents'])->name('assesment.playlist.contents');
+        Route::get('assessment/playlist/{id}/contents', [AssesmentController::class, 'getPlaylistContents']);
         Route::post('assesment/bulk-duplicate/preview', [AssesmentController::class, 'previewBulkDuplicate'])->name('assesment.bulk-duplicate.preview');
         Route::post('assesment/bulk-duplicate', [AssesmentController::class, 'bulkDuplicate'])->name('assesment.bulk-duplicate');
         Route::post('assesment/changestatus', [AssesmentController::class, 'changestatus'])->name('assesment.changestatus');

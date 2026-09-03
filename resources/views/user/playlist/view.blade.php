@@ -137,7 +137,11 @@
     @if (in_array($content->type, ['Document', 'SOP/Regulation']))
         <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
         <link rel="stylesheet" href="{{ asset('css/owl-pdf-reader.css') }}">
-        @if ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0)
+        @php
+            $rawPlaylistContentDuration = $content->page_duration ?? ($content->duration_page ?? null);
+            $isPlaylistContentScrollMode = $content->type === 'Document' && $rawPlaylistContentDuration !== null && (int) $rawPlaylistContentDuration === 0;
+        @endphp
+        @if ($isPlaylistContentScrollMode)
             <link rel="stylesheet" href="{{ asset('css/document-scroll-mode.css') }}">
         @endif
     @endif
@@ -651,7 +655,7 @@
         <script src="{{ asset('js/pdf.min.js') }}"></script>
         <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
         <script src="{{ asset('js/owl-pdf-reader.js') }}"></script>
-        @if ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0)
+        @if ($isPlaylistContentScrollMode)
             <script src="{{ asset('js/document-scroll-mode.js') }}"></script>
         @endif
     @endif

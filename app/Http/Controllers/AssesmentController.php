@@ -236,8 +236,19 @@ class AssesmentController extends Controller
     public function create()
     {
         $contents = Content::latest()->get();
-        $trainingplan = TrainingPlan::latest()->get();
-        return view('main.assesment.create', compact('contents', 'trainingplan'));
+        $trainingplans = TrainingPlan::latest()->get();
+        $trainingplan = $trainingplans;
+
+        $selectedTpId = old('trainingplan_id');
+        $playlistContents = collect();
+        if ($selectedTpId) {
+            $tp = TrainingPlan::find($selectedTpId);
+            if ($tp) {
+                $playlistContents = $tp->contents()->select('content.id', 'content.title')->get();
+            }
+        }
+
+        return view('main.assesment.create', compact('contents', 'trainingplan', 'trainingplans', 'playlistContents'));
     }
 
     public function store(Request $request)
@@ -320,14 +331,41 @@ class AssesmentController extends Controller
     public function edit(Assesment $assesment)
     {
         $contents      = Content::latest()->get();
-        $trainingplan  = TrainingPlan::latest()->get();
+        $trainingplans = TrainingPlan::latest()->get();
+        $trainingplan  = $trainingplans;
         $questionBanks = QuestionBank::get();
 
         $totalQuestions          = 0;
         $assessmentQuestionBanks = AssesmentQuestionBank::where('assesment_id', $assesment->id)->get();
         $totalQuestions          = $assessmentQuestionBanks->sum('questions_amount');
 
-        return view('main.assesment.edit', compact('assesment', 'contents', 'trainingplan', 'questionBanks', 'assessmentQuestionBanks', 'totalQuestions'));
+        $selectedTpId = old('trainingplan_id', $assesment->trainingplan_id);
+        $playlistContents = collect();
+        if ($selectedTpId) {
+            $tp = TrainingPlan::find($selectedTpId);
+            if ($tp) {
+                $playlistContents = $tp->contents()->select('content.id', 'content.title')->get();
+            }
+        }
+
+        $currentContentId = old('content_id', $assesment->content_id);
+        if ($currentContentId && !$playlistContents->contains('id', $currentContentId)) {
+            $currentContent = Content::find($currentContentId);
+            if ($currentContent) {
+                $playlistContents->push($currentContent);
+            }
+        }
+
+        return view('main.assesment.edit', compact(
+            'assesment',
+            'contents',
+            'trainingplan',
+            'trainingplans',
+            'questionBanks',
+            'assessmentQuestionBanks',
+            'totalQuestions',
+            'playlistContents'
+        ));
     }
 
     public function update(Request $request, Assesment $assesment)
@@ -713,12 +751,15 @@ class AssesmentController extends Controller
                 return [
                     'id'    => $item->id,
                     'title' => $item->title,
+                    'text'  => $item->title,
                 ];
             });
 
         return response()->json([
             'success'  => true,
             'contents' => $contents,
+            'data'     => $contents,
+            'results'  => $contents,
         ]);
     }
 

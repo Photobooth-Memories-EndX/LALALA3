@@ -13,7 +13,16 @@
     $pdfPreviousButtonId = $previousButtonId ?? 'pdf-previous-page';
     $pdfNextButtonId = $nextButtonId ?? 'pdf-next-page';
     $pdfShowPageTiming = (bool) ($showPageTiming ?? false);
-    $pdfPageDuration = isset($pageDuration) ? (int) $pageDuration : 30;
+    $rawDuration = $pageDuration
+        ?? ($duration_page
+        ?? (isset($content) ? ($content->page_duration ?? ($content->duration_page ?? null)) : null));
+    $pdfPageDuration = $rawDuration !== null ? (int) $rawDuration : 30;
+    $pdfIsScrollMode = isset($isScrollMode)
+        ? (bool) $isScrollMode
+        : ($rawDuration !== null && (int) $rawDuration === 0);
+    $pdfShowPagination = isset($showPagination)
+        ? (bool) $showPagination
+        : !$pdfIsScrollMode;
 @endphp
 
 <div class="pdf-toolbar {{ $pdfToolbarClass }}" id="{{ $pdfToolbarId }}" role="toolbar" aria-label="PDF Controls">
@@ -87,6 +96,7 @@
     </div>
 </div>
 
+@if ($pdfShowPagination)
 <nav class="pdf-page-navigation" aria-label="PDF page navigation">
     <button type="button"
             class="btn btn-primary pdf-page-navigation-btn pdf-page-navigation-previous"
@@ -144,3 +154,4 @@
         <i class="ti ti-chevron-right" aria-hidden="true"></i>
     </button>
 </nav>
+@endif

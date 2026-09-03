@@ -105,7 +105,11 @@
     @if ($content->type == 'Document' || $content->type == 'SOP/Regulation')
         <link rel="stylesheet" href="{{ asset('Tabler/dist/pdfjs-viewer.min.css') }}">
         <link rel="stylesheet" href="{{ asset('css/owl-pdf-reader.css') }}">
-        @if ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0)
+        @php
+            $rawContentDuration = $content->page_duration ?? ($content->duration_page ?? null);
+            $isContentScrollMode = $content->type === 'Document' && $rawContentDuration !== null && (int) $rawContentDuration === 0;
+        @endphp
+        @if ($isContentScrollMode)
             <link rel="stylesheet" href="{{ asset('css/document-scroll-mode.css') }}">
         @endif
     @endif
@@ -727,7 +731,7 @@
         <script src="{{ asset('js/pdf.min.js') }}"></script>
         <script src="{{ asset('js/pdfjs-viewer.min.js') }}"></script>
         <script src="{{ asset('js/owl-pdf-reader.js') }}"></script>
-        @if ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0)
+        @if ($isContentScrollMode)
             <script src="{{ asset('js/document-scroll-mode.js') }}"></script>
         @endif
 
@@ -771,7 +775,8 @@
             }
 
             var isDocument = @json($content->type === 'Document');
-            var rawPageDuration = {{ (int) ($content->page_duration ?? 30) }};
+            var rawDuration = @json($content->page_duration ?? ($content->duration_page ?? null));
+            var rawPageDuration = rawDuration !== null && rawDuration !== undefined ? Number(rawDuration) : 30;
             var isScrollMode = isDocument && rawPageDuration === 0;
 
             if (isScrollMode) {
@@ -840,7 +845,7 @@
             } else {
                 // EXISTING TIMED PAGINATION / SOP LOGIC (100% UNCHANGED)
                 var isTimedDocument = isDocument;
-                var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 30)) }};
+                var documentPageDuration = Math.max(1, rawPageDuration || 30);
 
                 var contentPdfReader = new OwlPdfReader({
                     shellId: 'pdfviewer-shell',

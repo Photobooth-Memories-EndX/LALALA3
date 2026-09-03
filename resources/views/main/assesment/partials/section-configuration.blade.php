@@ -7,6 +7,7 @@
     $trainingplanId = old('trainingplan_id', $isEdit ? $assesment->trainingplan_id : '');
     $uniqueCode = old('unique_code', $isEdit ? $assesment->unique_code : '');
     $passingGrade = old('passing_grade', $isEdit ? $assesment->passing_grade : '');
+    $playlistList = $trainingplans ?? $trainingplan ?? \App\Models\TrainingPlan::latest()->get();
 @endphp
 
 <div class="owl-section-block mb-4">
@@ -55,26 +56,47 @@
         </div>
     </div>
 
-    {{-- Conditional Selects --}}
-    <div class="mb-3 {{ ($type == 'content') ? '' : 'd-none' }}" id="content_id_wrapper">
-        <label class="form-label required">Learning Content</label>
-        <x-select name="content_id" id="content_id">
-            <option value="">-choose-</option>
-            @foreach ($contents as $item)
-                <option value="{{ $item->id }}" {{ ($contentId == $item->id) ? 'selected' : '' }}>{{ $item->title }}</option>
-            @endforeach
-        </x-select>
-    </div>
-
+    {{-- Conditional: Playlist / Training Plan (Parent when content_for = playlist, or for type = trainingplan) --}}
     <div class="mb-3 {{ ($type == 'trainingplan' || ($type == 'content' && $contentFor == 'playlist')) ? '' : 'd-none' }}" id="trainingplan_id_wrapper">
         <label class="form-label required" id="trainingplan_id_label">{{ ($type == 'content' && $contentFor == 'playlist') ? 'Playlist' : 'Training Plan' }}</label>
-        <x-select name="trainingplan_id" id="trainingplan_id">
-            <option value="">-choose-</option>
-            @foreach ($trainingplan as $item)
-                <option value="{{ $item->id }}" {{ ($trainingplanId == $item->id) ? 'selected' : '' }}>{{ $item->title }}</option>
+        <select name="trainingplan_id" id="trainingplan_id" class="form-select form-control select2" data-placeholder="Search playlist...">
+            <option value="">Search playlist...</option>
+            @foreach ($playlistList as $item)
+                <option value="{{ $item->id }}" {{ ((string) $trainingplanId === (string) $item->id) ? 'selected' : '' }}>{{ $item->title }}</option>
             @endforeach
-        </x-select>
+        </select>
     </div>
+
+    {{-- Conditional: Learning Content (Child when content_for = playlist, or direct when content_for = content) --}}
+    <div class="mb-3 {{ ($type == 'content') ? '' : 'd-none' }}" id="content_id_wrapper">
+        <label class="form-label required">Learning Content</label>
+        @php
+            $isPlaylistMode = ($type === 'content' && $contentFor === 'playlist');
+            $activeContents = $isPlaylistMode ? ($playlistContents ?? collect()) : $contents;
+            $isDisabled = $isPlaylistMode && empty($trainingplanId);
+        @endphp
+        <div class="position-relative">
+            <select name="content_id" id="content_id" class="form-select form-control select2" data-placeholder="{{ $isDisabled ? 'Please select a Playlist first' : 'Search content...' }}" {{ $isDisabled ? 'disabled' : '' }}>
+                @if ($isDisabled)
+                    <option value="">Please select a Playlist first</option>
+                @else
+                    <option value="">Search content...</option>
+                    @foreach ($activeContents as $item)
+                        <option value="{{ $item->id }}" {{ ($contentId == $item->id) ? 'selected' : '' }}>{{ $item->title }}</option>
+                    @endforeach
+                @endif
+            </select>
+            <div id="content_id_loading" class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 translate-middle-y me-4 d-none" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.__globalDirectContents = @json($contents->map(function($c) {
+            return ['id' => $c->id, 'title' => $c->title];
+        }));
+    </script>
 
     <div class="row g-3">
         <div class="col-md-6">

@@ -191,6 +191,14 @@
         if (shell) {
             shell.classList.remove('owl-pdf-single-page');
             shell.classList.add('owl-pdf-scroll-mode');
+            shell.dataset.readingMode = 'scroll';
+
+            var paginationElements = shell.querySelectorAll(
+                '.pdf-page-navigation, .pdf-page-navigation-status, .pdf-tb-stat-page, .pdf-tb-pageno, .pageno, [data-pdf-nav], .pdf-page-navigation-btn, .pdf-page-indicator, .pdf-page-counter'
+            );
+            paginationElements.forEach(function (el) {
+                el.style.display = 'none';
+            });
         }
 
         this.bindControls();
@@ -275,26 +283,22 @@
 
     DocumentScrollMode.prototype.updatePageLabel = function (page, totalPages) {
         var shell = this.getShell();
-        var label = shell ? shell.querySelector('.pageno') : null;
-        if (label) {
-            label.textContent = (page || 1) + ' / ' + (totalPages || this.totalPages || '--');
+        if (shell) {
+            var indicators = shell.querySelectorAll('.pdf-page-navigation, .pdf-page-navigation-status, .pdf-tb-stat-page, .pdf-tb-pageno, .pageno, .pdf-page-indicator, .pdf-page-counter');
+            indicators.forEach(function (el) {
+                el.style.display = 'none';
+            });
         }
     };
 
     DocumentScrollMode.prototype.updateNavigationButtons = function (page) {
         var shell = this.getShell();
-        if (!shell) return;
-
-        page = Math.max(1, parseInt(page, 10) || 1);
-        var total = this.totalPages || (this.viewer ? this.viewer.getPageCount() : 0);
-
-        shell.querySelectorAll('[data-pdf-nav="previous"]').forEach(function (button) {
-            button.disabled = page <= 1;
-        });
-
-        shell.querySelectorAll('[data-pdf-nav="next"]').forEach(function (button) {
-            button.disabled = !total || page >= total;
-        });
+        if (shell) {
+            var navElements = shell.querySelectorAll('[data-pdf-nav], .pdf-page-navigation-btn, .pdf-page-navigation');
+            navElements.forEach(function (el) {
+                el.style.display = 'none';
+            });
+        }
     };
 
     DocumentScrollMode.prototype.scrollToPage = function (pageNum) {
