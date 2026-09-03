@@ -37,8 +37,10 @@ class ClassificationController extends Controller
                 'id'                  => $item->id,
                 'title'               => $item->classification_name,
                 'name'                => $item->classification_name,
+                'type'                => 'CATEGORY',
                 'classification_name' => $item->classification_name,
                 'slug'                => $item->slug,
+                'url'                 => route('manage.classification.edit', $item->slug ?? $item->id),
             ];
         });
 
@@ -59,7 +61,7 @@ class ClassificationController extends Controller
     {
         $query = Classification::query();
 
-        $search = trim((string) ($request->get('search') ?? $request->get('s') ?? ''));
+        $search = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
         if ($search !== '') {
             $queryNormalized = str_replace("'", "’", $search);
             $queryOriginal = str_replace("’", "'", $search);

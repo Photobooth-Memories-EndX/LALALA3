@@ -301,6 +301,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:news_announcement'], function () {
         Route::get('news/search-autocomplete', [NewsController::class, 'autocompleteSearch'])->name('manage.news.autocomplete');
+        Route::get('news/autocomplete', [NewsController::class, 'autocompleteSearch']);
         Route::resource('news', NewsController::class);
         Route::get('news', [NewsController::class, 'index'])->name('manage.news.index');
         Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
@@ -312,6 +313,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:category_classification'], function () {
         Route::get('classification/search-autocomplete', [ClassificationController::class, 'autocompleteSearch'])->name('manage.classification.autocomplete');
+        Route::get('classification/autocomplete', [ClassificationController::class, 'autocompleteSearch']);
         Route::resource('classification', ClassificationController::class)->names([
             'index' => 'manage.classification.index',
             'create' => 'manage.classification.create',
@@ -362,6 +364,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:question_bank'], function () {
         Route::get('question-bank/search-autocomplete', [QuestionBankController::class, 'autocompleteSearch'])->name('manage.question.bank.autocomplete');
+        Route::get('question-bank/autocomplete', [QuestionBankController::class, 'autocompleteSearch']);
         Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question.bank.index');
         Route::get('question-bank/create', [QuestionBankController::class, 'create'])->name('question.bank.create');
         Route::post('question-bank/store', [QuestionBankController::class, 'store'])->name('question.bank.store');
@@ -381,6 +384,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:content_repository'], function () {
         Route::get('content/search-autocomplete', [ContentController::class, 'autocompleteSearch'])->name('manage.content.autocomplete');
+        Route::get('content/autocomplete', [ContentController::class, 'autocompleteSearch']);
         Route::resource('content', ContentController::class);
         Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');
         Route::get('content/thumbnail/upload/delete', [ContentController::class, 'deletethumbnailajax'])->name('content.deletethumbnailajax');
@@ -397,6 +401,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:playlist_learning_path'], function () {
         Route::get('playlist/search-autocomplete', [TrainingPlanController::class, 'autocompleteSearch'])->name('manage.trainingplan.autocomplete');
+        Route::get('playlist/autocomplete', [TrainingPlanController::class, 'autocompleteSearch']);
         Route::get('playlist/order/{slug}', [TrainingPlanController::class, 'order'])->name('playlist.order');
         Route::get('playlist-thumbnail-test', [TrainingPlanController::class, 'thumbnailTest'])->name('playlist.thumbnailTest');
         Route::post('playlist/{trainingplan?}/synchronize-learning-hours', [TrainingPlanController::class, 'synchronizeLearningHours'])->name('playlist.synchronize-learning-hours');
@@ -407,6 +412,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:event_documentation'], function () {
         Route::get('eventphoto/search-autocomplete', [EventPhotoController::class, 'autocompleteSearch'])->name('manage.eventphoto.autocomplete');
+        Route::get('eventphoto/autocomplete', [EventPhotoController::class, 'autocompleteSearch']);
         Route::resource('eventphoto', EventPhotoController::class);
         Route::get('eventphoto', [EventPhotoController::class, 'index'])->name('manage.eventphoto.index');
         Route::post('eventphoto/create/upload', [EventPhotoController::class, 'uploadfileajax'])->name('eventphoto.uploadfileajax');

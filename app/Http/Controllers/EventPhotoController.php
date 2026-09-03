@@ -48,6 +48,7 @@ class EventPhotoController extends Controller
                 'id'          => $gallery->id,
                 'title'       => $gallery->title,
                 'name'        => $gallery->title,
+                'type'        => 'GALLERY',
                 'slug'        => $gallery->slug,
                 'active'      => $gallery->active ?? $gallery->status,
                 'status'      => $gallery->status ?? $gallery->active,
@@ -56,6 +57,7 @@ class EventPhotoController extends Controller
                 'uploader'    => $gallery->uploader,
                 'event_date'  => $gallery->eventdate ? \Carbon\Carbon::parse($gallery->eventdate)->format('d M Y') : null,
                 'views'       => (int) ($gallery->views ?? 0),
+                'url'         => route('eventphoto.edit', $gallery->slug ?? $gallery->id),
             ];
         });
 
@@ -72,8 +74,8 @@ class EventPhotoController extends Controller
         $query = EventPhoto::query();
 
         // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if ($request->filled('q') || $request->filled('search') || $request->filled('s')) {
+            $search = $request->q ?: ($request->search ?: $request->s);
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', '%' . $search . '%')
                   ->orWhere('uploader', 'like', '%' . $search . '%')

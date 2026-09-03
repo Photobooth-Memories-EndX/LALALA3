@@ -742,19 +742,42 @@
         background-color: #f8f9fa !important;
     }
 
-    /* Sticky Bottom Footer Area */
-    .search-footer,
-    #header-search-footer,
-    #mobile-header-search-footer,
-    #gallery-search-footer,
-    #news-search-footer,
-    #content-search-footer,
-    #playlist-search-footer,
-    #ongoing-search-footer,
-    #assessment-search-footer,
-    #certificate-search-footer,
-    #search-more-results-footer,
-    #mobile-search-more-results-footer {
+    /* Manage Module Autocomplete Styling */
+    .manage-search-container {
+        position: relative !important;
+    }
+
+    .dropdown-menu[id*="-search-results"],
+    [id^="manage-"][id$="-search-results"] {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+        overflow: hidden !important;
+    }
+
+    .list-group[id*="-autocomplete-list"],
+    [id^="manage-"][id$="-autocomplete-list"] {
+        max-height: 280px !important;
+        overflow-y: auto !important;
+        background-color: #ffffff !important;
+        scrollbar-width: thin;
+    }
+
+    .list-group[id*="-autocomplete-list"] .dropdown-item,
+    [id^="manage-"][id$="-autocomplete-list"] .dropdown-item {
+        background-color: #ffffff !important;
+        color: #333333 !important;
+    }
+
+    .list-group[id*="-autocomplete-list"] .dropdown-item:hover,
+    [id^="manage-"][id$="-autocomplete-list"] .dropdown-item:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    div[id*="-search-footer"],
+    [id^="manage-"][id$="-search-footer"] {
         position: sticky !important;
         bottom: 0 !important;
         background-color: #f8f9fa !important;

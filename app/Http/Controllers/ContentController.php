@@ -47,12 +47,13 @@ class ContentController extends Controller
                 'id'             => $item->id,
                 'title'          => $item->title,
                 'name'           => $item->title,
-                'type'           => $item->type,
+                'type'           => strtoupper($item->type ?? 'CONTENT'),
                 'type_label'     => \App\Support\ContentTypeHelper::label($item->type),
                 'slug'           => $item->slug,
                 'author'         => $item->author,
                 'active'         => $item->active,
                 'classification' => $item->classification->classification_name ?? null,
+                'url'            => route('content.edit', $item->id),
             ];
         });
 
@@ -73,7 +74,7 @@ class ContentController extends Controller
         $thirtyDaysFromToday = $today->copy()->addDays(30)->toDateString();
 
         // Search Filter
-        $search = $request->s ?: $request->search;
+        $search = $request->q ?: ($request->s ?: $request->search);
         if (filled($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('content.title', 'like', "%{$search}%")

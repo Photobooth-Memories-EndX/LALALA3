@@ -39,9 +39,11 @@ class QuestionBankController extends Controller
                 'id'              => $item->id,
                 'title'           => $item->title,
                 'name'            => $item->title,
+                'type'            => 'QUESTION BANK',
                 'slug'            => $item->slug,
                 'questions_count' => (int) ($item->questions_count ?? 0),
                 'created_date'    => $item->created_date ? Carbon::parse($item->created_date)->format('d M Y') : ($item->created_at ? $item->created_at->format('d M Y') : null),
+                'url'             => route('question.bank.edit', $item->slug ?? $item->id),
             ];
         });
 
@@ -58,7 +60,7 @@ class QuestionBankController extends Controller
         $query = QuestionBank::with('questions')->withCount('questions');
 
         // Search Filter
-        $search = trim((string) ($request->get('search') ?? $request->get('s') ?? ''));
+        $search = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
         if ($search !== '') {
             $queryNormalized = str_replace("'", "’", $search);
             $queryOriginal = str_replace("’", "'", $search);

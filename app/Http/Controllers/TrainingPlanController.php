@@ -48,10 +48,12 @@ class TrainingPlanController extends Controller
                 'id'             => $item->id,
                 'title'          => $item->title,
                 'name'           => $item->title,
+                'type'           => 'PLAYLIST',
                 'slug'           => $item->slug,
                 'active'         => $item->active,
                 'total_contents' => (int) ($item->total_contents ?? 0),
                 'learning_hours' => $item->learning_hours,
+                'url'            => route('playlist.edit', $item->slug ?? $item->id),
             ];
         });
 
@@ -91,9 +93,11 @@ class TrainingPlanController extends Controller
             return [
                 'id'             => $playlist->id,
                 'title'          => $playlist->title,
+                'type'           => 'PLAYLIST',
                 'slug'           => $playlist->slug,
                 'total_contents' => (int) ($playlist->total_contents ?? 0),
                 'learning_hours' => $playlist->learning_hours,
+                'url'            => route('playlist.edit', $playlist->slug ?? $playlist->id),
             ];
         });
 
@@ -105,8 +109,8 @@ class TrainingPlanController extends Controller
         $query = TrainingPlan::query()->withCount('trainingplandetail');
 
         // Search Filter
-        if ($request->filled('search') || $request->filled('s')) {
-            $search = $request->filled('search') ? $request->search : $request->s;
+        if ($request->filled('q') || $request->filled('search') || $request->filled('s')) {
+            $search = $request->filled('q') ? $request->q : ($request->filled('search') ? $request->search : $request->s);
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('slug', 'like', "%{$search}%")

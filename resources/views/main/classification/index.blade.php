@@ -91,12 +91,21 @@
                         </div>
 
                         <!-- Live Autocomplete Search Input -->
-                        <div class="position-relative manage-category-search-container flex-grow-1">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="ti ti-search text-muted"></i></span>
-                                <input type="text" name="search" id="manage-category-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Search category..." value="{{ request('search') ?? request('s') }}" autocomplete="off">
+                        <div class="position-relative manage-search-container flex-grow-1">
+                            <div class="input-icon">
+                                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                <input type="text" name="q" id="manage-classification-search-input" class="form-control" placeholder="Search category..." value="{{ request('q') ?? (request('search') ?? request('s')) }}" autocomplete="off">
                             </div>
-                            <div id="manage-category-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1" style="display: none; max-height: 280px; overflow-y: auto; z-index: 1050;"></div>
+                            <div id="manage-classification-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" 
+                                 style="display: none; z-index: 2000; background-color: #ffffff;">
+                                <!-- Container 1: Scrollable List Area (Max 280px height with vertical scrollbar) -->
+                                <div id="manage-classification-autocomplete-list" class="list-group list-group-flush" 
+                                     style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                                
+                                <!-- Container 2: Fixed/Sticky Bottom Footer -->
+                                <div id="manage-classification-search-footer" class="border-top p-2 text-center" 
+                                     style="display: none; position: sticky; bottom: 0; z-index: 2005; background-color: #f8f9fa;"></div>
+                            </div>
                         </div>
 
                         <!-- Action Buttons (Search submit & Refresh) -->
@@ -346,23 +355,31 @@
         color: #60a5fa !important;
     }
 
+    .manage-classification-search-container,
     .manage-category-search-container {
         position: relative;
         width: 100%;
     }
 
+    #manage-classification-search-results,
     #manage-category-search-results {
         position: absolute;
         top: 100%;
         left: 0;
-        z-index: 1085;
-        max-height: 280px;
-        overflow-y: auto;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
-        padding: .35rem 0;
-        border: 1px solid rgba(0, 0, 0, .08);
-        background: #ffffff;
+        z-index: 2000;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        overflow: hidden !important;
+    }
+
+    #manage-classification-autocomplete-list,
+    #manage-category-autocomplete-list {
+        max-height: 280px !important;
+        overflow-y: auto !important;
+        background-color: #ffffff !important;
+        scrollbar-width: thin;
     }
 
     #manage-category-search-results::-webkit-scrollbar {
@@ -529,110 +546,13 @@
             });
         }
 
-        // Live Autocomplete for Category
-        function initManageCategoryAutocomplete() {
-            var searchInput = document.getElementById('manage-category-search-input') || document.querySelector('input[name="search"]');
-            var searchResults = document.getElementById('manage-category-search-results');
-            var form = document.getElementById('manageCategoryFilterForm') || searchInput?.closest('form');
-            var debounceTimer = null;
-
-            if (!searchInput || !searchResults) return;
-
-            function escapeHtml(text) {
-                if (!text) return '';
-                var div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-
+        // Connect live search input to DataTable
+        var searchInput = document.getElementById('manage-classification-search-input');
+        if (searchInput && table) {
             searchInput.addEventListener('input', function () {
-                var query = this.value.trim();
-                clearTimeout(debounceTimer);
-
-                if (table) {
-                    table.search(query).draw();
-                }
-
-                if (query.length < 1) {
-                    searchResults.style.display = 'none';
-                    searchResults.innerHTML = '';
-                    return;
-                }
-
-                debounceTimer = setTimeout(function () {
-                    fetch('/manage/classification/search-autocomplete?q=' + encodeURIComponent(query), {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    })
-                    .then(function (res) {
-                        if (!res.ok) throw new Error('HTTP ' + res.status);
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        searchResults.innerHTML = '';
-                        if (data && data.length > 0) {
-                            data.forEach(function (item) {
-                                var a = document.createElement('a');
-                                a.className = 'dropdown-item py-2 px-3 text-wrap border-bottom-subtle manage-category-search-item';
-                                a.href = '#';
-
-                                var titleText = item.title || item.name || item.classification_name || '';
-                                var slugText = item.slug ? '/' + item.slug : '';
-
-                                a.innerHTML = '<div class="d-flex align-items-center justify-content-between mb-1">' +
-                                        '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeHtml(titleText) + '</span>' +
-                                        '<span class="badge bg-blue-lt text-blue small flex-shrink-0">CATEGORY</span>' +
-                                    '</div>' +
-                                    (slugText ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + escapeHtml(slugText) + '</div>' : '');
-
-                                a.addEventListener('click', function (e) {
-                                    e.preventDefault();
-                                    searchInput.value = titleText;
-                                    searchResults.style.display = 'none';
-                                    if (table) {
-                                        table.search(titleText).draw();
-                                    }
-                                    if (form) {
-                                        if (typeof form.requestSubmit === 'function') {
-                                            form.requestSubmit();
-                                        } else {
-                                            form.submit();
-                                        }
-                                    }
-                                });
-                                searchResults.appendChild(a);
-                            });
-                            searchResults.style.display = 'block';
-                        } else {
-                            searchResults.innerHTML = '<div class="dropdown-item text-muted disabled py-2 px-3">No category found</div>';
-                            searchResults.style.display = 'block';
-                        }
-                    })
-                    .catch(function () {
-                        searchResults.style.display = 'none';
-                    });
-                }, 250);
-            });
-
-            searchInput.addEventListener('focus', function () {
-                if (this.value.trim().length >= 1 && searchResults.children.length > 0) {
-                    searchResults.style.display = 'block';
-                }
-            });
-
-            searchInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    searchResults.style.display = 'none';
-                }
-            });
-
-            document.addEventListener('click', function (e) {
-                if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                    searchResults.style.display = 'none';
-                }
+                table.search(this.value.trim()).draw();
             });
         }
-
-        initManageCategoryAutocomplete();
 
         let deleteForm = null;
 

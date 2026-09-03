@@ -44,6 +44,7 @@ class NewsController extends Controller
                 'id'         => $item->id,
                 'title'      => $item->title,
                 'name'       => $item->title,
+                'type'       => 'NEWS',
                 'slug'       => $item->slug,
                 'active'     => $item->active ?? $item->status,
                 'status'     => $item->status ?? $item->active,
@@ -51,6 +52,7 @@ class NewsController extends Controller
                 'author'     => $item->user->name ?? null,
                 'created_at' => $item->created_at ? $item->created_at->format('d M Y') : null,
                 'views'      => (int) ($item->views ?? 0),
+                'url'        => route('news.edit', $item->slug ?? $item->id),
             ];
         });
 
@@ -74,8 +76,8 @@ class NewsController extends Controller
         | Search News
         |--------------------------------------------------------------------------
         */
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if ($request->filled('q') || $request->filled('search') || $request->filled('s')) {
+            $search = $request->q ?: ($request->search ?: $request->s);
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', '%' . $search . '%')
                   ->orWhere('description', 'like', '%' . $search . '%')

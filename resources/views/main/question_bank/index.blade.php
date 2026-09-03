@@ -41,14 +41,18 @@
             position: absolute;
             top: 100%;
             left: 0;
-            z-index: 1085;
-            max-height: 320px;
-            overflow-y: auto;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
-            padding: .35rem 0;
-            border: 1px solid rgba(0, 0, 0, .08);
-            background: #ffffff;
+            z-index: 2000;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+            border: 1px solid #e2e8f0 !important;
+            background: #ffffff !important;
+            overflow: hidden !important;
+        }
+        #manage-questionbank-autocomplete-list {
+            max-height: 280px !important;
+            overflow-y: auto !important;
+            background-color: #ffffff !important;
+            scrollbar-width: thin;
         }
         #manage-questionbank-search-results::-webkit-scrollbar {
             width: 6px;
@@ -181,12 +185,21 @@
 
                             <!-- Live Autocomplete Search Input -->
                             <div class="col-12 col-md">
-                                <div class="position-relative manage-questionbank-search-container flex-grow-1">
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="ti ti-search text-muted"></i></span>
-                                        <input type="text" name="search" id="manage-questionbank-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Search question bank title..." value="{{ request('search') ?? request('s') }}" autocomplete="off">
+                                <div class="position-relative manage-search-container flex-grow-1">
+                                    <div class="input-icon">
+                                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                        <input type="text" name="q" id="manage-questionbank-search-input" class="form-control" placeholder="Search question bank..." value="{{ request('q') ?? (request('search') ?? request('s')) }}" autocomplete="off">
                                     </div>
-                                    <div id="manage-questionbank-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1" style="display: none; max-height: 320px; overflow-y: auto; z-index: 1050;"></div>
+                                    <div id="manage-questionbank-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" 
+                                         style="display: none; z-index: 2000; background-color: #ffffff;">
+                                        <!-- Container 1: Scrollable List Area (Max 280px height with vertical scrollbar) -->
+                                        <div id="manage-questionbank-autocomplete-list" class="list-group list-group-flush" 
+                                             style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                                        
+                                        <!-- Container 2: Fixed/Sticky Bottom Footer -->
+                                        <div id="manage-questionbank-search-footer" class="border-top p-2 text-center" 
+                                             style="display: none; position: sticky; bottom: 0; z-index: 2005; background-color: #f8f9fa;"></div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -369,106 +382,7 @@
                 $('#modal-delete-question-bank').modal('show');
             });
 
-            // Live Autocomplete for Question Bank
-            function initManageQuestionBankAutocomplete() {
-                var searchInput = document.getElementById('manage-questionbank-search-input') || document.querySelector('input[name="search"]');
-                var searchResults = document.getElementById('manage-questionbank-search-results');
-                var form = document.getElementById('manageQuestionBankFilterForm') || searchInput?.closest('form');
-                var debounceTimer = null;
-
-                if (!searchInput || !searchResults) return;
-
-                function escapeHtml(text) {
-                    if (!text) return '';
-                    var div = document.createElement('div');
-                    div.textContent = text;
-                    return div.innerHTML;
-                }
-
-                searchInput.addEventListener('input', function () {
-                    var query = this.value.trim();
-                    clearTimeout(debounceTimer);
-
-                    if (query.length < 1) {
-                        searchResults.style.display = 'none';
-                        searchResults.innerHTML = '';
-                        return;
-                    }
-
-                    debounceTimer = setTimeout(function () {
-                        fetch('/manage/question-bank/search-autocomplete?q=' + encodeURIComponent(query), {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                        .then(function (res) {
-                            if (!res.ok) throw new Error('HTTP ' + res.status);
-                            return res.json();
-                        })
-                        .then(function (data) {
-                            searchResults.innerHTML = '';
-                            if (data && data.length > 0) {
-                                data.forEach(function (item) {
-                                    var a = document.createElement('a');
-                                    a.className = 'dropdown-item py-2 px-3 text-wrap border-bottom-subtle manage-questionbank-search-item';
-                                    a.href = '#';
-
-                                    var titleText = item.title || item.name || '';
-                                    var count = item.questions_count !== undefined ? item.questions_count : 0;
-                                    var subDetails = [];
-                                    subDetails.push(count + ' ' + (count === 1 ? 'Question' : 'Questions'));
-                                    if (item.created_date) subDetails.push('Created: ' + item.created_date);
-
-                                    a.innerHTML = '<div class="d-flex align-items-center justify-content-between mb-1">' +
-                                            '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeHtml(titleText) + '</span>' +
-                                            '<span class="badge bg-purple-lt text-purple small flex-shrink-0">QUESTION BANK</span>' +
-                                        '</div>' +
-                                        (subDetails.length > 0 ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.map(escapeHtml).join(' &bull; ') + '</div>' : '');
-
-                                    a.addEventListener('click', function (e) {
-                                        e.preventDefault();
-                                        searchInput.value = titleText;
-                                        searchResults.style.display = 'none';
-                                        if (form) {
-                                            if (typeof form.requestSubmit === 'function') {
-                                                form.requestSubmit();
-                                            } else {
-                                                form.submit();
-                                            }
-                                        }
-                                    });
-                                    searchResults.appendChild(a);
-                                });
-                                searchResults.style.display = 'block';
-                            } else {
-                                searchResults.innerHTML = '<div class="dropdown-item text-muted disabled py-2 px-3">No question bank found</div>';
-                                searchResults.style.display = 'block';
-                            }
-                        })
-                        .catch(function () {
-                            searchResults.style.display = 'none';
-                        });
-                    }, 250);
-                });
-
-                searchInput.addEventListener('focus', function () {
-                    if (this.value.trim().length >= 1 && searchResults.children.length > 0) {
-                        searchResults.style.display = 'block';
-                    }
-                });
-
-                searchInput.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') {
-                        searchResults.style.display = 'none';
-                    }
-                });
-
-                document.addEventListener('click', function (e) {
-                    if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                        searchResults.style.display = 'none';
-                    }
-                });
-            }
-
-            initManageQuestionBankAutocomplete();
+            // Autocomplete is handled by standardized initManageAutocomplete
         });
     </script>
 @endpush
