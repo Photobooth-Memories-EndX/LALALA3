@@ -125,12 +125,8 @@ class AssessmentDuplicateService
     /**
      * Resolve target playlist ID for an assessment.
      *
-     * 1. If explicit trainingplan_id is passed in overrides, use it.
-     * 2. If source assessment already has trainingplan_id, use it.
-     * 3. If source content belongs to exactly one playlist via TrainingPlanDetail, use it.
-     * 4. If source content belongs to multiple playlists and no override was provided,
-     *    throw an InvalidArgumentException to avoid guessing or picking randomly.
-     * 5. If source content belongs to 0 playlists, return null.
+     * Only explicit trainingplan_id in overrides is used.
+     * Relational trainingplan_id from the source assessment or source content is never inherited.
      */
     public function resolveTargetPlaylistId(Assesment $assesment, array $overrides = []): ?int
     {
@@ -139,42 +135,15 @@ class AssessmentDuplicateService
             return (int) $overrides['trainingplan_id'];
         }
 
-        // 2. Source assessment already has trainingplan_id
-        if (!empty($assesment->trainingplan_id)) {
-            return (int) $assesment->trainingplan_id;
-        }
-
-        // 3. Look up from source Content's TrainingPlanDetail
-        if (!empty($assesment->content_id)) {
-            $playlistIds = TrainingPlanDetail::where('content_id', $assesment->content_id)
-                ->pluck('trainingplan_id')
-                ->unique()
-                ->values();
-
-            if ($playlistIds->count() === 1) {
-                return (int) $playlistIds[0];
-            }
-
-            if ($playlistIds->count() > 1) {
-                throw new \InvalidArgumentException(
-                    "Target Playlist is ambiguous: Content ID {$assesment->content_id} belongs to multiple Playlists (" .
-                    $playlistIds->implode(', ') .
-                    "). Please specify trainingplan_id explicitly."
-                );
-            }
-        }
-
         return null;
     }
 
     /**
      * Duplicate assessment with all configuration, question banks, and questions.
      * Historical results, attempts, assigned users, and unique codes are not copied.
-     * For Content Assessment (type = content), a new duplicate Content record is created
-     * and linked, unless explicit content_id override is supplied (e.g. Bulk Duplicate).
-     * If the source assessment or its content is associated with a playlist (or specified via overrides),
-     * the duplicate becomes a Playlist Assessment (assasment_content_for = playlist) with the resolved playlist target,
-     * and TrainingPlanDetail pivot is ensured idempotently.
+     * For single duplication, Content/Playlist relations (content_id, trainingplan_id) are not copied
+     * and become NULL. Explicit overrides (e.g. Bulk Duplicate) are respected.
+     * The duplicate uses the target context (assasment_content_for).
      */
     public function duplicate(Assesment $assesment, array $overrides = []): Assesment
     {
@@ -186,80 +155,51 @@ class AssessmentDuplicateService
             $newAssesment->created_at  = Carbon::now();
             $newAssesment->updated_at  = Carbon::now();
 
-            // Resolve target playlist ID
+            // Resolve target playlist ID from explicit overrides only
             $targetTpId = $this->resolveTargetPlaylistId($assesment, $overrides);
 
             // Validate context overrides if supplied
-            $overrideContext = $overrides['assasment_content_for'] ?? null;
+            $overrideContext = $overrides['assasment_content_for'] ?? $overrides['target_context'] ?? null;
             if ($overrideContext !== null) {
                 if ($assesment->type !== 'content') {
                     throw new \InvalidArgumentException('Only content assessments can have content context overrides.');
                 }
-                if ($overrideContext === 'playlist') {
-                    if (empty($targetTpId)) {
-                        throw new \InvalidArgumentException('trainingplan_id is required when duplicating to playlist context.');
-                    }
-                } elseif ($overrideContext !== 'content') {
+                if (!in_array($overrideContext, ['content', 'playlist'], true)) {
                     throw new \InvalidArgumentException("Invalid content context: {$overrideContext}. Must be 'content' or 'playlist'.");
                 }
             }
 
             // Determine target context:
             // 1. If explicit override is supplied, respect it.
-            // 2. If target playlist was resolved (from overrides, source TP, or source content's TrainingPlanDetail),
-            //    the duplicated assessment becomes a Playlist Assessment ('playlist').
-            // 3. Otherwise (e.g. standalone content not in any playlist), remains 'content'.
-            if ($overrideContext !== null) {
-                $targetContentFor = $overrideContext;
-            } elseif (!empty($targetTpId)) {
-                $targetContentFor = 'playlist';
-            } else {
-                $targetContentFor = 'content';
-            }
+            // 2. Otherwise, use source assessment's assasment_content_for (defaulting to 'content').
+            $targetContentFor = $overrideContext ?? ($assesment->assasment_content_for ?? 'content');
 
             if ($assesment->type === 'content') {
                 // Determine target Content ID:
-                // 1. If explicit content_id override is supplied (e.g. Bulk Duplicate with mapping):
-                if (isset($overrides['content_id']) && !empty($overrides['content_id'])) {
-                    $targetContentId = (int) $overrides['content_id'];
-                } elseif (!empty($assesment->content_id)) {
-                    // 2. Single Duplicate: duplicate the source Content to create a new Content
-                    $sourceContent = Content::find($assesment->content_id) ?? Content::withTrashed()->find($assesment->content_id);
-                    if ($sourceContent) {
-                        $newContent = $this->duplicateContent($sourceContent);
-                        $targetContentId = (int) $newContent->id;
-                    } else {
-                        $targetContentId = null;
+                // Only use explicit content_id override if supplied (e.g. Bulk Duplicate).
+                // Single duplicate never inherits source content_id or duplicates source content.
+                $targetContentId = (isset($overrides['content_id']) && !empty($overrides['content_id']))
+                    ? (int) $overrides['content_id']
+                    : null;
+
+                $newAssesment->content_id            = $targetContentId;
+                $newAssesment->assasment_content_for = $targetContentFor;
+                $newAssesment->trainingplan_id       = ($targetContentFor === 'playlist') ? $targetTpId : null;
+
+                // Ensure TrainingPlanDetail pivot exists for (trainingplan_id, content_id) if both are set (idempotent)
+                if (!empty($newAssesment->trainingplan_id) && !empty($newAssesment->content_id)) {
+                    $pivotExists = TrainingPlanDetail::where('trainingplan_id', $newAssesment->trainingplan_id)
+                        ->where('content_id', $newAssesment->content_id)
+                        ->exists();
+
+                    if (!$pivotExists) {
+                        $maxOrder = (int) TrainingPlanDetail::where('trainingplan_id', $newAssesment->trainingplan_id)->max('content_order');
+                        TrainingPlanDetail::create([
+                            'trainingplan_id' => $newAssesment->trainingplan_id,
+                            'content_id'      => $newAssesment->content_id,
+                            'content_order'   => (string) ($maxOrder + 1),
+                        ]);
                     }
-                } else {
-                    $targetContentId = null;
-                }
-
-                $newAssesment->content_id = $targetContentId;
-
-                if ($targetContentFor === 'playlist') {
-                    $newAssesment->assasment_content_for = 'playlist';
-                    $newAssesment->trainingplan_id       = $targetTpId;
-
-                    // Ensure TrainingPlanDetail pivot exists for (trainingplan_id, content_id) (idempotent)
-                    if (!empty($newAssesment->trainingplan_id) && !empty($newAssesment->content_id)) {
-                        $pivotExists = TrainingPlanDetail::where('trainingplan_id', $newAssesment->trainingplan_id)
-                            ->where('content_id', $newAssesment->content_id)
-                            ->exists();
-
-                        if (!$pivotExists) {
-                            $maxOrder = (int) TrainingPlanDetail::where('trainingplan_id', $newAssesment->trainingplan_id)->max('content_order');
-                            TrainingPlanDetail::create([
-                                'trainingplan_id' => $newAssesment->trainingplan_id,
-                                'content_id'      => $newAssesment->content_id,
-                                'content_order'   => (string) ($maxOrder + 1),
-                            ]);
-                        }
-                    }
-                } else {
-                    // Direct Content Assessment
-                    $newAssesment->assasment_content_for = 'content';
-                    $newAssesment->trainingplan_id       = null;
                 }
             } elseif ($assesment->type === 'trainingplan') {
                 $newAssesment->assasment_content_for = 'content';
