@@ -179,7 +179,7 @@
 
             {{-- SEARCH DESKTOP --}}
             <div class="topbar-search flex-grow-1 me-3">
-                <form action="{{ route('search', ['searchtype' => 'all']) }}"
+                <form action="/search"
                       method="get"
                       autocomplete="off"
                       novalidate
@@ -188,16 +188,16 @@
                     <div class="position-relative w-100" style="max-width: 450px;">
                         <input type="text"
                                id="globalSearchInput"
-                               name="s"
+                               name="q"
                                class="form-control rounded-pill px-4"
                                placeholder="Search learning, content, news..."
                                autocomplete="off"
                                aria-label="Search in website">
 
                         <!-- DROPDOWN HASIL AUTOCOMPLETE -->
-                        <div id="searchDropdownResults"
-                             class="dropdown-menu shadow-lg border-0 rounded-4 w-100 mt-1 overflow-hidden"
-                             style="display: none; position: absolute; top: 100%; left: 0; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                        <div id="header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                            <div id="search-autocomplete-list" class="list-group list-group-flush"></div>
+                            <div id="search-more-results-footer" class="border-top bg-light p-2 text-center sticky-bottom"></div>
                         </div>
                     </div>
                 </form>
@@ -393,7 +393,7 @@
                 {{-- ROW 3: SEARCH BAR (LEFT) + NOTIFICATION BELL (RIGHT) --}}
                 <div class="owl-mobile-action-row d-flex align-items-center gap-2 pb-1">
                     {{-- Search Bar (left, flexible) --}}
-                    <form action="{{ route('search', ['searchtype' => 'all']) }}"
+                    <form action="/search"
                           method="get"
                           autocomplete="off"
                           novalidate
@@ -402,16 +402,16 @@
                         <div class="position-relative w-100">
                             <input type="text"
                                    id="mobileSearchInput"
-                                   name="s"
+                                   name="q"
                                    class="form-control rounded-pill px-4"
                                    placeholder="Search learning, content, news..."
                                    autocomplete="off"
                                    aria-label="Search in website">
 
                             <!-- DROPDOWN HASIL AUTOCOMPLETE -->
-                            <div id="mobileSearchDropdownResults"
-                                 class="dropdown-menu shadow-lg border-0 rounded-4 w-100 mt-1 overflow-hidden"
-                                 style="display: none; position: absolute; top: 100%; left: 0; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                            <div id="mobile-header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                                <div id="mobile-search-autocomplete-list" class="list-group list-group-flush"></div>
+                                <div id="mobile-search-more-results-footer" class="border-top bg-light p-2 text-center sticky-bottom"></div>
                             </div>
                         </div>
                     </form>
@@ -462,14 +462,56 @@
 
 @include('partials.logout-modal')
 
+<style>
+.bg-purple-subtle {
+    background-color: rgba(174, 62, 201, 0.12) !important;
+}
+.text-purple {
+    color: #ae3ec9 !important;
+}
+[data-bs-theme="dark"] .bg-purple-subtle {
+    background-color: rgba(174, 62, 201, 0.25) !important;
+}
+[data-bs-theme="dark"] .text-purple {
+    color: #d670ec !important;
+}
+.sticky-bottom,
+#search-more-results-footer,
+#mobile-search-more-results-footer {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 2 !important;
+}
+[data-bs-theme="dark"] #search-more-results-footer,
+[data-bs-theme="dark"] #mobile-search-more-results-footer {
+    background-color: var(--tblr-bg-surface-secondary, #1e293b) !important;
+    border-color: var(--tblr-border-color, rgba(255, 255, 255, 0.1)) !important;
+}
+#header-search-results::-webkit-scrollbar,
+#mobile-header-search-results::-webkit-scrollbar {
+    width: 6px;
+}
+#header-search-results::-webkit-scrollbar-thumb,
+#mobile-header-search-results::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 4px;
+}
+[data-bs-theme="dark"] #header-search-results::-webkit-scrollbar-thumb,
+[data-bs-theme="dark"] #mobile-header-search-results::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    function initAutocomplete(inputId, dropdownId) {
+    function initAutocomplete(inputId, dropdownId, listId, footerId) {
         const searchInput = document.getElementById(inputId);
         const searchDropdown = document.getElementById(dropdownId);
+        const autocompleteList = document.getElementById(listId || 'search-autocomplete-list');
+        const moreFooter = (footerId && document.getElementById(footerId)) ? document.getElementById(footerId) : document.getElementById('search-more-results-footer');
         let debounceTimer = null;
 
-        if (!searchInput || !searchDropdown) return;
+        if (!searchInput || !searchDropdown || !autocompleteList || !moreFooter) return;
 
         function escapeHtml(text) {
             if (!text) return '';
@@ -486,7 +528,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Sembunyikan jika kosong
             if (query.length < 1) {
                 searchDropdown.style.display = 'none';
-                searchDropdown.innerHTML = '';
+                autocompleteList.innerHTML = '';
+                moreFooter.style.display = 'none';
                 return;
             }
 
@@ -496,20 +539,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(response => response.json())
                     .then(data => {
                         if (!data || data.length === 0) {
-                            searchDropdown.innerHTML = `<div class="dropdown-item text-muted small py-2 px-3">Tidak ada hasil ditemukan</div>`;
+                            autocompleteList.innerHTML = `<div class="dropdown-item text-muted small py-2 px-3 text-center">Tidak ada hasil ditemukan</div>`;
+                            moreFooter.style.display = 'none';
                         } else {
                             let html = '';
                             data.forEach(item => {
-                                // Ubah URL agar mengarah ke halaman hasil pencarian global
-                                let searchUrl = `/search/all?s=${encodeURIComponent(item.title)}`;
+                                const badgeClass = item.type === 'Playlist' ? 'bg-purple-subtle text-purple' : 'bg-light text-secondary';
+                                const itemUrl = item.url || `/search?q=${encodeURIComponent(item.title)}`;
+                                item.url = itemUrl;
 
                                 html += `
-                                    <a href="${searchUrl}" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle">
-                                        <span class="text-dark small fw-semibold">${escapeHtml(item.title)}</span>
+                                    <a href="${item.url}" class="dropdown-item py-2 d-flex align-items-center justify-content-between gap-2 border-bottom-subtle">
+                                        <span class="text-truncate">${escapeHtml(item.title)}</span>
+                                        <span class="badge ${badgeClass} text-uppercase ms-2 flex-shrink-0" style="font-size: 10px;">${escapeHtml(item.type || 'Content')}</span>
                                     </a>
                                 `;
                             });
-                            searchDropdown.innerHTML = html;
+                            autocompleteList.innerHTML = html;
+
+                            const keyword = searchInput.value.trim();
+                            if (data.length > 0) {
+                                moreFooter.innerHTML = `
+                                    <a href="/search?q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="ti ti-search"></i>
+                                        <span>See all results for "${keyword}"</span>
+                                    </a>
+                                `;
+                                moreFooter.style.display = 'block';
+                            } else {
+                                moreFooter.style.display = 'none';
+                            }
                         }
                         searchDropdown.style.display = 'block';
                     })
@@ -525,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 const query = this.value.trim();
                 if (query.length > 0) {
-                    window.location.href = `/search/all?s=${encodeURIComponent(query)}`;
+                    window.location.href = `/search?q=${encodeURIComponent(query)}`;
                 }
             }
         });
@@ -539,13 +598,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Munculkan kembali jika input diklik lagi & ada teks
         searchInput.addEventListener('focus', function() {
-            if (this.value.trim().length >= 1 && searchDropdown.children.length > 0) {
+            if (this.value.trim().length >= 1 && autocompleteList.children.length > 0) {
                 searchDropdown.style.display = 'block';
             }
         });
     }
 
-    initAutocomplete('globalSearchInput', 'searchDropdownResults');
-    initAutocomplete('mobileSearchInput', 'mobileSearchDropdownResults');
+    initAutocomplete('globalSearchInput', 'header-search-results', 'search-autocomplete-list', 'search-more-results-footer');
+    initAutocomplete('mobileSearchInput', 'mobile-header-search-results', 'mobile-search-autocomplete-list', 'mobile-search-more-results-footer');
 });
 </script>

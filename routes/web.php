@@ -86,7 +86,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/myprofile/deleteavatar', [ProfileController::class, 'deleteavatar'])->name('user.deleteavatar');
     Route::get('/mycomment', [ProfileController::class, 'comment'])->name('user.comment');
 
-    Route::get('/search/{searchtype}', [SearchController::class, 'index'])->name('search');
+    Route::get('/search/autocomplete', [SearchController::class, 'autocomplete'])->name('search.autocomplete');
+    Route::get('/search/{searchtype?}', [SearchController::class, 'index'])->name('search');
     Route::get('/api/search-autocomplete', [SearchController::class, 'autocomplete'])->name('api.search.autocomplete');
 
     Route::get('/change-password', [ProfileController::class, 'changePassword'])->name('user.changepassword');
@@ -213,6 +214,7 @@ Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
     Route::delete('/{trainingplan}/debug-certificate-preview', [PlaylistCertificateDebugController::class, 'destroy'])
         ->name('playlist.debug.certificate.preview.exit');
     Route::get('/{slug}/{vidslug}', [PlaylistUserController::class, 'view'])->name('playlist.user.view');
+    Route::get('/{slug}', [PlaylistUserController::class, 'show'])->name('user.playlist.show');
 });
 
 /*

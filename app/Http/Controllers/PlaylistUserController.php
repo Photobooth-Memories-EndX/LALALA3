@@ -199,6 +199,38 @@ class PlaylistUserController extends Controller
         ]);
     }
 
+    /**
+     * Show/redirect to the first accessible video of the playlist, or back to playlist index.
+     */
+    public function show($slug)
+    {
+        $trainingplan = TrainingPlan::where('active', 'Active')
+            ->where(function ($q) use ($slug) {
+                $q->where('slug', $slug)
+                  ->orWhere('id', $slug);
+            })
+            ->first();
+
+        if (!$trainingplan) {
+            return redirect()->route('playlist.user.index');
+        }
+
+        $firstDetail = $trainingplan->trainingplandetail()
+            ->whereHas('content', fn ($q) => $q->where('active', 'Active'))
+            ->orderByRaw('CAST(content_order AS UNSIGNED) ASC')
+            ->with('content')
+            ->first();
+
+        if ($firstDetail && $firstDetail->content) {
+            return redirect()->route('playlist.user.view', [
+                'slug'    => $trainingplan->slug,
+                'vidslug' => $firstDetail->content->slug,
+            ]);
+        }
+
+        return redirect()->route('playlist.user.index');
+    }
+
     public function view($slug, $vidslug, CertificateEligibilityService $certificateEligibility)
     {
         $userId = Auth::id();
