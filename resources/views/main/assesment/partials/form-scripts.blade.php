@@ -19,6 +19,8 @@
         const $contentSelect = $('#content_id');
         if (!$.fn.select2) return;
 
+        placeholder = placeholder || '— Select Learning Content (Optional / None) —';
+
         if ($contentSelect.hasClass('select2-hidden-accessible')) {
             $contentSelect.select2('destroy');
         }
@@ -33,7 +35,7 @@
             allowClear: !isDisabled
         });
 
-        $contentSelect.trigger('change');
+        $contentSelect.trigger('change.select2');
     }
 
     function initPlaylistSelect2() {
@@ -45,7 +47,7 @@
             $tpSelect.select2({
                 theme: 'bootstrap-5',
                 width: '100%',
-                placeholder: 'Search playlist...',
+                placeholder: '— Select Playlist (Optional / None) —',
                 allowClear: true
             });
         }
@@ -57,7 +59,7 @@
         initPlaylistSelect2();
 
         if (!$('#content_id').hasClass('select2-hidden-accessible')) {
-            const placeholder = $('#content_id').attr('data-placeholder') || 'Search content...';
+            const placeholder = $('#content_id').attr('data-placeholder') || '— Select Learning Content (Optional / None) —';
             const isDisabled  = $('#content_id').prop('disabled');
             $('#content_id').select2({
                 theme: 'bootstrap-5',
@@ -88,8 +90,10 @@
         const contentWrapper    = $('#content_id_wrapper');
         const tpWrapper         = $('#trainingplan_id_wrapper');
         const tpLabel           = $('#trainingplan_id_label');
+        const contentLabel      = $('#content_id_label');
         const contentSelect     = $('#content_id');
         const tpSelect          = $('#trainingplan_id');
+        const hintEl            = $('#assasment_content_for_hint');
 
         const timeLimitSecWrapper = $('#time_limit_section_wrapper');
         const remedialSecWrapper  = $('#remedial_section_wrapper');
@@ -100,21 +104,73 @@
 
         if (type === 'content') {
             contentForWrapper.removeClass('d-none');
-            contentWrapper.removeClass('d-none');
 
-            const contentFor = $('input[name="assasment_content_for"]:checked').val() || 'content';
+            const contentForEl = document.getElementById('assasment_content_for') || document.querySelector('select[name="assasment_content_for"]');
+            const contentFor = contentForEl ? contentForEl.value : '';
 
-            if (contentFor === 'playlist') {
+            // Update helper text (PERUBAHAN 7)
+            if (hintEl.length) {
+                if (contentFor === 'content') {
+                    hintEl.text('Assessment akan digunakan sebagai Direct Content dan tidak harus terhubung ke Playlist.').removeClass('d-none');
+                } else if (contentFor === 'playlist') {
+                    hintEl.text('Assessment akan digunakan pada materi di dalam Playlist. Playlist maupun Learning Content dapat dipilih atau dikosongkan.').removeClass('d-none');
+                } else {
+                    hintEl.text('').addClass('d-none');
+                }
+            }
+
+            if (contentFor === 'content') {
+                // Sembunyikan: Playlist
+                tpWrapper.addClass('d-none');
+                if (!isInitialLoad) {
+                    tpSelect.val('').trigger('change.select2');
+                }
+
+                // Tampilkan: Learning Content (Optional)
+                contentWrapper.removeClass('d-none');
+                if (contentLabel.length) {
+                    contentLabel.text('Learning Content (Optional)').removeClass('required');
+                }
+
+                if (!isInitialLoad) {
+                    const currentVal = contentSelect.val();
+                    contentSelect.empty();
+                    contentSelect.append('<option value="">— Select Learning Content (Optional / None) —</option>');
+                    if (window.__globalDirectContents && window.__globalDirectContents.length > 0) {
+                        window.__globalDirectContents.forEach(function(c) {
+                            const isSelected = (currentVal == c.id) ? 'selected' : '';
+                            contentSelect.append('<option value="' + c.id + '" ' + isSelected + '>' + $('<div>').text(c.title).html() + '</option>');
+                        });
+                    }
+                    reinitContentSelect2('— Select Learning Content (Optional / None) —', false);
+                }
+            } else if (contentFor === 'playlist') {
+                // Tampilkan: Playlist (Optional)
                 tpWrapper.removeClass('d-none');
-                if (tpLabel.length) tpLabel.text('Playlist');
+                if (tpLabel.length) {
+                    tpLabel.text('Playlist (Optional)').removeClass('required');
+                }
                 initPlaylistSelect2();
+
+                // Tampilkan: Learning Content (Optional)
+                contentWrapper.removeClass('d-none');
+                if (contentLabel.length) {
+                    contentLabel.text('Learning Content (Optional)').removeClass('required');
+                }
 
                 const selectedPlaylistId = tpSelect.val();
                 if (!selectedPlaylistId) {
                     if (!isInitialLoad) {
-                        contentSelect.empty()
-                            .append('<option value="">Please select a Playlist first</option>');
-                        reinitContentSelect2('Please select a Playlist first', true);
+                        const currentVal = contentSelect.val();
+                        contentSelect.empty();
+                        contentSelect.append('<option value="">— Select Learning Content (Optional / None) —</option>');
+                        if (window.__globalDirectContents && window.__globalDirectContents.length > 0) {
+                            window.__globalDirectContents.forEach(function(c) {
+                                const isSelected = (currentVal == c.id) ? 'selected' : '';
+                                contentSelect.append('<option value="' + c.id + '" ' + isSelected + '>' + $('<div>').text(c.title).html() + '</option>');
+                            });
+                        }
+                        reinitContentSelect2('— Select Learning Content (Optional / None) —', false);
                     }
                 } else {
                     if (!isInitialLoad && contentSelect.children('option').length <= 1) {
@@ -122,21 +178,12 @@
                     }
                 }
             } else {
-                // Direct Content
+                // Belum memilih apa pun: Sembunyikan kedua field
                 tpWrapper.addClass('d-none');
+                contentWrapper.addClass('d-none');
                 if (!isInitialLoad) {
-                    tpSelect.val('').trigger('change');
-
-                    if (window.__globalDirectContents && window.__globalDirectContents.length > 0) {
-                        const currentVal = contentSelect.val();
-                        contentSelect.empty();
-                        contentSelect.append('<option value="">Search content...</option>');
-                        window.__globalDirectContents.forEach(function(c) {
-                            const isSelected = (currentVal == c.id) ? 'selected' : '';
-                            contentSelect.append('<option value="' + c.id + '" ' + isSelected + '>' + $('<div>').text(c.title).html() + '</option>');
-                        });
-                    }
-                    reinitContentSelect2('Search content...', false);
+                    tpSelect.val('').trigger('change.select2');
+                    contentSelect.val('').trigger('change.select2');
                 }
             }
 
@@ -159,9 +206,9 @@
             contentForWrapper.addClass('d-none');
             contentWrapper.addClass('d-none');
             tpWrapper.removeClass('d-none');
-            if (tpLabel.length) tpLabel.text('Training Plan');
+            if (tpLabel.length) tpLabel.text('Training Plan').addClass('required');
             initPlaylistSelect2();
-            contentSelect.val('').trigger('change');
+            contentSelect.val('').trigger('change.select2');
 
             timeLimitSecWrapper.removeClass('d-none');
             remedialSecWrapper.removeClass('d-none');
@@ -182,8 +229,8 @@
             contentForWrapper.addClass('d-none');
             contentWrapper.addClass('d-none');
             tpWrapper.addClass('d-none');
-            contentSelect.val('').trigger('change');
-            tpSelect.val('').trigger('change');
+            contentSelect.val('').trigger('change.select2');
+            tpSelect.val('').trigger('change.select2');
 
             timeLimitSecWrapper.addClass('d-none');
             remedialSecWrapper.addClass('d-none');
@@ -235,7 +282,7 @@
     $(document).ready(function() {
         initAssessmentSelect2();
 
-        $(document).on('change', 'input[name="assasment_content_for"]', function() {
+        $(document).on('change', '#assasment_content_for, select[name="assasment_content_for"]', function() {
             updateAssessmentTypeConfiguration(false);
         });
 
@@ -244,7 +291,8 @@
             if (opts && opts.silent) return;
 
             const type = $('#assessment_type').val();
-            const contentFor = $('input[name="assasment_content_for"]:checked').val() || 'content';
+            const contentForEl = document.getElementById('assasment_content_for') || document.querySelector('select[name="assasment_content_for"]');
+            const contentFor = contentForEl ? contentForEl.value : '';
 
             if (type !== 'content' || contentFor !== 'playlist') {
                 return;
@@ -254,9 +302,21 @@
             const $contentSelect = $('#content_id');
 
             if (!playlistId) {
-                $contentSelect.empty()
-                    .append('<option value="">Please select a Playlist first</option>');
-                reinitContentSelect2('Please select a Playlist first', true);
+                if (playlistChangeXhr) {
+                    playlistChangeXhr.abort();
+                }
+                $('#content_id_loading').addClass('d-none');
+
+                const currentVal = $contentSelect.val();
+                $contentSelect.empty();
+                $contentSelect.append('<option value="">— Select Learning Content (Optional / None) —</option>');
+                if (window.__globalDirectContents && window.__globalDirectContents.length > 0) {
+                    window.__globalDirectContents.forEach(function(c) {
+                        const isSelected = (currentVal == c.id) ? 'selected' : '';
+                        $contentSelect.append('<option value="' + c.id + '" ' + isSelected + '>' + $('<div>').text(c.title).html() + '</option>');
+                    });
+                }
+                reinitContentSelect2('— Select Learning Content (Optional / None) —', false);
                 return;
             }
 
@@ -281,24 +341,23 @@
                     $contentSelect.empty();
 
                     const contents = res.contents || res.data || [];
+                    $contentSelect.append('<option value="">— Select Learning Content (Optional / None) —</option>');
                     if (contents.length > 0) {
-                        $contentSelect.append('<option value="">Search content...</option>');
                         contents.forEach(function(c) {
                             const title = c.title || c.text || ('Content ' + c.id);
                             $contentSelect.append('<option value="' + c.id + '">' + $('<div>').text(title).html() + '</option>');
                         });
-                        reinitContentSelect2('Search content...', false);
+                        reinitContentSelect2('— Select Learning Content (Optional / None) —', false);
                     } else {
-                        $contentSelect.append('<option value="">No content found in this playlist</option>');
-                        reinitContentSelect2('No content found in this playlist', true);
+                        reinitContentSelect2('— Select Learning Content (Optional / None) —', false);
                     }
                 },
                 error: function(xhr) {
                     if (xhr.statusText === 'abort') return;
                     $('#content_id_loading').addClass('d-none');
                     $contentSelect.empty()
-                        .append('<option value="">Failed to load content</option>');
-                    reinitContentSelect2('Failed to load content', true);
+                        .append('<option value="">— Select Learning Content (Optional / None) —</option>');
+                    reinitContentSelect2('— Select Learning Content (Optional / None) —', false);
                 }
             });
         });

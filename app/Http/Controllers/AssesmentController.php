@@ -275,9 +275,9 @@ class AssesmentController extends Controller
         ];
 
         if ($type === 'content') {
-            $rules['content_id'] = 'required';
+            $rules['content_id'] = 'nullable';
             if ($contentFor === 'playlist') {
-                $rules['trainingplan_id'] = 'required';
+                $rules['trainingplan_id'] = 'nullable';
             }
         } elseif ($type === 'trainingplan') {
             $rules['trainingplan_id'] = 'required';
@@ -290,12 +290,12 @@ class AssesmentController extends Controller
 
         if ($type === 'content') {
             $assesment->assasment_content_for = $contentFor;
-            $assesment->content_id            = $request->input('content_id');
-            $assesment->trainingplan_id       = ($contentFor === 'playlist') ? $request->input('trainingplan_id') : null;
+            $assesment->content_id            = $request->input('content_id') ?: null;
+            $assesment->trainingplan_id       = ($contentFor === 'playlist') ? ($request->input('trainingplan_id') ?: null) : null;
         } elseif ($type === 'trainingplan') {
             $assesment->assasment_content_for = 'content';
             $assesment->content_id            = null;
-            $assesment->trainingplan_id       = $request->input('trainingplan_id');
+            $assesment->trainingplan_id       = $request->input('trainingplan_id') ?: null;
         } else {
             $assesment->assasment_content_for = 'content';
             $assesment->content_id            = null;
@@ -392,9 +392,9 @@ class AssesmentController extends Controller
         ];
 
         if ($type === 'content') {
-            $rules['content_id'] = 'required';
+            $rules['content_id'] = 'nullable';
             if ($contentFor === 'playlist') {
-                $rules['trainingplan_id'] = 'required';
+                $rules['trainingplan_id'] = 'nullable';
             }
         } elseif ($type === 'trainingplan') {
             $rules['trainingplan_id'] = 'required';
@@ -406,12 +406,12 @@ class AssesmentController extends Controller
 
         if ($type === 'content') {
             $assesment->assasment_content_for = $contentFor;
-            $assesment->content_id            = $request->input('content_id');
-            $assesment->trainingplan_id       = ($contentFor === 'playlist') ? $request->input('trainingplan_id') : null;
+            $assesment->content_id            = $request->input('content_id') ?: null;
+            $assesment->trainingplan_id       = ($contentFor === 'playlist') ? ($request->input('trainingplan_id') ?: null) : null;
         } elseif ($type === 'trainingplan') {
             $assesment->assasment_content_for = 'content';
             $assesment->content_id            = null;
-            $assesment->trainingplan_id       = $request->input('trainingplan_id');
+            $assesment->trainingplan_id       = $request->input('trainingplan_id') ?: null;
         } else {
             $assesment->assasment_content_for = 'content';
             $assesment->content_id            = null;
