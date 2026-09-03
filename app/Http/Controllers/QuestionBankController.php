@@ -88,6 +88,15 @@ class QuestionBankController extends Controller
             }
         }
 
+        // Date Period Filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
         // Sort by Created Date
         $sortCreated = $request->get('sort_created', 'all');
         if ($sortCreated === 'oldest') {

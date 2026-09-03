@@ -233,12 +233,17 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer border-0 pt-0">
-                            <a href="{{ route('news.user.index') }}" class="btn btn-outline-secondary rounded-3 me-2">
-                                <i class="ti ti-refresh me-1"></i> Reset
+                        <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                            <!-- Reset Button (Placed on the left of Apply Filter) -->
+                            <a href="{{ route('news.user.index') }}" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1">
+                                <i class="ti ti-rotate me-1"></i>
+                                <span>Reset</span>
                             </a>
-                            <button type="submit" class="btn btn-primary rounded-3" form="owlNewsFilterForm">
-                                <i class="ti ti-check me-1"></i> Apply Filter
+
+                            <!-- Apply Filter Button -->
+                            <button type="submit" class="btn btn-primary px-3 d-inline-flex align-items-center gap-1" form="owlNewsFilterForm">
+                                <i class="ti ti-check me-1"></i>
+                                <span>Apply Filter</span>
                             </button>
                         </div>
                     </div>

@@ -108,13 +108,21 @@
                             </div>
                         </div>
 
-                        <!-- Action Buttons (Search submit & Refresh) -->
-                        <div class="d-flex gap-1 flex-shrink-0">
-                            <button type="submit" class="btn btn-primary rounded-3 px-3" style="background-color: #0c5b9e; border-color: #0c5b9e;" title="Search">
-                                <i class="ti ti-search"></i>
+                        <!-- Action Buttons (Search submit, More Filters & Reset) -->
+                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                            <!-- 1. Search Submit Button -->
+                            <button type="submit" class="btn btn-primary btn-icon px-3" title="Search">
+                                <i class="ti ti-search fs-2"></i>
                             </button>
-                            <a href="{{ route('manage.classification.index') }}" class="btn btn-outline-primary rounded-3 px-3 btn-quick-reset" style="border-color: #0c5b9e; color: #0c5b9e; background-color: transparent;" title="Reset Filter">
-                                <i class="ti ti-refresh" style="font-size: 1.1rem; color: #0c5b9e !important;"></i>
+
+                            <!-- 2. More Filters Modal Trigger Button (Icon Only - No Text) -->
+                            <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" data-bs-toggle="modal" data-bs-target="#categoryFilterModal" title="More Filters">
+                                <i class="ti ti-adjustments-horizontal fs-2"></i>
+                            </button>
+
+                            <!-- 3. Reset Button -->
+                            <a href="{{ route('manage.classification.index') }}" class="btn btn-outline-secondary btn-icon px-3" title="Reset Filters">
+                                <i class="ti ti-refresh fs-2"></i>
                             </a>
                         </div>
                     </div>
@@ -304,6 +312,27 @@
                 </button>
             </div>
 
+        </div>
+    </div>
+</div>
+
+<!-- Category / Classification More Filters Modal (Shell) -->
+<div class="modal fade" id="categoryFilterModal" tabindex="-1" aria-labelledby="categoryFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="categoryFilterModalLabel">
+                    <i class="ti ti-adjustments-horizontal me-2"></i>More Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="ti ti-filter-off text-muted fs-1 mb-2"></i>
+                <p class="text-muted mb-0">No additional filters available for categories.</p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>

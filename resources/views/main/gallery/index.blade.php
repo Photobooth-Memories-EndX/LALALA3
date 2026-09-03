@@ -314,16 +314,25 @@ body.theme-dark #manage-eventphoto-search-results .dropdown-item .text-dark {
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="col-auto d-flex gap-1">
-                            <button type="submit" class="btn btn-primary rounded-3 px-3" style="background-color: #0c5b9e; border-color: #0c5b9e;" title="Search">
-                                <i class="ti ti-search"></i>
+                        <div class="col-auto d-flex align-items-center gap-1 flex-shrink-0">
+                            <!-- 1. Search Submit Button -->
+                            <button type="submit" class="btn btn-primary btn-icon px-3" title="Search">
+                                <i class="ti ti-search fs-2"></i>
                             </button>
-                            <button type="button" class="btn btn-outline-primary rounded-3 px-3" style="border-color: #0c5b9e; color: #0c5b9e;" data-bs-toggle="modal" data-bs-target="#moreGalleryFiltersModal" title="More Filters">
-                                <i class="ti ti-adjustments-horizontal"></i>
+
+                            <!-- 2. More Filters Modal Trigger Button (Icon Only - No Text) -->
+                            <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" data-bs-toggle="modal" data-bs-target="#moreGalleryFiltersModal" title="More Filters">
+                                <i class="ti ti-adjustments-horizontal fs-2"></i>
+                                @if(request('date_from') || request('date_to') || request('author') || request('category') || request('status') || request('views'))
+                                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle">
+                                        <span class="visually-hidden">Active filter</span>
+                                    </span>
+                                @endif
                             </button>
-                            <!-- Tombol Reset Biru dengan Efek Hover Aman -->
-                            <a href="{{ route('manage.eventphoto.index') }}" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center justify-content-center btn-quick-reset" style="border-color: #0c5b9e; color: #0c5b9e; background-color: transparent;" title="Reset Filter">
-                                <i class="ti ti-refresh" style="font-size: 1.1rem; color: #0c5b9e !important;"></i>
+
+                            <!-- 3. Reset Button -->
+                            <a href="{{ route('manage.eventphoto.index') }}" class="btn btn-outline-secondary btn-icon px-3" title="Reset Filters">
+                                <i class="ti ti-refresh fs-2"></i>
                             </a>
                         </div>
                     </div>
@@ -522,9 +531,18 @@ body.theme-dark #manage-eventphoto-search-results .dropdown-item .text-dark {
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0 d-flex gap-2">
-                    <a href="{{ route('manage.eventphoto.index') }}" class="btn btn-outline-secondary rounded-pill flex-fill"><i class="ti ti-refresh me-1"></i> Reset</a>
-                    <button type="submit" class="btn btn-primary rounded-pill flex-fill" style="background-color: #0c5b9e; border-color: #0c5b9e;"><i class="ti ti-check me-1"></i> Apply Filter</button>
+                <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                    <!-- Reset Button (Placed on the left of Apply Filter) -->
+                    <a href="{{ route('manage.eventphoto.index') }}" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1">
+                        <i class="ti ti-rotate me-1"></i>
+                        <span>Reset</span>
+                    </a>
+
+                    <!-- Apply Filter Button -->
+                    <button type="submit" class="btn btn-primary px-3 d-inline-flex align-items-center gap-1">
+                        <i class="ti ti-check me-1"></i>
+                        <span>Apply Filter</span>
+                    </button>
                 </div>
             </form>
         </div>

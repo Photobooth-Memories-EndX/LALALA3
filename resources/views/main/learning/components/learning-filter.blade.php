@@ -77,19 +77,19 @@
                 </div>
 
                 <!-- 6. Icon Button: Apply Filter -->
-                <button type="button" id="btn-apply-filter" class="btn btn-primary rounded-3 px-3 flex-shrink-0" style="background-color: #0c5b9e; border-color: #0c5b9e;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
-                    <i class="ti ti-search"></i>
+                <button type="button" id="btn-apply-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
+                    <i class="ti ti-search fs-2"></i>
                 </button>
 
                 <!-- 7. Icon Button: More Filters -->
-                <button type="button" id="btn-more-filters" class="btn btn-outline-primary rounded-3 px-3 position-relative btn-more-filters flex-shrink-0" data-bs-toggle="modal" data-bs-target="#moreLearningFiltersModal" title="More Filters">
-                    <i class="ti ti-adjustments-horizontal"></i>
+                <button type="button" id="btn-more-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0" data-bs-toggle="modal" data-bs-target="#moreLearningFiltersModal" title="More Filters">
+                    <i class="ti ti-adjustments-horizontal fs-2"></i>
                     <span id="activeFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
                 </button>
 
                 <!-- 8. Icon Button: Reset -->
-                <button type="button" id="btn-reset-filter" class="btn btn-outline-primary rounded-3 px-3 btn-quick-reset flex-shrink-0" style="border-color: #0c5b9e; color: #0c5b9e;" data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
-                    <i class="ti ti-refresh"></i>
+                <button type="button" id="btn-reset-filter" class="btn btn-outline-secondary btn-icon px-3 btn-quick-reset flex-shrink-0" data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
+                    <i class="ti ti-refresh fs-2"></i>
                 </button>
 
                 <!-- 9. Button: Download -->
@@ -213,12 +213,17 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0 d-flex gap-2">
-                    <button type="button" id="btn-modal-reset" class="btn btn-outline-secondary rounded-pill flex-fill" data-bs-dismiss="modal">
-                        <i class="ti ti-refresh me-1"></i> <span>Reset</span>
+                <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                    <!-- Reset Button (Placed on the left of Apply Filter) -->
+                    <button type="button" id="btn-modal-reset" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1" data-bs-dismiss="modal">
+                        <i class="ti ti-rotate me-1"></i>
+                        <span>Reset</span>
                     </button>
-                    <button type="button" id="btn-modal-apply" class="btn btn-primary rounded-pill flex-fill" style="background-color: #0c5b9e; border-color: #0c5b9e;" data-bs-dismiss="modal">
-                        <i class="ti ti-check me-1"></i> Apply Filter
+
+                    <!-- Apply Filter Button -->
+                    <button type="button" id="btn-modal-apply" class="btn btn-primary px-3 d-inline-flex align-items-center gap-1" style="background-color: #0c5b9e; border-color: #0c5b9e;" data-bs-dismiss="modal">
+                        <i class="ti ti-check me-1"></i>
+                        <span>Apply Filter</span>
                     </button>
                 </div>
             </form>

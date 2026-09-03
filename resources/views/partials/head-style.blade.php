@@ -784,6 +784,52 @@
         border-top: 1px solid #e2e8f0 !important;
         z-index: 2005 !important;
     }
+
+    /* Standardized Compact Icon-Only Filter Action Buttons */
+    .btn-icon.px-3 {
+        width: 38px !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+    }
+    .btn-icon.px-3 i {
+        font-size: 1.15rem !important;
+        line-height: 1 !important;
+    }
+    .btn-icon.btn-primary {
+        background-color: #0c5b9e !important;
+        border-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+    .btn-icon.btn-primary:hover {
+        background-color: #09477d !important;
+        border-color: #09477d !important;
+    }
+    .btn-icon.btn-outline-primary {
+        border-color: #0c5b9e !important;
+        color: #0c5b9e !important;
+        background-color: transparent !important;
+    }
+    .btn-icon.btn-outline-primary:hover {
+        background-color: #e6f0fa !important;
+        border-color: #0c5b9e !important;
+        color: #0c5b9e !important;
+    }
+    .btn-icon.btn-outline-secondary {
+        border-color: #6c757d !important;
+        color: #6c757d !important;
+        background-color: transparent !important;
+    }
+    .btn-icon.btn-outline-secondary:hover {
+        background-color: #f1f3f5 !important;
+        border-color: #495057 !important;
+        color: #495057 !important;
+    }
 </style>
 
 {{-- Select2 --}}

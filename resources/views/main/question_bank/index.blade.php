@@ -190,26 +190,39 @@
                                         <span class="input-icon-addon"><i class="ti ti-search"></i></span>
                                         <input type="text" name="q" id="manage-questionbank-search-input" class="form-control" placeholder="Search question bank..." value="{{ request('q') ?? (request('search') ?? request('s')) }}" autocomplete="off">
                                     </div>
-                                    <div id="manage-questionbank-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" 
+                                    <div id="manage-questionbank-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden"
                                          style="display: none; z-index: 2000; background-color: #ffffff;">
                                         <!-- Container 1: Scrollable List Area (Max 280px height with vertical scrollbar) -->
-                                        <div id="manage-questionbank-autocomplete-list" class="list-group list-group-flush" 
+                                        <div id="manage-questionbank-autocomplete-list" class="list-group list-group-flush"
                                              style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
-                                        
+
                                         <!-- Container 2: Fixed/Sticky Bottom Footer -->
-                                        <div id="manage-questionbank-search-footer" class="border-top p-2 text-center" 
+                                        <div id="manage-questionbank-search-footer" class="border-top p-2 text-center"
                                              style="display: none; position: sticky; bottom: 0; z-index: 2005; background-color: #f8f9fa;"></div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Action Buttons -->
-                            <div class="col-auto d-flex gap-1">
-                                <button type="submit" class="btn btn-primary rounded-3 px-3" style="background-color: #0c5b9e; border-color: #0c5b9e;" title="Search">
-                                    <i class="ti ti-search"></i>
+                            <div class="col-auto d-flex align-items-center gap-1 flex-shrink-0">
+                                <!-- 1. Search Submit Button -->
+                                <button type="submit" class="btn btn-primary btn-icon px-3" title="Search">
+                                    <i class="ti ti-search fs-2"></i>
                                 </button>
-                                <a href="{{ route('question.bank.index') }}" class="btn btn-outline-primary rounded-3 px-3 btn-quick-reset" style="border-color: #0c5b9e; color: #0c5b9e; background-color: transparent;" title="Reset Filter">
-                                    <i class="ti ti-refresh" style="font-size: 1.1rem; color: #0c5b9e !important;"></i>
+
+                                <!-- 2. More Filters Modal Trigger Button (Icon Only - No Text) -->
+                                <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" data-bs-toggle="modal" data-bs-target="#questionBankFilterModal" title="More Filters">
+                                    <i class="ti ti-adjustments-horizontal fs-2"></i>
+                                    @if(request('date_from') || request('date_to'))
+                                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle">
+                                            <span class="visually-hidden">Active filter</span>
+                                        </span>
+                                    @endif
+                                </button>
+
+                                <!-- 3. Reset Button -->
+                                <a href="{{ route('question.bank.index') }}" class="btn btn-outline-secondary btn-icon px-3" title="Reset Filters">
+                                    <i class="ti ti-refresh fs-2"></i>
                                 </a>
                             </div>
                         </div>
@@ -359,6 +372,59 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Bank More Filters Modal -->
+    <div class="modal fade" id="questionBankFilterModal" tabindex="-1" aria-labelledby="questionBankFilterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{{ route('manage.question-bank.index') }}" method="GET">
+                    <!-- Preserve existing query search & type filters -->
+                    <input type="hidden" name="q" value="{{ request('q') }}">
+                    <input type="hidden" name="type" value="{{ request('type') }}">
+                    <input type="hidden" name="sort" value="{{ request('sort') }}">
+                    <input type="hidden" name="total_questions" value="{{ request('total_questions') }}">
+                    <input type="hidden" name="sort_created" value="{{ request('sort_created') }}">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="questionBankFilterModalLabel">
+                            <i class="ti ti-adjustments-horizontal me-2"></i>More Filters
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-muted small mb-2">Created Date Period</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label small text-muted">From Date</label>
+                                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small text-muted">To Date</label>
+                                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                        <!-- Reset Button (Placed on the left of Apply Filter) -->
+                        <a href="{{ route('manage.question-bank.index') }}" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1">
+                            <i class="ti ti-rotate me-1"></i>
+                            <span>Reset</span>
+                        </a>
+
+                        <!-- Apply Filter Button -->
+                        <button type="submit" class="btn btn-primary px-3 d-inline-flex align-items-center gap-1">
+                            <i class="ti ti-check me-1"></i>
+                            <span>Apply Filter</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

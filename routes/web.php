@@ -366,6 +366,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('question-bank/search-autocomplete', [QuestionBankController::class, 'autocompleteSearch'])->name('manage.question.bank.autocomplete');
         Route::get('question-bank/autocomplete', [QuestionBankController::class, 'autocompleteSearch']);
         Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question.bank.index');
+        Route::get('question-bank/index', [QuestionBankController::class, 'index'])->name('manage.question-bank.index');
         Route::get('question-bank/create', [QuestionBankController::class, 'create'])->name('question.bank.create');
         Route::post('question-bank/store', [QuestionBankController::class, 'store'])->name('question.bank.store');
         Route::get('question-bank/edit/{slug}', [QuestionBankController::class, 'edit'])->name('question.bank.edit');
