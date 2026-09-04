@@ -16,11 +16,6 @@
                     <i class="ti ti-table" aria-hidden="true"></i>
                     <span>Open Learning Table</span>
                 </a>
-                <a href="{{ route('manage.index') }}"
-                   class="btn manage-learning-hero__action manage-learning-hero__action--secondary">
-                    <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
-                    <span>Back to Dashboard</span>
-                </a>
             </div>
         </div>
 
@@ -37,23 +32,18 @@
         </aside>
     </section>
 @else
-    <header class="learning-table-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-        <div>
-            <div class="text-uppercase text-muted small fw-semibold">Manage Learning</div>
-            <h1 class="page-title mb-1">{{ $title ?? 'Learning' }}</h1>
-            <div class="text-muted">Monitor progress, status, and completion without loading the full dataset at once.</div>
-        </div>
+    <!-- TOMBOL BACK RATA KIRI ATAS -->
+    <div class="mb-3">
+        <a href="{{ route('manage.index') }}" class="btn-back mb-3 d-inline-flex align-items-center gap-1 text-decoration-none">
+            <i class="ti ti-arrow-left"></i>
+            <span>Back</span>
+        </a>
+    </div>
 
-        <div class="d-flex gap-2">
-            <a href="{{ route('learning.manage.all') }}" class="btn btn-outline-primary">
-                <i class="ti ti-layout-grid me-1"></i>
-                All Learning
-            </a>
-            <a href="{{ route('manage.index') }}" class="btn btn-outline-secondary">
-                <i class="ti ti-arrow-left me-1"></i>
-                Back
-            </a>
-        </div>
+    <header class="learning-table-header mb-4">
+        <div class="text-uppercase text-muted small fw-semibold">Manage Learning</div>
+        <h1 class="page-title mb-1">{{ $title ?? 'Learning' }}</h1>
+        <div class="text-muted">Monitor progress, status, and completion without loading the full dataset at once.</div>
     </header>
 @endif
 

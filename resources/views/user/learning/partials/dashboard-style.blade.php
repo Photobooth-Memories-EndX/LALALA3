@@ -130,6 +130,73 @@
         transform: translateY(.25rem) !important;
     }
 
+    /*
+     * Live Autocomplete Dropdown Search for Ongoing, Assessment & Certificate Learning
+     */
+    .search-ongoing-container,
+    .assessment-search-container,
+    .certificate-search-container {
+        position: relative;
+        width: 100%;
+    }
+
+    #ongoing-search-results,
+    #assessment-search-results,
+    #certificate-search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1085;
+        max-height: 300px;
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        overflow: hidden !important;
+    }
+
+    .autocomplete-list-group,
+    #ongoing-autocomplete-list,
+    #assessment-autocomplete-list,
+    #certificate-autocomplete-list {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+    }
+
+    #ongoing-search-results .dropdown-item,
+    #assessment-search-results .dropdown-item,
+    #certificate-search-results .dropdown-item {
+        background-color: #ffffff !important;
+        color: #333333 !important;
+        padding: .6rem .85rem;
+        transition: background-color .15s ease;
+        text-decoration: none;
+    }
+
+    #ongoing-search-results .dropdown-item:hover,
+    #ongoing-search-results .dropdown-item:focus,
+    #assessment-search-results .dropdown-item:hover,
+    #assessment-search-results .dropdown-item:focus,
+    #certificate-search-results .dropdown-item:hover,
+    #certificate-search-results .dropdown-item:focus {
+        background-color: #f8f9fa !important;
+    }
+
+    #ongoing-search-results .dropdown-item:not(:last-child),
+    #assessment-search-results .dropdown-item:not(:last-child),
+    #certificate-search-results .dropdown-item:not(:last-child) {
+        border-bottom: 1px solid rgba(0, 0, 0, .05);
+    }
+
+    .search-footer,
+    #ongoing-search-footer,
+    #assessment-search-footer,
+    #certificate-search-footer {
+        background-color: #f8f9fa !important;
+        border-top: 1px solid #e2e8f0 !important;
+    }
+
     /* Tombol Filter/Reset sejajar & sama tinggi dengan input di baris filter */
     .learning-filter-actions .btn {
         min-height: 42px;
@@ -704,6 +771,59 @@
         background: #6AAED6;
         border-color: #6AAED6;
         color: #fff;
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results,
+    [data-bs-theme="dark"] #assessment-search-results,
+    [data-bs-theme="dark"] #certificate-search-results,
+    body.dark-mode #ongoing-search-results,
+    body.dark-mode #assessment-search-results,
+    body.dark-mode #certificate-search-results {
+        background: #152235;
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item,
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item,
+    [data-bs-theme="dark"] #certificate-search-results .dropdown-item,
+    body.dark-mode #ongoing-search-results .dropdown-item,
+    body.dark-mode #assessment-search-results .dropdown-item,
+    body.dark-mode #certificate-search-results .dropdown-item {
+        color: #f1f5f9;
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item:not(:last-child),
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item:not(:last-child),
+    [data-bs-theme="dark"] #certificate-search-results .dropdown-item:not(:last-child),
+    body.dark-mode #ongoing-search-results .dropdown-item:not(:last-child),
+    body.dark-mode #assessment-search-results .dropdown-item:not(:last-child),
+    body.dark-mode #certificate-search-results .dropdown-item:not(:last-child) {
+        border-bottom-color: rgba(255, 255, 255, 0.06);
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item:hover,
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item:focus,
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item:hover,
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item:focus,
+    [data-bs-theme="dark"] #certificate-search-results .dropdown-item:hover,
+    [data-bs-theme="dark"] #certificate-search-results .dropdown-item:focus,
+    body.dark-mode #ongoing-search-results .dropdown-item:hover,
+    body.dark-mode #ongoing-search-results .dropdown-item:focus,
+    body.dark-mode #assessment-search-results .dropdown-item:hover,
+    body.dark-mode #assessment-search-results .dropdown-item:focus,
+    body.dark-mode #certificate-search-results .dropdown-item:hover,
+    body.dark-mode #certificate-search-results .dropdown-item:focus {
+        background: rgba(106, 174, 214, 0.14);
+    }
+
+    [data-bs-theme="dark"] #ongoing-search-results .dropdown-item .text-dark,
+    [data-bs-theme="dark"] #assessment-search-results .dropdown-item .text-dark,
+    [data-bs-theme="dark"] #certificate-search-results .dropdown-item .text-dark,
+    body.dark-mode #ongoing-search-results .dropdown-item .text-dark,
+    body.dark-mode #assessment-search-results .dropdown-item .text-dark,
+    body.dark-mode #certificate-search-results .dropdown-item .text-dark {
+        color: #f1f5f9 !important;
     }
 </style>
 @endsection

@@ -102,7 +102,7 @@
 
 @section('content')
 @php
-    $keyword    = $keyword    ?? request('s', '');
+    $keyword    = $keyword    ?? request('s', request('q', ''));
     $searchtype = $searchtype ?? 'all';
     $totalAll   = $totalcontent + $totalnews + $totaleventphoto + $totalplaylist;
 @endphp

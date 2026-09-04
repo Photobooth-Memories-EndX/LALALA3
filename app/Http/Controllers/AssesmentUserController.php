@@ -3,18 +3,99 @@
     namespace App\Http\Controllers;
 
     use App\Models\Assesment;
-    use Illuminate\Http\Request;
     use App\Models\AssesmentQuestion;
     use App\Models\AssesmentQuestionBank;
     use App\Models\AssesmentResult;
     use App\Services\AssessmentAccessService;
+    use App\Services\Learning\CompletedPlaylistService;
     use Illuminate\Database\Eloquent\Collection;
+    use Illuminate\Http\JsonResponse;
+    use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Cache;
     use Illuminate\Support\Str;
 
     class AssesmentUserController extends Controller
     {
+        /**
+         * AJAX live autocomplete search for assigned assessment items.
+         */
+        public function autocomplete(Request $request, CompletedPlaylistService $completedPlaylistService): JsonResponse
+        {
+            $query = trim((string) $request->get('q', ''));
+            if ($query === '') {
+                return response()->json([]);
+            }
+
+            $user   = Auth::user();
+            $userId = (int) Auth::id();
+
+            $completedPlaylistIds = $completedPlaylistService
+                ->forUser($userId)
+                ->pluck('id');
+
+            $assignedDescriptions = array_filter([
+                $user->name ?? null,
+                $user->team ?? null,
+                $user->department ?? null,
+                $user->division ?? null,
+            ]);
+
+            $assessments = Assesment::with(['contents', 'trainingplan'])
+                ->where(function ($q) use ($user, $userId, $completedPlaylistIds, $assignedDescriptions) {
+                    $q->whereHas('assesments_assigned', function ($aq) use ($user, $assignedDescriptions) {
+                        $aq->where('assigned_id', $user->id_emp)
+                            ->orWhere('assigned_id', $user->id_team ?? $user->id_tean)
+                            ->orWhere('assigned_id', $user->id_department);
+                        if (!empty($assignedDescriptions)) {
+                            $aq->orWhereIn('assigned_description', $assignedDescriptions);
+                        }
+                    })
+                    ->orWhereHas('contents', function ($cq) use ($userId) {
+                        $cq->whereHas('contentuser', function ($cuq) use ($userId) {
+                            $cuq->where('progress', '>=', 100)->where('user_id', $userId);
+                        });
+                    })
+                    ->orWhere(function ($tq) use ($completedPlaylistIds) {
+                        $tq->where('type', 'trainingplan')
+                            ->where('status', 'OK')
+                            ->whereIn('trainingplan_id', $completedPlaylistIds);
+                    })
+                    ->orWhereHas('scores', function ($sq) use ($userId) {
+                        $sq->where('user_id', $userId);
+                    });
+                })
+                ->where(function ($searchQuery) use ($query) {
+                    $keyword = '%' . $query . '%';
+                    $searchQuery->where('title', 'like', $keyword)
+                        ->orWhereHas('contents', fn ($content) => $content->where('title', 'like', $keyword))
+                        ->orWhereHas('trainingplan', fn ($playlist) => $playlist->where('title', 'like', $keyword));
+                })
+                ->limit(10)
+                ->get();
+
+            $results = $assessments->map(function ($assessment) {
+                $rawType = strtolower((string) ($assessment->type ?? 'content'));
+                $typeLabel = match ($rawType) {
+                    'trainingplan', 'playlist' => 'Playlist',
+                    'youtube'                  => 'MOOC',
+                    'global'                   => 'Global',
+                    default                    => ucwords(str_replace('_', ' ', $rawType)),
+                };
+
+                return [
+                    'id'         => $assessment->id,
+                    'title'      => $assessment->title,
+                    'slug'       => $assessment->slug,
+                    'type'       => $rawType,
+                    'type_label' => $typeLabel,
+                    'batch'      => $assessment->batch,
+                    'subtitle'   => $assessment->trainingplan->title ?? null,
+                ];
+            });
+
+            return response()->json($results->values());
+        }
     public function index()
         {
             $assesment = Assesment::with([

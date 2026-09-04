@@ -79,31 +79,42 @@
             <input type="hidden" name="sort" value="{{ $filters['sort'] }}" data-gallery-sort>
 
             <div class="gallery-filter-search">
-                <label class="visually-hidden" for="gallery-search">Search gallery by title</label>
-                <div class="input-icon">
-                    <span class="input-icon-addon" aria-hidden="true"><i class="ti ti-search"></i></span>
-                    <input id="gallery-search" type="search" name="q" value="{{ $filters['q'] }}"
-                        class="form-control" placeholder="Search by title..." autocomplete="off">
+                <label class="visually-hidden" for="gallery-search-input">Search gallery by title</label>
+                <div class="gallery-search-container position-relative flex-grow-1">
+                    <div class="input-icon">
+                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                        <input type="text" id="gallery-search-input" name="q" value="{{ $filters['q'] }}"
+                            class="form-control" placeholder="Search by title..." autocomplete="off">
+                    </div>
+                    
+                    <div id="gallery-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000; background-color: #ffffff;">
+                        <!-- Container 1: Scrollable List Area (Only items scroll here) -->
+                        <div id="gallery-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                        
+                        <!-- Container 2: Pinned Sticky Footer (Fixed at bottom outside scroll area) -->
+                        <div id="gallery-search-footer" class="border-top bg-light p-2 text-center" style="display: none; background-color: #f8f9fa;"></div>
+                    </div>
                 </div>
             </div>
-            <div class="gallery-filter-actions">
-                <button type="submit" class="btn btn-primary gallery-action-btn" aria-label="Search" title="Search">
-                    <i class="ti ti-search" aria-hidden="true"></i>
+            <div class="gallery-filter-actions d-flex align-items-center gap-1 flex-shrink-0">
+                <!-- 1. Search Submit Button -->
+                <button type="submit" class="btn btn-primary btn-icon px-3" aria-label="Search" title="Search">
+                    <i class="ti ti-search fs-2" aria-hidden="true"></i>
                 </button>
-                <a href="#galleryFilterModal" class="btn gallery-action-btn gallery-action-secondary" role="button"
-                    data-bs-toggle="modal" data-bs-target="#galleryFilterModal"
-                    aria-controls="galleryFilterModal" aria-label="More Filters" title="More Filters">
-                    <i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>
+
+                <!-- 2. More Filters Modal Trigger Button (Icon Only - No Text) -->
+                <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" data-bs-toggle="modal" data-bs-target="#galleryFilterModal" aria-controls="galleryFilterModal" aria-label="More Filters" title="More Filters">
+                    <i class="ti ti-adjustments-horizontal fs-2" aria-hidden="true"></i>
                     @if($advancedCount > 0)
-                        <span class="gallery-filter-count" aria-label="{{ $advancedCount }} advanced filters active">{{ $advancedCount }}</span>
+                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle">
+                            <span class="visually-hidden">{{ $advancedCount }} active filters</span>
+                        </span>
                     @endif
-                </a>
-                {{-- <button type="submit" class="btn gallery-action-btn gallery-action-apply" aria-label="Apply Filter" title="Apply Filter">
-                    <i class="ti ti-check" aria-hidden="true"></i>
-                </button> --}}
-                <a href="{{ route('gallery.user.index') }}" class="btn gallery-action-btn gallery-action-reset"
-                    data-gallery-reset aria-label="Reset Filter" title="Reset Filter">
-                    <i class="ti ti-refresh" aria-hidden="true"></i>
+                </button>
+
+                <!-- 3. Reset Button -->
+                <a href="{{ route('gallery.user.index') }}" class="btn btn-outline-secondary btn-icon px-3" data-gallery-reset aria-label="Reset Filter" title="Reset Filters">
+                    <i class="ti ti-refresh fs-2" aria-hidden="true"></i>
                 </a>
             </div>
         </div>

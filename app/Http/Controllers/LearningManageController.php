@@ -6,6 +6,7 @@ use App\Exports\LearningExport;
 use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
+use App\Models\User;
 use App\Services\Learning\LearningDatatableService;
 use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
@@ -98,6 +99,13 @@ class LearningManageController extends Controller
 
     public function all(Request $request)
     {
+        if ($request->input('action') === 'download') {
+            return Excel::download(
+                new LearningExport($request->all(), '', ''),
+                now()->format('Ymd_His') . '_learning.xlsx'
+            );
+        }
+
         return view('main.learning.all', $this->learningViewData($request, 'All Learning'));
     }
 
@@ -107,12 +115,7 @@ class LearningManageController extends Controller
 
         if ($request->input('action') === 'download') {
             return Excel::download(
-                new LearningExport(
-                    'category',
-                    $this->normalizeExportFilter($request->input('status')),
-                    $this->normalizeExportFilter($request->input('year')),
-                    $slug
-                ),
+                new LearningExport($request->all(), 'category', $slug),
                 now()->format('Ymd_His') . '_learning.xlsx'
             );
         }
@@ -130,12 +133,7 @@ class LearningManageController extends Controller
 
         if ($request->input('action') === 'download') {
             return Excel::download(
-                new LearningExport(
-                    'content',
-                    $this->normalizeExportFilter($request->input('status')),
-                    $this->normalizeExportFilter($request->input('year')),
-                    $slug
-                ),
+                new LearningExport($request->all(), 'content', $slug),
                 now()->format('Ymd_His') . '_learning.xlsx'
             );
         }
@@ -145,6 +143,68 @@ class LearningManageController extends Controller
             'Content: ' . ($contentModel->title ?? $slug),
             $slug
         ));
+    }
+
+    public function searchEmployees(Request $request)
+    {
+        $term = trim((string) ($request->input('q') ?? $request->input('search', '')));
+        $results = [];
+
+        $query = User::select('id', 'name', 'id_emp')
+            ->whereNotNull('name')
+            ->where('name', '!=', '');
+
+        if ($term !== '') {
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                  ->orWhere('id_emp', 'like', "%{$term}%");
+            });
+        }
+
+        $users = $query->limit(20)->get();
+
+        foreach ($users as $user) {
+            $nip = $user->id_emp ? " (NIP: {$user->id_emp})" : '';
+            $results[] = [
+                'id' => $user->id,
+                'text' => $user->name . $nip,
+            ];
+        }
+
+        return response()->json(['results' => $results]);
+    }
+
+    public function searchTitles(Request $request)
+    {
+        $term = trim((string) ($request->input('q') ?? $request->input('search', '')));
+        $results = [];
+
+        $query = Content::select('id', 'title')
+            ->whereNotNull('title')
+            ->where('title', '!=', '');
+
+        if ($term !== '') {
+            $query->where('title', 'like', "%{$term}%");
+        }
+
+        $contents = $query->distinct()->limit(20)->get();
+
+        foreach ($contents as $content) {
+            $results[] = [
+                'id' => $content->title,
+                'text' => $content->title,
+            ];
+        }
+
+        return response()->json(['results' => $results]);
+    }
+
+    public function download(Request $request)
+    {
+        return Excel::download(
+            new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')),
+            now()->format('Ymd_His') . '_learning_data.xlsx'
+        );
     }
 
     public function datatable(Request $request, LearningDatatableService $datatableService)

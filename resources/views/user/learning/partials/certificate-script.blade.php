@@ -77,6 +77,10 @@
                     : certificateDefaults[key];
             });
 
+            if (params.has('q') && !params.has('certificate_search')) {
+                nextState['certificate_search'] = String(params.get('q'));
+            }
+
             return replaceCertificateState(nextState);
         }
 
@@ -121,7 +125,7 @@
         }
 
         function restoreCertificateInputs() {
-            $('#certificateSearch').val(certificateFilterState.certificate_search || '');
+            $('#certificate-search-input, #certificateSearch').val(certificateFilterState.certificate_search || '');
 
             $('#certificateFilterBar [data-certificate-filter]').each(function () {
                 var $dropdown = $(this);
@@ -170,7 +174,7 @@
             nextState.certificate_date_from = $.trim($('#certificate_date_from').val() || $('[name="certificate_date_from"]').val() || '');
             nextState.certificate_date_to = $.trim($('#certificate_date_to').val() || $('[name="certificate_date_to"]').val() || '');
             nextState.certificate_sort = $('#certificateSort').val() || 'all';
-            nextState.certificate_search = $.trim($('#certificateSearch').val());
+            nextState.certificate_search = $.trim($('#certificate-search-input, #certificateSearch').val());
 
             return replaceCertificateState(nextState);
         }
@@ -197,16 +201,127 @@
             reloadCertificate(buildCertificateParams(certificateFilterState));
         }
 
-        $('#certificateSearch').off('.learningCertificate').on('input.learningCertificate', function () {
-            var value = $.trim(this.value);
-            clearTimeout(window.learningCertificateSearchTimer);
-            window.learningCertificateSearchTimer = setTimeout(function () {
-                var params = certificateParams();
-                params.delete('certificate_search');
-                params.delete('certificate_page');
-                if (value) params.set('certificate_search', value);
-                reloadCertificate(params);
-            }, 450);
+        function escapeCertificateHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ── Live Autocomplete Search for Certificate Filter ──────────────────────
+        function initCertificateAutocomplete() {
+            var searchInput = document.getElementById('certificate-search-input') || document.getElementById('certificateSearch');
+            var searchResults = document.getElementById('certificate-search-results');
+            var debounceTimer = null;
+
+            if (!searchInput || !searchResults) return;
+
+            var listEl = searchResults.querySelector('.autocomplete-list-group') || searchResults;
+            var footerEl = searchResults.querySelector('.search-footer');
+
+            $(searchInput).off('.learningCertificateSearch').on('input.learningCertificateSearch', function () {
+                var value = $.trim(this.value);
+                clearTimeout(debounceTimer);
+
+                if (value.length < 1) {
+                    searchResults.style.display = 'none';
+                    if (listEl) listEl.innerHTML = '';
+                    if (footerEl) footerEl.style.display = 'none';
+                    clearTimeout(window.learningCertificateSearchTimer);
+                    window.learningCertificateSearchTimer = setTimeout(function () {
+                        applyCertificateFilters();
+                    }, 400);
+                    return;
+                }
+
+                debounceTimer = setTimeout(function () {
+                    fetch('/user/certificate/search-autocomplete?q=' + encodeURIComponent(value), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        var html = '';
+                        if (data && data.length > 0) {
+                            data.forEach(function (item) {
+                                var badgeClass = item.type === 'playlist' || item.type === 'trainingplan'
+                                    ? 'bg-teal-lt text-teal'
+                                    : (item.type === 'global' ? 'bg-indigo-lt text-indigo' : 'bg-primary-lt text-primary');
+                                var typeLabel = item.type_label || (item.type ? escapeCertificateHtml(item.type.toUpperCase()) : 'CONTENT');
+
+                                var subDetails = [];
+                                if (item.certificate_number) subDetails.push('No: ' + escapeCertificateHtml(item.certificate_number));
+                                if (item.credential_id) subDetails.push('ID: ' + escapeCertificateHtml(item.credential_id));
+                                if (item.issuer) subDetails.push(escapeCertificateHtml(item.issuer));
+
+                                html += '<a href="#" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle certificate-search-item" data-title="' + escapeCertificateHtml(item.title) + '">' +
+                                    '<div class="d-flex align-items-center justify-content-between mb-1">' +
+                                        '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeCertificateHtml(item.title) + '</span>' +
+                                        '<span class="badge ' + badgeClass + ' small flex-shrink-0">' + escapeCertificateHtml(typeLabel) + '</span>' +
+                                    '</div>' +
+                                    (subDetails.length > 0 ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.join(' &bull; ') + '</div>' : '') +
+                                '</a>';
+                            });
+                        }
+                        if (listEl) listEl.innerHTML = html;
+
+                        var keyword = $.trim(searchInput.value);
+                        if (footerEl) {
+                            if (data && data.length > 0) {
+                                footerEl.innerHTML = `
+                                    <a href="/my-learning?learning_tab=certificate&q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="ti ti-search"></i>
+                                        <span>See all results for "${keyword}"</span>
+                                    </a>
+                                `;
+                                footerEl.style.display = 'block';
+                            } else {
+                                footerEl.innerHTML = '<div class="dropdown-item text-muted disabled py-2">No items found</div>';
+                                footerEl.style.display = 'block';
+                            }
+                        }
+                        searchResults.style.display = 'block';
+                    })
+                    .catch(function () {
+                        searchResults.style.display = 'none';
+                    });
+                }, 250);
+            });
+
+            $(searchInput).off('focus.learningCertificateSearch').on('focus.learningCertificateSearch', function () {
+                if ($.trim(this.value).length >= 1 && ((listEl && listEl.children.length > 0) || (footerEl && footerEl.style.display !== 'none'))) {
+                    searchResults.style.display = 'block';
+                }
+            });
+
+            $(searchInput).off('keydown.learningCertificateSearch').on('keydown.learningCertificateSearch', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchResults.style.display = 'none';
+                    applyCertificateFilters();
+                }
+            });
+        }
+
+        initCertificateAutocomplete();
+
+        $(document).off('click.certificateSearchItem').on('click.certificateSearchItem', '.certificate-search-item', function (event) {
+            event.preventDefault();
+            var title = String($(this).data('title') || '');
+            $('#certificate-search-input, #certificateSearch').val(title);
+            var searchResults = document.getElementById('certificate-search-results');
+            if (searchResults) searchResults.style.display = 'none';
+            applyCertificateFilters();
+        });
+
+        document.addEventListener('click', function (e) {
+            var searchInput = document.getElementById('certificate-search-input') || document.getElementById('certificateSearch');
+            var searchResults = document.getElementById('certificate-search-results');
+            if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
         });
 
         $('.certificate-quick-item').off('.learningCertificate').on('click.learningCertificate', function (event) {
@@ -256,6 +371,12 @@
 
         $('#certificateModalReset, #certificateResetFilter').off('.learningCertificate').on('click.learningCertificate', function () {
             clearTimeout(window.learningCertificateSearchTimer);
+            $('#certificate-search-input, #certificateSearch').val('');
+            var searchResults = document.getElementById('certificate-search-results');
+            if (searchResults) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+            }
             replaceCertificateState({});
             restoreCertificateInputs();
             updateAdvancedCount();

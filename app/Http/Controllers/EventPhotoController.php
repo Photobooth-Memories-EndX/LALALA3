@@ -3,11 +3,67 @@
 namespace App\Http\Controllers;
 
 use App\Models\EventPhoto;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 
 class EventPhotoController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for active published event photo galleries.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $galleries = EventPhoto::where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('category', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('uploader', 'LIKE', "%{$rawQuery}%");
+            })
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        $results = $galleries->map(function ($gallery) {
+            $photosArr = $gallery->photos ? (json_decode($gallery->photos, true) ?? []) : [];
+            $photoCount = is_array($photosArr) ? count($photosArr) : 0;
+
+            return [
+                'id'          => $gallery->id,
+                'title'       => $gallery->title,
+                'name'        => $gallery->title,
+                'type'        => 'GALLERY',
+                'slug'        => $gallery->slug,
+                'active'      => $gallery->active ?? $gallery->status,
+                'status'      => $gallery->status ?? $gallery->active,
+                'photo_count' => $photoCount,
+                'category'    => $gallery->category,
+                'uploader'    => $gallery->uploader,
+                'event_date'  => $gallery->eventdate ? \Carbon\Carbon::parse($gallery->eventdate)->format('d M Y') : null,
+                'views'       => (int) ($gallery->views ?? 0),
+                'url'         => route('eventphoto.edit', $gallery->slug ?? $gallery->id),
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -18,8 +74,8 @@ class EventPhotoController extends Controller
         $query = EventPhoto::query();
 
         // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if ($request->filled('q') || $request->filled('search') || $request->filled('s')) {
+            $search = $request->q ?: ($request->search ?: $request->s);
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', '%' . $search . '%')
                   ->orWhere('uploader', 'like', '%' . $search . '%')
@@ -155,6 +211,8 @@ class EventPhotoController extends Controller
             ];
         });
 
+        $draftCount = $draftEvent;
+
         return view(
             'main.gallery.index',
             compact(
@@ -163,6 +221,7 @@ class EventPhotoController extends Controller
                 'totalEvent',
                 'activeEvent',
                 'draftEvent',
+                'draftCount',
                 'totalPhotos',
                 'uploaders',
                 'categories'
@@ -189,16 +248,19 @@ class EventPhotoController extends Controller
      */
     public function store(Request $request)
     {
+        $isDraft = $request->input('action') === 'draft' || $request->input('action') === 'save';
+
         $request->validate([
-            'title' => 'required',
+            'title' => $isDraft ? 'nullable|string|max:255' : 'required',
             'category' => 'nullable|string|max:255',
         ]);
         $eventphoto = new EventPhoto();
 
-        $eventphoto->title = $request->input('title');
+        $eventphoto->title = $request->input('title') ?: 'Draft Gallery Event ' . date('Y-m-d H:i');
         $eventphoto->category = $request->input('category');
         $eventphoto->status = 'approved';
-        $eventphoto->eventdate = $request->input('eventdate');
+        $eventphoto->active = ($request->input('action') === 'publish') ? 'Active' : 'Inactive';
+        $eventphoto->eventdate = $request->input('eventdate') ?: date('Y-m-d');
 
         $eventphoto->likes = '0';
         $eventphoto->views = '0';
@@ -219,18 +281,23 @@ class EventPhotoController extends Controller
                 $arraydoc[] = $doc;
                 File::move(public_path('storage/gallery/tmp') . '/' . $doc, public_path('storage/gallery/photo/' . $newid . '') . '/' . $doc);
             }
-            EventPhoto::where('id', $newid)
-                ->update([
-                    'thumbnail' => $arraydoc[0],
-                    'photos' => json_encode($arraydoc)
-                ]);
+            if (!empty($arraydoc)) {
+                EventPhoto::where('id', $newid)
+                    ->update([
+                        'thumbnail' => $arraydoc[0],
+                        'photos' => json_encode($arraydoc)
+                    ]);
+            }
         }
-        if ($request->action == 'publish') {
-            EventPhoto::where('id', $newid)
-                ->update([
-                    'active' => 'Active'
-                ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'Event created successfully.',
+                'redirect' => route('manage.eventphoto.index')
+            ]);
         }
+
         return redirect()->route('manage.eventphoto.index')->with('success', 'Event created successfully.');
     }
 
@@ -274,65 +341,72 @@ class EventPhotoController extends Controller
         //
         $eventphoto = EventPhoto::find($request->id);
         $updateData = [
-            'title' => $request->title,
-            'category' => $request->category,
-            'status' => $request->status,
+            'title'     => $request->title,
+            'category'  => $request->category,
+            'status'    => $request->status,
             'eventdate' => $request->eventdate,
             'thumbnail' => $request->thumbnail
         ];
-        if ($request->action == 'unpublish') {
-            EventPhoto::where('id', $request->id)
-                ->update(array_merge(['active' => 'Inactive'], $updateData));
-        } else {
-           EventPhoto::where('id', $request->id)
-        ->update($updateData);
-            if ($request->has('documents')) {
-                $arraydoc = [];
 
-                $targetDir = public_path('storage/gallery/photo/' . $request->id);
+        if ($request->action == 'unpublish' || $request->action == 'draft') {
+            $updateData['active'] = 'Inactive';
+        } elseif ($request->action == 'publish') {
+            $updateData['active'] = 'Active';
+        }
 
-                if (!File::exists($targetDir)) {
-                    File::makeDirectory($targetDir, 0755, true);
+        EventPhoto::where('id', $request->id)->update($updateData);
+
+        if ($request->has('documents')) {
+            $arraydoc = [];
+
+            $targetDir = public_path('storage/gallery/photo/' . $request->id);
+
+            if (!File::exists($targetDir)) {
+                File::makeDirectory($targetDir, 0755, true);
+            }
+
+            foreach ($request->documents as $doc) {
+                $tmpPath = public_path('storage/gallery/tmp/' . $doc);
+                $targetPath = $targetDir . '/' . $doc;
+
+                if (File::exists($tmpPath)) {
+                    $arraydoc[] = $doc;
+                    File::move($tmpPath, $targetPath);
                 }
+            }
 
-                foreach ($request->documents as $doc) {
-                    $tmpPath = public_path('storage/gallery/tmp/' . $doc);
-                    $targetPath = $targetDir . '/' . $doc;
+            if (!empty($arraydoc)) {
+                $search = ['[', ']', '"'];
 
-                    if (File::exists($tmpPath)) {
-                        $arraydoc[] = $doc;
-                        File::move($tmpPath, $targetPath);
-                    }
-                }
+                $oldarray = [];
 
-                if (!empty($arraydoc)) {
-                    $search = ['[', ']', '"'];
+                if (!empty($eventphoto->photos)) {
+                    foreach (explode(',', $eventphoto->photos) as $listphoto) {
+                        $cleanPhoto = str_replace($search, '', $listphoto);
 
-                    $oldarray = [];
-
-                    if (!empty($eventphoto->photos)) {
-                        foreach (explode(',', $eventphoto->photos) as $listphoto) {
-                            $cleanPhoto = str_replace($search, '', $listphoto);
-
-                            if (!empty($cleanPhoto)) {
-                                $oldarray[] = $cleanPhoto;
-                            }
+                        if (!empty($cleanPhoto)) {
+                            $oldarray[] = $cleanPhoto;
                         }
                     }
-
-                    $newarray = array_merge($oldarray, $arraydoc);
-                    EventPhoto::where('id', $request->id)
-                        ->update([
-                            'photos' => json_encode($newarray)
-                        ]);
                 }
+
+                $newarray = array_merge($oldarray, $arraydoc);
+                $updatePhotosData = [
+                    'photos' => json_encode($newarray)
+                ];
+                if (empty($eventphoto->thumbnail) && !empty($newarray[0])) {
+                    $updatePhotosData['thumbnail'] = $newarray[0];
+                }
+                EventPhoto::where('id', $request->id)->update($updatePhotosData);
             }
-            if ($request->action == 'publish') {
-                EventPhoto::where('id', $request->id)
-                    ->update([
-                        'active' => 'Active'
-                    ]);
-            }
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'Event gallery saved successfully.',
+                'redirect' => route('manage.eventphoto.index')
+            ]);
         }
 
         return redirect()->route('eventphoto.edit', $eventphoto->slug)->with('success', 'Event saved successfully.');

@@ -45,6 +45,14 @@ class QuestionController extends Controller
         }
         $question->save();
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'Question has already been created successfully.',
+                'redirect' => route('question.bank.index')
+            ]);
+        }
+
         return redirect()->route('question.bank.create.question', $questionBank->slug)->with('success', 'Question has already been created successfully.');
     }
 
@@ -105,6 +113,14 @@ class QuestionController extends Controller
             $question->question_image = $filename;
         }
         $question->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'Question has been updated successfully.',
+                'redirect' => route('question.bank.index')
+            ]);
+        }
 
         return redirect()->route('question.bank.create.question', $questionBank->slug)->with('warning', "Qustion has already updated successfully.");
     }

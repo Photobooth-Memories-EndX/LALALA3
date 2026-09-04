@@ -430,14 +430,16 @@ button, input, select, textarea {
 }
 
 .owl-card-title {
-    font-size: 1.25rem;
+    font-size: 0.95rem;
     line-height: 1.4;
-    font-weight: 700;
+    font-weight: 600;
+    color: #2c3e50;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    margin-bottom: 1rem;
+    text-overflow: ellipsis;
+    margin-bottom: 0.5rem;
 }
 
 .owl-card-excerpt {
@@ -2211,16 +2213,37 @@ body[data-bs-theme="dark"] .owl-comment-area textarea {
     flex: 1 1 180px;
 }
 
-#owlNewsFilterForm .record-toolbar-search .input-icon,
-#owlNewsFilterForm .record-toolbar-search .form-control {
+#owlNewsFilterForm .news-search-container {
+    position: relative;
     width: 100%;
-    min-width: 0;
 }
 
-#owlNewsFilterForm .record-toolbar-search .form-control {
-    height: 40px;
-    min-height: 40px;
-    border-radius: 8px;
+#news-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1085;
+    max-height: 300px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+    padding: .35rem 0;
+    border: 1px solid rgba(0, 0, 0, .08);
+    background: #ffffff;
+}
+
+#news-search-results .dropdown-item {
+    padding: .6rem .85rem;
+    transition: background-color .15s ease;
+    text-decoration: none;
+}
+
+#news-search-results .dropdown-item:hover,
+#news-search-results .dropdown-item:focus {
+    background-color: rgba(15, 94, 156, .08);
+}
+
+#news-search-results .dropdown-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
 }
 
 #owlNewsFilterForm .learning-quick-dropdowns {
@@ -2419,6 +2442,35 @@ body.dark-mode #owlNewsFilterForm .record-toolbar-search .form-control {
     background: #192d45;
 }
 
+[data-bs-theme="dark"] #news-search-results,
+body.dark-mode #news-search-results {
+    background: #152235;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] #news-search-results .dropdown-item,
+body.dark-mode #news-search-results .dropdown-item {
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] #news-search-results .dropdown-item:not(:last-child),
+body.dark-mode #news-search-results .dropdown-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-bs-theme="dark"] #news-search-results .dropdown-item:hover,
+[data-bs-theme="dark"] #news-search-results .dropdown-item:focus,
+body.dark-mode #news-search-results .dropdown-item:hover,
+body.dark-mode #news-search-results .dropdown-item:focus {
+    background: rgba(106, 174, 214, 0.14);
+}
+
+[data-bs-theme="dark"] #news-search-results .dropdown-item .text-dark,
+body.dark-mode #news-search-results .dropdown-item .text-dark {
+    color: #f1f5f9 !important;
+}
+
 /* Final Learning Record flex order: filters → search → actions. */
 #owlNewsFilterForm .learning-quick-dropdowns {
     order: 1;
@@ -2475,5 +2527,46 @@ body.dark-mode #owlNewsFilterForm .record-toolbar-search .form-control {
         min-width: 100%;
         flex: 1 1 100%;
     }
+}
+
+/* Global & Module Autocomplete Search Dropdown Containers */
+.dropdown-menu.search-results-dropdown,
+.search-autocomplete-container,
+#news-search-results {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid #e2e8f0 !important;
+    overflow: hidden !important;
+}
+
+/* Scrollable List Container (Where items are rendered) */
+.autocomplete-list-group,
+#news-autocomplete-list {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+}
+
+/* Autocomplete Items */
+#news-search-results .dropdown-item,
+.dropdown-menu .dropdown-item,
+.autocomplete-list-group .dropdown-item {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+#news-search-results .dropdown-item:hover,
+#news-search-results .dropdown-item:focus,
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+    background-color: #f8f9fa !important;
+}
+
+/* Sticky Bottom Footer Area */
+.search-footer,
+#news-search-footer {
+    background-color: #f8f9fa !important;
+    border-top: 1px solid #e2e8f0 !important;
 }
 

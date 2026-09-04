@@ -3,16 +3,69 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assesment;
+use App\Models\Certificate;
 use App\Models\CertificateSetting;
 use App\Models\Content;
 use App\Models\TrainingPlan;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use App\Services\CertificateSyncService;
 use Yajra\DataTables\Facades\DataTables;
 
 class CertificateController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for user's owned certificate items.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->get('q', ''));
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        $userId = (int) Auth::id();
+        $keyword = '%' . $query . '%';
+
+        $certificates = Certificate::with(['certificateSetting'])
+            ->where('user_id', $userId)
+            ->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', $keyword)
+                    ->orWhere('certificate_number', 'like', $keyword)
+                    ->orWhere('credential_id', 'like', $keyword)
+                    ->orWhere('participant_name', 'like', $keyword)
+                    ->orWhere('certificate_type', 'like', $keyword)
+                    ->orWhereHas('certificateSetting', fn ($setting) => $setting->where('issuer_name', 'like', $keyword));
+            })
+            ->latest('issued_at')
+            ->limit(10)
+            ->get();
+
+        $results = $certificates->map(function ($certificate) {
+            $rawType = strtolower((string) ($certificate->certificate_type ?? 'content'));
+            $typeLabel = match ($rawType) {
+                'trainingplan', 'playlist' => 'Playlist',
+                'global'                   => 'Global',
+                default                    => ucwords(str_replace('_', ' ', $rawType)),
+            };
+
+            return [
+                'id'                 => $certificate->id,
+                'title'              => $certificate->title,
+                'certificate_number' => $certificate->certificate_number,
+                'credential_id'      => $certificate->credential_id,
+                'type'               => $rawType,
+                'type_label'         => $typeLabel,
+                'issuer'             => $certificate->certificateSetting->issuer_name ?? null,
+                'issued_at'          => optional($certificate->issued_at)->format('d M Y'),
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
     public function index(CertificateSyncService $syncService)
     {
         $syncService->sync();

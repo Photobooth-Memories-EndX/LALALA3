@@ -99,7 +99,7 @@
                 pageLength: 10,
                 autoWidth: false,
                 search: {
-                    search: $.trim($('#assessmentSearch').val())
+                    search: $.trim($('#assessment-search-input, #assessmentSearch').val())
                 },
                 dom: 't<"assessment-datatable-footer"ip>',
                 language: {
@@ -165,7 +165,7 @@
             }
 
             assessmentFilterParams = new URLSearchParams(window.location.search);
-            assessmentTable.search($.trim($('#assessmentSearch').val()));
+            assessmentTable.search($.trim($('#assessment-search-input, #assessmentSearch').val()));
 
             var dateFilter = filterValue('date');
             if (dateFilter === 'newest') {
@@ -248,19 +248,126 @@
         function applyAssessmentFilters() {
             clearTimeout(window.learningAssessmentSearchTimer);
             var state = collectAssessmentFilterState();
-            var search = $.trim($('#assessmentSearch').val());
+            var search = $.trim($('#assessment-search-input, #assessmentSearch').val());
             reloadAssessment(buildAssessmentParams(state, search));
         }
 
-        $('#assessmentSearch').off('.learningAssessment').on('input.learningAssessment', function () {
-            var value = $.trim(this.value);
-            clearTimeout(window.learningAssessmentSearchTimer);
-            window.learningAssessmentSearchTimer = setTimeout(function () {
-                var params = new URLSearchParams(window.location.search);
-                params.delete('assessment_search');
-                if (value) params.set('assessment_search', value);
-                reloadAssessment(params);
-            }, 450);
+        function escapeAssessmentHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ── Live Autocomplete Search for Assessment Filter ───────────────────────
+        function initAssessmentAutocomplete() {
+            var searchInput = document.getElementById('assessment-search-input') || document.getElementById('assessmentSearch');
+            var searchResults = document.getElementById('assessment-search-results');
+            var debounceTimer = null;
+
+            if (!searchInput || !searchResults) return;
+
+            var listEl = searchResults.querySelector('.autocomplete-list-group') || searchResults;
+            var footerEl = searchResults.querySelector('.search-footer');
+
+            $(searchInput).off('.learningAssessmentSearch').on('input.learningAssessmentSearch', function () {
+                var value = $.trim(this.value);
+                clearTimeout(debounceTimer);
+
+                if (value.length < 1) {
+                    searchResults.style.display = 'none';
+                    if (listEl) listEl.innerHTML = '';
+                    if (footerEl) footerEl.style.display = 'none';
+                    clearTimeout(window.learningAssessmentSearchTimer);
+                    window.learningAssessmentSearchTimer = setTimeout(function () {
+                        applyAssessmentFilters();
+                    }, 400);
+                    return;
+                }
+
+                debounceTimer = setTimeout(function () {
+                    fetch('/user/assessment/search-autocomplete?q=' + encodeURIComponent(value), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        var html = '';
+                        if (data && data.length > 0) {
+                            data.forEach(function (item) {
+                                var badgeClass = item.type === 'playlist' || item.type === 'trainingplan'
+                                    ? 'bg-teal-lt text-teal'
+                                    : (item.type === 'global' ? 'bg-indigo-lt text-indigo' : 'bg-primary-lt text-primary');
+                                var typeLabel = item.type_label || (item.type ? escapeAssessmentHtml(item.type.toUpperCase()) : 'CONTENT');
+
+                                html += '<a href="#" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle assessment-search-item" data-title="' + escapeAssessmentHtml(item.title) + '">' +
+                                    '<div class="d-flex align-items-center justify-content-between mb-1">' +
+                                        '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeAssessmentHtml(item.title) + '</span>' +
+                                        '<span class="badge ' + badgeClass + ' small flex-shrink-0">' + escapeAssessmentHtml(typeLabel) + '</span>' +
+                                    '</div>' +
+                                    (item.subtitle ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + escapeAssessmentHtml(item.subtitle) + '</div>' : '') +
+                                '</a>';
+                            });
+                        }
+                        if (listEl) listEl.innerHTML = html;
+
+                        var keyword = $.trim(searchInput.value);
+                        if (footerEl) {
+                            if (data && data.length > 0) {
+                                footerEl.innerHTML = `
+                                    <a href="/my-learning?learning_tab=assessment&q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="ti ti-search"></i>
+                                        <span>See all results for "${keyword}"</span>
+                                    </a>
+                                `;
+                                footerEl.style.display = 'block';
+                            } else {
+                                footerEl.innerHTML = '<div class="dropdown-item text-muted disabled py-2">No items found</div>';
+                                footerEl.style.display = 'block';
+                            }
+                        }
+                        searchResults.style.display = 'block';
+                    })
+                    .catch(function () {
+                        searchResults.style.display = 'none';
+                    });
+                }, 250);
+            });
+
+            $(searchInput).off('focus.learningAssessmentSearch').on('focus.learningAssessmentSearch', function () {
+                if ($.trim(this.value).length >= 1 && ((listEl && listEl.children.length > 0) || (footerEl && footerEl.style.display !== 'none'))) {
+                    searchResults.style.display = 'block';
+                }
+            });
+
+            $(searchInput).off('keydown.learningAssessmentSearch').on('keydown.learningAssessmentSearch', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchResults.style.display = 'none';
+                    applyAssessmentFilters();
+                }
+            });
+        }
+
+        initAssessmentAutocomplete();
+
+        $(document).off('click.assessmentSearchItem').on('click.assessmentSearchItem', '.assessment-search-item', function (event) {
+            event.preventDefault();
+            var title = String($(this).data('title') || '');
+            $('#assessment-search-input, #assessmentSearch').val(title);
+            var searchResults = document.getElementById('assessment-search-results');
+            if (searchResults) searchResults.style.display = 'none';
+            applyAssessmentFilters();
+        });
+
+        document.addEventListener('click', function (e) {
+            var searchInput = document.getElementById('assessment-search-input') || document.getElementById('assessmentSearch');
+            var searchResults = document.getElementById('assessment-search-results');
+            if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
         });
 
         $('.assessment-quick-item').off('.learningAssessment').on('click.learningAssessment', function (event) {
@@ -284,7 +391,12 @@
 
         $('#assessmentModalReset, #assessmentResetFilter').off('.learningAssessment').on('click.learningAssessment', function () {
             clearTimeout(window.learningAssessmentSearchTimer);
-            $('#assessmentSearch').val('');
+            $('#assessment-search-input, #assessmentSearch').val('');
+            var searchResults = document.getElementById('assessment-search-results');
+            if (searchResults) {
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+            }
             $('#assessmentFilterBar [data-assessment-filter]').each(function () {
                 setDropdownValue($(this), 'all', 'All');
             });

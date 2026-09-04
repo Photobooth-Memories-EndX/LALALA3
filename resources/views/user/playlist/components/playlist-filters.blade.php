@@ -95,11 +95,17 @@
             </div>
 
             <div class="playlist-filter-search">
-                <label class="sr-only" for="playlistSearch">Search playlist</label>
-                <div class="input-icon">
-                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                    <input type="search" id="playlistSearch" class="form-control"
-                           placeholder="Search playlist..." autocomplete="off">
+                <label class="sr-only" for="playlist-search-input">Search playlist</label>
+                <div class="position-relative playlist-search-container flex-grow-1 search-input-wrapper">
+                    <div class="input-icon">
+                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                        <input type="search" id="playlist-search-input" class="form-control module-search-input"
+                               placeholder="Search playlist..." value="{{ request('q', request('search')) }}" autocomplete="off">
+                    </div>
+                    <div id="playlist-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                        <div class="autocomplete-list-group list-group list-group-flush"></div>
+                        <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                    </div>
                 </div>
             </div>
 

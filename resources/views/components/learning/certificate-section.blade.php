@@ -86,12 +86,22 @@
                     </div>
 
                     <div class="certificate-toolbar-search">
-                        <label class="visually-hidden" for="certificateSearch">Search certificates</label>
-                        <div class="input-icon">
-                            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                            <input type="search" class="form-control" id="certificateSearch"
-                                   placeholder="Certificate number, credential, participant, target or type..."
-                                   value="{{ request('certificate_search') }}" autocomplete="off">
+                        <label class="visually-hidden" for="certificate-search-input">Search certificates</label>
+                        <div class="position-relative certificate-search-container flex-grow-1 search-input-wrapper">
+                            <div class="input-icon">
+                                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                <input type="text"
+                                       class="form-control module-search-input"
+                                       id="certificate-search-input"
+                                       name="certificate_search"
+                                       placeholder="Certificate number, credential, participant, target or type..."
+                                       value="{{ request('certificate_search', request('q')) }}"
+                                       autocomplete="off">
+                            </div>
+                            <div id="certificate-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                                <div class="autocomplete-list-group list-group list-group-flush"></div>
+                                <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                            </div>
                         </div>
                     </div>
 

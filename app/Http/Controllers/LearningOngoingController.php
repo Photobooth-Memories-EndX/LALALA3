@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ContentUser;
 use App\Services\Learning\OngoingContentService;
 use App\Services\Learning\OngoingPlaylistService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Learning On Going — pembelajaran yang sedang berjalan.
@@ -25,6 +29,100 @@ class LearningOngoingController extends Controller
         private OngoingPlaylistService $playlistService,
         private OngoingContentService $contentService,
     ) {
+    }
+
+    /**
+     * AJAX live autocomplete search for ongoing learning items.
+     * Filtered ONLY from the user's active ongoing dataset.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->get('q', ''));
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        $userId = (int) Auth::id();
+        $mode = (string) $request->get('mode', 'content');
+        $results = collect();
+
+        // 1. Search Active Ongoing Content
+        if ($mode !== 'playlist') {
+            $contentUsers = ContentUser::with(['content.classification'])
+                ->where('user_id', $userId)
+                ->where('finish', '0')
+                ->where(function ($q) {
+                    $q->whereNull('learning_status')->orWhere('learning_status', '!=', 'finished');
+                })
+                ->where('progress', '<', 100)
+                ->where('progress', '>=', 5)
+                ->whereNotExists(function ($q) {
+                    $q->from('trainingplandetail')
+                        ->whereColumn('trainingplandetail.content_id', 'content_users.content_id');
+                })
+                ->withAvailableContent()
+                ->whereHas('content', function ($q) use ($query) {
+                    $q->where('title', 'LIKE', "%{$query}%")
+                        ->orWhereHas('classification', function ($cq) use ($query) {
+                            $cq->where('classification_name', 'LIKE', "%{$query}%");
+                        });
+                })
+                ->limit(8)
+                ->get();
+
+            foreach ($contentUsers as $cu) {
+                if ($cu->content) {
+                    $results->push([
+                        'id'       => $cu->content->id,
+                        'title'    => $cu->content->title,
+                        'slug'     => $cu->content->slug,
+                        'category' => $cu->content->classification->classification_name ?? 'Content',
+                        'type'     => strtolower($cu->content->type ?? 'content'),
+                        'progress' => (int) $cu->progress,
+                        'url'      => route('content.user.view', $cu->content->slug),
+                    ]);
+                }
+            }
+        }
+
+        // 2. Search Active Ongoing Playlist
+        if ($mode === 'playlist' || ($mode === 'all' && $results->count() < 8)) {
+            $userPlaylists = $this->playlistService->userPlaylists($userId)->reject->is_completed;
+
+            $matchingPlaylists = $userPlaylists->filter(function ($plan) use ($query) {
+                return stripos((string) $plan->title, $query) !== false;
+            })->take(8);
+
+            if ($matchingPlaylists->isNotEmpty()) {
+                $firstSlugs = DB::table('trainingplandetail as tpd')
+                    ->join('content as c', 'c.id', '=', 'tpd.content_id')
+                    ->whereIn('tpd.trainingplan_id', $matchingPlaylists->pluck('id')->all())
+                    ->whereNull('c.deleted_at')
+                    ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
+                    ->get(['tpd.trainingplan_id as plan_id', 'c.slug as slug'])
+                    ->groupBy('plan_id')
+                    ->map(fn ($items) => optional($items->first())->slug);
+
+                foreach ($matchingPlaylists as $plan) {
+                    $firstSlug = $firstSlugs[$plan->id] ?? null;
+                    $playlistUrl = $firstSlug
+                        ? route('playlist.user.view', ['slug' => $plan->slug, 'vidslug' => $firstSlug])
+                        : url('/playlist/' . $plan->slug);
+
+                    $results->push([
+                        'id'       => $plan->id,
+                        'title'    => $plan->title,
+                        'slug'     => $plan->slug,
+                        'category' => 'Playlist',
+                        'type'     => 'playlist',
+                        'progress' => (int) $plan->progress_percent,
+                        'url'      => $playlistUrl,
+                    ]);
+                }
+            }
+        }
+
+        return response()->json($results->values());
     }
 
     /**
@@ -75,7 +173,7 @@ class LearningOngoingController extends Controller
     private function contentFilterState(): array
     {
         return [
-            'search'        => trim((string) request('ongoing_search')),
+            'search'        => trim((string) request('ongoing_search', request('q', ''))),
             'status'        => request('ongoing_status', 'all'),
             'year'          => request('ongoing_year', 'all'),
             'activity_sort' => request('ongoing_activity_sort', 'newest_activity'),
@@ -110,7 +208,7 @@ class LearningOngoingController extends Controller
     private function playlistFilterState(): array
     {
         return [
-            'search'           => trim((string) request('ongoing_search')),
+            'search'           => trim((string) request('ongoing_search', request('q', ''))),
             'status'           => request('ongoing_status', 'all'),
             'quick_status'     => (string) request('ongoing_quick_status', 'all'),
             'year'             => request('ongoing_year', 'all'),

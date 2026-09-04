@@ -88,15 +88,22 @@
                     </div>
 
                     <div class="assessment-toolbar-search">
-                        <label class="visually-hidden" for="assessmentSearch">Search assessments</label>
-                        <div class="input-icon">
-                            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                            <input type="search"
-                                   class="form-control"
-                                   id="assessmentSearch"
-                                   placeholder="Search assessment..."
-                                   value="{{ request('assessment_search') }}"
-                                   autocomplete="off">
+                        <label class="visually-hidden" for="assessment-search-input">Search assessments</label>
+                        <div class="position-relative assessment-search-container flex-grow-1 search-input-wrapper">
+                            <div class="input-icon">
+                                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                <input type="text"
+                                       class="form-control module-search-input"
+                                       id="assessment-search-input"
+                                       name="assessment_search"
+                                       placeholder="Search assessment..."
+                                       value="{{ request('assessment_search', request('q')) }}"
+                                       autocomplete="off">
+                            </div>
+                            <div id="assessment-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                                <div class="autocomplete-list-group list-group list-group-flush"></div>
+                                <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                            </div>
                         </div>
                     </div>
 

@@ -7,11 +7,56 @@ use App\Models\Comment;
 use App\Models\EventPhoto;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class GalleryUserController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for active published event photo galleries.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) $request->get('q', $request->get('search', '')));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $galleries = EventPhoto::where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%");
+            })
+            ->where(function ($q) {
+                $q->where('active', 'Active')
+                  ->orWhere('active', 1)
+                  ->orWhereNull('active');
+            })
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
+        $results = $galleries->map(function ($gallery) {
+            return [
+                'id'    => $gallery->id,
+                'title' => $gallery->title,
+                'slug'  => $gallery->slug,
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
     public function index(GalleryFilterRequest $request): View|JsonResponse
     {
         $filters = $this->normalizedFilters($request->validated());
@@ -144,7 +189,16 @@ class GalleryUserController extends Controller
     private function applyFilters(Builder $query, array $filters): void
     {
         if ($filters['q'] !== '') {
-            $query->where('title', 'like', '%' . $filters['q'] . '%');
+            $rawQ = $filters['q'];
+            $qNorm = str_replace("'", "’", $rawQ);
+            $qOrig = str_replace("’", "'", $rawQ);
+
+            $query->where(function ($q) use ($rawQ, $qNorm, $qOrig) {
+                $q->where('title', 'LIKE', "%{$rawQ}%")
+                  ->orWhere('title', 'LIKE', "%{$qNorm}%")
+                  ->orWhere('title', 'LIKE', "%{$qOrig}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQ}%");
+            });
         }
 
         if ($filters['uploader']) {

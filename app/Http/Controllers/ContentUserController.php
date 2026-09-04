@@ -12,15 +12,69 @@ use App\Services\AssessmentAccessService;
 use App\Services\LearningAnalyticsService;
 use App\Support\DurationFormatter;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ContentUserController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for active published content items.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->get('q', ''));
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        $todayDate = Carbon::today()->toDateString();
+        $keyword = '%' . $query . '%';
+
+        $contents = Content::with(['classification'])
+            ->where('active', 'Active')
+            ->where(function ($q) {
+                $q->where('playlistonly', 'N')
+                    ->orWhereNull('playlistonly');
+            })
+            ->notExpired($todayDate)
+            ->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', $keyword)
+                    ->orWhere('author', 'like', $keyword)
+                    ->orWhere('description', 'like', $keyword)
+                    ->orWhereHas('classification', fn ($c) => $c->where('classification_name', 'like', $keyword));
+            })
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
+        $results = $contents->map(function ($content) {
+            $rawType = strtolower((string) ($content->type ?? 'video'));
+            $typeLabel = match ($rawType) {
+                'document', 'doc', 'pdf' => 'Document',
+                'video'                  => 'Video',
+                'youtube'                => 'MOOC',
+                default                  => ucwords(str_replace('_', ' ', $rawType)),
+            };
+
+            return [
+                'id'         => $content->id,
+                'title'      => $content->title,
+                'slug'       => $content->slug,
+                'type'       => $rawType,
+                'type_label' => $typeLabel,
+                'author'     => $content->author,
+                'category'   => $content->classification->classification_name ?? null,
+                'duration'   => $content->duration,
+            ];
+        });
+
+        return response()->json($results->values());
+    }
 
     public function index(Request $request, LearningAnalyticsService $analyticsService)
     {
-        $filterSearch = $request->s ?: $request->search;
+        $filterSearch = $request->s ?: ($request->q ?: $request->search);
         $filterType = $request->type;
         $filterClassification = $request->classification;
         $filterDateOrder = $request->date_order ?? 'newest';

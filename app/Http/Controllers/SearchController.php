@@ -16,33 +16,99 @@ class SearchController extends Controller
 {
     public function autocomplete(Request $request)
     {
-        $query = trim($request->get('q', ''));
-        if (empty($query)) {
+        $queryRaw = trim((string) $request->get('q', ''));
+        if (empty($queryRaw)) {
             return response()->json([]);
         }
 
-        // Search dari tabel Content (Pembelajaran/Video)
-        $contents = Content::where('title', 'LIKE', "{$query}%")
-            ->orWhere('title', 'LIKE', "%{$query}%")
-            ->select('id', 'title', 'slug', DB::raw("'content' as category"))
-            ->limit(5)
-            ->get();
+        // Query string normalization (straight vs curly apostrophe)
+        $queryNormalized = str_contains($queryRaw, "'")
+            ? str_replace("'", "’", $queryRaw)
+            : str_replace("’", "'", $queryRaw);
 
-        // Search dari tabel News
-        $news = News::where('title', 'LIKE', "{$query}%")
-            ->orWhere('title', 'LIKE', "%{$query}%")
-            ->select('id', 'title', 'slug', DB::raw("'news' as category"))
-            ->limit(3)
-            ->get();
+        // Search dari Content (Active)
+        $contents = Content::where('active', 'Active')
+            ->where(function ($q) use ($queryRaw, $queryNormalized) {
+                $q->where('title', 'LIKE', "%{$queryRaw}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%");
+            })
+            ->select('id', 'title', 'slug')
+            ->limit(15)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id'    => $item->id,
+                    'title' => $item->title,
+                    'type'  => 'Content',
+                    'url'   => route('content.user.view', $item->slug ?? $item->id),
+                ];
+            });
 
-        $results = $contents->concat($news);
+        // Search dari Playlist / Training Plan (Active)
+        $playlists = TrainingPlan::where('active', 'Active')
+            ->where(function ($q) use ($queryRaw, $queryNormalized) {
+                $q->where('title', 'LIKE', "%{$queryRaw}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%");
+            })
+            ->select('id', 'title', 'slug')
+            ->limit(15)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id'    => $item->id,
+                    'title' => $item->title,
+                    'type'  => 'Playlist',
+                    'url'   => route('user.playlist.show', $item->slug ?? $item->id),
+                ];
+            });
 
-        return response()->json($results);
+        // Search dari News
+        $news = News::where(function ($q) use ($queryRaw, $queryNormalized) {
+                $q->where('title', 'LIKE', "%{$queryRaw}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%");
+            })
+            ->select('id', 'title', 'slug')
+            ->limit(10)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id'    => $item->id,
+                    'title' => $item->title,
+                    'type'  => 'News',
+                    'url'   => route('news.user.view', $item->slug ?? $item->id),
+                ];
+            });
+
+        // Search dari Gallery / EventPhoto
+        $galleries = EventPhoto::where(function ($q) use ($queryRaw, $queryNormalized) {
+                $q->where('title', 'LIKE', "%{$queryRaw}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%");
+            })
+            ->select('id', 'title', 'slug')
+            ->limit(10)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id'    => $item->id,
+                    'title' => $item->title,
+                    'type'  => 'Gallery',
+                    'url'   => route('gallery.user.view', $item->slug ?? $item->id),
+                ];
+            });
+
+        $results = collect()
+            ->concat($contents)
+            ->concat($playlists)
+            ->concat($news)
+            ->concat($galleries)
+            ->take(20);
+
+        return response()->json($results->values());
     }
 
     public function index(Request $request, $searchtype = 'all')
     {
-        $keyword = $request->get('s', '');
+        $keyword = $request->get('s', $request->get('q', ''));
 
         $content    = Content::where('title', 'LIKE', "%{$keyword}%")->get();
         $news       = News::where('title', 'LIKE', "%{$keyword}%")->get();

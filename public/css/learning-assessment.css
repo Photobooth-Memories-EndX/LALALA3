@@ -148,6 +148,39 @@
     flex: 1 1 180px;
 }
 
+.assessment-search-container {
+    position: relative;
+    width: 100%;
+}
+
+#assessment-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1085;
+    max-height: 300px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+    padding: .35rem 0;
+    border: 1px solid rgba(0, 0, 0, .08);
+    background: #ffffff;
+}
+
+#assessment-search-results .dropdown-item {
+    padding: .6rem .85rem;
+    transition: background-color .15s ease;
+    text-decoration: none;
+}
+
+#assessment-search-results .dropdown-item:hover,
+#assessment-search-results .dropdown-item:focus {
+    background-color: rgba(15, 94, 156, .08);
+}
+
+#assessment-search-results .dropdown-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+
 .assessment-toolbar-search .input-icon,
 .assessment-toolbar-search .form-control {
     width: 100%;
@@ -698,6 +731,35 @@ body.dark-mode #assessmentFilterBar .assessment-fast-filter-control.active {
     border-color: #6aaed6 !important;
     background: rgba(106, 174, 214, 0.16) !important;
     color: #bfdbfe !important;
+}
+
+[data-bs-theme="dark"] #assessment-search-results,
+body.dark-mode #assessment-search-results {
+    background: #152235;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item,
+body.dark-mode #assessment-search-results .dropdown-item {
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item:not(:last-child),
+body.dark-mode #assessment-search-results .dropdown-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item:hover,
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item:focus,
+body.dark-mode #assessment-search-results .dropdown-item:hover,
+body.dark-mode #assessment-search-results .dropdown-item:focus {
+    background: rgba(106, 174, 214, 0.14);
+}
+
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item .text-dark,
+body.dark-mode #assessment-search-results .dropdown-item .text-dark {
+    color: #f1f5f9 !important;
 }
 
 [data-bs-theme="dark"] #assessmentFilterBar .assessment-toolbar-search .form-control::placeholder,

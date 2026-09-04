@@ -88,7 +88,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/myprofile/deleteavatar', [ProfileController::class, 'deleteavatar'])->name('user.deleteavatar');
     Route::get('/mycomment', [ProfileController::class, 'comment'])->name('user.comment');
 
-    Route::get('/search/{searchtype}', [SearchController::class, 'index'])->name('search');
+    Route::get('/search/autocomplete', [SearchController::class, 'autocomplete'])->name('search.autocomplete');
+    Route::get('/search/{searchtype?}', [SearchController::class, 'index'])->name('search');
     Route::get('/api/search-autocomplete', [SearchController::class, 'autocomplete'])->name('api.search.autocomplete');
 
     Route::get('/change-password', [ProfileController::class, 'changePassword'])->name('user.changepassword');
@@ -102,6 +103,8 @@ Route::middleware(['auth'])->group(function () {
     // Learning On Going — dua mode terpisah (fragment AJAX): Content & Playlist.
     Route::get('/my-learning/content', [LearningOngoingController::class, 'content'])->name('user.learning.ongoing.content');
     Route::get('/my-learning/playlist', [LearningOngoingController::class, 'playlist'])->name('user.learning.ongoing.playlist');
+    Route::get('/user/learning/ongoing/search-autocomplete', [LearningOngoingController::class, 'autocomplete'])->name('user.learning.ongoing.autocomplete');
+    Route::get('/my-learning/ongoing/search-autocomplete', [LearningOngoingController::class, 'autocomplete'])->name('user.learning.ongoing.autocomplete.alias');
 
     // My Learning monitoring (role 3/4): tabel user scope + detail profile.
     Route::get('/my-learning/monitoring-user-datatable', [LearningMonitoringController::class, 'monitoringUserDatatable'])
@@ -136,8 +139,10 @@ Route::group(['prefix' => 'page'], function () {
 | News User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/news/search-autocomplete', [NewsUserController::class, 'autocomplete'])->middleware('auth')->name('user.news.autocomplete');
 Route::group(['prefix' => 'news', 'middleware' => 'auth'], function () {
     Route::get('/', [NewsUserController::class, 'index'])->name('news.user.index');
+    Route::get('/search-autocomplete', [NewsUserController::class, 'autocomplete'])->name('news.user.autocomplete');
     Route::get('/{slug}', [NewsUserController::class, 'view'])->name('news.user.view');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storenews'])->name('news.comment.store');
 });
@@ -147,8 +152,10 @@ Route::group(['prefix' => 'news', 'middleware' => 'auth'], function () {
 | Content User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/content/search-autocomplete', [ContentUserController::class, 'autocomplete'])->middleware('auth')->name('user.content.autocomplete');
 Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
     Route::get('/', [ContentUserController::class, 'index'])->name('content.user.index');
+    Route::get('/search-autocomplete', [ContentUserController::class, 'autocomplete'])->name('content.user.autocomplete');
     Route::get('/{slug}', [ContentUserController::class, 'view'])->name('content.user.view');
     Route::post('progress/update', [ContentUserController::class, 'updateProgress'])->name('content.user.progress.update');
     Route::put('progress/{slug}', [ContentUserController::class, 'progress'])->name('content.user.progress');
@@ -163,8 +170,10 @@ Route::group(['prefix' => 'content', 'middleware' => 'auth'], function () {
 | Assessment User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/assessment/search-autocomplete', [AssesmentUserController::class, 'autocomplete'])->middleware('auth')->name('user.assessment.autocomplete');
 Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
     Route::get('/', [AssesmentUserController::class, 'index'])->name('assesment.user.index');
+    Route::get('/search-autocomplete', [AssesmentUserController::class, 'autocomplete'])->name('assesment.user.autocomplete');
 
     Route::group(['middleware' => 'prevent-back-button'], function () {
         Route::get('/{slug}', [AssesmentUserController::class, 'view'])->name('assesment.user.view');
@@ -180,8 +189,10 @@ Route::get('/assessment-hub', [AssesmentUserController::class, 'index'])->middle
 | Gallery User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/gallery/search-autocomplete', [GalleryUserController::class, 'autocomplete'])->middleware('auth')->name('user.gallery.autocomplete');
 Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
     Route::get('/', [GalleryUserController::class, 'index'])->name('gallery.user.index');
+    Route::get('/search-autocomplete', [GalleryUserController::class, 'autocomplete'])->name('gallery.user.autocomplete');
     Route::get('/{slug}', [GalleryUserController::class, 'view'])->name('gallery.user.view');
     Route::post('/{slug}/comment/store', [CommentController::class, 'storeeventphoto'])->name('gallery.comment.store');
 });
@@ -191,8 +202,10 @@ Route::group(['prefix' => 'gallery', 'middleware' => 'auth'], function () {
 | Playlist User
 |--------------------------------------------------------------------------
 */
+Route::get('/user/playlist/search-autocomplete', [PlaylistUserController::class, 'autocomplete'])->middleware('auth')->name('user.playlist.autocomplete');
 Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
     Route::get('/', [PlaylistUserController::class, 'index'])->name('playlist.user.index');
+    Route::get('/search-autocomplete', [PlaylistUserController::class, 'autocomplete'])->name('playlist.user.autocomplete');
     Route::post('/progress/update', [PlaylistProgressController::class, 'updateProgress'])->name('playlist.user.progress.update');
     Route::post('/{trainingplan}/debug-state', [PlaylistDebugController::class, 'update'])
         ->name('playlist.debug.update');
@@ -203,6 +216,7 @@ Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
     Route::delete('/{trainingplan}/debug-certificate-preview', [PlaylistCertificateDebugController::class, 'destroy'])
         ->name('playlist.debug.certificate.preview.exit');
     Route::get('/{slug}/{vidslug}', [PlaylistUserController::class, 'view'])->name('playlist.user.view');
+    Route::get('/{slug}', [PlaylistUserController::class, 'show'])->name('user.playlist.show');
 });
 
 /*
@@ -211,6 +225,11 @@ Route::group(['prefix' => 'playlist', 'middleware' => 'auth'], function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
+    Route::get('/user/certificate/search-autocomplete', [CertificateController::class, 'autocomplete'])
+        ->name('user.certificate.autocomplete');
+    Route::get('/certificate/search-autocomplete', [CertificateController::class, 'autocomplete'])
+        ->name('certificate.autocomplete');
+
     Route::get('/certificate/generate/{contentUser}', [UserCertificateController::class, 'generate'])
         ->name('certificate.generate');
 
@@ -282,6 +301,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:news_announcement'], function () {
+        Route::get('news/search-autocomplete', [NewsController::class, 'autocompleteSearch'])->name('manage.news.autocomplete');
+        Route::get('news/autocomplete', [NewsController::class, 'autocompleteSearch']);
         Route::resource('news', NewsController::class);
         Route::get('news', [NewsController::class, 'index'])->name('manage.news.index');
         Route::put('news/delete-image/{slug}', [NewsImageController::class, 'deleteImage'])->name('news.deleteImage');
@@ -292,7 +313,17 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:category_classification'], function () {
-        Route::resource('classification', ClassificationController::class);
+        Route::get('classification/search-autocomplete', [ClassificationController::class, 'autocompleteSearch'])->name('manage.classification.autocomplete');
+        Route::get('classification/autocomplete', [ClassificationController::class, 'autocompleteSearch']);
+        Route::resource('classification', ClassificationController::class)->names([
+            'index' => 'manage.classification.index',
+            'create' => 'manage.classification.create',
+            'store' => 'manage.classification.store',
+            'show' => 'manage.classification.show',
+            'edit' => 'manage.classification.edit',
+            'update' => 'manage.classification.update',
+            'destroy' => 'manage.classification.destroy',
+        ]);
     });
 
     Route::group(['middleware' => 'mpermission:assessment_management'], function () {
@@ -339,7 +370,10 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:question_bank'], function () {
+        Route::get('question-bank/search-autocomplete', [QuestionBankController::class, 'autocompleteSearch'])->name('manage.question.bank.autocomplete');
+        Route::get('question-bank/autocomplete', [QuestionBankController::class, 'autocompleteSearch']);
         Route::get('question-bank', [QuestionBankController::class, 'index'])->name('question.bank.index');
+        Route::get('question-bank/index', [QuestionBankController::class, 'index'])->name('manage.question-bank.index');
         Route::get('question-bank/create', [QuestionBankController::class, 'create'])->name('question.bank.create');
         Route::post('question-bank/store', [QuestionBankController::class, 'store'])->name('question.bank.store');
         Route::get('question-bank/edit/{slug}', [QuestionBankController::class, 'edit'])->name('question.bank.edit');
@@ -357,6 +391,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:content_repository'], function () {
+        Route::get('content/search-autocomplete', [ContentController::class, 'autocompleteSearch'])->name('manage.content.autocomplete');
+        Route::get('content/autocomplete', [ContentController::class, 'autocompleteSearch']);
         Route::resource('content', ContentController::class);
         Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');
         Route::get('content/thumbnail/upload/delete', [ContentController::class, 'deletethumbnailajax'])->name('content.deletethumbnailajax');
@@ -372,15 +408,21 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:playlist_learning_path'], function () {
+        Route::get('playlist/search-autocomplete', [TrainingPlanController::class, 'autocompleteSearch'])->name('manage.trainingplan.autocomplete');
+        Route::get('playlist/autocomplete', [TrainingPlanController::class, 'autocompleteSearch']);
         Route::get('playlist/order/{slug}', [TrainingPlanController::class, 'order'])->name('playlist.order');
         Route::get('playlist-thumbnail-test', [TrainingPlanController::class, 'thumbnailTest'])->name('playlist.thumbnailTest');
         Route::post('playlist/{trainingplan?}/synchronize-learning-hours', [TrainingPlanController::class, 'synchronizeLearningHours'])->name('playlist.synchronize-learning-hours');
         Route::resource('playlist', TrainingPlanController::class)->parameters(['playlist' => 'trainingplan']);
+        Route::get('playlist/create', [TrainingPlanController::class, 'create'])->name('manage.playlist.create');
+        Route::get('playlist/index', [TrainingPlanController::class, 'index'])->name('manage.playlist.index');
     });
 
     Route::post('learning-hours/sync', [LearningHourSyncController::class, 'sync'])->name('learning-hours.sync');
 
     Route::group(['middleware' => 'mpermission:event_documentation'], function () {
+        Route::get('eventphoto/search-autocomplete', [EventPhotoController::class, 'autocompleteSearch'])->name('manage.eventphoto.autocomplete');
+        Route::get('eventphoto/autocomplete', [EventPhotoController::class, 'autocompleteSearch']);
         Route::resource('eventphoto', EventPhotoController::class);
         Route::get('eventphoto', [EventPhotoController::class, 'index'])->name('manage.eventphoto.index');
         Route::post('eventphoto/create/upload', [EventPhotoController::class, 'uploadfileajax'])->name('eventphoto.uploadfileajax');
@@ -390,12 +432,14 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     });
 
     Route::group(['middleware' => 'mpermission:learning_management'], function () {
+        Route::get('learning/search-employees', [LearningManageController::class, 'searchEmployees'])->name('learning.manage.search-employees');
+        Route::get('learning/search-titles', [LearningManageController::class, 'searchTitles'])->name('learning.manage.search-titles');
         Route::get('learning/datatable', [LearningManageController::class, 'datatable'])->name('learning.manage.datatable');
         Route::get('learning', [LearningManageController::class, 'index'])->name('learning.manage.index');
         Route::get('learning/all', [LearningManageController::class, 'all'])->name('learning.manage.all');
         Route::get('learning/category/{slug}', [LearningManageController::class, 'category'])->name('learning.manage.category');
         Route::get('learning/content/{slug}', [LearningManageController::class, 'content'])->name('learning.manage.content');
-        Route::get('learning/download', [DownloadController::class, 'learningdownload'])->name('manage.learning.download');
+        Route::get('learning/download', [LearningManageController::class, 'download'])->name('manage.learning.download');
     });
 
     Route::group(['middleware' => 'mpermission:learning_hours_management'], function () {

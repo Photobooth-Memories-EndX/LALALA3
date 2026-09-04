@@ -179,7 +179,7 @@
 
             {{-- SEARCH DESKTOP --}}
             <div class="topbar-search flex-grow-1 me-3">
-                <form action="{{ route('search', ['searchtype' => 'all']) }}"
+                <form action="/search"
                       method="get"
                       autocomplete="off"
                       novalidate
@@ -187,17 +187,20 @@
 
                     <div class="position-relative w-100" style="max-width: 450px;">
                         <input type="text"
-                               id="globalSearchInput"
-                               name="s"
+                               id="header-search-input"
+                               name="q"
                                class="form-control rounded-pill px-4"
                                placeholder="Search learning, content, news..."
                                autocomplete="off"
                                aria-label="Search in website">
 
                         <!-- DROPDOWN HASIL AUTOCOMPLETE -->
-                        <div id="searchDropdownResults"
-                             class="dropdown-menu shadow-lg border-0 rounded-4 w-100 mt-1 overflow-hidden"
-                             style="display: none; position: absolute; top: 100%; left: 0; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                        <div id="header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000; background-color: #ffffff;">
+                            <!-- 1. Scrollable List Container (Only items scroll here) -->
+                            <div id="header-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                            
+                            <!-- 2. Sticky/Fixed Footer Container (Always visible at bottom) -->
+                            <div id="header-search-footer" class="border-top bg-light p-2 text-center" style="display: none; position: sticky; bottom: 0; z-index: 2005;"></div>
                         </div>
                     </div>
                 </form>
@@ -393,7 +396,7 @@
                 {{-- ROW 3: SEARCH BAR (LEFT) + NOTIFICATION BELL (RIGHT) --}}
                 <div class="owl-mobile-action-row d-flex align-items-center gap-2 pb-1">
                     {{-- Search Bar (left, flexible) --}}
-                    <form action="{{ route('search', ['searchtype' => 'all']) }}"
+                    <form action="/search"
                           method="get"
                           autocomplete="off"
                           novalidate
@@ -401,17 +404,20 @@
 
                         <div class="position-relative w-100">
                             <input type="text"
-                                   id="mobileSearchInput"
-                                   name="s"
+                                   id="mobile-header-search-input"
+                                   name="q"
                                    class="form-control rounded-pill px-4"
                                    placeholder="Search learning, content, news..."
                                    autocomplete="off"
                                    aria-label="Search in website">
 
                             <!-- DROPDOWN HASIL AUTOCOMPLETE -->
-                            <div id="mobileSearchDropdownResults"
-                                 class="dropdown-menu shadow-lg border-0 rounded-4 w-100 mt-1 overflow-hidden"
-                                 style="display: none; position: absolute; top: 100%; left: 0; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                            <div id="mobile-header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000; background-color: #ffffff;">
+                                <!-- 1. Scrollable List Container (Only items scroll here) -->
+                                <div id="mobile-header-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                                
+                                <!-- 2. Sticky/Fixed Footer Container (Always visible at bottom) -->
+                                <div id="mobile-header-search-footer" class="border-top bg-light p-2 text-center" style="display: none; position: sticky; bottom: 0; z-index: 2005;"></div>
                             </div>
                         </div>
                     </form>
@@ -462,90 +468,216 @@
 
 @include('partials.logout-modal')
 
+<style>
+.bg-purple-subtle {
+    background-color: rgba(174, 62, 201, 0.12) !important;
+}
+.text-purple {
+    color: #ae3ec9 !important;
+}
+[data-bs-theme="dark"] .bg-purple-subtle {
+    background-color: rgba(174, 62, 201, 0.25) !important;
+}
+[data-bs-theme="dark"] .text-purple {
+    color: #d670ec !important;
+}
+.sticky-bottom,
+#search-more-results-footer,
+#mobile-search-more-results-footer,
+.search-footer {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 2 !important;
+}
+[data-bs-theme="dark"] #search-more-results-footer,
+[data-bs-theme="dark"] #mobile-search-more-results-footer,
+[data-bs-theme="dark"] .search-footer {
+    background-color: var(--tblr-bg-surface-secondary, #1e293b) !important;
+    border-color: var(--tblr-border-color, rgba(255, 255, 255, 0.1)) !important;
+}
+#header-search-results::-webkit-scrollbar,
+#mobile-header-search-results::-webkit-scrollbar,
+.module-search-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+#header-search-results::-webkit-scrollbar-thumb,
+#mobile-header-search-results::-webkit-scrollbar-thumb,
+.module-search-dropdown::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 4px;
+}
+[data-bs-theme="dark"] #header-search-results::-webkit-scrollbar-thumb,
+[data-bs-theme="dark"] #mobile-header-search-results::-webkit-scrollbar-thumb,
+[data-bs-theme="dark"] .module-search-dropdown::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Global & Module Autocomplete Search Dropdown Containers */
+.dropdown-menu.search-results-dropdown,
+.search-autocomplete-container,
+#header-search-results,
+#mobile-header-search-results,
+#gallery-search-results,
+#news-search-results,
+#content-search-results,
+#playlist-search-results,
+#ongoing-search-results,
+#assessment-search-results,
+#certificate-search-results {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid #e2e8f0 !important;
+    overflow: hidden !important;
+}
+
+/* Scrollable List Container (Where items are rendered) */
+.autocomplete-list-group,
+#gallery-autocomplete-list,
+#news-autocomplete-list,
+#content-autocomplete-list,
+#playlist-autocomplete-list,
+#ongoing-autocomplete-list,
+#assessment-autocomplete-list,
+#certificate-autocomplete-list,
+#header-autocomplete-list,
+#mobile-header-autocomplete-list,
+#search-autocomplete-list,
+#mobile-search-autocomplete-list {
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    scrollbar-width: thin;
+}
+
+/* Autocomplete Items */
+.dropdown-menu .dropdown-item,
+.autocomplete-list-group .dropdown-item {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus,
+.autocomplete-list-group .dropdown-item:hover,
+.autocomplete-list-group .dropdown-item:focus {
+    background-color: #f8f9fa !important;
+}
+
+/* Sticky Bottom Footer Area */
+.search-footer,
+#gallery-search-footer,
+#news-search-footer,
+#content-search-footer,
+#playlist-search-footer,
+#ongoing-search-footer,
+#assessment-search-footer,
+#certificate-search-footer,
+#header-search-footer,
+#mobile-header-search-footer,
+#search-more-results-footer,
+#mobile-search-more-results-footer {
+    position: sticky !important;
+    bottom: 0 !important;
+    background-color: #f8f9fa !important;
+    border-top: 1px solid #e2e8f0 !important;
+    z-index: 2005 !important;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    function initAutocomplete(inputId, dropdownId) {
-        const searchInput = document.getElementById(inputId);
-        const searchDropdown = document.getElementById(dropdownId);
-        let debounceTimer = null;
+    function handleAutocomplete(inputId, resultsId, listId, footerId, endpoint, searchUrl) {
+        const input = document.getElementById(inputId);
+        const results = document.getElementById(resultsId);
+        const list = document.getElementById(listId);
+        const footer = document.getElementById(footerId);
 
-        if (!searchInput || !searchDropdown) return;
+        if (!input || !results || !list || !footer) return;
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        searchInput.addEventListener('input', function() {
+        let timer;
+        input.addEventListener('input', function(e) {
+            if (e.target && e.target.id !== inputId) return;
+            clearTimeout(timer);
             const query = this.value.trim();
 
-            clearTimeout(debounceTimer);
-
-            // Sembunyikan jika kosong
             if (query.length < 1) {
-                searchDropdown.style.display = 'none';
-                searchDropdown.innerHTML = '';
+                results.style.display = 'none';
+                list.innerHTML = '';
+                footer.innerHTML = '';
+                footer.style.display = 'none';
                 return;
             }
 
-            // Debounce 250ms agar efisien
-            debounceTimer = setTimeout(() => {
-                fetch(`/api/search-autocomplete?q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
+            timer = setTimeout(() => {
+                fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
                     .then(data => {
-                        if (!data || data.length === 0) {
-                            searchDropdown.innerHTML = `<div class="dropdown-item text-muted small py-2 px-3">Tidak ada hasil ditemukan</div>`;
-                        } else {
-                            let html = '';
-                            data.forEach(item => {
-                                // Ubah URL agar mengarah ke halaman hasil pencarian global
-                                let searchUrl = `/search/all?s=${encodeURIComponent(item.title)}`;
+                        list.innerHTML = '';
+                        footer.innerHTML = '';
 
-                                html += `
-                                    <a href="${searchUrl}" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle">
-                                        <span class="text-dark small fw-semibold">${escapeHtml(item.title)}</span>
-                                    </a>
+                        if (data && data.length > 0) {
+                            data.forEach(item => {
+                                const a = document.createElement('a');
+                                a.className = 'dropdown-item py-2 px-3 text-wrap d-flex align-items-center justify-content-between border-bottom-subtle';
+                                a.href = item.url || `${searchUrl}?q=${encodeURIComponent(item.title)}`;
+                                const badgeClass = item.type === 'Playlist' ? 'bg-purple-subtle text-purple' : 'bg-light text-secondary';
+                                a.innerHTML = `
+                                    <span class="text-truncate fw-normal">${item.title}</span>
+                                    <span class="badge ${badgeClass} text-uppercase ms-2 flex-shrink-0" style="font-size: 10px;">${item.type || 'CONTENT'}</span>
                                 `;
+                                list.appendChild(a);
                             });
-                            searchDropdown.innerHTML = html;
+
+                            footer.innerHTML = `
+                                <a href="${searchUrl}?q=${encodeURIComponent(query)}" class="dropdown-item fw-semibold text-primary py-1 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="ti ti-search"></i>
+                                    <span>See all results for "${query}"</span>
+                                </a>
+                            `;
+                            footer.style.display = 'block';
+                            results.style.display = 'block';
+                        } else {
+                            list.innerHTML = `<div class="dropdown-item text-muted disabled py-2 px-3">No results found</div>`;
+                            footer.style.display = 'none';
+                            results.style.display = 'block';
                         }
-                        searchDropdown.style.display = 'block';
                     })
-                    .catch(err => {
-                        searchDropdown.style.display = 'none';
+                    .catch(() => {
+                        results.style.display = 'none';
                     });
             }, 250);
         });
 
-        // Penanganan tekan Enter pada input search
-        searchInput.addEventListener('keydown', function(e) {
+        // Close dropdown on click outside
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !results.contains(e.target)) {
+                results.style.display = 'none';
+            }
+        });
+
+        // Enter key submission
+        input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const query = this.value.trim();
                 if (query.length > 0) {
-                    window.location.href = `/search/all?s=${encodeURIComponent(query)}`;
+                    window.location.href = `${searchUrl}?q=${encodeURIComponent(query)}`;
                 }
             }
         });
 
-        // Sembunyikan dropdown jika pengguna mengklik di luar area search
-        document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
-                searchDropdown.style.display = 'none';
-            }
-        });
-
-        // Munculkan kembali jika input diklik lagi & ada teks
-        searchInput.addEventListener('focus', function() {
-            if (this.value.trim().length >= 1 && searchDropdown.children.length > 0) {
-                searchDropdown.style.display = 'block';
+        // Re-open on focus if query present
+        input.addEventListener('focus', function() {
+            if (this.value.trim().length >= 1 && list.children.length > 0) {
+                results.style.display = 'block';
             }
         });
     }
 
-    initAutocomplete('globalSearchInput', 'searchDropdownResults');
-    initAutocomplete('mobileSearchInput', 'mobileSearchDropdownResults');
+    handleAutocomplete('header-search-input', 'header-search-results', 'header-autocomplete-list', 'header-search-footer', '/api/search-autocomplete', '/search');
+    handleAutocomplete('mobile-header-search-input', 'mobile-header-search-results', 'mobile-header-autocomplete-list', 'mobile-header-search-footer', '/api/search-autocomplete', '/search');
 });
 </script>

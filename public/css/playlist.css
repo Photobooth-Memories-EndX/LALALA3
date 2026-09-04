@@ -56,6 +56,39 @@
     flex: 1 1 auto;
 }
 
+.playlist-search-container {
+    position: relative;
+    width: 100%;
+}
+
+#playlist-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1085;
+    max-height: 300px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+    padding: .35rem 0;
+    border: 1px solid rgba(0, 0, 0, .08);
+    background: #ffffff;
+}
+
+#playlist-search-results .dropdown-item {
+    padding: .6rem .85rem;
+    transition: background-color .15s ease;
+    text-decoration: none;
+}
+
+#playlist-search-results .dropdown-item:hover,
+#playlist-search-results .dropdown-item:focus {
+    background-color: rgba(15, 94, 156, .08);
+}
+
+#playlist-search-results .dropdown-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+
 .playlist-filter-search .input-icon,
 .playlist-filter-search .form-control {
     width: 100%;
@@ -250,6 +283,53 @@ body.theme-dark .playlist-filter-count,
 body.dark-mode .playlist-filter-count,
 body.dark .playlist-filter-count {
     border-color: var(--tblr-bg-surface-dark, #182433);
+}
+
+[data-bs-theme="dark"] #playlist-search-results,
+[data-theme="dark"] #playlist-search-results,
+body.theme-dark #playlist-search-results,
+body.dark-mode #playlist-search-results,
+body.dark #playlist-search-results {
+    background: #152235;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item,
+[data-theme="dark"] #playlist-search-results .dropdown-item,
+body.theme-dark #playlist-search-results .dropdown-item,
+body.dark-mode #playlist-search-results .dropdown-item,
+body.dark #playlist-search-results .dropdown-item {
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item:not(:last-child),
+[data-theme="dark"] #playlist-search-results .dropdown-item:not(:last-child),
+body.theme-dark #playlist-search-results .dropdown-item:not(:last-child),
+body.dark-mode #playlist-search-results .dropdown-item:not(:last-child),
+body.dark #playlist-search-results .dropdown-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item:hover,
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item:focus,
+[data-theme="dark"] #playlist-search-results .dropdown-item:hover,
+[data-theme="dark"] #playlist-search-results .dropdown-item:focus,
+body.theme-dark #playlist-search-results .dropdown-item:hover,
+body.theme-dark #playlist-search-results .dropdown-item:focus,
+body.dark-mode #playlist-search-results .dropdown-item:hover,
+body.dark-mode #playlist-search-results .dropdown-item:focus,
+body.dark #playlist-search-results .dropdown-item:hover,
+body.dark #playlist-search-results .dropdown-item:focus {
+    background: rgba(106, 174, 214, 0.14);
+}
+
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item .text-dark,
+[data-theme="dark"] #playlist-search-results .dropdown-item .text-dark,
+body.theme-dark #playlist-search-results .dropdown-item .text-dark,
+body.dark-mode #playlist-search-results .dropdown-item .text-dark,
+body.dark #playlist-search-results .dropdown-item .text-dark {
+    color: #f1f5f9 !important;
 }
 
 /* Pagination and shared Playlist surfaces */
