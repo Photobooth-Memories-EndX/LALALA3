@@ -53,7 +53,7 @@ class ContentController extends Controller
                 'author'         => $item->author,
                 'active'         => $item->active,
                 'classification' => $item->classification->classification_name ?? null,
-                'url'            => route('content.edit', $item->id),
+                'url'            => url('/manage/content') . '?q=' . urlencode($item->title),
             ];
         });
 

@@ -55,7 +55,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         itemsToRender.forEach(item => {
                             const a = document.createElement('a');
                             a.className = 'dropdown-item py-2 px-3 text-wrap d-flex align-items-center justify-content-between border-bottom-subtle';
-                            a.href = item.url || `${config.targetUrl}?q=${encodeURIComponent(item.title)}`;
+                            a.href = 'javascript:void(0);';
+                            a.style.cursor = 'pointer';
 
                             // Build subtitle details if available
                             let subDetails = [];
@@ -93,16 +94,46 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </div>
                                 <span class="badge ${badgeClass} text-uppercase ms-2 flex-shrink-0" style="font-size: 10px;">${escapeHtml(badgeText)}</span>
                             `;
+
+                            // CLICK HANDLER: Populate input, close dropdown, and submit filter form
+                            a.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                input.value = item.title;
+                                results.style.display = 'none';
+
+                                const form = input.closest('form');
+                                if (form) {
+                                    form.submit();
+                                } else {
+                                    window.location.href = `${config.targetUrl}?q=${encodeURIComponent(item.title)}`;
+                                }
+                            });
+
                             list.appendChild(a);
                         });
 
                         // Sticky "See all results" footer link
                         footer.innerHTML = `
-                            <a href="${config.targetUrl}?q=${encodeURIComponent(query)}" class="dropdown-item fw-semibold text-primary py-1 d-flex align-items-center justify-content-center gap-2">
+                            <a href="javascript:void(0);" class="dropdown-item fw-semibold text-primary py-1 d-flex align-items-center justify-content-center gap-2 trigger-see-all">
                                 <i class="ti ti-search"></i>
                                 <span>See all results for "${escapeHtml(query)}"</span>
                             </a>
                         `;
+
+                        const seeAllBtn = footer.querySelector('.trigger-see-all');
+                        if (seeAllBtn) {
+                            seeAllBtn.addEventListener('click', function (e) {
+                                e.preventDefault();
+                                results.style.display = 'none';
+                                const form = input.closest('form');
+                                if (form) {
+                                    form.submit();
+                                } else {
+                                    window.location.href = `${config.targetUrl}?q=${encodeURIComponent(query)}`;
+                                }
+                            });
+                        }
+
                         footer.style.display = 'block';
                         results.style.display = 'block';
                     } else {
