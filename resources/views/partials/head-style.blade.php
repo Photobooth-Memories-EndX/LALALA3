@@ -409,6 +409,73 @@
         color: #94a3b8 !important;
     }
 
+    /* Desktop Topbar Dark Mode */
+    [data-bs-theme="dark"] .app-topbar,
+    body[data-bs-theme="dark"] .app-topbar,
+    body.dark-mode .app-topbar {
+        background: var(--tblr-body-bg, #0f172a) !important;
+        border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] .app-topbar .ti,
+    [data-bs-theme="dark"] .app-topbar .nav-link,
+    body[data-bs-theme="dark"] .app-topbar .ti,
+    body[data-bs-theme="dark"] .app-topbar .nav-link,
+    body.dark-mode .app-topbar .ti,
+    body.dark-mode .app-topbar .nav-link {
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .app-topbar .nav-link:hover,
+    [data-bs-theme="dark"] .app-topbar .nav-link:hover .ti,
+    body[data-bs-theme="dark"] .app-topbar .nav-link:hover,
+    body[data-bs-theme="dark"] .app-topbar .nav-link:hover .ti,
+    body.dark-mode .app-topbar .nav-link:hover,
+    body.dark-mode .app-topbar .nav-link:hover .ti {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .user-header-details .user-header-name,
+    body[data-bs-theme="dark"] .user-header-details .user-header-name,
+    body.dark-mode .user-header-details .user-header-name {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .user-header-details .user-header-team,
+    body[data-bs-theme="dark"] .user-header-details .user-header-team,
+    body.dark-mode .user-header-details .user-header-team {
+        color: #94a3b8 !important;
+    }
+
+    [data-bs-theme="dark"] .topbar-search .form-control,
+    body[data-bs-theme="dark"] .topbar-search .form-control,
+    body.dark-mode .topbar-search .form-control {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    [data-bs-theme="dark"] .topbar-search .form-control::placeholder,
+    body[data-bs-theme="dark"] .topbar-search .form-control::placeholder,
+    body.dark-mode .topbar-search .form-control::placeholder {
+        color: #94a3b8 !important;
+    }
+
+    [data-bs-theme="dark"] .navbar-vertical .owl-sidebar-logout-btn,
+    body[data-bs-theme="dark"] .navbar-vertical .owl-sidebar-logout-btn,
+    body.dark-mode .navbar-vertical .owl-sidebar-logout-btn {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .navbar-vertical .owl-sidebar-logout-btn .ti,
+    [data-bs-theme="dark"] .navbar-vertical .owl-sidebar-logout-btn .nav-link-title,
+    body[data-bs-theme="dark"] .navbar-vertical .owl-sidebar-logout-btn .ti,
+    body[data-bs-theme="dark"] .navbar-vertical .owl-sidebar-logout-btn .nav-link-title,
+    body.dark-mode .navbar-vertical .owl-sidebar-logout-btn .ti,
+    body.dark-mode .navbar-vertical .owl-sidebar-logout-btn .nav-link-title {
+        color: #ffffff !important;
+    }
+
     .topbar-search {
         max-width: 520px;
         min-width: 260px;

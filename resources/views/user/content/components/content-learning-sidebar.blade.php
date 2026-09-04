@@ -57,9 +57,8 @@
 
                 {{-- Badge Status dengan Hijau Tua saat Completed --}}
                 <div class="ms-2 flex-shrink-0">
-                    <span class="badge rounded-pill {{ $learningStatusLabel === 'Completed' ? 'bg-success-lt text-success-dark fw-bold' : 'bg-primary-lt text-primary' }} px-3 py-2 border-0 d-inline-flex align-items-center"
-                          style="{{ $learningStatusLabel === 'Completed' ? 'color: #0f5132 !important; background-color: #d1e7dd !important;' : '' }}">
-                        <i class="ti ti-check me-1" style="{{ $learningStatusLabel === 'Completed' ? 'color: #0f5132 !important;' : '' }}"></i>
+                    <span class="badge rounded-pill {{ $learningStatusLabel === 'Completed' ? 'badge-learning-completed bg-success-lt fw-bold' : 'bg-primary-lt text-primary' }} px-3 py-2 border-0 d-inline-flex align-items-center">
+                        <i class="ti ti-check me-1"></i>
                         <span id="contentProgressStatus">{{ $learningStatusLabel }}</span>
                     </span>
                 </div>
