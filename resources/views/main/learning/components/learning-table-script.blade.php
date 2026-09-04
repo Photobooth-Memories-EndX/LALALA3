@@ -22,21 +22,26 @@
                 return;
             }
 
-            if (results && results.length > 0) {
-                results.forEach(item => {
-                    const label = item.label || item.name || item.title || item.text || '';
-                    const val = isEmployee ? (item.value || item.id || label) : (item.value || item.title || item.id || label);
-                    const subtext = item.subtext || (item.category ? item.category : '');
+            const items = Array.isArray(results) ? results : (results.results || []);
+
+            if (items && items.length > 0) {
+                items.forEach(item => {
+                    const label = item.title || item.label || item.name || item.text || '';
+                    const val = item.value || item.title || item.name || item.id || label;
+                    const subtext = item.type ? (item.type + (item.subtext ? ' • ' + item.subtext : '')) : (item.subtext || (item.category ? item.category : ''));
 
                     $list.append(`
-                        <a href="javascript:void(0);" class="list-group-item list-group-item-action text-truncate py-2 px-3 small border-0 select-autocomplete-item" data-input="${inputId}" data-value="${val}" data-label="${label}">
-                            <div class="fw-semibold text-dark text-truncate">${label}</div>
-                            ${subtext ? `<div class="text-muted extra-small text-truncate" style="font-size: 0.75rem;">${subtext}</div>` : ''}
+                        <a href="javascript:void(0);" class="list-group-item list-group-item-action autocomplete-item-row select-autocomplete-item" data-input="${inputId}" data-value="${val}" data-label="${label}">
+                            <div class="pe-2 text-truncate" style="flex: 1 1 auto; min-width: 0;">
+                                <div class="fw-semibold text-truncate" style="line-height: 1.35;">${label}</div>
+                                ${subtext ? `<div class="text-muted extra-small text-truncate" style="font-size: 0.75rem; line-height: 1.25; margin-top: 2px;">${subtext}</div>` : ''}
+                            </div>
+                            ${item.type ? `<span class="badge bg-light text-secondary border small px-2 py-1 ms-auto flex-shrink-0">${item.type}</span>` : ''}
                         </a>
                     `);
                 });
 
-                // Attach "See all results" footer link
+                // Attach "See all results" sticky footer link
                 $footer.html(`
                     <a href="javascript:void(0);" class="text-primary small fw-semibold text-decoration-none trigger-submit-filter" data-input="${inputId}">
                         See all results for "${keyword}" <i class="ti ti-arrow-right ms-1"></i>
@@ -186,7 +191,7 @@
                 [10, 25, 50, 100],
                 [10, 25, 50, 100]
             ],
-            order: [[6, 'desc']],
+            order: [[7, 'desc']],
             dom: '<"table-responsive"t><"d-flex flex-wrap align-items-center justify-content-between p-3"ip>',
             ajax: {
                 url: "{{ route('learning.manage.datatable') }}",
@@ -211,14 +216,15 @@
                 }
             },
             columns: [
-                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
-                { data: 'status_badge', name: 'status' },
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'status_badge', name: 'status', className: 'text-center' },
+                { data: 'id_emp', name: 'user.id_emp', className: 'text-center' },
                 { data: 'employee', name: 'user.name' },
                 { data: 'learning_title', name: 'content.title' },
                 { data: 'classification_name', name: 'content.classification.classification_name' },
-                { data: 'duration', name: 'content.duration' },
-                { data: 'learning_date', name: 'created_at' },
-                { data: 'progress_bar', name: 'progress', orderable: false, searchable: false }
+                { data: 'duration', name: 'content.duration', className: 'text-center' },
+                { data: 'learning_date', name: 'created_at', className: 'text-center' },
+                { data: 'progress_bar', name: 'progress', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {
                 processing: '<div class="py-4 text-center"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Loading learning data...</div></div>'

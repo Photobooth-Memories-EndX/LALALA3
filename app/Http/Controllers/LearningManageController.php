@@ -147,41 +147,30 @@ class LearningManageController extends Controller
 
     public function searchEmployees(Request $request)
     {
-        $term = trim((string) ($request->input('q') ?? ($request->input('search') ?? $request->input('employee_q', ''))));
-        $results = [];
-
-        $query = User::select('id', 'name', 'id_emp', 'email')
-            ->whereNotNull('name')
-            ->where('name', '!=', '');
-
-        if ($term !== '') {
-            $queryNormalized = str_replace("'", "’", $term);
-            $queryOriginal = str_replace("’", "'", $term);
-            $query->where(function ($q) use ($term, $queryNormalized, $queryOriginal) {
-                $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('name', 'like', "%{$queryNormalized}%")
-                  ->orWhere('name', 'like', "%{$queryOriginal}%")
-                  ->orWhere('id_emp', 'like', "%{$term}%")
-                  ->orWhere('email', 'like', "%{$term}%");
-            });
+        $query = trim((string) ($request->get('q') ?? ($request->get('search') ?? $request->get('employee_q', ''))));
+        if (!$query) {
+            return response()->json([]);
         }
 
-        $users = $query->limit(10)->get();
+        $users = User::where('id_emp', 'LIKE', "%{$query}%")
+            ->orWhere('name', 'LIKE', "%{$query}%")
+            ->limit(15)
+            ->get(['id', 'id_emp', 'name']);
 
-        foreach ($users as $user) {
-            $nip = $user->id_emp ? "NIP: {$user->id_emp}" : ($user->email ?? '');
-            $displayText = $user->name . ($user->id_emp ? " ({$user->id_emp})" : '');
-            $results[] = [
-                'id'      => $user->id,
-                'value'   => $user->id,
-                'label'   => $user->name,
-                'name'    => $user->name,
-                'text'    => $displayText,
-                'subtext' => $nip,
+        $results = $users->map(function ($user) use ($query) {
+            $isIdMatch = ($user->id_emp && str_contains(strtolower((string) $user->id_emp), strtolower($query)));
+
+            return [
+                'id'    => $user->id,
+                'title' => $isIdMatch ? (string) $user->id_emp : $user->name,
+                'label' => $isIdMatch ? (string) $user->id_emp : $user->name,
+                'type'  => $isIdMatch ? 'NIP' : 'EMPLOYEE',
+                'value' => $isIdMatch ? (string) $user->id_emp : $user->name,
+                'subtext' => $isIdMatch ? ($user->name ?? '') : ($user->id_emp ? "NIP: {$user->id_emp}" : ''),
             ];
-        }
+        });
 
-        return response()->json(['results' => $results]);
+        return response()->json($results);
     }
 
     public function searchTitles(Request $request)

@@ -26,6 +26,7 @@ class LearningDatatableService
             })
             ->addIndexColumn()
             ->addColumn('status_badge', fn ($row) => $this->statusBadge($row))
+            ->addColumn('id_emp', fn ($row) => $this->idEmpColumn($row))
             ->addColumn('employee', fn ($row) => $this->employeeColumn($row))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
             ->addColumn('classification_name', fn ($row) => $this->classificationColumn($row))
@@ -35,6 +36,7 @@ class LearningDatatableService
             ->addColumn('action', fn ($row) => $this->actionColumn($row))
             ->rawColumns([
                 'status_badge',
+                'id_emp',
                 'employee',
                 'learning_title',
                 'classification_name',
@@ -266,6 +268,13 @@ class LearningDatatableService
         $color = $status === 'mandatory' ? 'red' : 'blue';
 
         return '<span class="badge bg-' . $color . '-lt text-' . $color . '">' . e(ucfirst($status)) . '</span>';
+    }
+
+    private function idEmpColumn($row): string
+    {
+        $idEmp = $row->user->id_emp ?? ($row->id_emp ?? '-');
+
+        return '<span class="fw-semibold text-secondary">' . e($idEmp) . '</span>';
     }
 
     private function employeeColumn($row): string

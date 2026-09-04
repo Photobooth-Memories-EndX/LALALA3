@@ -8,8 +8,63 @@
     $routeSlug = request()->segment(4);
 @endphp
 
-<div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-3">
+<style>
+/* Autocomplete Dropdown List Container (Scrollable) */
+#manage-employee-list,
+#manage-title-list {
+    max-height: 220px !important;
+    overflow-y: auto !important;
+    background-color: #ffffff !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+#manage-employee-list::-webkit-scrollbar,
+#manage-title-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#manage-employee-list::-webkit-scrollbar-thumb,
+#manage-title-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+/* Autocomplete Individual Result Item */
+.autocomplete-item-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 14px !important;
+    min-height: 42px !important;
+    line-height: 1.4 !important;
+    font-size: 0.875rem !important;
+    color: #1e293b !important;
+    text-decoration: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    background-color: #ffffff !important;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.autocomplete-item-row:hover,
+.autocomplete-item-row:focus {
+    background-color: #f8fafc !important;
+    color: #0284c7 !important;
+}
+
+/* Sticky Footer Link */
+.autocomplete-sticky-footer {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 2055 !important;
+    background-color: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 8px 12px !important;
+}
+</style>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4" style="overflow: visible !important;">
+    <div class="card-body p-3" style="overflow: visible !important;">
         <!-- Label Header Quick Filter -->
         <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
             Quick Filter
@@ -28,32 +83,32 @@
             <input type="hidden" id="filter-progress-range" name="progress_range" value="{{ request('progress_range', 'all') }}">
             <input type="hidden" id="filter-duration" name="duration" value="{{ request('duration', 'all') }}">
 
-            <div class="d-flex align-items-center gap-2 flex-nowrap overflow-x-auto pb-1" style="scrollbar-width: thin;">
+            <div class="d-flex align-items-center gap-2 flex-wrap position-relative">
                 <!-- Employee / NIP Search Input Container -->
-                <div class="position-relative flex-grow-1" style="min-width: 200px; max-width: 280px;">
+                <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 280px; z-index: 2040;">
                     <input type="text" id="manage-employee-input" name="employee_q" value="{{ request('employee_q') ?? ($currentEmployeeText ?: $currentEmployeeId) }}" 
-                           class="form-control" placeholder="Search employee or NIP..." autocomplete="off">
+                           class="form-control rounded-3" placeholder="Search employee or NIP..." autocomplete="off">
                     <input type="hidden" id="learn-employee" name="employee_id" value="{{ $currentEmployeeId }}">
                     
                     <div id="manage-employee-dropdown" class="dropdown-menu shadow-lg w-100 position-absolute mt-1 p-0 overflow-hidden" 
-                         style="display: none; z-index: 2050; background-color: #ffffff; border-radius: 8px;">
-                        <div id="manage-employee-list" class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;"></div>
-                        <div id="manage-employee-footer" class="border-top p-2 text-center bg-light" style="display: none; position: sticky; bottom: 0;">
+                         style="display: none; z-index: 2050; background-color: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1;">
+                        <div id="manage-employee-list" class="list-group list-group-flush"></div>
+                        <div id="manage-employee-footer" class="autocomplete-sticky-footer text-center" style="display: none;">
                             <!-- See all results link generated via JS -->
                         </div>
                     </div>
                 </div>
 
                 <!-- Learning Title Search Input Container -->
-                <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 320px;">
+                <div class="position-relative flex-grow-1" style="min-width: 240px; max-width: 320px; z-index: 2040;">
                     <input type="text" id="manage-title-input" name="title_q" value="{{ request('title_q') ?? (request('learning_title') ?? request('title')) }}" 
-                           class="form-control" placeholder="Search learning title..." autocomplete="off">
+                           class="form-control rounded-3" placeholder="Search learning title..." autocomplete="off">
                     <input type="hidden" id="learn-title" name="learning_title" value="{{ $currentLearningTitle }}">
                     
                     <div id="manage-title-dropdown" class="dropdown-menu shadow-lg w-100 position-absolute mt-1 p-0 overflow-hidden" 
-                         style="display: none; z-index: 2050; background-color: #ffffff; border-radius: 8px;">
-                        <div id="manage-title-list" class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;"></div>
-                        <div id="manage-title-footer" class="border-top p-2 text-center bg-light" style="display: none; position: sticky; bottom: 0;">
+                         style="display: none; z-index: 2050; background-color: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1;">
+                        <div id="manage-title-list" class="list-group list-group-flush"></div>
+                        <div id="manage-title-footer" class="autocomplete-sticky-footer text-center" style="display: none;">
                             <!-- See all results link generated via JS -->
                         </div>
                     </div>
@@ -89,7 +144,7 @@
                 </div>
 
                 <!-- 6. Icon Button: Apply Filter -->
-                <button type="button" id="btn-apply-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
+                <button type="button" id="btn-apply-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
                     <i class="ti ti-search fs-2"></i>
                 </button>
 
