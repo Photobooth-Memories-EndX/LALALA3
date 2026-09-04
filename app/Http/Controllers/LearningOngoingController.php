@@ -87,7 +87,8 @@ class LearningOngoingController extends Controller
 
         // 2. Search Active Ongoing Playlist
         if ($mode === 'playlist' || ($mode === 'all' && $results->count() < 8)) {
-            $userPlaylists = $this->playlistService->userPlaylists($userId)->reject->is_completed;
+            $userPlaylists = $this->playlistService->userPlaylists($userId)
+                ->filter(fn ($plan) => (int) ($plan->finished_items ?? 0) >= 1 && (int) ($plan->progress_percent ?? 0) < 100 && !$plan->is_completed);
 
             $matchingPlaylists = $userPlaylists->filter(function ($plan) use ($query) {
                 return stripos((string) $plan->title, $query) !== false;

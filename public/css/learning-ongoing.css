@@ -28,6 +28,24 @@
     width: 100%;
 }
 
+.learning-modern-card {
+    cursor: pointer;
+    user-select: none;
+}
+
+.learning-modern-card * {
+    cursor: inherit;
+}
+
+.learning-modern-card .btn {
+    cursor: pointer !important;
+}
+
+.learning-modern-card .btn:disabled,
+.learning-modern-card .btn.disabled {
+    cursor: not-allowed !important;
+}
+
 .learning-modern-card .learning-card-progress {
     margin-top: 0;
     margin-bottom: 16px;

@@ -137,10 +137,14 @@ class OngoingPlaylistService
             return collect();
         }
 
-        // Default tab ongoing = playlist belum 100%; quick status Completed = playlist 100%.
-        $plans = $filters['quick_status'] === 'completed'
-            ? $userPlaylists->filter->is_completed->values()
-            : $userPlaylists->reject->is_completed->values();
+        // Default tab ongoing = playlist dengan minimal 1 item selesai (finished_items >= 1 atau progress_percent > 0) dan belum 100%.
+        // Quick status Completed = playlist 100%.
+        // Quick status Not Started = playlist 0% (finished_items == 0).
+        $plans = match ($filters['quick_status']) {
+            'completed'   => $userPlaylists->filter->is_completed->values(),
+            'not_started' => $userPlaylists->filter(fn ($p) => (int) ($p->finished_items ?? 0) === 0 && (int) ($p->progress_percent ?? 0) === 0)->values(),
+            default       => $userPlaylists->filter(fn ($p) => (int) ($p->finished_items ?? 0) >= 1 && (int) ($p->progress_percent ?? 0) < 100 && !$p->is_completed)->values(),
+        };
 
         $plans = $this->applyFilters($plans, $filters);
 

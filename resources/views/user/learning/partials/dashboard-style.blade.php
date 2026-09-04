@@ -210,12 +210,27 @@
         box-shadow: var(--learning-ui-shadow) !important;
         overflow: hidden;
         height: 100%;
+        cursor: pointer;
+        user-select: none;
         transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
     }
 
     .learning-modern-card:hover {
         transform: translateY(-3px);
         box-shadow: var(--learning-ui-shadow-hover) !important;
+    }
+
+    .learning-modern-card * {
+        cursor: inherit;
+    }
+
+    .learning-modern-card .btn {
+        cursor: pointer !important;
+    }
+
+    .learning-modern-card .btn:disabled,
+    .learning-modern-card .btn.disabled {
+        cursor: not-allowed !important;
     }
 
     .learning-thumb {
