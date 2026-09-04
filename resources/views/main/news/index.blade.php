@@ -167,7 +167,7 @@ body.theme-dark #manage-news-search-results .dropdown-item .text-dark {
 
 @section('content')
 
-<div class="page-header d-print-none mb-3">
+<div class="page-header d-print-none mb-0 pb-0">
     <div class="container-xl">
         <!-- Back Navigation Link -->
         <div class="mb-3">
@@ -177,7 +177,7 @@ body.theme-dark #manage-news-search-results .dropdown-item .text-dark {
         </div>
 
         <!-- News Management Hero Header Box -->
-        <div class="card border-0 shadow-sm p-4 mb-4 rounded-3 bg-white">
+        <div class="card border-0 shadow-sm p-4 mb-3 rounded-3 bg-white">
             <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                 <div class="d-flex align-items-center gap-3">
                     <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
@@ -199,14 +199,14 @@ body.theme-dark #manage-news-search-results .dropdown-item .text-dark {
     </div>
 </div>
 
-<div class="page-body">
+<div class="page-body mt-0 pt-0">
     <div class="container-xl">
 
         <x-alert type="success" />
         <x-alert type="warning" />
 
         <!-- News Management 3-Column Stats Cards Grid -->
-        <div class="row g-3 mb-4">
+        <div class="row g-3 mb-3">
             <!-- Card 1: Total News -->
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">

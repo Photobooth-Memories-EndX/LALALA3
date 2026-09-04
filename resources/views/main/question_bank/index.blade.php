@@ -107,7 +107,7 @@
 @endpush
 
 @section('content')
-    <div class="page-header d-print-none mb-3">
+    <div class="page-header d-print-none mb-0 pb-0">
         <div class="container-xl">
             <!-- Back Navigation Link -->
             <div class="mb-3">
@@ -117,12 +117,12 @@
             </div>
 
             <!-- Question Bank Management Hero Header Box -->
-            <div class="card border-0 shadow-sm p-4 mb-4 rounded-3 bg-white">
+            <div class="card border-0 shadow-sm p-4 mb-3 rounded-3 bg-white">
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     <div class="d-flex align-items-center gap-3">
                         <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
                              style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
-                            <i class="ti ti-help" style="font-size: 2rem !important;"></i>
+                            <i class="ti ti-help-circle" style="font-size: 2rem !important;"></i>
                         </div>
                         <div>
                             <h2 class="h3 fw-bold mb-1 text-dark">Question Bank Management</h2>
@@ -139,7 +139,7 @@
         </div>
     </div>
 
-    <div class="page-body">
+    <div class="page-body mt-0 pt-0">
         <div class="container-xl">
 
             <x-alert type='success' />
@@ -147,7 +147,7 @@
             <x-alert type='danger' />
 
             <!-- Question Bank 2-Column Stats Cards Grid -->
-            <div class="row g-3 mb-4">
+            <div class="row g-3 mb-3">
                 <!-- Card 1: Total Question Bank -->
                 <div class="col-md-6">
                     <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">

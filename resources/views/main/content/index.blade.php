@@ -4,7 +4,7 @@
     @include('main.monitoring.components.style')
 
     {{-- Page Header --}}
-    <div class="page-header d-print-none mb-3">
+    <div class="page-header d-print-none mb-0 pb-0">
         <div class="container-xl">
             <!-- Back Navigation Link -->
             <div class="mb-3">
@@ -14,7 +14,7 @@
             </div>
 
             <!-- Content Management Hero Header Box -->
-            <div class="card border-0 shadow-sm p-4 mb-4 rounded-3 bg-white">
+            <div class="card border-0 shadow-sm p-4 mb-3 rounded-3 bg-white">
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     <div class="d-flex align-items-center gap-3">
                         <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
@@ -45,7 +45,7 @@
         </div>
     </div>
 
-    <div class="page-body">
+    <div class="page-body mt-0 pt-0">
         <div class="container-xl">
 
             @if (session()->has('success'))
@@ -64,7 +64,7 @@
             @endif
 
             {{-- Stat Cards --}}
-            <div class="row g-3 mb-4">
+            <div class="row g-3 mb-3">
                 <!-- Card 1: Total Content -->
                 <div class="col-md-3">
                     <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
