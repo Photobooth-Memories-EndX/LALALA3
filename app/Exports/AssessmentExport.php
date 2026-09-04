@@ -76,7 +76,7 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $lastColumn = $this->mode === self::MODE_MY_LEARNING ? 'G' : 'J';
+                $lastColumn = $this->mode === self::MODE_MY_LEARNING ? 'H' : 'J';
                 $lastRow = max(1, $sheet->getHighestRow());
                 $range = "A1:{$lastColumn}{$lastRow}";
 
@@ -97,11 +97,12 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
                 if ($lastRow >= 2) {
                     $sheet->getDefaultRowDimension()->setRowHeight(-1);
                     $sheet->getStyle("A2:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("C2:G{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("C2:H{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("B2:B{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
                     $sheet->getStyle("B2:B{$lastRow}")->getAlignment()->setWrapText(true);
                     $sheet->getStyle("C2:C{$lastRow}")->getAlignment()->setWrapText(true);
-                    $sheet->getStyle("G2:G{$lastRow}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("E2:E{$lastRow}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("H2:H{$lastRow}")->getAlignment()->setWrapText(true);
                 }
 
                 foreach ($this->statusRows as $row => $status) {
@@ -110,7 +111,7 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
                         'Failed' => 'FFC7CE',
                         default => 'FCE4D6',
                     };
-                    $sheet->getStyle("G{$row}")->getFill()
+                    $sheet->getStyle("H{$row}")->getFill()
                         ->setFillType(Fill::FILL_SOLID)
                         ->getStartColor()->setRGB($color);
                 }
@@ -123,8 +124,9 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
         $rows = [[
             'No',
             'Assessment',
-            'Date Time',
             'Type',
+            'Category',
+            'Date Time',
             'Batch',
             'Assessment Score',
             'Status',
@@ -145,16 +147,40 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
                     ->sortByDesc('score')
                     ->first();
             }
-            $type = $assessment->type === 'trainingplan'
-                ? 'Playlist'
-                : ucfirst((string) ($assessment->type ?? '-'));
+
+            $rawType = strtolower((string) ($assessment->type ?? ''));
+            $contentFor = strtolower((string) ($assessment->assasment_content_for ?? 'content'));
+
+            if ($rawType === 'global') {
+                $type = 'Global Assessment';
+                $category = 'Global';
+                $relatedTo = '—';
+            } elseif ($rawType === 'trainingplan') {
+                $type = 'Playlist Assessment';
+                $category = '—';
+                $tpTitle = $assessment->trainingplan->title ?? null;
+                $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
+                $relatedTo = !empty($tpTitle) ? $tpTitle : (!empty($cTitle) ? $cTitle : '—');
+            } else {
+                $type = 'Content Assessment';
+                $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
+
+                if ($contentFor === 'playlist') {
+                    $category = 'Playlist';
+                    $tpTitle = $assessment->trainingplan->title ?? null;
+                    $relatedTo = !empty($tpTitle) ? $tpTitle : (!empty($cTitle) ? $cTitle : '—');
+                } else {
+                    $category = 'All Content';
+                    $relatedTo = !empty($cTitle) ? $cTitle : '—';
+                }
+            }
+
             $resultStatus = !$finalResult
                 ? 'Not Started'
                 : ($finalResult->pass ? 'Passed' : 'Failed');
             $status = $resultStatus === 'Failed' && $assessment->passing_grade !== null
                 ? $resultStatus . "\nPassing Grade: " . $assessment->passing_grade
                 : $resultStatus;
-            $subtitle = $assessment->trainingplan->title ?? 'Assessment';
             $dateTime = ($assessment->timer ?? 'n') === 'y'
                 ? 'Start : ' . ($assessment->fromdate ? date('d/m/Y H:i', strtotime($assessment->fromdate)) : '-')
                     . "\nFinish : " . ($assessment->todate ? date('d/m/Y H:i', strtotime($assessment->todate)) : '-')
@@ -162,11 +188,16 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
             $excelRow = $index + 2;
             $this->statusRows[$excelRow] = $resultStatus;
 
+            $assessmentTitleCell = ($relatedTo !== '—' && $relatedTo !== '-')
+                ? ($assessment->title ?? '-') . "\nRelated to: " . $relatedTo
+                : ($assessment->title ?? '-');
+
             $rows[] = [
                 $index + 1,
-                ($assessment->title ?? '-') . "\n" . $subtitle,
-                $dateTime,
+                $assessmentTitleCell,
                 $type,
+                $category,
+                $dateTime,
                 $finalResult->batch ?? '-',
                 $finalResult && $finalResult->score !== null ? $finalResult->score : '-',
                 $status,

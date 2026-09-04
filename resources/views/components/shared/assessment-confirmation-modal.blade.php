@@ -688,12 +688,22 @@
                     batchDisplay = batchStr.toLowerCase().indexOf('batch') !== -1 ? batchStr : 'Batch ' + batchStr;
                 }
 
+                var relatedTo = $el.data('assessment-related-to') || $row.attr('data-assessment-related-to') || '';
+                var relatedSection = '';
+                if (relatedTo && String(relatedTo).trim() !== '' && String(relatedTo).trim() !== '—' && String(relatedTo).trim() !== '-') {
+                    relatedSection = '<div class="assessment-info-popover-related">' +
+                        '<div class="assessment-info-popover-related-label">Related to</div>' +
+                        '<div class="assessment-info-popover-related-value">' + $('<div>').text(relatedTo).html() + '</div>' +
+                        '</div>';
+                }
+
                 var popoverHtml = '<div class="assessment-info-popover-card">' +
                     '<div class="assessment-info-popover-header">Assessment Info</div>' +
                     '<div class="assessment-info-popover-title">' + $('<div>').text(title).html() + '</div>' +
                     '<div class="assessment-info-popover-meta">' +
                     '<i class="ti ti-layers-intersect"></i> ' + $('<div>').text(batchDisplay).html() +
                     '</div>' +
+                    relatedSection +
                     '</div>';
 
                 if (typeof $.fn.popover === 'function') {

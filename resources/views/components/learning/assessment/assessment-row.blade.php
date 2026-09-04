@@ -58,14 +58,44 @@
     $contentFor = strtolower((string) ($assessment->assasment_content_for ?? 'content'));
     $hasTrainingPlanId = !empty($assessment->trainingplan_id);
 
-    $isPlaylistAssessment = ($contentFor === 'playlist') || ($rawType === 'trainingplan') || ($hasTrainingPlanId && $contentFor !== 'content');
-    $isContentAssessment = !$isPlaylistAssessment && ($rawType === 'content' || $contentFor === 'content') && !$hasTrainingPlanId;
+    // Strict user-facing Type & Category classifications:
+    // 1. Global Assessment:
+    //    Type: Global Assessment, Category: Global, Filter: global
+    // 2. Playlist Assessment:
+    //    Type: Playlist Assessment, Category: —, Filter: playlist
+    // 3. Content Assessment (content_for = playlist):
+    //    Type: Content Assessment, Category: Playlist, Filter: playlist
+    // 4. Content Assessment (content_for = content):
+    //    Type: Content Assessment, Category: All Content, Filter: content
+    if ($rawType === 'global') {
+        $typeDisplay = 'Global Assessment';
+        $categoryDisplay = 'Global';
+        $relatedToDisplay = '—';
+        $filterType = 'global';
+    } elseif ($rawType === 'trainingplan') {
+        $typeDisplay = 'Playlist Assessment';
+        $categoryDisplay = '—';
+        $tpTitle = $assessment->trainingplan->title ?? null;
+        $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
+        $relatedToDisplay = !empty($tpTitle) ? $tpTitle : (!empty($cTitle) ? $cTitle : '—');
+        $filterType = 'playlist';
+    } else {
+        // rawType === 'content' or fallback
+        $typeDisplay = 'Content Assessment';
+        $filterType = 'content';
+        $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
 
-    $typeLabel = $isPlaylistAssessment
-        ? 'Playlist'
-        : ($rawType === 'global' ? 'Global' : ($rawType === 'youtube' ? 'MOOC' : ($isContentAssessment ? 'Content' : ucwords(str_replace('_', ' ', $assessment->type ?? '-')))));
+        if ($contentFor === 'playlist') {
+            $categoryDisplay = 'Playlist';
+            $tpTitle = $assessment->trainingplan->title ?? null;
+            $relatedToDisplay = !empty($tpTitle) ? $tpTitle : (!empty($cTitle) ? $cTitle : '—');
+        } else {
+            $categoryDisplay = 'All Content';
+            $relatedToDisplay = !empty($cTitle) ? $cTitle : '—';
+        }
+    }
 
-    $filterType = $isPlaylistAssessment ? 'playlist' : ($isContentAssessment ? 'content' : ($rawType === 'global' ? 'global' : $rawType));
+    $typeLabel = $typeDisplay;
 
     $assessmentUrl = !empty($assessment->slug)
         ? route('assesment.user.view', $assessment->slug)
@@ -77,10 +107,16 @@
     $filterYear = $filterTimestamp ? date('Y', $filterTimestamp) : '';
     $filterMonth = $filterTimestamp ? date('n', $filterTimestamp) : '';
     $contentTitles = collect($assessment->contents ?? [])->pluck('title')->filter();
+    if (!empty($assessment->content?->title)) {
+        $contentTitles->push($assessment->content->title);
+    }
     $searchText = collect([
         $assessment->title ?? null,
         $assessment->trainingplan->title ?? null,
-    ])->merge($contentTitles)->filter()->implode(' ');
+        $typeDisplay,
+        $categoryDisplay !== '—' ? $categoryDisplay : null,
+        $relatedToDisplay !== '—' ? $relatedToDisplay : null,
+    ])->merge($contentTitles)->filter()->unique()->implode(' ');
 
     $nowCarbon = now();
     $hasAccessPeriod = $assessment->hasAccessPeriod();
@@ -174,6 +210,8 @@
     data-assessment-answered-count="{{ $answeredCount }}"
     data-assessment-total-count="{{ $totalCount }}"
     data-assessment-action-type="{{ $actionType }}"
+    data-assessment-category="{{ $categoryDisplay }}"
+    data-assessment-related-to="{{ $relatedToDisplay }}"
     data-assessment-availability="{{ $availability }}">
     <td class="text-center text-muted align-middle">{{ $index }}</td>
 
@@ -187,6 +225,8 @@
                data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
                data-assessment-type="{{ $filterType }}"
                data-assessment-type-label="{{ $typeLabel }}"
+               data-assessment-category="{{ $categoryDisplay }}"
+               data-assessment-related-to="{{ $relatedToDisplay }}"
                data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
                data-assessment-from-date="{{ $fromDateDisplay }}"
                data-assessment-to-date="{{ $toDateDisplay }}"
@@ -201,6 +241,8 @@
                  data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
                  data-assessment-type="{{ $filterType }}"
                  data-assessment-type-label="{{ $typeLabel }}"
+                 data-assessment-category="{{ $categoryDisplay }}"
+                 data-assessment-related-to="{{ $relatedToDisplay }}"
                  data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
                  data-assessment-from-date="{{ $fromDateDisplay }}"
                  data-assessment-to-date="{{ $toDateDisplay }}"
@@ -209,25 +251,19 @@
                 {{ $assessment->title ?? '-' }}
             </div>
         @endif
+    </td>
 
-        <div class="small assessment-subtitle d-flex align-items-center gap-1 mt-1">
-            @if ($isPlaylistAssessment)
-                <span class="badge bg-teal-lt text-teal text-uppercase" style="font-size: 0.65rem; font-weight: 600; padding: 2px 6px;">Playlist Assessment</span>
-                @if (!empty($assessment->trainingplan->title))
-                    <span class="text-muted text-truncate" style="max-width: 250px;">{{ $assessment->trainingplan->title }}</span>
-                @endif
-            @elseif ($isContentAssessment)
-                <span class="badge bg-purple-lt text-purple text-uppercase" style="font-size: 0.65rem; font-weight: 600; padding: 2px 6px;">Content Assessment</span>
-                @php
-                    $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
-                @endphp
-                @if (!empty($cTitle))
-                    <span class="text-muted text-truncate" style="max-width: 250px;">{{ $cTitle }}</span>
-                @endif
-            @else
-                <span class="badge bg-indigo-lt text-indigo text-uppercase" style="font-size: 0.65rem; font-weight: 600; padding: 2px 6px;">Global Assessment</span>
-            @endif
-        </div>
+    <td class="text-center align-middle" data-order="{{ $typeDisplay }}">
+        <x-learning.assessment.assessment-type
+            :type="$filterType"
+            :label="$typeDisplay"
+        />
+    </td>
+
+    <td class="text-center align-middle" data-order="{{ $categoryDisplay }}">
+        <x-learning.assessment.assessment-category
+            :category="$categoryDisplay"
+        />
     </td>
 
     <td class="text-start align-middle small lh-sm" data-order="{{ $assessment->fromdate ? strtotime($assessment->fromdate) : 0 }}">
@@ -247,13 +283,6 @@
         @elseif (!$hasAccessPeriod)
             <span class="text-muted">No Deadline</span>
         @endif
-    </td>
-
-    <td class="text-center align-middle">
-        <x-learning.assessment.assessment-type
-            :type="$assessment->type"
-            :label="$typeLabel"
-        />
     </td>
 
     <td class="text-center align-middle score-column">

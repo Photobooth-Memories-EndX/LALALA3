@@ -51,18 +51,69 @@
                             $aq->orWhereIn('assigned_description', $assignedDescriptions);
                         }
                     })
-                    ->orWhereHas('contents', function ($cq) use ($userId) {
-                        $cq->whereHas('contentuser', function ($cuq) use ($userId) {
-                            $cuq->where('progress', '>=', 100)->where('user_id', $userId);
+                    // Content Assessment -> resolve via Content relation
+                    ->orWhere(function ($cq) use ($userId) {
+                        $cq->where(function ($sub) {
+                            $sub->where('assasment_content_for', 'content')
+                                ->orWhere(function ($fallback) {
+                                    $fallback->where('type', 'content')
+                                        ->where(function ($s) {
+                                            $s->whereNull('assasment_content_for')
+                                                ->orWhere('assasment_content_for', 'content');
+                                        });
+                                });
+                        })
+                        ->where('type', '!=', 'global')
+                        ->whereHas('contents', function ($q) use ($userId) {
+                            $q->whereHas('contentuser', function ($cu) use ($userId) {
+                                $cu->where('progress', '>=', 100)->where('user_id', $userId);
+                            });
                         });
                     })
-                    ->orWhere(function ($tq) use ($completedPlaylistIds) {
-                        $tq->where('type', 'trainingplan')
-                            ->where('status', 'OK')
-                            ->whereIn('trainingplan_id', $completedPlaylistIds);
+                    // Playlist Assessment -> resolve via Playlist relation
+                    ->orWhere(function ($pq) use ($userId, $completedPlaylistIds) {
+                        $pq->where(function ($sub) {
+                            $sub->where('assasment_content_for', 'playlist')
+                                ->orWhere('type', 'trainingplan');
+                        })
+                        ->where('type', '!=', 'global')
+                        ->where('status', 'OK')
+                        ->where(function ($matchQ) use ($completedPlaylistIds, $userId) {
+                            $matchQ->whereIn('trainingplan_id', $completedPlaylistIds)
+                                ->orWhere(function ($lessonQ) use ($userId) {
+                                    $lessonQ->whereNotNull('trainingplan_id')
+                                        ->whereNotNull('content_id')
+                                        ->where(function ($progQ) use ($userId) {
+                                            $progQ->whereHas('content', function ($cQ) use ($userId) {
+                                                $cQ->whereHas('playlistContentUsers', function ($pcu) use ($userId) {
+                                                    $pcu->where('user_id', $userId)
+                                                        ->where(fn ($w) => $w->where('finish', '1')->orWhere('progress', '>=', 100));
+                                                })->orWhereHas('contentuser', function ($cu) use ($userId) {
+                                                    $cu->where('user_id', $userId)
+                                                        ->where(fn ($w) => $w->where('finish', '1')->orWhere('progress', '>=', 100));
+                                                });
+                                            });
+                                        });
+                                });
+                        });
                     })
                     ->orWhereHas('scores', function ($sq) use ($userId) {
                         $sq->where('user_id', $userId);
+                    })
+                    ->orWhere(function ($gq) use ($user, $assignedDescriptions) {
+                        $gq->where('type', 'global')
+                            ->where('status', 'OK')
+                            ->where(function ($sq) use ($user, $assignedDescriptions) {
+                                $sq->doesntHave('assesments_assigned')
+                                    ->orWhereHas('assesments_assigned', function ($aq) use ($user, $assignedDescriptions) {
+                                        $aq->where('assigned_id', $user->id_emp)
+                                            ->orWhere('assigned_id', $user->id_team ?? $user->id_tean)
+                                            ->orWhere('assigned_id', $user->id_department);
+                                        if (!empty($assignedDescriptions)) {
+                                            $aq->orWhereIn('assigned_description', $assignedDescriptions);
+                                        }
+                                    });
+                            });
                     });
                 })
                 ->where(function ($searchQuery) use ($query) {
@@ -76,12 +127,14 @@
 
             $results = $assessments->map(function ($assessment) {
                 $rawType = strtolower((string) ($assessment->type ?? 'content'));
-                $typeLabel = match ($rawType) {
-                    'trainingplan', 'playlist' => 'Playlist',
-                    'youtube'                  => 'MOOC',
-                    'global'                   => 'Global',
-                    default                    => ucwords(str_replace('_', ' ', $rawType)),
-                };
+                $contentFor = strtolower((string) ($assessment->assasment_content_for ?? 'content'));
+                if ($rawType === 'global') {
+                    $typeLabel = 'Global Assessment';
+                } elseif ($contentFor === 'playlist' || $rawType === 'trainingplan') {
+                    $typeLabel = 'Playlist Assessment';
+                } else {
+                    $typeLabel = 'Content Assessment';
+                }
 
                 return [
                     'id'         => $assessment->id,
