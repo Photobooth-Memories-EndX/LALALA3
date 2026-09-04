@@ -58,7 +58,10 @@
             <span>Continue</span>
         </a>
     @elseif ($isCompleted)
-        @if ($userAttempts >= $maxAttemptsDisplay)
+        @php
+            $isBypassRole = in_array((int) (auth()->user()->role ?? auth()->user()->role_id ?? 0), [2, 3], true);
+        @endphp
+        @if ($userAttempts >= $maxAttemptsDisplay && !$isBypassRole)
             <button type="button"
                     class="btn btn-sm assessment-action-btn btn-assessment-failed"
                     disabled>

@@ -71,6 +71,7 @@ class LearningAssessmentController extends Controller
                 'scores'      => fn ($q) => $q->where('user_id', $userId),
                 'trainingplan',
             ])
+            ->where('status', 'OK')
             ->where(function ($query) use ($user, $userId, $completedPlaylistIds) {
                 $query->whereHas('assesments_assigned', function ($q) use ($user) {
                     $q->where('assigned_id', $user->id_emp)
@@ -115,7 +116,29 @@ class LearningAssessmentController extends Controller
                         ->orWhereHas('trainingplan', fn ($playlist) => $playlist->where('title', 'like', $keyword));
                 });
             })
-            ->when($type !== 'all', fn ($q) => $q->where('type', $type === 'playlist' ? 'trainingplan' : $type))
+            ->when($type !== 'all', function ($q) use ($type) {
+                if ($type === 'playlist') {
+                    $q->where(function ($sq) {
+                        $sq->where('assasment_content_for', 'playlist')
+                            ->orWhere('type', 'trainingplan')
+                            ->orWhere(function ($tq) {
+                                $tq->whereNotNull('trainingplan_id')
+                                    ->where('assasment_content_for', '!=', 'content');
+                            });
+                    });
+                } elseif ($type === 'content') {
+                    $q->where(function ($sq) {
+                        $sq->where('type', 'content')
+                            ->where(function ($cq) {
+                                $cq->where('assasment_content_for', 'content')
+                                    ->orWhereNull('assasment_content_for');
+                            })
+                            ->whereNull('trainingplan_id');
+                    });
+                } else {
+                    $q->where('type', $type);
+                }
+            })
             ->when($status === 'passed', fn ($q) => $q->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 1)))
             ->when($status === 'failed', fn ($q) => $q
                 ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 0))

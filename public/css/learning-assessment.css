@@ -1420,6 +1420,109 @@ body.dark-mode .assessment-info-popover-meta {
     color: #cbd5e1 !important;
 }
 
+/* Dark Mode Support for Assessment Title & Subtitle */
+[data-bs-theme="dark"] .assessment-title,
+[data-bs-theme="dark"] .assessment-title-link,
+[data-bs-theme="dark"] .assessment-title-link:visited,
+body.dark-mode .assessment-title,
+body.dark-mode .assessment-title-link,
+body.dark-mode .assessment-title-link:visited,
+body.theme-dark .assessment-title,
+body.theme-dark .assessment-title-link,
+body.theme-dark .assessment-title-link:visited {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .assessment-row:hover .assessment-title-link,
+[data-bs-theme="dark"] .assessment-title-link:hover,
+[data-bs-theme="dark"] .assessment-title-link:focus,
+body.dark-mode .assessment-row:hover .assessment-title-link,
+body.dark-mode .assessment-title-link:hover,
+body.dark-mode .assessment-title-link:focus,
+body.theme-dark .assessment-row:hover .assessment-title-link,
+body.theme-dark .assessment-title-link:hover,
+body.theme-dark .assessment-title-link:focus {
+    color: #38bdf8 !important;
+    text-decoration-color: #38bdf8 !important;
+}
+
+[data-bs-theme="dark"] .assessment-subtitle,
+[data-bs-theme="dark"] .assessment-subtitle .text-muted,
+body.dark-mode .assessment-subtitle,
+body.dark-mode .assessment-subtitle .text-muted,
+body.theme-dark .assessment-subtitle,
+body.theme-dark .assessment-subtitle .text-muted {
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .assessment-table tbody tr.assessment-row:hover,
+body.dark-mode .assessment-table tbody tr.assessment-row:hover,
+body.theme-dark .assessment-table tbody tr.assessment-row:hover {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-bs-theme="dark"] .assessment-table tbody tr.assessment-row:hover > td,
+body.dark-mode .assessment-table tbody tr.assessment-row:hover > td,
+body.theme-dark .assessment-table tbody tr.assessment-row:hover > td {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Dark Mode Modals Support */
+[data-bs-theme="dark"] #assessmentConfirmationModal .modal-content,
+[data-bs-theme="dark"] #continueAssessmentModal .modal-content,
+body.dark-mode #assessmentConfirmationModal .modal-content,
+body.dark-mode #continueAssessmentModal .modal-content,
+body.theme-dark #assessmentConfirmationModal .modal-content,
+body.theme-dark #continueAssessmentModal .modal-content {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal .bg-light,
+[data-bs-theme="dark"] #continueAssessmentModal .bg-light,
+body.dark-mode #assessmentConfirmationModal .bg-light,
+body.dark-mode #continueAssessmentModal .bg-light,
+body.theme-dark #assessmentConfirmationModal .bg-light,
+body.theme-dark #continueAssessmentModal .bg-light {
+    background-color: #0f172a !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal .text-dark,
+[data-bs-theme="dark"] #continueAssessmentModal .text-dark,
+body.dark-mode #assessmentConfirmationModal .text-dark,
+body.dark-mode #continueAssessmentModal .text-dark,
+body.theme-dark #assessmentConfirmationModal .text-dark,
+body.theme-dark #continueAssessmentModal .text-dark {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal #assessmentModalName,
+[data-bs-theme="dark"] #continueAssessmentModal #continueModalName,
+body.dark-mode #assessmentConfirmationModal #assessmentModalName,
+body.dark-mode #continueAssessmentModal #continueModalName,
+body.theme-dark #assessmentConfirmationModal #assessmentModalName,
+body.theme-dark #continueAssessmentModal #continueModalName {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal ol,
+[data-bs-theme="dark"] #continueAssessmentModal ol,
+body.dark-mode #assessmentConfirmationModal ol,
+body.dark-mode #continueAssessmentModal ol,
+body.theme-dark #assessmentConfirmationModal ol,
+body.theme-dark #continueAssessmentModal ol {
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal .border-bottom,
+[data-bs-theme="dark"] #continueAssessmentModal .border-bottom,
+body.dark-mode #assessmentConfirmationModal .border-bottom,
+body.dark-mode #continueAssessmentModal .border-bottom,
+body.theme-dark #assessmentConfirmationModal .border-bottom,
+body.theme-dark #continueAssessmentModal .border-bottom {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
 @media (max-width: 576px) {
     /* Mengunci lebar modal agar memiliki jarak aman dari pinggir layar */
     .modal-dialog {

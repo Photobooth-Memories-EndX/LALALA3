@@ -54,22 +54,23 @@
     $isCompleted = $finalResult != null;
     $isPassed = $finalResult && $finalResult->pass;
 
-    $typeLabel = match (strtolower((string) ($assessment->type ?? ''))) {
-        'trainingplan', 'playlist' => 'Playlist',
-        'youtube'                  => 'MOOC',
-        default                    => ucwords(str_replace('_', ' ', $assessment->type ?? '-')),
-    };
+    $rawType = strtolower((string) ($assessment->type ?? ''));
+    $contentFor = strtolower((string) ($assessment->assasment_content_for ?? 'content'));
+    $hasTrainingPlanId = !empty($assessment->trainingplan_id);
+
+    $isPlaylistAssessment = ($contentFor === 'playlist') || ($rawType === 'trainingplan') || ($hasTrainingPlanId && $contentFor !== 'content');
+    $isContentAssessment = !$isPlaylistAssessment && ($rawType === 'content' || $contentFor === 'content') && !$hasTrainingPlanId;
+
+    $typeLabel = $isPlaylistAssessment
+        ? 'Playlist'
+        : ($rawType === 'global' ? 'Global' : ($rawType === 'youtube' ? 'MOOC' : ($isContentAssessment ? 'Content' : ucwords(str_replace('_', ' ', $assessment->type ?? '-')))));
+
+    $filterType = $isPlaylistAssessment ? 'playlist' : ($isContentAssessment ? 'content' : ($rawType === 'global' ? 'global' : $rawType));
 
     $assessmentUrl = !empty($assessment->slug)
         ? route('assesment.user.view', $assessment->slug)
         : null;
 
-    $filterType = match (strtolower((string) ($assessment->type ?? ''))) {
-        'trainingplan', 'playlist' => 'playlist',
-        'content' => 'content',
-        'global' => 'global',
-        default => strtolower((string) ($assessment->type ?? '')),
-    };
     $filterStatus = $isPassed ? 'passed' : ($isCompleted ? 'failed' : 'not_started');
     $filterDate = $assessment->fromdate ?? null;
     $filterTimestamp = $filterDate ? strtotime((string) $filterDate) : false;
@@ -80,22 +81,28 @@
         $assessment->title ?? null,
         $assessment->trainingplan->title ?? null,
     ])->merge($contentTitles)->filter()->implode(' ');
-    $now = time();
+
+    $nowCarbon = now();
     $hasAccessPeriod = $assessment->hasAccessPeriod();
     $hasTimeLimit = $assessment->hasTimeLimit();
 
     if ($hasAccessPeriod && !empty($assessment->fromdate) && !empty($assessment->todate)) {
-        $fromDateRaw = (strlen(trim((string) $assessment->fromdate)) === 10 ? trim((string) $assessment->fromdate) . ' 23:59:59' : (string) $assessment->fromdate);
-        $toDateRaw = (strlen(trim((string) $assessment->todate)) === 10 ? trim((string) $assessment->todate) . ' 23:59:59' : (string) $assessment->todate);
-        $fromDate = strtotime($fromDateRaw);
-        $toDate = strtotime($toDateRaw);
+        $fromDateRaw = strlen(trim((string) $assessment->fromdate)) === 10
+            ? trim((string) $assessment->fromdate) . ' 00:00:00'
+            : (string) $assessment->fromdate;
+        $toDateRaw = strlen(trim((string) $assessment->todate)) === 10
+            ? trim((string) $assessment->todate) . ' 23:59:59'
+            : (string) $assessment->todate;
 
-        $isExpired = $toDate ? ($now > $toDate) : false;
-        $isUpcoming = $fromDate ? ($now < $fromDate) : false;
+        $fromDateCarbon = \Illuminate\Support\Carbon::parse($fromDateRaw);
+        $toDateCarbon = \Illuminate\Support\Carbon::parse($toDateRaw);
+
+        $isUpcoming = $nowCarbon->lt($fromDateCarbon);
+        $isExpired = $nowCarbon->gt($toDateCarbon);
         $availability = $isUpcoming ? 'upcoming' : ($isExpired ? 'expired' : 'available');
 
-        $fromDateDisplay = date('d M Y, H:i', strtotime($assessment->fromdate));
-        $toDateDisplay = date('d M Y, H:i', strtotime($assessment->todate));
+        $fromDateDisplay = $fromDateCarbon->format('d M Y, H:i');
+        $toDateDisplay = $toDateCarbon->format('d M Y, H:i');
     } else {
         $isExpired = false;
         $isUpcoming = false;
@@ -121,7 +128,16 @@
             ->first();
     }
 
-    $hasSnapshot = $activeDraft && (!empty($activeDraft->user_answer) || !empty($activeDraft->question_snapshot));
+    $hasActiveDraft = ($activeDraft !== null);
+
+    // If active draft exists and time limit is enabled, check timer deadline
+    if ($hasActiveDraft && $hasTimeLimit && $activeDraft->created_at) {
+        $timeLimitDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assessment->time_limit_minutes);
+        if ($nowCarbon->gt($timeLimitDeadline)) {
+            $isExpired = true;
+            $availability = 'expired';
+        }
+    }
 
     $answeredCount = ($activeDraft && is_array($activeDraft->user_answer))
         ? count(array_filter($activeDraft->user_answer, fn($v) => $v !== null && $v !== ''))
@@ -130,12 +146,16 @@
     $totalCount = ($activeDraft && is_array($activeDraft->question_snapshot) && count($activeDraft->question_snapshot) > 0)
         ? count($activeDraft->question_snapshot)
         : (isset($assessment->questions) ? $assessment->questions->count() : ($assessment->questions_count ?? 10));
+
+    $actionType = $hasActiveDraft
+        ? 'continue'
+        : ($isCompleted && !$isPassed && (string)($assessment->type ?? '') !== 'global' && $userAttempts < $maxAttempts ? 'remedial' : 'start');
 @endphp
 
 <tr class="assessment-row"
     data-assessment-id="{{ $assessment->id }}"
     data-assessment-title="{{ $assessment->title ?? '' }}"
-    data-assessment-type="{{ $assessment->type ?? '' }}"
+    data-assessment-type="{{ $filterType }}"
     data-assessment-type-label="{{ $typeLabel }}"
     data-assessment-status="{{ $filterStatus }}"
     data-assessment-year="{{ $filterYear }}"
@@ -150,10 +170,10 @@
     data-assessment-user-attempts="{{ $userAttempts }}"
     data-assessment-max-attempts="{{ $maxAttempts }}"
     data-assessment-score="{{ $finalResult->score ?? '' }}"
-    data-assessment-has-snapshot="{{ $hasSnapshot ? 'true' : 'false' }}"
+    data-assessment-has-snapshot="{{ $hasActiveDraft ? 'true' : 'false' }}"
     data-assessment-answered-count="{{ $answeredCount }}"
     data-assessment-total-count="{{ $totalCount }}"
-    data-assessment-action-type="{{ $hasSnapshot ? 'continue' : ($isCompleted && !$isPassed && (string)($assessment->type ?? '') !== 'global' ? 'remedial' : 'start') }}"
+    data-assessment-action-type="{{ $actionType }}"
     data-assessment-availability="{{ $availability }}">
     <td class="text-center text-muted align-middle">{{ $index }}</td>
 
@@ -161,11 +181,11 @@
         @if ($assessmentUrl)
             <a href="javascript:void(0);"
                role="button"
-               class="fw-semibold text-primary assessment-title assessment-title-link assessment-name"
+               class="fw-semibold assessment-title assessment-title-link assessment-name"
                data-assessment-id="{{ $assessment->id }}"
                data-assessment-title="{{ $assessment->title ?? '' }}"
                data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
-               data-assessment-type="{{ $assessment->type ?? '' }}"
+               data-assessment-type="{{ $filterType }}"
                data-assessment-type-label="{{ $typeLabel }}"
                data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
                data-assessment-from-date="{{ $fromDateDisplay }}"
@@ -175,11 +195,11 @@
                 {{ $assessment->title ?? '-' }}
             </a>
         @else
-            <div class="fw-semibold text-primary assessment-title assessment-name"
+            <div class="fw-semibold assessment-title assessment-name"
                  data-assessment-id="{{ $assessment->id }}"
                  data-assessment-title="{{ $assessment->title ?? '' }}"
                  data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
-                 data-assessment-type="{{ $assessment->type ?? '' }}"
+                 data-assessment-type="{{ $filterType }}"
                  data-assessment-type-label="{{ $typeLabel }}"
                  data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
                  data-assessment-from-date="{{ $fromDateDisplay }}"
@@ -190,8 +210,23 @@
             </div>
         @endif
 
-        <div class="text-primary small opacity-75 assessment-subtitle">
-            {{ $assessment->trainingplan->title ?? 'Assessment' }}
+        <div class="small assessment-subtitle d-flex align-items-center gap-1 mt-1">
+            @if ($isPlaylistAssessment)
+                <span class="badge bg-teal-lt text-teal text-uppercase" style="font-size: 0.65rem; font-weight: 600; padding: 2px 6px;">Playlist Assessment</span>
+                @if (!empty($assessment->trainingplan->title))
+                    <span class="text-muted text-truncate" style="max-width: 250px;">{{ $assessment->trainingplan->title }}</span>
+                @endif
+            @elseif ($isContentAssessment)
+                <span class="badge bg-purple-lt text-purple text-uppercase" style="font-size: 0.65rem; font-weight: 600; padding: 2px 6px;">Content Assessment</span>
+                @php
+                    $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
+                @endphp
+                @if (!empty($cTitle))
+                    <span class="text-muted text-truncate" style="max-width: 250px;">{{ $cTitle }}</span>
+                @endif
+            @else
+                <span class="badge bg-indigo-lt text-indigo text-uppercase" style="font-size: 0.65rem; font-weight: 600; padding: 2px 6px;">Global Assessment</span>
+            @endif
         </div>
     </td>
 
@@ -260,7 +295,7 @@
             :is-completed="$isCompleted"
             :is-passed="$isPassed"
             :is-expired="$isExpired"
-            :has-snapshot="$hasSnapshot"
+            :has-snapshot="$hasActiveDraft"
             :answered-count="$answeredCount"
             :total-count="$totalCount"
             :duration="$assessment->duration ?? ($assessment->time_limit_minutes ?? 60)"
@@ -270,7 +305,7 @@
             :assessment-id="$assessment->id"
             :assessment-title="$assessment->title ?? ''"
             :assessment-batch="$finalResult->batch ?? ($assessment->batch ?? '-')"
-            :assessment-type="$assessment->type ?? ''"
+            :assessment-type="$filterType"
             :type-label="$typeLabel"
             :passing-grade="$assessment->passing_grade ?? '-'"
             :from-date="$fromDateDisplay"
