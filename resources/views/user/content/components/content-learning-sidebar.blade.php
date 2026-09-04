@@ -121,14 +121,26 @@
     @if ($assessmentObj)
         @php
             $attempts = $assessmentObj->attempts_count ?? $assessmentCount ?? 0;
-            $maxAttempts = $assessmentObj->max_attempts ?? (isset($assessmentObj->total_remedials) ? (1 + (int)$assessmentObj->total_remedials) : 3);
+            $maxAttempts = $maxAttempts ?? ($assessmentObj->max_attempts ?? (isset($assessmentObj->total_remedials) ? (1 + (int)$assessmentObj->total_remedials) : 3));
             $latestScore = $assessmentObj->latest_score ?? $assessmentLatestScores ?? 0;
             $passingGrade = $assessmentObj->passing_grade ?? 80;
-            $isPassed = $latestScore >= $passingGrade;
+            $isPassed = $isPassed ?? ($latestScore >= $passingGrade);
             $meetsProgressRequirement = isset($content_user) && method_exists($content_user, 'meetsAssessmentProgressRequirement')
                 ? $content_user->meetsAssessmentProgressRequirement()
                 : true;
             $assessmentSlug = $assessmentObj->slug ?? '#';
+
+            $fromDateVal = !empty($assessmentObj->fromdate) ? date('d M Y, H:i', strtotime($assessmentObj->fromdate)) : '-';
+            $toDateVal = !empty($assessmentObj->todate) ? date('d M Y, H:i', strtotime($assessmentObj->todate)) : '-';
+            $batchDisplay = !empty($assessmentObj->batch) && $assessmentObj->batch !== '-'
+                ? (str_contains(strtolower((string)$assessmentObj->batch), 'batch') ? $assessmentObj->batch : 'Batch ' . $assessmentObj->batch)
+                : 'Batch 1';
+            $assessmentDurationVal = $assessmentObj->duration ?? ($assessmentObj->time_limit_minutes ?? 60);
+
+            $isInactive = $isInactive ?? (strtoupper(trim((string)($assessmentObj->status ?? ''))) === 'NOT');
+            $isExpired = $isExpired ?? false;
+            $isBeforeStart = $isBeforeStart ?? false;
+            $actionType = $actionType ?? ($attempts == 0 ? 'start' : ($attempts < $maxAttempts ? 'remedial' : 'max_attempts'));
         @endphp
 
         <div class="card border-0 shadow-sm rounded-4 glass-surface content-sidebar-card">
@@ -155,22 +167,112 @@
                 </div>
 
                 @if ($isPassed)
-                    <button type="button" class="btn btn-success disabled w-100 rounded-pill" disabled>
+                    <button type="button" class="btn btn-success disabled w-100 rounded-pill" disabled style="cursor: not-allowed;">
                         <i class="ti ti-check me-1"></i> Passed
                     </button>
+                @elseif ($isInactive)
+                    <button type="button"
+                            class="btn btn-secondary disabled w-100 rounded-pill"
+                            disabled
+                            aria-disabled="true"
+                            tabindex="-1"
+                            style="cursor: not-allowed; pointer-events: none; background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important;">
+                        <i class="ti ti-alert-triangle me-1"></i> Assessment Inactive
+                    </button>
+                @elseif ($isExpired)
+                    <button type="button"
+                            class="btn btn-secondary disabled w-100 rounded-pill"
+                            disabled
+                            aria-disabled="true"
+                            tabindex="-1"
+                            style="cursor: not-allowed; pointer-events: none; background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important;">
+                        <i class="ti ti-clock-off me-1"></i> Assessment Expired
+                    </button>
+                @elseif ($isBeforeStart)
+                    <button type="button"
+                            class="btn btn-secondary disabled w-100 rounded-pill"
+                            disabled
+                            aria-disabled="true"
+                            tabindex="-1"
+                            style="cursor: not-allowed; pointer-events: none; background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important;">
+                        <i class="ti ti-calendar-time me-1"></i> Not Available Yet
+                    </button>
+                @elseif (!$meetsProgressRequirement)
+                    <button type="button"
+                            class="btn btn-secondary disabled w-100 rounded-pill"
+                            disabled
+                            aria-disabled="true"
+                            tabindex="-1"
+                            style="cursor: not-allowed;"
+                            title="Complete this content to unlock the assessment.">
+                        {{ $actionType === 'remedial' ? 'Remedial' : ($actionType === 'continue' ? 'Continue Assessment' : 'Start Assessment') }}
+                    </button>
+                @elseif ($actionType === 'continue' && !empty($activeDraft))
+                    <a href="{{ route('assesment.user.view', $assessmentSlug) }}"
+                       class="btn btn-primary w-100 rounded-pill shadow-sm btn-continue-test btn-assessment-continue"
+                       style="background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;"
+                       data-assessment-trigger="true"
+                       data-assessment-id="{{ $assessmentObj->id }}"
+                       data-assessment-title="{{ $assessmentObj->title }}"
+                       data-assessment-type="{{ $assessmentObj->type ?? 'content' }}"
+                       data-assessment-type-label="Content"
+                       data-assessment-batch="{{ $batchDisplay }}"
+                       data-assessment-from-date="{{ $fromDateVal }}"
+                       data-assessment-to-date="{{ $toDateVal }}"
+                       data-assessment-passing-grade="{{ $passingGrade }}"
+                       data-assessment-duration="{{ $assessmentDurationVal }}"
+                       data-assessment-user-attempts="{{ $attempts }}"
+                       data-assessment-max-attempts="{{ $maxAttempts }}"
+                       data-assessment-answered-count="{{ $answeredCount ?? 0 }}"
+                       data-assessment-total-count="{{ $totalCount ?? 10 }}"
+                       data-assessment-action-type="continue"
+                       data-assessment-is-expired="false"
+                       data-assessment-is-inactive="false">
+                        <i class="ti ti-player-play me-1"></i> Continue Assessment
+                    </a>
                 @elseif ($attempts == 0)
                     <a href="{{ route('assesment.user.view', $assessmentSlug) }}"
-                       class="btn btn-primary w-100 rounded-pill {{ !$meetsProgressRequirement ? 'disabled' : '' }}">
+                       class="btn btn-primary w-100 rounded-pill btn-start-test btn-assessment-start"
+                       data-assessment-trigger="true"
+                       data-assessment-id="{{ $assessmentObj->id }}"
+                       data-assessment-title="{{ $assessmentObj->title }}"
+                       data-assessment-type="{{ $assessmentObj->type ?? 'content' }}"
+                       data-assessment-type-label="Content"
+                       data-assessment-batch="{{ $batchDisplay }}"
+                       data-assessment-from-date="{{ $fromDateVal }}"
+                       data-assessment-to-date="{{ $toDateVal }}"
+                       data-assessment-passing-grade="{{ $passingGrade }}"
+                       data-assessment-duration="{{ $assessmentDurationVal }}"
+                       data-assessment-user-attempts="{{ $attempts }}"
+                       data-assessment-max-attempts="{{ $maxAttempts }}"
+                       data-assessment-action-type="start"
+                       data-assessment-is-expired="false"
+                       data-assessment-is-inactive="false">
                         Start Assessment
                     </a>
                 @elseif ($attempts < $maxAttempts)
                     <a href="{{ route('assesment.user.view', $assessmentSlug) }}"
-                       class="btn w-100 rounded-pill shadow-sm {{ !$meetsProgressRequirement ? 'disabled' : '' }}"
-                       style="background-color: #ff7a00; color: white; border: none;">
+                       class="btn w-100 rounded-pill shadow-sm btn-remedial btn-assessment-remedial"
+                       style="background-color: #ff7a00 !important; border-color: #ff7a00 !important; color: white !important;"
+                       data-assessment-trigger="true"
+                       data-assessment-id="{{ $assessmentObj->id }}"
+                       data-assessment-title="{{ $assessmentObj->title }}"
+                       data-assessment-type="{{ $assessmentObj->type ?? 'content' }}"
+                       data-assessment-type-label="Content"
+                       data-assessment-batch="{{ $batchDisplay }}"
+                       data-assessment-from-date="{{ $fromDateVal }}"
+                       data-assessment-to-date="{{ $toDateVal }}"
+                       data-assessment-passing-grade="{{ $passingGrade }}"
+                       data-assessment-duration="{{ $assessmentDurationVal }}"
+                       data-assessment-user-attempts="{{ $attempts }}"
+                       data-assessment-max-attempts="{{ $maxAttempts }}"
+                       data-assessment-action-type="remedial"
+                       data-assessment-is-expired="false"
+                       data-assessment-is-inactive="false">
                         <i class="ti ti-refresh me-1"></i> Remedial
                     </a>
                 @else
-                    <button type="button" class="btn btn-secondary disabled w-100 rounded-pill" disabled>
+                    <button type="button" class="btn btn-secondary disabled w-100 rounded-pill" disabled style="cursor: not-allowed;">
                         Max Attempt Reached
                     </button>
                 @endif

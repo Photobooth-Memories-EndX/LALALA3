@@ -139,6 +139,7 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
     (function ($) {
         'use strict';
@@ -197,8 +198,14 @@
         $(document)
             .off('click.assessmentConfirmation', '.btn-start-test, .btn-remedial, .btn-continue-test, .btn-assessment-start, .btn-assessment-remedial, .btn-assessment-continue, [data-assessment-trigger="true"]')
             .on('click.assessmentConfirmation', '.btn-start-test, .btn-remedial, .btn-continue-test, .btn-assessment-start, .btn-assessment-remedial, .btn-assessment-continue, [data-assessment-trigger="true"]', function (e) {
-                e.preventDefault();
                 var $btn = $(this);
+
+                if ($btn.prop('disabled') || $btn.hasClass('disabled') || $btn.attr('aria-disabled') === 'true') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                e.preventDefault();
 
                 var assessmentId = $btn.data('assessment-id') || $btn.attr('data-assessment-id');
                 if (!assessmentId) return;
@@ -260,6 +267,17 @@
                 var answeredCount = $btn.data('assessment-answered-count') || $row.attr('data-assessment-answered-count') || 0;
                 var totalCount = $btn.data('assessment-total-count') || $row.attr('data-assessment-total-count') || 0;
 
+                var isExpired = $btn.data('assessment-is-expired') === true || String($btn.attr('data-assessment-is-expired')) === 'true';
+                var isInactive = $btn.data('assessment-is-inactive') === true || String($btn.attr('data-assessment-is-inactive')) === 'true';
+                var isBeforeStart = $btn.data('assessment-is-before-start') === true || String($btn.attr('data-assessment-is-before-start')) === 'true';
+
+                if (!isExpired && toDate && toDate !== '-') {
+                    var parsedToDate = new Date(toDate);
+                    if (!isNaN(parsedToDate.getTime()) && new Date().getTime() > parsedToDate.getTime()) {
+                        isExpired = true;
+                    }
+                }
+
                 var actionType = $btn.data('assessment-action-type');
                 if (!actionType) {
                     if ($btn.hasClass('btn-continue-test') || $btn.hasClass('btn-assessment-continue')) {
@@ -297,6 +315,21 @@
                             $continueModal.find('#continueModalNoticeTitle').text('REQUIREMENTS');
                             $continueModal.find('#continueNoticeGlobal').hide();
                             $continueModal.find('#continueNoticeContent').show();
+                        }
+
+                        var $continueBtn = $continueModal.find('#btnConfirmContinueAssessment');
+                        if (isExpired || isInactive || isBeforeStart) {
+                            $continueBtn.addClass('disabled')
+                                .prop('disabled', true)
+                                .attr('aria-disabled', 'true')
+                                .attr('tabindex', '-1')
+                                .attr('style', 'background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important; cursor: not-allowed !important; pointer-events: none;');
+                        } else {
+                            $continueBtn.removeClass('disabled')
+                                .prop('disabled', false)
+                                .attr('aria-disabled', 'false')
+                                .removeAttr('tabindex')
+                                .attr('style', 'background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important; cursor: pointer; pointer-events: auto;');
                         }
 
                         $continueModal.find('#btnConfirmContinueAssessment').attr('href', targetUrl);
@@ -365,6 +398,20 @@
                             .html('<i class="ti ti-player-play fs-6"></i> <span>Start Test</span>');
                     }
 
+                    var $actionBtn = $confirmModal.find('#btnConfirmAssessmentAction');
+                    if (isExpired || isInactive || isBeforeStart) {
+                        $actionBtn.addClass('disabled')
+                            .prop('disabled', true)
+                            .attr('aria-disabled', 'true')
+                            .attr('tabindex', '-1')
+                            .attr('style', 'background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important; cursor: not-allowed !important; pointer-events: none;');
+                    } else {
+                        $actionBtn.removeClass('disabled')
+                            .prop('disabled', false)
+                            .attr('aria-disabled', 'false')
+                            .removeAttr('tabindex');
+                    }
+
                     $confirmModal.data('target-url', targetUrl);
                     $confirmModal.data('assessment-id', assessmentId);
 
@@ -375,6 +422,11 @@
         $(document)
             .off('click.assessmentConfirmSubmit', '#btnConfirmAssessmentAction')
             .on('click.assessmentConfirmSubmit', '#btnConfirmAssessmentAction', function (e) {
+                var $btn = $(this);
+                if ($btn.prop('disabled') || $btn.hasClass('disabled') || $btn.attr('aria-disabled') === 'true') {
+                    e.preventDefault();
+                    return false;
+                }
                 e.preventDefault();
                 var $modal = $('#assessmentConfirmationModal');
                 var targetUrl = $modal.data('target-url');
@@ -386,6 +438,11 @@
         $(document)
             .off('click.continueConfirmSubmit', '#btnConfirmContinueAssessment')
             .on('click.continueConfirmSubmit', '#btnConfirmContinueAssessment', function (e) {
+                var $btn = $(this);
+                if ($btn.prop('disabled') || $btn.hasClass('disabled') || $btn.attr('aria-disabled') === 'true') {
+                    e.preventDefault();
+                    return false;
+                }
                 var $modal = $('#continueAssessmentModal');
                 var targetUrl = $modal.data('target-url');
                 if (targetUrl && targetUrl !== '#' && targetUrl !== 'javascript:void(0);') {
@@ -445,5 +502,6 @@
         $(document).on('draw.dt', function () {
             initAssessmentNamePopovers();
         });
-    })(jQuery);
+    })(window.jQuery || jQuery);
 </script>
+@endpush

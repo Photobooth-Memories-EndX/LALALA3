@@ -38,6 +38,20 @@
                     'discussionCount' => $discussionCount,
                     'bookmarkCount' => $bookmarkCount,
                     'isBookmarked' => $isBookmarked,
+                    'activeDraft' => $activeDraft ?? null,
+                    'isExpired' => $isExpired ?? false,
+                    'isInactive' => $isInactive ?? false,
+                    'isBeforeStart' => $isBeforeStart ?? false,
+                    'canStart' => $canStart ?? false,
+                    'canContinue' => $canContinue ?? false,
+                    'canRemedial' => $canRemedial ?? false,
+                    'actionType' => $actionType ?? 'start',
+                    'effectiveDeadline' => $effectiveDeadline ?? null,
+                    'maxAttempts' => $maxAttempts ?? 1,
+                    'isPassed' => $isPassed ?? false,
+                    'answeredCount' => $answeredCount ?? 0,
+                    'totalCount' => $totalCount ?? 0,
+                    'denialReason' => $denialReason ?? null,
                 ])
             </div>
         </div>
@@ -49,6 +63,9 @@
     'content' => $content,
     'comment' => $comment,
 ])
+
+<x-shared.assessment-confirmation-modal />
+<x-shared.assessment-continue-modal />
 
 <script>
     (function () {

@@ -1,5 +1,18 @@
 @props(['assessment' => null, 'type' => 'content', 'answeredCount' => 0, 'totalCount' => 0, 'isContinue' => true])
 
+@php
+    $isAssessmentBlocked = false;
+    if ($assessment) {
+        $isInactiveProp = strtoupper(trim((string)($assessment->status ?? ''))) === 'NOT';
+        $hasPeriod = method_exists($assessment, 'hasAccessPeriod') ? $assessment->hasAccessPeriod() : (!empty($assessment->has_access_period));
+        $isExpiredProp = false;
+        if ($hasPeriod && !empty($assessment->todate)) {
+            $isExpiredProp = now()->format('Y-m-d H:i:s') > \Carbon\Carbon::parse($assessment->todate)->format('Y-m-d H:i:s');
+        }
+        $isAssessmentBlocked = $isInactiveProp || $isExpiredProp;
+    }
+@endphp
+
 <div class="modal fade" id="continueAssessmentModal" tabindex="-1" role="dialog" aria-labelledby="continueAssessmentModalTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document" style="max-width: 480px !important; width: 100%;">
         <div class="modal-content rounded-4 border-0 shadow">
@@ -124,10 +137,10 @@
                 <button type="button" class="btn btn-light rounded-pill px-4 text-secondary" data-dismiss="modal" data-bs-dismiss="modal">
                     Cancel
                 </button>
-                <a href="{{ ($assessment && !empty($assessment->slug)) ? route('assesment.user.view', $assessment->slug) : '#' }}"
+                <a href="{{ ($assessment && !empty($assessment->slug) && !$isAssessmentBlocked) ? route('assesment.user.view', $assessment->slug) : '#' }}"
                    id="btnConfirmContinueAssessment"
-                   class="btn rounded-pill px-4 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1"
-                   style="background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;">
+                   class="btn rounded-pill px-4 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1 {{ $isAssessmentBlocked ? 'disabled' : '' }}"
+                   @if($isAssessmentBlocked) disabled aria-disabled="true" tabindex="-1" style="background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important; cursor: not-allowed !important; pointer-events: none;" @else style="background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;" @endif>
                     <i class="ti ti-player-play fs-6"></i> Continue Assessment
                 </a>
             </div>

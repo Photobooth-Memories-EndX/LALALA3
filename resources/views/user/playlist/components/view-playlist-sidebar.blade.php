@@ -46,6 +46,18 @@
             </div>
         </div>
 
+        @if (!empty($continueLearningContent) && $continueLearningContent->id !== $content->id)
+            <div class="mb-3 flex-shrink-0">
+                <a href="{{ route('playlist.user.view', [$playlist->slug, $continueLearningContent->slug]) }}"
+                   class="btn btn-primary w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center gap-2 py-2"
+                   style="background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important;">
+                    <i class="ti ti-player-play-filled"></i>
+                    <span class="fw-semibold">Continue Learning</span>
+                    <i class="ti ti-arrow-right ms-auto"></i>
+                </a>
+            </div>
+        @endif
+
         <div class="mb-3 d-none flex-shrink-0" id="playlistSearchBox">
             <div class="input-icon">
                 <span class="input-icon-addon">
@@ -183,7 +195,103 @@
                             </div>
                         </a>
 
-                        @if ($lessonAssessment && ($lessonAssessment->type ?? '') === 'content' && ($lessonAssessment->assasment_content_for ?? '') === 'playlist' && (int)($lessonAssessment->trainingplan_id ?? 0) === (int)($playlist->id ?? 0))
+                        @php
+                            $cState = $contentAssessmentStates[$list->content_id] ?? null;
+                        @endphp
+                        @if ($cState)
+                            <div class="lesson-assessment-action">
+                                @if ($cState['state'] === 'passed')
+                                    <button type="button"
+                                            class="btn btn-success lesson-assessment-button w-100"
+                                            style="background-color: #2fb344 !important; border-color: #2fb344 !important; color: #ffffff !important; cursor: default !important;"
+                                            disabled
+                                            aria-disabled="true"
+                                            tabindex="-1">
+                                        <i class="ti ti-check me-1" aria-hidden="true"></i>
+                                        Passed
+                                    </button>
+                                @elseif ($cState['state'] === 'expired')
+                                    <button type="button"
+                                            class="btn btn-secondary lesson-assessment-button w-100"
+                                            style="background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important; cursor: not-allowed !important;"
+                                            disabled
+                                            aria-disabled="true"
+                                            tabindex="-1">
+                                        <i class="ti ti-calendar-x me-1" aria-hidden="true"></i>
+                                        Assessment Content Expired
+                                    </button>
+                                @elseif ($cState['state'] === 'inactive')
+                                    <button type="button"
+                                            class="btn btn-secondary lesson-assessment-button w-100"
+                                            style="background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important; cursor: not-allowed !important;"
+                                            disabled
+                                            aria-disabled="true"
+                                            tabindex="-1">
+                                        <i class="ti ti-alert-circle me-1" aria-hidden="true"></i>
+                                        Assessment Content Inactive
+                                    </button>
+                                @elseif ($cState['state'] === 'before_start')
+                                    <button type="button"
+                                            class="btn btn-secondary lesson-assessment-button w-100"
+                                            style="background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important; cursor: not-allowed !important;"
+                                            disabled
+                                            aria-disabled="true"
+                                            tabindex="-1">
+                                        <i class="ti ti-clock me-1" aria-hidden="true"></i>
+                                        Not Available Yet
+                                    </button>
+                                @elseif ($cState['state'] === 'max_attempts')
+                                    <button type="button"
+                                            class="btn btn-secondary lesson-assessment-button w-100"
+                                            style="background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important; cursor: not-allowed !important;"
+                                            disabled
+                                            aria-disabled="true"
+                                            tabindex="-1">
+                                        <i class="ti ti-alert-triangle me-1" aria-hidden="true"></i>
+                                        Max Attempt Reached
+                                    </button>
+                                @elseif ($isAssessmentUnlocked)
+                                    <button type="button"
+                                            class="btn btn-outline-primary lesson-assessment-button w-100"
+                                            data-assessment-trigger="true"
+                                            data-assessment-id="{{ $cState['assessmentId'] }}"
+                                            data-assessment-action-type="{{ $cState['actionType'] }}"
+                                            data-assessment-title="{{ $cState['title'] }}"
+                                            data-assessment-type="ASSESSMENT CONTENT"
+                                            data-assessment-type-label="Playlist Content"
+                                            data-assessment-batch="{{ $cState['batchDisplay'] }}"
+                                            data-assessment-from-date="{{ $cState['fromDateVal'] }}"
+                                            data-assessment-to-date="{{ $cState['toDateVal'] }}"
+                                            data-assessment-passing-grade="{{ $cState['passingGrade'] }}"
+                                            data-assessment-duration="{{ $cState['duration'] }}"
+                                            data-assessment-attempts="{{ $cState['attemptsDisplay'] }}"
+                                            data-assessment-user-attempts="{{ $cState['finalAttempts'] }}"
+                                            data-assessment-max-attempts="{{ $cState['maxAttempts'] }}"
+                                            data-assessment-answered-count="{{ $cState['answeredCount'] }}"
+                                            data-assessment-total-count="{{ $cState['totalQuestions'] }}"
+                                            data-assessment-is-expired="false"
+                                            data-assessment-is-inactive="false"
+                                            data-target-url="{{ route('assesment.user.view', $cState['slug']) }}"
+                                            data-assessment-url="{{ route('assesment.user.view', $cState['slug']) }}"
+                                            data-required-progress="{{ $requiredAssessmentProgress }}"
+                                            data-assessment-action
+                                            aria-disabled="false">
+                                        <i class="ti ti-clipboard-check me-1" aria-hidden="true"></i>
+                                        Assessment Content
+                                    </button>
+                                @else
+                                    <button type="button"
+                                            class="btn btn-outline-primary lesson-assessment-button disabled w-100"
+                                            disabled
+                                            tabindex="-1"
+                                            title="Complete this content to unlock the assessment."
+                                            aria-disabled="true">
+                                        <i class="ti ti-clipboard-check me-1" aria-hidden="true"></i>
+                                        Assessment Content
+                                    </button>
+                                @endif
+                            </div>
+                        @elseif ($lessonAssessment && ($lessonAssessment->type ?? '') === 'content' && ($lessonAssessment->assasment_content_for ?? '') === 'playlist' && (int)($lessonAssessment->trainingplan_id ?? 0) === (int)($playlist->id ?? 0))
                             @php
                                 $contentBatchDisplay = !empty($lessonAssessment->batch) && $lessonAssessment->batch !== '-'
                                     ? (str_contains(strtolower((string)$lessonAssessment->batch), 'batch') ? $lessonAssessment->batch : 'Batch ' . $lessonAssessment->batch)
@@ -198,6 +306,7 @@
                                         class="btn btn-outline-primary lesson-assessment-button {{ $isAssessmentUnlocked ? '' : 'disabled' }}"
                                         @if ($isAssessmentUnlocked)
                                             data-assessment-trigger="true"
+                                            data-assessment-id="{{ $lessonAssessment->id }}"
                                             data-assessment-title="{{ $lessonAssessment->title }}"
                                             data-assessment-type="ASSESSMENT CONTENT"
                                             data-assessment-batch="{{ $contentBatchDisplay }}"

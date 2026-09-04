@@ -359,6 +359,9 @@
         e.preventDefault();
 
         var $btn = $(this);
+        if ($btn.hasClass('lesson-assessment-button')) {
+            return;
+        }
         var $modal = $('#assessmentAccessModal');
 
         var targetUrl = $btn.data('target-url') || $btn.attr('data-target-url');
