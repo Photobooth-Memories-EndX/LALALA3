@@ -556,6 +556,8 @@ class ContentUserController extends Controller
             'total_pages'      => 'nullable|integer|min:1|max:100000',
             'current_time'     => 'nullable|numeric|min:0',
             'duration_seconds' => 'nullable|numeric|min:0',
+            'afk_seconds'      => 'nullable|numeric|min:0',
+            'afk_duration_seconds' => 'nullable|numeric|min:0',
             'active_page'      => 'nullable|integer|min:1',
             'completed_page'   => 'nullable|integer|min:1',
             'page_elapsed_seconds' => 'nullable|numeric|min:0|max:300',
@@ -738,6 +740,11 @@ class ContentUserController extends Controller
             $contentUser->learning_status = 'in_progress';
         }
 
+        $afkDuration = $validated['afk_duration_seconds'] ?? $validated['afk_seconds'] ?? null;
+        if ($afkDuration !== null && (float) $afkDuration > 0) {
+            $contentUser->afk_duration_seconds = max((int) ($contentUser->afk_duration_seconds ?? 0), (int) round((float) $afkDuration));
+        }
+
         $contentUser->save();
 
         return response()->json([
@@ -751,6 +758,7 @@ class ContentUserController extends Controller
             'remaining_seconds' => $remainingSeconds,
             'allowed_page' => $allowedPage,
             'duration_seconds' => $contentUser->duration_seconds,
+            'afk_duration_seconds' => (int) ($contentUser->afk_duration_seconds ?? 0),
         ]);
     }
 

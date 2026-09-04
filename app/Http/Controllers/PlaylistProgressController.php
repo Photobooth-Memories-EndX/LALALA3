@@ -29,6 +29,8 @@ class PlaylistProgressController extends Controller
             'total_pages'          => 'nullable|integer|min:1|max:100000',
             'current_time'         => 'nullable|numeric|min:0',
             'duration_seconds'     => 'nullable|numeric|min:0',
+            'afk_seconds'          => 'nullable|numeric|min:0',
+            'afk_duration_seconds' => 'nullable|numeric|min:0',
             'active_page'          => 'nullable|integer|min:1',
             'completed_page'       => 'nullable|integer|min:1',
             'page_elapsed_seconds' => 'nullable|numeric|min:0|max:300',
@@ -270,21 +272,27 @@ class PlaylistProgressController extends Controller
             $playlistContentUser->learning_status = 'in_progress';
         }
 
+        $afkDuration = $validated['afk_duration_seconds'] ?? $validated['afk_seconds'] ?? null;
+        if ($afkDuration !== null && (float) $afkDuration > 0) {
+            $playlistContentUser->afk_duration_seconds = max((int) ($playlistContentUser->afk_duration_seconds ?? 0), (int) round((float) $afkDuration));
+        }
+
         $playlistContentUser->save();
 
         return response()->json([
-            'success'           => true,
-            'progress'          => (int) $playlistContentUser->progress,
-            'status'            => $playlistContentUser->learning_status,
-            'finish'            => (int) $playlistContentUser->finish,
-            'current_time'      => (int) $playlistContentUser->current_time,
-            'last_page'         => $playlistContentUser->last_page,
-            'page_completed'    => $pageCompleted,
-            'remaining_seconds' => $remainingSeconds,
-            'allowed_page'      => $allowedPage,
-            'duration_seconds'  => $playlistContentUser->duration_seconds,
-            'trainingplan_id'   => (int) $playlistContentUser->trainingplan_id,
-            'content_id'        => (int) $playlistContentUser->content_id,
+            'success'              => true,
+            'progress'             => (int) $playlistContentUser->progress,
+            'status'               => $playlistContentUser->learning_status,
+            'finish'               => (int) $playlistContentUser->finish,
+            'current_time'         => (int) $playlistContentUser->current_time,
+            'last_page'            => $playlistContentUser->last_page,
+            'page_completed'       => $pageCompleted,
+            'remaining_seconds'    => $remainingSeconds,
+            'allowed_page'         => $allowedPage,
+            'duration_seconds'     => $playlistContentUser->duration_seconds,
+            'afk_duration_seconds' => (int) ($playlistContentUser->afk_duration_seconds ?? 0),
+            'trainingplan_id'      => (int) $playlistContentUser->trainingplan_id,
+            'content_id'           => (int) $playlistContentUser->content_id,
         ]);
     }
 }

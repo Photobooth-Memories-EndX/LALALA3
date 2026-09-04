@@ -8,6 +8,7 @@
     $todate = old('todate', $isEdit ? $assesment->todate : '');
     $timeLimitMinutes = old('time_limit_minutes', $isEdit ? ($assesment->time_limit_minutes ?? 60) : 60);
     $totalRemedials = old('total_remedials', $isEdit ? ($isGlobal ? 0 : ($assesment->total_remedials ?? 0)) : 0);
+    $afkThresholdSeconds = old('afk_threshold_seconds', $isEdit ? ($assesment->afk_threshold_seconds ?? 60) : 60);
 
     $showPeriod = ($hasAccessPeriod == '1' || $hasAccessPeriod === true || $hasAccessPeriod === 1);
     $showTimer = !$isGlobal && ($timer == 'y' || $timer === '1' || $timer === true);
@@ -110,6 +111,27 @@
                     {{ $isGlobal ? 'Global Assessment allows 1 attempt per batch.' : 'Number of additional remedial attempts after the initial assessment.' }}
                 </small>
                 @error('total_remedials')
+                    <div class="invalid-feedback d-block">
+                        {{ $message }}
+                    </div>
+                @enderror
+            </div>
+        </div>
+    </div>
+
+    {{-- AFK Threshold Section Container --}}
+    <div id="afk_section_wrapper" class="mt-3">
+        <div class="row g-3">
+            <div class="col-md-12">
+                <label class="form-label">AFK Inactivity Threshold (Seconds)</label>
+                <div class="input-group">
+                    <input type="number" name="afk_threshold_seconds" id="afk-threshold-seconds" class="form-control @error('afk_threshold_seconds') is-invalid @enderror" placeholder="60" min="5" value="{{ $afkThresholdSeconds }}">
+                    <span class="input-group-text">seconds</span>
+                </div>
+                <small class="form-hint text-muted" id="afk-threshold-hint">
+                    Batas waktu ketidakaktifan (Away From Keyboard) sebelum durasi AFK user mulai diakumulasikan saat ujian. Default: 60 detik.
+                </small>
+                @error('afk_threshold_seconds')
                     <div class="invalid-feedback d-block">
                         {{ $message }}
                     </div>

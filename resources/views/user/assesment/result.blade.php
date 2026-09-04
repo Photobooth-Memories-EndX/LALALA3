@@ -111,6 +111,19 @@
                                 </div>
                             </div>
 
+                            <div class="col-sm-6">
+                                <div class="p-3 rounded-4 bg-yellow-lt">
+                                    <div class="text-muted small">AFK Duration</div>
+                                    <div class="fw-bold">
+                                        @php
+                                            $afkSec = (int) ($assesment_result->afk_duration_seconds ?? 0);
+                                            $afkFormatted = $afkSec >= 60 ? sprintf('%02dm %02ds', floor($afkSec / 60), $afkSec % 60) : ($afkSec . 's');
+                                        @endphp
+                                        {{ $afkFormatted }}
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="col-12">
                                 <div class="p-3 rounded-4 {{ $isPassed ? 'bg-green-lt' : 'bg-red-lt' }}">
                                     <div class="text-muted small">Status</div>

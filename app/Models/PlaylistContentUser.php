@@ -21,6 +21,7 @@ class PlaylistContentUser extends Model
         'total_pages',
         'current_time',
         'duration_seconds',
+        'afk_duration_seconds',
         'learning_hour',
         'completed_at',
         'learning_status',
@@ -36,9 +37,15 @@ class PlaylistContentUser extends Model
         'total_pages'      => 'integer',
         'current_time'     => 'integer',
         'duration_seconds' => 'integer',
+        'afk_duration_seconds' => 'integer',
         'learning_hour'    => 'decimal:4',
         'completed_at'     => 'datetime',
     ];
+
+    public function getAfkDurationAttribute(): int
+    {
+        return (int) ($this->afk_duration_seconds ?? 0);
+    }
 
     /**
      * Check if the playlist content learning record is marked finished or progress >= 100%.

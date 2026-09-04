@@ -22,6 +22,7 @@ class ContentUser extends Model
         'total_pages',
         'current_time',
         'duration_seconds',
+        'afk_duration_seconds',
         'learning_hours',
         'completed_at',
         'learning_status',
@@ -33,9 +34,15 @@ class ContentUser extends Model
         'total_pages' => 'integer',
         'current_time' => 'integer',
         'duration_seconds' => 'integer',
+        'afk_duration_seconds' => 'integer',
         'learning_hours' => 'decimal:1',
         'completed_at' => 'datetime',
     ];
+
+    public function getAfkDurationAttribute(): int
+    {
+        return (int) ($this->afk_duration_seconds ?? 0);
+    }
 
     protected static function booted(): void
     {

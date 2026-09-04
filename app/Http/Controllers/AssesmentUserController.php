@@ -343,7 +343,7 @@
                 $this->ensureQuestionSnapshot($result, $assesment);
 
                 $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
-                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token', 'is_expired']))
+                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token', 'is_expired', 'afk_seconds', 'afk_duration_seconds']))
                     ->filter(function ($val) {
                         return $val !== null && $val !== '';
                     })
@@ -352,12 +352,19 @@
 
                 $scoreData = $this->calculateAttemptScore($result, $assesment, $mergedUserAnswers);
 
+                $submittedAfk = (int) $request->input('afk_seconds', $request->input('afk_duration_seconds', 0));
+                if ($submittedAfk > 0) {
+                    $result->afk_duration_seconds = max((int) ($result->afk_duration_seconds ?? 0), $submittedAfk);
+                }
+
                 $result->user_answer = $mergedUserAnswers;
                 $result->score = $scoreData['score'];
                 $result->batch = $assesment->batch;
                 $result->pass = $scoreData['pass'];
                 $result->final = 1;
                 $result->save();
+
+                $this->syncAfkToLearningProgress($assesment, (int) auth()->id(), (int) $result->afk_duration_seconds);
 
                 Cache::put($completedKey, $result->id, now()->addDay());
 
@@ -518,7 +525,7 @@
                 $this->ensureQuestionSnapshot($result, $assesment);
 
                 $existingUserAnswers = is_array($result->user_answer) ? $result->user_answer : [];
-                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token', 'is_expired']))
+                $submittedAnswers = collect($request->except(['_token', '_method', 'submission_token', 'is_expired', 'afk_seconds', 'afk_duration_seconds']))
                     ->filter(function ($val) {
                         return $val !== null && $val !== '';
                     })
@@ -527,12 +534,21 @@
 
                 $scoreData = $this->calculateAttemptScore($result, $assesment, $mergedUserAnswers);
 
+                $submittedAfk = (int) $request->input('afk_seconds', $request->input('afk_duration_seconds', 0));
+                if ($submittedAfk > 0) {
+                    $result->afk_duration_seconds = max((int) ($result->afk_duration_seconds ?? 0), $submittedAfk);
+                }
+
                 $result->user_answer = $mergedUserAnswers;
                 $result->score = $scoreData['score'];
                 $result->batch = $assesment->batch;
                 $result->pass = $scoreData['pass'];
                 $result->final = 0;
                 $result->save();
+
+                if ($submittedAfk > 0) {
+                    $this->syncAfkToLearningProgress($assesment, (int) auth()->id(), (int) $result->afk_duration_seconds);
+                }
 
                 return true;
             });
@@ -710,7 +726,55 @@
             $result->final = 1;
             $result->save();
 
+            $this->syncAfkToLearningProgress($assesment, (int) $result->user_id, (int) ($result->afk_duration_seconds ?? 0));
+
             $completedKey = 'assessment-completed:' . auth()->id() . ':' . $assesment->id . ':' . $assesment->batch . ':' . $result->id;
             Cache::put($completedKey, $result->id, now()->addDay());
+        }
+
+        /**
+         * Synchronizes assessment attempt AFK duration to content_users and/or playlist_content_users.
+         * Ensures remedial attempts aggregate properly and maintains idempotency across multiple tabs or retries.
+         */
+        private function syncAfkToLearningProgress(Assesment $assesment, int $userId, int $attemptAfkSeconds): void
+        {
+            if ($attemptAfkSeconds < 0 || $userId <= 0) {
+                return;
+            }
+
+            // 1. Sync to content_users if assessment is associated with content
+            if (!empty($assesment->content_id)) {
+                $contentUser = \App\Models\ContentUser::firstOrCreate([
+                    'user_id'    => $userId,
+                    'content_id' => $assesment->content_id,
+                ]);
+
+                if ($contentUser) {
+                    $totalAssessmentAfk = (int) AssesmentResult::where('user_id', $userId)
+                        ->where('assesment_id', $assesment->id)
+                        ->sum('afk_duration_seconds');
+
+                    $contentUser->afk_duration_seconds = max((int) ($contentUser->afk_duration_seconds ?? 0), $totalAssessmentAfk);
+                    $contentUser->save();
+                }
+            }
+
+            // 2. Sync to playlist_content_users if assessment is associated with playlist and content
+            if (!empty($assesment->trainingplan_id) && !empty($assesment->content_id)) {
+                $playlistContentUser = \App\Models\PlaylistContentUser::firstOrCreate([
+                    'user_id'         => $userId,
+                    'trainingplan_id' => $assesment->trainingplan_id,
+                    'content_id'      => $assesment->content_id,
+                ]);
+
+                if ($playlistContentUser) {
+                    $totalAssessmentAfk = (int) AssesmentResult::where('user_id', $userId)
+                        ->where('assesment_id', $assesment->id)
+                        ->sum('afk_duration_seconds');
+
+                    $playlistContentUser->afk_duration_seconds = max((int) ($playlistContentUser->afk_duration_seconds ?? 0), $totalAssessmentAfk);
+                    $playlistContentUser->save();
+                }
+            }
         }
     }

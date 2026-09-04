@@ -104,8 +104,21 @@
 
     function submitAssessmentForm() {
         window.assessmentAutoSubmit = true;
+        if (typeof window.updateAfkHiddenInput === 'function') {
+            window.updateAfkHiddenInput();
+        }
         var form = document.getElementById('formAssesment') || document.getElementById('assessmentForm') || document.querySelector('form[action*="assesment"]') || document.querySelector('form');
         if (form) {
+            if (typeof window.updateAfkHiddenInput === 'function') {
+                var afkInput = form.querySelector('input[name="afk_seconds"]');
+                if (!afkInput) {
+                    afkInput = document.createElement("input");
+                    afkInput.type = "hidden";
+                    afkInput.name = "afk_seconds";
+                    form.appendChild(afkInput);
+                }
+                afkInput.value = window.updateAfkHiddenInput();
+            }
             form.removeAttribute('novalidate');
             $('#btnFinishSubmit, #submitAssesment, #btnConfirmFinishSubmit, #btnConfirmLeaveTest').prop('disabled', true).text('Submitting...');
             form.submit();
@@ -123,6 +136,118 @@
         let isSaving = false;
         let hasPendingSave = false;
 
+        // =========================================================================
+        // AFK (Away From Keyboard) Tracking Module
+        // =========================================================================
+        const afkThresholdSeconds = {{ (int) ($assesment->afk_threshold_seconds ?? 60) }};
+        let cumulativeAfkSeconds = {{ (int) ($assesment_result_draft->afk_duration_seconds ?? 0) }};
+        let lastActivityTimestamp = Date.now();
+        let isAfkActive = false;
+        let afkStartTimestamp = null;
+        const afkAlertBanner = document.getElementById('afkAlertBanner');
+        const afkElapsedCounter = document.getElementById('afkElapsedCounter');
+        const inputAfkSeconds = document.getElementById('inputAfkSeconds');
+
+        window.updateAfkHiddenInput = function () {
+            let total = cumulativeAfkSeconds;
+            if (isAfkActive && afkStartTimestamp) {
+                total += Math.max(0, Math.floor((Date.now() - afkStartTimestamp) / 1000));
+            }
+            if (inputAfkSeconds) {
+                inputAfkSeconds.value = total;
+            }
+            return total;
+        };
+
+        function showAfkState() {
+            if (afkAlertBanner) {
+                afkAlertBanner.classList.remove('d-none');
+                afkAlertBanner.classList.add('d-flex');
+            }
+        }
+
+        function hideAfkState() {
+            if (afkAlertBanner) {
+                afkAlertBanner.classList.remove('d-flex');
+                afkAlertBanner.classList.add('d-none');
+            }
+        }
+
+        function recordUserActivity() {
+            const now = Date.now();
+            if (isAfkActive) {
+                if (afkStartTimestamp) {
+                    const elapsed = Math.max(0, Math.floor((now - afkStartTimestamp) / 1000));
+                    cumulativeAfkSeconds += elapsed;
+                }
+                isAfkActive = false;
+                afkStartTimestamp = null;
+                hideAfkState();
+                window.updateAfkHiddenInput();
+                doAutosave();
+            }
+            lastActivityTimestamp = now;
+        }
+
+        ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(function (eventName) {
+            window.addEventListener(eventName, recordUserActivity, { passive: true });
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                if (!isAfkActive) {
+                    isAfkActive = true;
+                    afkStartTimestamp = Date.now();
+                    showAfkState();
+                    window.updateAfkHiddenInput();
+                }
+            } else {
+                recordUserActivity();
+            }
+        });
+
+        window.addEventListener('blur', function () {
+            if (!isAfkActive) {
+                isAfkActive = true;
+                afkStartTimestamp = Date.now();
+                showAfkState();
+                window.updateAfkHiddenInput();
+            }
+        });
+
+        window.addEventListener('focus', function () {
+            recordUserActivity();
+        });
+
+        setInterval(function () {
+            if (assessmentSubmitting) return;
+
+            const now = Date.now();
+            const inactiveSeconds = Math.floor((now - lastActivityTimestamp) / 1000);
+
+            if (!isAfkActive && inactiveSeconds >= afkThresholdSeconds) {
+                isAfkActive = true;
+                afkStartTimestamp = now;
+                showAfkState();
+            }
+
+            if (isAfkActive) {
+                const currentAfkElapsed = afkStartTimestamp ? Math.max(0, Math.floor((now - afkStartTimestamp) / 1000)) : 0;
+                if (afkElapsedCounter) {
+                    afkElapsedCounter.textContent = (cumulativeAfkSeconds + currentAfkElapsed) + 's';
+                }
+                window.updateAfkHiddenInput();
+            }
+        }, 1000);
+
+        setInterval(function () {
+            if (assessmentSubmitting) return;
+            window.updateAfkHiddenInput();
+            if (isAfkActive) {
+                doAutosave();
+            }
+        }, 30000);
+
         function doAutosave() {
             if (assessmentSubmitting) return;
             if (isSaving) {
@@ -132,6 +257,8 @@
 
             isSaving = true;
             hasPendingSave = false;
+
+            window.updateAfkHiddenInput();
 
             let formData = new FormData($('#formAssesment')[0]);
 

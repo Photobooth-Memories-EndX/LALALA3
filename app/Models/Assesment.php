@@ -70,11 +70,23 @@ class Assesment extends Model
     protected $casts = [
         'has_access_period'     => 'boolean',
         'assasment_content_for' => 'string',
+        'afk_threshold_seconds' => 'integer',
     ];
 
     protected $attributes = [
         'assasment_content_for' => 'content',
+        'afk_threshold_seconds' => 60,
     ];
+
+    public function getAfkThresholdSecondsAttribute($value): int
+    {
+        return !empty($value) && (int) $value > 0 ? (int) $value : 60;
+    }
+
+    public function getAfkDurationAttribute(): int
+    {
+        return (int) $this->afk_threshold_seconds;
+    }
 
     public function hasAccessPeriod(): bool
     {

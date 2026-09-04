@@ -28,6 +28,9 @@
     } elseif ($toDisplay) {
         $periodDisplay = 'Until ' . $toDisplay;
     }
+
+    $afkSec = (int) ($modalResult->afk_duration_seconds ?? 0);
+    $afkFormatted = $afkSec >= 60 ? sprintf('%02dm %02ds', floor($afkSec / 60), $afkSec % 60) : ($afkSec . 's');
 @endphp
 
 <div class="modal fade" id="assessmentResultModal" tabindex="-1" role="dialog" aria-labelledby="assessmentResultModalTitle" aria-hidden="true">
@@ -102,6 +105,13 @@
                         <div class="p-3 rounded-3 bg-light assessment-result-item">
                             <div class="text-muted small assessment-result-item-label">Attempt</div>
                             <div class="fw-semibold text-dark assessment-result-item-value" id="assessmentResultModalAttempt">{{ $currentAttempt ?? 1 }} / {{ $maxAttempts ?? 1 }}</div>
+                        </div>
+                    </div>
+
+                    <div class="col-6" id="assessmentResultModalAfkRow">
+                        <div class="p-3 rounded-3 bg-light assessment-result-item">
+                            <div class="text-muted small assessment-result-item-label">AFK Duration</div>
+                            <div class="fw-semibold text-dark assessment-result-item-value" id="assessmentResultModalAfk">{{ $afkFormatted }}</div>
                         </div>
                     </div>
 
