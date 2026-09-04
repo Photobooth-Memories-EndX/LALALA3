@@ -40,18 +40,18 @@
                     Manage all OWL LMS modules from a centralized dashboard.
                 </p>
 
-                {{-- Tombol Aksi --}}
+                {{-- Tombol Aksi
                 <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <a href="{{ url('manage/content/create') }}" 
+                    <a href="{{ url('manage/content/create') }}"
                        class="btn btn-sm bg-white text-primary fw-bold rounded-pill px-3 py-2 border-0 shadow-sm" style="font-size: 12px; color: #002b66 !important;">
                         <i class="ti ti-plus me-1"></i> Add Content
                     </a>
 
-                    <a href="{{ url('manage/user') }}" 
+                    <a href="{{ url('manage/user') }}"
                        class="btn btn-sm text-white fw-bold rounded-pill px-3 py-2" style="font-size: 12px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); backdrop-filter: blur(4px);">
                         <i class="ti ti-users me-1"></i> Manage Users
                     </a>
-                </div>
+                </div> --}}
 
             </div>
 

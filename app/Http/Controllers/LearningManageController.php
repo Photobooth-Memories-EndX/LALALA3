@@ -147,27 +147,37 @@ class LearningManageController extends Controller
 
     public function searchEmployees(Request $request)
     {
-        $term = trim((string) ($request->input('q') ?? $request->input('search', '')));
+        $term = trim((string) ($request->input('q') ?? ($request->input('search') ?? $request->input('employee_q', ''))));
         $results = [];
 
-        $query = User::select('id', 'name', 'id_emp')
+        $query = User::select('id', 'name', 'id_emp', 'email')
             ->whereNotNull('name')
             ->where('name', '!=', '');
 
         if ($term !== '') {
-            $query->where(function ($q) use ($term) {
+            $queryNormalized = str_replace("'", "’", $term);
+            $queryOriginal = str_replace("’", "'", $term);
+            $query->where(function ($q) use ($term, $queryNormalized, $queryOriginal) {
                 $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('id_emp', 'like', "%{$term}%");
+                  ->orWhere('name', 'like', "%{$queryNormalized}%")
+                  ->orWhere('name', 'like', "%{$queryOriginal}%")
+                  ->orWhere('id_emp', 'like', "%{$term}%")
+                  ->orWhere('email', 'like', "%{$term}%");
             });
         }
 
-        $users = $query->limit(20)->get();
+        $users = $query->limit(10)->get();
 
         foreach ($users as $user) {
-            $nip = $user->id_emp ? " (NIP: {$user->id_emp})" : '';
+            $nip = $user->id_emp ? "NIP: {$user->id_emp}" : ($user->email ?? '');
+            $displayText = $user->name . ($user->id_emp ? " ({$user->id_emp})" : '');
             $results[] = [
-                'id' => $user->id,
-                'text' => $user->name . $nip,
+                'id'      => $user->id,
+                'value'   => $user->id,
+                'label'   => $user->name,
+                'name'    => $user->name,
+                'text'    => $displayText,
+                'subtext' => $nip,
             ];
         }
 
@@ -176,23 +186,37 @@ class LearningManageController extends Controller
 
     public function searchTitles(Request $request)
     {
-        $term = trim((string) ($request->input('q') ?? $request->input('search', '')));
+        $term = trim((string) ($request->input('q') ?? ($request->input('search') ?? $request->input('title_q', ''))));
         $results = [];
 
-        $query = Content::select('id', 'title')
+        $query = Content::with('classification:id,classification_name')
+            ->select('id', 'title', 'classification_id', 'slug')
             ->whereNotNull('title')
             ->where('title', '!=', '');
 
         if ($term !== '') {
-            $query->where('title', 'like', "%{$term}%");
+            $queryNormalized = str_replace("'", "’", $term);
+            $queryOriginal = str_replace("’", "'", $term);
+            $query->where(function ($q) use ($term, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'like', "%{$term}%")
+                  ->orWhere('title', 'like', "%{$queryNormalized}%")
+                  ->orWhere('title', 'like', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'like', "%{$term}%");
+            });
         }
 
-        $contents = $query->distinct()->limit(20)->get();
+        $contents = $query->limit(10)->get();
 
         foreach ($contents as $content) {
+            $catName = $content->classification->classification_name ?? 'Content';
             $results[] = [
-                'id' => $content->title,
-                'text' => $content->title,
+                'id'      => $content->title,
+                'value'   => $content->title,
+                'label'   => $content->title,
+                'title'   => $content->title,
+                'name'    => $content->title,
+                'text'    => $content->title,
+                'subtext' => $catName,
             ];
         }
 

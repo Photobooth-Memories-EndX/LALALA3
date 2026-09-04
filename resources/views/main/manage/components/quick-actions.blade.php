@@ -1,4 +1,4 @@
-<div class="card border-0 shadow-sm mt-4">
+{{-- <div class="card border-0 shadow-sm mt-4">
     <div class="card-body">
 
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -45,4 +45,4 @@
         </div>
 
     </div>
-</div>
+</div> --}}

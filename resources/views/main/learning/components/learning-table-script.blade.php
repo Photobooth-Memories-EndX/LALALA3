@@ -7,81 +7,161 @@
         const initialSearch = @json($search ?? '');
         const defaultEntries = @json((int) ($entries ?? 25));
 
-        // ── 1. Initialize Employee Search Dropdown (Select2 AJAX) ─────────────
-        if ($.fn.select2) {
-            $('#learn-employee').select2({
-                theme: 'bootstrap-5',
-                allowClear: true,
-                placeholder: $('#learn-employee').data('placeholder') || 'Search employee or NIP...',
-                width: '100%',
-                ajax: {
-                    url: "{{ route('learning.manage.search-employees') }}",
-                    dataType: 'json',
-                    delay: 300,
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
-                    },
-                    data: function (params) {
-                        return {
-                            _token: '{{ csrf_token() }}',
-                            q: params.term || '',
-                            page: params.page || 1
-                        };
-                    },
-                    processResults: function (data) {
-                        return {
-                            results: data.results || []
-                        };
-                    },
-                    cache: true
-                },
-                templateResult: function (item) {
-                    if (!item.id) return item.text;
-                    return $('<span>').text(item.text);
-                },
-                templateSelection: function (item) {
-                    return item.text || item.id;
-                },
-                minimumInputLength: 0
-            });
+        // ── 1. Helper: Render Autocomplete Results with Sticky Footer ──────
+        function renderAutocompleteResults(inputId, dropdownId, listId, footerId, results, isEmployee) {
+            const $input = $(`#${inputId}`);
+            const $dropdown = $(`#${dropdownId}`);
+            const $list = $(`#${listId}`);
+            const $footer = $(`#${footerId}`);
+            const keyword = $input.val().trim();
 
-            // ── 1b. Initialize Learning Title Search Dropdown (Select2 AJAX) ─────────────
-            $('#learn-title').select2({
-                theme: 'bootstrap-5',
-                allowClear: true,
-                placeholder: $('#learn-title').data('placeholder') || 'Search learning title...',
-                width: '100%',
-                ajax: {
-                    url: "{{ route('learning.manage.search-titles') }}",
-                    dataType: 'json',
-                    delay: 300,
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
-                    },
-                    data: function (params) {
-                        return {
-                            _token: '{{ csrf_token() }}',
-                            q: params.term || '',
-                            page: params.page || 1
-                        };
-                    },
-                    processResults: function (data) {
-                        return {
-                            results: data.results || []
-                        };
-                    },
-                    cache: true
-                },
-                templateResult: function (item) {
-                    if (!item.id) return item.text;
-                    return $('<span>').text(item.text);
-                },
-                templateSelection: function (item) {
-                    return item.text || item.id;
-                },
-                minimumInputLength: 0
-            });
+            $list.empty();
+
+            if (keyword.length === 0) {
+                $dropdown.hide();
+                return;
+            }
+
+            if (results && results.length > 0) {
+                results.forEach(item => {
+                    const label = item.label || item.name || item.title || item.text || '';
+                    const val = isEmployee ? (item.value || item.id || label) : (item.value || item.title || item.id || label);
+                    const subtext = item.subtext || (item.category ? item.category : '');
+
+                    $list.append(`
+                        <a href="javascript:void(0);" class="list-group-item list-group-item-action text-truncate py-2 px-3 small border-0 select-autocomplete-item" data-input="${inputId}" data-value="${val}" data-label="${label}">
+                            <div class="fw-semibold text-dark text-truncate">${label}</div>
+                            ${subtext ? `<div class="text-muted extra-small text-truncate" style="font-size: 0.75rem;">${subtext}</div>` : ''}
+                        </a>
+                    `);
+                });
+
+                // Attach "See all results" footer link
+                $footer.html(`
+                    <a href="javascript:void(0);" class="text-primary small fw-semibold text-decoration-none trigger-submit-filter" data-input="${inputId}">
+                        See all results for "${keyword}" <i class="ti ti-arrow-right ms-1"></i>
+                    </a>
+                `).show();
+            } else {
+                $list.append(`
+                    <div class="p-3 text-center text-muted small">No matches found for "${keyword}"</div>
+                `);
+                $footer.hide();
+            }
+
+            $dropdown.show();
         }
+
+        // ── 1b. Employee Live Autocomplete Listener ────────────────────────
+        let employeeDebounceTimer = null;
+        $('#manage-employee-input').on('input', function () {
+            const query = $(this).val().trim();
+            clearTimeout(employeeDebounceTimer);
+
+            if (query.length === 0) {
+                $('#manage-employee-dropdown').hide();
+                $('#learn-employee').val('');
+                return;
+            }
+
+            employeeDebounceTimer = setTimeout(function () {
+                $.ajax({
+                    url: "{{ route('learning.manage.search-employees') }}",
+                    type: 'GET',
+                    data: { q: query, search: query, employee_q: query },
+                    dataType: 'json',
+                    success: function (data) {
+                        const items = data.results || data || [];
+                        renderAutocompleteResults('manage-employee-input', 'manage-employee-dropdown', 'manage-employee-list', 'manage-employee-footer', items, true);
+                    },
+                    error: function () {
+                        $('#manage-employee-dropdown').hide();
+                    }
+                });
+            }, 250);
+        });
+
+        // ── 1c. Learning Title Live Autocomplete Listener ───────────────────
+        let titleDebounceTimer = null;
+        $('#manage-title-input').on('input', function () {
+            const query = $(this).val().trim();
+            clearTimeout(titleDebounceTimer);
+
+            if (query.length === 0) {
+                $('#manage-title-dropdown').hide();
+                $('#learn-title').val('');
+                return;
+            }
+
+            titleDebounceTimer = setTimeout(function () {
+                $.ajax({
+                    url: "{{ route('learning.manage.search-titles') }}",
+                    type: 'GET',
+                    data: { q: query, search: query, title_q: query },
+                    dataType: 'json',
+                    success: function (data) {
+                        const items = data.results || data || [];
+                        renderAutocompleteResults('manage-title-input', 'manage-title-dropdown', 'manage-title-list', 'manage-title-footer', items, false);
+                    },
+                    error: function () {
+                        $('#manage-title-dropdown').hide();
+                    }
+                });
+            }, 250);
+        });
+
+        // ── 1d. Autocomplete Selection Handlers ─────────────────────────────
+        $(document).on('click', '.select-autocomplete-item', function (e) {
+            e.preventDefault();
+            const targetInputId = $(this).data('input');
+            const val = $(this).data('value');
+            const label = $(this).data('label');
+
+            if (targetInputId === 'manage-employee-input') {
+                $('#manage-employee-input').val(label);
+                $('#learn-employee').val(val);
+                $('#manage-employee-dropdown').hide();
+            } else if (targetInputId === 'manage-title-input') {
+                $('#manage-title-input').val(label);
+                $('#learn-title').val(val);
+                $('#manage-title-dropdown').hide();
+            }
+
+            $('#btn-apply-filter').trigger('click');
+        });
+
+        // Handle clicking on "See all results" or pressing Enter
+        $(document).on('click', '.trigger-submit-filter', function () {
+            const targetInputId = $(this).data('input');
+            if (targetInputId === 'manage-employee-input') {
+                $('#learn-employee').val($('#manage-employee-input').val().trim());
+                $('#manage-employee-dropdown').hide();
+            } else if (targetInputId === 'manage-title-input') {
+                $('#learn-title').val($('#manage-title-input').val().trim());
+                $('#manage-title-dropdown').hide();
+            }
+            $('#btn-apply-filter').trigger('click');
+        });
+
+        // Hide dropdowns when clicking outside
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#manage-employee-input, #manage-employee-dropdown').length) {
+                $('#manage-employee-dropdown').hide();
+            }
+            if (!$(e.target).closest('#manage-title-input, #manage-title-dropdown').length) {
+                $('#manage-title-dropdown').hide();
+            }
+        });
+
+        $('#manage-employee-input, #manage-title-input').on('keypress', function (e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#manage-employee-dropdown, #manage-title-dropdown').hide();
+                $('#learn-employee').val($('#manage-employee-input').val().trim());
+                $('#learn-title').val($('#manage-title-input').val().trim());
+                $('#btn-apply-filter').trigger('click');
+            }
+        });
 
         // Initialize Bootstrap tooltips
         if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
@@ -291,19 +371,15 @@
 
         // ── 5. Full Filter Reset Event ────────────────────────────────────
         $('#btn-reset-filter').on('click', function () {
-            // Reset Select2 employee search
-            if ($.fn.select2 && $('#learn-employee').data('select2')) {
-                $('#learn-employee').val(null).trigger('change');
-            } else {
-                $('#learn-employee').val('');
-            }
+            // Reset Employee Search input & hidden value
+            $('#manage-employee-input').val('');
+            $('#learn-employee').val('');
+            $('#manage-employee-dropdown').hide();
 
-            // Reset Learning Title Select2
-            if ($.fn.select2 && $('#learn-title').data('select2')) {
-                $('#learn-title').val(null).trigger('change');
-            } else {
-                $('#learn-title').val('');
-            }
+            // Reset Learning Title Search input & hidden value
+            $('#manage-title-input').val('');
+            $('#learn-title').val('');
+            $('#manage-title-dropdown').hide();
 
             // Reset Quick Filter dropdowns
             $('#learn-status').val('all');

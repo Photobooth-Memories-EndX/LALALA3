@@ -29,22 +29,34 @@
             <input type="hidden" id="filter-duration" name="duration" value="{{ request('duration', 'all') }}">
 
             <div class="d-flex align-items-center gap-2 flex-nowrap overflow-x-auto pb-1" style="scrollbar-width: thin;">
-                <!-- 1. Employee Search Dropdown (Select2 AJAX) -->
-                <div class="flex-fill" style="min-width: 180px; max-width: 240px;">
-                    <select class="form-select" id="learn-employee" name="employee_id" data-placeholder="Search employee or NIP...">
-                        @if ($currentEmployeeId)
-                            <option value="{{ $currentEmployeeId }}" selected>{{ $currentEmployeeText ?: $currentEmployeeId }}</option>
-                        @endif
-                    </select>
+                <!-- Employee / NIP Search Input Container -->
+                <div class="position-relative flex-grow-1" style="min-width: 200px; max-width: 280px;">
+                    <input type="text" id="manage-employee-input" name="employee_q" value="{{ request('employee_q') ?? ($currentEmployeeText ?: $currentEmployeeId) }}" 
+                           class="form-control" placeholder="Search employee or NIP..." autocomplete="off">
+                    <input type="hidden" id="learn-employee" name="employee_id" value="{{ $currentEmployeeId }}">
+                    
+                    <div id="manage-employee-dropdown" class="dropdown-menu shadow-lg w-100 position-absolute mt-1 p-0 overflow-hidden" 
+                         style="display: none; z-index: 2050; background-color: #ffffff; border-radius: 8px;">
+                        <div id="manage-employee-list" class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;"></div>
+                        <div id="manage-employee-footer" class="border-top p-2 text-center bg-light" style="display: none; position: sticky; bottom: 0;">
+                            <!-- See all results link generated via JS -->
+                        </div>
+                    </div>
                 </div>
 
-                <!-- 2. Learning Title Search Dropdown (Select2 AJAX) -->
-                <div class="flex-fill" style="min-width: 180px; max-width: 240px;">
-                    <select class="form-select" id="learn-title" name="learning_title" data-placeholder="Search learning title...">
-                        @if ($currentLearningTitle)
-                            <option value="{{ $currentLearningTitle }}" selected>{{ $currentLearningTitle }}</option>
-                        @endif
-                    </select>
+                <!-- Learning Title Search Input Container -->
+                <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 320px;">
+                    <input type="text" id="manage-title-input" name="title_q" value="{{ request('title_q') ?? (request('learning_title') ?? request('title')) }}" 
+                           class="form-control" placeholder="Search learning title..." autocomplete="off">
+                    <input type="hidden" id="learn-title" name="learning_title" value="{{ $currentLearningTitle }}">
+                    
+                    <div id="manage-title-dropdown" class="dropdown-menu shadow-lg w-100 position-absolute mt-1 p-0 overflow-hidden" 
+                         style="display: none; z-index: 2050; background-color: #ffffff; border-radius: 8px;">
+                        <div id="manage-title-list" class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;"></div>
+                        <div id="manage-title-footer" class="border-top p-2 text-center bg-light" style="display: none; position: sticky; bottom: 0;">
+                            <!-- See all results link generated via JS -->
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 3. Status Dropdown -->
