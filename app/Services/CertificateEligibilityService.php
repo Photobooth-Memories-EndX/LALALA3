@@ -8,6 +8,7 @@ use App\Models\CertificateSetting;
 use App\Models\ContentUser;
 use App\Models\User;
 use App\Services\Learning\LearningProgressResolver;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -208,16 +209,16 @@ class CertificateEligibilityService
 
         $assessmentContentIds = $contentIds->merge($playlistContentIds)->unique()->values();
 
-        // Deteksi otomatis: assessment aktif milik content/playlist via FK-nya.
-        // Status "NOT" = nonaktif (konvensi AssesmentUserController) — tidak
-        // dihitung karena user memang tidak bisa mengerjakannya.
+        // Deteksi otomatis: seluruh assessment milik content/playlist via FK-nya.
+        // Status dan masa berlaku dievaluasi kemudian pada isAssessmentActiveForEntity()
+        // dan passAssessmentGate() agar assessment nonaktif (NOT) / kedaluwarsa tidak memblokir kelulusan.
         $assessments = ($assessmentContentIds->isEmpty() && $playlistIds->isEmpty())
             ? collect()
-            : Assesment::where('status', '!=', 'NOT')
-                ->where(function ($q) use ($assessmentContentIds, $playlistIds) {
+            : Assesment::where(function ($q) use ($assessmentContentIds, $playlistIds) {
                     $q->whereIn('content_id', $assessmentContentIds)
                         ->orWhereIn('trainingplan_id', $playlistIds);
                 })
+                ->orderBy('id')
                 ->get();
 
         // Hasil final user untuk seluruh assessment terdeteksi + assessment_id
@@ -370,6 +371,43 @@ class CertificateEligibilityService
     }
 
     /**
+     * Memeriksa apakah assessment untuk suatu entitas (Content atau Playlist)
+     * berstatus ON (aktif) dan dapat diakses.
+     *
+     * Aturan status assessment:
+     * 1. Jika tidak ada assessment sama sekali -> OFF (false).
+     * 2. Jika assessment terbaru berstatus NOT -> OFF (false) (admin menonaktifkan).
+     * 3. Jika tidak ada satupun assessment yang berstatus OK dan belum kedaluwarsa -> OFF (false).
+     * 4. Jika ada assessment berstatus OK dan periode akses masih berlaku/tanpa batas -> ON (true).
+     */
+    private function isAssessmentActiveForEntity(Collection $assessments): bool
+    {
+        if ($assessments->isEmpty()) {
+            return false;
+        }
+
+        $latest = $assessments->sortByDesc('id')->first();
+        if (!$latest || strtoupper(trim((string) ($latest->status ?? ''))) === 'NOT') {
+            return false;
+        }
+
+        $now = now();
+        foreach ($assessments as $assessment) {
+            if (strtoupper(trim((string) ($assessment->status ?? ''))) !== 'OK') {
+                continue;
+            }
+
+            if ($assessment->hasAccessPeriod() && !empty($assessment->todate) && $now->gt(Carbon::parse($assessment->todate))) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Gerbang assessment hasil deteksi otomatis. Tanpa assessment aktif:
      * cukup progress. Dengan assessment (post-test + remedial sebagai baris
      * terpisah): lulus SALAH SATU sudah memenuhi. Saat gagal, hasil final
@@ -386,6 +424,42 @@ class CertificateEligibilityService
             return new CertificateEligibilityResult(eligible: true, learning: $learning);
         }
 
+        $isAssessmentActive = $this->isAssessmentActiveForEntity($assessments);
+
+        // Jika assessment OFF / tidak aktif:
+        // User TIDAK WAJIB mengerjakan assessment dan assessment TIDAK memblokir certificate.
+        // Jika user pernah lulus di masa lalu (misal sebelum nonaktif/expired), sertakan hasilnya.
+        if (!$isAssessmentActive) {
+            $bestPassed = null;
+            $bestPassedAssessment = null;
+
+            foreach ($assessments as $assessment) {
+                $assessmentResult = $context['results']->get($assessment->id);
+                if (!$assessmentResult) {
+                    continue;
+                }
+
+                $minimumScore = $this->minimumScore($setting, $assessment);
+
+                if ((float) $assessmentResult->score >= $minimumScore) {
+                    if (!$bestPassed || (float) $assessmentResult->score > (float) $bestPassed->score) {
+                        $bestPassed = $assessmentResult;
+                        $bestPassedAssessment = $assessment;
+                    }
+                }
+            }
+
+            return new CertificateEligibilityResult(
+                eligible: true,
+                learning: $learning,
+                assessmentResult: $bestPassed,
+                assessmentRequired: false,
+                minimumScore: $bestPassedAssessment ? $this->minimumScore($setting, $bestPassedAssessment) : $this->minimumScore($setting),
+            );
+        }
+
+        // Jika assessment ON / aktif:
+        // Wajib lulus salah satu assessment terkait.
         $best           = null;
         $bestAssessment = null;
 

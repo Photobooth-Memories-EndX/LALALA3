@@ -55,8 +55,7 @@ class LearningRecordController extends Controller
         $firstContentSlugs  = $playlistContents->map(fn ($items) => $items->first()?->slug);
 
         // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
-        // sebagai antrean prioritas: baris yang siap Generate Certificate
-        // selalu paling atas, di dalam tiap kelompok Finish Date terbaru dulu.
+        // berdasarkan record/completion terbaru (finish_date desc).
         // Murni pengurutan Collection — query dan business logic tidak berubah.
         $allRows = $this->mergeLearningRecord(
             $this->buildContentRows($completedContents, $cert),
@@ -69,10 +68,7 @@ class LearningRecordController extends Controller
                 $completedContents,
                 $playlistContents
             )
-        )->sortBy([
-            ['cert_priority', 'asc'],
-            ['finish_date', 'desc'],
-        ])->values();
+        )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
         $rows = $this->applyRecordFilters($allRows);
 
         return view('user.learning.dashboard-partials.record', [
