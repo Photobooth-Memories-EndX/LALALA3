@@ -9,12 +9,20 @@
             $score = (int) ($assesment_result->score ?? 0);
             $passingGrade = (int) ($assesment->passing_grade ?? 0);
             $isPassed = $score >= $passingGrade;
-            $assessmentType = match (strtolower((string) ($assesment->type ?? ''))) {
-                'content' => 'Content Assessment',
-                'trainingplan', 'playlist' => 'Playlist Assessment',
-                'global' => 'Global Assessment',
-                default => !empty($assesment->type) ? ucwords(str_replace('_', ' ', $assesment->type)) . ' Assessment' : 'Assessment',
-            };
+
+            $typeDisplay = 'Assessment';
+            if (($assesment->type ?? '') === 'global') {
+                $typeDisplay = 'Global Assessment';
+            } elseif (($assesment->type ?? '') === 'content') {
+                $contentFor = $assesment->assesment_content_for ?? ($assesment->assessment_content_for ?? 'content');
+                if ($contentFor === 'playlist') {
+                    $typeDisplay = 'Content Assessment (Playlist)';
+                } else {
+                    $typeDisplay = 'Content Assessment (All Content)';
+                }
+            } elseif (!empty($assesment->type)) {
+                $typeDisplay = ucwords(str_replace('_', ' ', $assesment->type)) . ' Assessment';
+            }
         @endphp
 
         <div class="card border-0 shadow-sm rounded-4 mb-3">
@@ -23,7 +31,7 @@
                     <div class="col">
                         <div class="text-muted small mb-1">Assessment Result</div>
                         <h2 class="mb-1">{{ $assesment->title ?? '-' }}</h2>
-                        <div class="text-muted">      
+                        <div class="text-muted">
                         The following are the assessment results you have submitted.
                         </div>
                     </div>
@@ -76,7 +84,7 @@
                             <div class="col-sm-6">
                                 <div class="p-3 rounded-4 bg-cyan-lt">
                                     <div class="text-muted small">Type</div>
-                                    <div class="fw-bold">{{ $assessmentType }}</div>
+                                    <div class="fw-bold">{{ $typeDisplay }}</div>
                                 </div>
                             </div>
 
@@ -135,7 +143,7 @@
                             </a>
 
                             <a href="{{ url('/') }}" class="btn btn-outline-secondary rounded-3 px-3">
-                                Learning Dashboard
+                                Home
                             </a>
 
                             <a href="{{ url('/my-learning?learning_tab=record') }}" class="btn btn-outline-secondary rounded-3 px-3">
