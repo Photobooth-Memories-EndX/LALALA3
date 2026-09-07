@@ -48,11 +48,13 @@ class AssesmentController extends Controller
             '12' => 'December',
         ];
 
-        $types = Assesment::select('type')
-            ->whereNotNull('type')
-            ->distinct()
-            ->orderBy('type')
-            ->pluck('type');
+        $typeFilterOptions = [
+            'content_content'  => 'Content (All Content)',
+            'content_playlist' => 'Content (Playlist)',
+            'trainingplan'     => 'Playlist',
+            'global'           => 'Global',
+        ];
+        $types = $typeFilterOptions;
 
         $statuses = Assesment::select('status')
             ->whereNotNull('status')
@@ -110,7 +112,24 @@ class AssesmentController extends Controller
         }
 
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            $filterType = $request->type;
+            if ($filterType === 'content_content') {
+                $query->where('type', 'content')
+                    ->where(function ($q) {
+                        $q->where('assasment_content_for', 'content')
+                            ->orWhereNull('assasment_content_for');
+                    });
+            } elseif ($filterType === 'content_playlist') {
+                $query->where('type', 'content')
+                    ->where('assasment_content_for', 'playlist');
+            } elseif ($filterType === 'trainingplan') {
+                $query->where('type', 'trainingplan');
+            } elseif ($filterType === 'global') {
+                $query->where('type', 'global');
+            } elseif ($filterType === 'content') {
+                // Backward compatibility for legacy URL ?type=content
+                $query->where('type', 'content');
+            }
         }
 
         if ($request->filled('status')) {
@@ -224,6 +243,7 @@ class AssesmentController extends Controller
             'years',
             'months',
             'types',
+            'typeFilterOptions',
             'statuses',
             'questionUsedFilters',
             'questionBankFilters',
