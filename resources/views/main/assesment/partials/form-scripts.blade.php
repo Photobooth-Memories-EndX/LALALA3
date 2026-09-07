@@ -80,8 +80,33 @@
         });
     }
 
+    function onCombinedTypeChange(element, isInitialLoad) {
+        const combinedVal = element ? element.value : ($('#assessment_combined_type').val() || '');
+        const $type = $('#assessment_type');
+        const $contentFor = $('#assasment_content_for');
+
+        if (combinedVal === 'content_content') {
+            $type.val('content');
+            $contentFor.val('content');
+        } else if (combinedVal === 'content_playlist') {
+            $type.val('content');
+            $contentFor.val('playlist');
+        } else if (combinedVal === 'trainingplan') {
+            $type.val('trainingplan');
+            $contentFor.val('content');
+        } else if (combinedVal === 'global') {
+            $type.val('global');
+            $contentFor.val('content');
+        } else {
+            $type.val('');
+            $contentFor.val('');
+        }
+
+        updateAssessmentTypeConfiguration(!!isInitialLoad);
+    }
+
     function updateAssessmentTypeConfiguration(isInitialLoad) {
-        const typeEl = document.getElementById('assessment_type') || document.querySelector('select[name="type"]');
+        const typeEl = document.getElementById('assessment_type') || document.querySelector('input[name="type"]') || document.querySelector('select[name="type"]');
         if (!typeEl) return;
 
         const type = typeEl.value;
@@ -103,9 +128,9 @@
         const sectionSubtitle     = $('#period-timer-section-subtitle');
 
         if (type === 'content') {
-            contentForWrapper.removeClass('d-none');
+            if (contentForWrapper.length) contentForWrapper.addClass('d-none');
 
-            const contentForEl = document.getElementById('assasment_content_for') || document.querySelector('select[name="assasment_content_for"]');
+            const contentForEl = document.getElementById('assasment_content_for') || document.querySelector('input[name="assasment_content_for"]') || document.querySelector('select[name="assasment_content_for"]');
             const contentFor = contentForEl ? contentForEl.value : '';
 
             // Update helper text (PERUBAHAN 7)
@@ -252,7 +277,7 @@
     }
 
     function setRequired(that) {
-        updateAssessmentTypeConfiguration(false);
+        onCombinedTypeChange(that || document.getElementById('assessment_combined_type'), false);
     }
 
     function toggleAccessPeriod(element) {
@@ -282,6 +307,10 @@
     $(document).ready(function() {
         initAssessmentSelect2();
 
+        $(document).on('change', '#assessment_combined_type', function() {
+            onCombinedTypeChange(this, false);
+        });
+
         $(document).on('change', '#assasment_content_for, select[name="assasment_content_for"]', function() {
             updateAssessmentTypeConfiguration(false);
         });
@@ -291,7 +320,7 @@
             if (opts && opts.silent) return;
 
             const type = $('#assessment_type').val();
-            const contentForEl = document.getElementById('assasment_content_for') || document.querySelector('select[name="assasment_content_for"]');
+            const contentForEl = document.getElementById('assasment_content_for') || document.querySelector('input[name="assasment_content_for"]') || document.querySelector('select[name="assasment_content_for"]');
             const contentFor = contentForEl ? contentForEl.value : '';
 
             if (type !== 'content' || contentFor !== 'playlist') {
@@ -362,7 +391,12 @@
             });
         });
 
-        updateAssessmentTypeConfiguration(true);
+        const combinedTypeEl = document.getElementById('assessment_combined_type');
+        if (combinedTypeEl && combinedTypeEl.value) {
+            onCombinedTypeChange(combinedTypeEl, true);
+        } else {
+            updateAssessmentTypeConfiguration(true);
+        }
         toggleAccessPeriod(document.getElementById('has_access_period'));
     });
 </script>
