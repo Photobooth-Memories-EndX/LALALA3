@@ -10,7 +10,7 @@
         var assessmentFilterParams = new URLSearchParams(window.location.search);
 
         function filterValue(name) {
-            return String(assessmentFilterParams.get('assessment_filter_' + name) || 'all');
+            return String(assessmentFilterParams.get('assessment_filter_' + name) || (name === 'type' ? assessmentFilterParams.get('type') : null) || 'all');
         }
 
         function rowAttribute(row, name) {
@@ -23,6 +23,29 @@
             for (var index = 0; index < exactFilters.length; index++) {
                 var filterName = exactFilters[index];
                 var selectedValue = filterValue(filterName);
+
+                if (filterName === 'type') {
+                    if (selectedValue === 'all' || selectedValue === '') {
+                        continue;
+                    }
+                    var rowType = rowAttribute(row, 'type');
+                    if (selectedValue === 'content') {
+                        if (rowType !== 'content' && rowType !== 'content_content' && rowType !== 'content_playlist') {
+                            return false;
+                        }
+                        continue;
+                    }
+                    if (selectedValue === 'playlist' || selectedValue === 'trainingplan') {
+                        if (rowType !== 'trainingplan' && rowType !== 'playlist') {
+                            return false;
+                        }
+                        continue;
+                    }
+                    if (rowType !== selectedValue) {
+                        return false;
+                    }
+                    continue;
+                }
 
                 if (selectedValue !== 'all' && rowAttribute(row, filterName) !== selectedValue) {
                     return false;
@@ -208,7 +231,7 @@
         function buildAssessmentParams(state, search) {
             var params = new URLSearchParams(window.location.search);
             Array.from(params.keys()).forEach(function (key) {
-                if (key.indexOf('assessment_filter_') === 0 || key === 'assessment_search') {
+                if (key.indexOf('assessment_filter_') === 0 || key === 'assessment_search' || key === 'type') {
                     params.delete(key);
                 }
             });
@@ -405,7 +428,7 @@
 
             var params = new URLSearchParams(window.location.search);
             Array.from(params.keys()).forEach(function (key) {
-                if (key.indexOf('assessment_filter_') === 0 || key === 'assessment_search') {
+                if (key.indexOf('assessment_filter_') === 0 || key === 'assessment_search' || key === 'type') {
                     params.delete(key);
                 }
             });

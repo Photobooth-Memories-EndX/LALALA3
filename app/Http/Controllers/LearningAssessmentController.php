@@ -150,7 +150,10 @@ class LearningAssessmentController extends Controller
 
     private function applyFilters($query, Request $request, $userId)
     {
-        $type = $request->input('assessment_filter_type', 'all');
+        $type = $request->input('assessment_filter_type', $request->input('type', 'all'));
+        if (empty($type)) {
+            $type = 'all';
+        }
         $status = $request->input('assessment_filter_status', 'all');
         $score = $request->input('assessment_filter_score', 'all');
         $result = $request->input('assessment_filter_result', 'all');
@@ -171,11 +174,21 @@ class LearningAssessmentController extends Controller
                 });
             })
             ->when($type !== 'all', function ($q) use ($type) {
-                if ($type === 'global') {
-                    $q->where('type', 'global');
-                } elseif ($type === 'playlist') {
+                if ($type === 'content_content') {
+                    $q->where('type', 'content')
+                        ->where(function ($sub) {
+                            $sub->where('assasment_content_for', 'content')
+                                ->orWhereNull('assasment_content_for');
+                        });
+                } elseif ($type === 'content_playlist') {
+                    $q->where('type', 'content')
+                        ->where('assasment_content_for', 'playlist');
+                } elseif ($type === 'trainingplan' || $type === 'playlist') {
                     $q->where('type', 'trainingplan');
+                } elseif ($type === 'global') {
+                    $q->where('type', 'global');
                 } elseif ($type === 'content') {
+                    // Backward compatibility for legacy URL ?assessment_filter_type=content or ?type=content
                     $q->where('type', 'content');
                 } else {
                     $q->where('type', $type);

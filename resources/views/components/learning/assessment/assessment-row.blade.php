@@ -62,11 +62,11 @@
     // 1. Global Assessment:
     //    Type: Global Assessment, Category: Global, Filter: global
     // 2. Playlist Assessment:
-    //    Type: Playlist Assessment, Category: —, Filter: playlist
+    //    Type: Playlist Assessment, Category: —, Filter: trainingplan
     // 3. Content Assessment (content_for = playlist):
-    //    Type: Content Assessment, Category: Playlist, Filter: playlist
+    //    Type: Content Assessment, Category: Playlist, Filter: content_playlist
     // 4. Content Assessment (content_for = content):
-    //    Type: Content Assessment, Category: All Content, Filter: content
+    //    Type: Content Assessment, Category: All Content, Filter: content_content
     if ($rawType === 'global') {
         $typeDisplay = 'Global Assessment';
         $categoryDisplay = 'Global';
@@ -78,20 +78,21 @@
         $tpTitle = $assessment->trainingplan->title ?? null;
         $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
         $relatedToDisplay = !empty($tpTitle) ? $tpTitle : (!empty($cTitle) ? $cTitle : '—');
-        $filterType = 'playlist';
+        $filterType = 'trainingplan';
     } else {
         // rawType === 'content' or fallback
         $typeDisplay = 'Content Assessment';
-        $filterType = 'content';
         $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
 
         if ($contentFor === 'playlist') {
             $categoryDisplay = 'Playlist';
             $tpTitle = $assessment->trainingplan->title ?? null;
             $relatedToDisplay = !empty($tpTitle) ? $tpTitle : (!empty($cTitle) ? $cTitle : '—');
+            $filterType = 'content_playlist';
         } else {
             $categoryDisplay = 'All Content';
             $relatedToDisplay = !empty($cTitle) ? $cTitle : '—';
+            $filterType = 'content_content';
         }
     }
 

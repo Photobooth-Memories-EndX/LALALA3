@@ -53,7 +53,8 @@
 }
 
 .assessment-filter-dropdown-type .dropdown-menu {
-    width: 140px;
+    min-width: 100%;
+    width: max-content;
 }
 
 .assessment-filter-dropdown-status .dropdown-menu {
@@ -121,7 +122,7 @@
 .assessment-filter-dropdown-type .assessment-fast-filter-control {
     width: max-content;
     min-width: 105px;
-    max-width: 165px;
+    max-width: none;
 }
 
 .assessment-filter-dropdown-status .assessment-fast-filter-control {
@@ -250,7 +251,7 @@
 
     .assessment-filter-dropdown-type .assessment-fast-filter-control {
         min-width: 84px;
-        max-width: 115px;
+        max-width: none;
     }
 
     .assessment-filter-dropdown-status .assessment-fast-filter-control {

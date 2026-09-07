@@ -16,11 +16,24 @@
     ];
 
     $quickFilters = [
-        'type' => ['all' => 'All', 'content' => 'Content', 'playlist' => 'Playlist', 'global' => 'Global'],
+        'type' => [
+            'all' => 'All',
+            'content_content' => 'Content (All Content)',
+            'content_playlist' => 'Content (Playlist)',
+            'trainingplan' => 'Playlist',
+            'global' => 'Global',
+        ],
         'status' => ['all' => 'All', 'not_started' => 'Pending', 'passed' => 'Passed', 'failed' => 'Failed'],
     ];
+
+    $rawActiveType = request('assessment_filter_type', request('type', 'all'));
+    $normalizedType = match ($rawActiveType) {
+        'playlist' => 'trainingplan',
+        default => $rawActiveType,
+    };
+
     $activeFilters = [
-        'type' => request('assessment_filter_type', 'all'),
+        'type' => $normalizedType,
         'status' => request('assessment_filter_status', 'all'),
         'year' => request('assessment_filter_year', 'all'),
         'month' => request('assessment_filter_month', 'all'),
