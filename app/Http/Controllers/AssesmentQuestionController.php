@@ -395,7 +395,7 @@ class AssesmentQuestionController extends Controller
         }
 
         try {
-            $duplicateService->duplicate($assesment, $overrides);
+            $duplicateService->duplicateIndividual($assesment, $overrides);
 
             return redirect()->route('assesment.index')
                 ->with('success', 'Assessment duplicated successfully.');

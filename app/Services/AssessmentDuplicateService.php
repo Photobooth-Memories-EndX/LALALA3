@@ -212,6 +212,19 @@ class AssessmentDuplicateService
                 $newAssesment->trainingplan_id       = null;
             }
 
+            // Individual duplicate context handling:
+            // 1. Result duplicate assessment must have type = NULL.
+            // 2. If source assessment has status = OK, duplicate status automatically becomes NOT.
+            //    Otherwise, existing status behavior is preserved.
+            $isIndividual = !empty($overrides['is_individual']) || (($overrides['context'] ?? null) === 'individual');
+            if ($isIndividual) {
+                $newAssesment->type = null;
+
+                if ($assesment->status === 'OK') {
+                    $newAssesment->status = 'NOT';
+                }
+            }
+
             $newAssesment->save();
 
             // Clone Question Banks and linked questions
@@ -272,5 +285,15 @@ class AssessmentDuplicateService
 
             return $newAssesment;
         });
+    }
+
+    /**
+     * Duplicate an individual assessment with type = NULL and status = NOT (if source was OK).
+     */
+    public function duplicateIndividual(Assesment $assesment, array $overrides = []): Assesment
+    {
+        $overrides['is_individual'] = true;
+
+        return $this->duplicate($assesment, $overrides);
     }
 }

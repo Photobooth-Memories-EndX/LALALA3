@@ -27,6 +27,12 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $expectedTitle = $original->title . ' Copy 1';
         $duplicate = Assesment::where('title', $expectedTitle)->first();
         $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('global', $original->type);
+        $this->assertSame('OK', $original->status);
 
         // Cleanup
         if ($duplicate) {
@@ -54,8 +60,112 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $expectedTitle = $original->title . ' Copy 1';
         $duplicate = Assesment::where('title', $expectedTitle)->first();
         $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('global', $original->type);
+        $this->assertSame('OK', $original->status);
 
         // Cleanup
+        if ($duplicate) {
+            $duplicate->delete();
+        }
+        $original->delete();
+    }
+
+    public function test_duplicate_feature_content_assessment_results_in_type_null_and_status_not(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        $original = Assesment::create([
+            'title'                 => 'Feature Content Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug));
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('content', $original->type);
+        $this->assertSame('OK', $original->status);
+
+        if ($duplicate) {
+            $duplicate->delete();
+        }
+        $original->delete();
+    }
+
+    public function test_duplicate_feature_trainingplan_assessment_results_in_type_null_and_status_not(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        $original = Assesment::create([
+            'title'                 => 'Feature TP Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'trainingplan',
+            'assasment_content_for' => 'content',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug));
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('trainingplan', $original->type);
+        $this->assertSame('OK', $original->status);
+
+        if ($duplicate) {
+            $duplicate->delete();
+        }
+        $original->delete();
+    }
+
+    public function test_duplicate_feature_inactive_assessment_retains_status_not(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        $original = Assesment::create([
+            'title'  => 'Feature Inactive Test ' . uniqid(),
+            'status' => 'NOT',
+            'type'   => 'global',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug));
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('global', $original->type);
+        $this->assertSame('NOT', $original->status);
+
         if ($duplicate) {
             $duplicate->delete();
         }
@@ -78,6 +188,32 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $response->assertDontSee('duplicate_target_playlist');
         $response->assertDontSee('duplicate_trainingplan_id');
         $response->assertDontSee('onclick="return confirm(\'Clone this assessment ?\')"');
+    }
+
+    public function test_assessment_index_renders_null_type_as_dash_badge(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        $nullAssessment = Assesment::create([
+            'title'  => 'Null Type Rendering Test ' . uniqid(),
+            'type'   => null,
+            'status' => 'NOT',
+        ]);
+
+        $globalAssessment = Assesment::create([
+            'title'  => 'Global Type Rendering Test ' . uniqid(),
+            'type'   => 'global',
+            'status' => 'OK',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('assesment.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('<span class="owl-badge owl-badge-null">-</span>', false);
+        $response->assertSee('owl-badge-green', false);
+
+        $nullAssessment->delete();
+        $globalAssessment->delete();
     }
 
     public function test_admin_can_duplicate_content_as_direct(): void

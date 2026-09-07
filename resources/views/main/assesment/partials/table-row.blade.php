@@ -6,7 +6,7 @@
     } elseif ($list->type == 'global') {
         $typeClass = 'owl-badge-green';
     } else {
-        $typeClass = 'badge-secondary';
+        $typeClass = 'owl-badge-null';
     }
 
     $typeLabels = [
@@ -96,9 +96,13 @@
     </td>
 
     <td class="text-center">
-        <span class="owl-badge {{ $typeClass }}">
-            {{ $typeLabel }}
-        </span>
+        @if (is_null($list->type))
+            <span class="owl-badge owl-badge-null">-</span>
+        @else
+            <span class="owl-badge {{ $typeClass }}">
+                {{ $typeLabel }}
+            </span>
+        @endif
     </td>
 
     <td class="text-center">

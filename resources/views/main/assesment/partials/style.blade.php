@@ -226,6 +226,19 @@
         color: #c2410c;
     }
 
+    .owl-badge-null {
+        background: #f8fafc;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+        min-width: 28px;
+        padding: 3px 8px;
+        line-height: 1.2;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     /* ==========================
        UNIQUE CODE
     ========================== */
@@ -1179,5 +1192,14 @@
     [data-bs-theme="dark"] .score-history-table td,
     body.dark-mode .score-history-table td {
         color: #dce6f1 !important;
+    }
+
+    [data-theme="dark"] .owl-badge-null,
+    [data-bs-theme="dark"] .owl-badge-null,
+    body.theme-dark .owl-badge-null,
+    body.dark-mode .owl-badge-null {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+        color: #94a3b8 !important;
     }
 </style>
