@@ -503,5 +503,92 @@ class MyLearningRecordCourseHoverPreviewTest extends TestCase
         $this->assertStringContainsString(route('playlist.user.view', [$plan->slug, $m1->slug]), $html);
         $this->assertStringContainsString(route('playlist.user.view', [$plan->slug, $m2->slug]), $html);
     }
+
+    /**
+     * TEST: Playlist popup numbering renders cleanly for 1-digit, 2-digit (10, 11, 12, etc.)
+     * with discrete number elements (no clipping from list marker offset).
+     */
+    public function test_playlist_popup_two_digit_numbering(): void
+    {
+        $plan = TrainingPlan::create([
+            'title'                  => 'Safety Mandatory E-Learning 2025 Multi-Module',
+            'slug'                   => 'safety-mandatory-mm-' . rand(1000, 9999),
+            'active'                 => 'Active',
+            'total_duration_seconds' => 7200,
+            'learning_hours'         => 2.0,
+        ]);
+
+        $itemTitles = [
+            1  => 'Opening Safety Mandatory',
+            2  => '3 Major Accident',
+            3  => '10 Safety Iron Rules',
+            4  => 'Hazard Identification',
+            5  => 'Hierarchy of Hazard Control',
+            6  => 'Tool Box Meeting',
+            7  => 'Personal Protective Equipment',
+            8  => 'Good Driver',
+            9  => 'Fire Prevention and Protection System',
+            10 => 'Closing Safety Mandatory E-Learning',
+            11 => 'Safety Assessment Review',
+            12 => 'Post Safety Compliance',
+        ];
+
+        foreach ($itemTitles as $order => $title) {
+            $c = Content::create([
+                'title'             => $title,
+                'slug'              => 'sec-mod-' . $order . '-' . rand(1000, 9999),
+                'type'              => 'Video',
+                'classification_id' => $this->classification->id,
+                'duration'          => '00:10:00',
+                'learning_hours'    => 0.2,
+                'active'            => 'Active',
+                'playlistonly'      => 'Y',
+            ]);
+
+            TrainingPlanDetail::create([
+                'trainingplan_id' => $plan->id,
+                'content_id'      => $c->id,
+                'content_order'   => $order,
+            ]);
+
+            PlaylistContentUser::create([
+                'user_id'         => $this->user->id,
+                'trainingplan_id' => $plan->id,
+                'content_id'      => $c->id,
+                'progress'        => 100,
+                'finish'          => '1',
+            ]);
+        }
+
+        $this->actingAs($this->user);
+        $response = $this->get(route('user.learning.dashboard.partial', ['tab' => 'record']));
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+
+        // 1. Verify single-digit numbering elements are rendered
+        $this->assertStringContainsString('<span class="course-preview-playlist-number">1.</span>', $html);
+        $this->assertStringContainsString('<span class="course-preview-playlist-number">8.</span>', $html);
+        $this->assertStringContainsString('<span class="course-preview-playlist-number">9.</span>', $html);
+
+        // 2. Verify two-digit numbering elements (10., 11., 12.) are rendered intact
+        $this->assertStringContainsString('<span class="course-preview-playlist-number">10.</span>', $html);
+        $this->assertStringContainsString('<span class="course-preview-playlist-number">11.</span>', $html);
+        $this->assertStringContainsString('<span class="course-preview-playlist-number">12.</span>', $html);
+
+        // 3. Verify ordering: 10. comes before 11., 11. comes before 12.
+        $pos10 = strpos($html, '<span class="course-preview-playlist-number">10.</span>');
+        $pos11 = strpos($html, '<span class="course-preview-playlist-number">11.</span>');
+        $pos12 = strpos($html, '<span class="course-preview-playlist-number">12.</span>');
+        $this->assertTrue($pos10 < $pos11, '10. must appear before 11.');
+        $this->assertTrue($pos11 < $pos12, '11. must appear before 12.');
+
+        // 4. Verify 10. is associated with Closing Safety Mandatory E-Learning
+        $closingPos = strpos($html, 'Closing Safety Mandatory E-Learning');
+        $this->assertTrue($pos10 < $closingPos, 'Number 10. must precede Closing Safety title.');
+
+        // 5. Verify trigger has category-preview-trigger
+        $this->assertStringContainsString('category-preview-trigger', $html);
+    }
 }
 

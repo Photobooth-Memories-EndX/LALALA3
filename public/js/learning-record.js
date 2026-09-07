@@ -771,32 +771,66 @@ function initLearningRecord() {
             }
 
             $popup.data('activeTrigger', trigger);
-            $popup.html(htmlContent).stop(true, true).css({ display: 'block', opacity: 0 });
+
+            // Set fixed offscreen positioning first to measure intrinsic dimensions accurately
+            $popup.html(htmlContent).stop(true, true).css({
+                position: 'fixed',
+                top: '0px',
+                left: '0px',
+                right: 'auto',
+                bottom: 'auto',
+                display: 'block',
+                visibility: 'hidden',
+                opacity: 0
+            });
 
             var rect = trigger.getBoundingClientRect();
             var popupWidth = $popup.outerWidth();
             var popupHeight = $popup.outerHeight();
-            var viewportWidth = $(window).width();
-            var viewportHeight = $(window).height();
+            var viewportWidth = window.innerWidth || document.documentElement.clientWidth || $(window).width();
+            var viewportHeight = window.innerHeight || document.documentElement.clientHeight || $(window).height();
 
-            // Calculate left position (aligned with trigger, constrained within viewport)
-            var left = rect.left + window.scrollX;
-            if (left + popupWidth > viewportWidth - 16) {
-                left = Math.max(16, viewportWidth - popupWidth - 16 + window.scrollX);
+            var gap = 6;
+            var edge = 12;
+
+            // Anchor horizontally: center popup with trigger badge
+            var triggerCenterX = rect.left + (rect.width / 2);
+            var left = triggerCenterX - (popupWidth / 2);
+
+            // Constrain left within viewport edges
+            if (left + popupWidth > viewportWidth - edge) {
+                left = viewportWidth - popupWidth - edge;
+            }
+            if (left < edge) {
+                left = edge;
             }
 
-            // Calculate top position: prefer below trigger, if bottom overflows, display above
+            // Anchor vertically: prefer below, flip above if space below is tight and more space above
             var spaceBelow = viewportHeight - rect.bottom;
+            var spaceAbove = rect.top;
             var top;
-            if (spaceBelow < popupHeight + 12 && rect.top > popupHeight + 12) {
-                top = rect.top + window.scrollY - popupHeight - 6;
+
+            if (spaceBelow < popupHeight + gap + edge && spaceAbove > spaceBelow) {
+                top = rect.top - popupHeight - gap;
             } else {
-                top = rect.bottom + window.scrollY + 6;
+                top = rect.bottom + gap;
+            }
+
+            // Constrain top within viewport edges so popup never overflows outside the screen
+            if (top + popupHeight > viewportHeight - edge) {
+                top = Math.max(edge, viewportHeight - popupHeight - edge);
+            }
+            if (top < edge) {
+                top = edge;
             }
 
             $popup.css({
-                top: top + 'px',
-                left: left + 'px'
+                position: 'fixed',
+                top: Math.round(top) + 'px',
+                left: Math.round(left) + 'px',
+                right: 'auto',
+                bottom: 'auto',
+                visibility: 'visible'
             }).animate({ opacity: 1 }, 120);
         }
 
@@ -845,7 +879,19 @@ function initLearningRecord() {
             }
         });
 
-        $(window).add('.learning-record-scroll').off('scroll.categoryPreview resize.categoryPreview').on('scroll.categoryPreview resize.categoryPreview', function () {
+        function handleScrollEvent(e) {
+            if (!$popup.is(':visible')) return;
+            // If scroll originates inside the popup body (e.g. user scrolling the playlist item list), keep popup open
+            if (e.target && $(e.target).closest('#learningRecordCoursePopup').length) {
+                return;
+            }
+            hidePopup();
+        }
+
+        window.removeEventListener('scroll', handleScrollEvent, true);
+        window.addEventListener('scroll', handleScrollEvent, true);
+
+        $(window).off('resize.categoryPreview').on('resize.categoryPreview', function () {
             if ($popup.is(':visible')) {
                 hidePopup();
             }

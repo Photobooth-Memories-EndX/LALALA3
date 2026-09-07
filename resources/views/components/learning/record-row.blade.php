@@ -95,12 +95,13 @@
                             <ol class="course-preview-playlist-list mb-0">
                                 @foreach ($row['playlist_items'] as $item)
                                     <li class="course-preview-playlist-item">
+                                        <span class="course-preview-playlist-number">{{ $loop->iteration }}.</span>
                                         @if (!empty($item['url']))
                                             <a href="{{ $item['url'] }}" class="course-preview-playlist-link">
                                                 {{ $item['title'] }}
                                             </a>
                                         @else
-                                            <span class="text-muted">{{ $item['title'] }}</span>
+                                            <span class="course-preview-playlist-link text-muted">{{ $item['title'] }}</span>
                                         @endif
                                     </li>
                                 @endforeach
