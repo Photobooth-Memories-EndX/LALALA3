@@ -179,7 +179,7 @@
                 </button>
             @elseif($firstContent)
                 <a href="{{ route('playlist.user.view', [$playlist->slug, $firstContent->slug]) }}"
-                   class="btn btn-primary w-100 rounded-pill">
+                   class="btn btn-primary btn-learning-primary w-100 rounded-pill">
                     Start Learning
                     <i class="ti ti-arrow-right ms-1"></i>
                 </a>

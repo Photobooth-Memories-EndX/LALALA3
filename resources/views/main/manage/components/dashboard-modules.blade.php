@@ -142,11 +142,11 @@
                 auth()->user()->isSuperAdmin()
             )
 
-                <div class="mt-5 mb-5">
+                <div class="mt-4 mb-4">
 
-                    <hr class="my-5">
+                    <hr class="my-4 admin-section-divider">
 
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
                             <h2 class="mb-1">Super Administrator Access</h2>
                             <div class="text-muted">

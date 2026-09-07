@@ -32,7 +32,7 @@
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden" id="comment">
 
         {{-- ── Composer ── --}}
-        <div class="card-header border-0 bg-white p-4">
+        <div class="card-header border-0 p-4">
 
             {{-- <div class="comment-count mb-3">{{ $commentTotal }} Comments</div> --}}
 
@@ -76,7 +76,7 @@
         </div>
 
         {{-- ── Comment list ── --}}
-        <div class="card-body p-0 bg-white">
+        <div class="card-body p-0">
             @forelse($comment as $item)
                 @include('components.comment-thread', [
                     'comment'            => $item,
@@ -279,21 +279,40 @@
     }
 
     /* ── Dark mode ── */
-    [data-bs-theme="dark"] .comment-count {
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-count {
         color: #e5e7eb;
         border-bottom-color: rgba(255, 255, 255, 0.1);
     }
-    [data-bs-theme="dark"] .comment-replies-toggle { color: #93c5fd !important; }
-    [data-bs-theme="dark"] .comment-replies-toggle:hover {
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-replies-toggle { color: #93c5fd !important; }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-replies-toggle:hover {
         background: rgba(37, 99, 235, 0.15);
         color: #bfdbfe !important;
     }
-    [data-bs-theme="dark"] .card-header,
-    [data-bs-theme="dark"] .card-body {
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .card-header,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .card-body {
         background-color: var(--tblr-card-bg, #1e293b) !important;
     }
-    [data-bs-theme="dark"] .comment-bubble { background: rgba(255, 255, 255, 0.06); }
-    [data-bs-theme="dark"] .comment-text { color: #e5e7eb; }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-bubble { background: rgba(255, 255, 255, 0.06); }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-text { color: #e5e7eb; }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-name { color: #f8fafc; }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-textarea,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-reply-textarea {
+        background-color: var(--tblr-bg-surface-secondary, #151f2e) !important;
+        border-color: var(--tblr-border-color, rgba(255, 255, 255, 0.12)) !important;
+        color: #f8fafc !important;
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-delete-modal-card {
+        background-color: #1e293b;
+        color: #f8fafc;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-delete-title { color: #f8fafc; }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-delete-text { color: #cbd5e1; }
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .comment-delete-actions .btn-light {
+        background-color: #0f172a;
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #f8fafc;
+    }
 
     /* ── Mobile ── */
     @media (max-width: 576px) {

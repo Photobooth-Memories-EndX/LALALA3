@@ -614,3 +614,31 @@ body.dark-mode #content-search-results .dropdown-item:focus {
 body.dark-mode #content-search-results .dropdown-item .text-dark {
     color: #f1f5f9 !important;
 }
+
+/* Content Card Action Buttons (Start Learning) aligned with My Learning tokens */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .content-card .btn-primary,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .content-card .btn-learning-primary {
+    background: var(--learning-btn-primary, #0F5E9C) !important;
+    border-color: var(--learning-btn-primary, #0F5E9C) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .content-card .btn-primary:hover,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .content-card .btn-primary:focus,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .content-card .btn-learning-primary:hover,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .content-card .btn-learning-primary:focus {
+    background: var(--learning-btn-primary-hover, #0B4F84) !important;
+    border-color: var(--learning-btn-primary-hover, #0B4F84) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) !important;
+    transform: translateY(-1px);
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .content-card .btn-primary:active,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .content-card .btn-learning-primary:active {
+    background: var(--learning-btn-primary-hover, #0B4F84) !important;
+    border-color: var(--learning-btn-primary-hover, #0B4F84) !important;
+    color: #ffffff !important;
+    transform: translateY(0);
+}

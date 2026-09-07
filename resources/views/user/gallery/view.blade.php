@@ -52,10 +52,9 @@
                             </span>
                         @endif
                         <button type="button" 
-                                class="btn btn-sm bg-white text-primary rounded-pill px-3 py-1 fw-medium d-inline-flex align-items-center gap-1 shadow-sm border-0" 
+                                class="btn btn-sm bg-white text-primary rounded-pill px-3 py-1 fw-medium d-inline-flex align-items-center gap-1 shadow-sm border-0 gallery-hero-comment-btn" 
                                 data-bs-toggle="modal" 
-                                data-bs-target="#modal-gallery-comments"
-                                style="color: #0d6efd !important; background-color: #ffffff !important;">
+                                data-bs-target="#modal-gallery-comments">
                             <i class="ti ti-message-dots fs-6"></i>
                             <span><span class="gallery-comment-total-count">{{ $commentTotal }}</span> Comments</span>
                         </button>

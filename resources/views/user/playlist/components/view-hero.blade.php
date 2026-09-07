@@ -29,6 +29,9 @@
         default                                                           => 'bg-secondary',
     };
 
+    $classificationName = $content->classification->classification_name ?? 'Learning';
+    $classificationSlug = \Illuminate\Support\Str::slug($classificationName);
+
     $continueThumb = $lastWatchedThumb;
     $continueUrl = '#contentContainer';
     $continueLabel = 'Continue Learning';
@@ -87,8 +90,8 @@
                     </div>
 
                     <div class="view-hero-bottom">
-                        <span class="badge bg-white text-primary">
-                            {{ $content->classification->classification_name ?? 'Learning' }}
+                        <span class="badge bg-white text-primary classification-badge classification-badge-{{ $classificationSlug }}" data-classification="{{ $classificationName }}">
+                            {{ $classificationName }}
                         </span>
                         <span class="badge {{ $contentTypeBadgeClass }}">{{ \App\Support\ContentTypeHelper::label($content->type ?? 'Content') }}</span>
                     </div>

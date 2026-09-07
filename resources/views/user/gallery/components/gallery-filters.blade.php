@@ -87,12 +87,12 @@
                             class="form-control" placeholder="Search by title..." autocomplete="off">
                     </div>
                     
-                    <div id="gallery-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000; background-color: #ffffff;">
+                    <div id="gallery-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000;">
                         <!-- Container 1: Scrollable List Area (Only items scroll here) -->
-                        <div id="gallery-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                        <div id="gallery-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto;"></div>
                         
                         <!-- Container 2: Pinned Sticky Footer (Fixed at bottom outside scroll area) -->
-                        <div id="gallery-search-footer" class="border-top bg-light p-2 text-center" style="display: none; background-color: #f8f9fa;"></div>
+                        <div id="gallery-search-footer" class="border-top p-2 text-center" style="display: none;"></div>
                     </div>
                 </div>
             </div>

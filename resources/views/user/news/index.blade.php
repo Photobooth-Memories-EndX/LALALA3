@@ -68,7 +68,7 @@
                                     </div>
                                     <div id="news-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
                                         <div class="autocomplete-list-group list-group list-group-flush"></div>
-                                        <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                                        <div id="news-search-footer" class="search-footer border-top p-2 text-center sticky-bottom"></div>
                                     </div>
                                 </div>
                             </div>
@@ -233,7 +233,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                        <div class="modal-footer owl-modal-footer d-flex justify-content-end align-items-center gap-2">
                             <!-- Reset Button (Placed on the left of Apply Filter) -->
                             <a href="{{ route('news.user.index') }}" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1">
                                 <i class="ti ti-rotate me-1"></i>
@@ -320,37 +320,26 @@
 
 @section('script')
 
-<!-- Dark Mode Toggle Button -->
-<button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
-    <i class="ti ti-moon-stars"></i>
-</button>
-
 <script>
 (function(){
-    // DARK MODE INITIALIZATION
-    function initDarkMode() {
-        const isDarkMode = localStorage.getItem('owl-dark-mode') === 'true';
-        const toggle = document.getElementById('darkModeToggle');
-
-        if (isDarkMode) {
-            document.body.classList.add('dark-mode');
-            updateToggleIcon(true);
-        }
-
-        if (toggle) {
-            toggle.addEventListener('click', function() {
-                document.body.classList.toggle('dark-mode');
-                const isNowDark = document.body.classList.contains('dark-mode');
-                localStorage.setItem('owl-dark-mode', isNowDark);
-                updateToggleIcon(isNowDark);
-            });
-        }
+    function updateThemeDOM(isDark) {
+        const theme = isDark ? 'dark' : 'light';
+        document.documentElement.dataset.bsTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        document.body.dataset.bsTheme = theme;
+        document.body.classList.toggle('dark-mode', isDark);
     }
 
-    function updateToggleIcon(isDark) {
-        const toggle = document.getElementById('darkModeToggle');
-        if (toggle) {
-            toggle.innerHTML = isDark ? '<i class="ti ti-sun"></i>' : '<i class="ti ti-moon-stars"></i>';
+    // DARK MODE SYNC WITH SIDEBAR-MASTER
+    function initDarkMode() {
+        const storedTheme = localStorage.getItem('owl-dark-mode');
+        const isDarkMode = storedTheme === 'dark' || storedTheme === 'true' ||
+            document.body.classList.contains('dark-mode') ||
+            document.documentElement.dataset.bsTheme === 'dark' ||
+            document.body.dataset.bsTheme === 'dark';
+
+        if (isDarkMode) {
+            updateThemeDOM(true);
         }
     }
 
@@ -470,7 +459,7 @@
 
                                 html += '<a href="' + itemUrl + '" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle news-search-item" data-title="' + escapeNewsHtml(item.title) + '">' +
                                     '<div class="d-flex align-items-center justify-content-between mb-1">' +
-                                        '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeNewsHtml(item.title) + '</span>' +
+                                        '<span class="news-search-title small fw-semibold text-truncate me-2">' + escapeNewsHtml(item.title) + '</span>' +
                                         '<span class="badge bg-primary-lt text-primary small flex-shrink-0">NEWS</span>' +
                                     '</div>' +
                                     (subDetails.length > 0 ? '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.join(' &bull; ') + '</div>' : '') +
@@ -661,71 +650,4 @@
 
 @section('style')
 <link rel="stylesheet" href="{{ asset('css/owl-news.css') }}">
-<style>
-.owl-news-card .owl-card-title {
-    font-size: 0.95rem !important;
-    font-weight: 600 !important;
-    color: #2c3e50;
-    line-height: 1.4 !important;
-    min-height: 2.8rem;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    margin-bottom: 0.5rem !important;
-}
-.owl-news-card .owl-card-title a,
-.owl-news-card .owl-card-title-link {
-    font-size: 0.95rem !important;
-    font-weight: 600 !important;
-    color: inherit !important;
-    line-height: 1.4 !important;
-}
-[data-bs-theme="dark"] .owl-news-card .owl-card-title,
-body.dark-mode .owl-news-card .owl-card-title {
-    color: #e2e8f0 !important;
-}
-
-/* Global & Module Autocomplete Search Dropdown Containers */
-.dropdown-menu.search-results-dropdown,
-.search-autocomplete-container,
-#news-search-results {
-    background-color: #ffffff !important;
-    background: #ffffff !important;
-    border-radius: 8px !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
-    border: 1px solid #e2e8f0 !important;
-    overflow: hidden !important;
-}
-
-/* Scrollable List Container (Where items are rendered) */
-.autocomplete-list-group,
-#news-autocomplete-list {
-    background-color: #ffffff !important;
-    background: #ffffff !important;
-}
-
-/* Autocomplete Items */
-#news-search-results .dropdown-item,
-.dropdown-menu .dropdown-item,
-.autocomplete-list-group .dropdown-item {
-    background-color: #ffffff !important;
-    color: #333333 !important;
-}
-
-#news-search-results .dropdown-item:hover,
-#news-search-results .dropdown-item:focus,
-.dropdown-menu .dropdown-item:hover,
-.dropdown-menu .dropdown-item:focus {
-    background-color: #f8f9fa !important;
-}
-
-/* Sticky Bottom Footer Area */
-.search-footer,
-#news-search-footer {
-    background-color: #f8f9fa !important;
-    border-top: 1px solid #e2e8f0 !important;
-}
-</style>
 @endsection

@@ -16,7 +16,7 @@
         <div class="modal-content record-filter-modal">
             <div class="modal-header border-bottom px-4 py-3 align-items-center">
                 <div>
-                    <h5 class="modal-title fw-bold text-dark mb-0" id="recordMoreFiltersTitle">More Filters</h5>
+                    <h5 class="modal-title fw-bold mb-0" id="recordMoreFiltersTitle">More Filters</h5>
                     <div class="text-muted small">Refine Learning Record</div>
                 </div>
                 <button type="button" class="btn-close close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close"></button>

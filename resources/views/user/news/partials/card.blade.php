@@ -37,7 +37,7 @@
         {{-- BODY --}}
         <div class="card-body d-flex flex-column flex-grow-1 p-3">
 
-            <h5 class="card-title line-clamp-2 mb-2 owl-card-title fw-semibold" title="{{ $item->title ?? '' }}" style="font-size: 0.95rem; font-weight: 600; color: #2c3e50; line-height: 1.4; min-height: 2.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+            <h5 class="card-title line-clamp-2 mb-2 owl-card-title fw-semibold" title="{{ $item->title ?? '' }}">
                 <a href="{{ route('news.user.view', array_merge(['slug' => $item->slug], request()->query())) }}" class="owl-card-title-link text-reset text-decoration-none fw-semibold" title="{{ $item->title ?? '' }}">
                     {{ $item->title ?? '-' }}
                 </a>
@@ -73,7 +73,7 @@
         {{-- FOOTER --}}
         <div class="card-footer bg-transparent border-top pt-3 pb-3 mt-auto">
             <a href="{{ route('news.user.view', array_merge(['slug' => $item->slug], request()->query())) }}"
-               class="btn btn-primary w-100 rounded-pill">
+               class="btn btn-primary btn-learning-primary w-100 rounded-pill">
                 Read more <i class="ti ti-arrow-right ms-1"></i>
             </a>
         </div>

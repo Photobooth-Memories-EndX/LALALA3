@@ -147,7 +147,7 @@
                 </button>
             @else
                 <a href="{{ $cardUrl }}"
-                   class="btn btn-primary w-100 rounded-pill">
+                   class="btn btn-primary btn-learning-primary w-100 rounded-pill">
                     <i class="ti ti-player-play me-1"></i>
                     Start Learning
                 </a>
