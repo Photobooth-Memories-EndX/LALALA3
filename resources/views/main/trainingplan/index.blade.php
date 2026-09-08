@@ -33,7 +33,11 @@
                     </div>
 
                     <!-- Right Group: Action Button -->
-                    <div class="flex-shrink-0">
+                    <div class="flex-shrink-0 d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalSyncPlaylistDuration" id="btnSyncPlaylistDuration">
+                            <i class="ti ti-clock-check fs-2"></i>
+                            <span>Sync Playlist Durations</span>
+                        </button>
                         <a href="{{ route('manage.playlist.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
                             <i class="ti ti-plus fs-2"></i>
                             <span>Add Playlist</span>
@@ -493,6 +497,9 @@
             </div>
         </div>
     </div>
+
+    {{-- Playlist Duration Synchronization Modal --}}
+    @include('main.trainingplan.components.playlist-sync-duration-modal')
 
 @endsection
 

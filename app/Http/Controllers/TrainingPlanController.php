@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
+use App\Services\PlaylistDurationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -681,4 +682,37 @@ class TrainingPlanController extends Controller
             'message'                => 'No playlist or contents to synchronize.',
         ]);
     }
+
+    /**
+     * AJAX bulk / single playlist duration synchronization endpoint.
+     */
+    public function synchronizeDurations(Request $request, PlaylistDurationService $service): JsonResponse
+    {
+        try {
+            $ids = null;
+            if ($request->filled('ids')) {
+                $ids = (array) $request->input('ids');
+            } elseif ($request->filled('id')) {
+                $ids = [(int) $request->input('id')];
+            }
+
+            $result = $service->synchronizeAll($ids);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Playlist durations synchronized successfully.',
+                'data'    => $result,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Playlist duration synchronization failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to synchronize playlist durations. Please try again later.',
+            ], 500);
+        }
+    }
 }
+

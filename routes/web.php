@@ -414,6 +414,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('playlist/autocomplete', [TrainingPlanController::class, 'autocompleteSearch']);
         Route::get('playlist/order/{slug}', [TrainingPlanController::class, 'order'])->name('playlist.order');
         Route::get('playlist-thumbnail-test', [TrainingPlanController::class, 'thumbnailTest'])->name('playlist.thumbnailTest');
+        Route::post('playlist/synchronize-durations', [TrainingPlanController::class, 'synchronizeDurations'])->name('manage.playlist.synchronize-durations');
         Route::post('playlist/{trainingplan?}/synchronize-learning-hours', [TrainingPlanController::class, 'synchronizeLearningHours'])->name('playlist.synchronize-learning-hours');
         Route::resource('playlist', TrainingPlanController::class)->parameters(['playlist' => 'trainingplan']);
         Route::get('playlist/create', [TrainingPlanController::class, 'create'])->name('manage.playlist.create');
