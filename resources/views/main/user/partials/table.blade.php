@@ -283,8 +283,8 @@
                     <a href="{{ route('user.index', array_filter(['q' => request('q'), 'status' => request('status'), 'company_type' => request('company_type'), 'entries' => $entries, 'team' => request('team')])) }}" class="btn btn-outline-secondary px-3">
                         Reset
                     </a>
-                    <button type="submit" class="btn btn-primary px-4" style="background-color: #003b6d; border-color: #003b6d;">
-                        Apply Filters
+                    <button type="submit" class="btn btn-primary px-4" style="background-color: #003b6d; border-color: #003b6d;" data-bs-dismiss="modal" data-dismiss="modal">
+                        <i class="ti ti-check me-1"></i> Apply Filters
                     </button>
                 </div>
             </form>
