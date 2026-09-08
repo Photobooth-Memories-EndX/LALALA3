@@ -82,12 +82,12 @@ class PlaylistTotalDurationTest extends TestCase
             'success'                => true,
             'total_duration_seconds' => 8100,
             'duration'               => '02:15:00',
-            'learning_hours'         => 2.5,
+            'learning_hours'         => 2.25,
         ]);
 
         $plan->refresh();
         $this->assertSame(8100, $plan->total_duration_seconds);
-        $this->assertEquals(2.5, $plan->learning_hours);
+        $this->assertEquals(2.25, $plan->learning_hours);
     }
 
     /**

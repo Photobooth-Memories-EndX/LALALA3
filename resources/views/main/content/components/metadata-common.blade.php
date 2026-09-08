@@ -52,10 +52,10 @@
             <small class="form-hint mt-1">Learning Hours are calculated automatically from duration.</small>
         @else
             <input type="number"
-                   min="1"
-                   step="0.5"
+                   min="0"
+                   step="0.0001"
                    class="form-control @error('learning_hours') is-invalid @enderror"
-                   placeholder="e.g. 1.5"
+                   placeholder="e.g. 1.0000"
                    name="learning_hours"
                    id="learning_hours"
                    value="{{ $learningHoursVal }}"
@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             var num = parseFloat(val);
-            var isValid = !isNaN(num) && num >= 0.5 && /^(?:\d+|\d+\.5)$/.test(val);
+            var isValid = !isNaN(num) && num >= 0;
 
             if (isValid) {
                 lhInput.classList.remove('is-invalid');
@@ -156,28 +156,14 @@ document.addEventListener("DOMContentLoaded", function () {
         function normalizeLH(forceFallback) {
             var val = lhInput.value.trim();
 
-            if (forceFallback || val === '' || val === '0' || val === '0.0' || parseFloat(val) <= 0 || isNaN(parseFloat(val))) {
-                if (val === '' || val === '0' || val === '0.0' || parseFloat(val) <= 0 || isNaN(parseFloat(val))) {
-                    lhInput.value = '0.5';
-                    val = '0.5';
-                }
-            }
-
-            if (/^\d+\.0+$/.test(val)) {
-                var intVal = parseInt(val, 10);
-                lhInput.value = intVal <= 0 ? '0.5' : intVal.toString();
-            } else if (/^\d+\.50+$/.test(val)) {
-                lhInput.value = parseFloat(val).toString();
+            if (forceFallback && (val === '' || isNaN(parseFloat(val)) || parseFloat(val) < 0)) {
+                lhInput.value = '0';
             }
 
             validateLH();
         }
 
         lhInput.addEventListener('input', function () {
-            var val = lhInput.value.trim();
-            if (val === '0' || val === '0.0') {
-                lhInput.value = '0.5';
-            }
             validateLH();
         });
 

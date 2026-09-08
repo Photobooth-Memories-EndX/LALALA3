@@ -405,6 +405,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::post('content/{content}/synchronize-learning-hours', [ContentController::class, 'synchronizeLearningHours'])->name('content.synchronize-learning-hours');
         Route::get('content/ajax/document-pdf-list', [ContentController::class, 'documentPdfList'])->name('content.document-pdf-list');
         Route::post('content/ajax/sync-total-page', [ContentController::class, 'syncTotalPage'])->name('content.sync-total-page');
+        Route::post('learning-hours/sync', [LearningHourSyncController::class, 'sync'])->name('learning-hours.sync');
     });
 
     Route::group(['middleware' => 'mpermission:playlist_learning_path'], function () {
@@ -417,8 +418,6 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('playlist/create', [TrainingPlanController::class, 'create'])->name('manage.playlist.create');
         Route::get('playlist/index', [TrainingPlanController::class, 'index'])->name('manage.playlist.index');
     });
-
-    Route::post('learning-hours/sync', [LearningHourSyncController::class, 'sync'])->name('learning-hours.sync');
 
     Route::group(['middleware' => 'mpermission:event_documentation'], function () {
         Route::get('eventphoto/search-autocomplete', [EventPhotoController::class, 'autocompleteSearch'])->name('manage.eventphoto.autocomplete');

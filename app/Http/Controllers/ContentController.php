@@ -459,11 +459,6 @@ class ContentController extends Controller
                 'required',
                 'numeric',
                 'min:0',
-                function ($attribute, $value, $fail) {
-                    if (fmod((float) $value * 2, 1.0) !== 0.0) {
-                        $fail('Learning Hours must be in increments of 0.5.');
-                    }
-                },
             ],
         ]);
 
