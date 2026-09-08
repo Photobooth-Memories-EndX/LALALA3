@@ -51,20 +51,33 @@
             @enderror
             <small class="form-hint mt-1">Learning Hours are calculated automatically from duration.</small>
         @else
-            <input type="number"
-                   min="0"
-                   step="0.0001"
-                   class="form-control @error('learning_hours') is-invalid @enderror"
-                   placeholder="e.g. 1.0000"
-                   name="learning_hours"
-                   id="learning_hours"
-                   value="{{ $learningHoursVal }}"
-                   required
-                   autocomplete="off">
+            <div class="row g-2 align-items-center">
+                <div class="col-12 col-sm-7 col-md-8">
+                    <input type="number"
+                           min="0"
+                           step="0.0001"
+                           class="form-control @error('learning_hours') is-invalid @enderror"
+                           placeholder="e.g. 1.0000"
+                           name="learning_hours"
+                           id="learning_hours"
+                           value="{{ $learningHoursVal }}"
+                           required
+                           autocomplete="off">
+                </div>
+                <div class="col-12 col-sm-5 col-md-4">
+                    <button type="button"
+                            class="btn btn-outline-primary w-100"
+                            id="btn-sync-content-lh"
+                            data-url="">
+                        <i class="ti ti-refresh me-1 icon-sync"></i>
+                        <span class="btn-text">Synchronize</span>
+                    </button>
+                </div>
+            </div>
             @error('learning_hours')
                 <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
-            <small class="form-hint mt-1">Learning Hours can be entered manually.</small>
+            <small class="form-hint mt-1">Learning Hours can be entered manually or synchronized from duration.</small>
         @endif
     </div>
 
@@ -189,14 +202,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
 $(document).ready(function() {
     function showToast(message, type) {
-        let bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-        let icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+        let textClass = type === 'warning' ? 'text-dark' : 'text-white';
+        let bgClass = type === 'success' ? 'bg-success' : (type === 'warning' ? 'bg-warning' : 'bg-danger');
+        let icon = type === 'success' ? 'ti ti-check' : (type === 'warning' ? 'ti ti-alert-triangle' : 'ti ti-alert-circle');
 
         let toastHtml = `
-            <div class="toast owl-toast ${bgClass} text-white align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast owl-toast ${bgClass} ${textClass} align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
                 <div class="toast-body d-flex align-items-center justify-content-between p-3">
                     <div class="d-flex align-items-center">
-                        <i class="fas ${icon} me-2 fs-4"></i>
+                        <i class="${icon} me-2 fs-3"></i>
                         <span>${message}</span>
                     </div>
                 </div>
@@ -219,14 +233,14 @@ $(document).ready(function() {
             let $btn = $(this);
             let url = $btn.data('url');
 
-            if (!url || $btn.data('loading')) return;
+            if ($btn.data('loading')) return;
 
-            $btn.data('loading', true);
             let $form = $btn.closest('form');
             if (!$form.length) {
                 $form = $('form#contentEditForm, form#contentCreateForm, form').first();
             }
 
+            $btn.data('loading', true);
             $btn.prop('disabled', true);
             $btn.find('.icon-sync').attr('class', 'spinner-border spinner-border-sm me-1 icon-sync');
             $btn.find('.btn-text').text('Synchronizing...');
@@ -304,54 +318,113 @@ $(document).ready(function() {
             let pageDurationVal = $form.find('[name="page_duration"], #page_duration').val() || '';
             let totalPageVal = $form.find('[name="total_page"], [name="document_total_pages"], #total_page, #document_total_pages').val() || '';
 
-            let payload = {
-                _token: csrfToken,
-                duration: durationVal,
-                page_duration: pageDurationVal,
-                document_total_pages: totalPageVal,
-                total_page: totalPageVal,
-                type: typeVal
+            let restoreButton = function() {
+                $btn.find('.icon-sync').attr('class', 'ti ti-refresh me-1 icon-sync');
+                $btn.find('.btn-text').text('Synchronize');
+                $btn.prop('disabled', false);
+                $btn.data('loading', false);
+                $('body').css('cursor', 'default');
             };
 
-            $.ajax({
-                url: url,
-                type: 'POST',
-                dataType: 'json',
-                data: payload,
-                success: function(res) {
-                    if (res && res.success) {
-                        if (res.learning_hours !== undefined) {
-                            $form.find('[name="learning_hours"], #learning_hours').val(res.learning_hours);
+            // If URL exists, invoke the server-side sync endpoint (Edit Content)
+            if (url) {
+                let payload = {
+                    _token: csrfToken,
+                    duration: durationVal,
+                    page_duration: pageDurationVal,
+                    document_total_pages: totalPageVal,
+                    total_page: totalPageVal,
+                    type: typeVal
+                };
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    dataType: 'json',
+                    data: payload,
+                    success: function(res) {
+                        if (res && res.success) {
+                            if (res.learning_hours !== undefined) {
+                                $form.find('[name="learning_hours"], #learning_hours').val(res.learning_hours);
+                            }
+                            if (res.duration !== undefined) {
+                                // Update all duration input fields across metadata components
+                                $form.find('[name="duration"], [name="_disabled_duration"]').val(res.duration);
+                                $form.find('#doc_duration, #video_duration, #youtube_duration, #default_duration').val(res.duration);
+                            }
+                            showToast(res.message || 'Learning Hours synchronized successfully.', 'success');
+                        } else {
+                            showToast(res && res.message ? res.message : 'Unable to synchronize Learning Hours.', 'danger');
                         }
-                        if (res.duration !== undefined) {
-                            // Update all duration input fields across metadata components
-                            $form.find('[name="duration"], [name="_disabled_duration"]').val(res.duration);
-                            $form.find('#doc_duration, #video_duration, #youtube_duration, #default_duration').val(res.duration);
+                    },
+                    error: function(xhr) {
+                        let message = 'Unable to synchronize Learning Hours.';
+                        if (xhr && xhr.responseJSON) {
+                            if (xhr.responseJSON.errors) {
+                                message = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                            } else if (xhr.responseJSON.message) {
+                                message = xhr.responseJSON.message;
+                            }
                         }
-                        showToast(res.message || 'Learning Hours synchronized successfully.', 'success');
-                    } else {
-                        showToast(res && res.message ? res.message : 'Unable to synchronize Learning Hours.', 'danger');
+                        showToast(message, 'danger');
+                    },
+                    complete: function() {
+                        restoreButton();
                     }
-                },
-                error: function(xhr) {
-                    let message = 'Unable to synchronize Learning Hours.';
-                    if (xhr && xhr.responseJSON) {
-                        if (xhr.responseJSON.errors) {
-                            message = Object.values(xhr.responseJSON.errors).flat().join('<br>');
-                        } else if (xhr.responseJSON.message) {
-                            message = xhr.responseJSON.message;
-                        }
+                });
+            } else {
+                // Client-side synchronization for Create Content (matches ActualLearningHourCalculator)
+                let parseDurationSeconds = function(str) {
+                    if (!str) return 0;
+                    let s = $.trim(String(str));
+                    if (!s) return 0;
+                    let parts = s.split(':');
+                    if (parts.length === 2) {
+                        let m = parseInt(parts[0], 10) || 0;
+                        let sSec = parseInt(parts[1], 10) || 0;
+                        return (m * 60) + sSec;
                     }
-                    showToast(message, 'danger');
-                },
-                complete: function() {
-                    $btn.find('.icon-sync').attr('class', 'ti ti-refresh me-1 icon-sync');
-                    $btn.find('.btn-text').text('Synchronize');
-                    $btn.prop('disabled', false);
-                    $btn.data('loading', false);
-                    $('body').css('cursor', 'default');
+                    if (parts.length === 3) {
+                        let h = parseInt(parts[0], 10) || 0;
+                        let m = parseInt(parts[1], 10) || 0;
+                        let sSec = parseInt(parts[2], 10) || 0;
+                        return (h * 3600) + (m * 60) + sSec;
+                    }
+                    if (!isNaN(Number(s))) {
+                        return Math.max(0, parseInt(s, 10) || 0);
+                    }
+                    return 0;
+                };
+
+                let totalSeconds = parseDurationSeconds(durationVal);
+                if (totalSeconds <= 0 && typeVal === 'Document') {
+                    let tp = parseInt(totalPageVal, 10) || 0;
+                    let pd = parseInt(pageDurationVal, 10) || 0;
+                    if (tp > 0 && pd > 0) {
+                        totalSeconds = tp * pd;
+                    }
                 }
-            });
+
+                setTimeout(function() {
+                    if (totalSeconds <= 0) {
+                        restoreButton();
+                        showToast('Duration is not available yet to calculate Learning Hours.', 'warning');
+                        return;
+                    }
+
+                    // Formula: round(seconds / 3600, 4)
+                    let calculatedHours = (Math.round((totalSeconds / 3600) * 10000) / 10000).toFixed(4);
+                    $form.find('[name="learning_hours"], #learning_hours').val(calculatedHours);
+
+                    if (durationVal) {
+                        $form.find('[name="duration"], [name="_disabled_duration"]').val(durationVal);
+                        $form.find('#doc_duration, #video_duration, #youtube_duration, #default_duration').filter(':visible').val(durationVal);
+                    }
+
+                    restoreButton();
+                    showToast('Learning Hours synchronized successfully: ' + calculatedHours + ' h', 'success');
+                }, 200);
+            }
         });
 });
 </script>

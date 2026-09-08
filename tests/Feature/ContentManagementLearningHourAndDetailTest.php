@@ -464,5 +464,56 @@ class ContentManagementLearningHourAndDetailTest extends TestCase
         $this->assertStringNotContainsString('.admin-gallery-stat', $styleContent);
         $this->assertStringNotContainsString('.content-manage-filter', $styleContent);
     }
+
+    public function test_content_create_view_renders_learning_hours_field_and_synchronize_button(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        $response = $this->get(route('content.create'));
+        $response->assertOk();
+
+        $content = $response->getContent();
+
+        // Must render learning hours input with name and ID
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*name="learning_hours"[^>]*id="learning_hours"/i',
+            $content
+        );
+
+        // Input on create must NOT be readonly (preserves manual input)
+        $this->assertDoesNotMatchRegularExpression(
+            '/<input[^>]*name="learning_hours"[^>]*readonly/i',
+            $content
+        );
+
+        // Must render Synchronize button with ID #btn-sync-content-lh
+        $this->assertMatchesRegularExpression(
+            '/<button[^>]*id="btn-sync-content-lh"[^>]*>.*?Synchronize.*?<\/button>/s',
+            $content
+        );
+    }
+
+    public function test_content_store_saves_synchronized_learning_hours(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        $title = 'Test Synchronized LH Content ' . \Illuminate\Support\Str::random(5);
+        $response = $this->post(route('content.store'), [
+            'title'                 => $title,
+            'type'                  => 'Video',
+            'classification'        => $this->classification->id,
+            'duration'              => '00:02:30',
+            'learning_hours'        => 0.0417,
+            'date'                  => '2026-09-08',
+            'action'                => 'save',
+        ]);
+
+        $response->assertRedirect(route('content.index'));
+
+        $content = Content::where('title', $title)->first();
+        $this->assertNotNull($content);
+        $this->assertEquals(0.0417, (float) $content->learning_hours);
+        $this->assertSame('00:02:30', $content->duration);
+    }
 }
 
