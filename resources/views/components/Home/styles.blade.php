@@ -257,9 +257,9 @@ body.dark-mode .home-modern-text-primary {
 
 .home-modern-card {
     background: #fff;
-    border: 1px solid rgba(var(--kp-primary-rgb), .08);
+    border: 1px solid rgba(15, 23, 42, 0.09);
     border-radius: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
     overflow: hidden;
 }
 
@@ -336,6 +336,7 @@ body.dark-mode .home-modern-text-primary {
     border-radius: 14px;
     overflow: hidden;
     position: relative;
+    border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .home-modern-continue-thumb img {
@@ -714,7 +715,7 @@ body.dark-mode .home-modern-text-primary {
     gap: 10px;
     padding: 11px 14px;
     border-radius: 14px;
-    border: 1px solid #f1f5f9;
+    border: 1px solid rgba(15, 23, 42, 0.08);
     background: #f8fafc;
     margin-bottom: 10px;
     text-decoration: none;
@@ -729,7 +730,7 @@ body.dark-mode .home-modern-text-primary {
 
 .home-modern-deadline-row:hover,
 .home-modern-deadline-row-static:hover {
-    border-color: #f1f5f9;
+    border-color: rgba(15, 23, 42, 0.12);
     background: #f8fafc;
     color: #53565A;
     box-shadow: none;
@@ -962,8 +963,8 @@ body.dark-mode .home-modern-text-primary {
 /* Base Card Surfaces */
 :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-card {
     background: #152238 !important;
-    border: 1px solid rgba(148, 163, 184, 0.14) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22) !important;
+    border: 1px solid rgba(148, 163, 184, 0.18) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28) !important;
     border-radius: 18px !important;
 }
 
@@ -1067,7 +1068,7 @@ body.dark-mode .home-modern-text-primary {
 /* Continue Learning Component */
 :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-continue-thumb {
     background: #1a2942 !important;
-    border: 1px solid rgba(148, 163, 184, 0.14) !important;
+    border: 1px solid rgba(148, 163, 184, 0.16) !important;
     border-radius: 14px !important;
 }
 
@@ -1155,7 +1156,7 @@ body.dark-mode .home-modern-text-primary {
 /* Video & Module Cards (Top Video & Training Modules) */
 :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-video-card {
     background: #1a2942 !important;
-    border: 1px solid rgba(148, 163, 184, 0.12) !important;
+    border: 1px solid rgba(148, 163, 184, 0.15) !important;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
     border-radius: 16px !important;
     color: inherit;
@@ -1289,7 +1290,7 @@ body.dark-mode .home-modern-text-primary {
 :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-deadline-row,
 :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-deadline-row-static {
     background: #1a2942 !important;
-    border: 1px solid rgba(148, 163, 184, 0.12) !important;
+    border: 1px solid rgba(148, 163, 184, 0.15) !important;
     color: #e2e8f0 !important;
     border-radius: 14px !important;
     margin-bottom: 10px !important;
@@ -1374,7 +1375,7 @@ body.dark-mode .home-modern-text-primary {
 
 :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-gallery-slide-thumb {
     background: #1a2942 !important;
-    border: 1px solid rgba(148, 163, 184, 0.14) !important;
+    border: 1px solid rgba(148, 163, 184, 0.15) !important;
     border-radius: 14px !important;
 }
 
@@ -1405,7 +1406,7 @@ body.dark-mode .home-modern-text-primary {
 
 :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-news-slide-thumb {
     background: #1a2942 !important;
-    border: 1px solid rgba(148, 163, 184, 0.14) !important;
+    border: 1px solid rgba(148, 163, 184, 0.15) !important;
     border-radius: 14px !important;
 }
 
@@ -1757,6 +1758,7 @@ body.dark-mode .home-modern-text-primary {
     border-radius: 14px;
     overflow: hidden;
     background: #f3f6fb;
+    border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .home-modern-gallery-slide-thumb img {
@@ -1826,6 +1828,7 @@ body.dark-mode .home-modern-text-primary {
     border-radius: 14px;
     overflow: hidden;
     background: #f3f6fb;
+    border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .home-modern-news-slide-thumb img {

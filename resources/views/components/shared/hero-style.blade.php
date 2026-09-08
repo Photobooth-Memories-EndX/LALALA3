@@ -428,7 +428,8 @@
 
             [data-bs-theme="dark"] .shared-learning-hero,
             body.dark-mode .shared-learning-hero {
-                box-shadow: 0 18px 42px rgba(0, 0, 0, .34);
+                border: 1px solid rgba(148, 163, 184, 0.18) !important;
+                box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45) !important;
             }
 
             [data-bs-theme="dark"] .shared-hero-summary,
@@ -457,11 +458,17 @@
 
             [data-bs-theme="dark"] .shared-learning-hero .badge.bg-white,
             body.dark-mode .shared-learning-hero .badge.bg-white {
-                background: rgba(255, 255, 255, 0.15) !important;
-                color: #7dd3fc !important;
-                border: 1px solid rgba(255, 255, 255, 0.22) !important;
+                background: rgba(255, 255, 255, 0.18) !important;
+                color: #BAE6FD !important;
+                border: 1px solid rgba(125, 211, 252, 0.35) !important;
                 backdrop-filter: blur(8px);
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+                -webkit-backdrop-filter: blur(8px);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+            }
+
+            [data-bs-theme="dark"] .shared-learning-hero .badge.bg-white i,
+            body.dark-mode .shared-learning-hero .badge.bg-white i {
+                color: #38bdf8 !important;
             }
 
             [data-bs-theme="dark"] .shared-hero-summary-row:hover,
