@@ -16,79 +16,69 @@
     <link href="Tabler/dist/css/demo.min.css?1684106062" rel="stylesheet" />
     <link rel="shortcut icon" href="{{ asset('owl.png') }}" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <style>
-        @import url('https://rsms.me/inter/inter.css');
+    <link href="{{ asset('css/login.css') }}" rel="stylesheet" />
 
-        :root {
-            --tblr-font-sans-serif: 'Inter Var', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
-        }
-
-        body, .page, .page-center {
-            font-feature-settings: "cv03", "cv04", "cv11";
-            background: linear-gradient(135deg, #eef2f7 0%, #f8fafc 50%, #fff7ed 100%) !important;
-            border: none !important;
-            min-height: 100vh;
-        }
-
-        body::before, body::after,
-        .page::before, .page::after,
-        .page-center::before, .page-center::after {
-            display: none !important;
-            content: none !important;
-            border: none !important;
-            background: transparent !important;
-        }
-
-        .login-card {
-            border: none !important;
-            box-shadow: 0 20px 27px rgba(0, 0, 0, 0.05) !important;
-            border-radius: 16px !important;
-            backdrop-filter: blur(10px);
-            background-color: rgba(255, 255, 255, 0.95) !important;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        @media (max-width: 576px) {
-            .modal-dialog {
-                margin: 12px auto !important;
-                max-width: calc(100% - 24px) !important;
+    <script>
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const urlTheme = params.get('theme');
+            const storedTheme = localStorage.getItem('owl-dark-mode');
+            let theme = (urlTheme === 'dark' || urlTheme === 'light') ? urlTheme : storedTheme;
+            if (!theme) {
+                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
-            .modal-content {
-                padding: 0.5rem !important;
-            }
-            .modal-body {
-                padding: 0.75rem 1rem !important;
-            }
-            .modal-title {
-                font-size: 1.05rem !important;
-            }
-            .assessment-title-wrapper h5 {
-                font-size: 1rem !important;
-            }
-        }
-    </style>
+            document.documentElement.dataset.bsTheme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
 
     <script src="{{ asset('js/jquery.min.js') }}"></script>
 </head>
 
-<body class="d-flex flex-column justify-content-center">
+<body class="login-page d-flex flex-column justify-content-center">
+    <script>
+        (function() {
+            const theme = document.documentElement.dataset.bsTheme || 'light';
+            document.body.dataset.bsTheme = theme;
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        })();
+    </script>
     <script src="Tabler/dist/js/demo-theme.min.js?1684106062"></script>
     <div class="page page-center">
         <div class="container container-tight py-4">
             <div class="text-center mb-4">
-                <a href="." class="navbar-brand navbar-brand-autodark"><img src="owl.png" height="250" alt="OWL Learning Hub"></a>
+                <a href="." class="navbar-brand navbar-brand-autodark brand-logo"><img src="owl.png" height="250" alt="OWL Learning Hub"></a>
             </div>
             <div class="card card-md login-card">
+                <button type="button" 
+                        class="btn login-theme-toggle" 
+                        id="loginThemeToggle" 
+                        aria-label="Switch to dark mode" 
+                        title="Toggle theme (Dark / Light)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-moon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-sun theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+                        <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />
+                    </svg>
+                </button>
                 <div class="card-body p-4 p-md-5">
 
                     <x-alert type='success' />
                     <x-alert type='warning' />
 
-                    <h2 class="h2 text-center mb-2 fw-bold text-dark" style="letter-spacing: -0.5px;">Corporate Learning Hub</h2>
+                    <div class="login-header-row mb-2">
+                        <h2 class="h2 text-center mb-0 fw-bold login-title text-dark" style="letter-spacing: -0.5px;">Corporate Learning Hub</h2>
+                    </div>
                     
                     <!-- Tagline tambahan -->
                     <div class="tagline-subtext fs-5 fw-semibold text-center mb-3" style="font-size: 0.95rem !important;">
-                        <span style="color: #0b2545 !important;">Open Mind</span>
+                        <span class="tagline-open-mind">Open Mind</span>
                         <span style="color: #0d6efd !important;" class="mx-1">•</span>
                         <span style="color: #0d6efd !important;">Wide Growth</span>
                         <span style="color: #fd7e14 !important;" class="mx-1">•</span>
@@ -415,6 +405,39 @@
             }, 250);
         });
         @endif
+    </script>
+    <script>
+        (function() {
+            const toggleBtn = document.getElementById('loginThemeToggle');
+            if (!toggleBtn) return;
+
+            function updateToggleAria(theme) {
+                if (theme === 'dark') {
+                    toggleBtn.setAttribute('aria-label', 'Switch to light mode');
+                    toggleBtn.setAttribute('title', 'Switch to light mode');
+                } else {
+                    toggleBtn.setAttribute('aria-label', 'Switch to dark mode');
+                    toggleBtn.setAttribute('title', 'Switch to dark mode');
+                }
+            }
+
+            const currentTheme = document.documentElement.dataset.bsTheme || 'light';
+            updateToggleAria(currentTheme);
+
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const activeTheme = document.documentElement.dataset.bsTheme === 'dark' ? 'dark' : 'light';
+                const newTheme = activeTheme === 'dark' ? 'light' : 'dark';
+
+                localStorage.setItem('owl-dark-mode', newTheme);
+                document.documentElement.dataset.bsTheme = newTheme;
+                document.documentElement.setAttribute('data-theme', newTheme);
+                document.body.dataset.bsTheme = newTheme;
+                document.body.classList.toggle('dark-mode', newTheme === 'dark');
+
+                updateToggleAria(newTheme);
+            });
+        })();
     </script>
 </body>
 

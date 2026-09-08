@@ -1,0 +1,403 @@
+/* ==========================================================================
+   OWL LMS - Login Page Stylesheet (Light & Dark Mode)
+   File: public/css/login.css
+   Scoped strictly under .login-page to prevent any global leakage.
+   ========================================================================== */
+
+@import url('https://rsms.me/inter/inter.css');
+
+/* ==========================================================================
+   1. BASE & LIGHT MODE (Existing Login Visual Language Preserved)
+   ========================================================================== */
+.login-page,
+.login-page .page,
+.login-page .page-center {
+    font-feature-settings: "cv03", "cv04", "cv11";
+    background: linear-gradient(135deg, #eef2f7 0%, #f8fafc 50%, #fff7ed 100%) !important;
+    border: none !important;
+    min-height: 100vh;
+    transition: background 0.3s ease;
+}
+
+.login-page::before,
+.login-page::after,
+.login-page .page::before,
+.login-page .page::after,
+.login-page .page-center::before,
+.login-page .page-center::after {
+    display: none !important;
+    content: none !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Card Surface */
+.login-page .login-card {
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 20px 27px rgba(0, 0, 0, 0.05) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* Brand Logo */
+.login-page .brand-logo {
+    display: inline-block;
+}
+.login-page .brand-logo img {
+    height: 250px;
+    max-width: 100%;
+    width: auto;
+    object-fit: contain;
+    filter: none;
+    transition: none !important;
+}
+
+/* Header Layout — Title Centered Independently */
+.login-page .login-header-row {
+    display: block;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    width: 100%;
+}
+
+.login-page .login-title {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+/* Theme Toggle Button - Positioned at Card Top-Right Corner */
+.login-page .login-theme-toggle {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 10;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    background: transparent !important;
+    border: none !important;
+    color: #05507D;
+    cursor: pointer;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+}
+
+.login-page .login-theme-toggle:hover {
+    background: transparent !important;
+    border: none !important;
+    color: #033959;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+.login-page .login-theme-toggle:active {
+    background: transparent !important;
+    border: none !important;
+    color: #022338;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+.login-page .login-theme-toggle:focus-visible {
+    outline: 2px solid #05507D;
+    outline-offset: 2px;
+    box-shadow: none !important;
+}
+
+.login-page .login-theme-toggle svg {
+    width: 20px;
+    height: 20px;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Toggle Icon Visibility - Light Mode */
+.login-page .theme-icon-sun {
+    display: none !important;
+}
+.login-page .theme-icon-moon {
+    display: block !important;
+    width: 20px;
+    height: 20px;
+    transition: none !important;
+}
+
+/* Tagline */
+.login-page .tagline-subtext {
+    font-size: 0.95rem !important;
+}
+.login-page .tagline-open-mind {
+    color: #0b2545;
+    transition: color 0.3s ease;
+}
+
+/* Form Controls */
+.login-page .form-control {
+    border-radius: 8px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.login-page .form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(5, 80, 125, 0.15) !important;
+    border-color: #05507D !important;
+}
+
+/* Action Buttons (Excluding Theme Toggle) */
+.login-page .btn:not(.login-theme-toggle) {
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.login-page .btn:not(.login-theme-toggle):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Password Toggle Icon */
+.login-page .input-group-text {
+    border-radius: 0 8px 8px 0;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Modal Responsiveness */
+@media (max-width: 576px) {
+    .login-page .modal-dialog {
+        margin: 12px auto !important;
+        max-width: calc(100% - 24px) !important;
+    }
+    .login-page .modal-content {
+        padding: 0.5rem !important;
+    }
+    .login-page .modal-body {
+        padding: 0.75rem 1rem !important;
+    }
+    .login-page .modal-title {
+        font-size: 1.05rem !important;
+    }
+    .login-page .assessment-title-wrapper h5 {
+        font-size: 1rem !important;
+    }
+}
+
+/* Small screen adjustment for header toggle */
+@media (max-width: 420px) {
+    .login-page .login-header-row {
+        margin-bottom: 0.5rem;
+    }
+    .login-page .login-title {
+        font-size: 1.25rem;
+        text-align: center;
+        white-space: normal;
+    }
+    .login-page .login-theme-toggle {
+        top: 16px;
+        right: 16px;
+        width: 28px;
+        height: 28px;
+        margin: 0;
+        transform: none !important;
+    }
+    .login-page .login-theme-toggle svg {
+        width: 18px;
+        height: 18px;
+    }
+    .login-page .login-theme-toggle:hover,
+    .login-page .login-theme-toggle:active {
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+
+/* ==========================================================================
+   2. DARK MODE (Strictly Scoped, Matching OWL LMS Design Language)
+   ========================================================================== */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .page,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .page-center {
+    background: radial-gradient(circle at 50% 18%, #142138 0%, #0b1320 70%) !important;
+    color: #f1f5f9 !important;
+}
+
+/* Dark Mode White Logo (Instant, Tabler autodark parity) */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .brand-logo img,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .navbar-brand-autodark img {
+    filter: brightness(0) invert(1) !important;
+    opacity: 0.95;
+    transition: none !important;
+}
+
+/* Dark Login Card Surface */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .login-card {
+    background-color: #152238 !important;
+    border: 1px solid rgba(148, 163, 184, 0.18) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Dark Card Header & Text */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .login-title,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .login-card .text-dark {
+    color: #f8fafc !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .tagline-open-mind {
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .form-label,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .text-secondary {
+    color: #cbd5e1 !important;
+}
+
+/* Dark Mode Theme Toggle Button - Clean Icon Only (No Background / No Border / No Glow) */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .login-theme-toggle {
+    background: transparent !important;
+    border: none !important;
+    color: #38bdf8 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .login-theme-toggle:hover {
+    background: transparent !important;
+    border: none !important;
+    color: #7dd3fc !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .login-theme-toggle:active {
+    background: transparent !important;
+    border: none !important;
+    color: #bae6fd !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .login-theme-toggle:focus-visible {
+    outline: 2px solid #38bdf8 !important;
+    outline-offset: 2px;
+    box-shadow: none !important;
+}
+
+/* Toggle Icon Visibility - Dark Mode */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .theme-icon-moon {
+    display: none !important;
+}
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .theme-icon-sun {
+    display: block !important;
+    width: 20px;
+    height: 20px;
+    transition: none !important;
+}
+
+/* Dark Mode Inputs */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .form-control {
+    background-color: #1a2942 !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .form-control::placeholder {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .form-control:focus {
+    background-color: #1e2e46 !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 0.25rem rgba(56, 189, 248, 0.2) !important;
+    color: #ffffff !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .input-group-text {
+    background-color: #1a2942 !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    border-left: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .input-group-text .link-secondary {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .input-group-text .link-secondary:hover {
+    color: #38bdf8 !important;
+}
+
+/* Dark Mode Buttons */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .btn-primary {
+    background-color: #0F5E9C !important;
+    border-color: #0F5E9C !important;
+    color: #ffffff !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .btn-primary:hover {
+    background-color: #0B4F84 !important;
+    border-color: #0B4F84 !important;
+    box-shadow: 0 4px 14px rgba(15, 94, 156, 0.4) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .btn-warning {
+    background-color: #F2682A !important;
+    border-color: #F2682A !important;
+    color: #ffffff !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .btn-warning:hover {
+    background-color: #d8541a !important;
+    border-color: #d8541a !important;
+    box-shadow: 0 4px 14px rgba(242, 104, 42, 0.4) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .btn-secondary {
+    background-color: #223247 !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #e2e8f0 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .btn-secondary:hover {
+    background-color: #2c3e55 !important;
+    border-color: rgba(148, 163, 184, 0.45) !important;
+    color: #ffffff !important;
+}
+
+/* Dark Mode Modals */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .modal-content {
+    background-color: #152238 !important;
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .modal-header,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .modal-footer {
+    border-color: rgba(148, 163, 184, 0.14) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode).login-page .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
