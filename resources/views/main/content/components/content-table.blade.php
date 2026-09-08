@@ -114,13 +114,16 @@
                                             title="Edit">
                                             <i class="ti ti-edit"></i>
                                         </a>
-                                        <form action="{{ route('content.destroy', $list) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('content.destroy', $list) }}" method="POST" class="d-inline form-delete-content">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit"
-                                                class="btn btn-sm btn-danger owl-action-btn"
+                                            <button type="button"
+                                                class="btn btn-sm btn-danger owl-action-btn btn-trigger-delete"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteContentModal"
+                                                data-title="{{ $list->title }}"
                                                 title="Delete"
-                                                onclick="return confirm('Are you sure want to delete this data?')">
+                                                aria-label="Delete content">
                                                 <i class="ti ti-trash"></i>
                                             </button>
                                         </form>

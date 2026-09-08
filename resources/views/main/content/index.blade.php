@@ -29,6 +29,8 @@
     @include('main.content.components.content-sync-total-page-modal')
 
     @include('main.content.components.content-detail-modal')
+
+    @include('main.content.components.content-delete-modal')
 @endsection
 
 @section('script')

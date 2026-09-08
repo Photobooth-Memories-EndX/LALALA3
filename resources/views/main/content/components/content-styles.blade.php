@@ -78,24 +78,30 @@ body.theme-dark #moreContentFiltersModal .form-select {
 [data-bs-theme="dark"] #modalSyncLearningHours .modal-content,
 [data-bs-theme="dark"] #modalTotalPageSynchronization .modal-content,
 [data-bs-theme="dark"] #contentDetailModal .modal-content,
+[data-bs-theme="dark"] #deleteContentModal .modal-content,
 body.dark-mode #modalSyncLearningHours .modal-content,
 body.dark-mode #modalTotalPageSynchronization .modal-content,
 body.dark-mode #contentDetailModal .modal-content,
+body.dark-mode #deleteContentModal .modal-content,
 body.theme-dark #modalSyncLearningHours .modal-content,
 body.theme-dark #modalTotalPageSynchronization .modal-content,
-body.theme-dark #contentDetailModal .modal-content {
+body.theme-dark #contentDetailModal .modal-content,
+body.theme-dark #deleteContentModal .modal-content {
     background-color: var(--tblr-bg-surface, #1f2937) !important;
     color: #f8fafc !important;
 }
 [data-bs-theme="dark"] #modalSyncLearningHours .modal-footer,
 [data-bs-theme="dark"] #modalTotalPageSynchronization .modal-footer,
 [data-bs-theme="dark"] #contentDetailModal .modal-footer,
+[data-bs-theme="dark"] #deleteContentModal .modal-footer,
 body.dark-mode #modalSyncLearningHours .modal-footer,
 body.dark-mode #modalTotalPageSynchronization .modal-footer,
 body.dark-mode #contentDetailModal .modal-footer,
+body.dark-mode #deleteContentModal .modal-footer,
 body.theme-dark #modalSyncLearningHours .modal-footer,
 body.theme-dark #modalTotalPageSynchronization .modal-footer,
-body.theme-dark #contentDetailModal .modal-footer {
+body.theme-dark #contentDetailModal .modal-footer,
+body.theme-dark #deleteContentModal .modal-footer {
     background-color: var(--tblr-bg-surface-secondary, #111827) !important;
 }
 [data-bs-theme="dark"] #modalSyncLearningHours .bg-light,
@@ -103,28 +109,37 @@ body.theme-dark #contentDetailModal .modal-footer {
 [data-bs-theme="dark"] #modalTotalPageSynchronization .bg-light-subtle,
 [data-bs-theme="dark"] #contentDetailModal .bg-light,
 [data-bs-theme="dark"] #contentDetailModal .bg-white,
+[data-bs-theme="dark"] #deleteContentModal .bg-light,
+[data-bs-theme="dark"] #deleteContentModal .bg-white,
 body.dark-mode #modalSyncLearningHours .bg-light,
 body.dark-mode #modalTotalPageSynchronization .bg-light,
 body.dark-mode #modalTotalPageSynchronization .bg-light-subtle,
 body.dark-mode #contentDetailModal .bg-light,
 body.dark-mode #contentDetailModal .bg-white,
+body.dark-mode #deleteContentModal .bg-light,
+body.dark-mode #deleteContentModal .bg-white,
 body.theme-dark #modalSyncLearningHours .bg-light,
 body.theme-dark #modalTotalPageSynchronization .bg-light,
 body.theme-dark #modalTotalPageSynchronization .bg-light-subtle,
 body.theme-dark #contentDetailModal .bg-light,
-body.theme-dark #contentDetailModal .bg-white {
+body.theme-dark #contentDetailModal .bg-white,
+body.theme-dark #deleteContentModal .bg-light,
+body.theme-dark #deleteContentModal .bg-white {
     background-color: var(--tblr-bg-surface-secondary, #111827) !important;
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
 [data-bs-theme="dark"] #modalSyncLearningHours .text-dark,
 [data-bs-theme="dark"] #modalTotalPageSynchronization .text-dark,
 [data-bs-theme="dark"] #contentDetailModal .text-dark,
+[data-bs-theme="dark"] #deleteContentModal .text-dark,
 body.dark-mode #modalSyncLearningHours .text-dark,
 body.dark-mode #modalTotalPageSynchronization .text-dark,
 body.dark-mode #contentDetailModal .text-dark,
+body.dark-mode #deleteContentModal .text-dark,
 body.theme-dark #modalSyncLearningHours .text-dark,
 body.theme-dark #modalTotalPageSynchronization .text-dark,
-body.theme-dark #contentDetailModal .text-dark {
+body.theme-dark #contentDetailModal .text-dark,
+body.theme-dark #deleteContentModal .text-dark {
     color: #f8fafc !important;
 }
 [data-bs-theme="dark"] #modalTotalPageSynchronization .list-group-item,

@@ -371,5 +371,99 @@
                 loadContentDetail(contentId);
             }
         });
+
+        // Delete Content Confirmation Handler (100% Tabler Modal, Zero Native confirm)
+        let activeDeleteForm = null;
+        const deleteModalEl = document.getElementById('deleteContentModal');
+        const deleteItemTitleEl = document.getElementById('deleteContentItemTitle');
+        const deleteItemNameContainer = document.getElementById('deleteContentItemNameContainer');
+        const btnConfirmDelete = document.getElementById('btnConfirmDeleteContent');
+        const btnConfirmDeleteText = document.getElementById('btnConfirmDeleteText');
+        const btnConfirmDeleteIcon = document.getElementById('btnConfirmDeleteIcon');
+        const btnCancelDelete = document.getElementById('btnCancelDeleteContent');
+
+        function showDeleteContentModal() {
+            if (!deleteModalEl) return;
+
+            if (
+                window.bootstrap &&
+                window.bootstrap.Modal &&
+                typeof window.bootstrap.Modal.getOrCreateInstance === 'function'
+            ) {
+                window.bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
+                return;
+            }
+
+            if (
+                window.bootstrap &&
+                typeof window.bootstrap.Modal === 'function'
+            ) {
+                new window.bootstrap.Modal(deleteModalEl).show();
+                return;
+            }
+
+            if (
+                typeof $ !== 'undefined' &&
+                $.fn &&
+                typeof $.fn.modal === 'function'
+            ) {
+                $(deleteModalEl).modal('show');
+                return;
+            }
+
+            // Fallback
+            deleteModalEl.style.display = 'block';
+            deleteModalEl.classList.add('show');
+        }
+
+        // Delegated event listener for delete trigger buttons across pagination & filters
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.btn-trigger-delete');
+            if (!btn) return;
+
+            e.preventDefault();
+            activeDeleteForm = btn.closest('form');
+
+            const title = btn.getAttribute('data-title') || '';
+            if (deleteItemTitleEl && deleteItemNameContainer) {
+                if (title.trim()) {
+                    deleteItemTitleEl.textContent = title;
+                    deleteItemNameContainer.style.display = 'block';
+                } else {
+                    deleteItemNameContainer.style.display = 'none';
+                }
+            }
+
+            // Reset confirm button state
+            if (btnConfirmDelete) {
+                btnConfirmDelete.disabled = false;
+            }
+            if (btnConfirmDeleteText) {
+                btnConfirmDeleteText.textContent = 'Delete';
+            }
+            if (btnConfirmDeleteIcon) {
+                btnConfirmDeleteIcon.className = 'ti ti-trash me-1';
+            }
+            if (btnCancelDelete) {
+                btnCancelDelete.disabled = false;
+            }
+
+            showDeleteContentModal();
+        });
+
+        // Confirm delete button click: submit the active existing delete form
+        if (btnConfirmDelete) {
+            btnConfirmDelete.addEventListener('click', function () {
+                if (!activeDeleteForm) return;
+
+                // Double submit protection
+                btnConfirmDelete.disabled = true;
+                if (btnConfirmDeleteText) btnConfirmDeleteText.textContent = 'Deleting...';
+                if (btnConfirmDeleteIcon) btnConfirmDeleteIcon.className = 'spinner-border spinner-border-sm me-1';
+                if (btnCancelDelete) btnCancelDelete.disabled = true;
+
+                activeDeleteForm.submit();
+            });
+        }
     });
 </script>
