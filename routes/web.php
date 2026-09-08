@@ -393,6 +393,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::group(['middleware' => 'mpermission:content_repository'], function () {
         Route::get('content/search-autocomplete', [ContentController::class, 'autocompleteSearch'])->name('manage.content.autocomplete');
         Route::get('content/autocomplete', [ContentController::class, 'autocompleteSearch']);
+        Route::get('content/{content}/details', [ContentController::class, 'details'])->name('content.details');
         Route::resource('content', ContentController::class);
         Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');
         Route::get('content/thumbnail/upload/delete', [ContentController::class, 'deletethumbnailajax'])->name('content.deletethumbnailajax');

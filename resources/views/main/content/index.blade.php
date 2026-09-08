@@ -14,11 +14,10 @@
             </div>
 
             <!-- Content Management Hero Header Box -->
-            <div class="card border-0 shadow-sm p-4 mb-3 rounded-3 bg-white">
+            <div class="card border-0 shadow-sm p-4 mb-3 rounded-3 content-hero-card">
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
-                             style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
+                        <div class="content-hero-icon rounded-3 d-flex align-items-center justify-content-center flex-shrink-0">
                             <i class="ti ti-books" style="font-size: 2rem !important;"></i>
                         </div>
                         <div>
@@ -26,7 +25,7 @@
                             <p class="text-muted small mb-0">Manage learning materials, videos, documents, assessments, and playlist content.</p>
                         </div>
                     </div>
-                    <div class="flex-shrink-0 d-flex align-items-center gap-2">
+                    <div class="flex-shrink-0 d-flex flex-wrap align-items-center gap-2">
                         <button type="button" class="btn btn-outline-primary px-3 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalSyncLearningHours" id="btnOpenSyncLhModal">
                             <i class="ti ti-refresh me-1"></i>Sync Learning Hours
                         </button>
@@ -80,8 +79,8 @@
             {{-- Stat Cards --}}
             <div class="row g-3 mb-3">
                 <!-- Card 1: Total Content -->
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 content-stat-card">
                         <div class="d-flex align-items-center">
                             <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
                                  style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
@@ -96,8 +95,8 @@
                 </div>
 
                 <!-- Card 2: Active -->
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 content-stat-card">
                         <div class="d-flex align-items-center">
                             <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
                                  style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
@@ -112,8 +111,8 @@
                 </div>
 
                 <!-- Card 3: Inactive -->
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 content-stat-card">
                         <div class="d-flex align-items-center">
                             <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
                                  style="width: 44px; height: 44px; background-color: #e63946; color: #ffffff;">
@@ -128,8 +127,8 @@
                 </div>
 
                 <!-- Card 4: Playlist Only -->
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 content-stat-card">
                         <div class="d-flex align-items-center">
                             <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
                                  style="width: 44px; height: 44px; background-color: #0284c7; color: #ffffff;">
@@ -153,6 +152,50 @@
                     </div>
 
                     <form action="{{ route('content.index') }}" method="GET" id="manageContentFilterForm">
+                        {{-- Preserve active More Filter parameters upon Quick Filter submission --}}
+                        @if(request()->filled('min_learning_hour'))
+                            <input type="hidden" name="min_learning_hour" value="{{ request('min_learning_hour') }}">
+                        @endif
+                        @if(request()->filled('max_learning_hour'))
+                            <input type="hidden" name="max_learning_hour" value="{{ request('max_learning_hour') }}">
+                        @endif
+                        @if(request()->filled('learning_hour'))
+                            <input type="hidden" name="learning_hour" value="{{ request('learning_hour') }}">
+                        @endif
+                        @if(request()->filled('duration'))
+                            <input type="hidden" name="duration" value="{{ request('duration') }}">
+                        @endif
+                        @if(request()->filled('author'))
+                            <input type="hidden" name="author" value="{{ request('author') }}">
+                        @endif
+                        @if(request()->filled('sort'))
+                            <input type="hidden" name="sort" value="{{ request('sort') }}">
+                        @endif
+                        @if(request()->filled('view_order') || request()->filled('sort_views'))
+                            <input type="hidden" name="view_order" value="{{ request('view_order') ?? request('sort_views') }}">
+                        @endif
+                        @if(request()->filled('created_from_date') || request()->filled('created_from'))
+                            <input type="hidden" name="created_from_date" value="{{ request('created_from_date') ?? request('created_from') }}">
+                        @endif
+                        @if(request()->filled('created_to_date') || request()->filled('created_to'))
+                            <input type="hidden" name="created_to_date" value="{{ request('created_to_date') ?? request('created_to') }}">
+                        @endif
+                        @if(request()->filled('deadline_from_date') || request()->filled('period_from') || request()->filled('date_from'))
+                            <input type="hidden" name="deadline_from_date" value="{{ request('deadline_from_date') ?? (request('period_from') ?? request('date_from')) }}">
+                        @endif
+                        @if(request()->filled('deadline_to_date') || request()->filled('period_to') || request()->filled('date_to'))
+                            <input type="hidden" name="deadline_to_date" value="{{ request('deadline_to_date') ?? (request('period_to') ?? request('date_to')) }}">
+                        @endif
+                        @if(request()->filled('deadline_status') || request()->filled('deadline'))
+                            <input type="hidden" name="deadline_status" value="{{ request('deadline_status') ?? request('deadline') }}">
+                        @endif
+                        @if(request()->filled('exam'))
+                            <input type="hidden" name="exam" value="{{ request('exam') }}">
+                        @endif
+                        @if(request()->filled('playlistonly') || request()->filled('playlist'))
+                            <input type="hidden" name="playlistonly" value="{{ request('playlistonly') ?? request('playlist') }}">
+                        @endif
+
                         <div class="row g-2 align-items-center">
                             <!-- Filter Status -->
                             <div class="col-6 col-md-auto">
@@ -214,14 +257,14 @@
                                     </div>
                                     
                                     <div id="manage-content-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" 
-                                         style="display: none; z-index: 2000; background-color: #ffffff;">
+                                         style="display: none; z-index: 2000;">
                                         <!-- Container 1: Scrollable List Area (Max 280px height with vertical scrollbar) -->
                                         <div id="manage-content-autocomplete-list" class="list-group list-group-flush" 
-                                             style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                                             style="max-height: 280px; overflow-y: auto;"></div>
                                         
                                         <!-- Container 2: Fixed/Sticky Bottom Footer -->
                                         <div id="manage-content-search-footer" class="border-top p-2 text-center" 
-                                             style="display: none; position: sticky; bottom: 0; z-index: 2005; background-color: #f8f9fa;"></div>
+                                             style="display: none; position: sticky; bottom: 0; z-index: 2005;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -236,7 +279,7 @@
                                 <!-- 2. More Filters Modal Trigger Button (Icon Only - No Text) -->
                                 <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" data-bs-toggle="modal" data-bs-target="#moreContentFiltersModal" title="More Filters">
                                     <i class="ti ti-adjustments-horizontal fs-2"></i>
-                                    @if(request('duration') || request('learning_hour') || request('has_exam') || request('date_from') || request('date_to') || request('author') || request('category'))
+                                    @if(request('duration') || request('learning_hour') || request('min_learning_hour') || request('max_learning_hour') || request('has_exam') || request('date_from') || request('date_to') || request('author') || request('category'))
                                         <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle">
                                             <span class="visually-hidden">Active filter</span>
                                         </span>
@@ -274,6 +317,7 @@
                                         <th>Type</th>
                                         <th>Classification</th>
                                         <th>Duration</th>
+                                        <th>Learning Hour</th>
                                         <th>Date</th>
                                         <th>Status</th>
                                         <th>Exam</th>
@@ -309,6 +353,15 @@
                                             </td>
                                             <td>{{ $list->classification->classification_name ?? '-' }}</td>
                                             <td>{{ \App\Support\DurationFormatter::format($list->duration) }}</td>
+                                            <td>
+                                                @if ($list->learning_hours !== null)
+                                                    <span class="badge bg-blue-lt font-monospace text-nowrap" style="letter-spacing: 0.02em;">
+                                                        <i class="ti ti-clock me-1 opacity-75"></i>{{ number_format((float) $list->learning_hours, 4, '.', '') }} h
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted small">-</span>
+                                                @endif
+                                            </td>
                                             <td>{{ $list->date ? \Carbon\Carbon::parse($list->date)->format('d/m/Y') : '-' }}</td>
                                             <td>
                                                 @php $isActive = $list->active == 'Active'; @endphp
@@ -345,6 +398,13 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-1">
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary owl-action-btn btn-view-content-detail"
+                                                        data-id="{{ $list->id }}"
+                                                        title="View Detail"
+                                                        aria-label="View content details">
+                                                        <i class="ti ti-eye"></i>
+                                                    </button>
                                                     <a href="{{ route('content.edit', $list) }}"
                                                         class="btn btn-sm btn-info owl-action-btn"
                                                         title="Edit">
@@ -404,7 +464,7 @@
                 </div>
                 <form action="{{ route('content.index') }}" method="GET">
                     <div class="modal-body py-3">
-                        <input type="hidden" name="s" value="{{ request('s') ?? request('search') }}">
+                        <input type="hidden" name="q" value="{{ request('q') ?? (request('s') ?? request('search')) }}">
                         <input type="hidden" name="active" value="{{ request('active') ?? request('status') }}">
                         <input type="hidden" name="type" value="{{ request('type') }}">
                         <input type="hidden" name="classification_id" value="{{ request('classification_id') ?? request('classification') }}">
@@ -475,6 +535,8 @@
                                     <option value="asc" {{ (request('sort') == 'asc' || request('sort') == 'title_asc' || request('sort') == 'title') ? 'selected' : '' }}>Title (A-Z)</option>
                                     <option value="desc" {{ (request('sort') == 'desc' || request('sort') == 'title_desc') ? 'selected' : '' }}>Title (Z-A)</option>
                                     <option value="views" {{ request('sort') == 'views' ? 'selected' : '' }}>Most Views</option>
+                                    <option value="lh_asc" {{ (request('sort') == 'lh_asc' || request('sort') == 'learning_hours_asc') ? 'selected' : '' }}>Learning Hours (Lowest)</option>
+                                    <option value="lh_desc" {{ (request('sort') == 'lh_desc' || request('sort') == 'learning_hours_desc') ? 'selected' : '' }}>Learning Hours (Highest)</option>
                                 </select>
                             </div>
                         </div>
@@ -527,9 +589,25 @@
                             </div>
                         </div>
 
-                        <!-- Learning Hour Radio -->
+                        <!-- Learning Hour Filter (Numeric Range & Presets) -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold text-dark small d-block">Learning Hour</label>
+                            <label class="form-label fw-bold text-dark small d-block">
+                                <i class="ti ti-clock me-1 text-primary"></i> Learning Hour
+                            </label>
+
+                            <!-- Numeric Range Min & Max -->
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small text-muted mb-1">Min Learning Hour (h)</label>
+                                    <input type="number" step="0.0001" min="0" name="min_learning_hour" class="form-control rounded-3" placeholder="e.g. 0.2500" value="{{ request('min_learning_hour') }}">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small text-muted mb-1">Max Learning Hour (h)</label>
+                                    <input type="number" step="0.0001" min="0" name="max_learning_hour" class="form-control rounded-3" placeholder="e.g. 1.5000" value="{{ request('max_learning_hour') }}">
+                                </div>
+                            </div>
+
+                            <!-- Preset Radios -->
                             @php $currLH = request('learning_hour', 'all'); @endphp
                             <div class="d-flex flex-wrap gap-3 align-items-center">
                                 <div class="form-check">
@@ -542,11 +620,15 @@
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="learning_hour" id="contentLh3" value="1-3h" {{ $currLH === '1-3h' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="contentLh3">1 - 3 hours</label>
+                                    <label class="form-check-label text-dark" for="contentLh3">1 - 3 Hours</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="learning_hour" id="contentLhAbove3" value="gt3h" {{ $currLH === 'gt3h' ? 'checked' : '' }}>
                                     <label class="form-check-label text-dark" for="contentLhAbove3">&gt; 3 Hours</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="learning_hour" id="contentLhMissing" value="missing_lh" {{ $currLH === 'missing_lh' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-dark" for="contentLhMissing">Missing LH</label>
                                 </div>
                             </div>
                         </div>
@@ -857,6 +939,165 @@
         </div>
     </div>
 
+    <!-- Content Detail Modal -->
+    <div class="modal modal-blur fade" id="contentDetailModal" tabindex="-1" aria-labelledby="contentDetailModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                        <div class="avatar avatar-md bg-primary-lt text-primary rounded-3 flex-shrink-0">
+                            <i class="ti ti-file-description fs-2"></i>
+                        </div>
+                        <div class="min-w-0 flex-grow-1">
+                            <h5 class="modal-title fw-bold text-dark mb-0 text-truncate" id="contentDetailModalTitle">Content Details</h5>
+                            <small class="text-muted" id="contentDetailModalSubtitle">View comprehensive information for this content</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <!-- Loading State -->
+                <div class="modal-body py-5 text-center" id="contentDetailLoading">
+                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5 class="fw-bold mb-1">Loading Content Details...</h5>
+                    <p class="text-muted small mb-0">Please wait while we retrieve the content information.</p>
+                </div>
+
+                <!-- Error State -->
+                <div class="modal-body py-4" id="contentDetailError" style="display: none;">
+                    <div class="alert alert-danger d-flex align-items-center gap-2 mb-0" id="detailError">
+                        <i class="ti ti-alert-circle fs-2 flex-shrink-0"></i>
+                        <div class="flex-grow-1">
+                            <strong class="d-block" id="contentDetailErrorTitle">Failed to load content details</strong>
+                            <span class="small" id="contentDetailErrorMessage">Unable to load content details. Please try again.</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger px-3 ms-auto d-inline-flex align-items-center gap-1" id="btnRetryContentDetail">
+                            <i class="ti ti-refresh me-1" id="btnRetrySpinner"></i>
+                            <span id="btnRetryText">Retry</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Content Data Body -->
+                <div class="modal-body py-3" id="contentDetailContent" data-detail-content style="display: none;">
+                    <!-- Title & Badge Header Section -->
+                    <div class="mb-3">
+                        <h4 class="fw-bold text-dark mb-2" id="detailTitle">-</h4>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="badge bg-blue-lt" id="detailTypeBadge">-</span>
+                            <span class="badge bg-success-lt" id="detailStatusBadge">-</span>
+                            <span class="badge bg-secondary-lt" id="detailClassificationBadge">-</span>
+                            <span class="badge bg-azure-lt" id="detailViewsBadge"><i class="ti ti-eye me-1"></i><span id="detailViews">0</span> Views</span>
+                        </div>
+                    </div>
+
+                    <!-- Learning Information Featured Card -->
+                    <div class="card border-0 bg-light rounded-3 p-3 mb-3">
+                        <div class="fw-semibold text-dark small mb-2 d-flex align-items-center gap-1">
+                            <i class="ti ti-clock-check text-primary me-1"></i> Learning Information
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="p-2 border rounded-3 bg-white text-center h-100">
+                                    <div class="text-muted small mb-1">Duration</div>
+                                    <div class="h3 fw-bold text-dark mb-0 font-monospace" id="detailDuration">00:00:00</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-2 border rounded-3 bg-white text-center h-100">
+                                    <div class="text-muted small mb-1">Learning Hour</div>
+                                    <div class="h3 fw-bold text-primary mb-0 font-monospace" id="detailLearningHour">0.0000 h</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="small text-muted text-center mt-2">
+                            <i class="ti ti-info-circle me-1"></i>Actual learning hours based on content duration.
+                        </div>
+                    </div>
+
+                    <!-- Document Information Section (Conditional) -->
+                    <div class="card border-0 bg-light rounded-3 p-3 mb-3" id="detailDocumentSection" style="display: none;">
+                        <div class="fw-semibold text-dark small mb-2 d-flex align-items-center gap-1">
+                            <i class="ti ti-files text-primary me-1"></i> Document Information
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="small text-muted">Total Pages:</div>
+                                <div class="fw-bold text-dark" id="detailTotalPage">0</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted">Page Duration:</div>
+                                <div class="fw-bold text-dark" id="detailPageDuration">0 seconds</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Details & Metadata -->
+                    <div class="row g-3 mb-3">
+                        <!-- Description -->
+                        <div class="col-12" id="detailDescriptionContainer">
+                            <label class="form-label small fw-semibold text-muted mb-1">Description</label>
+                            <div class="p-3 border rounded-3 bg-light text-dark small" id="detailDescription" style="max-height: 120px; overflow-y: auto; white-space: pre-wrap;">-</div>
+                        </div>
+
+                        <!-- Author & Date -->
+                        <div class="col-sm-6">
+                            <div class="border rounded-3 p-2 bg-light">
+                                <span class="small text-muted d-block">Author</span>
+                                <strong class="text-dark small" id="detailAuthor">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="border rounded-3 p-2 bg-light">
+                                <span class="small text-muted d-block">Content Date</span>
+                                <strong class="text-dark small" id="detailDate">-</strong>
+                            </div>
+                        </div>
+
+                        <!-- Exam & Playlist Status -->
+                        <div class="col-sm-6">
+                            <div class="border rounded-3 p-2 bg-light">
+                                <span class="small text-muted d-block">Assessment / Exam</span>
+                                <strong class="text-dark small" id="detailExam">-</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="border rounded-3 p-2 bg-light">
+                                <span class="small text-muted d-block">Playlist Status</span>
+                                <strong class="text-dark small" id="detailPlaylist">-</strong>
+                            </div>
+                        </div>
+
+                        <!-- Deadline Information -->
+                        <div class="col-12" id="detailDeadlineContainer">
+                            <div class="border rounded-3 p-2 bg-light">
+                                <span class="small text-muted d-block">Deadline</span>
+                                <strong class="text-dark small" id="detailDeadline">No Deadline</strong>
+                            </div>
+                        </div>
+
+                        <!-- Associated Playlists -->
+                        <div class="col-12" id="detailAssociatedPlaylistsContainer" style="display: none;">
+                            <label class="form-label small fw-semibold text-muted mb-1">Included in Playlists</label>
+                            <div class="d-flex flex-wrap gap-1" id="detailPlaylistsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light d-flex justify-content-between align-items-center border-0">
+                    <a href="#" class="btn btn-primary d-inline-flex align-items-center gap-1" id="btnEditContentShortcut">
+                        <i class="ti ti-edit me-1"></i> Edit Content
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @section('style')
@@ -869,32 +1110,53 @@ body.dark-mode .page-body,
 body.theme-dark .page-body {
     background: var(--tblr-body-bg, #111827);
 }
-.btn-back {
-    color: #0c5b9e !important;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+
+/* Content Hero Card & Icon */
+.content-hero-card {
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-.btn-back:hover {
-    opacity: 0.85;
-    transform: translateX(-3px);
+.content-hero-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(15, 94, 156, 0.1);
+    color: #0f5e9c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.btn-quick-reset {
-    transition: all 0.2s ease;
+[data-bs-theme="dark"] .content-hero-card,
+body.dark-mode .content-hero-card,
+body.theme-dark .content-hero-card {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
 }
-.btn-quick-reset:hover {
-    background-color: #0c5b9e !important;
-    color: #ffffff !important;
+[data-bs-theme="dark"] .content-hero-icon,
+body.dark-mode .content-hero-icon,
+body.theme-dark .content-hero-icon {
+    background: rgba(106, 174, 214, 0.15) !important;
+    color: #6aaed6 !important;
 }
-[data-bs-theme="dark"] .btn-quick-reset,
-body.dark-mode .btn-quick-reset,
-body.theme-dark .btn-quick-reset {
-    background-color: transparent !important;
+
+/* Content Stat Cards */
+.content-stat-card {
+    background-color: #ffffff;
+    border-radius: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
-[data-bs-theme="dark"] .btn-quick-reset:hover,
-body.dark-mode .btn-quick-reset:hover,
-body.theme-dark .btn-quick-reset:hover {
-    background-color: #0c5b9e !important;
-    color: #ffffff !important;
+.content-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08) !important;
 }
+[data-bs-theme="dark"] .content-stat-card,
+body.dark-mode .content-stat-card,
+body.theme-dark .content-stat-card {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 [data-bs-theme="dark"] #moreContentFiltersModal .modal-content,
 body.dark-mode #moreContentFiltersModal .modal-content,
 body.theme-dark #moreContentFiltersModal .modal-content {
@@ -918,56 +1180,60 @@ body.theme-dark #moreContentFiltersModal .form-select {
 }
 [data-bs-theme="dark"] #modalSyncLearningHours .modal-content,
 [data-bs-theme="dark"] #modalTotalPageSynchronization .modal-content,
+[data-bs-theme="dark"] #contentDetailModal .modal-content,
 body.dark-mode #modalSyncLearningHours .modal-content,
 body.dark-mode #modalTotalPageSynchronization .modal-content,
+body.dark-mode #contentDetailModal .modal-content,
 body.theme-dark #modalSyncLearningHours .modal-content,
-body.theme-dark #modalTotalPageSynchronization .modal-content {
+body.theme-dark #modalTotalPageSynchronization .modal-content,
+body.theme-dark #contentDetailModal .modal-content {
     background-color: var(--tblr-bg-surface, #1f2937) !important;
     color: #f8fafc !important;
 }
 [data-bs-theme="dark"] #modalSyncLearningHours .modal-footer,
 [data-bs-theme="dark"] #modalTotalPageSynchronization .modal-footer,
+[data-bs-theme="dark"] #contentDetailModal .modal-footer,
 body.dark-mode #modalSyncLearningHours .modal-footer,
 body.dark-mode #modalTotalPageSynchronization .modal-footer,
+body.dark-mode #contentDetailModal .modal-footer,
 body.theme-dark #modalSyncLearningHours .modal-footer,
-body.theme-dark #modalTotalPageSynchronization .modal-footer {
+body.theme-dark #modalTotalPageSynchronization .modal-footer,
+body.theme-dark #contentDetailModal .modal-footer {
     background-color: var(--tblr-bg-surface-secondary, #111827) !important;
 }
 [data-bs-theme="dark"] #modalSyncLearningHours .bg-light,
 [data-bs-theme="dark"] #modalTotalPageSynchronization .bg-light,
 [data-bs-theme="dark"] #modalTotalPageSynchronization .bg-light-subtle,
+[data-bs-theme="dark"] #contentDetailModal .bg-light,
+[data-bs-theme="dark"] #contentDetailModal .bg-white,
 body.dark-mode #modalSyncLearningHours .bg-light,
 body.dark-mode #modalTotalPageSynchronization .bg-light,
 body.dark-mode #modalTotalPageSynchronization .bg-light-subtle,
+body.dark-mode #contentDetailModal .bg-light,
+body.dark-mode #contentDetailModal .bg-white,
 body.theme-dark #modalSyncLearningHours .bg-light,
 body.theme-dark #modalTotalPageSynchronization .bg-light,
-body.theme-dark #modalTotalPageSynchronization .bg-light-subtle {
+body.theme-dark #modalTotalPageSynchronization .bg-light-subtle,
+body.theme-dark #contentDetailModal .bg-light,
+body.theme-dark #contentDetailModal .bg-white {
     background-color: var(--tblr-bg-surface-secondary, #111827) !important;
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
 [data-bs-theme="dark"] #modalSyncLearningHours .text-dark,
 [data-bs-theme="dark"] #modalTotalPageSynchronization .text-dark,
+[data-bs-theme="dark"] #contentDetailModal .text-dark,
 body.dark-mode #modalSyncLearningHours .text-dark,
 body.dark-mode #modalTotalPageSynchronization .text-dark,
+body.dark-mode #contentDetailModal .text-dark,
 body.theme-dark #modalSyncLearningHours .text-dark,
-body.theme-dark #modalTotalPageSynchronization .text-dark {
+body.theme-dark #modalTotalPageSynchronization .text-dark,
+body.theme-dark #contentDetailModal .text-dark {
     color: #f8fafc !important;
 }
 [data-bs-theme="dark"] #modalTotalPageSynchronization .list-group-item,
 body.dark-mode #modalTotalPageSynchronization .list-group-item,
 body.theme-dark #modalTotalPageSynchronization .list-group-item {
     color: #cbd5e1 !important;
-}
-.admin-gallery-stat {
-    border-radius: 16px;
-    transition: transform .2s, box-shadow .2s;
-}
-.admin-gallery-stat:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,.1);
-}
-.content-manage-filter .form-label {
-    margin-bottom: 4px;
 }
 [data-theme="dark"] .card,
 body.theme-dark .card {
@@ -983,16 +1249,20 @@ body.theme-dark .card {
     left: 0;
     z-index: 2000;
     border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
-    border: 1px solid #e2e8f0 !important;
-    background: #ffffff !important;
-    overflow: hidden !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    overflow: hidden;
 }
 #manage-content-autocomplete-list {
-    max-height: 280px !important;
-    overflow-y: auto !important;
-    background-color: #ffffff !important;
+    max-height: 280px;
+    overflow-y: auto;
+    background-color: #ffffff;
     scrollbar-width: thin;
+}
+#manage-content-search-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 #manage-content-search-results .dropdown-item {
     padding: .6rem .85rem;
@@ -1009,9 +1279,20 @@ body.theme-dark .card {
 [data-bs-theme="dark"] #manage-content-search-results,
 body.dark-mode #manage-content-search-results,
 body.theme-dark #manage-content-search-results {
-    background: #1f2937;
-    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--tblr-bg-surface, #1f2937) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+[data-bs-theme="dark"] #manage-content-autocomplete-list,
+body.dark-mode #manage-content-autocomplete-list,
+body.theme-dark #manage-content-autocomplete-list {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+}
+[data-bs-theme="dark"] #manage-content-search-footer,
+body.dark-mode #manage-content-search-footer,
+body.theme-dark #manage-content-search-footer {
+    background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+    border-top-color: rgba(255, 255, 255, 0.1) !important;
 }
 [data-bs-theme="dark"] #manage-content-search-results .dropdown-item,
 body.dark-mode #manage-content-search-results .dropdown-item,
@@ -1156,6 +1437,234 @@ body.theme-dark #manage-content-search-results .dropdown-item .text-dark {
                     }
                 });
             }
+
+            // View Content Detail Handler (Zero Native Alert, 100% In-Modal States)
+            const contentDetailModalEl = document.getElementById('contentDetailModal');
+            let contentDetailModalInstance = null;
+            if (contentDetailModalEl && window.bootstrap && window.bootstrap.Modal) {
+                contentDetailModalInstance = window.bootstrap.Modal.getOrCreateInstance(contentDetailModalEl);
+            }
+
+            const detailLoadingEl = document.getElementById('contentDetailLoading');
+            const detailErrorEl = document.getElementById('contentDetailError');
+            const detailContentEl = document.getElementById('contentDetailContent');
+            const detailErrorMsgEl = document.getElementById('contentDetailErrorMessage');
+            const btnRetryDetail = document.getElementById('btnRetryContentDetail');
+            const btnRetryText = document.getElementById('btnRetryText');
+            const btnRetrySpinner = document.getElementById('btnRetrySpinner');
+            let currentDetailId = null;
+
+            function safeVal(val, fallback) {
+                if (fallback === undefined) fallback = '-';
+                if (val === null || val === undefined) return fallback;
+                const str = String(val).trim();
+                if (str === '' || str === 'null' || str === 'undefined' || str === 'NaN') return fallback;
+                return str;
+            }
+
+            function isNumericVal(val) {
+                return val !== null && val !== undefined && val !== '' && !isNaN(Number(val));
+            }
+
+            function loadContentDetail(contentId) {
+                currentDetailId = contentId;
+                if (!contentDetailModalInstance && contentDetailModalEl && window.bootstrap && window.bootstrap.Modal) {
+                    contentDetailModalInstance = window.bootstrap.Modal.getOrCreateInstance(contentDetailModalEl);
+                }
+                if (contentDetailModalInstance) {
+                    contentDetailModalInstance.show();
+                }
+
+                // In-modal loading state: show spinner, hide content and error
+                if (detailLoadingEl) detailLoadingEl.style.display = 'block';
+                if (detailErrorEl) detailErrorEl.style.display = 'none';
+                if (detailContentEl) detailContentEl.style.display = 'none';
+
+                const url = "{{ url('/manage/content') }}/" + encodeURIComponent(contentId) + "/details";
+
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }).done(function (res) {
+                    if (res && res.success && res.data) {
+                        renderContentDetail(res.data);
+                        if (detailLoadingEl) detailLoadingEl.style.display = 'none';
+                        if (detailErrorEl) detailErrorEl.style.display = 'none';
+                        if (detailContentEl) detailContentEl.style.display = 'block';
+                    } else {
+                        const errMsg = (res && res.message) ? res.message : 'Unable to load content details. Please try again.';
+                        showDetailError(errMsg);
+                    }
+                }).fail(function (xhr, textStatus) {
+                    let msg = 'Unable to load content details. Please try again.';
+                    if (xhr.status === 403) {
+                        msg = 'You do not have permission to view this content.';
+                    } else if (xhr.status === 404) {
+                        msg = 'Content not found.';
+                    } else if (xhr.status === 500) {
+                        msg = 'Unable to load content details. Please try again.';
+                    } else if (xhr.status === 0 || textStatus === 'timeout' || (!xhr.status && textStatus === 'error')) {
+                        msg = 'Unable to connect to the server. Please try again.';
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    showDetailError(msg);
+                }).always(function () {
+                    // Reset retry button state
+                    if (btnRetryDetail) {
+                        btnRetryDetail.disabled = false;
+                    }
+                    if (btnRetryText) {
+                        btnRetryText.textContent = 'Retry';
+                    }
+                    if (btnRetrySpinner) {
+                        btnRetrySpinner.classList.remove('ti-spin');
+                    }
+                });
+            }
+
+            function showDetailError(msg) {
+                if (detailLoadingEl) detailLoadingEl.style.display = 'none';
+                if (detailContentEl) detailContentEl.style.display = 'none';
+                if (detailErrorEl) detailErrorEl.style.display = 'block';
+                if (detailErrorMsgEl) detailErrorMsgEl.textContent = msg || 'Unable to load content details. Please try again.';
+            }
+
+            // Retry button listener (attached once, zero duplicate listeners)
+            if (btnRetryDetail) {
+                btnRetryDetail.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (currentDetailId) {
+                        btnRetryDetail.disabled = true;
+                        if (btnRetryText) btnRetryText.textContent = 'Retrying...';
+                        if (btnRetrySpinner) btnRetrySpinner.classList.add('ti-spin');
+                        loadContentDetail(currentDetailId);
+                    }
+                });
+            }
+
+            function renderContentDetail(data) {
+                if (!data) return;
+
+                const titleEl = document.getElementById('detailTitle');
+                const subTitleEl = document.getElementById('contentDetailModalSubtitle');
+                const typeBadgeEl = document.getElementById('detailTypeBadge');
+                const statusBadgeEl = document.getElementById('detailStatusBadge');
+                const classBadgeEl = document.getElementById('detailClassificationBadge');
+                const viewsEl = document.getElementById('detailViews');
+                const durationEl = document.getElementById('detailDuration');
+                const lhEl = document.getElementById('detailLearningHour');
+                const descEl = document.getElementById('detailDescription');
+                const authorEl = document.getElementById('detailAuthor');
+                const dateEl = document.getElementById('detailDate');
+                const examEl = document.getElementById('detailExam');
+                const playlistEl = document.getElementById('detailPlaylist');
+                const deadlineEl = document.getElementById('detailDeadline');
+                const docSectionEl = document.getElementById('detailDocumentSection');
+                const totalPageEl = document.getElementById('detailTotalPage');
+                const pageDurEl = document.getElementById('detailPageDuration');
+                const editBtnEl = document.getElementById('btnEditContentShortcut');
+                const playlistsContainer = document.getElementById('detailAssociatedPlaylistsContainer');
+                const playlistsList = document.getElementById('detailPlaylistsList');
+
+                if (titleEl) titleEl.textContent = safeVal(data.title);
+                if (subTitleEl) {
+                    const idText = safeVal(data.id, '');
+                    const slugText = data.slug ? ' • ' + data.slug : '';
+                    subTitleEl.textContent = idText ? ('Content #' + idText + slugText) : 'Content Details';
+                }
+                if (typeBadgeEl) typeBadgeEl.textContent = safeVal(data.type_label || data.type, 'Content');
+                if (statusBadgeEl) {
+                    const statusText = safeVal(data.status, 'Inactive');
+                    statusBadgeEl.textContent = statusText;
+                    statusBadgeEl.className = 'badge ' + (statusText === 'Active' ? 'bg-success-lt' : 'bg-warning-lt');
+                }
+                if (classBadgeEl) classBadgeEl.textContent = safeVal(data.classification);
+                if (viewsEl) viewsEl.textContent = isNumericVal(data.views) ? (data.views_formatted || Number(data.views).toLocaleString()) : '0';
+                if (durationEl) durationEl.textContent = safeVal(data.duration_formatted || data.duration, '00:00:00');
+                if (lhEl) {
+                    if (data.learning_hours !== null && data.learning_hours !== undefined && !isNaN(data.learning_hours)) {
+                        lhEl.textContent = data.learning_hours_formatted || (Number(data.learning_hours).toFixed(4) + ' h');
+                    } else {
+                        lhEl.textContent = '-';
+                    }
+                }
+                if (descEl) descEl.textContent = safeVal(data.description, 'No description provided.');
+                if (authorEl) authorEl.textContent = safeVal(data.author);
+                if (dateEl) dateEl.textContent = safeVal(data.date);
+                if (examEl) {
+                    if (data.exam === 'OK') {
+                        examEl.textContent = 'With Exam (OK)';
+                    } else if (data.exam === 'NOT') {
+                        examEl.textContent = 'Without Exam';
+                    } else {
+                        examEl.textContent = safeVal(data.exam_label);
+                    }
+                }
+                if (playlistEl) {
+                    if (data.playlistonly === 'Y') {
+                        playlistEl.textContent = 'Playlist Only';
+                    } else if (data.playlistonly === 'N') {
+                        playlistEl.textContent = 'General Content';
+                    } else {
+                        playlistEl.textContent = safeVal(data.playlist_label);
+                    }
+                }
+
+                if (deadlineEl) {
+                    if (data.has_deadline && data.from_date && data.to_date && data.from_date !== '-' && data.to_date !== '-') {
+                        deadlineEl.textContent = data.from_date + ' – ' + data.to_date + (data.is_expired ? ' (Expired)' : '');
+                    } else {
+                        deadlineEl.textContent = 'No Deadline';
+                    }
+                }
+
+                if (docSectionEl) {
+                    const isDoc = data.type === 'Document' || (isNumericVal(data.total_page) && Number(data.total_page) > 0) || (isNumericVal(data.page_duration) && Number(data.page_duration) > 0);
+                    if (isDoc) {
+                        docSectionEl.style.display = 'block';
+                        if (totalPageEl) totalPageEl.textContent = (isNumericVal(data.total_page) && Number(data.total_page) > 0) ? (data.total_page + ' pages') : '-';
+                        if (pageDurEl) pageDurEl.textContent = (isNumericVal(data.page_duration) && Number(data.page_duration) > 0) ? (data.page_duration + ' seconds / page') : '-';
+                    } else {
+                        docSectionEl.style.display = 'none';
+                    }
+                }
+
+                if (playlistsContainer && playlistsList) {
+                    if (Array.isArray(data.playlists) && data.playlists.length > 0) {
+                        playlistsContainer.style.display = 'block';
+                        playlistsList.innerHTML = '';
+                        data.playlists.forEach(function (p) {
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-purple-lt';
+                            badge.textContent = safeVal(p.title, 'Playlist #' + (p.id || ''));
+                            playlistsList.appendChild(badge);
+                        });
+                    } else {
+                        playlistsContainer.style.display = 'none';
+                        playlistsList.innerHTML = '';
+                    }
+                }
+
+                if (editBtnEl) {
+                    editBtnEl.href = data.edit_url || (data.slug ? ('{{ url("/manage/content") }}/' + encodeURIComponent(data.slug) + '/edit') : '#');
+                }
+            }
+
+            // Event delegation for View Detail buttons
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('.btn-view-content-detail');
+                if (!btn) return;
+                e.preventDefault();
+                const contentId = btn.getAttribute('data-id');
+                if (contentId) {
+                    loadContentDetail(contentId);
+                }
+            });
         });
     </script>
 @endsection

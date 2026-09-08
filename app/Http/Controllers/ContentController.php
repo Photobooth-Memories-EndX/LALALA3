@@ -248,7 +248,7 @@ class ContentController extends Controller
         }
 
         // Learning Hour Filter
-        $lhFilter = $request->get('learning_hour');
+        $lhFilter = $request->get('learning_hour') ?: ($request->get('filter_learning_hours') ?: $request->get('learning_hours'));
         if (filled($lhFilter) && $lhFilter !== 'all') {
             if ($lhFilter === 'lt1h') {
                 $query->where('content.learning_hours', '<', 1);
@@ -256,7 +256,19 @@ class ContentController extends Controller
                 $query->where('content.learning_hours', '>=', 1)->where('content.learning_hours', '<=', 3);
             } elseif ($lhFilter === 'gt3h') {
                 $query->where('content.learning_hours', '>', 3);
+            } elseif ($lhFilter === 'has_lh' || $lhFilter === 'has') {
+                $query->whereNotNull('content.learning_hours');
+            } elseif ($lhFilter === 'missing_lh' || $lhFilter === 'missing') {
+                $query->whereNull('content.learning_hours');
             }
+        }
+
+        // Min & Max Numeric Learning Hour Filter
+        if ($request->filled('min_learning_hour')) {
+            $query->where('content.learning_hours', '>=', (float) $request->min_learning_hour);
+        }
+        if ($request->filled('max_learning_hour')) {
+            $query->where('content.learning_hours', '<=', (float) $request->max_learning_hour);
         }
 
         // Sort Views (Radio in Modal)
@@ -297,6 +309,14 @@ class ContentController extends Controller
                 break;
             case 'title':
                 $query->orderBy('content.title');
+                break;
+            case 'lh_asc':
+            case 'learning_hours_asc':
+                $query->orderBy('content.learning_hours', 'asc');
+                break;
+            case 'lh_desc':
+            case 'learning_hours_desc':
+                $query->orderBy('content.learning_hours', 'desc');
                 break;
             default:
                 $query->orderByRaw("
@@ -908,6 +928,73 @@ class ContentController extends Controller
             'duration' => $content->duration,
             'learning_hours' => $content->learning_hours,
             'message' => 'Total page updated successfully.',
+        ]);
+    }
+
+    /**
+     * AJAX Content Detail Modal Endpoint.
+     */
+    public function details(Request $request, $id): JsonResponse
+    {
+        $content = is_numeric($id)
+            ? Content::with(['classification', 'trainingPlans'])->find($id)
+            : Content::with(['classification', 'trainingPlans'])->where('slug', $id)->first();
+
+        if (!$content) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Content not found.',
+            ], 404);
+        }
+
+        $formattedDuration = DurationFormatter::format($content->duration);
+        $formattedLh = $content->learning_hours !== null
+            ? number_format((float) $content->learning_hours, 4, '.', '') . ' h'
+            : '-';
+
+        $playlists = $content->trainingPlans->map(function ($tp) {
+            return [
+                'id'    => $tp->id,
+                'title' => $tp->title ?? $tp->name,
+                'slug'  => $tp->slug,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'                       => $content->id,
+                'title'                    => $content->title,
+                'slug'                     => $content->slug,
+                'type'                     => $content->type,
+                'type_label'               => \App\Support\ContentTypeHelper::label($content->type),
+                'classification'           => $content->classification->classification_name ?? '-',
+                'active'                   => $content->active,
+                'status'                   => $content->active,
+                'date'                     => $content->date ? Carbon::parse($content->date)->format('d/m/Y') : '-',
+                'created_at'               => $content->created_at ? $content->created_at->format('d/m/Y H:i') : '-',
+                'updated_at'               => $content->updated_at ? $content->updated_at->format('d/m/Y H:i') : '-',
+                'duration'                 => $content->duration ?? '00:00:00',
+                'duration_formatted'       => $formattedDuration,
+                'learning_hours'           => $content->learning_hours !== null ? (float) $content->learning_hours : null,
+                'learning_hours_formatted' => $formattedLh,
+                'page_duration'            => (int) ($content->page_duration ?? 0),
+                'total_page'               => (int) ($content->total_page ?? 0),
+                'description'              => $content->description,
+                'author'                   => $content->author ?? '-',
+                'views'                    => (int) ($content->views ?? 0),
+                'views_formatted'          => number_format($content->views ?? 0),
+                'has_deadline'             => (bool) $content->has_deadline,
+                'from_date'                => $content->from_date ? $content->from_date->format('d/m/Y') : '-',
+                'to_date'                  => $content->to_date ? $content->to_date->format('d/m/Y') : '-',
+                'is_expired'               => $content->isExpired(),
+                'exam'                     => $content->exam,
+                'exam_label'               => $content->exam === 'OK' ? 'With Exam (OK)' : 'Without Exam (NOT)',
+                'playlistonly'             => $content->playlistonly,
+                'playlist_label'           => $content->playlistonly === 'Y' ? 'Playlist Only' : 'General Content',
+                'playlists'                => $playlists,
+                'edit_url'                 => route('content.edit', $content),
+            ],
         ]);
     }
 }
