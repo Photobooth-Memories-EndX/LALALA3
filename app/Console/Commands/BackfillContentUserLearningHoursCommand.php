@@ -2,9 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Services\LearningHours\LearningHourConverterService;
+use App\Services\LearningHours\ContentUserBatchCalculatorService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class BackfillContentUserLearningHoursCommand extends Command
 {
@@ -13,155 +12,127 @@ class BackfillContentUserLearningHoursCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'learning-hours:backfill-content-users {--chunk=2500 : Number of records per chunk}';
+    protected $signature = 'learning-hours:backfill-content-users
+                            {--chunk=2500 : Number of records per chunk}
+                            {--dry-run : Simulate calculation without writing to database}
+                            {--force : Recalculate and update even if learning_hours already matches}
+                            {--limit= : Maximum records to process}
+                            {--user= : Specific User ID}
+                            {--content= : Specific Content ID}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Safely backfill learning_hours and completed_at on content_users using hybrid calculation rules without mutating existing timestamps';
+    protected $description = 'Batch calculate actual learning hours for content_users using exact actual seconds and precision 4 decimals';
 
     /**
      * Execute the console command.
-     *
-     * @return int
      */
-    public function handle(LearningHourConverterService $converter): int
+    public function handle(ContentUserBatchCalculatorService $batchService): int
     {
-        $this->info('Starting ContentUser Learning Hours and Completed At Backfill...');
+        $isDryRun = (bool) $this->option('dry-run');
+        $force = (bool) $this->option('force');
+        $chunkSize = max(50, (int) ($this->option('chunk') ?? 2500));
+        $limit = $this->option('limit') !== null ? (int) $this->option('limit') : null;
+        $userId = $this->option('user') !== null ? (int) $this->option('user') : null;
+        $contentId = $this->option('content') !== null ? (int) $this->option('content') : null;
 
-        $startTime = microtime(true);
-        $totalRecords = DB::table('content_users')->count();
-        $this->info("Total content_users records in database: {$totalRecords}");
-
-        if ($totalRecords === 0) {
-            $this->info('No records to backfill.');
-            return Command::SUCCESS;
+        $this->info('======================================================================');
+        $this->info(' BATCH CALCULATE ACTUAL LEARNING HOURS: CONTENT USERS');
+        $this->info('======================================================================');
+        $this->line('Mode       : ' . ($isDryRun ? '<comment>DRY RUN (Preview Only - No DB Writes)</comment>' : '<fg=green;options=bold>LIVE EXECUTION</>'));
+        $this->line("Chunk Size : {$chunkSize}");
+        if ($force) {
+            $this->line('Force Mode : <comment>Enabled (overwrites matching values)</comment>');
         }
-
-        // 1. Preload master contents into memory
-        $contents = DB::table('content')
-            ->whereNull('deleted_at')
-            ->get(['id', 'duration', 'learning_hours'])
-            ->keyBy('id');
-
-        $this->info("Preloaded {$contents->count()} active content records.");
-
-        $chunkSize = max(100, (int) $this->option('chunk'));
-        $lastId = 0;
-        $processed = 0;
-        $completedCount = 0;
-        $partialCount = 0;
-        $zeroCount = 0;
-        $orphanCount = 0;
-
-        $bar = $this->output->createProgressBar($totalRecords);
-        $bar->start();
-
-        while (true) {
-            $chunk = DB::table('content_users')
-                ->where('id', '>', $lastId)
-                ->orderBy('id')
-                ->limit($chunkSize)
-                ->get(['id', 'content_id', 'progress', 'finish', 'created_at', 'updated_at']);
-
-            if ($chunk->isEmpty()) {
-                break;
-            }
-
-            $hoursGroups = [];
-            $completedIds = [];
-            $notCompletedIds = [];
-
-            foreach ($chunk as $item) {
-                $lastId = $item->id;
-                $processed++;
-
-                $content = $contents->get($item->content_id);
-
-                if (!$content) {
-                    // Orphan record (content missing or soft-deleted)
-                    $orphanCount++;
-                    $hoursGroups['NULL'][] = $item->id;
-                    $notCompletedIds[] = $item->id;
-                    continue;
-                }
-
-                $masterHours = $content->learning_hours !== null
-                    ? (float) $content->learning_hours
-                    : $converter->convert($content->duration);
-
-                if ($masterHours === null) {
-                    $orphanCount++;
-                    $hoursGroups['NULL'][] = $item->id;
-                    $notCompletedIds[] = $item->id;
-                    continue;
-                }
-
-                $isFinished = ((string) $item->finish === '1' || (int) $item->progress >= 100);
-
-                if ($isFinished) {
-                    $completedCount++;
-                    $userHours = (float) $masterHours;
-                    $hoursGroups[(string) $userHours][] = $item->id;
-                    $completedIds[] = $item->id;
-                } else {
-                    $notCompletedIds[] = $item->id;
-                    $progress = (int) ($item->progress ?? 0);
-
-                    if ($progress > 0) {
-                        $partialCount++;
-                        $userHours = round((float) $masterHours * ($progress / 100), 1);
-                        $hoursGroups[(string) $userHours][] = $item->id;
-                    } else {
-                        $zeroCount++;
-                        $userHours = 0.0;
-                        $hoursGroups['0.0'][] = $item->id;
-                    }
-                }
-            }
-
-            // Perform batch updates via DB::table (without triggering Eloquent timestamps)
-            DB::transaction(function () use ($hoursGroups, $completedIds, $notCompletedIds) {
-                foreach ($hoursGroups as $hoursKey => $ids) {
-                    if ($hoursKey === 'NULL') {
-                        DB::table('content_users')->whereIn('id', $ids)->update(['learning_hours' => null]);
-                    } else {
-                        DB::table('content_users')->whereIn('id', $ids)->update(['learning_hours' => (float) $hoursKey]);
-                    }
-                }
-
-                if (!empty($completedIds)) {
-                    DB::table('content_users')->whereIn('id', $completedIds)->update([
-                        'completed_at' => DB::raw('COALESCE(updated_at, created_at)'),
-                    ]);
-                }
-
-                if (!empty($notCompletedIds)) {
-                    DB::table('content_users')->whereIn('id', $notCompletedIds)->update([
-                        'completed_at' => null,
-                    ]);
-                }
-            });
-
-            $bar->advance($chunk->count());
+        if ($userId !== null) {
+            $this->line("User ID    : {$userId}");
         }
+        if ($contentId !== null) {
+            $this->line("Content ID : {$contentId}");
+        }
+        if ($limit !== null) {
+            $this->line("Limit      : {$limit} records");
+        }
+        $this->newLine();
 
-        $bar->finish();
-        $this->newLine(2);
+        $this->line('Starting batch execution...');
 
-        $duration = round(microtime(true) - $startTime, 2);
+        $lastLoggedBatch = 0;
 
-        $this->info("Backfill completed successfully in {$duration} seconds!");
-        $this->table(
-            ['Metric', 'Count'],
+        $results = $batchService->process(
             [
-                ['Total Records Processed', number_format($processed)],
-                ['Completed Records (Full Master Hours)', number_format($completedCount)],
-                ['Partial Progress Records (Proportional Hours)', number_format($partialCount)],
-                ['Zero Progress Records (0.0 Hours)', number_format($zeroCount)],
-                ['Orphan / Invalid Records (NULL Hours)', number_format($orphanCount)],
+                'chunk_size'  => $chunkSize,
+                'dry_run'     => $isDryRun,
+                'force'       => $force,
+                'user_id'     => $userId,
+                'content_id'  => $contentId,
+                'max_records' => $limit,
+            ],
+            function (int $batchNumber, int $processedInBatch, int $totalProcessed, array $stats) use (&$lastLoggedBatch) {
+                if ($batchNumber <= 5 || $batchNumber % 10 === 0) {
+                    $this->line(sprintf(
+                        'Batch #%d processed: %d records (Total: %d | Updated: %d | Skipped: %d | Fallback: %d | Zero: %d)',
+                        $batchNumber,
+                        $processedInBatch,
+                        $totalProcessed,
+                        $stats['updated'],
+                        $stats['skipped'],
+                        $stats['historical_fallback'],
+                        $stats['zero']
+                    ));
+                    $lastLoggedBatch = $batchNumber;
+                }
+            }
+        );
+
+        if ($results['batch_count'] > $lastLoggedBatch) {
+            $this->line(sprintf('Final Batch #%d completed.', $results['batch_count']));
+        }
+
+        // Show sample table (especially helpful in dry-run)
+        if (!empty($results['samples'])) {
+            $this->newLine();
+            $this->info('SAMPLE CALCULATED RECORDS (Max 10):');
+            $sampleRows = [];
+            foreach ($results['samples'] as $s) {
+                $sampleRows[] = [
+                    $s['id'],
+                    $s['current_time'] . 's',
+                    $s['finish'],
+                    $s['progress'] . '%',
+                    $s['existing_hour'] !== null ? number_format((float) $s['existing_hour'], 4, '.', '') . ' h' : 'NULL',
+                    number_format((float) $s['calculated_hour'], 4, '.', '') . ' h',
+                    $s['rule'],
+                ];
+            }
+            $this->table(
+                ['ID', 'Current Time', 'Finish', 'Progress', 'Existing LH', 'Calculated LH', 'Rule Applied'],
+                $sampleRows
+            );
+        }
+
+        $this->newLine();
+        $this->info('======================================================================');
+        $this->info(' BATCH EXECUTION SUMMARY');
+        $this->info('======================================================================');
+        $this->table(
+            ['Metric', 'Value'],
+            [
+                ['Total Scanned', number_format($results['total_scanned'])],
+                ['Total Updated', number_format($results['total_updated'])],
+                ['Total Skipped (Already Matching)', number_format($results['total_skipped'])],
+                ['Historical Fallback Records', number_format($results['total_historical_fallback'])],
+                ['Zero / Unfinished Records', number_format($results['total_zero'])],
+                ['Missing Content Records', number_format($results['total_missing_content'])],
+                ['Concurrency Skipped', number_format($results['total_concurrent_changed'])],
+                ['Failed Records', number_format($results['total_failed'])],
+                ['Total Batches', number_format($results['total_batches'])],
+                ['Execution Time', $results['duration_seconds'] . 's'],
+                ['Peak Memory', $results['peak_memory_mb'] . ' MB'],
+                ['Mode', $isDryRun ? 'DRY RUN (No DB changes)' : 'LIVE (Changes applied)'],
             ]
         );
 

@@ -19,9 +19,11 @@ class ContentUserLearningHourManagementService
     public function __construct(
         protected LearningHourConverterService $converter,
         protected DurationParserService $parser,
-        protected ?LearningHourService $learningHourService = null
+        protected ?LearningHourService $learningHourService = null,
+        protected ?ActualLearningHourCalculator $calculator = null
     ) {
         $this->learningHourService ??= new LearningHourService();
+        $this->calculator ??= app(ActualLearningHourCalculator::class);
     }
 
     /**
@@ -70,29 +72,14 @@ class ContentUserLearningHourManagementService
         }
 
         $content = $contentUser->content;
-        $masterHours = $content->learning_hours !== null
-            ? (float) $content->learning_hours
-            : $this->calculateFromDuration($content->duration);
+        $contentDuration = $content?->duration ?? $contentUser->duration_seconds;
 
-        if ($masterHours === null) {
-            return [
-                'success' => false,
-                'updated' => false,
-                'learning_hours' => null,
-                'message' => 'Cannot determine master learning hours from content.',
-            ];
-        }
-
-        $progress = (int) ($contentUser->progress ?? 0);
-        $isFinished = $contentUser->isFinished();
-
-        if ($isFinished) {
-            $userHours = (float) $masterHours;
-        } elseif ($progress > 0) {
-            $userHours = round((float) $masterHours * ($progress / 100), 1);
-        } else {
-            $userHours = 0.0;
-        }
+        $userHours = $this->calculator->calculateFromTracking(
+            $contentUser->current_time,
+            $contentUser->finish,
+            $contentUser->progress,
+            $contentDuration
+        );
 
         if (!$force && $contentUser->learning_hours !== null && abs((float) $contentUser->learning_hours - $userHours) < 0.0001) {
             return [
@@ -107,6 +94,7 @@ class ContentUserLearningHourManagementService
             'learning_hours' => $userHours,
         ];
 
+        $isFinished = $contentUser->isFinished();
         if ($isFinished && $contentUser->completed_at === null) {
             $updateData['completed_at'] = now();
         }
@@ -408,44 +396,50 @@ class ContentUserLearningHourManagementService
             $lastId = $item->id;
             $chunkProcessed++;
 
-            if (!$item->content || empty($item->content->duration)) {
-                $chunkFailed++;
-                continue;
-            }
-
-            $masterHours = $item->content->learning_hours !== null
-                ? (float) $item->content->learning_hours
-                : $this->calculateFromDuration($item->content->duration);
-
-            if ($masterHours === null) {
-                $chunkFailed++;
-                continue;
-            }
-
-            $progress = (int) ($item->progress ?? 0);
+            $contentDuration = $item->content?->duration ?? $item->duration_seconds;
+            $currTime = (int) ($item->current_time ?? 0);
             $isFinished = $item->isFinished();
 
-            if ($isFinished) {
-                $userHours = (float) $masterHours;
-                if ($item->completed_at === null) {
-                    $completedIds[] = $item->id;
-                }
-            } elseif ($progress > 0) {
-                $userHours = round((float) $masterHours * ($progress / 100), 1);
-            } else {
-                $userHours = 0.0;
+            if ($currTime <= 0 && $isFinished && empty($contentDuration)) {
+                $chunkFailed++;
+                continue;
             }
 
-            $groups[(string) $userHours][] = $item->id;
+            $userHours = $this->calculator->calculateFromTracking(
+                $item->current_time,
+                $item->finish,
+                $item->progress,
+                $contentDuration
+            );
+
+            if ($isFinished && $item->completed_at === null) {
+                $completedIds[] = $item->id;
+            }
+
+            $key = number_format($userHours, 4, '.', '') . '|' . $currTime;
+            if (!isset($groups[$key])) {
+                $groups[$key] = [
+                    'hour' => $userHours,
+                    'snapshot_time' => $currTime,
+                    'ids' => [],
+                ];
+            }
+            $groups[$key]['ids'][] = $item->id;
         }
 
         DB::beginTransaction();
         try {
-            foreach ($groups as $hoursVal => $ids) {
-                DB::table('content_users')->whereIn('id', $ids)->update(['learning_hours' => (float) $hoursVal]);
+            foreach ($groups as $group) {
+                DB::table('content_users')
+                    ->whereIn('id', $group['ids'])
+                    ->where('current_time', $group['snapshot_time'])
+                    ->update(['learning_hours' => $group['hour']]);
             }
             if (!empty($completedIds)) {
-                DB::table('content_users')->whereIn('id', $completedIds)->whereNull('completed_at')->update(['completed_at' => now()]);
+                DB::table('content_users')
+                    ->whereIn('id', $completedIds)
+                    ->whereNull('completed_at')
+                    ->update(['completed_at' => DB::raw('COALESCE(updated_at, created_at, NOW())')]);
             }
             DB::commit();
         } catch (\Throwable $e) {
@@ -689,17 +683,15 @@ class ContentUserLearningHourManagementService
     }
 
     /**
-     * Format learning hours float for human-readable display.
-     * E.g. 0.5 -> "0.5 hour", 1.0 -> "1 hour", 1.5 -> "1.5 hours".
+     * Format learning hours float for human-readable display with exact 4 decimal precision.
+     * E.g. 0.3417 -> "0.3417 h", 0.0 -> "0.0000 h".
      */
     public function formatHours(?float $hours): string
     {
-        if ($hours === null || $hours <= 0) {
+        if ($hours === null) {
             return '-';
         }
 
-        $label = rtrim(rtrim(number_format($hours, 1, '.', ''), '0'), '.');
-
-        return $label . ' ' . ($hours <= 1.0 ? 'hour' : 'hours');
+        return number_format($hours, 4, '.', '') . ' h';
     }
 }

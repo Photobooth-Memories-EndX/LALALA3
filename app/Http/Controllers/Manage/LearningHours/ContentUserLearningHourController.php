@@ -48,6 +48,11 @@ class ContentUserLearningHourController extends Controller
      */
     public function datatable(Request $request): JsonResponse
     {
+        // Safeguard pagination bounds against memory exhaustion
+        $length = min(100, max(1, (int) $request->input('length', 20)));
+        $start = max(0, (int) $request->input('start', 0));
+        $request->merge(['length' => $length, 'start' => $start]);
+
         if ($request->input('source') === 'playlist') {
             $query = $this->service->buildPlaylistDatatableQuery($request);
 
@@ -58,6 +63,7 @@ class ContentUserLearningHourController extends Controller
                 ->orderColumn('learning_hours_badge', 'playlist_content_users.learning_hour $1')
                 ->orderColumn('learning_hours', 'playlist_content_users.learning_hour $1')
                 ->orderColumn('learning_hour', 'playlist_content_users.learning_hour $1')
+                ->orderColumn('playlist_content_users.learning_hour', 'playlist_content_users.learning_hour $1')
                 ->orderColumn('progress_bar', 'playlist_content_users.progress $1')
                 ->orderColumn('progress', 'playlist_content_users.progress $1')
                 ->orderColumn('completed_at', 'playlist_content_users.completed_at $1')
@@ -172,9 +178,12 @@ class ContentUserLearningHourController extends Controller
             })
             ->orderColumn('learning_hours_badge', 'content_users.learning_hours $1')
             ->orderColumn('learning_hours', 'content_users.learning_hours $1')
+            ->orderColumn('content_users.learning_hours', 'content_users.learning_hours $1')
             ->orderColumn('progress_bar', 'content_users.progress $1')
             ->orderColumn('progress', 'content_users.progress $1')
+            ->orderColumn('content_users.progress', 'content_users.progress $1')
             ->orderColumn('completed_at', 'content_users.completed_at $1')
+            ->orderColumn('content_users.completed_at', 'content_users.completed_at $1')
             ->addColumn('checkbox', function (ContentUser $row) {
                 return '<input type="checkbox" class="form-check-input record-checkbox" value="' . $row->id . '">';
             })

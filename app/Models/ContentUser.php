@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\LearningHours\ActualLearningHourCalculator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -35,7 +36,7 @@ class ContentUser extends Model
         'current_time' => 'integer',
         'duration_seconds' => 'integer',
         'afk_duration_seconds' => 'integer',
-        'learning_hours' => 'decimal:1',
+        'learning_hours' => 'decimal:4',
         'completed_at' => 'datetime',
     ];
 
@@ -44,6 +45,10 @@ class ContentUser extends Model
         return (int) ($this->afk_duration_seconds ?? 0);
     }
 
+    /**
+     * Model boot hooks to ensure completed_at and learning_hours are updated safely
+     * WITHOUT executing any database queries (0 N+1).
+     */
     protected static function booted(): void
     {
         static::saving(function (ContentUser $contentUser) {
@@ -51,25 +56,23 @@ class ContentUser extends Model
                 $contentUser->completed_at = now();
             }
 
-            $content = $contentUser->relationLoaded('content') ? $contentUser->content : $contentUser->content()->first();
-            if ($content) {
-                $masterHours = $content->learning_hours;
-                if ($masterHours === null && !empty($content->duration)) {
-                    $masterHours = app(\App\Services\Learning\LearningHourService::class)->calculate($content->duration);
-                }
+            // Calculate actual learning_hours without executing any database query.
+            // Content duration is read from loaded relation or the record's duration_seconds column.
+            // If relation is not loaded, NEVER call $contentUser->content()->first() to prevent N+1.
+            $contentDuration = null;
+            if ($contentUser->relationLoaded('content')) {
+                $contentDuration = $contentUser->content?->duration;
+            }
+            $contentDuration = $contentDuration ?? $contentUser->duration_seconds;
 
-                if ($masterHours !== null) {
-                    $masterFloat = (float) $masterHours;
-                    $progress = (int) ($contentUser->progress ?? 0);
-
-                    if ($contentUser->isFinished()) {
-                        $contentUser->learning_hours = $masterFloat;
-                    } elseif ($progress > 0) {
-                        $contentUser->learning_hours = round($masterFloat * ($progress / 100), 1);
-                    } else {
-                        $contentUser->learning_hours = 0.0;
-                    }
-                }
+            if ((int) $contentUser->current_time > 0 || $contentDuration !== null || !$contentUser->isFinished()) {
+                $calculator = app(ActualLearningHourCalculator::class);
+                $contentUser->learning_hours = $calculator->calculateFromTracking(
+                    $contentUser->current_time,
+                    $contentUser->finish,
+                    $contentUser->progress,
+                    $contentDuration
+                );
             }
         });
     }

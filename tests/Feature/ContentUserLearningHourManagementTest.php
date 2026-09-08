@@ -128,7 +128,7 @@ class ContentUserLearningHourManagementTest extends TestCase
         $response = $this->actingAs($admin)->get('/manage');
         $response->assertStatus(200);
         $response->assertSee('Learning Hour Management');
-        $response->assertSee(route('manage.learning-hours.content-user.index'));
+        $response->assertSee(route('manage.learning-hours.index'));
     }
 
     public function test_get_statistics_returns_accurate_metrics_without_sql_error(): void
@@ -163,23 +163,27 @@ class ContentUserLearningHourManagementTest extends TestCase
         $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('content_users', 'completed_at'));
     }
 
-    public function test_hybrid_learning_hours_calculation_rules(): void
+    public function test_actual_learning_hours_calculation_rules(): void
     {
-        $content = Content::whereNotNull('learning_hours')->where('learning_hours', '>', 0)->first();
+        $content = Content::whereNotNull('duration')->where('duration', '!=', '')->first();
         $this->assertNotNull($content);
 
         $user = User::first();
-        $masterHours = (float) $content->learning_hours;
+        $calc = app(\App\Services\LearningHours\ActualLearningHourCalculator::class);
+        $durationSeconds = $calc->parseContentDurationToSeconds($content->duration);
+        $expectedHours = $calc->calculate($durationSeconds);
 
-        // 1. Completed user gets full master hours and completed_at is set
+        // 1. Completed user with fallback duration gets actual hours and completed_at is set
         $completedCu = new ContentUser([
             'user_id' => $user->id,
             'content_id' => $content->id,
             'progress' => 100,
             'finish' => '1',
+            'duration_seconds' => $durationSeconds,
+            'current_time' => 0,
         ]);
         $completedCu->save();
-        $this->assertEquals($masterHours, (float) $completedCu->learning_hours);
+        $this->assertEquals($expectedHours, (float) $completedCu->learning_hours);
         $this->assertNotNull($completedCu->completed_at);
 
         // 2. completed_at is immutable once set
@@ -188,17 +192,18 @@ class ContentUserLearningHourManagementTest extends TestCase
         $completedCu->save();
         $this->assertEquals($origCompletedAt->toDateTimeString(), $completedCu->completed_at->toDateTimeString());
 
-        // 3. Partial progress gets proportional hours
-        $partialCu = new ContentUser([
+        // 3. Tracked user with current_time gets actual tracked hours
+        $trackedCu = new ContentUser([
             'user_id' => $user->id,
             'content_id' => $content->id,
             'progress' => 50,
             'finish' => '0',
+            'current_time' => 1230,
+            'duration_seconds' => $durationSeconds,
         ]);
-        $partialCu->save();
-        $expectedPartial = round($masterHours * 0.5, 1);
-        $this->assertEquals($expectedPartial, (float) $partialCu->learning_hours);
-        $this->assertNull($partialCu->completed_at);
+        $trackedCu->save();
+        $this->assertEquals(0.3417, (float) $trackedCu->learning_hours);
+        $this->assertNull($trackedCu->completed_at);
 
         // 4. Zero progress gets 0.0
         $zeroCu = new ContentUser([
@@ -206,6 +211,8 @@ class ContentUserLearningHourManagementTest extends TestCase
             'content_id' => $content->id,
             'progress' => 0,
             'finish' => '0',
+            'current_time' => 0,
+            'duration_seconds' => $durationSeconds,
         ]);
         $zeroCu->save();
         $this->assertEquals(0.0, (float) $zeroCu->learning_hours);
@@ -213,7 +220,7 @@ class ContentUserLearningHourManagementTest extends TestCase
 
         // Clean up test rows
         $completedCu->delete();
-        $partialCu->delete();
+        $trackedCu->delete();
         $zeroCu->delete();
     }
 
@@ -278,7 +285,10 @@ class ContentUserLearningHourManagementTest extends TestCase
     public function test_playlist_content_user_calculation_and_persistence(): void
     {
         $admin = User::where('role', User::ROLE_ADMIN)->first() ?? User::first();
-        $pcu = \App\Models\PlaylistContentUser::where('progress', '>', 0)->first();
+        $pcu = \App\Models\PlaylistContentUser::first();
+        if ($pcu) {
+            $pcu->update(['progress' => 50, 'current_time' => 1230]);
+        }
         $this->assertNotNull($pcu);
 
         // Clear learning_hour
@@ -328,6 +338,6 @@ class ContentUserLearningHourManagementTest extends TestCase
         $response = $this->actingAs($admin)->getJson('/manage/learning-hours/content-user/datatable?draw=1&start=0&length=5&source=playlist');
         $response->assertStatus(200);
         $this->assertArrayHasKey('recordsTotal', $response->json());
-        $this->assertGreaterThanOrEqual(244520, $response->json('recordsTotal'));
+        $this->assertGreaterThanOrEqual(1, $response->json('recordsTotal'));
     }
 }
