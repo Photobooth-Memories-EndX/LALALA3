@@ -94,9 +94,9 @@
             @method('DELETE')
 
             <button
-                type="submit"
-                class="dropdown-item dropdown-delete"
-                onclick="return confirm('Delete this assessment ?')">
+                type="button"
+                class="dropdown-item dropdown-delete btn-trigger-delete-assessment"
+                data-title="{{ $list->title }}">
 
                 <i class="fas fa-trash-alt text-danger"></i>
                 <span>Delete Assessment</span>

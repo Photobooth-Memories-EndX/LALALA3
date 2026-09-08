@@ -212,11 +212,46 @@
 
         .form-control:disabled,
         .form-select:disabled,
-        .form-check-input:disabled {
+        .form-check-input:disabled:not(:checked),
+        .form-check-input[disabled]:not(:checked) {
             background-color: var(--tblr-bg-surface-secondary, #f8fafc) !important;
             color: var(--tblr-muted, #64748b) !important;
             cursor: not-allowed !important;
-            opacity: 0.9 !important;
+            opacity: 0.85 !important;
+        }
+
+        .form-check-input:disabled:checked,
+        .form-check-input[disabled]:checked {
+            background-color: var(--tblr-primary, #206bc4) !important;
+            border-color: var(--tblr-primary, #206bc4) !important;
+            opacity: 0.7 !important;
+            cursor: not-allowed !important;
+        }
+
+        .cursor-not-allowed {
+            cursor: not-allowed !important;
+        }
+
+        [data-bs-theme="dark"] .form-control:disabled,
+        [data-bs-theme="dark"] .form-select:disabled,
+        [data-bs-theme="dark"] .form-check-input:disabled:not(:checked),
+        [data-bs-theme="dark"] .form-check-input[disabled]:not(:checked),
+        body.dark-mode .form-control:disabled,
+        body.dark-mode .form-select:disabled,
+        body.dark-mode .form-check-input:disabled:not(:checked),
+        body.dark-mode .form-check-input[disabled]:not(:checked) {
+            background-color: rgba(255, 255, 255, .06) !important;
+            border-color: rgba(255, 255, 255, .16) !important;
+            color: rgba(255, 255, 255, .5) !important;
+        }
+
+        [data-bs-theme="dark"] .form-check-input:disabled:checked,
+        [data-bs-theme="dark"] .form-check-input[disabled]:checked,
+        body.dark-mode .form-check-input:disabled:checked,
+        body.dark-mode .form-check-input[disabled]:checked {
+            background-color: var(--tblr-primary, #206bc4) !important;
+            border-color: var(--tblr-primary, #206bc4) !important;
+            opacity: 0.7 !important;
         }
     </style>
 @endsection

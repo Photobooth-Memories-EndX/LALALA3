@@ -769,6 +769,119 @@
             $('#btnCancelBulkDuplicate').prop('disabled', false).text('Cancel');
         });
 
+        // =========================================================================
+        // Delete Assessment Confirmation Modal UI (Replaces native confirm())
+        // Forwards to existing delete form mechanism without new delete functions
+        // =========================================================================
+        let activeDeleteAssessmentForm = null;
+        const deleteAssessmentModalEl = document.getElementById('deleteAssessmentModal');
+        const deleteAssessmentTitleEl = document.getElementById('deleteAssessmentItemTitle');
+        const deleteAssessmentTitleContainer = document.getElementById('deleteAssessmentItemNameContainer');
+        const btnConfirmDeleteAssessment = document.getElementById('btnConfirmDeleteAssessment');
+        const btnConfirmDeleteAssessmentText = document.getElementById('btnConfirmDeleteAssessmentText');
+        const btnConfirmDeleteAssessmentIcon = document.getElementById('btnConfirmDeleteAssessmentIcon');
+        const btnCancelDeleteAssessment = document.getElementById('btnCancelDeleteAssessment');
+
+        function showDeleteAssessmentModal() {
+            if (!deleteAssessmentModalEl) return;
+
+            if (
+                window.bootstrap &&
+                window.bootstrap.Modal &&
+                typeof window.bootstrap.Modal.getOrCreateInstance === 'function'
+            ) {
+                window.bootstrap.Modal.getOrCreateInstance(deleteAssessmentModalEl).show();
+                return;
+            }
+
+            if (
+                window.bootstrap &&
+                typeof window.bootstrap.Modal === 'function'
+            ) {
+                new window.bootstrap.Modal(deleteAssessmentModalEl).show();
+                return;
+            }
+
+            if (
+                typeof $ !== 'undefined' &&
+                $.fn &&
+                typeof $.fn.modal === 'function'
+            ) {
+                $(deleteAssessmentModalEl).modal('show');
+                return;
+            }
+
+            // Fallback
+            deleteAssessmentModalEl.style.display = 'block';
+            deleteAssessmentModalEl.classList.add('show');
+        }
+
+        // Delegated click handler for row delete buttons (works across pagination & filters)
+        $(document).on('click', '.btn-trigger-delete-assessment', function (e) {
+            e.preventDefault();
+            activeDeleteAssessmentForm = this.closest('form');
+
+            const title = this.getAttribute('data-title') || '';
+            if (deleteAssessmentTitleEl && deleteAssessmentTitleContainer) {
+                if (title.trim()) {
+                    deleteAssessmentTitleEl.textContent = title;
+                    deleteAssessmentTitleContainer.style.display = 'block';
+                } else {
+                    deleteAssessmentTitleContainer.style.display = 'none';
+                }
+            }
+
+            // Reset confirmation button state
+            if (btnConfirmDeleteAssessment) {
+                btnConfirmDeleteAssessment.disabled = false;
+            }
+            if (btnConfirmDeleteAssessmentText) {
+                btnConfirmDeleteAssessmentText.textContent = 'Delete';
+            }
+            if (btnConfirmDeleteAssessmentIcon) {
+                btnConfirmDeleteAssessmentIcon.className = 'ti ti-trash me-1';
+            }
+            if (btnCancelDeleteAssessment) {
+                btnCancelDeleteAssessment.disabled = false;
+            }
+
+            showDeleteAssessmentModal();
+        });
+
+        // Reset active form on modal close/dismiss
+        if (deleteAssessmentModalEl) {
+            $(deleteAssessmentModalEl).on('hidden.bs.modal', function () {
+                activeDeleteAssessmentForm = null;
+            });
+        }
+        if (btnCancelDeleteAssessment) {
+            btnCancelDeleteAssessment.addEventListener('click', function () {
+                activeDeleteAssessmentForm = null;
+            });
+        }
+
+        // Confirm button: submit existing delete form
+        if (btnConfirmDeleteAssessment) {
+            btnConfirmDeleteAssessment.addEventListener('click', function () {
+                if (!activeDeleteAssessmentForm) return;
+
+                // Double submit protection
+                btnConfirmDeleteAssessment.disabled = true;
+                if (btnConfirmDeleteAssessmentText) {
+                    btnConfirmDeleteAssessmentText.textContent = 'Deleting...';
+                }
+                if (btnConfirmDeleteAssessmentIcon) {
+                    btnConfirmDeleteAssessmentIcon.className = 'spinner-border spinner-border-sm me-1';
+                }
+                if (btnCancelDeleteAssessment) {
+                    btnCancelDeleteAssessment.disabled = true;
+                }
+
+                // Submit the active existing delete form directly
+                activeDeleteAssessmentForm.submit();
+            });
+        }
+
     });
 
     function copyAssessmentLink(text, button) {

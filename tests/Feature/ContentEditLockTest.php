@@ -303,4 +303,181 @@ class ContentEditLockTest extends TestCase
             'status' => 422,
         ]);
     }
+
+    public function test_only_show_on_playlist_checkbox_unpublished_and_true_is_checked_and_enabled(): void
+    {
+        $content = Content::create([
+            'title'             => 'Unpublished Playlist Only Content',
+            'type'              => 'Document',
+            'active'            => 'Inactive',
+            'classification_id' => $this->classification->id,
+            'playlistonly'      => 'Y',
+        ]);
+
+        $response = $this->get(route('content.edit', $content->slug));
+        $response->assertOk();
+
+        $contentHtml = $response->getContent();
+        // Checkbox must have checked and must NOT have disabled
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*name="playlistonly"[^>]*id="playlistonly"[^>]*checked/i',
+            $contentHtml
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<input[^>]*name="playlistonly"[^>]*id="playlistonly"[^>]*disabled/i',
+            $contentHtml
+        );
+    }
+
+    public function test_only_show_on_playlist_checkbox_published_and_true_is_checked_and_disabled(): void
+    {
+        $content = Content::create([
+            'title'             => 'Published Playlist Only Content',
+            'type'              => 'Document',
+            'active'            => 'Active',
+            'classification_id' => $this->classification->id,
+            'playlistonly'      => 'Y',
+        ]);
+
+        $response = $this->get(route('content.edit', $content->slug));
+        $response->assertOk();
+
+        $contentHtml = $response->getContent();
+        // Checkbox must have BOTH checked AND disabled
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*name="playlistonly"[^>]*id="playlistonly"[^>]*checked[^>]*disabled/i',
+            $contentHtml
+        );
+    }
+
+    public function test_only_show_on_playlist_checkbox_unpublished_and_false_is_unchecked_and_enabled(): void
+    {
+        $content = Content::create([
+            'title'             => 'Unpublished General Content',
+            'type'              => 'Document',
+            'active'            => 'Inactive',
+            'classification_id' => $this->classification->id,
+            'playlistonly'      => 'N',
+        ]);
+
+        $response = $this->get(route('content.edit', $content->slug));
+        $response->assertOk();
+
+        $contentHtml = $response->getContent();
+        // Checkbox must NOT have checked and must NOT have disabled
+        $this->assertDoesNotMatchRegularExpression(
+            '/<input[^>]*name="playlistonly"[^>]*id="playlistonly"[^>]*checked/i',
+            $contentHtml
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<input[^>]*name="playlistonly"[^>]*id="playlistonly"[^>]*disabled/i',
+            $contentHtml
+        );
+    }
+
+    public function test_only_show_on_playlist_checkbox_published_and_false_is_unchecked_and_disabled(): void
+    {
+        $content = Content::create([
+            'title'             => 'Published General Content',
+            'type'              => 'Document',
+            'active'            => 'Active',
+            'classification_id' => $this->classification->id,
+            'playlistonly'      => 'N',
+        ]);
+
+        $response = $this->get(route('content.edit', $content->slug));
+        $response->assertOk();
+
+        $contentHtml = $response->getContent();
+        // Checkbox must NOT have checked, but MUST have disabled
+        $this->assertDoesNotMatchRegularExpression(
+            '/<input[^>]*name="playlistonly"[^>]*id="playlistonly"[^>]*checked/i',
+            $contentHtml
+        );
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*name="playlistonly"[^>]*id="playlistonly"[^>]*disabled/i',
+            $contentHtml
+        );
+    }
+
+    public function test_unpublish_flow_preserves_playlistonly_value_and_makes_checkbox_editable(): void
+    {
+        $content = Content::create([
+            'title'             => 'Content to Unpublish Preserving Playlist Only',
+            'type'              => 'Document',
+            'active'            => 'Active',
+            'classification_id' => $this->classification->id,
+            'playlistonly'      => 'Y',
+        ]);
+
+        // Unpublish the content
+        $unpublishResponse = $this->put(route('content.update', $content->slug), [
+            'contentid' => $content->id,
+            'action'    => 'unpublish',
+        ]);
+        $unpublishResponse->assertRedirect(route('content.edit', $content->slug));
+
+        $content->refresh();
+        $this->assertSame('Inactive', $content->active);
+        $this->assertSame('Y', $content->playlistonly);
+
+        // Edit page now shows checked AND enabled
+        $editResponse = $this->get(route('content.edit', $content->slug));
+        $editResponse->assertOk();
+
+        $contentHtml = $editResponse->getContent();
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*name="playlistonly"[^>]*id="playlistonly"[^>]*checked/i',
+            $contentHtml
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<input[^>]*name="playlistonly"[^>]*id="playlistonly"[^>]*disabled/i',
+            $contentHtml
+        );
+    }
+
+    public function test_save_unpublished_content_updates_and_preserves_playlistonly(): void
+    {
+        $content = Content::create([
+            'title'             => 'Editable Draft Content',
+            'type'              => 'Document',
+            'active'            => 'Inactive',
+            'classification_id' => $this->classification->id,
+            'author'            => 'Test Author',
+            'description'       => 'Test Description',
+            'playlistonly'      => 'N',
+        ]);
+
+        // Save with playlistonly = Y
+        $response1 = $this->put(route('content.update', $content->slug), [
+            'contentid'      => $content->id,
+            'title'          => 'Editable Draft Content',
+            'author'         => 'Test Author',
+            'classification' => $this->classification->id,
+            'type'           => 'Document',
+            'total_page'     => 10,
+            'description'    => 'Test Description',
+            'playlistonly'   => 'Y',
+            'action'         => 'update',
+        ]);
+        $response1->assertRedirect();
+        $content->refresh();
+        $this->assertSame('Y', $content->playlistonly);
+
+        // Save with playlistonly = N
+        $response2 = $this->put(route('content.update', $content->slug), [
+            'contentid'      => $content->id,
+            'title'          => 'Editable Draft Content',
+            'author'         => 'Test Author',
+            'classification' => $this->classification->id,
+            'type'           => 'Document',
+            'total_page'     => 10,
+            'description'    => 'Test Description',
+            'playlistonly'   => 'N',
+            'action'         => 'update',
+        ]);
+        $response2->assertRedirect();
+        $content->refresh();
+        $this->assertSame('N', $content->playlistonly);
+    }
 }

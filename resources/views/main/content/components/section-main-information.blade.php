@@ -78,10 +78,10 @@
 
             {{-- 5. Only Show on Playlist --}}
             <div class="col-12">
-                <label class="form-check cursor-pointer">
-                    <input type="hidden" name="playlistonly" value="N">
-                    <input class="form-check-input" type="checkbox" name="playlistonly" value="Y"
-                        @checked(old('playlistonly', $content->playlistonly ?? '') === 'Y')
+                <label class="form-check {{ $isLocked ? 'cursor-not-allowed' : 'cursor-pointer' }}" for="playlistonly">
+                    <input type="hidden" name="playlistonly" value="N" {{ $isLocked ? 'disabled' : '' }}>
+                    <input class="form-check-input" type="checkbox" name="playlistonly" id="playlistonly" value="Y"
+                        @checked(in_array(old('playlistonly', $content->playlistonly ?? 'N'), ['Y', '1', 1, true, 'yes', 'Yes'], true))
                         {{ $isLocked ? 'disabled' : '' }}>
                     <span class="form-check-label">Only show on Playlist</span>
                 </label>
