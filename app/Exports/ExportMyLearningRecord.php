@@ -45,12 +45,17 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         $playlists = $this->completedPlaylists((int) $user->id);
         $certificate = $this->certificateContext($user, $eligibilityService);
         $contentUsersById = $contentUsers->keyBy('content_id');
+        $playlistStartDates = \App\Models\PlaylistContentUser::where('user_id', (int) $user->id)
+            ->whereIn('trainingplan_id', $playlists->pluck('id'))
+            ->groupBy('trainingplan_id')
+            ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
+            ->pluck('min_created', 'trainingplan_id');
 
         $contentRows = $contentUsers->map(fn (ContentUser $cu) => $this->contentRow($cu, $certificate, $hours));
         $contentRowsById = $contentUsers->mapWithKeys(
             fn (ContentUser $cu, int $index) => [(int) $cu->content_id => $contentRows->get($index)]
         );
-        $playlistRows = $playlists->map(fn (TrainingPlan $plan) => $this->playlistRows($plan, $contentUsersById, $certificate, $hours));
+        $playlistRows = $playlists->map(fn (TrainingPlan $plan) => $this->playlistRows($plan, $contentUsersById, $certificate, $hours, $playlistStartDates));
 
         $this->rows = $this->applyFilters($contentRows->concat($playlistRows)->values());
         $output = [$this->headings()];
@@ -236,7 +241,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             'learning_hour'       => $hours->value($learningHoursVal),
             'progress'            => (int) ($cu->progress ?? 0) . '%',
             'start_date'          => optional($cu->created_at)->format('Y-m-d H:i') ?? '',
-            'finish_date'         => (int) $cu->finish === 1 ? (optional($cu->updated_at)->format('Y-m-d H:i') ?? '') : '',
+            'finish_date'         => (int) $cu->finish === 1 ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i') ?? '') : '',
             'score'               => $result?->score() ?? '',
             'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',
             'date'                => $cu->updated_at,
@@ -248,7 +253,13 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         ];
     }
 
-    private function playlistRows(TrainingPlan $plan, Collection $contentUsers, array $cert, LearningHourService $hours): array
+    private function playlistRows(
+        TrainingPlan $plan,
+        Collection $contentUsers,
+        array $cert,
+        LearningHourService $hours,
+        ?Collection $playlistStartDates = null
+    ): array
     {
         $seconds = (int) ($plan->total_duration_seconds ?? 0);
         $learningHoursVal = ($plan->learning_hours !== null && $plan->learning_hours !== '')
@@ -262,7 +273,11 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             ->map(fn (ContentUser $contentUser) => $this->contentRow($contentUser, $cert, $hours, true))
             ->values()
             ->all();
-        $startDate = collect($children)->pluck('start_date')->filter()->min();
+
+        $rawStartDate = $playlistStartDates?->get($plan->id)
+            ?? collect($children)->pluck('start_date')->filter()->min()
+            ?? $plan->created_at;
+        $startDate = $rawStartDate ? Carbon::parse($rawStartDate)->format('Y-m-d H:i') : '';
 
         return [
             'category'            => 'Playlist',
@@ -272,7 +287,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             'duration'            => DurationFormatter::fromSeconds($seconds),
             'learning_hour'       => $hours->value($learningHoursVal),
             'progress'            => '100%',
-            'start_date'          => $startDate ?? '',
+            'start_date'          => $startDate,
             'finish_date'         => $plan->last_finished_at ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i') : '',
             'score'               => $result?->score() ?? '',
             'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',

@@ -45,6 +45,7 @@ class LearningOngoingContentTest extends TestCase
             'duration' => '00:10:00',
             'learning_hours' => 1.0,
             'has_deadline' => false,
+            'active' => 'Active',
         ]);
     }
 
@@ -157,9 +158,18 @@ class LearningOngoingContentTest extends TestCase
         $plan = TrainingPlan::create([
             'title' => 'User Ongoing Playlist',
             'total_duration_seconds' => 600,
+            'active' => 'Active',
         ]);
 
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $playlistContent->id, 'content_order' => 1]);
+
+        \App\Models\PlaylistContentUser::create([
+            'user_id' => $this->user->id,
+            'trainingplan_id' => $plan->id,
+            'content_id' => $playlistContent->id,
+            'progress' => 50,
+            'finish' => '0',
+        ]);
 
         $userPlaylists = $this->playlistService->userPlaylists($this->user->id);
         $playlistIds = $userPlaylists->pluck('id')->toArray();

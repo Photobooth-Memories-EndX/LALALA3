@@ -53,6 +53,11 @@ class LearningRecordController extends Controller
         $cert               = $this->certificateContext($eligibilityService);
         $playlistContents   = $this->playlistContentsData($completedPlaylists);
         $firstContentSlugs  = $playlistContents->map(fn ($items) => $items->first()?->slug);
+        $playlistStartDates = \App\Models\PlaylistContentUser::where('user_id', $userId)
+            ->whereIn('trainingplan_id', $completedPlaylists->pluck('id'))
+            ->groupBy('trainingplan_id')
+            ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
+            ->pluck('min_created', 'trainingplan_id');
 
         // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
         // berdasarkan record/completion terbaru (finish_date desc).
@@ -66,7 +71,8 @@ class LearningRecordController extends Controller
                 // (route playlist.user.view butuh pasangan slug playlist + content).
                 $firstContentSlugs,
                 $completedContents,
-                $playlistContents
+                $playlistContents,
+                $playlistStartDates
             )
         )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
         $rows = $this->applyRecordFilters($allRows);
@@ -504,7 +510,7 @@ class LearningRecordController extends Controller
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
                 'finish_date'     => (int) $cu->finish === 1
-                    ? (optional($cu->updated_at)->format('Y-m-d H:i:s') ?? '')
+                    ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
                     : '',
                 // Score & ambangnya dari CertificateEligibilityResult — angka
                 // yang sama dengan yang dipakai menentukan tombol Generate.
@@ -585,21 +591,24 @@ class LearningRecordController extends Controller
         array $cert,
         Collection $firstContentSlugs,
         Collection $contentUsers,
-        ?Collection $allPlaylistContents = null
+        ?Collection $allPlaylistContents = null,
+        ?Collection $playlistStartDates = null
     ): Collection
     {
         $allPlaylistContents = $allPlaylistContents ?? $this->playlistContentsData($playlists);
 
-        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents) {
+        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents, $playlistStartDates) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
             $eligible    = $eligibility?->eligible ?? false;
 
-            $startDate = $contentUsers
-                ->filter(fn (ContentUser $cu) => $cu->content->trainingPlans->contains('id', $plan->id))
-                ->pluck('created_at')
-                ->filter()
-                ->min();
+            $startDate = $playlistStartDates?->get($plan->id)
+                ?? $contentUsers
+                    ->filter(fn (ContentUser $cu) => $cu->content->trainingPlans->contains('id', $plan->id))
+                    ->pluck('created_at')
+                    ->filter()
+                    ->min()
+                ?? $plan->created_at;
             $finishDate = $plan->last_finished_at
                 ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i:s')
                 : '';
