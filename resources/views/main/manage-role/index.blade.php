@@ -164,5 +164,149 @@
         background-color: #0f172a !important;
         color: #f8fafc !important;
     }
+
+    /* Live Search Dropdown Styling & Dark Mode */
+    #role-search-results {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    #role-search-results .dropdown-item:hover,
+    #role-search-results .dropdown-item:focus {
+        background-color: rgba(15, 94, 156, .08);
+    }
+
+    #role-search-results .dropdown-item:not(:last-child) {
+        border-bottom: 1px solid rgba(0, 0, 0, .05);
+    }
+
+    [data-bs-theme="dark"] #role-search-results,
+    [data-theme="dark"] #role-search-results,
+    body.theme-dark #role-search-results {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    [data-bs-theme="dark"] #role-search-items,
+    [data-theme="dark"] #role-search-items,
+    body.theme-dark #role-search-items {
+        background-color: #1e293b !important;
+    }
+
+    [data-bs-theme="dark"] #role-see-all-results,
+    [data-theme="dark"] #role-see-all-results,
+    body.theme-dark #role-see-all-results {
+        background-color: #0f172a !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #38bdf8 !important;
+    }
+
+    [data-bs-theme="dark"] #role-search-results .dropdown-item,
+    [data-theme="dark"] #role-search-results .dropdown-item,
+    body.theme-dark #role-search-results .dropdown-item {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #role-search-results .dropdown-item .text-dark,
+    [data-theme="dark"] #role-search-results .dropdown-item .text-dark,
+    body.theme-dark #role-search-results .dropdown-item .text-dark {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #role-search-results .dropdown-item:not(:last-child),
+    [data-theme="dark"] #role-search-results .dropdown-item:not(:last-child),
+    body.theme-dark #role-search-results .dropdown-item:not(:last-child) {
+        border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    [data-bs-theme="dark"] #role-search-results .dropdown-item:hover,
+    [data-bs-theme="dark"] #role-search-results .dropdown-item:focus,
+    [data-theme="dark"] #role-search-results .dropdown-item:hover,
+    [data-theme="dark"] #role-search-results .dropdown-item:focus,
+    body.theme-dark #role-search-results .dropdown-item:hover,
+    body.theme-dark #role-search-results .dropdown-item:focus {
+        background-color: rgba(106, 174, 214, 0.16) !important;
+    }
 </style>
+@endsection
+
+@section('script')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('role-search-input');
+    const searchResultsDropdown = document.getElementById('role-search-results');
+    const searchItemsContainer = document.getElementById('role-search-items');
+    const seeAllResultsBtn = document.getElementById('role-see-all-results');
+    const searchKeywordText = document.getElementById('search-keyword-text');
+    let debounceTimer = null;
+
+    if (!searchInput || !searchResultsDropdown) return;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+
+        if (query.length === 0) {
+            searchResultsDropdown.classList.add('d-none');
+            searchResultsDropdown.style.display = 'none';
+            return;
+        }
+
+        if (searchKeywordText) {
+            searchKeywordText.textContent = query;
+        }
+
+        debounceTimer = setTimeout(() => {
+            fetch(`/manage/role/live-search?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    searchItemsContainer.innerHTML = '';
+
+                    if (data && data.length > 0) {
+                        data.forEach(user => {
+                            const item = document.createElement('a');
+                            item.className = 'dropdown-item d-flex align-items-center justify-content-between px-3 py-2 border-bottom';
+                            item.href = `/manage/role?q=${encodeURIComponent(user.name)}`;
+                            item.innerHTML = `
+                                <div class="text-truncate me-2" style="max-width: 280px;">
+                                    <strong class="d-block text-dark small text-truncate">${user.name}</strong>
+                                    <span class="text-muted extra-small d-block text-truncate" style="font-size: 0.75rem;">${user.id_emp || ''} - ${user.email || ''}</span>
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary rounded-pill extra-small px-2 py-1 flex-shrink-0">USER</span>
+                            `;
+                            searchItemsContainer.appendChild(item);
+                        });
+                    } else {
+                        searchItemsContainer.innerHTML = '<div class="px-3 py-2 text-muted small">No users found</div>';
+                    }
+
+                    searchResultsDropdown.classList.remove('d-none');
+                    searchResultsDropdown.style.display = 'block';
+                })
+                .catch(err => {
+                    console.error('Role Live Search Error:', err);
+                    searchResultsDropdown.classList.add('d-none');
+                    searchResultsDropdown.style.display = 'none';
+                });
+        }, 250);
+    });
+
+    if (seeAllResultsBtn) {
+        seeAllResultsBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (searchInput.form) {
+                searchInput.form.submit();
+            }
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        if (!searchInput.contains(e.target) && !searchResultsDropdown.contains(e.target)) {
+            searchResultsDropdown.classList.add('d-none');
+            searchResultsDropdown.style.display = 'none';
+        }
+    });
+});
+</script>
 @endsection

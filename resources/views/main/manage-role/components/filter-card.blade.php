@@ -41,12 +41,27 @@
                     </select>
                 </div>
 
-                <!-- 4. Search Input Box -->
+                <!-- 4. Live Search Input Box with Dropdown Popup -->
                 <div class="position-relative flex-grow-1 min-w-0">
-                    <input type="text" name="q" value="{{ request('q') ?? ($search ?? '') }}"
-                           class="form-control rounded-3"
-                           placeholder="Name, email, NIP..."
-                           autocomplete="off">
+                    <input type="text" id="role-search-input" name="q" value="{{ request('q') }}"
+                           class="form-control rounded-3" placeholder="Search by name, email, NIP..." autocomplete="off">
+
+                    <!-- Floating Dropdown Container -->
+                    <div id="role-search-results" class="dropdown-menu shadow-lg border rounded-3 w-100 p-0 mt-1 d-none overflow-hidden"
+                         style="position: absolute; top: 100%; left: 0; z-index: 9999; background-color: #ffffff;">
+
+                        <!-- 1. Scrollable Results Area -->
+                        <div id="role-search-items" class="py-1" style="max-height: 240px; overflow-y: auto;"></div>
+
+                        <!-- 2. Fixed Bottom Footer Link -->
+                        <div id="role-search-footer" class="border-top p-0 bg-light" style="position: sticky; bottom: 0; z-index: 10000;">
+                            <a href="javascript:void(0)" id="role-see-all-results"
+                               class="dropdown-item text-center fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-1"
+                               style="font-size: 0.85rem; background-color: #f8f9fa;">
+                                <i class="ti ti-search fs-3"></i> See all results for "<span id="search-keyword-text"></span>"
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 5. Action Buttons (Search, More Filters, Reset) -->

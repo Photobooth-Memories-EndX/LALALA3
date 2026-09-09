@@ -472,6 +472,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 */
 Route::group(['prefix' => 'manage/role', 'middleware' => ['auth', 'superadmin']], function () {
     Route::get('/', [ManageRoleController::class, 'index'])->name('manage.role.index');
+    Route::get('/live-search', [ManageRoleController::class, 'liveSearch'])->name('manage.role.live-search');
+    Route::get('/search-autocomplete', [ManageRoleController::class, 'liveSearch'])->name('manage.role.autocomplete');
+    Route::get('/autocomplete', [ManageRoleController::class, 'liveSearch']);
     Route::put('/{user}', [ManageRoleController::class, 'update'])->name('manage.role.update');
 });
 

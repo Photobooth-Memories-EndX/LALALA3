@@ -114,6 +114,28 @@ class ManageRoleController extends Controller
         ]);
     }
 
+    /**
+     * AJAX autocomplete live search for Manage Role.
+     */
+    public function liveSearch(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+        if ($q === '') {
+            return response()->json([]);
+        }
+
+        $users = User::query()
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'LIKE', "%{$q}%")
+                      ->orWhere('email', 'LIKE', "%{$q}%")
+                      ->orWhere('id_emp', 'LIKE', "%{$q}%");
+            })
+            ->limit(8)
+            ->get(['id', 'name', 'email', 'id_emp']);
+
+        return response()->json($users);
+    }
+
    public function update(Request $request, User $user)
 {
     $request->validate([
