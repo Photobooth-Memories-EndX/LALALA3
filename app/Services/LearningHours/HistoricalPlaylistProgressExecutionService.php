@@ -91,8 +91,8 @@ class HistoricalPlaylistProgressExecutionService
         ?int $userId = null
     ): array {
         // 1. Concurrency Check
-        $active = $this->getActiveExecution();
-        if ($active !== null) {
+        $running = $this->getRunningExecution();
+        if ($running !== null) {
             throw new \RuntimeException('Migration is currently in progress.');
         }
 
@@ -106,13 +106,16 @@ class HistoricalPlaylistProgressExecutionService
             $oldPlaylistIds = $scope['old_playlist_ids'];
             $playlistTitles = $scope['playlist_titles'];
 
-            // 3. Get candidate statistics matching dry run
-            $summary = $this->dryRunService->getSummaryMetrics($cutoff, $playlistId);
+            // 3. Get candidate statistics matching dry run (fresh to guarantee accurate up-to-date counts)
+            $summary = $this->dryRunService->getSummaryMetrics($cutoff, $playlistId, fresh: true);
             $totalCandidates = (int) ($summary['total_candidates'] ?? 0);
             $candidateAlreadyExists = (int) ($summary['skipped_existing_count'] ?? 0);
             $toInsertCount = (int) ($summary['to_insert_count'] ?? 0);
 
             $executionId = 'historical-playlist-progress-' . Str::uuid();
+
+            $isAlreadyCompleted = ($totalCandidates > 0 && $toInsertCount === 0);
+            $isImmediatelyCompleted = ($totalCandidates === 0 || empty($oldPlaylistIds) || $isAlreadyCompleted);
 
             $metadata = [
                 'execution_id'             => $executionId,
@@ -124,23 +127,25 @@ class HistoricalPlaylistProgressExecutionService
                 'candidate_already_exists' => $candidateAlreadyExists,
                 'to_insert_count'          => $toInsertCount,
                 'chunk_size'               => $chunkSize,
-                'current_playlist_idx'     => 0,
+                'current_playlist_idx'     => $isAlreadyCompleted ? count($oldPlaylistIds) : 0,
                 'current_offset'           => 0,
                 'inserted_records'         => 0,
-                'skipped_records'          => 0,
+                'skipped_records'          => $isAlreadyCompleted ? $totalCandidates : 0,
+                'already_completed'        => $isAlreadyCompleted,
                 'started_at'               => now()->toIso8601String(),
-                'finished_at'              => null,
+                'finished_at'              => $isImmediatelyCompleted ? now()->toIso8601String() : null,
                 'last_error'               => null,
+                'message'                  => $isAlreadyCompleted
+                    ? "All historical playlist progress has already been migrated. " . number_format($totalCandidates) . " of " . number_format($totalCandidates) . " records are already present."
+                    : null,
             ];
-
-            $isImmediatelyCompleted = ($totalCandidates === 0 || empty($oldPlaylistIds));
 
             // 4. Create persistent execution batch
             $batch = LearningHourCalculationBatch::create([
                 'type'              => self::BATCH_TYPE,
                 'status'            => $isImmediatelyCompleted ? 'completed' : 'processing',
                 'total_records'     => $totalCandidates,
-                'processed_records' => 0,
+                'processed_records' => $isAlreadyCompleted ? $totalCandidates : 0,
                 'failed_records'    => 0,
                 'last_processed_id' => null,
                 'created_by'        => $userId,
@@ -318,6 +323,10 @@ class HistoricalPlaylistProgressExecutionService
                 $metadata['finished_at'] = now()->toIso8601String();
                 $this->releaseLock();
                 Cache::forget(self::ACTIVE_EXECUTION_CACHE_KEY);
+                $this->dryRunService->clearSummaryCache($metadata['cutoff'] ?? self::DEFAULT_CUTOFF, $metadata['playlist_id'] ?? null);
+                if (!empty($metadata['playlist_id'])) {
+                    $this->dryRunService->clearSummaryCache($metadata['cutoff'] ?? self::DEFAULT_CUTOFF, null);
+                }
 
                 Log::info('Historical playlist progress migration execution completed', [
                     'execution_id'      => $metadata['execution_id'] ?? null,
@@ -387,9 +396,40 @@ class HistoricalPlaylistProgressExecutionService
     }
 
     /**
-     * Get currently active running execution, if any.
+     * Get currently active running execution, or recently completed/failed execution within 15 minutes.
      */
     public function getActiveExecution(): ?array
+    {
+        $running = $this->getRunningExecution();
+        if ($running !== null) {
+            return $running;
+        }
+
+        $recentBatch = LearningHourCalculationBatch::where('type', self::BATCH_TYPE)
+            ->whereIn('status', ['completed', 'failed'])
+            ->where('updated_at', '>=', now()->subMinutes(15))
+            ->latest('id')
+            ->first();
+
+        if (!$recentBatch) {
+            return null;
+        }
+
+        $metadata = json_decode($recentBatch->error_message ?? '{}', true) ?: [];
+        $isCompleted = ($recentBatch->status === 'completed');
+
+        $currentIdx = (int) ($metadata['current_playlist_idx'] ?? 0);
+        $playlistIds = $metadata['playlist_ids'] ?? [];
+        $currentPlaylistId = $playlistIds[$currentIdx] ?? null;
+        $currentPlaylistTitle = $currentPlaylistId ? ($metadata['playlist_titles'][$currentPlaylistId] ?? null) : null;
+
+        return $this->formatExecutionResponse($recentBatch, $metadata, $isCompleted, $currentPlaylistTitle);
+    }
+
+    /**
+     * Get currently processing execution batch, if any.
+     */
+    public function getRunningExecution(): ?array
     {
         $activeBatch = LearningHourCalculationBatch::where('type', self::BATCH_TYPE)
             ->where('status', 'processing')
@@ -444,7 +484,7 @@ class HistoricalPlaylistProgressExecutionService
      */
     public function isLocked(): bool
     {
-        return $this->getActiveExecution() !== null;
+        return $this->getRunningExecution() !== null;
     }
 
     /**
@@ -479,6 +519,10 @@ class HistoricalPlaylistProgressExecutionService
     ): array {
         $totalCandidates = (int) $batch->total_records;
         $processedRecords = (int) $batch->processed_records;
+        $chunkSize = max(1, (int) ($metadata['chunk_size'] ?? self::DEFAULT_CHUNK_SIZE));
+
+        $totalBatches = $totalCandidates > 0 ? (int) ceil($totalCandidates / $chunkSize) : 0;
+        $currentBatch = $chunkSize > 0 ? min($totalBatches, (int) ceil($processedRecords / $chunkSize)) : 0;
 
         $percentage = $totalCandidates > 0
             ? round(min(100.0, ($processedRecords / $totalCandidates) * 100), 1)
@@ -486,6 +530,7 @@ class HistoricalPlaylistProgressExecutionService
 
         if ($isCompleted) {
             $percentage = 100.0;
+            $currentBatch = $totalBatches;
         }
 
         $playlistIds = $metadata['playlist_ids'] ?? [];
@@ -497,17 +542,23 @@ class HistoricalPlaylistProgressExecutionService
             $durationSeconds = $batch->started_at->diffInSeconds($endTime);
         }
 
+        $alreadyCompleted = (bool) ($metadata['already_completed'] ?? false);
+
         return [
             'success'              => true,
             'execution_id'         => $metadata['execution_id'] ?? ('historical-playlist-progress-' . $batch->id),
             'batch_id'             => $batch->id,
             'status'               => $batch->status,
             'is_completed'         => $isCompleted,
+            'already_completed'    => $alreadyCompleted,
             'percentage'           => $percentage,
             'total_candidates'     => $totalCandidates,
             'processed_records'    => $processedRecords,
             'inserted_records'     => (int) ($metadata['inserted_records'] ?? 0),
             'skipped_records'      => (int) ($metadata['skipped_records'] ?? 0),
+            'batch_number'         => $currentBatch,
+            'total_batches'        => $totalBatches,
+            'chunk_size'           => $chunkSize,
             'cutoff'               => $metadata['cutoff'] ?? self::DEFAULT_CUTOFF,
             'playlist_id'          => $metadata['playlist_id'] ?? null,
             'current_playlist'     => $currentPlaylistTitle ?? ($isCompleted ? 'All Completed' : 'Initializing...'),
@@ -516,6 +567,7 @@ class HistoricalPlaylistProgressExecutionService
             'started_at'           => $batch->started_at?->toIso8601String(),
             'finished_at'          => $batch->finished_at?->toIso8601String(),
             'duration_seconds'     => $durationSeconds,
+            'message'              => $metadata['message'] ?? ($alreadyCompleted ? 'All historical playlist progress has already been migrated.' : null),
             'last_error'           => $metadata['last_error'] ?? null,
         ];
     }
