@@ -482,6 +482,8 @@ Route::group(['prefix' => 'manage/role', 'middleware' => ['auth', 'superadmin']]
 */
 Route::group(['prefix' => 'monitoring', 'middleware' => ['auth', 'mpermission:monitoring']], function () {
     Route::get('/', [MonitoringController::class, 'index'])->name('monitoring.index');
+    Route::get('/live-search', [MonitoringController::class, 'liveSearch'])->name('monitoring.live-search');
+    Route::get('/autocomplete', [MonitoringController::class, 'liveSearch']);
     Route::get('/datatable', [MonitoringController::class, 'datatable'])->name('monitoring.datatable');
     Route::get('/profile/{hash}', [MonitoringController::class, 'profile'])->name('monitoring.profile');
 
