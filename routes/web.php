@@ -52,6 +52,7 @@ use App\Http\Controllers\PlaylistCertificateDebugController;
 use App\Http\Controllers\Manage\LearningHours\ContentUserLearningHourController;
 use App\Http\Controllers\Manage\LearningHours\PlaylistContentUserLearningHourController;
 use App\Http\Controllers\Manage\LearningHours\LearningHoursLandingController;
+use App\Http\Controllers\Manage\LearningHours\PlaylistProgressDryRunController;
 
 /*
 |--------------------------------------------------------------------------
@@ -461,6 +462,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('/datatable', [PlaylistContentUserLearningHourController::class, 'datatable'])->name('datatable');
             Route::get('/statistics', [PlaylistContentUserLearningHourController::class, 'statistics'])->name('statistics');
             Route::post('/calculate', [PlaylistContentUserLearningHourController::class, 'calculate'])->name('calculate');
+        });
+
+        Route::prefix('learning-hours/dry-run')->name('manage.learning-hours.dry-run.')->group(function () {
+            Route::get('/', [PlaylistProgressDryRunController::class, 'index'])->name('index');
+            Route::post('/execute', [PlaylistProgressDryRunController::class, 'executeStart'])->name('execute');
+            Route::post('/execute-step', [PlaylistProgressDryRunController::class, 'executeStep'])->name('execute-step');
+            Route::get('/status/{executionId}', [PlaylistProgressDryRunController::class, 'status'])->name('status');
         });
     });
 });
