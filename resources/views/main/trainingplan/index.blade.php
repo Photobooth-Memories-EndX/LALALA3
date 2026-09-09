@@ -79,6 +79,22 @@
                 </div>
             @endif
 
+            @if (session()->has('error'))
+                <div class="alert alert-important alert-danger alert-dismissible mb-3" role="alert">
+                    <div class="d-flex">
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div style="white-space: pre-line;">{{ session('error') }}</div>
+                    </div>
+                    <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
+                </div>
+            @endif
+
             {{-- Stat Cards --}}
             <div class="row g-3 mb-3">
                 <!-- Card 1: Total Playlist -->
@@ -217,7 +233,16 @@
                                 <!-- 2. More Filters Modal Trigger Button (Icon Only - No Text) -->
                                 <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" data-bs-toggle="modal" data-bs-target="#morePlaylistFiltersModal" title="More Filters">
                                     <i class="ti ti-adjustments-horizontal fs-2"></i>
-                                    @if(request('date_from') || request('date_to') || request('author') || request('category') || request('status') || request('sort'))
+                                    @php
+                                        $hasMoreFilters = request('author_id') || request('author') ||
+                                            request('created_from') || request('created_to') ||
+                                            request('period_from') || request('period_to') ||
+                                            request('sort') || request('sort_views') ||
+                                            request('duration') ||
+                                            request('duration_from') || request('duration_to') ||
+                                            request('learning_hours_from') || request('learning_hours_to');
+                                    @endphp
+                                    @if($hasMoreFilters)
                                         <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle">
                                             <span class="visually-hidden">Active filter</span>
                                         </span>
@@ -482,31 +507,80 @@
                             </div>
                         </div>
 
-                        <!-- Playlist Duration Radio -->
-                        <div class="mb-2">
-                            <label class="form-label fw-bold text-dark small d-block">Playlist Duration</label>
-                            <div class="d-flex flex-wrap gap-3 align-items-center">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="durAll" value="" {{ !request('duration') ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="durAll">All Durations</label>
+                        <!-- Playlist Duration Range (HH:MM:SS) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small d-flex align-items-center gap-1">
+                                <i class="ti ti-clock me-1 text-primary"></i> Playlist Duration
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1" style="font-size: 11px;">From</label>
+                                    <input type="text"
+                                           name="duration_from"
+                                           class="form-control rounded-3 font-monospace @error('duration_from') is-invalid @enderror"
+                                           placeholder="HH:MM:SS"
+                                           value="{{ old('duration_from', request('duration_from')) }}"
+                                           pattern="^(\d+):([0-5]\d):([0-5]\d)$"
+                                           title="Format: HH:MM:SS (e.g. 00:30:00)">
+                                    @error('duration_from')
+                                        <div class="invalid-feedback small">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="dur10" value="under_10" {{ request('duration') == 'under_10' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="dur10">&lt; 10 Menit</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="dur30" value="10_30" {{ request('duration') == '10_30' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="dur30">10 - 30 Menit</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="dur60" value="30_60" {{ request('duration') == '30_60' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="dur60">30 - 60 Menit</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="durAbove60" value="above_60" {{ request('duration') == 'above_60' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="durAbove60">&gt; 1 Jam</label>
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1" style="font-size: 11px;">To</label>
+                                    <input type="text"
+                                           name="duration_to"
+                                           class="form-control rounded-3 font-monospace @error('duration_to') is-invalid @enderror"
+                                           placeholder="HH:MM:SS"
+                                           value="{{ old('duration_to', request('duration_to')) }}"
+                                           pattern="^(\d+):([0-5]\d):([0-5]\d)$"
+                                           title="Format: HH:MM:SS (e.g. 02:00:00)">
+                                    @error('duration_to')
+                                        <div class="invalid-feedback small">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
+                            <small class="text-muted d-block mt-1" style="font-size: 11px;">
+                                Filter by actual duration in <code>HH:MM:SS</code> format (e.g. <code>00:30:00</code> to <code>02:00:00</code>).
+                            </small>
+                        </div>
+
+                        <!-- Learning Hours Range Filter -->
+                        <div class="mb-2">
+                            <label class="form-label fw-bold text-dark small d-flex align-items-center gap-1">
+                                <i class="ti ti-calculator me-1 text-primary"></i> Learning Hours
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1" style="font-size: 11px;">From</label>
+                                    <input type="number"
+                                           step="0.0001"
+                                           min="0"
+                                           name="learning_hours_from"
+                                           class="form-control rounded-3 font-monospace @error('learning_hours_from') is-invalid @enderror"
+                                           placeholder="0.00"
+                                           value="{{ old('learning_hours_from', request('learning_hours_from')) }}">
+                                    @error('learning_hours_from')
+                                        <div class="invalid-feedback small">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1" style="font-size: 11px;">To</label>
+                                    <input type="number"
+                                           step="0.0001"
+                                           min="0"
+                                           name="learning_hours_to"
+                                           class="form-control rounded-3 font-monospace @error('learning_hours_to') is-invalid @enderror"
+                                           placeholder="10.00"
+                                           value="{{ old('learning_hours_to', request('learning_hours_to')) }}">
+                                    @error('learning_hours_to')
+                                        <div class="invalid-feedback small">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1" style="font-size: 11px;">
+                                Filter by calculated learning hours (e.g. <code>1.00</code> to <code>4.00</code>).
+                            </small>
                         </div>
                     </div>
                     <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
@@ -684,6 +758,14 @@ document.addEventListener('DOMContentLoaded', function () {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     }
+
+    @if ($errors->has('duration_from') || $errors->has('duration_to') || $errors->has('learning_hours_from') || $errors->has('learning_hours_to'))
+        var filterModalEl = document.getElementById('morePlaylistFiltersModal');
+        if (filterModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var filterModal = bootstrap.Modal.getOrCreateInstance(filterModalEl);
+            filterModal.show();
+        }
+    @endif
 });
 </script>
 @endsection

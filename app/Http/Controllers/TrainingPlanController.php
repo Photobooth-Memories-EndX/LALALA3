@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class TrainingPlanController extends Controller
@@ -112,6 +113,48 @@ class TrainingPlanController extends Controller
 
     public function index(Request $request)
     {
+        // Validate Duration and Learning Hours Range Filters
+        $validator = Validator::make($request->all(), [
+            'duration_from'       => ['nullable', 'regex:/^(\d+):([0-5]\d):([0-5]\d)$/'],
+            'duration_to'         => ['nullable', 'regex:/^(\d+):([0-5]\d):([0-5]\d)$/'],
+            'learning_hours_from' => ['nullable', 'numeric', 'min:0'],
+            'learning_hours_to'   => ['nullable', 'numeric', 'min:0'],
+        ], [
+            'duration_from.regex'         => 'The Duration From must be in the format HH:MM:SS.',
+            'duration_to.regex'           => 'The Duration To must be in the format HH:MM:SS.',
+            'learning_hours_from.numeric' => 'The Learning Hours From must be a valid number.',
+            'learning_hours_from.min'     => 'The Learning Hours From must be at least 0.',
+            'learning_hours_to.numeric'   => 'The Learning Hours To must be a valid number.',
+            'learning_hours_to.min'       => 'The Learning Hours To must be at least 0.',
+        ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $durationFrom = $request->input('duration_from');
+            $durationTo = $request->input('duration_to');
+            if ($durationFrom && $durationTo && preg_match('/^(\d+):([0-5]\d):([0-5]\d)$/', $durationFrom) && preg_match('/^(\d+):([0-5]\d):([0-5]\d)$/', $durationTo)) {
+                $fromSec = DurationFormatter::toSeconds($durationFrom);
+                $toSec = DurationFormatter::toSeconds($durationTo);
+                if ($fromSec !== null && $toSec !== null && $fromSec > $toSec) {
+                    $validator->errors()->add('duration_from', 'Duration From cannot be greater than Duration To.');
+                }
+            }
+
+            $lhFrom = $request->input('learning_hours_from');
+            $lhTo = $request->input('learning_hours_to');
+            if ($lhFrom !== null && $lhFrom !== '' && is_numeric($lhFrom) && $lhTo !== null && $lhTo !== '' && is_numeric($lhTo)) {
+                if ((float) $lhFrom > (float) $lhTo) {
+                    $validator->errors()->add('learning_hours_from', 'Learning Hours From cannot be greater than Learning Hours To.');
+                }
+            }
+        });
+
+        if ($validator->fails()) {
+            return redirect()->route('playlist.index', $request->except(['duration_from', 'duration_to', 'learning_hours_from', 'learning_hours_to']))
+                ->withErrors($validator)
+                ->withInput()
+                ->with('error', $validator->errors()->first());
+        }
+
         $query = TrainingPlan::query()->withCount('trainingplandetail');
 
         // Search Filter
@@ -191,7 +234,35 @@ class TrainingPlanController extends Controller
             });
         }
 
-        // Duration Filter
+        // Playlist Duration Range Filter (HH:MM:SS -> total_duration_seconds)
+        if ($request->filled('duration_from')) {
+            $fromSec = DurationFormatter::toSeconds($request->duration_from);
+            if ($fromSec !== null) {
+                $query->whereNotNull('total_duration_seconds')
+                      ->where('total_duration_seconds', '>=', $fromSec);
+            }
+        }
+        if ($request->filled('duration_to')) {
+            $toSec = DurationFormatter::toSeconds($request->duration_to);
+            if ($toSec !== null) {
+                $query->whereNotNull('total_duration_seconds')
+                      ->where('total_duration_seconds', '<=', $toSec);
+            }
+        }
+
+        // Learning Hours Range Filter (learning_hours)
+        if ($request->filled('learning_hours_from')) {
+            $lhFrom = (float) $request->learning_hours_from;
+            $query->whereNotNull('learning_hours')
+                  ->where('learning_hours', '>=', $lhFrom);
+        }
+        if ($request->filled('learning_hours_to')) {
+            $lhTo = (float) $request->learning_hours_to;
+            $query->whereNotNull('learning_hours')
+                  ->where('learning_hours', '<=', $lhTo);
+        }
+
+        // Legacy Duration Filter (fallback)
         if ($request->filled('duration') && $request->duration !== 'all') {
             if ($request->duration === 'under_10' || $request->duration === 'lt10') {
                 $query->where('total_duration_seconds', '<', 600);
@@ -460,6 +531,38 @@ class TrainingPlanController extends Controller
             }
         }
 
+        // Handle Unpublish action immediately without requiring form field validation
+        if ($request->action === 'unpublish') {
+            $trainingplan->active = 'Inactive';
+            $trainingplan->save();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'   => 200,
+                    'message'  => 'Playlist unpublished successfully',
+                    'redirect' => route('playlist.index')
+                ]);
+            }
+
+            session()->flash('success', 'Playlist unpublished successfully');
+            return redirect()->route('playlist.edit', $trainingplan->slug);
+        }
+
+        // Active Playlist Security: reject manual duration / learning hours tampering while published
+        if ($trainingplan->active === 'Active') {
+            if ($request->filled('total_duration') || $request->filled('total_duration_seconds') || $request->filled('learning_hours')) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'status'  => 422,
+                        'message' => 'Cannot modify duration or learning hours while playlist is active. Please unpublish this playlist first before making changes.'
+                    ], 422);
+                }
+
+                return redirect()->route('playlist.edit', $trainingplan->slug)
+                    ->with('warning', 'Cannot modify duration or learning hours while playlist is active. Please unpublish this playlist first before making changes.');
+            }
+        }
+
         DB::beginTransaction();
 
         try {
@@ -471,18 +574,34 @@ class TrainingPlanController extends Controller
                 }
             } else {
                 $request->validate([
-                    'title'          => 'required',
-                    'learning_hours' => 'nullable',
-                    'thumbnail'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-                    'has_deadline'   => 'nullable|boolean',
-                    'from_date'      => 'nullable|date|required_if:has_deadline,1',
-                    'to_date'        => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+                    'title'                  => 'required',
+                    'total_duration'         => ['nullable', 'regex:/^\d+:([0-5]\d):([0-5]\d)$/'],
+                    'total_duration_seconds' => ['nullable', 'integer', 'min:0'],
+                    'learning_hours'         => ['nullable', 'numeric', 'min:0'],
+                    'thumbnail'              => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                    'has_deadline'           => 'nullable|boolean',
+                    'from_date'              => 'nullable|date|required_if:has_deadline,1',
+                    'to_date'                => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+                ], [
+                    'total_duration.regex'   => 'The total duration format must be HH:MM:SS (e.g. 01:30:00).',
+                    'learning_hours.numeric' => 'The learning hours must be a valid number.',
+                    'learning_hours.min'     => 'The learning hours must be at least 0.',
                 ]);
 
                 $hasDeadline = $request->boolean('has_deadline');
 
-                // Handle thumbnail upload
+                // Handle thumbnail upload & removal
                 $thumbnailPath = $trainingplan->thumbnail;
+                if ($request->boolean('remove_thumbnail') && !$request->hasFile('thumbnail')) {
+                    $old = $trainingplan->thumbnail;
+                    if ($old
+                        && !Str::startsWith($old, ['http://', 'https://'])
+                        && File::exists(public_path('storage/' . $old))) {
+                        File::delete(public_path('storage/' . $old));
+                    }
+                    $thumbnailPath = null;
+                }
+
                 if ($request->hasFile('thumbnail')) {
                     $old = $trainingplan->thumbnail;
                     if ($old
@@ -500,32 +619,35 @@ class TrainingPlanController extends Controller
                     $thumbnailPath = 'files/training_plan/' . $filename;
                 }
 
-                $trainingplan->title          = $request->input('title');
-                $trainingplan->url_link       = $request->url_link;
-                $trainingplan->thumbnail      = $thumbnailPath;
-                $trainingplan->has_deadline   = $hasDeadline;
-                $trainingplan->from_date      = $hasDeadline ? $request->from_date : null;
-                $trainingplan->to_date        = $hasDeadline ? $request->to_date : null;
+                $totalSeconds = null;
+                if ($request->filled('total_duration')) {
+                    $totalSeconds = DurationFormatter::toSeconds($request->input('total_duration'));
+                } elseif ($request->filled('total_duration_seconds')) {
+                    $totalSeconds = (int) $request->input('total_duration_seconds');
+                }
+
+                $learningHours = null;
+                if ($request->filled('learning_hours')) {
+                    $learningHours = (float) $request->input('learning_hours');
+                }
+
+                $trainingplan->title        = $request->input('title');
+                $trainingplan->url_link     = $request->url_link;
+                $trainingplan->thumbnail    = $thumbnailPath;
+                $trainingplan->has_deadline = $hasDeadline;
+                $trainingplan->from_date    = $hasDeadline ? $request->from_date : null;
+                $trainingplan->to_date      = $hasDeadline ? $request->to_date : null;
+
+                if ($totalSeconds !== null) {
+                    $trainingplan->total_duration_seconds = $totalSeconds;
+                }
+                if ($learningHours !== null) {
+                    $trainingplan->learning_hours = $learningHours;
+                }
 
                 if ($request->action == "publish") {
                     $trainingplan->active = "Active";
-                } else if ($request->action == "unpublish") {
-                    $trainingplan->active = "Inactive";
-                    $trainingplan->save();
-
-                    DB::commit();
-
-                    if ($request->ajax() || $request->wantsJson()) {
-                        return response()->json([
-                            'status'   => 200,
-                            'message'  => 'Playlist unpublished successfully',
-                            'redirect' => route('playlist.index')
-                        ]);
-                    }
-
-                    session()->flash('success', 'Playlist updated successfully');
-                    return redirect()->route('playlist.edit', $trainingplan->slug);
-                } else if ($request->action == "draft") {
+                } else if ($request->action == "unpublish" || $request->action == "draft") {
                     $trainingplan->active = "Inactive";
                 }
 
@@ -549,10 +671,32 @@ class TrainingPlanController extends Controller
                         ]
                     );
                 }
+
+                // Ensure manual/submitted duration & learning hours set by admin on Update are preserved
+                $forceAttributes = [];
+                if ($totalSeconds !== null) {
+                    $forceAttributes['total_duration_seconds'] = $totalSeconds;
+                } else {
+                    app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
+                }
+
+                if ($learningHours !== null) {
+                    $forceAttributes['learning_hours'] = $learningHours;
+                } else {
+                    app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
+                }
+
+                if (!empty($forceAttributes)) {
+                    TrainingPlan::where('id', $trainingplan->id)->update($forceAttributes);
+                    $trainingplan->forceFill($forceAttributes);
+                }
             }
 
-            app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
-            app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
+            if ($request->savetype == "reorder") {
+                app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
+                app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
+            }
+
             DB::commit();
 
             if ($request->ajax() || $request->wantsJson()) {
@@ -568,7 +712,10 @@ class TrainingPlanController extends Controller
             }
 
             session()->flash('success', 'Playlist updated successfully');
-            return redirect()->route('playlist.edit', $trainingplan->slug);
+            return redirect()->route('playlist.edit', $trainingplan->fresh()->slug ?? $trainingplan->slug);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error edit playlist: ' . $e->getMessage());

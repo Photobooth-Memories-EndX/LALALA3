@@ -1,19 +1,10 @@
 @extends('layouts.sidebar-master')
 
-@push('styles')
-    <link rel="stylesheet" href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}">
-    @include('main.trainingplan.components.tomselect-content-style')
-    <style>
-        .btn-back {
-            color: #0c5b9e !important;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-        .btn-back:hover {
-            opacity: 0.85;
-            transform: translateX(-3px);
-        }
-    </style>
-@endpush
+@php
+    $trainingplan = $trainingplan ?? null;
+    $isLocked = $trainingplan && $trainingplan->active === 'Active';
+    $title = $title ?? 'Edit Playlist';
+@endphp
 
 @section('content')
     @include('main.monitoring.components.style')
@@ -21,30 +12,31 @@
     {{-- Page Header --}}
     <div class="page-header d-print-none mb-3">
         <div class="container-xl">
-            <!-- TOMBOL BACK RATA KIRI ATAS -->
-            <div class="mb-3">
-                <a href="{{ route('playlist.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
-                    <i class="ti ti-arrow-left me-1 fs-5"></i> Back
-                </a>
-            </div>
-
-            <div class="row align-items-center">
-                <div class="col">
-                    <div class="page-pretitle">Manage / Playlist</div>
-                    <h2 class="owl-page-title mb-1">{{ $title }}</h2>
-                    <div class="owl-page-subtitle">
-                        {{ $trainingplan->title }}
-                        <span class="badge bg-{{ $trainingplan->active == 'Active' ? 'success' : 'warning' }}-lt ms-2">
-                            {{ $trainingplan->active }}
-                        </span>
-                    </div>
+            <div style="max-width: 1100px; margin: 0 auto;">
+                <div class="mb-3">
+                    <a href="{{ route('playlist.index') }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none">
+                        <i class="ti ti-arrow-left"></i>
+                        <span>Back</span>
+                    </a>
                 </div>
-                <div class="col-auto ms-auto">
-                    <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
-                        <li class="breadcrumb-item"><a href="javascript:;">Manage</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('playlist.index') }}">Playlist</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
-                    </ol>
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Manage / Playlist</div>
+                        <h2 class="owl-page-title mb-1">{{ $title }}</h2>
+                        <div class="owl-page-subtitle">
+                            {{ $trainingplan->title }}
+                            <span class="badge bg-{{ $trainingplan->active == 'Active' ? 'success' : 'warning' }}-lt ms-2">
+                                {{ $trainingplan->active }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-auto ms-auto">
+                        <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item"><a href="javascript:;">Manage</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('playlist.index') }}">Playlist</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
         </div>
@@ -52,245 +44,69 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <form action="{{ route('playlist.update', $trainingplan->slug) }}" method="post" autocomplete="off" id="trainingPlanForm" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
-                <input type="hidden" name="savetype" value="update">
+            <div style="max-width: 1100px; margin: 0 auto;">
 
-                <div class="row g-3">
+                <x-alert type="success" />
+                <x-alert type="warning" />
+                <x-alert type="danger" />
 
-                    {{-- Kolom Kiri: Konten Playlist --}}
-                    <div class="col-lg-8">
+                <form action="{{ route('playlist.update', $trainingplan->slug) }}" method="post" autocomplete="off" id="trainingPlanForm" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="savetype" value="update">
 
-                        {{-- Informasi Playlist --}}
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Informasi Playlist</h3>
-                            </div>
-                            <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
 
-                                <x-alert type="success" />
-                                <x-alert type="warning" />
+                            {{-- ① Publish Status --}}
+                            @include('main.trainingplan.components.playlist-edit-publish-status', [
+                                'trainingplan' => $trainingplan,
+                                'stepNumber'   => 1,
+                                'isLocked'     => $isLocked,
+                            ])
 
-                                <div class="mb-3">
-                                    <label for="title" class="form-label required">Title</label>
-                                    <input type="text" class="form-control @error('title') is-invalid @enderror" placeholder="Enter playlist title"
-                                        name="title" id="title"
-                                        value="{{ old('title', $trainingplan->title) }}" required>
-                                    @error('title')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="mb-3">
-                                    <label for="url-link" class="form-label">URL Link</label>
-                                    <input type="url" name="url_link" id="url-link" class="form-control @error('url_link') is-invalid @enderror"
-                                        value="{{ old('url_link', $trainingplan->url_link) }}"
-                                        placeholder="https://...">
-                                    <small class="form-hint">Opsional. Link eksternal terkait playlist ini.</small>
-                                    @error('url_link')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="mb-3">
-                                    <label for="total_duration" class="form-label">Playlist Total Duration (HH:MM:SS)</label>
-                                    <div class="row g-2 align-items-center">
-                                        <div class="col-12 col-sm-7 col-md-8">
-                                            <input type="text"
-                                                class="form-control bg-light @error('total_duration') is-invalid @enderror"
-                                                id="total_duration"
-                                                name="total_duration"
-                                                value="{{ old('total_duration', \App\Support\DurationFormatter::fromSeconds($trainingplan->total_duration_seconds ?? 0)) }}"
-                                                readonly>
-                                        </div>
-                                        <div class="col-12 col-sm-5 col-md-4">
-                                            <button type="button"
-                                                class="btn btn-outline-primary w-100"
-                                                id="btn-sync-playlist"
-                                                data-url="{{ route('playlist.synchronize-learning-hours', $trainingplan->slug ?? $trainingplan->id) }}">
-                                                <i class="ti ti-refresh me-1 icon-sync"></i>
-                                                <span class="btn-text">Synchronize</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <small class="form-hint mt-1">Gunakan tombol Synchronize untuk menghitung ulang total duration dan learning hours.</small>
-                                    @error('total_duration')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="mb-3">
-                                    <label for="learning_hours" class="form-label">Learning Hours</label>
-                                    <input type="text"
-                                        class="form-control bg-light @error('learning_hours') is-invalid @enderror"
-                                        id="learning_hours"
-                                        name="learning_hours"
-                                        value="{{ old('learning_hours', $trainingplan->learning_hours ?? 0) }}"
-                                        readonly>
-                                    @error('learning_hours')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
+                            {{-- ② Playlist Information --}}
+                            @include('main.trainingplan.components.playlist-edit-information', [
+                                'trainingplan' => $trainingplan,
+                                'stepNumber'   => 2,
+                                'isLocked'     => $isLocked,
+                            ])
 
-                        {{-- Konten Playlist --}}
-                        <div class="card owl-main-card">
-                            <div class="card-header">
-                                <div>
-                                    <h3 class="card-title">Konten Playlist</h3>
-                                    <p class="text-muted mb-0" style="font-size:13px;">
-                                        Select content, then drag and drop items to arrange the section order.
-                                    </p>
-                                </div>
-                                <span class="badge bg-blue-lt text-blue">Drag &amp; Drop</span>
-                            </div>
-                            <div class="card-body">
-                                <label class="form-label">Content</label>
-                                <div class="playlist-content-select-wrapper">
-                                    <select class="form-select js-content-select" id="select-content" name="content[]" multiple>
-                                        @unless (count($content) == 0)
-                                            @foreach ($content as $list)
-                                                <option value="{{ $list->id }}"
-                                                    data-status="{{ $list->active }}"
-                                                    @if (in_array($list->id, $activecontent)) selected @endif>
-                                                    {{ $list->title }}
-                                                </option>
-                                            @endforeach
-                                        @else
-                                            <option value="" disabled>No content available</option>
-                                        @endunless
-                                    </select>
-                                </div>
-                                <div class="d-flex justify-content-between mt-2">
-                                    <small class="form-hint">Type to search content. Drag items to reorder sections.</small>
-                                    <small class="content-select-count" id="content-count-label"></small>
-                                </div>
-                                <div class="mt-3">
-                                    <button type="submit" form="trainingPlanForm" class="btn btn-primary w-100" name="action" value="save" formnovalidate>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"></path>
-                                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                            <path d="M14 4l0 4l-6 0l0 -4"></path>
-                                        </svg>
-                                        Simpan Perubahan Playlist
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                            {{-- ③ Thumbnail & Live Preview --}}
+                            @include('main.trainingplan.components.playlist-edit-thumbnail', [
+                                'trainingplan' => $trainingplan,
+                                'stepNumber'   => 3,
+                                'isLocked'     => $isLocked,
+                            ])
 
-                    </div>
+                            {{-- ④ Duration & Learning Hours --}}
+                            @include('main.trainingplan.components.playlist-edit-duration', [
+                                'trainingplan' => $trainingplan,
+                                'stepNumber'   => 4,
+                                'isLocked'     => $isLocked,
+                            ])
 
-                    {{-- Kolom Kanan: Thumbnail + Deadline + Aksi --}}
-                    <div class="col-lg-4">
+                            {{-- ⑤ Playlist Content (Assignment & Drag and Drop) --}}
+                            @include('main.trainingplan.components.playlist-edit-content', [
+                                'trainingplan'  => $trainingplan,
+                                'content'       => $content,
+                                'activecontent' => $activecontent,
+                                'stepNumber'    => 5,
+                                'isLocked'      => $isLocked,
+                            ])
 
-                        {{-- Thumbnail Playlist --}}
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Thumbnail Playlist</h3>
-                            </div>
-                            <div class="card-body">
-                                @if($trainingplan->thumbnail_url)
-                                    <div class="mb-2">
-                                        <img src="{{ $trainingplan->thumbnail_url }}"
-                                            alt="Thumbnail" class="img-fluid rounded"
-                                            style="max-height:120px; object-fit:cover;">
-                                        <div class="small text-muted mt-1">Thumbnail saat ini.</div>
-                                    </div>
-                                @endif
-                                <div>
-                                    <label class="form-label">{{ $trainingplan->thumbnail_url ? 'Ganti Thumbnail' : 'Upload Thumbnail' }}</label>
-                                    <input type="file" name="thumbnail" id="thumbnail" class="form-control"
-                                        accept="image/jpg,image/jpeg,image/png,image/webp">
-                                    <small class="form-hint">Optional. Format: JPG, PNG, WEBP — maks. 2 MB.</small>
-                                </div>
-                            </div>
-                        </div>
+                            {{-- ⑥ Deadline & Action Buttons --}}
+                            @include('main.trainingplan.components.playlist-edit-action', [
+                                'trainingplan' => $trainingplan,
+                                'stepNumber'   => 6,
+                                'isLocked'     => $isLocked,
+                            ])
 
-                        {{-- Deadline Playlist --}}
-                        @php
-                            $showDeadline = old('has_deadline') !== null
-                                ? (bool) old('has_deadline')
-                                : (bool) $trainingplan->has_deadline;
-                        @endphp
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Deadline Playlist</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-check cursor-pointer">
-                                        <input type="hidden" name="has_deadline" value="0">
-                                        <input class="form-check-input" type="checkbox" id="has_deadline"
-                                            name="has_deadline" value="1"
-                                            @if($showDeadline) checked @endif>
-                                        <span class="form-check-label fw-medium">Set Deadline?</span>
-                                    </label>
-                                    <small class="form-hint d-block mt-1">If checked, specify the date range below.</small>
-                                </div>
-                                <div id="deadline-fields" style="{{ $showDeadline ? '' : 'display:none;' }}">
-                                    <div class="mb-2">
-                                        <label class="form-label">From Date</label>
-                                        <input type="date" class="form-control" name="from_date" id="from_date"
-                                            value="{{ old('from_date', $trainingplan->from_date ? $trainingplan->from_date->format('Y-m-d') : '') }}">
-                                    </div>
-                                    <div>
-                                        <label class="form-label">To Date</label>
-                                        <input type="date" class="form-control" name="to_date" id="to_date"
-                                            value="{{ old('to_date', $trainingplan->to_date ? $trainingplan->to_date->format('Y-m-d') : '') }}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card owl-main-card">
-                            <div class="card-header">
-                                <h3 class="card-title">Action</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-grid gap-2">
-                                    @if ($trainingplan->active == 'Active')
-                                        <button type="submit" class="btn btn-warning" name="action" value="unpublish">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"></path>
-                                                <path d="M9 12h6"></path>
-                                            </svg>
-                                            Unpublish This Playlist
-                                        </button>
-                                    @else
-                                        <a type="button" class="btn btn-secondary" href="{{ route('playlist.order', $trainingplan->slug) }}">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M3 9l4 -4l4 4m-4 -4v14"></path>
-                                                <path d="M21 15l-4 4l-4 -4m4 4v-14"></path>
-                                            </svg>
-                                            Re-order Content
-                                        </a>
-                                        <button type="submit" class="btn btn-success" name="action" value="save" formnovalidate>
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"></path>
-                                                <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                                <path d="M14 4l0 4l-6 0l0 -4"></path>
-                                            </svg>
-                                            Save (Draft)
-                                        </button>
-                                        <button type="submit" class="btn btn-primary" name="action" value="publish">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M7 11v8a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1h3a4 4 0 0 0 4 -4v-1a2 2 0 0 1 4 0v5h3a2 2 0 0 1 2 2l-1 5a2 3 0 0 1 -2 2h-7a3 3 0 0 1 -3 -3"></path>
-                                            </svg>
-                                            Save & Publish
-                                        </button>
-                                    @endif
-                                    <a href="{{ route('playlist.index') }}" class="btn btn-light">Back to List</a>
-                                </div>
-                            </div>
                         </div>
                     </div>
+                </form>
 
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -314,14 +130,14 @@
                 </div>
                 <div class="modal-footer border-0 pt-0 d-flex justify-content-between align-items-center">
                     <button type="button" class="btn btn-outline-danger d-inline-flex align-items-center gap-1" id="btnDiscardAndLeave">
-                        <i class="ti ti-trash"></i> Discard & Leave
+                        <i class="ti ti-trash"></i> Discard &amp; Leave
                     </button>
                     <div class="d-flex align-items-center gap-2">
                         <button type="button" class="btn btn-info text-white" id="btnKeepEditing" data-bs-dismiss="modal" data-dismiss="modal">
                             Keep Editing
                         </button>
                         <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-1" id="btnSaveDraftAndExit">
-                            <i class="ti ti-device-floppy"></i> <span class="btn-save-text">Save as Draft & Exit</span>
+                            <i class="ti ti-device-floppy"></i> <span class="btn-save-text">Save as Draft &amp; Exit</span>
                         </button>
                     </div>
                 </div>
@@ -330,20 +146,66 @@
     </div>
 @endsection
 
-@push('scripts')
+@section('style')
+    <link rel="stylesheet" href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}">
+    @include('main.trainingplan.components.tomselect-content-style')
+    <style>
+        .btn-back {
+            color: #0c5b9e !important;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .btn-back:hover {
+            opacity: 0.85;
+            transform: translateX(-3px);
+        }
+
+        .form-control:disabled,
+        .form-select:disabled,
+        .form-check-input:disabled:not(:checked),
+        .form-check-input[disabled]:not(:checked) {
+            background-color: var(--tblr-bg-surface-secondary, #f8fafc) !important;
+            color: var(--tblr-muted, #64748b) !important;
+            cursor: not-allowed !important;
+            opacity: 0.85 !important;
+        }
+
+        .form-check-input:disabled:checked,
+        .form-check-input[disabled]:checked {
+            background-color: var(--tblr-primary, #206bc4) !important;
+            border-color: var(--tblr-primary, #206bc4) !important;
+            opacity: 0.7 !important;
+            cursor: not-allowed !important;
+        }
+
+        [data-bs-theme="dark"] .form-control:disabled,
+        [data-bs-theme="dark"] .form-select:disabled,
+        body.dark-mode .form-control:disabled,
+        body.dark-mode .form-select:disabled {
+            background-color: rgba(255, 255, 255, .06) !important;
+            border-color: rgba(255, 255, 255, .16) !important;
+            color: rgba(255, 255, 255, .5) !important;
+        }
+    </style>
+@endsection
+
+@section('script')
     <script src="{{ asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062') }}"></script>
+    <script src="{{ asset('Tabler/dist/libs/fslightbox/index.js?1684106062') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
     <script>
         var activeContentOrdered = @json(
             $trainingplan->trainingplandetail->sortBy(fn ($d) => (int) $d->content_order)->pluck('content_id')->values()->toArray()
         );
 
+        var isPlaylistLocked = {{ $isLocked ? 'true' : 'false' }};
+
         document.addEventListener('DOMContentLoaded', function () {
+            // ── TomSelect + SortableJS Initialization ───────────────────────
             document.querySelectorAll('.js-content-select').forEach(function (selectEl) {
                 if (selectEl.tomselect) return;
 
                 var tom = new TomSelect(selectEl, {
-                    plugins: ['remove_button'],
+                    plugins: isPlaylistLocked ? [] : ['remove_button'],
                     maxItems: null,
                     create: false,
                     persist: false,
@@ -351,9 +213,9 @@
                     closeAfterSelect: false,
                     sortField: [],
                     dropdownParent: 'body',
-                    placeholder: 'Type to search content...',
+                    placeholder: isPlaylistLocked ? 'Playlist locked (Active)' : 'Type to search materials...',
                     searchField: ['text'],
-                    maxOptions: 80,
+                    maxOptions: 100,
                     render: {
                         item: function (data, escape) {
                             var status = data.status || (data.$option ? data.$option.getAttribute('data-status') : null);
@@ -362,9 +224,13 @@
                                 ? '<span class="badge rounded-pill text-white fw-semibold px-2.5 py-1 ms-2" style="background-color: #f59e0b !important; font-size: 0.75rem; flex-shrink: 0;">Inactive</span>'
                                 : '<span class="badge rounded-pill text-white fw-semibold px-2.5 py-1 ms-2" style="background-color: #28a745 !important; font-size: 0.75rem; flex-shrink: 0;">Active</span>';
 
+                            var dragHandle = isPlaylistLocked
+                                ? ''
+                                : '<span class="playlist-drag-handle" title="Drag to rearrange order">&#9776;</span>';
+
                             return '<div class="playlist-section-item-inner d-flex align-items-center justify-content-between w-100">' +
                                 '<div class="d-flex align-items-center gap-2 text-truncate me-2 min-w-0 flex-grow-1">' +
-                                '<span class="playlist-drag-handle" title="Tarik untuk mengubah urutan">&#9776;</span>' +
+                                dragHandle +
                                 '<span class="playlist-section-badge"></span>' +
                                 '<span class="playlist-section-title fw-semibold text-truncate" title="' + escape(data.text) + '">' + escape(data.text) + '</span>' +
                                 '</div>' +
@@ -383,7 +249,7 @@
                             return '<div class="playlist-option-item d-flex align-items-center justify-content-between"><span>' + escape(data.text) + '</span>' + statusBadge + '</div>';
                         },
                         no_results: function () {
-                            return '<div class="p-2 text-muted" style="font-size:13px;">Konten tidak ditemukan</div>';
+                            return '<div class="p-2 text-muted" style="font-size:13px;">No materials found</div>';
                         }
                     },
                     onInitialize: function () {
@@ -397,7 +263,12 @@
                             });
                         }
 
-                        enablePlaylistSortable(self);
+                        if (isPlaylistLocked) {
+                            self.disable();
+                        } else {
+                            enablePlaylistSortable(self);
+                        }
+
                         updatePlaylistSectionNumbers(self);
                         updateCountLabel(self);
                     },
@@ -412,10 +283,8 @@
                 });
 
                 function enablePlaylistSortable(tomInstance) {
-                    if (typeof Sortable === 'undefined') {
-                        console.error('SortableJS belum dimuat.');
-                        return;
-                    }
+                    if (typeof Sortable === 'undefined' || isPlaylistLocked) return;
+
                     new Sortable(tomInstance.control, {
                         animation: 180,
                         handle: '.playlist-drag-handle',
@@ -452,7 +321,7 @@
                     var total = Object.keys(tomInstance.options).length;
                     var label = document.getElementById('content-count-label');
                     if (!label) return;
-                    label.textContent = count > 0 ? count + ' dari ' + total + ' konten dipilih' : '';
+                    label.textContent = count > 0 ? count + ' of ' + total + ' materials selected' : '';
                 }
 
                 var formEl = selectEl.closest('form');
@@ -472,103 +341,104 @@
                     });
                 }
             });
-        });
-    </script>
-    <script>
-        (function () {
-            var cb = document.getElementById('has_deadline');
-            var fields = document.getElementById('deadline-fields');
-            if (!cb || !fields) return;
-            cb.addEventListener('change', function () {
-                if (this.checked) {
-                    fields.style.display = '';
-                } else {
-                    fields.style.display = 'none';
-                    var fd = document.getElementById('from_date');
-                    var td = document.getElementById('to_date');
-                    if (fd) fd.value = '';
-                    if (td) td.value = '';
-                }
-            });
-        })();
-    </script>
-    <script>
-        (function () {
-            var $input = $('#learning_hours');
-            var $form = $('#trainingPlanForm');
 
-            function isValidLearningHours(val) {
-                if (val === '' || val === null || val === undefined) return false;
-                var num = parseFloat(val);
-                if (isNaN(num)) return false;
-                if (num < 0) return false;
-                if (num === 0) return true;
-
-                var timesTwo = Math.round(num * 10000) / 10000 * 2;
-                return Math.abs(timesTwo - Math.round(timesTwo)) < 0.0001;
-            }
-
-            function validateInput() {
-                var val = $input.val();
-                var $errorDiv = $('#learning_hours_error');
-
-                if (!isValidLearningHours(val)) {
-                    $input.addClass('is-invalid');
-                    if ($errorDiv.length) {
-                        $errorDiv.html('Learning Hours must be 0 or in increments of 0.5.<br><small class="text-muted">Examples: 0, 0.5, 1, 1.5, 2, 2.5</small>').show();
-                    }
-                    return false;
-                } else {
-                    $input.removeClass('is-invalid');
-                    if ($errorDiv.length) {
-                        $errorDiv.empty().hide();
-                    }
-                    return true;
-                }
-            }
-
-            $input.on('input change blur', function () {
-                validateInput();
-            });
-
-            if ($form.length) {
-                $form.on('submit', function (e) {
-                    if (!validateInput()) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        $input.focus();
-                        return false;
+            // ── Deadline toggle ─────────────────────────────────────────────
+            (function () {
+                var cb = document.getElementById('has_deadline');
+                var fields = document.getElementById('deadline-fields');
+                if (!cb || !fields) return;
+                cb.addEventListener('change', function () {
+                    if (this.checked) {
+                        fields.style.display = '';
+                    } else {
+                        fields.style.display = 'none';
+                        var fd = document.getElementById('from_date');
+                        var td = document.getElementById('to_date');
+                        if (fd) fd.value = '';
+                        if (td) td.value = '';
                     }
                 });
-            }
-        })();
+            })();
 
-        $(document).ready(function() {
-            function showToast(message, type) {
-                let bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-                let icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+            // ── Thumbnail Live Preview & Remove ─────────────────────────────
+            (function () {
+                var input = document.getElementById('playlist_thumbnail_input');
+                var linkEl = document.getElementById('playlistThumbnailLink');
+                var imgEl = document.getElementById('playlistThumbnailImg');
+                var emptyEl = document.getElementById('playlistThumbnailEmpty');
+                var removeBtn = document.getElementById('btn-remove-playlist-thumb');
+                var removeHidden = document.getElementById('remove_thumbnail');
+                var currentWrapper = document.getElementById('current-thumbnail-wrapper');
+                var labelThumb = document.getElementById('label-thumbnail-file');
 
-                let toastHtml = `
-                    <div class="toast owl-toast ${bgClass} text-white align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
-                        <div class="toast-body d-flex align-items-center justify-content-between p-3">
-                            <div class="d-flex align-items-center">
-                                <i class="fas ${icon} me-2 fs-4"></i>
-                                <span>${message}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                if ($('#owl-toast-wrapper').length === 0) {
-                    $('body').append('<div id="owl-toast-wrapper" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; width: 320px;"></div>');
+                if (input) {
+                    input.addEventListener('change', function (e) {
+                        var file = e.target.files && e.target.files[0];
+                        if (file) {
+                            var objectUrl = URL.createObjectURL(file);
+                            if (imgEl && linkEl) {
+                                imgEl.src = objectUrl;
+                                linkEl.href = objectUrl;
+                                linkEl.style.display = 'flex';
+                                if (emptyEl) emptyEl.style.display = 'none';
+                                if (window.refreshFsLightbox) {
+                                    refreshFsLightbox();
+                                }
+                            }
+                            if (removeHidden) removeHidden.value = '0';
+                        }
+                    });
                 }
 
-                let $toast = $(toastHtml);
-                $('#owl-toast-wrapper').append($toast);
-                $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (confirm('Are you sure you want to remove the thumbnail for this playlist?')) {
+                            if (removeHidden) removeHidden.value = '1';
+                            if (currentWrapper) currentWrapper.remove();
+                            if (input) input.value = '';
+                            if (labelThumb) labelThumb.textContent = 'Upload Thumbnail';
+                            if (linkEl) linkEl.style.display = 'none';
+                            if (imgEl) imgEl.src = '';
+                            if (emptyEl) emptyEl.style.display = 'flex';
+                            if (window.refreshFsLightbox) {
+                                refreshFsLightbox();
+                            }
+                        }
+                    });
+                }
+            })();
+        });
+
+        // ── Toast Notifications ─────────────────────────────────────────────
+        function showPlaylistToast(message, type) {
+            let bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+            let icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+
+            let toastHtml = `
+                <div class="toast owl-toast ${bgClass} text-white align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-body d-flex align-items-center justify-content-between p-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas ${icon} me-2 fs-4"></i>
+                            <span>${message}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if ($('#owl-toast-wrapper').length === 0) {
+                $('body').append('<div id="owl-toast-wrapper" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; width: 320px;"></div>');
             }
 
-            $(document).on('click', '#btn-sync-playlist, #btn-sync-playlist-lh', function(e) {
+            let $toast = $(toastHtml);
+            $('#owl-toast-wrapper').append($toast);
+            $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
+        }
+
+        // ── Namespaced Synchronize Button Handler ───────────────────────────
+        $(document)
+            .off('click.playlistSync', '#btn-sync-playlist, #btn-sync-playlist-lh')
+            .on('click.playlistSync', '#btn-sync-playlist, #btn-sync-playlist-lh', function(e) {
                 e.preventDefault();
                 let $btn = $(this);
                 let url = $btn.data('url');
@@ -577,10 +447,20 @@
 
                 $btn.data('loading', true);
                 let $form = $btn.closest('form');
+                if (!$form.length) {
+                    $form = $('#trainingPlanForm');
+                }
+
+                // Obtain current ordered content IDs from active TomSelect instance
                 let selectedContents = [];
-                $form.find('input[name="content[]"]:checked, select[name="content[]"] option:selected, input.js-content-ordered').each(function() {
-                    selectedContents.push($(this).val());
-                });
+                let selectEl = document.querySelector('.js-content-select');
+                if (selectEl && selectEl.tomselect) {
+                    selectedContents = selectEl.tomselect.items ? Array.from(selectEl.tomselect.items) : [];
+                } else {
+                    $form.find('input[name="content[]"]:checked, select[name="content[]"] option:selected, input.js-content-ordered').each(function() {
+                        selectedContents.push($(this).val());
+                    });
+                }
 
                 $btn.prop('disabled', true);
                 $btn.find('.icon-sync').attr('class', 'spinner-border spinner-border-sm me-1 icon-sync');
@@ -605,13 +485,13 @@
                             if (res.learning_hours !== undefined) {
                                 $form.find('[name="learning_hours"]').val(res.learning_hours);
                             }
-                            showToast(res.message || 'Playlist duration synchronized successfully.', 'success');
+                            showPlaylistToast(res.message || 'Playlist duration & learning hours synchronized successfully.', 'success');
                         } else {
-                            showToast(res && res.message ? res.message : 'Unable to synchronize duration.', 'danger');
+                            showPlaylistToast(res && res.message ? res.message : 'Unable to synchronize duration & learning hours.', 'danger');
                         }
                     },
                     error: function(xhr) {
-                        let message = 'Unable to synchronize duration.';
+                        let message = 'Unable to synchronize duration & learning hours.';
                         if (xhr && xhr.responseJSON) {
                             if (xhr.responseJSON.errors) {
                                 message = Object.values(xhr.responseJSON.errors).flat().join('<br>');
@@ -619,19 +499,21 @@
                                 message = xhr.responseJSON.message;
                             }
                         }
-                        showToast(message, 'danger');
+                        showPlaylistToast(message, 'danger');
                     },
                     complete: function() {
                         $btn.find('.icon-sync').attr('class', 'ti ti-refresh me-1 icon-sync');
                         $btn.find('.btn-text').text('Synchronize');
-                        $btn.prop('disabled', false);
+                        if (!isPlaylistLocked) {
+                            $btn.prop('disabled', false);
+                        }
                         $btn.data('loading', false);
                         $('body').css('cursor', 'default');
                     }
                 });
             });
-        });
 
+        // ── Unsaved Changes Confirmation Modal ──────────────────────────────
         function openUnsavedChangesModal() {
             var modalEl = document.getElementById('unsavedChangesModal');
             if (!modalEl) return;
@@ -683,26 +565,26 @@
             }
         }
 
-        // 1. Back button click handler (both jQuery and native)
+        // 1. Back button click handler
         $(document).on('click', '.btn-back', function (e) {
             e.preventDefault();
             e.stopPropagation();
             openUnsavedChangesModal();
         });
 
-        // 2. Modal dismissal handlers ("X" and "Keep Editing")
+        // 2. Modal dismissal handlers
         $(document).on('click', '#unsavedChangesModal .btn-close, #unsavedChangesModal [data-bs-dismiss="modal"], #unsavedChangesModal [data-dismiss="modal"], #btnKeepEditing', function (e) {
             e.preventDefault();
             closeUnsavedChangesModal();
         });
 
-        // 3. "Discard & Leave" handler
+        // 3. Discard & Leave handler
         $(document).on('click', '#btnDiscardAndLeave', function (e) {
             e.preventDefault();
             window.location.href = "{{ route('playlist.index') }}";
         });
 
-        // 4. "Save as Draft & Exit" handler
+        // 4. Save as Draft & Exit handler
         $(document).on('click', '#btnSaveDraftAndExit', function (e) {
             e.preventDefault();
             var saveBtn = this;
@@ -761,7 +643,7 @@
             }
         });
 
-        // Vanilla fallback listener
+        // Vanilla fallback listener for Back & Discard
         document.addEventListener('click', function (e) {
             var backBtn = e.target.closest('.btn-back');
             if (backBtn) {
@@ -786,4 +668,4 @@
             }
         });
     </script>
-@endpush
+@endsection
