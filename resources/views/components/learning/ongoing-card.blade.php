@@ -63,10 +63,7 @@
     $rawLearningHours = $learningHours ?? $learning_hours ?? null;
 
     if (!is_null($rawLearningHours) && $rawLearningHours !== '' && is_numeric($rawLearningHours)) {
-        $lhVal = ((float) $rawLearningHours == (int) $rawLearningHours)
-            ? (int) $rawLearningHours
-            : (float) $rawLearningHours;
-        $learningHourDisplay = $lhVal . ' ' . ($lhVal == 1 ? 'Hour' : 'Hours');
+        $learningHourDisplay = number_format((float) $rawLearningHours, 2) . ' Hours';
     } else {
         $learningHourDisplay = '-';
     }

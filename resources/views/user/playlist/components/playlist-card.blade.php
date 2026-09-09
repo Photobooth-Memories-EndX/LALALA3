@@ -17,9 +17,8 @@
     $formattedDuration = $stats['duration'] ?? $playlist->duration ?? ($durationSec > 0 ? sprintf('%02d:%02d:%02d', floor($durationSec / 3600), floor(($durationSec % 3600) / 60), $durationSec % 60) : '00:00:00');
     
     $rawLh = $stats['learning_hours'] ?? $playlist->learning_hours ?? null;
-    if (!is_null($rawLh) && $rawLh !== '') {
-        $numLh = (float) $rawLh == (int) $rawLh ? (int) $rawLh : (float) $rawLh;
-        $learningHoursDisplay = $numLh . ' ' . ($numLh == 1 ? 'Hour' : 'Hours');
+    if (!is_null($rawLh) && $rawLh !== '' && is_numeric($rawLh)) {
+        $learningHoursDisplay = number_format((float) $rawLh, 2) . ' Hours';
     } else {
         $learningHoursDisplay = '-';
     }
