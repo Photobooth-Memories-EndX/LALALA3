@@ -1,7 +1,7 @@
 @php
     $trainingplan       = $trainingplan ?? null;
     $trainingplandetail = $trainingplandetail ?? collect();
-    $isLocked           = $isLocked ?? ($trainingplan && $trainingplan->active === 'Active');
+    $isLocked           = false;
     $isEmpty            = $trainingplandetail->isEmpty();
 @endphp
 
@@ -42,11 +42,11 @@
                     <li class="trainingplan-sortlist-item list-group-item d-flex align-items-center gap-3 p-3 mb-2 rounded-3 border bg-white shadow-sm"
                         data-detail-id="{{ $detail->id }}"
                         data-order="{{ $detail->content_order }}">
-                        <div class="trainingplan-drag-handle text-muted fs-3 flex-shrink-0 {{ $isLocked ? 'd-none' : '' }}"
+                        <div class="trainingplan-drag-handle text-muted fs-3 flex-shrink-0"
                             style="cursor: grab;"
                             title="Drag to reorder"
                             aria-label="Drag handle">
-                            <i class="ti ti-grip-vertical"></i>
+                            <i class="ti ti-grip-vertical" style="pointer-events: none;"></i>
                         </div>
 
                         <span class="trainingplan-item-badge badge bg-primary text-white rounded-circle flex-shrink-0"
@@ -104,18 +104,11 @@
                 <span>Back to Edit</span>
             </a>
 
-            @if (!$isLocked)
-                <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-1" id="btnSaveOrder">
-                    <span class="spinner-border spinner-border-sm d-none" id="saveSpinner" role="status" aria-hidden="true"></span>
-                    <i class="ti ti-device-floppy" id="saveIcon"></i>
-                    <span id="saveBtnText">Save Order</span>
-                </button>
-            @else
-                <button type="button" class="btn btn-secondary d-inline-flex align-items-center gap-1" disabled title="Unpublish playlist before reordering">
-                    <i class="ti ti-lock"></i>
-                    <span>Locked</span>
-                </button>
-            @endif
+            <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-1" id="btnSaveOrder">
+                <span class="spinner-border spinner-border-sm d-none" id="saveSpinner" role="status" aria-hidden="true"></span>
+                <i class="ti ti-device-floppy" id="saveIcon"></i>
+                <span id="saveBtnText">Save Order</span>
+            </button>
         </div>
     @endunless
 </div>

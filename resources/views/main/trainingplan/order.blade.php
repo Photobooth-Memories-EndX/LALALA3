@@ -3,7 +3,7 @@
 @php
     $trainingplan       = $trainingplan ?? null;
     $trainingplandetail = $trainingplandetail ?? collect();
-    $isLocked           = $isLocked ?? ($trainingplan && $trainingplan->active === 'Active');
+    $isLocked           = false;
     $title              = $title ?? 'Order Playlist Content';
 @endphp
 
@@ -54,18 +54,6 @@
                 <x-alert type="warning" />
                 <x-alert type="danger" />
 
-                @if ($isLocked)
-                    <div class="alert alert-warning d-flex align-items-start gap-2 mb-3 py-2 px-3">
-                        <i class="ti ti-lock fs-2 text-warning flex-shrink-0 mt-1"></i>
-                        <div>
-                            <strong class="d-block text-dark small mb-1">Ordering is locked</strong>
-                            <span class="small text-secondary">
-                                This playlist is currently active. Unpublish the playlist before changing the content order.
-                            </span>
-                        </div>
-                    </div>
-                @endif
-
                 <form action="{{ route('playlist.update', $trainingplan->slug) }}" method="post" autocomplete="off" id="formOrderPlaylist">
                     @csrf
                     @method('PUT')
@@ -105,8 +93,9 @@
         }
 
         .trainingplan-sortlist-item {
-            transition: background .15s ease, box-shadow .15s ease, transform .15s ease;
+            transition: background .15s ease, box-shadow .15s ease;
             user-select: none;
+            position: relative;
         }
 
         .trainingplan-sortlist-item:hover {
@@ -115,37 +104,74 @@
         }
 
         .trainingplan-drag-handle {
-            cursor: grab;
+            cursor: grab !important;
             user-select: none;
             touch-action: none;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: color .15s ease;
+        }
+
+        .trainingplan-drag-handle:hover {
+            color: var(--tblr-primary, #206bc4) !important;
         }
 
         .trainingplan-drag-handle:active {
-            cursor: grabbing;
+            cursor: grabbing !important;
         }
 
+        /* SortableJS States matching Playlist Edit / Add Content */
         .sortable-ghost {
-            opacity: 0.35;
-            background-color: #e2e8f0 !important;
-            border: 2px dashed #94a3b8 !important;
+            opacity: 0.35 !important;
+            background-color: #f1f5f9 !important;
+            border: 2px dashed var(--tblr-primary, #206bc4) !important;
         }
 
         .sortable-chosen {
-            background-color: #f1f5f9 !important;
+            background-color: rgba(32, 107, 196, .06) !important;
             box-shadow: 0 6px 16px rgba(0,0,0,.1) !important;
         }
 
+        .sortable-drag {
+            opacity: 0.95 !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,.15) !important;
+            background-color: #ffffff !important;
+        }
+
         /* Dark mode */
+        [data-bs-theme="dark"] .trainingplan-sortlist-item,
         [data-theme="dark"] .trainingplan-sortlist-item,
+        body.dark-mode .trainingplan-sortlist-item,
         body.theme-dark .trainingplan-sortlist-item {
             background: #182433 !important;
             border-color: #25384d !important;
             color: #dce6f1 !important;
         }
 
+        [data-bs-theme="dark"] .trainingplan-sortlist-item:hover,
         [data-theme="dark"] .trainingplan-sortlist-item:hover,
+        body.dark-mode .trainingplan-sortlist-item:hover,
         body.theme-dark .trainingplan-sortlist-item:hover {
             background: #223247 !important;
+        }
+
+        [data-bs-theme="dark"] .sortable-ghost,
+        [data-theme="dark"] .sortable-ghost,
+        body.dark-mode .sortable-ghost,
+        body.theme-dark .sortable-ghost {
+            background: #1e293b !important;
+            border-color: #38bdf8 !important;
+        }
+
+        [data-bs-theme="dark"] .sortable-drag,
+        [data-theme="dark"] .sortable-drag,
+        body.dark-mode .sortable-drag,
+        body.theme-dark .sortable-drag {
+            background: #1f2937 !important;
+            color: #f8fafc !important;
         }
     </style>
 @endsection
@@ -153,84 +179,97 @@
 @section('script')
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var sortableEl = document.getElementById('sortlist');
-            var formEl = document.getElementById('formOrderPlaylist');
-            var isLocked = {{ $isLocked ? 'true' : 'false' }};
-            var saveBtn = document.getElementById('btnSaveOrder');
-            var spinner = document.getElementById('saveSpinner');
-            var saveIcon = document.getElementById('saveIcon');
-            var saveBtnText = document.getElementById('saveBtnText');
+        (function () {
+            function initOrderSortable() {
+                var sortableEl = document.getElementById('sortlist');
+                var formEl = document.getElementById('formOrderPlaylist');
+                var saveBtn = document.getElementById('btnSaveOrder');
+                var spinner = document.getElementById('saveSpinner');
+                var saveIcon = document.getElementById('saveIcon');
+                var saveBtnText = document.getElementById('saveBtnText');
 
-            function updateSequenceBadges() {
                 if (!sortableEl) return;
-                var items = sortableEl.querySelectorAll('.trainingplan-sortlist-item');
-                items.forEach(function (item, index) {
-                    var badge = item.querySelector('.trainingplan-item-badge');
-                    if (badge) {
-                        badge.textContent = index + 1;
-                    }
-                });
-            }
 
-            // Initialize SortableJS if not locked
-            if (sortableEl && !isLocked && typeof Sortable !== 'undefined') {
-                new Sortable(sortableEl, {
-                    handle: '.trainingplan-drag-handle',
-                    animation: 150,
-                    ghostClass: 'sortable-ghost',
-                    chosenClass: 'sortable-chosen',
-                    onEnd: function () {
-                        updateSequenceBadges();
-                    }
-                });
-            }
-
-            // Form Submit: Rebuild hidden inputs from live DOM order
-            if (formEl) {
-                formEl.addEventListener('submit', function (e) {
-                    if (isLocked) {
-                        e.preventDefault();
-                        return;
-                    }
-
-                    if (saveBtn && saveBtn.getAttribute('data-submitting') === 'true') {
-                        e.preventDefault();
-                        return;
-                    }
-
-                    if (!sortableEl) return;
-
+                function updateSequenceBadges() {
                     var items = sortableEl.querySelectorAll('.trainingplan-sortlist-item');
-                    if (items.length === 0) return;
-
-                    // Remove any existing/stale order inputs
-                    formEl.querySelectorAll('input[name^="order["]').forEach(function (el) {
-                        el.remove();
-                    });
-
-                    // Build fresh order inputs strictly according to DOM order
                     items.forEach(function (item, index) {
-                        var detailId = item.getAttribute('data-detail-id');
-                        if (detailId) {
-                            var input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'order[' + detailId + ']';
-                            input.value = index;
-                            formEl.appendChild(input);
+                        var badge = item.querySelector('.trainingplan-item-badge');
+                        if (badge) {
+                            badge.textContent = index + 1;
                         }
                     });
+                }
 
-                    // Set loading state on button
-                    if (saveBtn) {
-                        saveBtn.disabled = true;
-                        saveBtn.setAttribute('data-submitting', 'true');
-                        if (spinner) spinner.classList.remove('d-none');
-                        if (saveIcon) saveIcon.classList.add('d-none');
-                        if (saveBtnText) saveBtnText.textContent = 'Saving...';
-                    }
-                });
+                // Initialize SortableJS using the exact working pattern from Playlist Edit
+                if (typeof Sortable === 'undefined') {
+                    // Retry shortly if SortableJS CDN script is still downloading/evaluating
+                    setTimeout(initOrderSortable, 50);
+                    return;
+                }
+
+                if (!sortableEl._sortableInstance) {
+                    sortableEl._sortableInstance = new Sortable(sortableEl, {
+                        animation: 180,
+                        handle: '.trainingplan-drag-handle',
+                        draggable: '.trainingplan-sortlist-item',
+                        forceFallback: true,
+                        fallbackOnBody: true,
+                        swapThreshold: 0.65,
+                        ghostClass: 'sortable-ghost',
+                        chosenClass: 'sortable-chosen',
+                        dragClass: 'sortable-drag',
+                        onEnd: function () {
+                            updateSequenceBadges();
+                        }
+                    });
+                }
+
+                // Form Submit: Rebuild hidden inputs from live DOM order
+                if (formEl && !formEl._orderSubmitBound) {
+                    formEl._orderSubmitBound = true;
+                    formEl.addEventListener('submit', function (e) {
+                        if (saveBtn && saveBtn.getAttribute('data-submitting') === 'true') {
+                            e.preventDefault();
+                            return;
+                        }
+
+                        var items = sortableEl.querySelectorAll('.trainingplan-sortlist-item');
+                        if (items.length === 0) return;
+
+                        // Remove any existing/stale order inputs
+                        formEl.querySelectorAll('input[name^="order["]').forEach(function (el) {
+                            el.remove();
+                        });
+
+                        // Build fresh order inputs strictly according to DOM order
+                        items.forEach(function (item, index) {
+                            var detailId = item.getAttribute('data-detail-id');
+                            if (detailId) {
+                                var input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = 'order[' + detailId + ']';
+                                input.value = index;
+                                formEl.appendChild(input);
+                            }
+                        });
+
+                        // Set loading state on button
+                        if (saveBtn) {
+                            saveBtn.disabled = true;
+                            saveBtn.setAttribute('data-submitting', 'true');
+                            if (spinner) spinner.classList.remove('d-none');
+                            if (saveIcon) saveIcon.classList.add('d-none');
+                            if (saveBtnText) saveBtnText.textContent = 'Saving...';
+                        }
+                    });
+                }
             }
-        });
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initOrderSortable);
+            } else {
+                initOrderSortable();
+            }
+        })();
     </script>
 @endsection

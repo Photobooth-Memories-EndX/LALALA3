@@ -440,26 +440,39 @@ class PlaylistOrderTest extends TestCase
     }
 
     /**
-     * 18. Active playlist cannot reorder (rejects mutation).
+     * 18. Active playlist can reorder content (ACTIVE != ORDERING LOCKED).
      */
-    public function test_active_playlist_cannot_reorder(): void
+    public function test_active_playlist_can_reorder(): void
     {
-        $plan = $this->createPlaylist('Active Locked Plan', 'Active');
+        $plan = $this->createPlaylist('Active Allowed Plan', 'Active');
         $c1 = $this->createContent('C1');
+        $c2 = $this->createContent('C2');
         $d1 = TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
+        $d2 = TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c2->id, 'content_order' => 1]);
 
+        // Swap order on Active playlist: d2 first (0), d1 second (1)
         $response = $this->actingAs($this->adminUser)
             ->putJson(route('playlist.update', $plan->slug), [
                 'savetype' => 'reorder',
                 'order'    => [
-                    $d1->id => 0,
+                    $d2->id => 0,
+                    $d1->id => 1,
                 ],
             ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(200);
         $response->assertJson([
-            'message' => 'Please unpublish this playlist before changing its content order.',
+            'status'  => 200,
+            'success' => true,
+            'message' => 'Playlist order updated successfully.',
         ]);
+
+        // Verify order persisted correctly in database
+        $this->assertEquals(0, (int) $d2->fresh()->content_order);
+        $this->assertEquals(1, (int) $d1->fresh()->content_order);
+
+        // Verify playlist active status remains untouched
+        $this->assertEquals('Active', $plan->fresh()->active);
     }
 
     /**
@@ -852,5 +865,39 @@ class PlaylistOrderTest extends TestCase
         $expectedUrl = url('/manage/playlist/' . $plan->slug . '/order');
 
         $this->assertEquals($expectedUrl, route('manage.playlist.order', $plan->slug));
+    }
+
+    /**
+     * 34. Active playlist order page renders unlocked UI with drag handles and save button.
+     */
+    public function test_active_playlist_order_page_renders_unlocked_ui(): void
+    {
+        $plan = $this->createPlaylist('Active Order UI Plan', 'Active');
+        $c1 = $this->createContent('C1');
+        $d1 = TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->get(route('manage.playlist.order', $plan->slug));
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Ordering is locked');
+        $response->assertDontSee('Unpublish the playlist before changing the content order');
+        $response->assertSee('Save Order');
+        $response->assertSee('trainingplan-drag-handle');
+    }
+
+    /**
+     * 35. Active playlist edit page displays re-order content button.
+     */
+    public function test_active_playlist_edit_page_displays_reorder_content_button(): void
+    {
+        $plan = $this->createPlaylist('Active Edit Action Plan', 'Active');
+
+        $response = $this->actingAs($this->adminUser)
+            ->get(route('playlist.edit', $plan->slug));
+
+        $response->assertStatus(200);
+        $response->assertSee(route('manage.playlist.order', $plan->slug));
+        $response->assertSee('Re-order Content');
     }
 }

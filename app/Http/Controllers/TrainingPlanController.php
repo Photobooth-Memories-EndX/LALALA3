@@ -390,7 +390,7 @@ class TrainingPlanController extends Controller
             'slug'               => $trainingplan->slug,
             'trainingplan'       => $trainingplan,
             'trainingplandetail' => $trainingplandetail,
-            'isLocked'           => $trainingplan->active === 'Active',
+            'isLocked'           => false,
         ]);
     }
 
@@ -564,21 +564,9 @@ class TrainingPlanController extends Controller
             return redirect()->route('playlist.edit', $trainingplan->slug);
         }
 
-        // Active Playlist Security: reject any modification tampering while published
-        if ($trainingplan->active === 'Active') {
-            if ($request->savetype === 'reorder') {
-                if ($request->ajax() || $request->wantsJson()) {
-                    return response()->json([
-                        'status'  => 422,
-                        'success' => false,
-                        'message' => 'Please unpublish this playlist before changing its content order.',
-                    ], 422);
-                }
-
-                return redirect()->route('manage.playlist.order', $trainingplan->slug)
-                    ->with('warning', 'Please unpublish this playlist before changing its content order.');
-            }
-
+        // Active Playlist Security: reject general modification tampering while published
+        // Note: Content ordering is explicitly permitted for Active playlists (ACTIVE != ORDERING LOCKED)
+        if ($trainingplan->active === 'Active' && $request->savetype !== 'reorder') {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'status'  => 422,

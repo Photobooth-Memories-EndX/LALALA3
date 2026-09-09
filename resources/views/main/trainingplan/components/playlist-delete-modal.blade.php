@@ -34,28 +34,28 @@
                 </div>
 
                 <!-- Active Playlist Warning Alert (Shown only when status is Active) -->
-                <div class="alert alert-warning d-flex align-items-start gap-2 mb-3 py-2 px-3" id="deleteModalActiveWarning" style="display: none;">
-                    <i class="ti ti-alert-triangle fs-2 text-warning flex-shrink-0 mt-1"></i>
+                <div class="alert alert-warning d-flex align-items-start gap-2 mb-3 py-2 px-3 playlist-delete-warning-alert" id="deleteModalActiveWarning" style="display: none;">
+                    <i class="ti ti-alert-triangle fs-2 flex-shrink-0 mt-1 delete-warning-icon"></i>
                     <div>
-                        <strong class="d-block text-dark small mb-1">Active Playlist Warning</strong>
-                        <span class="small text-secondary">
+                        <strong class="d-block small mb-1 delete-warning-title">Active Playlist Warning</strong>
+                        <span class="small delete-warning-text">
                             This playlist is currently active and may be available to learners. Deleting it will remove it from the active playlist catalog.
                         </span>
                     </div>
                 </div>
 
                 <!-- Informational Safety Notice -->
-                <div class="p-2 rounded-2 bg-light border-0 mb-0">
-                    <p class="text-muted small mb-0 d-flex align-items-center gap-1">
-                        <i class="ti ti-info-circle text-primary fs-3 flex-shrink-0"></i>
+                <div class="p-2 rounded-2 mb-0 playlist-delete-info-box">
+                    <p class="small mb-0 d-flex align-items-center gap-2 delete-info-text">
+                        <i class="ti ti-info-circle fs-3 flex-shrink-0 delete-info-icon"></i>
                         <span>Underlying learning materials will remain available in the repository. User learning history will be preserved.</span>
                     </p>
                 </div>
 
                 <!-- Error Alert (Hidden by default) -->
-                <div class="alert alert-danger d-flex align-items-center gap-2 mt-3 mb-0 py-2 px-3" id="deleteModalErrorAlert" style="display: none;">
-                    <i class="ti ti-alert-circle fs-3 text-danger flex-shrink-0"></i>
-                    <span class="small flex-grow-1" id="deleteModalErrorMessage">Failed to delete playlist.</span>
+                <div class="alert alert-danger d-flex align-items-center gap-2 mt-3 mb-0 py-2 px-3 playlist-delete-error-alert" id="deleteModalErrorAlert" style="display: none;">
+                    <i class="ti ti-alert-circle fs-3 flex-shrink-0 delete-error-icon"></i>
+                    <span class="small flex-grow-1 delete-error-text" id="deleteModalErrorMessage">Failed to delete playlist.</span>
                 </div>
             </div>
 
@@ -71,6 +71,218 @@
         </div>
     </div>
 </div>
+
+<style>
+/* =======================================================
+   Delete Playlist Modal Scoped Contrast & Theme Styling
+   ======================================================= */
+
+/* --- Light Mode Alert & Label Contrast --- */
+
+/* Active Warning Alert */
+#modalDeletePlaylist .playlist-delete-warning-alert {
+    background-color: #fffbeb !important;
+    border: 1px solid #fde047 !important;
+    color: #713f12 !important;
+}
+#modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-icon {
+    color: #b45309 !important;
+}
+#modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-title {
+    color: #78350f !important;
+    font-weight: 700 !important;
+}
+#modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-text {
+    color: #854d0e !important;
+    font-weight: 500 !important;
+}
+
+/* Informational Safety Notice Box */
+#modalDeletePlaylist .playlist-delete-info-box {
+    background-color: #f0f9ff !important;
+    border: 1px solid #bae6fd !important;
+}
+#modalDeletePlaylist .playlist-delete-info-box .delete-info-icon {
+    color: #0284c7 !important;
+}
+#modalDeletePlaylist .playlist-delete-info-box .delete-info-text {
+    color: #0c4a6e !important;
+    font-weight: 500 !important;
+}
+
+/* Error Alert */
+#modalDeletePlaylist .playlist-delete-error-alert {
+    background-color: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #991b1b !important;
+}
+#modalDeletePlaylist .playlist-delete-error-alert .delete-error-icon {
+    color: #dc2626 !important;
+}
+#modalDeletePlaylist .playlist-delete-error-alert .delete-error-text {
+    color: #991b1b !important;
+    font-weight: 600 !important;
+}
+
+/* --- Dark Mode Scoped Contrast Overrides --- */
+
+/* Modal shell */
+[data-bs-theme="dark"] #modalDeletePlaylist .modal-content,
+[data-theme="dark"] #modalDeletePlaylist .modal-content,
+body.dark-mode #modalDeletePlaylist .modal-content,
+body.theme-dark #modalDeletePlaylist .modal-content,
+body.dark #modalDeletePlaylist .modal-content {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    color: #f8fafc !important;
+}
+
+/* Modal header & footer */
+[data-bs-theme="dark"] #modalDeletePlaylist .modal-header,
+[data-bs-theme="dark"] #modalDeletePlaylist .modal-footer,
+[data-theme="dark"] #modalDeletePlaylist .modal-header,
+[data-theme="dark"] #modalDeletePlaylist .modal-footer,
+body.dark-mode #modalDeletePlaylist .modal-header,
+body.dark-mode #modalDeletePlaylist .modal-footer,
+body.theme-dark #modalDeletePlaylist .modal-header,
+body.theme-dark #modalDeletePlaylist .modal-footer,
+body.dark #modalDeletePlaylist .modal-header,
+body.dark #modalDeletePlaylist .modal-footer {
+    background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Playlist summary card */
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-card,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-card,
+body.dark-mode #modalDeletePlaylist .playlist-delete-card,
+body.theme-dark #modalDeletePlaylist .playlist-delete-card,
+body.dark #modalDeletePlaylist .playlist-delete-card {
+    background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Dark text elements adapt to clean white/light in dark mode */
+[data-bs-theme="dark"] #modalDeletePlaylist .text-dark,
+[data-theme="dark"] #modalDeletePlaylist .text-dark,
+body.dark-mode #modalDeletePlaylist .text-dark,
+body.theme-dark #modalDeletePlaylist .text-dark,
+body.dark #modalDeletePlaylist .text-dark {
+    color: #f8fafc !important;
+}
+
+/* Muted text in dark mode */
+[data-bs-theme="dark"] #modalDeletePlaylist .text-muted,
+[data-theme="dark"] #modalDeletePlaylist .text-muted,
+body.dark-mode #modalDeletePlaylist .text-muted,
+body.theme-dark #modalDeletePlaylist .text-muted,
+body.dark #modalDeletePlaylist .text-muted {
+    color: #94a3b8 !important;
+}
+
+/* Close button and Cancel button */
+[data-bs-theme="dark"] #modalDeletePlaylist .btn-close,
+[data-theme="dark"] #modalDeletePlaylist .btn-close,
+body.dark-mode #modalDeletePlaylist .btn-close,
+body.theme-dark #modalDeletePlaylist .btn-close,
+body.dark #modalDeletePlaylist .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-bs-theme="dark"] #modalDeletePlaylist .btn-light,
+[data-theme="dark"] #modalDeletePlaylist .btn-light,
+body.dark-mode #modalDeletePlaylist .btn-light,
+body.theme-dark #modalDeletePlaylist .btn-light,
+body.dark #modalDeletePlaylist .btn-light {
+    background-color: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #f3f4f6 !important;
+}
+
+/* Dark Mode Warning Alert */
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-warning-alert,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-warning-alert,
+body.dark-mode #modalDeletePlaylist .playlist-delete-warning-alert,
+body.theme-dark #modalDeletePlaylist .playlist-delete-warning-alert,
+body.dark #modalDeletePlaylist .playlist-delete-warning-alert {
+    background-color: rgba(245, 159, 0, 0.16) !important;
+    border: 1px solid rgba(250, 204, 21, 0.35) !important;
+    color: #fef9c3 !important;
+}
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-icon,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-icon,
+body.dark-mode #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-icon,
+body.theme-dark #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-icon,
+body.dark #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-icon {
+    color: #facc15 !important;
+}
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-title,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-title,
+body.dark-mode #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-title,
+body.theme-dark #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-title,
+body.dark #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-title {
+    color: #fef08a !important;
+    font-weight: 700 !important;
+}
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-text,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-text,
+body.dark-mode #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-text,
+body.theme-dark #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-text,
+body.dark #modalDeletePlaylist .playlist-delete-warning-alert .delete-warning-text {
+    color: #fef9c3 !important;
+    font-weight: 500 !important;
+}
+
+/* Dark Mode Informational Notice */
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-info-box,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-info-box,
+body.dark-mode #modalDeletePlaylist .playlist-delete-info-box,
+body.theme-dark #modalDeletePlaylist .playlist-delete-info-box,
+body.dark #modalDeletePlaylist .playlist-delete-info-box {
+    background-color: rgba(14, 165, 233, 0.14) !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+}
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-info-box .delete-info-icon,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-info-box .delete-info-icon,
+body.dark-mode #modalDeletePlaylist .playlist-delete-info-box .delete-info-icon,
+body.theme-dark #modalDeletePlaylist .playlist-delete-info-box .delete-info-icon,
+body.dark #modalDeletePlaylist .playlist-delete-info-box .delete-info-icon {
+    color: #38bdf8 !important;
+}
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-info-box .delete-info-text,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-info-box .delete-info-text,
+body.dark-mode #modalDeletePlaylist .playlist-delete-info-box .delete-info-text,
+body.theme-dark #modalDeletePlaylist .playlist-delete-info-box .delete-info-text,
+body.dark #modalDeletePlaylist .playlist-delete-info-box .delete-info-text {
+    color: #e0f2fe !important;
+    font-weight: 500 !important;
+}
+
+/* Dark Mode Error Alert */
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-error-alert,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-error-alert,
+body.dark-mode #modalDeletePlaylist .playlist-delete-error-alert,
+body.theme-dark #modalDeletePlaylist .playlist-delete-error-alert,
+body.dark #modalDeletePlaylist .playlist-delete-error-alert {
+    background-color: rgba(239, 68, 68, 0.20) !important;
+    border: 1px solid rgba(248, 113, 113, 0.35) !important;
+    color: #fee2e2 !important;
+}
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-error-alert .delete-error-icon,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-error-alert .delete-error-icon,
+body.dark-mode #modalDeletePlaylist .playlist-delete-error-alert .delete-error-icon,
+body.theme-dark #modalDeletePlaylist .playlist-delete-error-alert .delete-error-icon,
+body.dark #modalDeletePlaylist .playlist-delete-error-alert .delete-error-icon {
+    color: #f87171 !important;
+}
+[data-bs-theme="dark"] #modalDeletePlaylist .playlist-delete-error-alert .delete-error-text,
+[data-theme="dark"] #modalDeletePlaylist .playlist-delete-error-alert .delete-error-text,
+body.dark-mode #modalDeletePlaylist .playlist-delete-error-alert .delete-error-text,
+body.theme-dark #modalDeletePlaylist .playlist-delete-error-alert .delete-error-text,
+body.dark #modalDeletePlaylist .playlist-delete-error-alert .delete-error-text {
+    color: #fee2e2 !important;
+    font-weight: 600 !important;
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

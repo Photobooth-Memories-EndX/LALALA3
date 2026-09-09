@@ -73,9 +73,15 @@
             </a>
 
             @if ($isLocked)
-                <div class="d-flex align-items-center text-muted small">
-                    <i class="ti ti-lock me-1 text-warning"></i>
-                    <span>Playlist is locked while Active. Use the <strong>Unpublish</strong> button in Step 1 to edit.</span>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <div class="d-flex align-items-center text-muted small me-2">
+                        <i class="ti ti-lock me-1 text-warning"></i>
+                        <span>Playlist is locked while Active. Use the <strong>Unpublish</strong> button in Step 1 to edit details.</span>
+                    </div>
+
+                    <a type="button" class="btn btn-outline-secondary" href="{{ route('manage.playlist.order', $trainingplan->slug) }}" title="Re-order materials">
+                        <i class="ti ti-arrows-sort me-1"></i> Re-order Content
+                    </a>
                 </div>
             @else
                 <div class="d-flex flex-wrap align-items-center gap-2">
