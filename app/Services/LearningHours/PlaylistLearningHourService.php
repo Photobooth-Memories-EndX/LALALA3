@@ -24,9 +24,10 @@ class PlaylistLearningHourService implements LearningHourSyncInterface
      * Synchronize learning_hours for all playlists (trainingplan) using chunking and dirty checking.
      * Eager loads trainingplandetail.content to completely avoid N+1 queries.
      *
+     * @param bool $syncDuration If false, total_duration_seconds remains unchanged.
      * @return array{updated: int, skipped: int, total: int}
      */
-    public function syncAll(): array
+    public function syncAll(bool $syncDuration = false): array
     {
         $updated = 0;
         $skipped = 0;
@@ -35,10 +36,10 @@ class PlaylistLearningHourService implements LearningHourSyncInterface
 
         TrainingPlan::query()
             ->with(['trainingplandetail.content:id,duration'])
-            ->chunk($chunkSize, function ($playlists) use (&$updated, &$skipped, &$total) {
+            ->chunk($chunkSize, function ($playlists) use (&$updated, &$skipped, &$total, $syncDuration) {
                 foreach ($playlists as $plan) {
                     $total++;
-                    if ($this->syncPlaylist($plan)) {
+                    if ($this->syncPlaylist($plan, $syncDuration)) {
                         $updated++;
                     } else {
                         $skipped++;
@@ -56,19 +57,20 @@ class PlaylistLearningHourService implements LearningHourSyncInterface
     /**
      * Alias for batch synchronization.
      */
-    public function syncBatch(): array
+    public function syncBatch(bool $syncDuration = false): array
     {
-        return $this->syncAll();
+        return $this->syncAll($syncDuration);
     }
 
     /**
      * Synchronize a single training plan / playlist record.
      * Always calculates total duration strictly from trainingplandetail -> content.duration.
+     * When $syncDuration is false, strictly updates learning_hours and leaves total_duration_seconds untouched.
      * Returns true if database was updated, false if skipped (dirty checking).
      */
-    public function syncPlaylist(TrainingPlan $plan): bool
+    public function syncPlaylist(TrainingPlan $plan, bool $syncDuration = false): bool
     {
-        return DB::transaction(function () use ($plan) {
+        return DB::transaction(function () use ($plan, $syncDuration) {
             if (!$plan->relationLoaded('trainingplandetail')) {
                 $plan->load('trainingplandetail.content:id,duration');
             }
@@ -85,21 +87,26 @@ class PlaylistLearningHourService implements LearningHourSyncInterface
             $currentTotalSeconds = (int) ($plan->total_duration_seconds ?? 0);
 
             $hoursChanged = abs($currentLearningHours - $newLearningHours) >= 0.0001;
-            $secondsChanged = $currentTotalSeconds !== $totalSeconds;
+            $secondsChanged = $syncDuration && ($currentTotalSeconds !== $totalSeconds);
             $wasUpdated = false;
 
             if ($hoursChanged || $secondsChanged) {
-                $plan->forceFill([
-                    'learning_hours'         => $newLearningHours,
-                    'total_duration_seconds' => $totalSeconds,
-                ])->saveQuietly();
+                $attributes = [
+                    'learning_hours' => $newLearningHours,
+                ];
+
+                if ($syncDuration) {
+                    $attributes['total_duration_seconds'] = $totalSeconds;
+                }
+
+                $plan->forceFill($attributes)->saveQuietly();
 
                 $wasUpdated = true;
 
                 $this->logAudit('Playlist synchronized', [
                     'playlist_id'          => $plan->id,
                     'old_duration_seconds' => $currentTotalSeconds,
-                    'new_duration_seconds' => $totalSeconds,
+                    'new_duration_seconds' => $syncDuration ? $totalSeconds : $currentTotalSeconds,
                     'old_learning_hours'   => $currentLearningHours,
                     'new_learning_hours'   => $newLearningHours,
                     'user_id'              => Auth::id(),
@@ -110,7 +117,7 @@ class PlaylistLearningHourService implements LearningHourSyncInterface
             PlaylistLearningHourSynchronized::dispatch(
                 $plan,
                 $currentTotalSeconds,
-                $totalSeconds,
+                $syncDuration ? $totalSeconds : $currentTotalSeconds,
                 $currentLearningHours,
                 $newLearningHours,
                 $wasUpdated
@@ -135,9 +142,9 @@ class PlaylistLearningHourService implements LearningHourSyncInterface
     /**
      * Synchronize a single playlist record and return detailed DTO result.
      */
-    public function syncSinglePlaylist(TrainingPlan $plan): LearningHourSyncResult
+    public function syncSinglePlaylist(TrainingPlan $plan, bool $syncDuration = true): LearningHourSyncResult
     {
-        $wasUpdated = $this->syncPlaylist($plan);
+        $wasUpdated = $this->syncPlaylist($plan, $syncDuration);
         $freshPlan = $plan->fresh();
 
         if (!$freshPlan->relationLoaded('trainingplandetail')) {

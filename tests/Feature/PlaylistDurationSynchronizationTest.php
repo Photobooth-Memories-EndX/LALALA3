@@ -2,13 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\TrainingPlanController;
 use App\Models\Classification;
 use App\Models\Content;
 use App\Models\RoleAccessPermission;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Models\User;
+use App\Services\PlaylistDurationService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -403,5 +406,68 @@ class PlaylistDurationSynchronizationTest extends TestCase
 
         $plan->refresh();
         $this->assertSame(1800, $plan->total_duration_seconds);
+    }
+
+    /**
+     * Test 16 — Concurrency: Concurrent synchronization request is rejected with HTTP 429.
+     */
+    public function test_concurrent_synchronization_rejected_with_http_429(): void
+    {
+        $lock = Cache::lock(TrainingPlanController::DURATION_SYNC_LOCK_KEY, 60);
+        $this->assertTrue($lock->get(), 'Failed to acquire pre-test simulated lock.');
+
+        try {
+            $response = $this->actingAs($this->adminUser)
+                ->postJson(route('manage.playlist.synchronize-durations'));
+
+            $response->assertStatus(429);
+            $response->assertJson([
+                'success' => false,
+                'message' => 'Another playlist duration synchronization is currently in progress. Please wait until it completes.',
+            ]);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Test 17 — Concurrency: Lock is properly released after synchronization finishes.
+     */
+    public function test_lock_is_released_after_synchronization_finishes(): void
+    {
+        $response = $this->actingAs($this->adminUser)
+            ->postJson(route('manage.playlist.synchronize-durations'));
+
+        $response->assertStatus(200);
+
+        // Verify the lock was released in the finally block by acquiring it now
+        $lock = Cache::lock(TrainingPlanController::DURATION_SYNC_LOCK_KEY, 10);
+        $this->assertTrue($lock->get(), 'Lock was not released after successful synchronization.');
+        $lock->release();
+    }
+
+    /**
+     * Test 18 — Concurrency: Lock is released even if an exception occurs during sync.
+     */
+    public function test_lock_is_released_when_exception_occurs(): void
+    {
+        $mockService = $this->mock(PlaylistDurationService::class);
+        $mockService->shouldReceive('synchronizeAll')
+            ->once()
+            ->andThrow(new \RuntimeException('Simulated unexpected sync failure.'));
+
+        $response = $this->actingAs($this->adminUser)
+            ->postJson(route('manage.playlist.synchronize-durations'));
+
+        $response->assertStatus(500);
+        $response->assertJson([
+            'success' => false,
+            'message' => 'Failed to synchronize playlist durations. Please try again later.',
+        ]);
+
+        // Verify the lock was released despite the exception
+        $lock = Cache::lock(TrainingPlanController::DURATION_SYNC_LOCK_KEY, 10);
+        $this->assertTrue($lock->get(), 'Lock was not released after exception occurred.');
+        $lock->release();
     }
 }

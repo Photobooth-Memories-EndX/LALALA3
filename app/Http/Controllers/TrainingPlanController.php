@@ -5,9 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
+use App\Services\LearningHours\PlaylistLearningHourService;
 use App\Services\PlaylistDurationService;
+use App\Support\ContentTypeHelper;
+use App\Support\DurationFormatter;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -683,12 +688,26 @@ class TrainingPlanController extends Controller
         ]);
     }
 
+    public const DURATION_SYNC_LOCK_KEY = 'playlist_duration_sync_lock';
+    public const DURATION_SYNC_LOCK_TTL = 120; // 2 minutes
+
     /**
      * AJAX bulk / single playlist duration synchronization endpoint.
      */
     public function synchronizeDurations(Request $request, PlaylistDurationService $service): JsonResponse
     {
+        $lock = Cache::lock(self::DURATION_SYNC_LOCK_KEY, self::DURATION_SYNC_LOCK_TTL);
+
+        if (!$lock->get()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Another playlist duration synchronization is currently in progress. Please wait until it completes.',
+            ], 429);
+        }
+
         try {
+            @set_time_limit(300);
+
             $ids = null;
             if ($request->filled('ids')) {
                 $ids = (array) $request->input('ids');
@@ -712,7 +731,155 @@ class TrainingPlanController extends Controller
                 'success' => false,
                 'message' => 'Failed to synchronize playlist durations. Please try again later.',
             ], 500);
+        } finally {
+            $lock->release();
         }
+    }
+
+    public const LEARNING_HOURS_SYNC_LOCK_KEY = 'playlist_learning_hours_sync_lock';
+    public const LEARNING_HOURS_SYNC_LOCK_TTL = 300; // 5 minutes
+
+    /**
+     * AJAX bulk playlist learning hours synchronization endpoint.
+     */
+    public function synchronizeAllLearningHours(Request $request, PlaylistLearningHourService $service): JsonResponse|RedirectResponse
+    {
+        $lock = Cache::lock(self::LEARNING_HOURS_SYNC_LOCK_KEY, self::LEARNING_HOURS_SYNC_LOCK_TTL);
+
+        if (!$lock->get()) {
+            $message = 'Another playlist learning hours synchronization is currently in progress. Please wait until it completes.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 429);
+            }
+
+            return redirect()->back()->with('error', $message);
+        }
+
+        try {
+            @set_time_limit(300);
+
+            // Synchronize learning hours only without modifying total_duration_seconds
+            $result = $service->syncAll(false);
+
+            $message = "Playlist Learning Hours synchronized successfully.\n"
+                . "Updated: {$result['updated']}, Skipped: {$result['skipped']}, Total: {$result['total']}";
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Playlist Learning Hours synchronized successfully.',
+                    'data'    => [
+                        'total'            => $result['total'],
+                        'updated'          => $result['updated'],
+                        'skipped'          => $result['skipped'],
+                        'playlist_total'   => $result['total'],
+                        'playlist_updated' => $result['updated'],
+                        'playlist_skipped' => $result['skipped'],
+                    ],
+                ]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Throwable $e) {
+            Log::error('Playlist Learning Hours synchronization failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            $errorMessage = 'Failed to synchronize playlist learning hours: ' . $e->getMessage();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', $errorMessage);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * AJAX read-only playlist detail / quick view endpoint.
+     */
+    public function details(mixed $id): JsonResponse
+    {
+        $plan = TrainingPlan::with([
+            'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
+            'trainingplandetail.content' => fn ($q) => $q->select('id', 'title', 'slug', 'duration', 'type', 'active', 'learning_hours')
+        ])->where(function ($q) use ($id) {
+            if (is_numeric($id)) {
+                $q->where('id', (int) $id);
+            } else {
+                $q->where('slug', $id);
+            }
+        })->first();
+
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Playlist not found.',
+            ], 404);
+        }
+
+        $deadlineText = 'No Deadline';
+        $isExpired = false;
+        if ($plan->has_deadline && $plan->from_date && $plan->to_date) {
+            $deadlineText = $plan->from_date->format('d/m/Y') . ' – ' . $plan->to_date->format('d/m/Y');
+            $isExpired = now()->gt($plan->to_date);
+        }
+
+        $materials = [];
+        $orderIndex = 1;
+        foreach ($plan->trainingplandetail as $detail) {
+            $content = $detail->content;
+            if (!$content || !$content->id || (method_exists($content, 'trashed') && $content->trashed())) {
+                continue;
+            }
+
+            $materials[] = [
+                'id'             => $content->id,
+                'order'          => (int) ($detail->content_order ?? $orderIndex),
+                'display_order'  => $orderIndex++,
+                'title'          => $content->title ?? '-',
+                'slug'           => $content->slug,
+                'type'           => $content->type ?? 'Other',
+                'type_label'     => ContentTypeHelper::label($content->type),
+                'duration'       => DurationFormatter::format($content->duration),
+                'duration_raw'   => $content->duration ?? '00:00:00',
+                'learning_hours' => $content->learning_hours !== null ? number_format((float) $content->learning_hours, 4, '.', '') . ' h' : '-',
+                'active'         => $content->active,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'                     => $plan->id,
+                'title'                  => $plan->title,
+                'slug'                   => $plan->slug,
+                'status'                 => $plan->active,
+                'has_deadline'           => (bool) $plan->has_deadline,
+                'deadline'               => $deadlineText,
+                'deadline_formatted'     => $deadlineText,
+                'is_expired'             => $isExpired,
+                'from_date'              => $plan->from_date ? $plan->from_date->format('d/m/Y') : null,
+                'to_date'                => $plan->to_date ? $plan->to_date->format('d/m/Y') : null,
+                'thumbnail_url'          => $plan->thumbnail_url,
+                'total_duration'         => DurationFormatter::fromSeconds((int) ($plan->total_duration_seconds ?? 0)),
+                'total_duration_seconds' => (int) ($plan->total_duration_seconds ?? 0),
+                'learning_hours'         => number_format((float) ($plan->learning_hours ?? 0), 4, '.', '') . ' h',
+                'learning_hours_value'   => (float) ($plan->learning_hours ?? 0),
+                'materials_count'        => count($materials),
+                'materials'              => $materials,
+                'edit_url'               => route('playlist.edit', $plan->slug ?? $plan->id),
+                'order_url'              => route('playlist.order', $plan->slug ?? $plan->id),
+            ],
+        ]);
     }
 }
 

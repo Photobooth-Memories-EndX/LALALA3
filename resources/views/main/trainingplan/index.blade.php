@@ -34,6 +34,10 @@
 
                     <!-- Right Group: Action Button -->
                     <div class="flex-shrink-0 d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalSyncPlaylistLearningHours" id="btnSyncPlaylistLearningHours">
+                            <i class="ti ti-refresh fs-2"></i>
+                            <span>Sync Learning Hours</span>
+                        </button>
                         <button type="button" class="btn btn-outline-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalSyncPlaylistDuration" id="btnSyncPlaylistDuration">
                             <i class="ti ti-clock-check fs-2"></i>
                             <span>Sync Playlist Durations</span>
@@ -320,6 +324,13 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-1 flex-wrap">
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary owl-action-btn btn-view-playlist-detail"
+                                                        data-id="{{ $list->id }}"
+                                                        title="View Detail"
+                                                        aria-label="View playlist details">
+                                                        <i class="ti ti-eye"></i>
+                                                    </button>
                                                     <a href="{{ route('playlist.edit', $list->slug) }}"
                                                         class="btn btn-sm btn-info owl-action-btn" title="Edit">
                                                         <i class="ti ti-edit"></i>
@@ -500,6 +511,12 @@
 
     {{-- Playlist Duration Synchronization Modal --}}
     @include('main.trainingplan.components.playlist-sync-duration-modal')
+
+    {{-- Playlist Learning Hours Synchronization Modal --}}
+    @include('main.trainingplan.components.playlist-sync-learning-hours-modal')
+
+    {{-- Playlist Detail Modal --}}
+    @include('main.trainingplan.components.playlist-detail-modal')
 
 @endsection
 
