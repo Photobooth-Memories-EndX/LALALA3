@@ -18,11 +18,18 @@
             </div>
 
             <div class="d-flex gap-2 align-items-center">
+                <a href="{{ route('manage.learning-hours.dry-run.index', array_merge(request()->query(), ['fresh' => 1])) }}" class="btn btn-outline-secondary" title="Force refresh calculation from database">
+                    <i class="ti ti-refresh me-1"></i> Refresh
+                </a>
                 <a href="{{ route('manage.learning-hours.index') }}" class="btn btn-outline-secondary">
                     <i class="ti ti-arrow-left me-1"></i> Back to Module Hub
                 </a>
-                <button type="button" class="btn btn-primary" id="btnOpenExecuteModal" data-bs-toggle="modal" data-bs-target="#modalConfirmExecute" {{ (!empty($activeExecution) && $activeExecution['status'] === 'processing') ? 'disabled' : '' }}>
-                    <i class="ti ti-player-play me-1"></i> Execute Migration
+                <button type="button" class="btn {{ ($summary['to_insert_count'] ?? 0) == 0 ? 'btn-outline-success' : 'btn-primary' }}" id="btnOpenExecuteModal" data-bs-toggle="modal" data-bs-target="#modalConfirmExecute" {{ (!empty($activeExecution) && $activeExecution['status'] === 'processing') ? 'disabled' : '' }}>
+                    @if (($summary['to_insert_count'] ?? 0) == 0)
+                        <i class="ti ti-circle-check me-1"></i> Migration Up-to-Date
+                    @else
+                        <i class="ti ti-player-play me-1"></i> Execute Migration
+                    @endif
                 </button>
             </div>
         </header>
@@ -44,23 +51,47 @@
                 </span>
             </div>
             <div class="card-body">
-                <!-- Progress bar -->
+                <!-- Progress Section -->
                 <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span id="exec-step-indicator" class="small fw-semibold text-muted">
-                            {{ (!empty($activeExecution) && $activeExecution['status'] === 'completed') ? 'Migration completed.' : 'Initializing chunk step...' }}
-                        </span>
-                        <span id="exec-progress-text" class="small font-monospace fw-bold text-primary">
-                            {{ $activeExecution['percentage'] ?? '0' }}%
-                        </span>
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-1 mb-2">
+                        <div>
+                            <span id="exec-progress-title" class="text-uppercase text-muted fw-bold small me-2">Migration Progress</span>
+                            <span id="exec-progress-counts" class="h4 mb-0 fw-bold font-monospace text-dark">
+                                {{ number_format($activeExecution['processed_records'] ?? 0) }} / {{ number_format($activeExecution['total_candidates'] ?? $summary['total_candidates']) }} records
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="exec-batch-badge" class="badge bg-secondary-lt font-monospace px-2 py-1">
+                                Batch <span id="exec-current-batch">{{ $activeExecution['batch_number'] ?? 0 }}</span> / <span id="exec-total-batches">{{ $activeExecution['total_batches'] ?? ($summary['total_candidates'] > 0 ? ceil($summary['total_candidates'] / 1000) : 0) }}</span>
+                            </span>
+                            <span id="exec-progress-text" class="h4 mb-0 font-monospace fw-bold text-primary">
+                                {{ $activeExecution['percentage'] ?? '0' }}%
+                            </span>
+                        </div>
                     </div>
-                    <div class="progress" style="height: 12px;">
-                        <div id="exec-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+
+                    <div class="progress" style="height: 14px;">
+                        <div id="exec-progress-bar" class="progress-bar {{ (!empty($activeExecution) && $activeExecution['status'] === 'completed') ? 'bg-success' : 'progress-bar-striped progress-bar-animated bg-primary' }}"
                              role="progressbar"
                              style="width: {{ $activeExecution['percentage'] ?? 0 }}%;"
                              aria-valuenow="{{ $activeExecution['percentage'] ?? 0 }}"
                              aria-valuemin="0"
                              aria-valuemax="100"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span id="exec-step-indicator" class="small fw-semibold text-muted">
+                            @if (!empty($activeExecution) && $activeExecution['status'] === 'completed')
+                                {{ $activeExecution['message'] ?? 'Migration completed successfully.' }}
+                            @elseif (!empty($activeExecution) && $activeExecution['status'] === 'failed')
+                                {{ $activeExecution['last_error'] ?? 'Execution paused due to error.' }}
+                            @else
+                                Ready to start.
+                            @endif
+                        </span>
+                        <span id="exec-status-subtext" class="small text-muted font-monospace">
+                            Status: <span id="exec-live-status" class="fw-semibold">{{ ucfirst($activeExecution['status'] ?? 'Ready') }}</span>
+                        </span>
                     </div>
                 </div>
 
@@ -120,8 +151,15 @@
                 <div id="exec-success-alert" class="alert alert-success border-0 shadow-sm mt-3 mb-0" style="{{ (!empty($activeExecution) && $activeExecution['status'] === 'completed') ? '' : 'display: none;' }}">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <div class="fw-bold fs-5"><i class="ti ti-circle-check me-2"></i> Migration Completed Successfully!</div>
-                            <div class="small text-success">All historical playlist candidates have been processed. Existing progress records were preserved.</div>
+                            <div id="exec-success-title" class="fw-bold fs-5">
+                                <i class="ti ti-circle-check me-2"></i>
+                                {{ (!empty($activeExecution) && !empty($activeExecution['already_completed'])) ? 'Migration Already Complete' : 'Migration Completed Successfully!' }}
+                            </div>
+                            <div id="exec-success-message" class="small text-success">
+                                {{ (!empty($activeExecution) && !empty($activeExecution['already_completed']))
+                                    ? 'All historical playlist progress has already been migrated. ' . number_format($activeExecution['total_candidates'] ?? $summary['total_candidates']) . ' of ' . number_format($activeExecution['total_candidates'] ?? $summary['total_candidates']) . ' records are already present in isolated storage.'
+                                    : 'All historical playlist candidates have been processed. Existing progress records were preserved.' }}
+                            </div>
                         </div>
                         <a href="{{ route('manage.learning-hours.dry-run.index', ['cutoff' => $cutoff, 'playlist_id' => $selectedPlaylistId ?? 'all']) }}" class="btn btn-success btn-sm">
                             <i class="ti ti-refresh me-1"></i> Refresh Summary
@@ -513,64 +551,179 @@
 <div class="modal fade" id="modalConfirmExecute" tabindex="-1" aria-labelledby="modalConfirmExecuteLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" id="modalConfirmExecuteLabel">
-                    <i class="ti ti-alert-triangle text-warning me-2"></i> Execute Historical Playlist Progress Migration?
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body py-3">
-                <p class="text-muted small mb-3">
-                    You are about to execute progress migration from <code>content_users</code> to <code>playlist_content_users</code> for the reviewed scope below.
-                </p>
-
-                <div class="table-responsive mb-3">
-                    <table class="table table-sm table-bordered mb-0">
-                        <tbody>
-                            <tr>
-                                <th class="bg-light text-muted w-50 small">Cutoff Timestamp</th>
-                                <td class="font-monospace small fw-semibold">{{ $cutoff }}</td>
-                            </tr>
-                            <tr>
-                                <th class="bg-light text-muted small">Playlist Scope</th>
-                                <td class="small fw-semibold">
-                                    @if ($selectedPlaylistId)
-                                        #{{ $selectedPlaylistId }} - {{ $playlists->firstWhere('id', $selectedPlaylistId)?->title ?? 'Selected Playlist' }}
-                                    @else
-                                        All Historical Playlists ({{ $summary['old_playlists_count'] }} Playlists)
-                                    @endif
-                                </td>
-                            </tr>
-                            <tr>
-                                <th class="bg-light text-muted small">Total Candidate PCUs</th>
-                                <td class="small font-monospace fw-bold text-primary">{{ number_format($summary['total_candidates']) }}</td>
-                            </tr>
-                            <tr>
-                                <th class="bg-light text-muted small">Existing PCUs (Skipped)</th>
-                                <td class="small font-monospace text-muted">{{ number_format($summary['skipped_existing_count']) }}</td>
-                            </tr>
-                            <tr>
-                                <th class="bg-light text-muted small">New PCUs to Create</th>
-                                <td class="small font-monospace fw-bold text-success">{{ number_format($summary['to_insert_count']) }}</td>
-                            </tr>
-                            <tr>
-                                <th class="bg-light text-muted small">Execution Strategy</th>
-                                <td class="small text-muted">Client-Driven AJAX Chunking (1,000 records/step)</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <!-- 1. Confirmation View (Initial) -->
+            <div id="modal-confirm-view">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalConfirmExecuteLabel">
+                        <i class="ti ti-alert-triangle text-warning me-2"></i> Execute Historical Playlist Progress Migration?
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="modal-body py-3">
+                    <p class="text-muted small mb-3">
+                        You are about to execute progress migration from <code>content_users</code> to <code>playlist_content_users</code> for the reviewed scope below.
+                    </p>
 
-                <div class="alert alert-warning border-0 small mb-0">
-                    <div class="fw-semibold mb-1"><i class="ti ti-shield-check me-1"></i> Safety & Idempotency Guarantee</div>
-                    <div>This action creates new playlist progress records. <strong>Existing records will NOT be overwritten</strong> (<code>insertOrIgnore</code>). The process runs in sequential steps with active concurrency locking.</div>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-bordered mb-0">
+                            <tbody>
+                                <tr>
+                                    <th class="bg-light text-muted w-50 small">Cutoff Timestamp</th>
+                                    <td class="font-monospace small fw-semibold">{{ $cutoff }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light text-muted small">Playlist Scope</th>
+                                    <td class="small fw-semibold">
+                                        @if ($selectedPlaylistId)
+                                            #{{ $selectedPlaylistId }} - {{ $playlists->firstWhere('id', $selectedPlaylistId)?->title ?? 'Selected Playlist' }}
+                                        @else
+                                            All Historical Playlists ({{ $summary['old_playlists_count'] }} Playlists)
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light text-muted small">Total Candidate PCUs</th>
+                                    <td class="small font-monospace fw-bold text-primary">{{ number_format($summary['total_candidates']) }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light text-muted small">Existing PCUs (Skipped)</th>
+                                    <td class="small font-monospace text-muted">{{ number_format($summary['skipped_existing_count']) }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light text-muted small">New PCUs to Create</th>
+                                    <td class="small font-monospace fw-bold text-success">{{ number_format($summary['to_insert_count']) }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-light text-muted small">Execution Strategy</th>
+                                    <td class="small text-muted">Client-Driven AJAX Chunking (1,000 records/step)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (($summary['to_insert_count'] ?? 0) == 0)
+                        <div class="alert alert-success border-0 small mb-0">
+                            <div class="fw-semibold mb-1"><i class="ti ti-check me-1"></i> Already Up-To-Date</div>
+                            <div>All <strong>{{ number_format($summary['total_candidates']) }}</strong> historical candidates already exist in isolated storage. Executing will verify status without creating duplicate records.</div>
+                        </div>
+                    @else
+                        <div class="alert alert-warning border-0 small mb-0">
+                            <div class="fw-semibold mb-1"><i class="ti ti-shield-check me-1"></i> Safety & Idempotency Guarantee</div>
+                            <div>This action creates new playlist progress records. <strong>Existing records will NOT be overwritten</strong> (<code>insertOrIgnore</code>). The process runs in sequential steps with active concurrency locking.</div>
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="btnCancelExecute">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btnConfirmExecute">
+                        <i class="ti ti-player-play me-1"></i> {{ ($summary['to_insert_count'] ?? 0) == 0 ? 'Confirm & Verify Status' : 'Start Migration' }}
+                    </button>
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="btnCancelExecute">Cancel</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmExecute">
-                    <i class="ti ti-player-play me-1"></i> Start Migration
-                </button>
+
+            <!-- 2. Live Execution Progress View (Inside Modal) -->
+            <div id="modal-progress-view" style="display: none;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalProgressTitle">
+                        <i class="ti ti-activity text-primary me-2" id="modalProgressIcon"></i> <span id="modalProgressHeading">Historical Playlist Progress Migration</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="modalProgressCloseBtn" style="display: none;"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <!-- Live Status Subheading -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span id="modalStatusBadge" class="badge bg-warning-lt text-warning fs-6 px-3 py-1">
+                            <i class="ti ti-loader me-1" id="modalStatusBadgeIcon"></i> <span id="modalLiveStatus">Processing...</span>
+                        </span>
+                        <span id="modalBatchBadge" class="badge bg-secondary-lt font-monospace px-2 py-1">
+                            Batch <span id="modalCurrentBatch">0</span> / <span id="modalTotalBatches">{{ $activeExecution['total_batches'] ?? ($summary['total_candidates'] > 0 ? ceil($summary['total_candidates'] / 1000) : 0) }}</span>
+                        </span>
+                    </div>
+
+                    <!-- Progress Numbers & Bar -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span id="modalProgressCounts" class="h4 mb-0 fw-bold font-monospace text-dark">
+                                0 / {{ number_format($summary['total_candidates']) }} records
+                            </span>
+                            <span id="modalProgressText" class="h4 mb-0 font-monospace fw-bold text-primary">
+                                0.0%
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 12px;">
+                            <div id="modalProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                 role="progressbar"
+                                 style="width: 0%;"
+                                 aria-valuenow="0"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100"></div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span id="modalStepIndicator" class="small fw-semibold text-muted">
+                                Preparing migration session...
+                            </span>
+                            <span id="modalDuration" class="small text-muted font-monospace">0s</span>
+                        </div>
+                    </div>
+
+                    <!-- Counter Grid -->
+                    <div class="row g-2 text-center mb-3">
+                        <div class="col-3">
+                            <div class="p-2 bg-light rounded">
+                                <div class="text-muted" style="font-size: 0.75rem;">Total Candidates</div>
+                                <div id="modalTotalCount" class="fw-bold text-dark font-monospace small">
+                                    {{ number_format($summary['total_candidates']) }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 bg-light rounded">
+                                <div class="text-muted" style="font-size: 0.75rem;">Processed</div>
+                                <div id="modalProcessedCount" class="fw-bold text-primary font-monospace small">0</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 bg-teal-lt rounded">
+                                <div class="text-teal" style="font-size: 0.75rem;">Inserted</div>
+                                <div id="modalInsertedCount" class="fw-bold text-teal font-monospace small">0</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 bg-light rounded">
+                                <div class="text-muted" style="font-size: 0.75rem;">Skipped</div>
+                                <div id="modalSkippedCount" class="fw-bold text-muted font-monospace small">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Playlist Info -->
+                    <div class="small text-muted p-2 rounded bg-light border-0 mb-2">
+                        <i class="ti ti-playlist me-1"></i> Current: <span id="modalCurrentPlaylist" class="fw-semibold text-dark">Initializing...</span>
+                    </div>
+
+                    <!-- Alert Boxes (Success / Error) -->
+                    <div id="modalSuccessAlert" class="alert alert-success border-0 small mb-0" style="display: none;">
+                        <div class="fw-semibold mb-1" id="modalSuccessTitle"><i class="ti ti-circle-check me-1"></i> Migration Completed</div>
+                        <div id="modalSuccessMessage">Migration completed successfully.</div>
+                    </div>
+                    <div id="modalErrorAlert" class="alert alert-danger border-0 small mb-0" style="display: none;">
+                        <div class="fw-semibold mb-1"><i class="ti ti-alert-triangle me-1"></i> Execution Paused</div>
+                        <div id="modalErrorMessage"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-between align-items-center">
+                    <span id="modalFooterStatus" class="small text-muted font-monospace">
+                        <i class="ti ti-loader me-1"></i> Migration is in progress...
+                    </span>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm" id="modalBtnRetry" style="display: none;">
+                            <i class="ti ti-rotate-clockwise me-1"></i> Retry Execution
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" id="modalBtnDismiss" style="display: none;">
+                            Close
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -587,16 +740,108 @@ $(function() {
     let stepCount = 0;
     let startTime = null;
 
-    if (isRunning && activeExecutionId) {
+    if (activeExecutionId) {
         $('#execution-card').show();
         updateUIProgress(@json($activeExecution));
-        stepMigration();
+        if (isRunning) {
+            stepMigration();
+        } else if (@json(!empty($activeExecution) && $activeExecution['status'] === 'completed')) {
+            renderCompleted(@json($activeExecution));
+        } else if (@json(!empty($activeExecution) && $activeExecution['status'] === 'failed')) {
+            renderFailed(@json($activeExecution['last_error'] ?? 'Execution encountered an unexpected failure.'));
+        }
     }
+
+    // Modal lifecycle guards:
+    // Prevent accidental closure while migration is running
+    $('#modalConfirmExecute').on('hide.bs.modal', function(e) {
+        if (isRunning) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Reset view back to confirmation when modal is dismissed
+    $('#modalConfirmExecute').on('hidden.bs.modal', function() {
+        if (!isRunning) {
+            $('#modal-progress-view').hide();
+            $('#modal-confirm-view').show();
+            $('#btnConfirmExecute').prop('disabled', false);
+            $('#btnCancelExecute').prop('disabled', false);
+        }
+    });
 
     $('#btnConfirmExecute').on('click', function() {
         const $btn = $(this);
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Initializing...');
+        $btn.prop('disabled', true);
         $('#btnCancelExecute').prop('disabled', true);
+        $('#btnOpenExecuteModal').prop('disabled', true);
+
+        // Transform modal content into live progress view (DO NOT close modal)
+        $('#modal-confirm-view').hide();
+        $('#modal-progress-view').show();
+        $('#modalProgressCloseBtn').hide();
+        $('#modalBtnDismiss').hide();
+        $('#modalBtnRetry').hide();
+        $('#modalSuccessAlert').hide();
+        $('#modalErrorAlert').hide();
+        $('#modalFooterStatus').show().html('<i class="ti ti-loader me-1"></i> Migration is in progress...');
+
+        const totalCandidates = Number(@json($summary['total_candidates'])) || 0;
+        const totalBatches = totalCandidates > 0 ? Math.ceil(totalCandidates / 1000) : 0;
+
+        // Initialize modal progress widgets
+        $('#modalProgressHeading').text('Historical Playlist Progress Migration');
+        $('#modalProgressIcon').attr('class', 'ti ti-activity text-primary me-2');
+        $('#modalStatusBadge')
+            .removeClass('bg-success-lt text-success bg-danger-lt text-danger')
+            .addClass('bg-warning-lt text-warning')
+            .html('<i class="ti ti-loader me-1"></i> Initializing...');
+        $('#modalLiveStatus').text('Initializing...');
+        $('#modalStepIndicator').html('<span class="spinner-border spinner-border-sm me-1 text-primary"></span> Preparing migration session...');
+        $('#modalProgressCounts').text('0 / ' + totalCandidates.toLocaleString() + ' records');
+        $('#modalProgressText').text('0.0%');
+        $('#modalProgressBar')
+            .removeClass('bg-success bg-danger')
+            .addClass('progress-bar-striped progress-bar-animated bg-primary')
+            .css('width', '0%')
+            .attr('aria-valuenow', 0);
+        $('#modalCurrentBatch').text('0');
+        $('#modalTotalBatches').text(totalBatches);
+        $('#modalTotalCount').text(totalCandidates.toLocaleString());
+        $('#modalProcessedCount').text('0');
+        $('#modalInsertedCount').text('0');
+        $('#modalSkippedCount').text('0');
+        $('#modalCurrentPlaylist').text('Initializing...');
+        $('#modalDuration').text('0s');
+
+        // Also prepare background execution card for persistent display
+        $('#exec-success-alert').hide();
+        $('#exec-error-alert').hide();
+        $('#execution-card').show();
+        $('#exec-status-badge')
+            .removeClass('bg-success-lt text-success bg-danger-lt text-danger')
+            .addClass('bg-warning-lt text-warning')
+            .html('<i class="ti ti-loader me-1"></i> Initializing...');
+        $('#exec-live-status').text('Initializing...');
+        $('#exec-step-indicator').html('<span class="spinner-border spinner-border-sm me-1 text-primary"></span> Preparing migration session...');
+        $('#exec-progress-counts').text('0 / ' + totalCandidates.toLocaleString() + ' records');
+        $('#exec-progress-text').text('0.0%');
+        $('#exec-progress-bar')
+            .removeClass('bg-success bg-danger')
+            .addClass('progress-bar-striped progress-bar-animated bg-primary')
+            .css('width', '0%')
+            .attr('aria-valuenow', 0);
+        $('#exec-current-batch').text('0');
+        $('#exec-total-batches').text(totalBatches);
+        $('#exec-total-count').text(totalCandidates.toLocaleString());
+        $('#exec-processed-count').text('0');
+        $('#exec-inserted-count').text('0');
+        $('#exec-skipped-count').text('0');
+        $('#exec-duration').text('0s');
+
+        startTime = Date.now();
+        isRunning = true;
 
         $.ajax({
             url: "{{ route('manage.learning-hours.dry-run.execute') }}",
@@ -608,24 +853,9 @@ $(function() {
                 chunk_size: 1000
             },
             success: function(res) {
-                const modalEl = document.getElementById('modalConfirmExecute');
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) {
-                    modal.hide();
-                } else {
-                    $('#modalConfirmExecute').modal('hide');
-                }
-
-                $('#btnOpenExecuteModal').prop('disabled', true);
-                $('#execution-card').slideDown();
-                $('html, body').animate({
-                    scrollTop: $("#execution-card").offset().top - 80
-                }, 400);
-
                 if (res.execution) {
                     activeExecutionId = res.execution.execution_id;
                     isRunning = !res.execution.is_completed;
-                    startTime = Date.now();
                     updateUIProgress(res.execution);
 
                     if (res.execution.is_completed) {
@@ -636,11 +866,14 @@ $(function() {
                 }
             },
             error: function(xhr) {
-                $btn.prop('disabled', false).html('<i class="ti ti-player-play me-1"></i> Start Migration');
-                $('#btnCancelExecute').prop('disabled', false);
+                let errorMsg = 'Failed to start execution.';
+                if (xhr.status === 409) {
+                    errorMsg = xhr.responseJSON?.message || 'Another migration execution is currently running.';
+                } else if (xhr.responseJSON?.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
 
-                const msg = xhr.responseJSON?.message || 'Failed to start execution.';
-                alert(msg);
+                renderFailed(errorMsg);
             }
         });
     });
@@ -649,7 +882,26 @@ $(function() {
         if (!activeExecutionId || !isRunning) return;
 
         stepCount++;
-        $('#exec-step-indicator').text('Processing chunk #' + stepCount + '...');
+        const total = Number($('#exec-total-count').text().replace(/,/g, '')) || 0;
+        const totalBatches = Number($('#exec-total-batches').text()) || 1;
+
+        // Update card
+        $('#exec-current-batch').text(stepCount);
+        $('#exec-live-status').text('Processing...');
+        $('#exec-status-badge')
+            .removeClass('bg-success-lt text-success bg-danger-lt text-danger')
+            .addClass('bg-warning-lt text-warning')
+            .html('<i class="ti ti-loader me-1"></i> Running');
+        $('#exec-step-indicator').text('Processing batch ' + stepCount + ' of ' + totalBatches + '...');
+
+        // Update modal
+        $('#modalCurrentBatch').text(stepCount);
+        $('#modalLiveStatus').text('Processing...');
+        $('#modalStatusBadge')
+            .removeClass('bg-success-lt text-success bg-danger-lt text-danger')
+            .addClass('bg-warning-lt text-warning')
+            .html('<i class="ti ti-loader me-1"></i> Processing...');
+        $('#modalStepIndicator').text('Processing batch ' + stepCount + ' of ' + totalBatches + '...');
 
         $.ajax({
             url: "{{ route('manage.learning-hours.dry-run.execute-step') }}",
@@ -678,58 +930,219 @@ $(function() {
     }
 
     function updateUIProgress(data) {
+        const total = Number(data.total_candidates || 0);
+        const processed = Number(data.processed_records || 0);
         const pct = Math.min(100, Math.max(0, parseFloat(data.percentage) || 0)).toFixed(1);
+        const currentBatch = Number(data.batch_number || 0);
+        const totalBatches = Number(data.total_batches || (total > 0 ? Math.ceil(total / (data.chunk_size || 1000)) : 0));
+
+        let durationText = '0s';
+        if (startTime) {
+            const elapsed = Math.round((Date.now() - startTime) / 1000);
+            durationText = elapsed + 's';
+        } else if (data.duration_seconds !== null && data.duration_seconds !== undefined) {
+            durationText = data.duration_seconds + 's';
+        }
+
+        // Update Execution Card
+        $('#exec-progress-title').text('Migration Progress');
         $('#exec-progress-bar').css('width', pct + '%').attr('aria-valuenow', pct);
         $('#exec-progress-text').text(pct + '%');
-        $('#exec-processed-count').text(Number(data.processed_records || 0).toLocaleString());
-        $('#exec-total-count').text(Number(data.total_candidates || 0).toLocaleString());
+        $('#exec-progress-counts').text(processed.toLocaleString() + ' / ' + total.toLocaleString() + ' records');
+        if (currentBatch > 0) {
+            $('#exec-current-batch').text(currentBatch);
+        }
+        $('#exec-total-batches').text(totalBatches);
+        $('#exec-total-count').text(total.toLocaleString());
+        $('#exec-processed-count').text(processed.toLocaleString());
         $('#exec-inserted-count').text(Number(data.inserted_records || 0).toLocaleString());
         $('#exec-skipped-count').text(Number(data.skipped_records || 0).toLocaleString());
         $('#exec-current-playlist').text(data.current_playlist || '-');
+        $('#exec-duration').text(durationText);
 
-        if (startTime) {
-            const elapsed = Math.round((Date.now() - startTime) / 1000);
-            $('#exec-duration').text(elapsed + 's');
-        } else if (data.duration_seconds !== null && data.duration_seconds !== undefined) {
-            $('#exec-duration').text(data.duration_seconds + 's');
+        // Update Modal Progress View
+        $('#modalProgressHeading').text('Historical Playlist Progress Migration');
+        $('#modalProgressBar').css('width', pct + '%').attr('aria-valuenow', pct);
+        $('#modalProgressText').text(pct + '%');
+        $('#modalProgressCounts').text(processed.toLocaleString() + ' / ' + total.toLocaleString() + ' records');
+        if (currentBatch > 0) {
+            $('#modalCurrentBatch').text(currentBatch);
         }
+        $('#modalTotalBatches').text(totalBatches);
+        $('#modalTotalCount').text(total.toLocaleString());
+        $('#modalProcessedCount').text(processed.toLocaleString());
+        $('#modalInsertedCount').text(Number(data.inserted_records || 0).toLocaleString());
+        $('#modalSkippedCount').text(Number(data.skipped_records || 0).toLocaleString());
+        $('#modalCurrentPlaylist').text(data.current_playlist || '-');
+        $('#modalDuration').text(durationText);
     }
 
     function renderCompleted(data) {
         isRunning = false;
-        $('#exec-status-badge').removeClass('bg-warning-lt text-warning bg-danger-lt text-danger')
+        const total = Number(data.total_candidates || 0);
+        const processed = Number(data.processed_records || total);
+        const totalBatches = Number(data.total_batches || (total > 0 ? Math.ceil(total / (data.chunk_size || 1000)) : 0));
+        const isAlreadyMigrated = !!data.already_completed;
+
+        // 1. Update Execution Card
+        $('#exec-status-badge')
+            .removeClass('bg-warning-lt text-warning bg-danger-lt text-danger')
             .addClass('bg-success-lt text-success')
             .html('<i class="ti ti-check me-1"></i> Completed');
-        $('#exec-progress-bar').removeClass('progress-bar-striped progress-bar-animated bg-primary')
-            .addClass('bg-success').css('width', '100%');
+        $('#exec-progress-bar')
+            .removeClass('progress-bar-striped progress-bar-animated bg-primary bg-danger')
+            .addClass('bg-success')
+            .css('width', '100%')
+            .attr('aria-valuenow', 100);
         $('#exec-progress-text').text('100%');
-        $('#exec-step-indicator').text('Migration completed successfully.');
+        $('#exec-progress-counts').text(total.toLocaleString() + ' / ' + total.toLocaleString() + ' records');
+        $('#exec-current-batch').text(totalBatches);
+        $('#exec-total-batches').text(totalBatches);
+        $('#exec-live-status').text('Completed');
+
+        if (isAlreadyMigrated) {
+            $('#exec-progress-title').text('Migration Already Complete');
+            $('#exec-step-indicator').text(data.message || 'All historical playlist progress has already been migrated. ' + total.toLocaleString() + ' of ' + total.toLocaleString() + ' records are already present.');
+            $('#exec-success-title').html('<i class="ti ti-circle-check me-2"></i> Migration Already Complete');
+            $('#exec-success-message').text('All historical playlist progress has already been migrated. ' + total.toLocaleString() + ' of ' + total.toLocaleString() + ' records are already present in isolated storage.');
+        } else {
+            $('#exec-progress-title').text('Migration Completed');
+            $('#exec-step-indicator').text(data.message || 'Migration completed successfully.');
+            $('#exec-success-title').html('<i class="ti ti-circle-check me-2"></i> Migration Completed Successfully!');
+            $('#exec-success-message').text('All historical playlist candidates have been processed. Existing progress records were preserved.');
+        }
         $('#exec-success-alert').slideDown();
         $('#exec-error-alert').hide();
+
+        // 2. Update Modal Progress View
+        $('#modalStatusBadge')
+            .removeClass('bg-warning-lt text-warning bg-danger-lt text-danger')
+            .addClass('bg-success-lt text-success')
+            .html('<i class="ti ti-check me-1"></i> Completed');
+        $('#modalProgressBar')
+            .removeClass('progress-bar-striped progress-bar-animated bg-primary bg-danger')
+            .addClass('bg-success')
+            .css('width', '100%')
+            .attr('aria-valuenow', 100);
+        $('#modalProgressText').text('100%');
+        $('#modalProgressCounts').text(total.toLocaleString() + ' / ' + total.toLocaleString() + ' records');
+        $('#modalCurrentBatch').text(totalBatches);
+        $('#modalTotalBatches').text(totalBatches);
+        $('#modalLiveStatus').text('Completed');
+        $('#modalProcessedCount').text(total.toLocaleString());
+
+        if (isAlreadyMigrated) {
+            $('#modalProgressIcon').attr('class', 'ti ti-circle-check text-success me-2');
+            $('#modalProgressHeading').text('Migration Already Complete');
+            $('#modalStepIndicator').text('Completed: All candidates already migrated.');
+            $('#modalSuccessTitle').html('<i class="ti ti-circle-check me-1"></i> Migration Already Complete');
+            $('#modalSuccessMessage').text('All historical playlist progress has already been migrated. ' + total.toLocaleString() + ' of ' + total.toLocaleString() + ' records are already present in isolated storage.');
+        } else {
+            $('#modalProgressIcon').attr('class', 'ti ti-circle-check text-success me-2');
+            $('#modalProgressHeading').text('Migration Completed');
+            $('#modalStepIndicator').text('Migration completed successfully.');
+            $('#modalSuccessTitle').html('<i class="ti ti-circle-check me-1"></i> Migration Completed Successfully!');
+            $('#modalSuccessMessage').text('All ' + total.toLocaleString() + ' historical playlist candidates have been processed. Existing records were preserved.');
+        }
+
+        $('#modalSuccessAlert').slideDown();
+        $('#modalErrorAlert').hide();
+        $('#modalFooterStatus').html('<i class="ti ti-check text-success me-1"></i> Migration completed successfully.');
+        $('#modalBtnDismiss').show();
+        $('#modalProgressCloseBtn').show();
+        $('#modalBtnRetry').hide();
+
+        $('#btnConfirmExecute').prop('disabled', false);
+        $('#btnCancelExecute').prop('disabled', false);
         $('#btnOpenExecuteModal').prop('disabled', false);
     }
 
     function renderFailed(errorMsg) {
         isRunning = false;
-        $('#exec-status-badge').removeClass('bg-warning-lt text-warning bg-success-lt text-success')
+
+        // 1. Update Execution Card
+        $('#exec-status-badge')
+            .removeClass('bg-warning-lt text-warning bg-success-lt text-success')
             .addClass('bg-danger-lt text-danger')
             .html('<i class="ti ti-alert-triangle me-1"></i> Failed');
-        $('#exec-progress-bar').removeClass('progress-bar-striped progress-bar-animated bg-primary')
+        $('#exec-progress-bar')
+            .removeClass('progress-bar-striped progress-bar-animated bg-primary')
             .addClass('bg-danger');
+        $('#exec-progress-title').text('Migration Failed');
+        $('#exec-live-status').text('Failed');
         $('#exec-step-indicator').text('Execution paused due to error.');
         $('#exec-error-message').text(errorMsg);
         $('#exec-error-alert').slideDown();
         $('#exec-btn-retry').prop('disabled', false);
+
+        // 2. Update Modal Progress View
+        $('#modalProgressIcon').attr('class', 'ti ti-alert-triangle text-danger me-2');
+        $('#modalProgressHeading').text('Migration Failed');
+        $('#modalStatusBadge')
+            .removeClass('bg-warning-lt text-warning bg-success-lt text-success')
+            .addClass('bg-danger-lt text-danger')
+            .html('<i class="ti ti-alert-triangle me-1"></i> Failed');
+        $('#modalProgressBar')
+            .removeClass('progress-bar-striped progress-bar-animated bg-primary')
+            .addClass('bg-danger');
+        $('#modalLiveStatus').text('Failed');
+        $('#modalStepIndicator').text('Execution paused due to error.');
+        $('#modalErrorMessage').text(errorMsg);
+        $('#modalErrorAlert').slideDown();
+        $('#modalSuccessAlert').hide();
+        $('#modalFooterStatus').html('<i class="ti ti-alert-triangle text-danger me-1"></i> Execution paused due to error.');
+        $('#modalBtnRetry').show().prop('disabled', false);
+        $('#modalBtnDismiss').show();
+        $('#modalProgressCloseBtn').show();
+
+        $('#btnConfirmExecute').prop('disabled', false);
+        $('#btnCancelExecute').prop('disabled', false);
+        $('#btnOpenExecuteModal').prop('disabled', false);
     }
+
+    $('#modalBtnRetry').on('click', function() {
+        $(this).prop('disabled', true).hide();
+        $('#modalBtnDismiss').hide();
+        $('#modalProgressCloseBtn').hide();
+        $('#modalErrorAlert').slideUp();
+        $('#modalProgressHeading').text('Historical Playlist Progress Migration');
+        $('#modalProgressIcon').attr('class', 'ti ti-activity text-primary me-2');
+        $('#modalStatusBadge')
+            .removeClass('bg-danger-lt text-danger')
+            .addClass('bg-warning-lt text-warning')
+            .html('<i class="ti ti-loader me-1"></i> Retrying...');
+        $('#modalProgressBar')
+            .removeClass('bg-danger')
+            .addClass('progress-bar-striped progress-bar-animated bg-primary');
+        $('#modalLiveStatus').text('Retrying...');
+        $('#modalFooterStatus').show().html('<i class="ti ti-loader me-1"></i> Migration is in progress...');
+
+        $('#exec-error-alert').slideUp();
+        $('#exec-status-badge')
+            .removeClass('bg-danger-lt text-danger')
+            .addClass('bg-warning-lt text-warning')
+            .html('<i class="ti ti-loader me-1"></i> Retrying...');
+        $('#exec-progress-bar')
+            .removeClass('bg-danger')
+            .addClass('progress-bar-striped progress-bar-animated bg-primary');
+        $('#exec-live-status').text('Retrying...');
+
+        isRunning = true;
+        stepMigration();
+    });
 
     $('#exec-btn-retry').on('click', function() {
         $(this).prop('disabled', true);
+        $('#btnOpenExecuteModal').prop('disabled', true);
         $('#exec-error-alert').slideUp();
-        $('#exec-status-badge').removeClass('bg-danger-lt text-danger')
+        $('#exec-status-badge')
+            .removeClass('bg-danger-lt text-danger')
             .addClass('bg-warning-lt text-warning')
             .html('<i class="ti ti-loader me-1"></i> Retrying...');
-        $('#exec-progress-bar').removeClass('bg-danger')
+        $('#exec-progress-bar')
+            .removeClass('bg-danger')
             .addClass('progress-bar-striped progress-bar-animated bg-primary');
+        $('#exec-live-status').text('Retrying...');
         isRunning = true;
         stepMigration();
     });

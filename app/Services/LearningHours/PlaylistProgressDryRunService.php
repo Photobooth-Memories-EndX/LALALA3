@@ -36,9 +36,14 @@ class PlaylistProgressDryRunService
      *     zero_count: int,
      * }
      */
-    public function getSummaryMetrics(string $cutoff = self::DEFAULT_CUTOFF, ?int $playlistId = null): array
+    public function getSummaryMetrics(string $cutoff = self::DEFAULT_CUTOFF, ?int $playlistId = null, bool $fresh = false): array
     {
-        $cacheKey = 'playlist_dry_run_summary_' . md5($cutoff . '_' . ($playlistId ?? 'all'));
+        $fingerprint = $this->getDataVersionFingerprint($playlistId);
+        $cacheKey = 'playlist_dry_run_summary_' . md5($cutoff . '_' . ($playlistId ?? 'all') . '_' . $fingerprint);
+
+        if ($fresh) {
+            Cache::forget($cacheKey);
+        }
 
         return Cache::remember($cacheKey, 300, function () use ($cutoff, $playlistId) {
             // 1. Identify Old & New Playlists
@@ -367,5 +372,35 @@ class PlaylistProgressDryRunService
                 ->select(['id', 'title', 'created_at'])
                 ->get();
         });
+    }
+
+    /**
+     * Invalidate summary and validation cache for a given scope.
+     */
+    public function clearSummaryCache(string $cutoff = self::DEFAULT_CUTOFF, ?int $playlistId = null): void
+    {
+        $fingerprint = $this->getDataVersionFingerprint($playlistId);
+        Cache::forget('playlist_dry_run_summary_' . md5($cutoff . '_' . ($playlistId ?? 'all') . '_' . $fingerprint));
+        Cache::forget('playlist_dry_run_summary_' . md5($cutoff . '_' . ($playlistId ?? 'all')));
+        Cache::forget('playlist_dry_run_validation_' . md5($cutoff . '_' . ($playlistId ?? 'all')));
+    }
+
+    /**
+     * Get a lightweight data version fingerprint to guarantee cached metrics
+     * are automatically invalidated if candidate or PCU data changes.
+     */
+    public function getDataVersionFingerprint(?int $playlistId = null): string
+    {
+        $pcuQuery = DB::table('playlist_content_users');
+        if ($playlistId !== null) {
+            $pcuQuery->where('trainingplan_id', $playlistId);
+        }
+        $pcuCount = $pcuQuery->count();
+
+        $cuStats = DB::table('content_users')
+            ->selectRaw('COUNT(*) as total_rows, MAX(id) as max_id, MAX(updated_at) as max_updated')
+            ->first();
+
+        return md5($pcuCount . '_' . ($cuStats->total_rows ?? 0) . '_' . ($cuStats->max_id ?? 0) . '_' . ($cuStats->max_updated ?? ''));
     }
 }

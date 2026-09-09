@@ -31,11 +31,17 @@ class PlaylistProgressDryRunController extends Controller
         $perPage = max(10, min(100, (int) $request->input('per_page', PlaylistProgressDryRunService::DEFAULT_PER_PAGE)));
         $page = max(1, (int) $request->input('page', 1));
 
-        $summary = $this->dryRunService->getSummaryMetrics($cutoff, $playlistId);
+        $fresh = $request->boolean('fresh');
+        $summary = $this->dryRunService->getSummaryMetrics($cutoff, $playlistId, fresh: $fresh);
         $validation = $this->dryRunService->getSourceValidationMetrics($cutoff, $playlistId);
         $candidates = $this->dryRunService->getCandidatesPaginated($cutoff, $playlistId, $perPage, $page, $search);
         $playlists = $this->dryRunService->getPlaylistsForFilter($cutoff);
         $activeExecution = $this->executionService->getActiveExecution();
+
+        // If new candidates exist in the database, do not display a stale past completed execution card
+        if ($activeExecution !== null && $activeExecution['status'] === 'completed' && ($summary['to_insert_count'] ?? 0) > 0) {
+            $activeExecution = null;
+        }
 
         return view('manage.learning-hours.dry-run.index', [
             'summary'            => $summary,
