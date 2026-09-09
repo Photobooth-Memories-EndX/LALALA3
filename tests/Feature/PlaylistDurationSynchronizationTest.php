@@ -389,7 +389,7 @@ class PlaylistDurationSynchronizationTest extends TestCase
         $plan = TrainingPlan::create([
             'title'                  => 'Legacy Sync Plan',
             'total_duration_seconds' => 0,
-            'active'                 => 'Active',
+            'active'                 => 'Inactive',
         ]);
 
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);

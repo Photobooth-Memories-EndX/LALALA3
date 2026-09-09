@@ -724,4 +724,119 @@ class PlaylistEditTest extends TestCase
         $response->assertSee('Deadline &amp; Action', false);
         $response->assertSee('max-width: 1100px', false);
     }
+
+    /**
+     * Test 26 — Active playlist rejects full form update without unpublishing.
+     * Prevents wiping playlist materials when content[] is omitted on published playlist.
+     */
+    public function test_active_playlist_rejects_full_form_update_without_unpublishing(): void
+    {
+        $c1 = Content::create(['title' => 'Protected Content 1', 'duration' => '00:15:00', 'active' => 'Active', 'classification_id' => $this->classification->id]);
+        $c2 = Content::create(['title' => 'Protected Content 2', 'duration' => '00:30:00', 'active' => 'Active', 'classification_id' => $this->classification->id]);
+
+        $plan = TrainingPlan::create([
+            'title'                  => 'Active Protected Plan',
+            'active'                 => 'Active',
+            'total_duration_seconds' => 2700,
+            'learning_hours'         => 0.7500,
+        ]);
+
+        $d1 = TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
+        $d2 = TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c2->id, 'content_order' => 1]);
+
+        // 1. Test AJAX/JSON submission without content[]
+        $ajaxResponse = $this->actingAs($this->adminUser)
+            ->putJson(route('playlist.update', $plan->slug), [
+                'title'  => 'Maliciously Modified Title',
+                'action' => 'publish',
+            ]);
+
+        $ajaxResponse->assertStatus(422);
+        $ajaxResponse->assertJson([
+            'status'  => 422,
+            'success' => false,
+            'message' => 'Cannot modify an active playlist. Please unpublish the playlist before making changes.',
+        ]);
+
+        // Assert no data modified after AJAX request
+        $freshPlan = $plan->fresh();
+        $this->assertSame('Active', $freshPlan->active);
+        $this->assertSame('Active Protected Plan', $freshPlan->title);
+        $this->assertSame(2700, $freshPlan->total_duration_seconds);
+        $this->assertEquals(0.7500, $freshPlan->learning_hours);
+
+        $details = TrainingPlanDetail::where('trainingplan_id', $plan->id)->orderBy('content_order')->get();
+        $this->assertCount(2, $details);
+        $this->assertEquals($c1->id, $details[0]->content_id);
+        $this->assertEquals($c2->id, $details[1]->content_id);
+
+        // 2. Test standard form submission without content[]
+        $formResponse = $this->actingAs($this->adminUser)
+            ->put(route('playlist.update', $plan->slug), [
+                'title'  => 'Form Modified Title',
+                'action' => 'publish',
+            ]);
+
+        $formResponse->assertRedirect(route('playlist.edit', $plan->slug));
+        $formResponse->assertSessionHas('warning', 'Cannot modify an active playlist. Please unpublish the playlist before making changes.');
+
+        // Assert all materials and attributes remain completely intact
+        $freshPlan2 = $plan->fresh();
+        $this->assertSame('Active', $freshPlan2->active);
+        $this->assertSame('Active Protected Plan', $freshPlan2->title);
+        $this->assertSame(2700, $freshPlan2->total_duration_seconds);
+        $this->assertEquals(0.7500, $freshPlan2->learning_hours);
+
+        $details2 = TrainingPlanDetail::where('trainingplan_id', $plan->id)->orderBy('content_order')->get();
+        $this->assertCount(2, $details2);
+        $this->assertEquals($c1->id, $details2[0]->content_id);
+        $this->assertEquals($c2->id, $details2[1]->content_id);
+    }
+
+    /**
+     * Test 27 — Active playlist rejects direct synchronize learning hours request.
+     */
+    public function test_active_playlist_rejects_direct_synchronize_learning_hours(): void
+    {
+        $c1 = Content::create(['title' => 'Sync C1', 'duration' => '01:00:00', 'active' => 'Active', 'classification_id' => $this->classification->id]);
+        $c2 = Content::create(['title' => 'Sync C2', 'duration' => '00:30:00', 'active' => 'Active', 'classification_id' => $this->classification->id]);
+
+        $plan = TrainingPlan::create([
+            'title'                  => 'Active Sync Protected Plan',
+            'active'                 => 'Active',
+            'total_duration_seconds' => 3600,
+            'learning_hours'         => 1.0000,
+        ]);
+
+        TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
+
+        // Attempt direct POST to sync endpoint with different content payload (c2 = 1800s, 0.5h)
+        $response = $this->actingAs($this->adminUser)
+            ->postJson(route('playlist.synchronize-learning-hours', $plan->slug), [
+                'content' => [$c2->id],
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            'status'  => 422,
+            'success' => false,
+            'message' => 'Cannot synchronize duration or learning hours while playlist is active. Please unpublish first.',
+        ]);
+
+        // Verify total_duration_seconds and learning_hours remain completely unchanged
+        $freshPlan = $plan->fresh();
+        $this->assertSame(3600, $freshPlan->total_duration_seconds);
+        $this->assertEquals(1.0000, $freshPlan->learning_hours);
+        $this->assertSame('Active', $freshPlan->active);
+
+        // Verify detail remains unchanged
+        $this->assertDatabaseHas('trainingplandetail', [
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $c1->id,
+        ]);
+        $this->assertDatabaseMissing('trainingplandetail', [
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $c2->id,
+        ]);
+    }
 }

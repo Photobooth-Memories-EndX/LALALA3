@@ -79,7 +79,7 @@
                 </div>
             @else
                 <div class="d-flex flex-wrap align-items-center gap-2">
-                    <a type="button" class="btn btn-outline-secondary" href="{{ route('playlist.order', $trainingplan->slug) }}" title="Re-order materials">
+                    <a type="button" class="btn btn-outline-secondary" href="{{ route('manage.playlist.order', $trainingplan->slug) }}" title="Re-order materials">
                         <i class="ti ti-arrows-sort me-1"></i> Re-order Content
                     </a>
 

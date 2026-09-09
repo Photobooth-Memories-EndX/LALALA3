@@ -74,7 +74,7 @@
             @foreach ($content_all as $index => $list)
                 @php
                     $lesson = $list->content;
-                    if (!$lesson) continue;
+                    if (!$lesson || !$lesson->id) continue;
 
                     $isContentInactive = ($lesson->active !== 'Active');
                     $isActive = optional($lesson)->slug === $content->slug;

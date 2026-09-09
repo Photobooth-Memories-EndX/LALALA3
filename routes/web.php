@@ -411,8 +411,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::group(['middleware' => 'mpermission:playlist_learning_path'], function () {
         Route::get('playlist/search-autocomplete', [TrainingPlanController::class, 'autocompleteSearch'])->name('manage.trainingplan.autocomplete');
-        Route::get('playlist/autocomplete', [TrainingPlanController::class, 'autocompleteSearch']);
-        Route::get('playlist/order/{slug}', [TrainingPlanController::class, 'order'])->name('playlist.order');
+        Route::get('playlist/{playlist}/order', [TrainingPlanController::class, 'order'])->name('manage.playlist.order');
         Route::get('playlist-thumbnail-test', [TrainingPlanController::class, 'thumbnailTest'])->name('playlist.thumbnailTest');
         Route::post('playlist/synchronize-durations', [TrainingPlanController::class, 'synchronizeDurations'])->name('manage.playlist.synchronize-durations');
         Route::post('playlist/synchronize-learning-hours', [TrainingPlanController::class, 'synchronizeAllLearningHours'])->name('manage.playlist.synchronize-learning-hours');

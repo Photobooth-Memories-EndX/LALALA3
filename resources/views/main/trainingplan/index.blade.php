@@ -372,7 +372,7 @@
                                                         aria-label="Edit playlist">
                                                         <i class="ti ti-edit"></i>
                                                     </a>
-                                                    <a href="{{ route('playlist.order', $list->slug) }}"
+                                                    <a href="{{ route('manage.playlist.order', $list->slug) }}"
                                                         class="btn btn-sm btn-secondary owl-action-btn p-1"
                                                         style="width:28px;height:28px;"
                                                         title="Order Content"

@@ -370,29 +370,35 @@ class TrainingPlanController extends Controller
         ]);
     }
 
-    public function order($slug)
+    public function order(mixed $slug)
     {
-        $content = Content::whereNull('deleted_at')->orderBy('title')->get();
-        $trainingplan = TrainingPlan::with([
-            'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
-            'trainingplandetail.content'
-        ])->whereNull('deleted_at')->firstWhere('slug', $slug);
-        $trainingplandetail = TrainingPlanDetail::with('content')
+        $trainingplan = TrainingPlan::where('slug', $slug)->orWhere('id', $slug)->first();
+
+        if (!$trainingplan) {
+            abort(404, 'Playlist not found.');
+        }
+
+        $trainingplandetail = TrainingPlanDetail::with(['content' => function ($q) {
+                $q->withTrashed();
+            }])
             ->where('trainingplan_id', $trainingplan->id)
             ->orderByRaw('CAST(content_order AS UNSIGNED) ASC')
             ->get();
 
         return view('main.trainingplan.order', [
-            "title" =>  "Edit Playlist",
-            "slug" =>  $trainingplan->slug,
-            "trainingplandetail" =>  $trainingplandetail,
-            "content" =>  $content
+            'title'              => 'Order Playlist Content',
+            'slug'               => $trainingplan->slug,
+            'trainingplan'       => $trainingplan,
+            'trainingplandetail' => $trainingplandetail,
+            'isLocked'           => $trainingplan->active === 'Active',
         ]);
     }
 
     public function create()
     {
-        $content = Content::whereNull('deleted_at')->orderBy('title')->get();
+        $content = Content::whereNull('deleted_at')
+            ->orderBy('title')
+            ->get(['id', 'title', 'active', 'duration']);
 
         return view('main.trainingplan.create', [
             "title" =>  "Add Playlist",
@@ -509,7 +515,9 @@ class TrainingPlanController extends Controller
             }
         }
 
-        $content = Content::whereNull('deleted_at')->orderBy('title')->get();
+        $content = Content::whereNull('deleted_at')
+            ->orderBy('title')
+            ->get(['id', 'title', 'active', 'duration']);
         $trainingplan = TrainingPlan::with([
             'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
             'trainingplandetail.content'
@@ -556,30 +564,102 @@ class TrainingPlanController extends Controller
             return redirect()->route('playlist.edit', $trainingplan->slug);
         }
 
-        // Active Playlist Security: reject manual duration / learning hours tampering while published
+        // Active Playlist Security: reject any modification tampering while published
         if ($trainingplan->active === 'Active') {
-            if ($request->filled('total_duration') || $request->filled('total_duration_seconds') || $request->filled('learning_hours')) {
+            if ($request->savetype === 'reorder') {
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'status'  => 422,
-                        'message' => 'Cannot modify duration or learning hours while playlist is active. Please unpublish this playlist first before making changes.'
+                        'success' => false,
+                        'message' => 'Please unpublish this playlist before changing its content order.',
                     ], 422);
                 }
 
-                return redirect()->route('playlist.edit', $trainingplan->slug)
-                    ->with('warning', 'Cannot modify duration or learning hours while playlist is active. Please unpublish this playlist first before making changes.');
+                return redirect()->route('manage.playlist.order', $trainingplan->slug)
+                    ->with('warning', 'Please unpublish this playlist before changing its content order.');
             }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'  => 422,
+                    'success' => false,
+                    'message' => 'Cannot modify an active playlist. Please unpublish the playlist before making changes.',
+                ], 422);
+            }
+
+            return redirect()->route('playlist.edit', $trainingplan->slug)
+                ->with('warning', 'Cannot modify an active playlist. Please unpublish the playlist before making changes.');
         }
 
         DB::beginTransaction();
 
         try {
             if ($request->savetype == "reorder") {
-                foreach ($request->order as $key => $value) {
-                    TrainingPlanDetail::where('id', $key)->update([
-                        'content_order' => $value
+                $rawOrder = $request->input('order');
+                if (!is_array($rawOrder) || empty($rawOrder)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'order' => ['The order data is required and must be an array.'],
                     ]);
                 }
+
+                // Retrieve all valid TrainingPlanDetail IDs for this playlist
+                $playlistDetails = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)->get()->keyBy('id');
+                $validDetailIds = $playlistDetails->keys()->map(fn ($id) => (string) $id)->all();
+
+                $submittedDetailIds = array_map(fn ($k) => (string) $k, array_keys($rawOrder));
+                $submittedValues = array_values($rawOrder);
+
+                // Reject if foreign detail IDs exist or IDs from another playlist
+                $foreignIds = array_diff($submittedDetailIds, $validDetailIds);
+                if (!empty($foreignIds)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'order' => ['The submitted order contains invalid or foreign material IDs for this playlist.'],
+                    ]);
+                }
+
+                // Check for non-numeric, negative, or non-integer sequence values
+                foreach ($rawOrder as $detailId => $seq) {
+                    if (!is_numeric($seq) || (int) $seq < 0 || (int) $seq != $seq) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'order' => ['Each sequence order must be a non-negative integer.'],
+                        ]);
+                    }
+                }
+
+                // Check for duplicate sequence values
+                if (count($submittedValues) !== count(array_unique($submittedValues))) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'order' => ['Duplicate sequence values are not allowed.'],
+                    ]);
+                }
+
+                // Sort by sequence ascending so DOM order is respected
+                asort($rawOrder, SORT_NUMERIC);
+
+                // Sequential re-indexing (0, 1, 2, ...) to ensure 0-based gapless storage
+                $normalizedIndex = 0;
+                foreach ($rawOrder as $detailId => $seq) {
+                    TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)
+                        ->where('id', $detailId)
+                        ->update([
+                            'content_order' => (string) $normalizedIndex,
+                        ]);
+                    $normalizedIndex++;
+                }
+
+                DB::commit();
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'status'   => 200,
+                        'success'  => true,
+                        'message'  => 'Playlist order updated successfully.',
+                        'redirect' => route('manage.playlist.order', $trainingplan->fresh()->slug ?? $trainingplan->slug),
+                    ]);
+                }
+
+                session()->flash('success', 'Playlist order updated successfully.');
+                return redirect()->route('manage.playlist.order', $trainingplan->fresh()->slug ?? $trainingplan->slug);
             } else {
                 $request->validate([
                     'title'                  => 'required',
@@ -698,11 +778,6 @@ class TrainingPlanController extends Controller
                     TrainingPlan::where('id', $trainingplan->id)->update($forceAttributes);
                     $trainingplan->forceFill($forceAttributes);
                 }
-            }
-
-            if ($request->savetype == "reorder") {
-                app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
-                app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
             }
 
             DB::commit();
@@ -864,6 +939,14 @@ class TrainingPlanController extends Controller
                     $trainingplan = TrainingPlan::where('slug', $param)->orWhere('id', $param)->first();
                 }
             }
+        }
+
+        if ($trainingplan && $trainingplan->exists && $trainingplan->active === 'Active') {
+            return response()->json([
+                'status'  => 422,
+                'success' => false,
+                'message' => 'Cannot synchronize duration or learning hours while playlist is active. Please unpublish first.',
+            ], 422);
         }
 
         if ($request->has('content')) {
@@ -1115,7 +1198,7 @@ class TrainingPlanController extends Controller
                 'materials_count'        => count($materials),
                 'materials'              => $materials,
                 'edit_url'               => route('playlist.edit', $plan->slug ?? $plan->id),
-                'order_url'              => route('playlist.order', $plan->slug ?? $plan->id),
+                'order_url'              => route('manage.playlist.order', $plan->slug ?? $plan->id),
             ],
         ]);
     }
