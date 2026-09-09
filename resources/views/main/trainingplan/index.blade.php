@@ -42,7 +42,7 @@
                             <i class="ti ti-clock-check fs-2"></i>
                             <span>Sync Playlist Durations</span>
                         </button>
-                        <a href="{{ route('manage.playlist.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
+                        <a href="{{ route('playlist.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
                             <i class="ti ti-plus fs-2"></i>
                             <span>Add Playlist</span>
                         </a>
@@ -379,18 +379,21 @@
                                                         aria-label="Order content">
                                                         <i class="ti ti-arrows-sort"></i>
                                                     </a>
-                                                    <form action="{{ route('playlist.destroy', $list->slug) }}" method="POST" class="d-inline m-0 p-0">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit"
-                                                            class="btn btn-sm btn-danger owl-action-btn p-1"
-                                                            style="width:28px;height:28px;"
-                                                            title="Delete"
-                                                            aria-label="Delete playlist"
-                                                            onclick="return confirm('Are you sure want to delete this data?')">
-                                                            <i class="ti ti-trash"></i>
-                                                        </button>
-                                                    </form>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-danger owl-action-btn p-1 btn-delete-playlist"
+                                                        style="width:28px;height:28px;"
+                                                        title="Delete"
+                                                        aria-label="Delete playlist"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalDeletePlaylist"
+                                                        data-id="{{ $list->id }}"
+                                                        data-slug="{{ $list->slug }}"
+                                                        data-title="{{ $list->title }}"
+                                                        data-materials-count="{{ $list->trainingplandetail_count ?? ($list->trainingplandetail ? $list->trainingplandetail->count() : 0) }}"
+                                                        data-status="{{ $list->active }}"
+                                                        data-delete-url="{{ route('playlist.destroy', $list->slug) }}">
+                                                        <i class="ti ti-trash"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -609,6 +612,9 @@
 
     {{-- Playlist Detail Modal --}}
     @include('main.trainingplan.components.playlist-detail-modal')
+
+    {{-- Playlist Delete Confirmation Modal --}}
+    @include('main.trainingplan.components.playlist-delete-modal')
 
 @endsection
 

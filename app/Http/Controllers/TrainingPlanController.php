@@ -403,13 +403,19 @@ class TrainingPlanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title'          => 'required',
-            'total_duration' => 'nullable',
-            'learning_hours' => 'nullable',
-            'thumbnail'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'has_deadline'   => 'nullable|boolean',
-            'from_date'      => 'nullable|date|required_if:has_deadline,1',
-            'to_date'        => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+            'title'                  => 'required',
+            'url_link'               => 'nullable|url',
+            'total_duration'         => ['nullable', 'regex:/^\d+:([0-5]\d):([0-5]\d)$/'],
+            'total_duration_seconds' => ['nullable', 'integer', 'min:0'],
+            'learning_hours'         => ['nullable', 'numeric', 'min:0'],
+            'thumbnail'              => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'has_deadline'           => 'nullable|boolean',
+            'from_date'              => 'nullable|date|required_if:has_deadline,1',
+            'to_date'                => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+        ], [
+            'total_duration.regex'   => 'The total duration format must be HH:MM:SS (e.g. 01:30:00).',
+            'learning_hours.numeric' => 'The learning hours must be a valid number.',
+            'learning_hours.min'     => 'The learning hours must be at least 0.',
         ]);
 
         DB::beginTransaction();
@@ -417,12 +423,14 @@ class TrainingPlanController extends Controller
         try {
             $hasDeadline = $request->boolean('has_deadline');
 
-            $parser = app(\App\Services\LearningHours\DurationParserService::class);
-            $durationInput = $request->input('total_duration', $request->input('total_duration_seconds'));
-            $totalSeconds = ($durationInput !== null && trim((string) $durationInput) !== '')
-                ? $parser->toSeconds((string) $durationInput)
-                : 0;
-            $learningHours = (float) $request->input('learning_hours', 0);
+            $totalSeconds = 0;
+            if ($request->filled('total_duration')) {
+                $totalSeconds = DurationFormatter::toSeconds($request->input('total_duration')) ?? 0;
+            } elseif ($request->filled('total_duration_seconds')) {
+                $totalSeconds = (int) $request->input('total_duration_seconds');
+            }
+
+            $learningHours = $request->filled('learning_hours') ? (float) $request->input('learning_hours') : 0.0;
 
             $trainingplan = new TrainingPlan();
             $trainingplan->title                  = $request->title;
@@ -472,7 +480,7 @@ class TrainingPlanController extends Controller
                 return response()->json([
                     'status'   => 200,
                     'message'  => 'Playlist successfully saved' . $addmessage,
-                    'redirect' => route('playlist.index')
+                    'redirect' => $request->action === 'draft' ? route('playlist.index') : route('playlist.edit', $trainingplan->slug)
                 ]);
             }
 
@@ -725,11 +733,89 @@ class TrainingPlanController extends Controller
         }
     }
 
-    public function destroy(TrainingPlan $trainingplan)
+    public function destroy(Request $request, mixed $trainingplan = null)
     {
-        $trainingplan->delete();
+        if (!$trainingplan instanceof TrainingPlan) {
+            $param = $trainingplan ?? $request->route('trainingplan');
+            if ($param instanceof TrainingPlan) {
+                $trainingplan = $param;
+            } else {
+                $trainingplan = TrainingPlan::withTrashed()->where('slug', $param)->orWhere('id', $param)->first();
+            }
+        }
 
-        return to_route('playlist.index')->with('success', 'Playlist successfully deleted');
+        if (!$trainingplan) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Playlist not found.',
+                ], 404);
+            }
+
+            return to_route('playlist.index')->with('warning', 'Playlist not found.');
+        }
+
+        if ($trainingplan->trashed()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This playlist has already been deleted.',
+                ], 404);
+            }
+
+            return to_route('playlist.index')->with('warning', 'This playlist has already been deleted.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $thumbnailPath = $trainingplan->thumbnail;
+
+            // Remove/detach TrainingPlanDetail records belonging to this playlist
+            TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)->delete();
+
+            // Soft-delete the TrainingPlan
+            $trainingplan->delete();
+
+            DB::commit();
+
+            // Filesystem cleanup after successful DB commit
+            if ($thumbnailPath && !Str::startsWith($thumbnailPath, ['http://', 'https://'])) {
+                $rel = ltrim($thumbnailPath, '/');
+                $fullPath = public_path('storage/' . $rel);
+                if (File::exists($fullPath)) {
+                    try {
+                        File::delete($fullPath);
+                    } catch (\Throwable $fileEx) {
+                        Log::warning('Failed to delete thumbnail file for deleted playlist: ' . $fileEx->getMessage(), [
+                            'playlist_id' => $trainingplan->id,
+                            'path'        => $fullPath,
+                        ]);
+                    }
+                }
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Playlist deleted successfully.',
+                ]);
+            }
+
+            return to_route('playlist.index')->with('success', 'Playlist deleted successfully.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete playlist: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->with('warning', 'Failed to delete playlist: ' . $e->getMessage());
+        }
     }
 
     public function thumbnailTest()

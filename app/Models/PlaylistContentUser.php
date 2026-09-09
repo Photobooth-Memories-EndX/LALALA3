@@ -97,7 +97,7 @@ class PlaylistContentUser extends Model
 
     public function trainingPlan()
     {
-        return $this->belongsTo(TrainingPlan::class, 'trainingplan_id');
+        return $this->belongsTo(TrainingPlan::class, 'trainingplan_id')->withTrashed();
     }
 
     public function content()
