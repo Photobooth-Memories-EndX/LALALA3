@@ -81,12 +81,17 @@ class PlaylistDetailTest extends TestCase
                 'title',
                 'slug',
                 'status',
+                'active',
                 'has_deadline',
                 'deadline',
                 'deadline_formatted',
                 'is_expired',
                 'from_date',
                 'to_date',
+                'url_link',
+                'created_at',
+                'created_at_formatted',
+                'updated_at',
                 'thumbnail_url',
                 'total_duration',
                 'total_duration_seconds',
@@ -507,5 +512,66 @@ class PlaylistDetailTest extends TestCase
 
         // The endpoint should eager-load trainingplandetail and content in fixed queries (at most 5 queries: auth/perm check, trainingplan, trainingplandetail, content)
         $this->assertLessThanOrEqual(5, count($queries), 'Potential N+1 detected: too many database queries executed.');
+    }
+
+    /**
+     * Test 18 — Metadata fields URL link, created_at, and updated_at are returned accurately.
+     */
+    public function test_metadata_fields_url_and_timestamps_are_returned_accurately(): void
+    {
+        $plan = TrainingPlan::create([
+            'title'    => 'Metadata Verification Playlist',
+            'active'   => 'Active',
+            'url_link' => 'https://example.com/playlist/test',
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->getJson(route('manage.playlist.details', $plan->id));
+
+        $response->assertStatus(200);
+        $this->assertSame('https://example.com/playlist/test', $response->json('data.url_link'));
+        $this->assertNotNull($response->json('data.created_at'));
+        $this->assertNotNull($response->json('data.created_at_formatted'));
+        $this->assertSame('Active', $response->json('data.active'));
+    }
+
+    /**
+     * Test 19 — Playlist index view contains Total Duration & Learning Hours columns, and does NOT contain Slug column.
+     */
+    public function test_playlist_index_view_columns_refactor(): void
+    {
+        $plan = TrainingPlan::create([
+            'title'                  => 'Unique Playlist For Table Test',
+            'active'                 => 'Active',
+            'learning_hours'         => 3.5000,
+            'total_duration_seconds' => 12600, // 03:30:00
+        ]);
+
+        $response = $this->actingAs($this->adminUser)
+            ->get(route('playlist.index'));
+
+        $response->assertStatus(200);
+        $html = $response->getContent();
+
+        // 1. Slug header must NOT exist in the table
+        $this->assertStringNotContainsString('<th>Slug</th>', $html);
+
+        // 2. Total Duration & Learning Hours headers must exist
+        $this->assertStringContainsString('Total Duration', $html);
+        $this->assertStringContainsString('Learning Hours', $html);
+
+        // 3. Compact Title hover tooltip title attribute exists
+        $this->assertStringContainsString('title="Unique Playlist For Table Test"', $html);
+
+        // 4. Formatted duration and learning hours appear
+        $this->assertStringContainsString('03:30:00', $html);
+        $this->assertStringContainsString('3.5000 h', $html);
+
+        // 5. 4 Compact action buttons are present
+        $this->assertStringContainsString('btn-view-playlist-detail', $html);
+        $this->assertStringContainsString('ti ti-eye', $html);
+        $this->assertStringContainsString('ti ti-edit', $html);
+        $this->assertStringContainsString('ti ti-arrows-sort', $html);
+        $this->assertStringContainsString('ti ti-trash', $html);
     }
 }

@@ -42,17 +42,16 @@
 
             <!-- Content Data Body -->
             <div class="modal-body px-3 py-2" id="playlistDetailContent" style="display: none;">
-                <!-- Section 1: Playlist Header & Identity -->
-                <div class="d-flex align-items-start gap-3 p-2 rounded-3 bg-light border mb-2 playlist-detail-hero-box">
-                    <div class="flex-shrink-0" id="detailPlaylistThumbnailContainer">
-                        <img src="" alt="Thumbnail" id="detailPlaylistThumbnail" class="rounded-2 border" style="width: 72px; height: 72px; object-fit: cover; display: none;">
-                        <div class="rounded-2 d-flex align-items-center justify-content-center bg-blue-lt text-blue" id="detailPlaylistThumbFallback" style="width: 72px; height: 72px;">
-                            <i class="ti ti-playlist fs-1"></i>
+                <!-- Section 1: Playlist Identity & Metadata -->
+                <div class="p-3 rounded-3 bg-light border mb-2 playlist-detail-hero-box">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                        <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                            <div class="avatar avatar-sm bg-primary-lt text-primary rounded-2 flex-shrink-0">
+                                <i class="ti ti-playlist fs-2"></i>
+                            </div>
+                            <h4 class="fw-bold text-dark mb-0 text-break lh-sm min-w-0" id="detailPlaylistTitle">-</h4>
                         </div>
-                    </div>
-                    <div class="flex-grow-1 min-w-0">
-                        <h4 class="fw-bold text-dark mb-1 text-break lh-sm" id="detailPlaylistTitle">-</h4>
-                        <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+                        <div class="d-flex flex-wrap align-items-center gap-1 flex-shrink-0">
                             <span class="badge bg-success-lt" id="detailPlaylistStatusBadge">Active</span>
                             <span class="badge bg-azure-lt" id="detailPlaylistMaterialsBadge">
                                 <i class="ti ti-books me-1"></i><span id="detailPlaylistMaterialsCount">0</span> Materials
@@ -61,8 +60,33 @@
                                 <i class="ti ti-calendar me-1"></i><span id="detailPlaylistDeadline">No Deadline</span>
                             </span>
                         </div>
-                        <div class="text-muted small text-truncate" style="font-size: 11px;">
-                            Slug: <code class="text-muted font-monospace" id="detailPlaylistSlug">-</code>
+                    </div>
+
+                    <!-- Metadata Grid: Slug, URL Link, Created/Updated At -->
+                    <div class="row g-2 pt-2 border-top playlist-detail-meta-grid" style="font-size: 12px;">
+                        <div class="col-12">
+                            <div class="d-flex align-items-start gap-1">
+                                <span class="text-muted flex-shrink-0" style="min-width: 80px;"><i class="ti ti-link me-1"></i>Slug:</span>
+                                <code class="font-monospace text-break user-select-all text-dark bg-white px-2 py-1 rounded border w-100" id="detailPlaylistSlug" style="word-break: break-all; white-space: pre-wrap;">-</code>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex align-items-start gap-1">
+                                <span class="text-muted flex-shrink-0" style="min-width: 80px;"><i class="ti ti-external-link me-1"></i>URL Link:</span>
+                                <span id="detailPlaylistUrlWrapper" class="text-break min-w-0">—</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-1 text-muted">
+                                <span style="min-width: 80px;"><i class="ti ti-calendar me-1"></i>Created:</span>
+                                <span class="text-dark fw-medium font-monospace" id="detailPlaylistCreatedAt">—</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-1 text-muted">
+                                <span style="min-width: 80px;"><i class="ti ti-clock-edit me-1"></i>Updated:</span>
+                                <span class="text-dark fw-medium font-monospace" id="detailPlaylistUpdatedAt">—</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -196,6 +220,18 @@ body.theme-dark #playlistDetailModal .table th,
 body.theme-dark #playlistDetailModal .table td {
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
+[data-bs-theme="dark"] #playlistDetailModal .playlist-detail-meta-grid code,
+body.dark-mode #playlistDetailModal .playlist-detail-meta-grid code,
+body.theme-dark #playlistDetailModal .playlist-detail-meta-grid code {
+    background-color: var(--tblr-bg-surface, #1f2937) !important;
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+[data-bs-theme="dark"] #playlistDetailModal .border-top,
+body.dark-mode #playlistDetailModal .border-top,
+body.theme-dark #playlistDetailModal .border-top {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
 </style>
 
 <script>
@@ -244,30 +280,29 @@ document.addEventListener('DOMContentLoaded', function () {
         if (titleEl) titleEl.textContent = data.title || '-';
         if (slugEl) slugEl.textContent = data.slug || '-';
 
-        // Thumbnail
-        const thumbImg = document.getElementById('detailPlaylistThumbnail');
-        const thumbFallback = document.getElementById('detailPlaylistThumbFallback');
-        if (thumbImg && thumbFallback) {
-            if (data.thumbnail_url) {
-                thumbImg.src = data.thumbnail_url;
-                thumbImg.style.display = 'block';
-                thumbFallback.style.display = 'none';
-                thumbImg.onerror = function () {
-                    thumbImg.style.display = 'none';
-                    thumbFallback.style.display = 'flex';
-                };
+        // URL Link
+        const urlWrapper = document.getElementById('detailPlaylistUrlWrapper');
+        if (urlWrapper) {
+            if (data.url_link && data.url_link.trim() !== '') {
+                const safeUrl = encodeURI(data.url_link);
+                urlWrapper.innerHTML = '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none fw-medium d-inline-flex align-items-center gap-1"><i class="ti ti-external-link"></i><span class="text-break">' + $('<div>').text(data.url_link).html() + '</span></a>';
             } else {
-                thumbImg.style.display = 'none';
-                thumbFallback.style.display = 'flex';
+                urlWrapper.innerHTML = '<span class="text-muted">—</span>';
             }
         }
+
+        // Created At & Updated At
+        const createdAtEl = document.getElementById('detailPlaylistCreatedAt');
+        const updatedAtEl = document.getElementById('detailPlaylistUpdatedAt');
+        if (createdAtEl) createdAtEl.textContent = data.created_at_formatted || data.created_at || '—';
+        if (updatedAtEl) updatedAtEl.textContent = data.updated_at || '—';
 
         // Status Badge
         const statusBadge = document.getElementById('detailPlaylistStatusBadge');
         if (statusBadge) {
-            const isActive = data.status === 'Active';
+            const isActive = (data.status === 'Active' || data.active === 'Active');
             statusBadge.className = 'badge ' + (isActive ? 'bg-success-lt text-success' : 'bg-warning-lt text-warning');
-            statusBadge.textContent = data.status || '-';
+            statusBadge.textContent = data.status || data.active || '-';
         }
 
         // Materials Count Badge

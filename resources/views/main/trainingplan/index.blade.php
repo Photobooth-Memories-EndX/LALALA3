@@ -250,22 +250,23 @@
                             <table class="table table-hover owl-table mb-0">
                                 <thead>
                                     <tr>
-                                        <th style="width:48px">No</th>
-                                        <th style="width:80px">Thumbnail</th>
-                                        <th>Title</th>
-                                        <th>Slug</th>
-                                        <th class="text-center" style="width:90px">Materials</th>
-                                        <th style="width:90px">Status</th>
-                                        <th>Deadline</th>
-                                        <th>URL Link</th>
-                                        <th style="width:110px">Created At</th>
-                                        <th style="width:120px">Action</th>
+                                        <th style="width:40px" class="text-center">No</th>
+                                        <th style="width:75px">Thumbnail</th>
+                                        <th style="min-width:170px;">Title</th>
+                                        <th class="text-center" style="width:85px">Materials</th>
+                                        <th style="width:85px">Status</th>
+                                        <th style="width:130px">Deadline</th>
+                                        <th style="width:120px">URL Link</th>
+                                        <th style="width:105px" class="text-nowrap">Total Duration</th>
+                                        <th style="width:105px" class="text-nowrap">Learning Hours</th>
+                                        <th style="width:95px" class="text-nowrap">Created At</th>
+                                        <th style="width:115px" class="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($trainingplans as $list)
                                         <tr>
-                                            <td>{{ $trainingplans->firstItem() + $loop->index }}</td>
+                                            <td class="text-center text-muted small">{{ $trainingplans->firstItem() + $loop->index }}</td>
                                             <td>
                                                 @if($list->thumbnail_url)
                                                     <img src="{{ $list->thumbnail_url }}"
@@ -282,12 +283,13 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <span class="monitoring-link fw-semibold">
+                                                <span class="monitoring-link fw-semibold d-inline-block text-truncate"
+                                                    style="max-width: 210px;"
+                                                    title="{{ $list->title }}"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-placement="top">
                                                     {{ Str::limit($list->title, 35) }}
                                                 </span>
-                                            </td>
-                                            <td>
-                                                <code class="text-muted" style="font-size:11px;">{{ Str::limit($list->slug, 30) }}</code>
                                             </td>
                                             <td class="text-center">
                                                 <span class="badge bg-azure-lt text-azure">
@@ -312,38 +314,54 @@
                                             </td>
                                             <td>
                                                 @if($list->url_link)
-                                                    <a href="{{ $list->url_link }}" target="_blank" class="text-truncate d-inline-block" style="max-width:140px;" title="{{ $list->url_link }}">
-                                                        <i class="ti ti-external-link me-1"></i>{{ Str::limit($list->url_link, 20) }}
+                                                    <a href="{{ $list->url_link }}" target="_blank" class="text-truncate d-inline-block" style="max-width:115px;" title="{{ $list->url_link }}">
+                                                        <i class="ti ti-external-link me-1"></i>{{ Str::limit($list->url_link, 18) }}
                                                     </a>
                                                 @else
                                                     <span class="text-muted">—</span>
                                                 @endif
                                             </td>
-                                            <td class="text-secondary small">
-                                                {{ $list->created_at->format('d/m/Y') }}
+                                            <td class="font-monospace text-nowrap small text-dark">
+                                                {{ \App\Support\DurationFormatter::fromSeconds((int) ($list->total_duration_seconds ?? 0)) }}
                                             </td>
-                                            <td>
-                                                <div class="d-flex gap-1 flex-wrap">
+                                            <td class="font-monospace text-nowrap small text-primary fw-medium">
+                                                {{ number_format((float) ($list->learning_hours ?? 0), 4, '.', '') }} h
+                                            </td>
+                                            <td class="text-secondary small text-nowrap">
+                                                {{ $list->created_at ? $list->created_at->format('d/m/Y') : '—' }}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-inline-flex gap-1 align-items-center flex-nowrap">
                                                     <button type="button"
-                                                        class="btn btn-sm btn-outline-primary owl-action-btn btn-view-playlist-detail"
+                                                        class="btn btn-sm btn-outline-primary owl-action-btn btn-view-playlist-detail p-1"
+                                                        style="width:28px;height:28px;"
                                                         data-id="{{ $list->id }}"
                                                         title="View Detail"
                                                         aria-label="View playlist details">
                                                         <i class="ti ti-eye"></i>
                                                     </button>
                                                     <a href="{{ route('playlist.edit', $list->slug) }}"
-                                                        class="btn btn-sm btn-info owl-action-btn" title="Edit">
+                                                        class="btn btn-sm btn-info owl-action-btn p-1"
+                                                        style="width:28px;height:28px;"
+                                                        title="Edit"
+                                                        aria-label="Edit playlist">
                                                         <i class="ti ti-edit"></i>
                                                     </a>
                                                     <a href="{{ route('playlist.order', $list->slug) }}"
-                                                        class="btn btn-sm btn-secondary owl-action-btn" title="Order Content">
+                                                        class="btn btn-sm btn-secondary owl-action-btn p-1"
+                                                        style="width:28px;height:28px;"
+                                                        title="Order Content"
+                                                        aria-label="Order content">
                                                         <i class="ti ti-arrows-sort"></i>
                                                     </a>
-                                                    <form action="{{ route('playlist.destroy', $list->slug) }}" method="POST" class="d-inline">
+                                                    <form action="{{ route('playlist.destroy', $list->slug) }}" method="POST" class="d-inline m-0 p-0">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit"
-                                                            class="btn btn-sm btn-danger owl-action-btn" title="Delete"
+                                                            class="btn btn-sm btn-danger owl-action-btn p-1"
+                                                            style="width:28px;height:28px;"
+                                                            title="Delete"
+                                                            aria-label="Delete playlist"
                                                             onclick="return confirm('Are you sure want to delete this data?')">
                                                             <i class="ti ti-trash"></i>
                                                         </button>
@@ -638,6 +656,21 @@ body.dark-mode #manage-playlist-search-results .dropdown-item .text-dark,
 body.theme-dark #manage-playlist-search-results .dropdown-item .text-dark {
     color: #f8fafc !important;
 }
+.owl-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.owl-action-btn:hover {
+    transform: translateY(-1px);
+}
+[data-bs-theme="dark"] .table td.text-dark,
+body.dark-mode .table td.text-dark,
+body.theme-dark .table td.text-dark {
+    color: #f8fafc !important;
+}
 </style>
 @endsection
 
@@ -645,6 +678,12 @@ body.theme-dark #manage-playlist-search-results .dropdown-item .text-dark {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Autocomplete is handled by standardized initManageAutocomplete
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
 });
 </script>
 @endsection
