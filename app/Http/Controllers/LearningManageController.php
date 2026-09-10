@@ -171,7 +171,7 @@ class LearningManageController extends Controller
     {
         $query = trim((string) ($request->get('q') ?? ($request->get('search') ?? $request->get('employee_q', ''))));
         if (!$query) {
-            return response()->json([]);
+            return response()->json(['results' => []]);
         }
 
         $users = User::where('id_emp', 'LIKE', "%{$query}%")
@@ -192,7 +192,7 @@ class LearningManageController extends Controller
             ];
         });
 
-        return response()->json($results);
+        return response()->json(['results' => $results]);
     }
 
     public function searchTitles(Request $request)

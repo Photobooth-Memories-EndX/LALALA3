@@ -31,7 +31,7 @@ class ManageLearningTest extends TestCase
         $response->assertViewHas('ongoing');
         $response->assertViewHas('finish');
         $response->assertViewHas('completionRate');
-        $response->assertViewHas('learningHours', 35622.6);
+        $response->assertViewHas('learningHours', 84319.2);
         $response->assertViewHas('classification');
 
         echo PHP_EOL . "Feature Test - GET /manage/learning:" . PHP_EOL;

@@ -6,6 +6,7 @@ use App\Services\Learning\LearningDatatableService;
 use App\Support\DurationFormatter;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
@@ -257,12 +258,22 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
         }
         fwrite($sfh, '</row>' . "\n");
 
-        // Query streaming
+        // Single unbuffered streaming query execution to prevent timeout & memory bloat
         $query = $this->query();
         $rowCount = 0;
 
-        $query->chunk(5000, function ($rows) use ($sfh, &$rowCount, $colLetters) {
-            foreach ($rows as $row) {
+        $pdo = DB::connection()->getPdo();
+        $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
+        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+
+        $buffer = '';
+        $batchSize = 2000;
+
+        try {
+            $stmt = $pdo->prepare($query->toSql());
+            $stmt->execute($query->getBindings());
+
+            while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
                 $rowCount++;
                 $r = $rowCount + 1;
 
@@ -288,16 +299,30 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
                     $progress,
                 ];
 
-                fwrite($sfh, "<row r=\"{$r}\">\n");
-                fwrite($sfh, "<c r=\"A{$r}\"><v>{$rowCount}</v></c>\n");
+                $rowXml = "<row r=\"{$r}\"><c r=\"A{$r}\"><v>{$rowCount}</v></c>";
                 foreach ($data as $idx => $val) {
                     $coord = $colLetters[$idx + 1] . $r;
                     $escaped = $this->escapeXml($val);
-                    fwrite($sfh, "<c r=\"{$coord}\" t=\"inlineStr\"><is><t>{$escaped}</t></is></c>\n");
+                    $rowXml .= "<c r=\"{$coord}\" t=\"inlineStr\"><is><t>{$escaped}</t></is></c>";
                 }
-                fwrite($sfh, '</row>' . "\n");
+                $rowXml .= "</row>\n";
+
+                $buffer .= $rowXml;
+                if ($rowCount % $batchSize === 0) {
+                    fwrite($sfh, $buffer);
+                    $buffer = '';
+                }
             }
-        });
+
+            if ($buffer !== '') {
+                fwrite($sfh, $buffer);
+                $buffer = '';
+            }
+
+            $stmt->closeCursor();
+        } finally {
+            $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
+        }
 
         fwrite($sfh, '</sheetData>' . "\n");
         fwrite($sfh, '</worksheet>' . "\n");
