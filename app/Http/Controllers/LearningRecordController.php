@@ -10,6 +10,7 @@ use App\Models\TrainingPlan;
 use App\Services\CertificateEligibilityService;
 use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningHourService;
+use App\Services\Learning\LearningRecordLearningHourService;
 use App\Support\DurationFormatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -37,7 +38,13 @@ class LearningRecordController extends Controller
     public function __construct(
         private readonly LearningHourService $learningHourService,
         private readonly CompletedPlaylistService $completedPlaylistService,
+        private readonly ?LearningRecordLearningHourService $recordLearningHourService = null,
     ) {
+    }
+
+    private function recordLhService(): LearningRecordLearningHourService
+    {
+        return $this->recordLearningHourService ?? app(LearningRecordLearningHourService::class);
     }
 
     /**
@@ -58,6 +65,7 @@ class LearningRecordController extends Controller
             ->groupBy('trainingplan_id')
             ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
             ->pluck('min_created', 'trainingplan_id');
+        $playlistActualHours = $this->recordLhService()->calculatePlaylistsBatch($userId, $completedPlaylists);
 
         // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
         // berdasarkan record/completion terbaru (finish_date desc).
@@ -72,7 +80,8 @@ class LearningRecordController extends Controller
                 $firstContentSlugs,
                 $completedContents,
                 $playlistContents,
-                $playlistStartDates
+                $playlistStartDates,
+                $playlistActualHours
             )
         )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
         $rows = $this->applyRecordFilters($allRows);
@@ -430,7 +439,7 @@ class LearningRecordController extends Controller
             'classifications' => $classifications,
             'playlists'       => $completedPlaylists->map(fn ($p) => ['id' => $p->id, 'title' => $p->title])->values(),
             'years'           => $years,
-            'learningHours'   => $this->learningHourService->filterOptions($rows->pluck('learning_hour_bucket')),
+            'learningHours'   => $this->recordLhService()->filterOptions($rows->pluck('learning_hour_bucket')),
         ];
     }
 
@@ -485,9 +494,8 @@ class LearningRecordController extends Controller
             $playlists = $content->relationLoaded('trainingPlans')
                 ? $content->trainingPlans
                 : collect();
-            $learningHoursVal = ($content->learning_hours !== null && $content->learning_hours !== '')
-                ? (float) $content->learning_hours
-                : (float) $this->learningHourService->bucket($content->duration);
+            $actualHours = $this->recordLhService()->calculateContent($cu);
+            $formattedHours = $this->recordLhService()->formatHours($actualHours);
 
             return [
                 'row_kind'        => 'content',
@@ -503,9 +511,9 @@ class LearningRecordController extends Controller
                 'classification'  => $content->classification->classification_name ?? '-',
                 'duration'        => DurationFormatter::formatForLearningRecord($content->duration),
                 'duration_sort'   => DurationFormatter::toSeconds($content->duration) ?? -1,
-                'learning_hour'   => $this->learningHourService->formatHours($learningHoursVal),
-                'learning_hour_bucket' => $learningHoursVal,
-                'learning_hour_value'  => $this->learningHourService->value($learningHoursVal),
+                'learning_hour'   => $formattedHours,
+                'learning_hour_bucket' => $actualHours,
+                'learning_hour_value'  => $actualHours,
                 'progress'        => (int) ($cu->progress ?? 0),
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
@@ -592,12 +600,13 @@ class LearningRecordController extends Controller
         Collection $firstContentSlugs,
         Collection $contentUsers,
         ?Collection $allPlaylistContents = null,
-        ?Collection $playlistStartDates = null
+        ?Collection $playlistStartDates = null,
+        ?Collection $playlistActualHours = null
     ): Collection
     {
         $allPlaylistContents = $allPlaylistContents ?? $this->playlistContentsData($playlists);
 
-        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents, $playlistStartDates) {
+        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents, $playlistStartDates, $playlistActualHours) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
             $eligible    = $eligibility?->eligible ?? false;
@@ -629,9 +638,9 @@ class LearningRecordController extends Controller
             })->values()->all();
 
             $durationSeconds = (int) ($plan->total_duration_seconds ?? 0);
-            $learningHoursVal = ($plan->learning_hours !== null && $plan->learning_hours !== '')
-                ? (float) $plan->learning_hours
-                : (float) $this->learningHourService->bucketFromSeconds($durationSeconds);
+            $actualHours = $playlistActualHours?->get($plan->id)
+                ?? (float) $this->recordLhService()->calculatePlaylistSingle((int) Auth::id(), $plan);
+            $formattedHours = $this->recordLhService()->formatHours($actualHours);
 
             return [
                 'row_kind'        => 'playlist',
@@ -650,9 +659,9 @@ class LearningRecordController extends Controller
                 'classification'  => '-',
                 'duration'        => $this->formatDurationSeconds($durationSeconds),
                 'duration_sort'   => $durationSeconds,
-                'learning_hour'   => $this->learningHourService->formatHours($learningHoursVal),
-                'learning_hour_bucket' => $learningHoursVal,
-                'learning_hour_value'  => $this->learningHourService->value($learningHoursVal),
+                'learning_hour'   => $formattedHours,
+                'learning_hour_bucket' => $actualHours,
+                'learning_hour_value'  => $actualHours,
                 'progress'        => 100,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'start_date'      => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',

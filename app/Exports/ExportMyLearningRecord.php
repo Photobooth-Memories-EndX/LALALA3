@@ -9,6 +9,7 @@ use App\Models\TrainingPlanDetail;
 use App\Services\CertificateEligibilityService;
 use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningHourService;
+use App\Services\Learning\LearningRecordLearningHourService;
 use App\Support\DurationFormatter;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -39,7 +40,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             return [$this->headings()];
         }
 
-        $hours = app(LearningHourService::class);
+        $actualHourService = app(LearningRecordLearningHourService::class);
         $eligibilityService = app(CertificateEligibilityService::class);
         $contentUsers = $this->completedContents((int) $user->id);
         $playlists = $this->completedPlaylists((int) $user->id);
@@ -50,12 +51,13 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             ->groupBy('trainingplan_id')
             ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
             ->pluck('min_created', 'trainingplan_id');
+        $playlistActualHours = $actualHourService->calculatePlaylistsBatch((int) $user->id, $playlists);
 
-        $contentRows = $contentUsers->map(fn (ContentUser $cu) => $this->contentRow($cu, $certificate, $hours));
+        $contentRows = $contentUsers->map(fn (ContentUser $cu) => $this->contentRow($cu, $certificate, $actualHourService));
         $contentRowsById = $contentUsers->mapWithKeys(
             fn (ContentUser $cu, int $index) => [(int) $cu->content_id => $contentRows->get($index)]
         );
-        $playlistRows = $playlists->map(fn (TrainingPlan $plan) => $this->playlistRows($plan, $contentUsersById, $certificate, $hours, $playlistStartDates));
+        $playlistRows = $playlists->map(fn (TrainingPlan $plan) => $this->playlistRows($plan, $contentUsersById, $certificate, $actualHourService, $playlistStartDates, $playlistActualHours));
 
         $this->rows = $this->applyFilters($contentRows->concat($playlistRows)->values());
         $output = [$this->headings()];
@@ -98,7 +100,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             '',
             '',
             DurationFormatter::fromSeconds($durationSeconds),
-            $hours->value($learningHours),
+            number_format($learningHours, 2, '.', '') . ' h',
             '',
             '',
             '',
@@ -223,14 +225,13 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         ];
     }
 
-    private function contentRow(ContentUser $cu, array $cert, LearningHourService $hours, bool $playlistChild = false): array
+    private function contentRow(ContentUser $cu, array $cert, LearningRecordLearningHourService $hourService, bool $playlistChild = false): array
     {
         $content = $cu->content;
         $setting = $cert['content']->get($content->id);
         $result = $setting ? ($cert['results'][$setting->id] ?? null) : null;
-        $learningHoursVal = ($content->learning_hours !== null && $content->learning_hours !== '')
-            ? (float) $content->learning_hours
-            : (float) $hours->bucket($content->duration);
+        $actualHours = $hourService->calculateContent($cu);
+        $formattedHours = number_format($actualHours, 2, '.', '') . ' h';
 
         return [
             'category'            => 'Content',
@@ -238,7 +239,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             'title'               => $content->title ?? '-',
             'classification'      => optional($content->classification)->classification_name ?? '-',
             'duration'            => DurationFormatter::formatForLearningRecord($content->duration),
-            'learning_hour'       => $hours->value($learningHoursVal),
+            'learning_hour'       => $formattedHours,
             'progress'            => (int) ($cu->progress ?? 0) . '%',
             'start_date'          => optional($cu->created_at)->format('Y-m-d H:i') ?? '',
             'finish_date'         => (int) $cu->finish === 1 ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i') ?? '') : '',
@@ -246,7 +247,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',
             'date'                => $cu->updated_at,
             'duration_seconds'    => DurationFormatter::toSeconds($content->duration) ?? -1,
-            'learning_hour_value' => $learningHoursVal,
+            'learning_hour_value' => $actualHours,
             'learning_status'     => (string) ($cu->learning_status ?? ''),
             'playlist_ids'        => $content->trainingPlans->pluck('id')->map(fn ($id) => (string) $id)->all(),
             'children'            => [],
@@ -257,20 +258,21 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         TrainingPlan $plan,
         Collection $contentUsers,
         array $cert,
-        LearningHourService $hours,
-        ?Collection $playlistStartDates = null
+        LearningRecordLearningHourService $hourService,
+        ?Collection $playlistStartDates = null,
+        ?Collection $playlistActualHours = null
     ): array
     {
         $seconds = (int) ($plan->total_duration_seconds ?? 0);
-        $learningHoursVal = ($plan->learning_hours !== null && $plan->learning_hours !== '')
-            ? (float) $plan->learning_hours
-            : (float) $hours->bucketFromSeconds($seconds);
+        $actualHours = $playlistActualHours?->get($plan->id)
+            ?? $hourService->calculatePlaylistSingle((int) Auth::id(), $plan);
+        $formattedHours = number_format($actualHours, 2, '.', '') . ' h';
         $setting = $cert['playlist']->get($plan->id);
         $result = $setting ? ($cert['results'][$setting->id] ?? null) : null;
         $children = $plan->trainingplandetail->sortBy('content_order')
             ->map(fn (TrainingPlanDetail $detail) => $contentUsers->get($detail->content_id))
             ->filter()
-            ->map(fn (ContentUser $contentUser) => $this->contentRow($contentUser, $cert, $hours, true))
+            ->map(fn (ContentUser $contentUser) => $this->contentRow($contentUser, $cert, $hourService, true))
             ->values()
             ->all();
 
@@ -285,7 +287,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             'title'               => $plan->title ?? '-',
             'classification'      => '-',
             'duration'            => DurationFormatter::fromSeconds($seconds),
-            'learning_hour'       => $hours->value($learningHoursVal),
+            'learning_hour'       => $formattedHours,
             'progress'            => '100%',
             'start_date'          => $startDate,
             'finish_date'         => $plan->last_finished_at ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i') : '',
@@ -293,7 +295,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',
             'date'                => $plan->last_finished_at,
             'duration_seconds'    => $seconds,
-            'learning_hour_value' => $learningHoursVal,
+            'learning_hour_value' => $actualHours,
             'children'            => $children,
             'playlist_id'         => $plan->id,
         ];
