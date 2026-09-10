@@ -15,12 +15,10 @@ class LearningDatatableService
     public const PLAYLIST_CUTOFF = LearningManageController::PLAYLIST_CUTOFF;
 
     /**
-     * Build unified query builder for learning data (ContentUser + PlaylistContentUser post-cutoff).
+     * Build unified query builder for learning data (ContentUser + PlaylistContentUser).
      */
     public static function buildBaseQuery(array $filters = [], string $type = '', string $slug = ''): Builder
     {
-        $cutoff = self::PLAYLIST_CUTOFF;
-
         $categoryParam = strtolower(trim((string) ($filters['category'] ?? ($filters['learning_source'] ?? ($filters['source'] ?? 'all')))));
 
         $cuSelect = DB::table('content_users as cu')
@@ -49,8 +47,7 @@ class LearningDatatableService
                 'pcu.finish',
                 'pcu.progress',
                 'pcu.created_at',
-            ])
-            ->where('pcu.created_at', '>', $cutoff);
+            ]);
 
         if ($categoryParam === 'all_content') {
             $union = $cuSelect;
@@ -97,7 +94,7 @@ class LearningDatatableService
         // 1. Status Filter
         $status = $filters['status'] ?? null;
         if (filled($status) && $status !== 'all') {
-            $statusStr = (string) $status;
+            $statusStr = strtolower(trim((string) $status));
             if ($statusStr === 'finished' || $statusStr === 'finish' || $statusStr === '1') {
                 $query->where('unified.finish', '1');
             } elseif ($statusStr === 'ongoing' || $statusStr === '0') {
@@ -106,7 +103,7 @@ class LearningDatatableService
                 $query->where('unified.finish', '0')->where(function ($q) {
                     $q->where('unified.progress', 0)->orWhereNull('unified.progress');
                 });
-            } elseif (in_array($statusStr, ['mandatory', 'optional'], true)) {
+            } elseif (in_array($statusStr, ['mandatory', 'optional', 'playlist'], true)) {
                 $query->where('unified.status', $statusStr);
             }
         }

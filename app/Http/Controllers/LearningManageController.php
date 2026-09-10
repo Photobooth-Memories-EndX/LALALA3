@@ -20,16 +20,13 @@ class LearningManageController extends Controller
 
     public function index()
     {
-        $cutoff = self::PLAYLIST_CUTOFF;
-
         $cuTotal = ContentUser::count();
         $cuOngoing = ContentUser::where('finish', '0')->count();
         $cuFinish = ContentUser::where('finish', '1')->count();
 
-        $pcuGenuine = PlaylistContentUser::where('created_at', '>', $cutoff);
-        $pcuTotal = (clone $pcuGenuine)->count();
-        $pcuOngoing = (clone $pcuGenuine)->where('finish', '0')->count();
-        $pcuFinish = (clone $pcuGenuine)->where('finish', '1')->count();
+        $pcuTotal = PlaylistContentUser::count();
+        $pcuOngoing = PlaylistContentUser::where('finish', '0')->count();
+        $pcuFinish = PlaylistContentUser::where('finish', '1')->count();
 
         $totalLearning = $cuTotal + $pcuTotal;
         $ongoing = $cuOngoing + $pcuOngoing;
@@ -52,7 +49,6 @@ class LearningManageController extends Controller
                         'content_id',
                         'finish',
                     ])
-                    ->where('created_at', '>', $cutoff)
             );
 
         $classification = DB::table('classification')
@@ -132,10 +128,8 @@ class LearningManageController extends Controller
     public function all(Request $request)
     {
         if ($request->input('action') === 'download') {
-            return Excel::download(
-                new LearningExport($request->all(), '', ''),
-                now()->format('Ymd_His') . '_learning.xlsx'
-            );
+            return (new LearningExport($request->all(), '', ''))
+                ->download(now()->format('Ymd_His') . '_learning.xlsx');
         }
 
         return view('main.learning.all', $this->learningViewData($request, 'All Learning'));
@@ -146,10 +140,8 @@ class LearningManageController extends Controller
         $classification = Classification::where('slug', $slug)->firstOrFail();
 
         if ($request->input('action') === 'download') {
-            return Excel::download(
-                new LearningExport($request->all(), 'category', $slug),
-                now()->format('Ymd_His') . '_learning.xlsx'
-            );
+            return (new LearningExport($request->all(), 'category', $slug))
+                ->download(now()->format('Ymd_His') . '_learning.xlsx');
         }
 
         return view('main.learning.all', $this->learningViewData(
@@ -164,10 +156,8 @@ class LearningManageController extends Controller
         $contentModel = Content::where('slug', $slug)->first();
 
         if ($request->input('action') === 'download') {
-            return Excel::download(
-                new LearningExport($request->all(), 'content', $slug),
-                now()->format('Ymd_His') . '_learning.xlsx'
-            );
+            return (new LearningExport($request->all(), 'content', $slug))
+                ->download(now()->format('Ymd_His') . '_learning.xlsx');
         }
 
         return view('main.learning.all', $this->learningViewData(
@@ -246,10 +236,8 @@ class LearningManageController extends Controller
 
     public function download(Request $request)
     {
-        return Excel::download(
-            new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')),
-            now()->format('Ymd_His') . '_learning_data.xlsx'
-        );
+        return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
+            ->download(now()->format('Ymd_His') . '_learning_data.xlsx');
     }
 
     public function datatable(Request $request, LearningDatatableService $datatableService)
