@@ -115,7 +115,7 @@
                     <i class="ti ti-refresh me-1"></i>
                     Reset
                 </button>
-                <button type="submit" class="btn btn-primary rounded-3" id="assessmentApplyMoreFilters">
+                <button type="submit" class="btn btn-primary rounded-3" id="assessmentApplyMoreFilters" data-bs-dismiss="modal" data-dismiss="modal">
                     <i class="ti ti-check me-1"></i>
                     Apply Filter
                 </button>

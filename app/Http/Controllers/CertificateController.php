@@ -80,7 +80,13 @@ class CertificateController extends Controller
             'optional' => CertificateSetting::where('is_assessment_required', 0)->count(),
         ];
 
-        return view('main.certificate.index', compact('summary'));
+        $issuers = CertificateSetting::whereNotNull('issuer_name')
+            ->where('issuer_name', '!=', '')
+            ->distinct()
+            ->orderBy('issuer_name')
+            ->pluck('issuer_name');
+
+        return view('main.certificate.index', compact('summary', 'issuers'));
     }
 
     public function datatable(Request $request)

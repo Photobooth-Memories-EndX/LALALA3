@@ -23,10 +23,15 @@ class ManageRoleController extends Controller
      */
     public function index(Request $request)
     {
-        $search     = $request->input('s');
+        $search     = $request->input('q') ?? ($request->input('s') ?? $request->input('search'));
         $division   = $request->input('division');
         $department = $request->input('department');
         $team       = $request->input('team');
+        $orgUnit    = $request->input('org_unit');
+        $entries    = (int) ($request->input('entries', 15));
+        if (!in_array($entries, [10, 15, 25, 50, 100])) {
+            $entries = 15;
+        }
 
         $users = User::query()
             ->when($search, function ($query) use ($search) {
@@ -36,7 +41,8 @@ class ManageRoleController extends Controller
                         ->orWhere('id_emp', 'like', "%{$search}%")
                         ->orWhere('division', 'like', "%{$search}%")
                         ->orWhere('department', 'like', "%{$search}%")
-                        ->orWhere('team', 'like', "%{$search}%");
+                        ->orWhere('team', 'like', "%{$search}%")
+                        ->orWhere('id_org_unit', 'like', "%{$search}%");
                 });
             })
             ->when($division, function ($query) use ($division) {
@@ -48,33 +54,44 @@ class ManageRoleController extends Controller
             ->when($team, function ($query) use ($team) {
                 $query->where('team', $team);
             })
+            ->when($orgUnit, function ($query) use ($orgUnit) {
+                $query->where('id_org_unit', $orgUnit);
+            })
             ->orderBy('name')
-            ->paginate(15)
+            ->paginate($entries)
             ->withQueryString();
 
-            $divisions = User::query()
-                ->whereNotNull('division')
-                ->whereRaw("TRIM(division) != ''")
-                ->selectRaw('TRIM(division) as division')
-                ->distinct()
-                ->orderBy('division')
-                ->pluck('division');
+        $divisions = User::query()
+            ->whereNotNull('division')
+            ->whereRaw("TRIM(division) != ''")
+            ->selectRaw('TRIM(division) as division')
+            ->distinct()
+            ->orderBy('division')
+            ->pluck('division');
 
-            $departments = User::query()
-                ->whereNotNull('department')
-                ->whereRaw("TRIM(department) != ''")
-                ->selectRaw('TRIM(department) as department')
-                ->distinct()
-                ->orderBy('department')
-                ->pluck('department');
+        $departments = User::query()
+            ->whereNotNull('department')
+            ->whereRaw("TRIM(department) != ''")
+            ->selectRaw('TRIM(department) as department')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department');
 
-            $teams = User::query()
-                ->whereNotNull('team')
-                ->whereRaw("TRIM(team) != ''")
-                ->selectRaw('TRIM(team) as team')
-                ->distinct()
-                ->orderBy('team')
-                ->pluck('team');
+        $teams = User::query()
+            ->whereNotNull('team')
+            ->whereRaw("TRIM(team) != ''")
+            ->selectRaw('TRIM(team) as team')
+            ->distinct()
+            ->orderBy('team')
+            ->pluck('team');
+
+        $orgUnits = User::query()
+            ->whereNotNull('id_org_unit')
+            ->whereRaw("TRIM(id_org_unit) != ''")
+            ->selectRaw('TRIM(id_org_unit) as id_org_unit')
+            ->distinct()
+            ->orderBy('id_org_unit')
+            ->pluck('id_org_unit');
 
         return view('main.manage-role.index', [
             'users'           => $users,
@@ -82,9 +99,12 @@ class ManageRoleController extends Controller
             'division'        => $division,
             'department'      => $department,
             'team'            => $team,
+            'orgUnit'         => $orgUnit,
+            'entries'         => $entries,
             'divisions'       => $divisions,
             'departments'     => $departments,
             'teams'           => $teams,
+            'orgUnits'        => $orgUnits,
             'assignableRoles' => $this->assignableRoleLabels(),
 
             'totalUsers'      => User::count(),
@@ -92,6 +112,28 @@ class ManageRoleController extends Controller
             'totalDepartment' => $departments->count(),
             'totalTeam'       => $teams->count(),
         ]);
+    }
+
+    /**
+     * AJAX autocomplete live search for Manage Role.
+     */
+    public function liveSearch(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+        if ($q === '') {
+            return response()->json([]);
+        }
+
+        $users = User::query()
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'LIKE', "%{$q}%")
+                      ->orWhere('email', 'LIKE', "%{$q}%")
+                      ->orWhere('id_emp', 'LIKE', "%{$q}%");
+            })
+            ->limit(8)
+            ->get(['id', 'name', 'email', 'id_emp']);
+
+        return response()->json($users);
     }
 
    public function update(Request $request, User $user)

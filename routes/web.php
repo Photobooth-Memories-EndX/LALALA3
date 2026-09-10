@@ -268,6 +268,7 @@ Route::get('/certificate/verify/{credentialId}', [UserCertificateController::cla
 Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
+    Route::get('/dashboard', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
 
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);
@@ -471,6 +472,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 */
 Route::group(['prefix' => 'manage/role', 'middleware' => ['auth', 'superadmin']], function () {
     Route::get('/', [ManageRoleController::class, 'index'])->name('manage.role.index');
+    Route::get('/live-search', [ManageRoleController::class, 'liveSearch'])->name('manage.role.live-search');
+    Route::get('/search-autocomplete', [ManageRoleController::class, 'liveSearch'])->name('manage.role.autocomplete');
+    Route::get('/autocomplete', [ManageRoleController::class, 'liveSearch']);
     Route::put('/{user}', [ManageRoleController::class, 'update'])->name('manage.role.update');
 });
 
@@ -481,6 +485,8 @@ Route::group(['prefix' => 'manage/role', 'middleware' => ['auth', 'superadmin']]
 */
 Route::group(['prefix' => 'monitoring', 'middleware' => ['auth', 'mpermission:monitoring']], function () {
     Route::get('/', [MonitoringController::class, 'index'])->name('monitoring.index');
+    Route::get('/live-search', [MonitoringController::class, 'liveSearch'])->name('monitoring.live-search');
+    Route::get('/autocomplete', [MonitoringController::class, 'liveSearch']);
     Route::get('/datatable', [MonitoringController::class, 'datatable'])->name('monitoring.datatable');
     Route::get('/profile/{hash}', [MonitoringController::class, 'profile'])->name('monitoring.profile');
 

@@ -179,14 +179,15 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
         // Filter by Employee ID / NIP / Name
         $employeeParam = $this->filters['employee_id'] ?? ($this->filters['user_id'] ?? ($this->filters['employee'] ?? null));
         if (filled($employeeParam) && $employeeParam !== 'all') {
-            if (is_numeric($employeeParam)) {
-                $query->where('content_users.user_id', $employeeParam);
-            } else {
-                $query->whereHas('user', function ($userQuery) use ($employeeParam) {
-                    $userQuery->where('name', 'like', '%' . $employeeParam . '%')
-                        ->orWhere('id_emp', 'like', '%' . $employeeParam . '%');
+            $query->whereHas('user', function ($userQuery) use ($employeeParam) {
+                $userQuery->where(function ($uq) use ($employeeParam) {
+                    $uq->where('id_emp', 'like', '%' . $employeeParam . '%')
+                        ->orWhere('name', 'like', '%' . $employeeParam . '%');
+                    if (is_numeric($employeeParam)) {
+                        $uq->orWhere('id', (int) $employeeParam);
+                    }
                 });
-            }
+            });
         }
 
         // Filter by Learning Title
