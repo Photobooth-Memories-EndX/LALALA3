@@ -9,6 +9,7 @@
             <th>Team</th>
             <th>Title</th>
             <th>Classification</th>
+            <th>Category</th>
             <th>Duration</th>
             <th>Date</th>
             <th>Progress</th>
@@ -18,16 +19,22 @@
         @foreach ($content as $list)
             <tr>
                 <td>{{ $loop->index + 1 }}</td>
-                <td>{{ $list->status }}</td>
-                <td>{{ $list->user->id_emp }}</td>
-                <td>{{ $list->user->name }}</td>
-                <td>{{ $list->user->department }}</td>
-                <td>{{ $list->user->team }}</td>
-                <td>{{ $list->content->title }}</td>
-                <td>{{ $list->content->classification->classification_name ?? '' }}</td>
-                <td>{{ \App\Support\DurationFormatter::format($list->content->duration ?? null) }}</td>
+                <td>{{ $list->status ?? '-' }}</td>
+                <td>{{ $list->user_id_emp ?? ($list->user->id_emp ?? '-') }}</td>
+                <td>{{ $list->user_name ?? ($list->user->name ?? '-') }}</td>
+                <td>{{ $list->user_department ?? ($list->user->department ?? '-') }}</td>
+                <td>{{ $list->user_team ?? ($list->user->team ?? '-') }}</td>
+                <td>
+                    {{ $list->content_title ?? ($list->content->title ?? '-') }}
+                    @if (!empty($list->playlist_title))
+                        (Playlist: {{ $list->playlist_title }})
+                    @endif
+                </td>
+                <td>{{ $list->classification_name ?? ($list->content->classification->classification_name ?? '-') }}</td>
+                <td>{{ $list->category_source ?? 'All Content' }}</td>
+                <td>{{ \App\Support\DurationFormatter::format($list->content_duration ?? ($list->content->duration ?? null)) }}</td>
                 <td>{{ $list->created_at }}</td>
-                <td>{{ $list->progress }}%</td>
+                <td>{{ $list->progress ?? 0 }}%</td>
             </tr>
         @endforeach
     </tbody>

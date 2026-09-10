@@ -1,4 +1,5 @@
 @php
+    $currentCategory = request('category') ?? (request('learning_source') ?? (request('source', 'all')));
     $currentStatus = request('status', 'all');
     $currentYear = request('year', 'all');
     $currentEntries = (int) ($entries ?? 25);
@@ -112,6 +113,15 @@
                             <!-- See all results link generated via JS -->
                         </div>
                     </div>
+                </div>
+
+                <!-- Category / Learning Source Dropdown -->
+                <div style="min-width: 135px; flex-shrink: 0;">
+                    <select class="form-select rounded-3" id="learn-category" name="category">
+                        <option value="all" {{ ($currentCategory === 'all' || blank($currentCategory)) ? 'selected' : '' }}>All Category</option>
+                        <option value="all_content" {{ $currentCategory === 'all_content' ? 'selected' : '' }}>All Content</option>
+                        <option value="playlist" {{ $currentCategory === 'playlist' ? 'selected' : '' }}>Playlist</option>
+                    </select>
                 </div>
 
                 <!-- 3. Status Dropdown -->

@@ -191,7 +191,7 @@
                 [10, 25, 50, 100],
                 [10, 25, 50, 100]
             ],
-            order: [[7, 'desc']],
+            order: [[8, 'desc']],
             dom: '<"table-responsive"t><"d-flex flex-wrap align-items-center justify-content-between p-3"ip>',
             ajax: {
                 url: "{{ route('learning.manage.datatable') }}",
@@ -204,6 +204,8 @@
                     d.employee_id = $('#learn-employee').val() || '';
                     d.learning_title = $('#learn-title').val() || '';
                     d.search = $('#learn-title').val() || '';
+                    d.category = $('#learn-category').val();
+                    d.learning_source = $('#learn-category').val();
                     d.status = $('#learn-status').val();
                     d.year = $('#learn-year').val();
                     d.classification_slug = $('#classification-slug').val();
@@ -217,14 +219,15 @@
             },
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
-                { data: 'status_badge', name: 'status', className: 'text-center' },
-                { data: 'id_emp', name: 'user.id_emp', className: 'text-center' },
-                { data: 'employee', name: 'user.name' },
-                { data: 'learning_title', name: 'content.title' },
-                { data: 'classification_name', name: 'content.classification.classification_name' },
-                { data: 'duration', name: 'content.duration', className: 'text-center' },
-                { data: 'learning_date', name: 'created_at', className: 'text-center' },
-                { data: 'progress_bar', name: 'progress', orderable: false, searchable: false, className: 'text-center' }
+                { data: 'status_badge', name: 'unified.status', className: 'text-center' },
+                { data: 'id_emp', name: 'u.id_emp', className: 'text-center' },
+                { data: 'employee', name: 'u.name' },
+                { data: 'learning_title', name: 'c.title' },
+                { data: 'classification_name', name: 'cl.classification_name' },
+                { data: 'category_badge', name: 'unified.category_source', className: 'text-center' },
+                { data: 'duration', name: 'c.duration', className: 'text-center' },
+                { data: 'learning_date', name: 'unified.created_at', className: 'text-center' },
+                { data: 'progress_bar', name: 'unified.progress', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {
                 processing: '<div class="py-4 text-center"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Loading learning data...</div></div>'
@@ -288,6 +291,7 @@
             updateUrlParams({
                 employee_id: $('#learn-employee').val() || null,
                 learning_title: $('#learn-title').val() || null,
+                category: $('#learn-category').val() !== 'all' ? $('#learn-category').val() : null,
                 status: $('#learn-status').val() !== 'all' ? $('#learn-status').val() : null,
                 year: $('#learn-year').val() !== 'all' ? $('#learn-year').val() : null,
             });
@@ -388,6 +392,7 @@
             $('#manage-title-dropdown').hide();
 
             // Reset Quick Filter dropdowns
+            $('#learn-category').val('all');
             $('#learn-status').val('all');
             $('#learn-year').val('all');
             $('#learn-entries').val(defaultEntries);
@@ -422,6 +427,9 @@
 
             const titleVal = $('#learn-title').val();
             if (titleVal) params.append('learning_title', titleVal);
+
+            const catVal = $('#learn-category').val();
+            if (catVal && catVal !== 'all') params.append('category', catVal);
 
             const statusVal = $('#learn-status').val();
             if (statusVal && statusVal !== 'all') params.append('status', statusVal);

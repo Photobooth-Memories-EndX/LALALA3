@@ -10,6 +10,7 @@
                         <th>EMPLOYEE</th>
                         <th>LEARNING TITLE</th>
                         <th>CLASSIFICATION</th>
+                        <th class="text-center">CATEGORY</th>
                         <th class="text-center">DURATION</th>
                         <th class="text-center">DATE</th>
                         <th class="text-center">PROGRESS</th>
