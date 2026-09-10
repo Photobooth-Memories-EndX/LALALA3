@@ -332,7 +332,7 @@
 
 @push('scripts')
     <script src="{{ asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+    <script src="{{ asset('vendor/sortablejs/Sortable.min.js') }}"></script>
     <script>
         var activeContentOrdered = @json(
             $trainingplan->trainingplandetail->sortBy(fn ($d) => (int) $d->content_order)->pluck('content_id')->values()->toArray()
