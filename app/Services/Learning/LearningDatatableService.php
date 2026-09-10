@@ -412,21 +412,21 @@ class LearningDatatableService
             || filled(trim((string) $request->input('search.value')))
             || (is_string($request->input('search')) && trim($request->input('search')) !== '');
 
-        if ($categoryParam === 'all_content') {
-            $totalRecords = ContentUser::count();
-        } elseif ($categoryParam === 'playlist') {
-            $totalRecords = PlaylistContentUser::count();
-        } else {
-            $totalRecords = ContentUser::count() + PlaylistContentUser::count();
-        }
+        $totalAll = ContentUser::count() + PlaylistContentUser::count();
 
         $query = self::buildBaseQuery($request->all());
 
         $dataTable = DataTables::query($query)
-            ->setTotalRecords($totalRecords);
+            ->setTotalRecords($totalAll);
 
-        if (!$hasFilters) {
-            $dataTable->setFilteredRecords($totalRecords);
+        if ($hasFilters) {
+            $dataTable->setFilteredRecords($query->count());
+        } elseif ($categoryParam === 'all_content') {
+            $dataTable->setFilteredRecords(ContentUser::count());
+        } elseif ($categoryParam === 'playlist') {
+            $dataTable->setFilteredRecords(PlaylistContentUser::count());
+        } else {
+            $dataTable->setFilteredRecords($totalAll);
         }
 
         return $dataTable
