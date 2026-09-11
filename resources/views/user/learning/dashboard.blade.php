@@ -41,7 +41,7 @@
                     :stats="[
                         ['label' => 'Course Completed', 'value' => number_format($completedContentLearning ?? 0)],
                         ['label' => 'Playlist Completed', 'value' => number_format($completedPlaylistLearning ?? 0)],
-                        ['label' => 'Learning Hours', 'value' => number_format($learningHours ?? 0, 1)],
+                        ['label' => 'Learning Hours', 'value' => number_format($learningHours ?? 0, 2)],
                     ]"
                 />
             </div>

@@ -28,25 +28,23 @@
                     aria-label="Learning record statistics">
                     <div class="learning-hero-ds-card learning-hero-ds-card--primary">
                         <span class="learning-hero-ds-label">Total Learning Hours</span>
-                        <strong class="learning-hero-ds-value learning-hero-ds-value--large">
-                            {{ data_get($stats, '2.value', '—') }}
+                        <strong class="learning-hero-ds-value learning-hero-ds-value--large" data-record-stat="hours">
+                            {{ is_numeric(data_get($stats, '2.value')) ? number_format((float) data_get($stats, '2.value'), 2) : data_get($stats, '2.value', '—') }}
                         </strong>
                     </div>
 
                     <div class="learning-hero-ds-stack">
                         <div class="learning-hero-ds-card learning-hero-ds-card--secondary">
                             <span class="learning-hero-ds-label">Course Completed</span>
-                            <strong class="learning-hero-ds-value">
+                            <strong class="learning-hero-ds-value" data-record-stat="course">
                                 {{ data_get($stats, '0.value', '—') }}
-                                {{-- 1002 --}}
                             </strong>
                         </div>
 
                         <div class="learning-hero-ds-card learning-hero-ds-card--success">
                             <span class="learning-hero-ds-label">Playlist Completed</span>
-                            <strong class="learning-hero-ds-value">
+                            <strong class="learning-hero-ds-value" data-record-stat="playlist">
                                 {{ data_get($stats, '1.value', '—') }}
-                                {{-- 1945 --}}
                             </strong>
                         </div>
                     </div>

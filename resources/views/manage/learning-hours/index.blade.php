@@ -22,7 +22,7 @@
         <!-- Module Selection Cards -->
         <div class="row g-3">
             {{-- Card 1: Content User Learning Hours --}}
-            <div class="col-sm-6 col-lg-6 mb-3">
+            <div class="col-sm-6 col-lg-4 mb-3">
                 <a href="{{ route('manage.learning-hours.content-user.index') }}" class="text-decoration-none text-reset">
                     <div class="card border-0 shadow-sm h-100 admin-menu-card hover-shadow transition">
                         <div class="card-body p-4">
@@ -48,7 +48,7 @@
             </div>
 
             {{-- Card 2: Playlist Content User Learning Hours --}}
-            <div class="col-sm-6 col-lg-6 mb-3">
+            <div class="col-sm-6 col-lg-4 mb-3">
                 <a href="{{ route('manage.learning-hours.playlist-content-user.index') }}" class="text-decoration-none text-reset">
                     <div class="card border-0 shadow-sm h-100 admin-menu-card hover-shadow transition">
                         <div class="card-body p-4">
@@ -66,6 +66,32 @@
 
                             <div class="d-flex align-items-center text-primary fw-semibold small">
                                 Manage Playlist Records
+                                <i class="ti ti-arrow-right ms-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            {{-- Card 3: Dry Run Migration --}}
+            <div class="col-sm-6 col-lg-4 mb-3">
+                <a href="{{ route('manage.learning-hours.dry-run.index') }}" class="text-decoration-none text-reset">
+                    <div class="card border-0 shadow-sm h-100 admin-menu-card hover-shadow transition">
+                        <div class="card-body p-4">
+                            <span class="avatar avatar-md bg-warning-lt text-warning mb-3">
+                                <i class="ti ti-test-pipe fs-2"></i>
+                            </span>
+
+                            <h3 class="mb-2">
+                                Dry Run Migration
+                            </h3>
+
+                            <p class="text-muted small mb-4">
+                                Preview historical learning progress migration from Content User to Playlist Content User.
+                            </p>
+
+                            <div class="d-flex align-items-center text-warning fw-semibold small">
+                                Open Dry Run
                                 <i class="ti ti-arrow-right ms-1"></i>
                             </div>
                         </div>

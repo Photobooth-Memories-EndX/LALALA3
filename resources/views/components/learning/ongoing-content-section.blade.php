@@ -67,6 +67,8 @@
                                 :status-label="$statusLabel"
                                 :thumbnail="$thumbnail"
                                 :learning-hours="$content->learning_hours ?? null"
+                                :current-learning-hours="$list->current_learning_hours ?? ($card['current_learning_hours'] ?? null)"
+                                :total-learning-hours="$list->total_learning_hours ?? ($card['total_learning_hours'] ?? null)"
                             />
                         </div>
                     @endif

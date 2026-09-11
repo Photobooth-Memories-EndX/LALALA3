@@ -65,6 +65,18 @@
         template.remove();
     }
 
+    function syncLearningRecordHero() {
+        var template = document.querySelector(
+            '#learning-tab-content template[data-learning-record-hero]'
+        );
+        var heroRegion = document.querySelector('[data-learning-hero="record"]');
+
+        if (!template || !heroRegion) return;
+
+        heroRegion.replaceChildren(template.content.cloneNode(true));
+        template.remove();
+    }
+
     function loadLearningTab(tab) {
         if (_activeTab === tab) return;
 
@@ -122,6 +134,7 @@
             $('#learning-tab-content').html(html);
             syncLearningOngoingHero();
             syncLearningAssessmentHero();
+            syncLearningRecordHero();
             initLearningAssessment();
             initLearningCertificate();
             initLearningRecord();

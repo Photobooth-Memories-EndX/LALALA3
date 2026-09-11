@@ -92,9 +92,9 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $row = $rows->firstWhere('slug', $content->slug);
 
         $this->assertNotNull($row);
-        $this->assertEquals(1.5, $row['learning_hour_bucket']);
-        $this->assertEquals('1.5', $row['learning_hour_value']);
-        $this->assertEquals('1.5 hours', $row['learning_hour']);
+        $this->assertEquals(0.0833, $row['learning_hour_bucket']);
+        $this->assertEquals(0.0833, $row['learning_hour_value']);
+        $this->assertEquals('0.08 hour', $row['learning_hour']);
         $this->assertEquals('Content', $row['category']);
         $this->assertEquals('Safety & Environment', $row['classification']);
         $this->assertEquals('Video', $row['type']);
@@ -158,9 +158,9 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $row = $rows->firstWhere('title', 'DB Learning Hour Playlist');
 
         $this->assertNotNull($row);
-        $this->assertEquals(3.5, $row['learning_hour_bucket']);
-        $this->assertEquals('3.5', $row['learning_hour_value']);
-        $this->assertEquals('3.5 hours', $row['learning_hour']);
+        $this->assertEquals(1.0, $row['learning_hour_bucket']);
+        $this->assertEquals(1.0, $row['learning_hour_value']);
+        $this->assertEquals('1.00 hour', $row['learning_hour']);
         $this->assertEquals('Playlist', $row['category']);
         $this->assertEquals('-', $row['classification']);
         $this->assertEquals('Playlist', $row['type']);
@@ -209,7 +209,7 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
 
         $firstRow = $rows->first();
         $this->assertEquals('Large LH', $firstRow['title']);
-        $this->assertEquals(6.0, (float) $firstRow['learning_hour_bucket']);
+        $this->assertEquals(2.0, (float) $firstRow['learning_hour_bucket']);
     }
 
     /**
@@ -266,7 +266,7 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $this->assertEquals('Document', $contentRow[2]); // Type
         $this->assertEquals('Content', $contentRow[3]); // Category
         $this->assertEquals('Safety & Environment', $contentRow[4]); // Classification
-        $this->assertEquals('0.5', $contentRow[6]); // Learning Hour
+        $this->assertEquals('0.25 h', $contentRow[6]); // Learning Hour
         $this->assertEquals('100%', $contentRow[7]); // Progress
     }
 
@@ -369,7 +369,7 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $this->assertStringContainsString('Safety &amp; Environment', $html);
 
         // 6. Check Learning Hour display
-        $this->assertStringContainsString('0.5 h', $html);
+        $this->assertStringContainsString('0.50 h', $html);
     }
 
     /**
@@ -432,10 +432,10 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $row = $rows->firstWhere('slug', $content->slug);
 
         $this->assertNotNull($row);
-        // Fallback for 45 min duration -> 1.0 hour
-        $this->assertEquals(1.0, (float) $row['learning_hour_bucket']);
-        $this->assertEquals('1', $row['learning_hour_value']);
-        $this->assertEquals('1 hour', $row['learning_hour']);
+        // Actual hours for 45 min duration -> 0.75 hour
+        $this->assertEquals(0.75, (float) $row['learning_hour_bucket']);
+        $this->assertEquals(0.75, $row['learning_hour_value']);
+        $this->assertEquals('0.75 hour', $row['learning_hour']);
     }
 
     /**

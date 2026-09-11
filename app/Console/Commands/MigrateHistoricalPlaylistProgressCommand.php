@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\PlaylistContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
+use App\Services\LearningHours\HistoricalPlaylistProgressExecutionService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,7 @@ class MigrateHistoricalPlaylistProgressCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(): int
+    public function handle(HistoricalPlaylistProgressExecutionService $executionService): int
     {
         $isDryRun = (bool) $this->option('dry-run');
         $cutoff = (string) $this->option('cutoff');
@@ -72,10 +73,28 @@ class MigrateHistoricalPlaylistProgressCommand extends Command
             ->distinct('content_id')
             ->count('content_id');
 
-        // 3. Aggregate statistics of candidates
+        // 3. Aggregate statistics of unique candidates (deduplicating content_users per user & content)
+        $dedupedCuQuery = DB::table('content_users')
+            ->groupBy('user_id', 'content_id')
+            ->selectRaw("
+                user_id,
+                content_id,
+                MAX(CASE WHEN finish = '1' OR progress >= 100 THEN 1 ELSE 0 END) as is_finished,
+                MAX(progress) as max_progress
+            ");
+
+        if ($specificPlaylistId !== null) {
+            $specificContentIds = DB::table('trainingplandetail')
+                ->where('trainingplan_id', $specificPlaylistId)
+                ->pluck('content_id');
+            $dedupedCuQuery->whereIn('content_id', $specificContentIds);
+        }
+
         $candidateQuery = DB::table('trainingplandetail as tpd')
             ->join('trainingplan as tp', 'tp.id', '=', 'tpd.trainingplan_id')
-            ->join('content_users as cu', 'cu.content_id', '=', 'tpd.content_id')
+            ->joinSub($dedupedCuQuery, 'cu', function ($join) {
+                $join->on('cu.content_id', '=', 'tpd.content_id');
+            })
             ->where('tp.created_at', '<=', $cutoff);
 
         if ($specificPlaylistId !== null) {
@@ -85,9 +104,9 @@ class MigrateHistoricalPlaylistProgressCommand extends Command
         $stats = $candidateQuery->selectRaw("
             COUNT(*) as total_candidates,
             COUNT(DISTINCT cu.user_id) as affected_users,
-            SUM(CASE WHEN cu.progress >= 100 OR cu.finish = '1' THEN 1 ELSE 0 END) as finished_count,
-            SUM(CASE WHEN cu.progress > 0 AND cu.progress < 100 AND cu.finish = '0' THEN 1 ELSE 0 END) as in_progress_count,
-            SUM(CASE WHEN cu.progress = 0 AND cu.finish = '0' THEN 1 ELSE 0 END) as zero_count
+            SUM(CASE WHEN cu.is_finished = 1 OR cu.max_progress >= 100 THEN 1 ELSE 0 END) as finished_count,
+            SUM(CASE WHEN cu.is_finished = 0 AND cu.max_progress > 0 AND cu.max_progress < 100 THEN 1 ELSE 0 END) as in_progress_count,
+            SUM(CASE WHEN cu.is_finished = 0 AND cu.max_progress = 0 THEN 1 ELSE 0 END) as zero_count
         ")->first();
 
         $totalCandidates = (int) ($stats->total_candidates ?? 0);
@@ -105,7 +124,9 @@ class MigrateHistoricalPlaylistProgressCommand extends Command
 
         $existsQuery = DB::table('trainingplandetail as tpd')
             ->join('trainingplan as tp', 'tp.id', '=', 'tpd.trainingplan_id')
-            ->join('content_users as cu', 'cu.content_id', '=', 'tpd.content_id')
+            ->joinSub($dedupedCuQuery, 'cu', function ($join) {
+                $join->on('cu.content_id', '=', 'tpd.content_id');
+            })
             ->join('playlist_content_users as pcu', function ($join) {
                 $join->on('pcu.user_id', '=', 'cu.user_id')
                      ->on('pcu.trainingplan_id', '=', 'tpd.trainingplan_id')
@@ -158,7 +179,13 @@ class MigrateHistoricalPlaylistProgressCommand extends Command
             'cu.progress',
             'cu.finish',
             'cu.learning_status',
-        ])->limit(5)->get();
+        ])
+        ->orderBy('cu.user_id')
+        ->orderByDesc('cu.finish')
+        ->orderByDesc('cu.progress')
+        ->orderByDesc('cu.current_time')
+        ->orderByDesc('cu.id')
+        ->limit(5)->get();
 
         if ($samples->isNotEmpty()) {
             $this->newLine();
@@ -207,58 +234,31 @@ class MigrateHistoricalPlaylistProgressCommand extends Command
         $insertedCount = 0;
         $startTime = microtime(true);
 
-        // Process by old playlists to ensure structured chunking
-        $progressBar = $this->output->createProgressBar($totalCandidates);
-        $progressBar->start();
+        try {
+            $execution = $executionService->startExecution($cutoff, $specificPlaylistId, $chunkSize);
 
-        foreach ($oldPlaylistIds as $tpId) {
-            $details = DB::table('trainingplandetail')
-                ->where('trainingplan_id', $tpId)
-                ->pluck('content_id')
-                ->map(fn ($id) => (int) $id)
-                ->all();
+            $progressBar = $this->output->createProgressBar($totalCandidates);
+            $progressBar->start();
 
-            if (empty($details)) {
-                continue;
+            while (!$execution['is_completed']) {
+                $stepResult = $executionService->executeStep($execution['execution_id']);
+                if (!$stepResult['success']) {
+                    $this->newLine();
+                    $this->error('Migration failed: ' . ($stepResult['message'] ?? 'Unknown error'));
+                    return self::FAILURE;
+                }
+                $progressBar->setProgress($stepResult['processed_records']);
+                $execution = $stepResult;
             }
 
-            // Chunk content_users for these content_ids
-            DB::table('content_users')
-                ->whereIn('content_id', $details)
-                ->orderBy('id')
-                ->chunk($chunkSize, function ($chunk) use ($tpId, &$insertedCount, $progressBar) {
-                    $payload = [];
-                    foreach ($chunk as $cu) {
-                        $payload[] = [
-                            'user_id'          => (int) $cu->user_id,
-                            'trainingplan_id'  => (int) $tpId,
-                            'content_id'       => (int) $cu->content_id,
-                            'progress'         => (int) ($cu->progress ?? 0),
-                            'last_page'        => $cu->last_page !== null ? (int) $cu->last_page : null,
-                            'total_pages'      => $cu->total_pages !== null ? (int) $cu->total_pages : null,
-                            'current_time'     => (int) ($cu->current_time ?? 0),
-                            'duration_seconds' => $cu->duration_seconds !== null ? (int) $cu->duration_seconds : null,
-                            'learning_status'  => (string) ($cu->learning_status ?? 'not_started'),
-                            'finish'           => (string) ($cu->finish ?? '0'),
-                            'created_at'       => $cu->created_at ?? Carbon::now(),
-                            'updated_at'       => $cu->updated_at ?? Carbon::now(),
-                        ];
-                    }
-
-                    if (!empty($payload)) {
-                        // insertOrIgnore prevents duplicate errors and respects existing PCU
-                        $affected = DB::table('playlist_content_users')->insertOrIgnore($payload);
-                        $insertedCount += $affected;
-                    }
-
-                    $progressBar->advance(count($chunk));
-                });
+            $progressBar->finish();
+            $this->newLine(2);
+        } finally {
+            $executionService->releaseLock();
         }
 
-        $progressBar->finish();
-        $this->newLine(2);
-
         $duration = round(microtime(true) - $startTime, 2);
+        $insertedCount = $execution['inserted_records'] ?? 0;
 
         $this->info("Migration completed in {$duration} seconds.");
         $this->line("Successfully inserted: <info>{$insertedCount}</info> records into playlist_content_users.");

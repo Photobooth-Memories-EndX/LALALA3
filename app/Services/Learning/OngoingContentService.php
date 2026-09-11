@@ -48,13 +48,44 @@ class OngoingContentService
 
         return $query->get()
             ->filter(fn ($cu) => $cu->content !== null)
-            ->map(fn ($cu) => [
-                'card_type'     => 'content',
-                'list'          => $cu,
-                'sort_activity' => optional($cu->updated_at)->timestamp ?? 0,
-                'sort_progress' => (int) ($cu->progress ?? 0),
-                'sort_duration' => (int) ($cu->duration_seconds ?? 0),
-            ])
+            ->map(function ($cu) {
+                $durationSeconds = (int) ($cu->duration_seconds ?? 0);
+                if ($durationSeconds <= 0 && $cu->content && !empty($cu->content->duration)) {
+                    $durationSeconds = \App\Support\DurationFormatter::toSeconds($cu->content->duration) ?? 0;
+                }
+
+                $currentTime = (int) ($cu->current_time ?? 0);
+                $progress = (int) ($cu->progress ?? 0);
+                $isFinished = ((string) $cu->finish === '1' || $progress >= 100);
+
+                if ($currentTime > 0) {
+                    $actualSeconds = $currentTime;
+                } elseif ($isFinished && $durationSeconds > 0) {
+                    $actualSeconds = $durationSeconds;
+                } elseif ($progress > 0 && $durationSeconds > 0) {
+                    $actualSeconds = (int) round(($progress / 100) * $durationSeconds);
+                } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
+                    $actualSeconds = (int) round((float) $cu->learning_hours * 3600);
+                } else {
+                    $actualSeconds = 0;
+                }
+
+                $currentHours = round($actualSeconds / 3600, 4);
+                $totalHours = $durationSeconds > 0 ? round($durationSeconds / 3600, 4) : 0.0;
+
+                $cu->current_learning_hours = $currentHours;
+                $cu->total_learning_hours   = $totalHours;
+
+                return [
+                    'card_type'              => 'content',
+                    'list'                   => $cu,
+                    'current_learning_hours' => $currentHours,
+                    'total_learning_hours'   => $totalHours,
+                    'sort_activity'          => optional($cu->updated_at)->timestamp ?? 0,
+                    'sort_progress'          => (int) ($cu->progress ?? 0),
+                    'sort_duration'          => (int) ($cu->duration_seconds ?? 0),
+                ];
+            })
             ->values();
     }
 

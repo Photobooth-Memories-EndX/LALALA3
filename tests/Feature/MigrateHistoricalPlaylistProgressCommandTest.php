@@ -488,4 +488,55 @@ class MigrateHistoricalPlaylistProgressCommandTest extends TestCase
 
         $this->assertEquals($countBefore, $countAfter, 'Dry run must not perform any inserts or mutations');
     }
+
+    /**
+     * 12. Duplicate content_users prioritizes best progress (finish=1, progress=100)
+     */
+    public function test_12_duplicate_content_users_prioritizes_best_progress(): void
+    {
+        $plan = $this->createOldPlaylist('Plan Duplicate Priority Test');
+        $content = $this->createContent('Content Duplicate Priority Test');
+        TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $content->id, 'content_order' => 0]);
+
+        // Older record with lower ID, lower progress, finish = 0
+        $olderCu = ContentUser::create([
+            'user_id'          => $this->user1->id,
+            'content_id'       => $content->id,
+            'progress'         => 35,
+            'finish'           => '0',
+            'learning_status'  => 'in_progress',
+            'current_time'     => 120,
+            'duration_seconds' => 400,
+        ]);
+
+        // Newer record with higher ID, 100% progress, finish = 1
+        $newerCu = ContentUser::create([
+            'user_id'          => $this->user1->id,
+            'content_id'       => $content->id,
+            'progress'         => 100,
+            'finish'           => '1',
+            'learning_status'  => 'completed',
+            'current_time'     => 400,
+            'duration_seconds' => 400,
+        ]);
+
+        $this->assertTrue($olderCu->id < $newerCu->id, 'Precondition: older record has smaller ID than newer record');
+
+        $this->artisan('learning:migrate-playlist-progress', [
+            '--playlist' => $plan->id,
+            '--cutoff'   => $this->cutoff,
+            '--force'    => true,
+        ])->assertSuccessful();
+
+        $pcu = PlaylistContentUser::where('user_id', $this->user1->id)
+            ->where('trainingplan_id', $plan->id)
+            ->where('content_id', $content->id)
+            ->first();
+
+        $this->assertNotNull($pcu);
+        $this->assertEquals(100, $pcu->progress, 'PCU must receive the best progress (100%) rather than the older record (35%)');
+        $this->assertEquals('1', $pcu->finish, 'PCU must receive finish=1');
+        $this->assertEquals('completed', $pcu->learning_status);
+        $this->assertEquals(400, $pcu->current_time);
+    }
 }

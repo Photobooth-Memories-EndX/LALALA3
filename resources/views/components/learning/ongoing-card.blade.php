@@ -26,6 +26,10 @@
     'continueUrl' => null,
     'learningHours' => null,
     'learning_hours' => null,
+    'currentLearningHours' => null,
+    'totalLearningHours' => null,
+    'current_learning_hours' => null,
+    'total_learning_hours' => null,
 ])
 
 @php
@@ -60,10 +64,21 @@
         $periodString = 'No Period';
     }
 
+    $curLh = $currentLearningHours ?? $current_learning_hours ?? null;
+    $totLh = $totalLearningHours ?? $total_learning_hours ?? null;
     $rawLearningHours = $learningHours ?? $learning_hours ?? null;
 
-    if (!is_null($rawLearningHours) && $rawLearningHours !== '' && is_numeric($rawLearningHours)) {
-        $learningHourDisplay = number_format((float) $rawLearningHours, 2) . ' Hours';
+    if (!is_null($curLh) && !is_null($totLh)) {
+        $curFormatted = number_format((float) $curLh, 2, '.', '');
+        $totFormatted = number_format((float) $totLh, 2, '.', '');
+        $learningHourDisplay = $curFormatted . ' / ' . $totFormatted . ' Hours';
+    } elseif (!is_null($rawLearningHours) && $rawLearningHours !== '' && is_numeric($rawLearningHours)) {
+        $lhVal = ((float) $rawLearningHours == (int) $rawLearningHours)
+            ? (int) $rawLearningHours
+            : (float) $rawLearningHours;
+        $learningHourDisplay = $lhVal . ' ' . ($lhVal == 1 ? 'Hour' : 'Hours');
+    } elseif (!is_null($rawLearningHours) && is_string($rawLearningHours) && str_contains($rawLearningHours, '/')) {
+        $learningHourDisplay = str_contains($rawLearningHours, 'Hour') ? $rawLearningHours : $rawLearningHours . ' Hours';
     } else {
         $learningHourDisplay = '-';
     }

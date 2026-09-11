@@ -51,11 +51,12 @@ class ContentUserLearningHourManagementServiceTest extends TestCase
 
     public function test_it_formats_hours_correctly(): void
     {
-        $this->assertEquals('0.5 hour', $this->service->formatHours(0.5));
-        $this->assertEquals('1 hour', $this->service->formatHours(1.0));
-        $this->assertEquals('1.5 hours', $this->service->formatHours(1.5));
-        $this->assertEquals('2 hours', $this->service->formatHours(2.0));
-        $this->assertEquals('-', $this->service->formatHours(0.0));
+        $this->assertEquals('0.5000 h', $this->service->formatHours(0.5));
+        $this->assertEquals('1.0000 h', $this->service->formatHours(1.0));
+        $this->assertEquals('1.5000 h', $this->service->formatHours(1.5));
+        $this->assertEquals('2.0000 h', $this->service->formatHours(2.0));
+        $this->assertEquals('0.3417 h', $this->service->formatHours(0.341666));
+        $this->assertEquals('0.0000 h', $this->service->formatHours(0.0));
         $this->assertEquals('-', $this->service->formatHours(null));
     }
 }
