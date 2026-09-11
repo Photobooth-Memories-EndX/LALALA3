@@ -70,25 +70,10 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             }
         }
 
-        $filteredContentIds = $contentRowsById
-            ->filter(fn (array $row) => $this->applyFilters(collect([$row]))->isNotEmpty())
-            ->keys();
-        $filteredPlaylistIds = $this->rows
-            ->filter(fn (array $row) => $row['type'] === 'Playlist')
-            ->pluck('playlist_id');
-        $playlistChildContentIds = $playlists
-            ->whereIn('id', $filteredPlaylistIds)
-            ->flatMap(fn (TrainingPlan $plan) => $plan->trainingplandetail->pluck('content_id'));
-        $totalContentIds = $filteredContentIds
-            ->merge($playlistChildContentIds)
-            ->unique()
-            ->values();
-        $totalRows = $contentRowsById->only($totalContentIds->all());
-
-        $durationSeconds = (int) $totalRows->sum(
+        $durationSeconds = (int) $this->rows->sum(
             fn (array $row) => max(0, (int) ($row['duration_seconds'] ?? 0))
         );
-        $learningHours = (float) $totalRows->sum(
+        $learningHours = (float) $this->rows->sum(
             fn (array $row) => (float) ($row['learning_hour_value'] ?? 0)
         );
 
@@ -319,26 +304,150 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         ];
     }
 
+    private function normalizeFilters(array $f): array
+    {
+        return [
+            'search'         => trim((string) ($f['search'] ?? $f['record_search'] ?? '')),
+            'type'           => (string) ($f['type'] ?? $f['record_filter_type'] ?? 'all'),
+            'classification' => (string) ($f['classification'] ?? $f['record_filter_classification'] ?? 'all'),
+            'playlist'       => (string) ($f['playlist'] ?? $f['record_filter_playlist'] ?? 'all'),
+            'year'           => (string) ($f['year'] ?? $f['record_filter_year'] ?? 'all'),
+            'month'          => (string) ($f['month'] ?? $f['record_filter_month'] ?? 'all'),
+            'modalYear'      => (string) ($f['modalYear'] ?? $f['record_filter_modal_year'] ?? 'all'),
+            'modalMonths'    => array_map('strval', array_values(array_filter((array) ($f['modalMonths'] ?? $f['record_filter_modal_month'] ?? [])))),
+            'modalTypes'     => array_values(array_filter((array) ($f['modalTypes'] ?? $f['record_filter_modal_type'] ?? []), fn ($v) => $v !== 'all')),
+            'program'        => (string) ($f['program'] ?? $f['record_filter_program'] ?? 'all'),
+            'learningStatus' => array_values(array_filter((array) ($f['learningStatus'] ?? $f['record_filter_learning_status'] ?? []))),
+            'learningHour'   => (string) ($f['learningHour'] ?? $f['record_filter_learning_hour'] ?? 'all'),
+            'duration'       => (string) ($f['duration'] ?? $f['record_filter_duration'] ?? 'all'),
+            'progressRanges' => array_values(array_filter((array) ($f['progressRanges'] ?? $f['record_filter_progress'] ?? []))),
+            'completion'     => (string) ($f['completion'] ?? $f['record_filter_completion'] ?? 'all'),
+            'scoreTest'      => (string) ($f['scoreTest'] ?? $f['record_filter_score'] ?? 'all'),
+            'certificate'    => (string) ($f['certificate'] ?? $f['record_filter_certificate'] ?? 'all'),
+            'quickFilter'    => (string) ($f['quickFilter'] ?? $f['record_quick'] ?? $f['ongoing_mode'] ?? 'all'),
+        ];
+    }
+
     private function applyFilters(Collection $rows): Collection
     {
-        $f = $this->filters;
+        $f = $this->normalizeFilters($this->filters);
+
         return $rows->filter(function ($row) use ($f) {
-            $date = $row['date'] ? Carbon::parse($row['date']) : null;
-            $type = $f['type'] ?? 'all';
-            if ($type !== 'all' && !(($type === 'Video' && in_array($row['type'], ['Video', 'YouTube'], true)) || $row['type'] === $type)) return false;
-            if (($f['classification'] ?? 'all') !== 'all' && $row['classification'] !== $f['classification']) return false;
-            if (($f['playlist'] ?? 'all') !== 'all' && !in_array((string) $f['playlist'], $row['playlist_ids'] ?? [(string) ($row['playlist_id'] ?? '')], true)) return false;
-            if (($f['year'] ?? 'all') !== 'all' && (!$date || $date->year != $f['year'])) return false;
-            if (($f['month'] ?? 'all') !== 'all' && (!$date || $date->month != $f['month'])) return false;
-            if (($f['modalYear'] ?? 'all') !== 'all' && (!$date || $date->year != $f['modalYear'])) return false;
-            if (!empty($f['modalMonths']) && (!$date || !in_array((string) $date->month, (array) $f['modalMonths'], true))) return false;
-            if (!empty($f['learningStatus']) && !in_array($row['learning_status'] ?? '', (array) $f['learningStatus'], true)) return false;
-            if (($f['learningHour'] ?? 'all') !== 'all' && !$this->rangeMatches((float) ($row['learning_hour_value'] ?? 0), $f['learningHour'])) return false;
-            if (($f['duration'] ?? 'all') !== 'all' && !$this->rangeMatches((float) ($row['duration_seconds'] ?? -1), $f['duration'], true)) return false;
-            if (($f['completion'] ?? 'all') !== 'all' && !$this->completionMatches($row['progress'], $f['completion'])) return false;
-            if (($f['scoreTest'] ?? 'all') !== 'all' && !$this->scoreMatches($row['score'], $f['scoreTest'])) return false;
-            if (($f['certificate'] ?? 'all') !== 'all' && strtolower($row['certificate'] ?: 'none') !== strtolower($f['certificate'])) return false;
-            if (($f['search'] ?? '') !== '' && !str_contains(strtolower($row['title'] . ' ' . $row['classification']), strtolower($f['search']))) return false;
+            $date = !empty($row['date']) ? Carbon::parse($row['date']) : null;
+            $rowType = (string) ($row['type'] ?? '');
+            $isPlaylist = ($rowType === 'Playlist' || ($row['category'] ?? '') === 'Playlist');
+
+            // Quick Filter mode
+            if ($f['quickFilter'] === 'content' && $isPlaylist) {
+                return false;
+            }
+            if ($f['quickFilter'] === 'playlist' && !$isPlaylist) {
+                return false;
+            }
+
+            // Type filter
+            $type = $f['type'];
+            if ($type !== 'all') {
+                if ($type === 'Playlist' && !$isPlaylist) {
+                    return false;
+                }
+                if ($type === 'Video' && !in_array($rowType, ['Video', 'YouTube'], true)) {
+                    return false;
+                }
+                if ($type === 'Document' && $rowType !== 'Document') {
+                    return false;
+                }
+                if ($type !== 'Playlist' && $type !== 'Video' && $type !== 'Document' && $rowType !== $type) {
+                    return false;
+                }
+            }
+
+            // Modal types
+            if (!empty($f['modalTypes'])) {
+                $matchedType = false;
+                foreach ($f['modalTypes'] as $mt) {
+                    if ($mt === 'Playlist' && $isPlaylist) { $matchedType = true; break; }
+                    if ($mt === 'Video' && in_array($rowType, ['Video', 'YouTube'], true)) { $matchedType = true; break; }
+                    if ($rowType === $mt) { $matchedType = true; break; }
+                }
+                if (!$matchedType) {
+                    return false;
+                }
+            }
+
+            if ($f['classification'] !== 'all' && ($row['classification'] ?? '') !== $f['classification']) {
+                return false;
+            }
+
+            if ($f['playlist'] !== 'all') {
+                $pids = array_map('strval', $row['playlist_ids'] ?? [(string) ($row['playlist_id'] ?? '')]);
+                if (!in_array((string) $f['playlist'], $pids, true)) {
+                    return false;
+                }
+            }
+
+            if ($f['year'] !== 'all' && (!$date || (string) $date->year !== $f['year'])) {
+                return false;
+            }
+            if ($f['modalYear'] !== 'all' && (!$date || (string) $date->year !== $f['modalYear'])) {
+                return false;
+            }
+            if ($f['month'] !== 'all' && (!$date || (string) $date->month !== $f['month'])) {
+                return false;
+            }
+            if (!empty($f['modalMonths']) && (!$date || !in_array((string) $date->month, $f['modalMonths'], true))) {
+                return false;
+            }
+
+            if (!empty($f['learningStatus']) && !in_array($row['learning_status'] ?? '', $f['learningStatus'], true)) {
+                return false;
+            }
+
+            if ($f['learningHour'] !== 'all' && !$this->rangeMatches((float) ($row['learning_hour_value'] ?? 0), $f['learningHour'])) {
+                return false;
+            }
+
+            if ($f['duration'] !== 'all' && !$this->rangeMatches((float) ($row['duration_seconds'] ?? -1), $f['duration'], true)) {
+                return false;
+            }
+
+            if (!empty($f['progressRanges'])) {
+                $rawProg = (float) rtrim((string) ($row['progress'] ?? 0), '%');
+                $matchedProg = false;
+                foreach ($f['progressRanges'] as $pr) {
+                    if ($this->rangeMatches($rawProg, (string) $pr)) {
+                        $matchedProg = true;
+                        break;
+                    }
+                }
+                if (!$matchedProg) {
+                    return false;
+                }
+            }
+
+            if ($f['completion'] !== 'all' && !$this->completionMatches((string) ($row['progress'] ?? ''), $f['completion'])) {
+                return false;
+            }
+
+            if ($f['scoreTest'] !== 'all' && !$this->scoreMatches($row['score'] ?? null, $f['scoreTest'])) {
+                return false;
+            }
+
+            if ($f['certificate'] !== 'all') {
+                $certVal = strtolower((string) ($row['certificate'] ?? 'none'));
+                if ($certVal === '') $certVal = 'none';
+                if ($certVal !== strtolower($f['certificate'])) {
+                    return false;
+                }
+            }
+
+            if ($f['search'] !== '') {
+                $searchContent = mb_strtolower(($row['title'] ?? '') . ' ' . ($row['classification'] ?? ''));
+                if (!str_contains($searchContent, mb_strtolower($f['search']))) {
+                    return false;
+                }
+            }
+
             return true;
         })->sortBy(fn ($row) => $row['type'] === 'Playlist' ? 2 : (strtolower($row['type']) === 'video' || strtolower($row['type']) === 'youtube' ? 1 : 0))->values();
     }

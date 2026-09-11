@@ -34,8 +34,6 @@ class LearningController extends Controller
         $userId = Auth::id();
         $user   = Auth::user();
 
-        $learningHours = $analyticsService->userLearningHours((int) $userId);
-
         $totalLearning = ContentUser::where('user_id', $userId)->count();
 
         $completedLearning = ContentUser::where('user_id', $userId)
@@ -46,15 +44,22 @@ class LearningController extends Controller
 
         $ongoingLearning = $analyticsService->ongoingLearningCount((int) $userId);
 
-        $completedContentLearning = ContentUser::query()
+        $completedPlaylists = $completedPlaylistService->forUser((int) $userId);
+        $completedPlaylistLearning = $completedPlaylists->count();
+
+        $recordHourService = app(\App\Services\Learning\LearningRecordLearningHourService::class);
+        $contentUsersForLh = ContentUser::with('content')
             ->join('content', 'content.id', '=', 'content_users.content_id')
             ->where('content_users.user_id', $userId)
             ->where('content_users.finish', '1')
             ->whereNull('content.deleted_at')
             ->whereIn('content.type', ['Video', 'Document'])
-            ->count();
-
-        $completedPlaylistLearning = $completedPlaylistService->forUser((int) $userId)->count();
+            ->select('content_users.*')
+            ->get();
+        $completedContentLearning = $contentUsersForLh->count();
+        $actualContentHours = (float) $contentUsersForLh->sum(fn ($cu) => $recordHourService->calculateContent($cu));
+        $actualPlaylistHours = (float) $recordHourService->calculatePlaylistsBatch((int) $userId, $completedPlaylists)->sum();
+        $learningHours = round($actualContentHours + $actualPlaylistHours, 2);
 
         $certificates = Certificate::where('user_id', $userId)
             ->get(['certificate_type']);

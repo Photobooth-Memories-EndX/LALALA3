@@ -123,13 +123,47 @@ function initLearningRecord() {
 
     function restoreRecordFiltersFromUrl() {
         var params = new URLSearchParams(window.location.search);
-        $('#recordSearch').val(params.get('record_search') || '');
+        var searchVal = params.get('record_search') || params.get('search') || '';
+        $('#recordSearch').val(searchVal);
         var requestedSort = String(params.get('record_sort') || '');
         var requestedDirection = String(params.get('record_sort_direction') || '');
         if ($table.find('th[data-sort-key="' + requestedSort + '"]').length
             && (requestedDirection === 'asc' || requestedDirection === 'desc')) {
             sortKey = requestedSort;
             sortDir = requestedDirection;
+        }
+
+        var urlQuick = params.get('record_quick') || params.get('quickFilter') || params.get('ongoing_mode');
+        if (urlQuick && ['all', 'content', 'playlist'].indexOf(urlQuick) !== -1) {
+            setQuickPill(urlQuick);
+        }
+
+        var urlType = params.get('record_filter_type') || params.get('type');
+        if (urlType) {
+            $('#recordFilterType, #hidden_record_filter_type').val(urlType);
+            var $typeItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_type"][data-value="' + urlType + '"]');
+            if ($typeItem.length) updateQuickDropdown($typeItem);
+        }
+
+        var urlClassification = params.get('record_filter_classification') || params.get('classification');
+        if (urlClassification) {
+            $('#recordFilterClassification, #hidden_record_filter_classification').val(urlClassification);
+            var $classItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_classification"][data-value="' + urlClassification + '"]');
+            if ($classItem.length) updateQuickDropdown($classItem);
+        }
+
+        var urlYear = params.get('record_filter_year') || params.get('year') || params.get('record_filter_modal_year');
+        if (urlYear) {
+            $('#recordFilterYear, #hidden_record_filter_year').val(urlYear);
+            var $yearItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_year"][data-value="' + urlYear + '"]');
+            if ($yearItem.length) updateQuickDropdown($yearItem);
+        }
+
+        var urlMonth = params.get('record_filter_month') || params.get('month');
+        if (urlMonth) {
+            $('#recordFilterMonth, #hidden_record_filter_month').val(urlMonth);
+            var $monthItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_month"][data-value="' + urlMonth + '"]');
+            if ($monthItem.length) updateQuickDropdown($monthItem);
         }
 
         setCheckedValues('recordModalType[]', queryArray(params, recordArrayParams.modalTypes), 'all');
@@ -180,6 +214,10 @@ function initLearningRecord() {
             });
         });
 
+        if (quickFilter && quickFilter !== 'all') {
+            params.set('record_quick', quickFilter);
+        }
+
         params.delete('record_page');
         if (sortKey && (sortDir === 'asc' || sortDir === 'desc')) {
             params.set('record_sort', sortKey);
@@ -200,13 +238,60 @@ function initLearningRecord() {
         var params = new URLSearchParams();
         Object.keys(state).forEach(function (key) {
             if (Array.isArray(state[key])) {
-                state[key].forEach(function (value) { params.append(key + '[]', value); });
+                state[key].forEach(function (value) {
+                    params.append(key + '[]', value);
+                    if (recordArrayParams[key]) {
+                        params.append(recordArrayParams[key] + '[]', value);
+                    }
+                });
             } else if (state[key] !== 'all' && state[key] !== '') {
                 params.set(key, state[key]);
+                if (recordScalarParams[key]) {
+                    params.set(recordScalarParams[key], state[key]);
+                }
             }
         });
+        if (state.search) {
+            params.set('search', state.search);
+            params.set('record_search', state.search);
+        }
+        if (quickFilter && quickFilter !== 'all') {
+            params.set('quickFilter', quickFilter);
+            params.set('record_quick', quickFilter);
+        }
         var baseUrl = $('#recordDownloadExcel').data('export-url') || '/my-learning/learning-record/export';
         $('#recordDownloadExcel').attr('href', baseUrl + (params.toString() ? '?' + params.toString() : ''));
+    }
+
+    function updateSummaryCards(matched) {
+        var courseCount = 0;
+        var playlistCount = 0;
+        var totalHours = 0;
+
+        $.each(matched, function (_, tr) {
+            var $tr = $(tr);
+            var kind = $tr.attr('data-kind') || $tr.data('kind');
+            if (kind === 'content') {
+                courseCount++;
+            } else if (kind === 'playlist') {
+                playlistCount++;
+            }
+            var lh = parseFloat($tr.attr('data-learning-hour') || $tr.attr('data-sort-learning-hour') || 0);
+            if (!isNaN(lh) && lh > 0) {
+                totalHours += lh;
+            }
+        });
+
+        var formattedHours = (Math.round(totalHours * 100) / 100).toFixed(2);
+
+        $('[data-record-stat="hours"], [data-learning-hero="record"] .learning-hero-ds-card--primary .learning-hero-ds-value')
+            .text(formattedHours);
+
+        $('[data-record-stat="course"], [data-learning-hero="record"] .learning-hero-ds-card--secondary .learning-hero-ds-value')
+            .text(courseCount.toLocaleString());
+
+        $('[data-record-stat="playlist"], [data-learning-hero="record"] .learning-hero-ds-card--success .learning-hero-ds-value')
+            .text(playlistCount.toLocaleString());
     }
 
     function activeRows() {
@@ -469,6 +554,9 @@ function initLearningRecord() {
             ? playlistMatches
             : (quickFilter === 'content' ? contentMatches : allMatches);
         var matched = activeRows().filter(function (tr) { return matcher($(tr), f); });
+
+        updateSummaryCards(matched);
+        updateExportUrl();
 
         if (f.activitySort === 'newest' || f.activitySort === 'oldest' || f.activitySort === 'recent') {
             matched.sort(function (a, b) {
