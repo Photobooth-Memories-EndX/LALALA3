@@ -237,5 +237,23 @@ $('.toggle-class').change(function() {
                 $('#status-alert .alert').fadeOut();
             }, 2000);
         });
+
+        // JS Handler to immediately hide modal backdrop on form submit
+        document.querySelectorAll('.modal form').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                const modalEl = this.closest('.modal');
+                if (modalEl) {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) modalInstance.hide();
+                    }
+                    if (typeof $ !== 'undefined' && $.fn.modal) {
+                        $(modalEl).modal('hide');
+                    }
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open').css('overflow', '');
+                }
+            });
+        });
     
 </script>

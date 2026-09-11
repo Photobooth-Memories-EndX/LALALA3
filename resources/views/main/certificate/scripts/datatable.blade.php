@@ -9,8 +9,16 @@
             serverSide: true,
             responsive: true,
             autoWidth: false,
+            dom: "t<'d-flex align-items-center justify-content-between p-3'ip>",
             pageLength: 15,
             order: [[0, 'asc']],
+            language: {
+                emptyTable: "No certificate settings found",
+                zeroRecords: "No matching certificate settings found",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
+            },
             ajax: {
                 url: @json(route('certificate.setting.datatable')),
                 data: function (data) {
@@ -30,28 +38,78 @@
                 {data: 'minimum_score', name: 'minimum_score'},
                 {data: 'issuer', name: 'issuer_name'},
                 {data: 'status', name: 'is_active'},
-                {data: 'action', name: 'action', orderable: false, searchable: false}
+                {data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-end'}
             ]
         });
 
-        $('.certificate-filter').on('change', function () {
+        // Entries select
+        $('#certificate-entries').on('change', function () {
+            const len = parseInt($(this).val()) || 15;
+            table.page.len(len).draw();
+        });
+
+        // Quick filter dropdowns (type, status)
+        $('#certificate-type, #certificate-status').on('change', function () {
             table.ajax.reload();
         });
 
-        $('#certificate-search').on('input', function () {
-            clearTimeout(searchTimer);
-            const keyword = this.value;
-            searchTimer = setTimeout(function () {
-                table.search(keyword).draw();
-            }, 400);
+        // Search box input with debounce
+        $('#certificate-search').on('keyup', function (e) {
+            if (e.key === 'Enter') {
+                clearTimeout(searchTimer);
+                table.search(this.value).draw();
+            } else {
+                clearTimeout(searchTimer);
+                const keyword = this.value;
+                searchTimer = setTimeout(function () {
+                    table.search(keyword).draw();
+                }, 400);
+            }
         });
 
+        // Search submit button
+        $('#btn-certificate-search').on('click', function () {
+            table.search($('#certificate-search').val()).draw();
+        });
+
+        // Apply More Filters modal
+        $('#btn-apply-certificate-filters').on('click', function () {
+            table.ajax.reload();
+            const modalEl = document.getElementById('moreCertificateFiltersModal');
+            if (modalEl) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                }
+                $(modalEl).modal('hide');
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open').css('overflow', '');
+            }
+        });
+
+        // Reset More Filters modal inputs
+        $('#btn-reset-modal-filters').on('click', function () {
+            $('#certificate-issuer').val('all');
+            $('#certificate-assessment-required').val('all');
+            $('#certificate-minimum-progress').val('all');
+            $('#certificate-minimum-score').val('all');
+            table.ajax.reload();
+        });
+
+        // Global Reset button
         $('#certificate-filter-reset').on('click', function () {
-            $('.certificate-filter').val('all');
+            $('#certificate-entries').val(15);
+            $('#certificate-type').val('all');
+            $('#certificate-status').val('all');
+            $('#certificate-issuer').val('all');
+            $('#certificate-assessment-required').val('all');
+            $('#certificate-minimum-progress').val('all');
+            $('#certificate-minimum-score').val('all');
             $('#certificate-search').val('');
-            table.search('').ajax.reload();
+            table.search('').page.len(15).ajax.reload();
         });
 
+        // Edit Certificate Modal trigger
         $(document).on('click', '.certificate-edit', function () {
             const setting = $(this).data('setting');
             const modal = $('#editCertificateSettingModal');

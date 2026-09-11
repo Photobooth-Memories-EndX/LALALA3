@@ -9,13 +9,110 @@ use Illuminate\Support\Facades\Http;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $entries    = 25;
-        $user       = User::paginate($entries)->withQueryString();
-        $search     = "";
+        $query = User::query();
 
-        return view('main.user.index', compact('user', 'search', 'entries'))->with('no', (request('page', 1) - 1) * $entries);
+        // Search Filter (name, id_emp, email, team, department, division)
+        $search = $request->q ?: ($request->search_user ?: ($request->s ?: $request->search));
+        if (filled($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('id_emp', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhere('team', 'LIKE', "%{$search}%")
+                  ->orWhere('department', 'LIKE', "%{$search}%")
+                  ->orWhere('division', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Status Filter (1/Active, 0/Inactive)
+        $status = $request->status ?? $request->active;
+        if (filled($status) && $status !== 'all') {
+            if ($status === '1' || strtolower($status) === 'active') {
+                $query->where('active', 1);
+            } elseif ($status === '0' || strtolower($status) === 'inactive') {
+                $query->where('active', 0);
+            }
+        }
+
+        // Company Type Filter (ptkp / non-ptkp / non_ptkp)
+        $companyType = $request->company_type;
+        if (filled($companyType) && $companyType !== 'all') {
+            if ($companyType === 'ptkp') {
+                $query->where('id_emp', 'NOT LIKE', 'ex%');
+            } elseif ($companyType === 'non-ptkp' || $companyType === 'non_ptkp' || $companyType === 'outsourcing') {
+                $query->where('id_emp', 'LIKE', 'ex%');
+            }
+        }
+
+        // Team Filter
+        if ($request->filled('team') && $request->team !== 'all') {
+            $query->where('team', $request->team);
+        }
+
+        // Department Filter
+        if ($request->filled('department') && $request->department !== 'all') {
+            $query->where('department', $request->department);
+        }
+
+        // Division Filter
+        if ($request->filled('division') && $request->division !== 'all') {
+            $query->where('division', $request->division);
+        }
+
+        // Stats calculation
+        $totalUser = User::count();
+        $totalActive = User::where('active', 1)->count();
+        $totalInactive = User::where('active', 0)->count();
+        $totalPtkp = User::where('id_emp', 'NOT LIKE', 'ex%')->count();
+        $totalNonPtkp = User::where('id_emp', 'LIKE', 'ex%')->count();
+
+        // Distinct filter lists
+        $teams = User::whereNotNull('team')
+            ->where('team', '!=', '')
+            ->where('team', '!=', '-')
+            ->where('team', '!=', 'ZZZZZZZZZZ')
+            ->distinct()
+            ->orderBy('team')
+            ->pluck('team');
+
+        $departments = User::whereNotNull('department')
+            ->where('department', '!=', '')
+            ->where('department', '!=', '-')
+            ->where('department', '!=', 'ZZZZZZZZZZ')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department');
+
+        $divisions = User::whereNotNull('division')
+            ->where('division', '!=', '')
+            ->where('division', '!=', '-')
+            ->where('division', '!=', 'ZZZZZZZZZZ')
+            ->distinct()
+            ->orderBy('division')
+            ->pluck('division');
+
+        $entries = (int) ($request->entries ?: ($request->show_entries ?: 25));
+        if (!in_array($entries, [10, 25, 50, 100])) {
+            $entries = 25;
+        }
+
+        $user = $query->paginate($entries)->withQueryString();
+
+        return view('main.user.index', compact(
+            'user',
+            'search',
+            'entries',
+            'totalUser',
+            'totalActive',
+            'totalInactive',
+            'totalPtkp',
+            'totalNonPtkp',
+            'teams',
+            'departments',
+            'divisions'
+        ))->with('no', (request('page', 1) - 1) * $entries);
     }
 
     public function create()
@@ -210,16 +307,7 @@ class UserController extends Controller
 
     public function searchUser(Request $request)
     {
-        $entries    = $request->show_entries;
-        $search     = $request->search_user;
-        $user = User::where('name', 'LIKE', "%$search%")
-            ->orWhere('id_emp', 'LIKE', "%$search%")
-            ->orWhere('team', 'LIKE', "%$search%")
-            ->orWhere('department', 'LIKE', "%$search%")
-            ->orWhere('division', 'LIKE', "%$search%")
-            ->paginate($entries)->withQueryString();
-
-        return view('main.user.index', compact('user', 'search', 'entries'))->with('no', (request('page', 1) - 1) * $entries);
+        return $this->index($request);
     }
 
     public function detail(User $user)

@@ -79,6 +79,49 @@ class MonitoringController extends Controller
         return $this->buildUserDataTable($query, $request);
     }
 
+    /**
+     * AJAX live search autocomplete endpoint for Monitoring users.
+     */
+    public function liveSearch(Request $request)
+    {
+        $search = trim((string) $request->input('q', ''));
+        if ($search === '') {
+            return response()->json([]);
+        }
+
+        $results = $this->baseMonitoringUserQuery()
+            ->where(function ($q) use ($search) {
+                $q->where('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%")
+                    ->orWhere('users.id_emp', 'like', "%{$search}%")
+                    ->orWhere('users.division', 'like', "%{$search}%")
+                    ->orWhere('users.department', 'like', "%{$search}%")
+                    ->orWhere('users.team', 'like', "%{$search}%");
+            })
+            ->limit(10)
+            ->get(['users.id', 'users.name', 'users.id_emp', 'users.division', 'users.department', 'users.team', 'users.role']);
+
+        $roles = User::roles();
+
+        $data = $results->map(function ($user) use ($roles) {
+            $subtitleParts = array_filter([
+                $user->id_emp ? 'NIP: ' . $user->id_emp : null,
+                $user->division,
+                $user->department,
+                $user->team,
+            ]);
+
+            return [
+                'id'       => $user->id,
+                'title'    => $user->name,
+                'subtitle' => implode(' • ', $subtitleParts),
+                'type'     => $roles[$user->role] ?? 'USER',
+            ];
+        });
+
+        return response()->json($data);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Halaman Group (per Division / Department / Team)

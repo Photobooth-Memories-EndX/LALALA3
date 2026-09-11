@@ -2,22 +2,29 @@
 
 namespace App\Exports;
 
-use App\Models\Classification;
-use App\Models\ContentUser;
+use App\Services\Learning\LearningDatatableService;
+use App\Support\DurationFormatter;
+use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
-use Maatwebsite\Excel\Concerns\FromView;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use ZipStream\Option\Archive as ArchiveOptions;
+use ZipStream\ZipStream;
 
-class LearningExport implements FromView, ShouldAutoSize, WithStyles
+class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkReading, WithStyles, WithColumnWidths, Responsable
 {
     protected array $filters = [];
     protected string $type = '';
     protected string $slug = '';
-    protected int $total = 0;
+    protected int $rowNumber = 0;
 
     public function __construct($filters = [], $typeOrStatus = '', $yearOrSlug = '', $slug = '')
     {
@@ -39,226 +46,302 @@ class LearningExport implements FromView, ShouldAutoSize, WithStyles
             $this->slug = (string) $slug;
         }
 
-        $this->total = 0;
+        $this->rowNumber = 0;
     }
 
-    public function view(): View
+    public function query()
     {
-        $query = ContentUser::with(['user', 'content.classification'])
-            ->select('content_users.*');
+        $query = LearningDatatableService::buildBaseQuery($this->filters, $this->type, $this->slug);
 
-        $status = $this->filters['status'] ?? null;
-        if (filled($status) && $status !== 'all') {
-            $statusStr = (string) $status;
-            if ($statusStr === 'finished' || $statusStr === 'finish' || $statusStr === '1') {
-                $query->where('content_users.finish', '1');
-            } elseif ($statusStr === 'ongoing' || $statusStr === '0') {
-                $query->where('content_users.finish', '0')->where('content_users.progress', '>', 0);
-            } elseif ($statusStr === 'not_started') {
-                $query->where('content_users.finish', '0')->where(function ($q) {
-                    $q->where('content_users.progress', 0)->orWhereNull('content_users.progress');
-                });
-            } elseif (in_array($statusStr, ['mandatory', 'optional'], true)) {
-                $query->where('content_users.status', $statusStr);
-            }
+        if (empty($this->filters['sort'])) {
+            $query->orderBy('unified.created_at', 'desc')
+                  ->orderBy('unified.source_type', 'desc')
+                  ->orderBy('unified.source_id', 'desc');
         }
 
-        $programType = $this->filters['program_type'] ?? ($this->filters['program'] ?? null);
-        if (filled($programType) && $programType !== 'all') {
-            if ($programType === 'mandatory') {
-                $query->where(function ($q) {
-                    $q->where('content_users.status', 'mandatory');
-                    if (DB::getSchemaBuilder()->hasColumn('content_users', 'is_mandatory')) {
-                        $q->orWhere('content_users.is_mandatory', 1);
-                    }
-                });
-            } elseif ($programType === 'optional') {
-                $query->where(function ($q) {
-                    $q->where('content_users.status', 'optional');
-                    if (DB::getSchemaBuilder()->hasColumn('content_users', 'is_mandatory')) {
-                        $q->orWhere('content_users.is_mandatory', 0);
-                    }
-                });
-            } else {
-                $query->where('content_users.status', $programType);
-            }
-        }
+        return $query;
+    }
 
-        $year = $this->filters['year'] ?? null;
-        if (filled($year) && $year !== 'all') {
-            $query->whereYear('content_users.created_at', $year);
-        }
-
-        $fromDate = $this->filters['from_date'] ?? ($this->filters['date_from'] ?? null);
-        $toDate = $this->filters['to_date'] ?? ($this->filters['date_to'] ?? null);
-
-        if (filled($fromDate) && filled($toDate)) {
-            $query->whereBetween('content_users.created_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
-        } elseif (filled($fromDate)) {
-            $query->whereDate('content_users.created_at', '>=', $fromDate);
-        } elseif (filled($toDate)) {
-            $query->whereDate('content_users.created_at', '<=', $toDate);
-        }
-
-        $progressRange = $this->filters['progress_range'] ?? null;
-        if (filled($progressRange) && $progressRange !== 'all') {
-            $progressVal = str_replace([' ', '%'], '', (string) $progressRange);
-            switch ($progressVal) {
-                case '0':
-                    $query->where(function ($q) {
-                        $q->where('content_users.progress', 0)->orWhereNull('content_users.progress');
-                    });
-                    break;
-                case '1-25':
-                    $query->whereBetween('content_users.progress', [1, 25]);
-                    break;
-                case '26-50':
-                    $query->whereBetween('content_users.progress', [26, 50]);
-                    break;
-                case '51-75':
-                    $query->whereBetween('content_users.progress', [51, 75]);
-                    break;
-                case '76-99':
-                    $query->whereBetween('content_users.progress', [76, 99]);
-                    break;
-                case '100':
-                    $query->where('content_users.progress', 100);
-                    break;
-            }
-        }
-
-        $duration = $this->filters['duration'] ?? null;
-        if (filled($duration) && $duration !== 'all') {
-            $durationInput = strtolower(trim((string) $duration));
-            $durationRange = match ($durationInput) {
-                'lt10', 'under_10', '< 10 minutes', '<10min', '<10' => [null, 600, false, true],
-                '10-30', '10_30', '10 - 30 minutes', '10-30min' => [600, 1800, true, false],
-                '30-60', '30_60', '30 - 60 minutes', '30-60min' => [1800, 3600, false, false],
-                'gt60', 'above_60', '> 1 hour', '>1hour', '>60', '>60min' => [3600, null, false, false],
-                default => null,
-            };
-
-            if ($durationRange !== null) {
-                [$minimum, $maximum, $includeMinimum, $excludeMaximum] = $durationRange;
-                $isSqlite = DB::connection()->getDriverName() === 'sqlite';
-                if (!$isSqlite) {
-                    $durationInSeconds = "CASE
-                        WHEN content.duration IS NULL OR TRIM(content.duration) = '' THEN NULL
-                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 1 THEN
-                            CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 60
-                            + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
-                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2 THEN
-                            CAST(SUBSTRING_INDEX(content.duration, ':', 1) AS UNSIGNED) * 3600
-                            + CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(content.duration, ':', 2), ':', -1) AS UNSIGNED) * 60
-                            + CAST(SUBSTRING_INDEX(content.duration, ':', -1) AS UNSIGNED)
-                        ELSE NULL
-                    END";
-
-                    $query->whereHas('content', function ($contentQ) use ($durationInSeconds, $minimum, $maximum, $includeMinimum, $excludeMaximum) {
-                        if ($minimum !== null) {
-                            $contentQ->whereRaw($durationInSeconds . ($includeMinimum ? ' >= ?' : ' > ?'), [$minimum]);
-                        }
-                        if ($maximum !== null) {
-                            $contentQ->whereRaw($durationInSeconds . ($excludeMaximum ? ' < ?' : ' <= ?'), [$maximum]);
-                        }
-                    });
-                }
-            }
-        }
-
-        $classSlug = $this->filters['classification_slug'] ?? ($this->type === 'category' ? $this->slug : null);
-        if (filled($classSlug)) {
-            $query->whereHas('content.classification', fn ($q) => $q->where('slug', $classSlug));
-        }
-
-        $contentSlug = $this->filters['content_slug'] ?? ($this->type === 'content' ? $this->slug : null);
-        if (filled($contentSlug)) {
-            $query->whereHas('content', fn ($q) => $q->where('slug', $contentSlug));
-        }
-
-        // Filter by Employee ID / NIP / Name
-        $employeeParam = $this->filters['employee_id'] ?? ($this->filters['user_id'] ?? ($this->filters['employee'] ?? null));
-        if (filled($employeeParam) && $employeeParam !== 'all') {
-            if (is_numeric($employeeParam)) {
-                $query->where('content_users.user_id', $employeeParam);
-            } else {
-                $query->whereHas('user', function ($userQuery) use ($employeeParam) {
-                    $userQuery->where('name', 'like', '%' . $employeeParam . '%')
-                        ->orWhere('id_emp', 'like', '%' . $employeeParam . '%');
-                });
-            }
-        }
-
-        // Filter by Learning Title
-        $learningTitleParam = $this->filters['learning_title'] ?? ($this->filters['title'] ?? ($this->filters['content_title'] ?? null));
-        if (filled($learningTitleParam)) {
-            $query->whereHas('content', function ($contentQuery) use ($learningTitleParam) {
-                $contentQuery->where('title', 'like', '%' . $learningTitleParam . '%');
-            });
-        }
-
-        $searchParam = $this->filters['search'] ?? '';
-        $search = is_array($searchParam)
-            ? trim((string) ($searchParam['value'] ?? ''))
-            : trim((string) $searchParam);
-
-        if ($search !== '' && !filled($employeeParam) && !filled($learningTitleParam)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('content_users.status', 'like', '%' . $search . '%')
-                    ->orWhereHas('user', function ($userQuery) use ($search) {
-                        $userQuery->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('id_emp', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('content', function ($contentQuery) use ($search) {
-                        $contentQuery->where('title', 'like', '%' . $search . '%')
-                            ->orWhere('duration', 'like', '%' . $search . '%')
-                            ->orWhereHas('classification', function ($classificationQuery) use ($search) {
-                                $classificationQuery->where('classification_name', 'like', '%' . $search . '%');
-                            });
-                    });
-            });
-        }
-
-        $sort = $this->filters['sort'] ?? null;
-        if (filled($sort)) {
-            switch ($sort) {
-                case 'newest':
-                    $query->orderBy('content_users.created_at', 'desc');
-                    break;
-                case 'oldest':
-                    $query->orderBy('content_users.created_at', 'asc');
-                    break;
-                case 'highest_progress':
-                    $query->orderBy('content_users.progress', 'desc');
-                    break;
-                case 'lowest_progress':
-                    $query->orderBy('content_users.progress', 'asc');
-                    break;
-            }
-        } else {
-            $query->orderBy('content_users.created_at', 'desc');
-        }
-
-        $content = $query->get();
-        $this->total = count($content);
+    public function view(): \Illuminate\View\View
+    {
+        $content = $this->query()->get();
 
         return view('main.report.learningdownload', ['content' => $content]);
     }
 
+    public function headings(): array
+    {
+        return [
+            '#',
+            'Status',
+            'Employee ID',
+            'Name',
+            'Department',
+            'Team',
+            'Title',
+            'Classification',
+            'Category',
+            'Duration',
+            'Date',
+            'Progress',
+        ];
+    }
+
+    public function map($row): array
+    {
+        $this->rowNumber++;
+
+        $title = $row->content_title ?? '-';
+        if (!empty($row->playlist_title)) {
+            $title .= ' (Playlist: ' . $row->playlist_title . ')';
+        }
+
+        return [
+            $this->rowNumber,
+            $row->status ?? '-',
+            $row->user_id_emp ?? '-',
+            $row->user_name ?? '-',
+            $row->user_department ?? '-',
+            $row->user_team ?? '-',
+            $title,
+            $row->classification_name ?? '-',
+            $row->category_source ?? 'All Content',
+            DurationFormatter::format($row->content_duration ?? null),
+            $row->created_at,
+            ($row->progress ?? 0) . '%',
+        ];
+    }
+
+    public function chunkSize(): int
+    {
+        return 2000;
+    }
+
+    public function columnWidths(): array
+    {
+        return [
+            'A' => 6,
+            'B' => 12,
+            'C' => 15,
+            'D' => 25,
+            'E' => 20,
+            'F' => 20,
+            'G' => 45,
+            'H' => 25,
+            'I' => 15,
+            'J' => 12,
+            'K' => 20,
+            'L' => 10,
+        ];
+    }
+
     public function styles(Worksheet $sheet)
     {
-        $styleArray = [
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                    'color' => ['argb' => '00000000'],
-                ],
-            ],
+        return [
+            1 => ['font' => ['bold' => true]],
         ];
+    }
 
-        $sheet->getStyle('A1:K1')->getFont()->setBold(true);
-        if ($this->total > 0 && $this->total <= 2500) {
-            $sheet->getStyle('A1:K' . ($this->total + 1))->applyFromArray($styleArray);
+    public function download(?string $fileName = null): BinaryFileResponse
+    {
+        $fileName = $fileName ?? (now()->format('Ymd_His') . '_learning_data.xlsx');
+        $tempPath = $this->generateXlsxFile();
+
+        return response()->download(
+            $tempPath,
+            $fileName,
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]
+        )->deleteFileAfterSend(true);
+    }
+
+    public function toResponse($request)
+    {
+        return $this->download();
+    }
+
+    public function generateXlsxFile(): string
+    {
+        $tempXlsx = tempnam(sys_get_temp_dir(), 'xlsx_export_') . '.xlsx';
+        $opt = new ArchiveOptions();
+        $opt->setSendHttpHeaders(false);
+        $fh = fopen($tempXlsx, 'w+b');
+        $opt->setOutputStream($fh);
+
+        $zip = new ZipStream(null, $opt);
+
+        // 1. [Content_Types].xml
+        $zip->addFile('[Content_Types].xml',
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            . '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+            . '</Types>'
+        );
+
+        // 2. _rels/.rels
+        $zip->addFile('_rels/.rels',
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            . '</Relationships>'
+        );
+
+        // 3. xl/_rels/workbook.xml.rels
+        $zip->addFile('xl/_rels/workbook.xml.rels',
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+            . '</Relationships>'
+        );
+
+        // 4. xl/workbook.xml
+        $zip->addFile('xl/workbook.xml',
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<sheets><sheet name="Learning Report" sheetId="1" r:id="rId1"/></sheets>'
+            . '</workbook>'
+        );
+
+        // 5. xl/styles.xml
+        $zip->addFile('xl/styles.xml',
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<fonts count="2">'
+            . '<font><sz val="11"/><name val="Calibri"/></font>'
+            . '<font><b/><sz val="11"/><name val="Calibri"/></font>'
+            . '</fonts>'
+            . '<fills count="2">'
+            . '<fill><patternFill patternType="none"/></fill>'
+            . '<fill><patternFill patternType="gray125"/></fill>'
+            . '</fills>'
+            . '<borders count="1">'
+            . '<border><left/><right/><top/><bottom/><diagonal/></border>'
+            . '</borders>'
+            . '<cellStyleXfs count="1">'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'
+            . '</cellStyleXfs>'
+            . '<cellXfs count="2">'
+            . '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            . '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+            . '</cellXfs>'
+            . '</styleSheet>'
+        );
+
+        // 6. Temporary file stream for sheet1.xml
+        $sheetFile = tempnam(sys_get_temp_dir(), 'xlsx_sheet_');
+        $sfh = fopen($sheetFile, 'w+b');
+
+        fwrite($sfh, '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n");
+        fwrite($sfh, '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' . "\n");
+        fwrite($sfh, '<cols>' . "\n");
+        foreach ($this->columnWidths() as $colLetter => $w) {
+            $colIdx = Coordinate::columnIndexFromString($colLetter);
+            fwrite($sfh, "<col min=\"{$colIdx}\" max=\"{$colIdx}\" width=\"{$w}\" customWidth=\"1\"/>\n");
         }
+        fwrite($sfh, '</cols>' . "\n");
+        fwrite($sfh, '<sheetData>' . "\n");
+
+        // Header row
+        $headers = $this->headings();
+        $colLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        fwrite($sfh, '<row r="1">' . "\n");
+        foreach ($headers as $i => $h) {
+            $c = $colLetters[$i] . '1';
+            $val = $this->escapeXml($h);
+            fwrite($sfh, "<c r=\"{$c}\" t=\"inlineStr\" s=\"1\"><is><t>{$val}</t></is></c>\n");
+        }
+        fwrite($sfh, '</row>' . "\n");
+
+        // Single unbuffered streaming query execution to prevent timeout & memory bloat
+        $query = $this->query();
+        $rowCount = 0;
+
+        $pdo = DB::connection()->getPdo();
+        $wasBuffered = $pdo->getAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
+        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+
+        $buffer = '';
+        $batchSize = 2000;
+
+        try {
+            $stmt = $pdo->prepare($query->toSql());
+            $stmt->execute($query->getBindings());
+
+            while ($row = $stmt->fetch(\PDO::FETCH_OBJ)) {
+                $rowCount++;
+                $r = $rowCount + 1;
+
+                $title = $row->content_title ?? '-';
+                if (!empty($row->playlist_title)) {
+                    $title .= ' (Playlist: ' . $row->playlist_title . ')';
+                }
+
+                $duration = DurationFormatter::format($row->content_duration ?? null);
+                $progress = ($row->progress ?? 0) . '%';
+
+                $data = [
+                    $row->status ?? '-',
+                    $row->user_id_emp ?? '-',
+                    $row->user_name ?? '-',
+                    $row->user_department ?? '-',
+                    $row->user_team ?? '-',
+                    $title,
+                    $row->classification_name ?? '-',
+                    $row->category_source ?? 'All Content',
+                    $duration,
+                    $row->created_at,
+                    $progress,
+                ];
+
+                $rowXml = "<row r=\"{$r}\"><c r=\"A{$r}\"><v>{$rowCount}</v></c>";
+                foreach ($data as $idx => $val) {
+                    $coord = $colLetters[$idx + 1] . $r;
+                    $escaped = $this->escapeXml($val);
+                    $rowXml .= "<c r=\"{$coord}\" t=\"inlineStr\"><is><t>{$escaped}</t></is></c>";
+                }
+                $rowXml .= "</row>\n";
+
+                $buffer .= $rowXml;
+                if ($rowCount % $batchSize === 0) {
+                    fwrite($sfh, $buffer);
+                    $buffer = '';
+                }
+            }
+
+            if ($buffer !== '') {
+                fwrite($sfh, $buffer);
+                $buffer = '';
+            }
+
+            $stmt->closeCursor();
+        } finally {
+            $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $wasBuffered);
+        }
+
+        fwrite($sfh, '</sheetData>' . "\n");
+        fwrite($sfh, '</worksheet>' . "\n");
+        rewind($sfh);
+
+        $zip->addFileFromStream('xl/worksheets/sheet1.xml', $sfh);
+        fclose($sfh);
+        @unlink($sheetFile);
+
+        $zip->finish();
+        fclose($fh);
+
+        return $tempXlsx;
+    }
+
+    protected function escapeXml($value): string
+    {
+        $clean = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', (string) $value);
+        return htmlspecialchars($clean, ENT_XML1 | ENT_COMPAT, 'UTF-8');
     }
 }
+

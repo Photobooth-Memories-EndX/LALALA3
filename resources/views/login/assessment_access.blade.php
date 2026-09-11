@@ -15,20 +15,37 @@
     <link href="Tabler/dist/css/tabler-vendors.min.css?1684106062" rel="stylesheet" />
     <link href="Tabler/dist/css/demo.min.css?1684106062" rel="stylesheet" />
     <link rel="shortcut icon" href="{{ asset('owl.png') }}" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('vendor/tabler-icons/tabler-icons.min.css') }}" />
     <link href="{{ asset('css/login.css') }}" rel="stylesheet" />
 
     <script>
         (function() {
-            const params = new URLSearchParams(window.location.search);
-            const urlTheme = params.get('theme');
-            const storedTheme = localStorage.getItem('owl-dark-mode');
-            let theme = (urlTheme === 'dark' || urlTheme === 'light') ? urlTheme : storedTheme;
+            var validThemes = ['light', 'dark'];
+            var params = new URLSearchParams(window.location.search);
+            var urlTheme = params.get('theme');
+            var normalize = function(v) {
+                if (!v) return null;
+                var s = String(v).trim().toLowerCase();
+                if (s === 'true') return 'dark';
+                if (s === 'false') return 'light';
+                return validThemes.indexOf(s) !== -1 ? s : null;
+            };
+            var stored = normalize(localStorage.getItem('owl-dark-mode')) || normalize(localStorage.getItem('tablerTheme'));
+            var theme = normalize(urlTheme) || stored;
             if (!theme) {
-                theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
             }
-            document.documentElement.dataset.bsTheme = theme;
+            localStorage.setItem('tablerTheme', theme);
+            localStorage.setItem('owl-dark-mode', theme);
+            document.cookie = 'owl-theme=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
+            document.documentElement.setAttribute('data-bs-theme', theme);
             document.documentElement.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+            }
         })();
     </script>
 
@@ -430,6 +447,8 @@
                 const newTheme = activeTheme === 'dark' ? 'light' : 'dark';
 
                 localStorage.setItem('owl-dark-mode', newTheme);
+                localStorage.setItem('tablerTheme', newTheme);
+                document.cookie = 'owl-theme=' + newTheme + ';path=/;max-age=31536000;SameSite=Lax';
                 document.documentElement.dataset.bsTheme = newTheme;
                 document.documentElement.setAttribute('data-theme', newTheme);
                 document.body.dataset.bsTheme = newTheme;
