@@ -18,7 +18,7 @@
         const playerElement = document.querySelector('#player');
 
         if (playerElement && typeof Plyr !== 'undefined') {
-            @if (($content->type == 'Video') || ($content->type == 'YouTube'))
+            @if ($content->type == 'Video')
                 @if (($content_user->progress ?? 0) >= 100)
                     const player = new Plyr('#player');
                 @else

@@ -328,6 +328,8 @@
 
         if (mode === 'playlist') {
             params.set('ongoing_mode', 'playlist');
+        } else if (mode === 'mooc') {
+            params.set('ongoing_mode', 'mooc');
         }
 
         var qs = params.toString();
@@ -339,13 +341,18 @@
 
     // Back/forward browser: restore the tab encoded in the GET query.
     window.addEventListener('popstate', function () {
-        _ongoingMode = null;
+        var params = new URLSearchParams(window.location.search);
+        _ongoingMode = params.get('ongoing_mode') === 'mooc' ? 'mooc' : null;
         _activeTab = null;
         loadLearningTab(learningTabFromUrl());
     });
 
     $(function () {
         // Restore the tab that initiated a full-page GET filter request.
+        var initialParams = new URLSearchParams(window.location.search);
+        if (initialParams.get('ongoing_mode') === 'mooc') {
+            _ongoingMode = 'mooc';
+        }
         loadLearningTab(learningTabFromUrl());
 
         // Tab button click handler

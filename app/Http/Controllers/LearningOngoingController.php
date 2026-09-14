@@ -167,6 +167,23 @@ class LearningOngoingController extends Controller
     }
 
     /**
+     * Mode MOOC — HTML fragment card MOOC Learning On Going.
+     */
+    public function mooc()
+    {
+        $userId  = (int) Auth::id();
+        $filters = $this->contentFilterState();
+
+        $cards = $this->contentService->moocCards($userId, $filters);
+
+        $ongoingMoocs = $this->paginateOngoingCards(
+            $this->sortOngoingCards($cards, $filters['progress_sort'], $filters['activity_sort'])
+        );
+
+        return view('user.learning.dashboard-partials.ongoing-mooc', compact('ongoingMoocs'));
+    }
+
+    /**
      * Filter mode Content — search, type (Video/Document), quick status,
      * year/month, serta seluruh filter modal All Filters. Tanpa unsur playlist.
      *

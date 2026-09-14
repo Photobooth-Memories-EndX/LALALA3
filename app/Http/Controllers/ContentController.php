@@ -482,11 +482,10 @@ class ContentController extends Controller
             ],
         ]);
 
-        if ($request->type == "YouTube") {
-            parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
-            // $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
-            $ytid = $ytarray['v'];
+        if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
+            [$linkToStore, $ytid] = $this->normalizeCourseLink($request->link);
         } else {
+            $linkToStore = null;
             $ytid = null;
         }
         $hasDeadline = $request->boolean('has_deadline');
@@ -519,7 +518,7 @@ class ContentController extends Controller
             'total_page'       => $documentTotalPages,
             'description'      => $request->description ?? '',
             'playlistonly'     => ($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N',
-            'link'             => $ytid,
+            'link'             => $linkToStore,
             'has_deadline'     => $hasDeadline,
             'from_date'        => $hasDeadline ? $request->from_date : null,
             'to_date'          => $hasDeadline ? $request->to_date : null,
@@ -531,11 +530,18 @@ class ContentController extends Controller
         if (!File::isDirectory($path)) {
             File::makeDirectory($path, 0777, true, true);
         }
-        if ($request->type == "YouTube") {
-            $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
-            $image = file_get_contents($url);
-            $thumbpath = public_path('storage/files/content/' . $newid . '/thumb.jpg');
-            file_put_contents($thumbpath, $image);
+        if (in_array($request->type, ['YouTube', 'MOOC'], true) && !empty($ytid)) {
+            try {
+                $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+                $context = stream_context_create(['http' => ['timeout' => 3]]);
+                $image = @file_get_contents($url, false, $context);
+                if ($image) {
+                    $thumbpath = public_path('storage/files/content/' . $newid . '/thumb.jpg');
+                    file_put_contents($thumbpath, $image);
+                }
+            } catch (\Throwable $e) {
+                // Ignore network failure or blocked YouTube
+            }
         }
         if ($request->has('documents')) {
             foreach ($request->documents as $doc) {
@@ -560,7 +566,7 @@ class ContentController extends Controller
                         'active' => 'Active'
                     ]);
                 $addmessage = " and published";
-            } else if ($request->type == "YouTube") {
+            } else if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
                 Content::where('id', $newid)
                     ->update([
                         'active' => 'Active'
@@ -653,18 +659,25 @@ class ContentController extends Controller
 
         $path = public_path('storage/files/content/' . $request->id . '');
         $arraydoc = array();
-        if ($request->type == "YouTube") {
-            parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
-            $ytid = $ytarray['v'];
+        if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
+            [$linkToStore, $ytid] = $this->normalizeCourseLink($request->link);
             Content::where('id', $request->contentid)
                 ->update(['file' => null]);
-            if ($request->action != 'unpublish') {
-                $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
-                $image = file_get_contents($url);
-                $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
-                file_put_contents($thumbpath, $image);
+            if ($request->action != 'unpublish' && !empty($ytid)) {
+                try {
+                    $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+                    $context = stream_context_create(['http' => ['timeout' => 3]]);
+                    $image = @file_get_contents($url, false, $context);
+                    if ($image) {
+                        $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
+                        file_put_contents($thumbpath, $image);
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore network failure
+                }
             }
         } else {
+            $linkToStore = null;
             $ytid = null;
             $arraythumbnail = [];
             $targetDir = public_path('storage/files/content/' . $request->contentid);
@@ -722,7 +735,7 @@ class ContentController extends Controller
                 $active = "Active";
                 $redir = "-";
                 $redirmessage = "-";
-            } else if ($request->type == "YouTube") {
+            } else if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
                 $message = "Content successfully saved and published";
                 $active = "Active";
                 $redir = "-";
@@ -786,7 +799,7 @@ class ContentController extends Controller
                 'description'      => $request->description ?? ($targetContent->description ?? ''),
                 'playlistonly'     => $request->has('playlistonly') ? (($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N') : ($targetContent->playlistonly ?? 'N'),
                 'active'           => $active,
-                'link'             => $ytid,
+                'link'             => $linkToStore,
                 'has_deadline'     => $hasDeadlineUpdate,
                 'from_date'        => $hasDeadlineUpdate ? $request->from_date : null,
                 'to_date'          => $hasDeadlineUpdate ? $request->to_date : null,
@@ -996,5 +1009,41 @@ class ContentController extends Controller
                 'edit_url'                 => route('content.edit', $content),
             ],
         ]);
+    }
+
+    /**
+     * Normalize link input for MOOC/YouTube content.
+     * Returns [$linkToStore, $youtubeId].
+     */
+    private function normalizeCourseLink(?string $link): array
+    {
+        $link = trim((string) $link);
+        if ($link === '') {
+            return [null, null];
+        }
+
+        // 1. YouTube URL with query param or short link
+        if (str_contains($link, 'youtube.com') || str_contains($link, 'youtu.be')) {
+            $parsedQuery = parse_url($link, PHP_URL_QUERY);
+            $ytid = null;
+            if ($parsedQuery) {
+                parse_str($parsedQuery, $ytarray);
+                $ytid = $ytarray['v'] ?? null;
+            }
+            if (!$ytid && preg_match('#youtu\.be/([A-Za-z0-9_-]{6,15})#', $link, $matches)) {
+                $ytid = $matches[1];
+            }
+            if ($ytid) {
+                return [$ytid, $ytid];
+            }
+        }
+
+        // 2. Plain YouTube ID (legacy 11-char ID without slashes or colons)
+        if (!str_contains($link, '/') && !str_contains($link, ':') && strlen($link) === 11) {
+            return [$link, $link];
+        }
+
+        // 3. External URL: store full URL, no YouTube ID
+        return [$link, null];
     }
 }

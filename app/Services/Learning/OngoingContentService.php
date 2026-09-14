@@ -43,6 +43,9 @@ class OngoingContentService
                 ->whereColumn('trainingplandetail.content_id', 'content_users.content_id');
         });
 
+        // 3. Exclude MOOC/YouTube dari mode Content standar (Video/Document)
+        $query->whereHas('content', fn ($q) => $q->whereNotIn('type', ['YouTube', 'MOOC']));
+
         $this->applyStatusScope($query, $filters);
         $this->applyFilters($query, $filters);
 
@@ -255,5 +258,70 @@ class OngoingContentService
                 }
             });
         });
+    }
+
+    /**
+     * Bentuk card MOOC Learning On Going untuk user aktif.
+     *
+     * @return \Illuminate\Support\Collection<int, array>
+     */
+    public function moocCards(int $userId, array $filters): Collection
+    {
+        $query = ContentUser::with([
+                'content.classification',
+            ])
+            ->where('user_id', $userId)
+            ->withAvailableContent();
+
+        // 1. Khusus tipe MOOC / YouTube
+        $query->whereHas('content', fn ($q) => $q->whereIn('type', ['YouTube', 'MOOC']));
+
+        // 2. Exclude content yang merupakan child/member dari Playlist
+        $query->whereNotExists(function ($q) {
+            $q->from('trainingplandetail')
+                ->whereColumn('trainingplandetail.content_id', 'content_users.content_id');
+        });
+
+        // 3. Lifecycle ongoing MOOC:
+        // finish = '0' (belum selesai) dan (learning_status = 'in_progress' atau progress > 0)
+        $query->where('finish', '0')
+            ->where(function ($q) {
+                $q->where('learning_status', 'in_progress')
+                    ->orWhere('progress', '>', 0);
+            });
+
+        // 4. Search filter jika ada
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->whereHas('content', function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhere('author', 'like', '%' . $search . '%')
+                    ->orWhereHas('classification', fn ($cq) => $cq->where('classification_name', 'like', '%' . $search . '%'));
+            });
+        }
+
+        return $query->get()
+            ->filter(fn ($cu) => $cu->content !== null)
+            ->map(function ($cu) {
+                $durationSeconds = (int) ($cu->duration_seconds ?? 0);
+                if ($durationSeconds <= 0 && $cu->content && !empty($cu->content->duration)) {
+                    $durationSeconds = \App\Support\DurationFormatter::toSeconds($cu->content->duration) ?? 0;
+                }
+
+                $cu->current_learning_hours = (float) ($cu->learning_hours ?? 0);
+                $cu->total_learning_hours   = $durationSeconds > 0 ? round($durationSeconds / 3600, 4) : 0.0;
+
+                return [
+                    'card_type'              => 'mooc',
+                    'list'                   => $cu,
+                    'current_learning_hours' => $cu->current_learning_hours,
+                    'total_learning_hours'   => $cu->total_learning_hours,
+                    'sort_activity'          => optional($cu->updated_at)->timestamp ?? 0,
+                    'sort_progress'          => (int) ($cu->progress ?? 0),
+                    'sort_duration'          => $durationSeconds,
+                ];
+            })
+            ->values();
     }
 }

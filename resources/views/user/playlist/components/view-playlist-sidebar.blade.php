@@ -87,6 +87,11 @@
                         ['Document', 'PDF', 'SOP/Regulation'],
                         true
                     );
+                    $isMoocLesson = in_array(
+                        $lesson->type,
+                        ['YouTube', 'MOOC'],
+                        true
+                    );
 
                     if ($learningProgress >= 100) {
                         $lessonStatusIcon = 'ti ti-circle-check-filled';
@@ -114,10 +119,14 @@
                         <div class="playlist-lesson-main d-flex align-items-start gap-2">
                             <div class="lesson-type-icon lesson-thumbnail flex-shrink-0"
                                  role="img"
-                                 aria-label="{{ $isDocumentLesson ? 'Document content' : 'Video content' }}">
+                                 aria-label="{{ $isDocumentLesson ? 'Document content' : ($isMoocLesson ? 'External course content' : 'Video content') }}">
                                 @if ($isDocumentLesson)
                                     <span class="lesson-thumbnail-fallback" aria-hidden="true">
                                         <i class="ti ti-file-description" aria-hidden="true"></i>
+                                    </span>
+                                @elseif ($isMoocLesson)
+                                    <span class="lesson-thumbnail-fallback bg-indigo-lt text-indigo" aria-hidden="true">
+                                        <i class="ti ti-world" aria-hidden="true"></i>
                                     </span>
                                 @else
                                     <img src="{{ $defaultLessonThumbnail }}"
@@ -153,10 +162,14 @@
                            class="playlist-lesson-main">
                             <div class="lesson-type-icon lesson-thumbnail flex-shrink-0"
                                  role="img"
-                                 aria-label="{{ $isDocumentLesson ? 'Document content' : 'Video content' }}">
+                                 aria-label="{{ $isDocumentLesson ? 'Document content' : ($isMoocLesson ? 'External course content' : 'Video content') }}">
                                 @if ($isDocumentLesson)
                                     <span class="lesson-thumbnail-fallback" aria-hidden="true">
                                         <i class="ti ti-file-description" aria-hidden="true"></i>
+                                    </span>
+                                @elseif ($isMoocLesson)
+                                    <span class="lesson-thumbnail-fallback bg-indigo-lt text-indigo" aria-hidden="true">
+                                        <i class="ti ti-world" aria-hidden="true"></i>
                                     </span>
                                 @else
                                     <img src="{{ $defaultLessonThumbnail }}"

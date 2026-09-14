@@ -129,7 +129,11 @@ class ContentUserController extends Controller
         }
 
         if ($filterType) {
-            $queryContent->where('type', $filterType);
+            if (in_array(strtolower($filterType), ['youtube', 'mooc'], true)) {
+                $queryContent->whereIn('type', ['YouTube', 'MOOC']);
+            } else {
+                $queryContent->where('type', $filterType);
+            }
         }
 
         if ($filterClassification) {

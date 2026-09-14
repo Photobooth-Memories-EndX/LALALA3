@@ -115,7 +115,7 @@
 @endsection
 
 @section('style')
-    @if (($content->type == 'Video') || ($content->type == 'YouTube'))
+    @if ($content->type == 'Video')
         <link rel="stylesheet" href="{{ $url_ytplayer_css }}">
     @endif
 
@@ -1303,7 +1303,7 @@
         </script>
     @endif
 
-    @if (($content->type == 'Video') || ($content->type == 'YouTube'))
+    @if ($content->type == 'Video')
         <script src="{{ $url_ytplayer_js }}"></script>
 
         <script>

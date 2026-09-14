@@ -96,7 +96,7 @@ class LearningController extends Controller
             // Tab ongoing: Content (default), Playlist, dan placeholder MOOC.
             'ongoing' => match (request('ongoing_mode')) {
                 'playlist' => app(LearningOngoingController::class)->playlist(),
-                'mooc'     => view('components.learning.ongoing-mooc-section'),
+                'mooc'     => app(LearningOngoingController::class)->mooc(),
                 default    => strtolower((string) request('type')) === 'playlist'
                     ? app(LearningOngoingController::class)->playlist()
                     : app(LearningOngoingController::class)->content(),
