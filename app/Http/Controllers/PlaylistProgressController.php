@@ -340,7 +340,7 @@ class PlaylistProgressController extends Controller
                 if ($deltaToApply > 0) {
                     $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
                     // Legacy baseline logic (safe & conservative, at most once)
-                    if ($currentActualWatch === 0 && !$record->wasRecentlyCreated && (int) $record->getOriginal('current_time') > 0) {
+                    if ($currentActualWatch === 0 && !$playlistContentUser->wasRecentlyCreated && (int) $record->getOriginal('current_time') > 0) {
                         $maxBaseline = $recordDuration > 0 ? (int) round($recordDuration) : (int) $record->getOriginal('current_time');
                         $currentActualWatch = min((int) $record->getOriginal('current_time'), $maxBaseline);
                     }

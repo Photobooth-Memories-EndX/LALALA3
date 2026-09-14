@@ -99,6 +99,7 @@ class ManualPlaylistContentUserLearningHourService
                         'playlist_content_users.finish',
                         'playlist_content_users.current_time',
                         'playlist_content_users.duration_seconds',
+                        'playlist_content_users.actual_watch_seconds',
                         'playlist_content_users.learning_hour',
                         'playlist_content_users.completed_at',
                         'playlist_content_users.created_at',
@@ -127,10 +128,13 @@ class ManualPlaylistContentUserLearningHourService
 
                     $isFinished = ((string) $record->finish === '1' || (int) $record->progress >= 100);
                     $currTime = (int) ($record->current_time ?? 0);
+                    $actualWatch = (int) ($record->actual_watch_seconds ?? 0);
 
                     // Track rule applied
                     $ruleApplied = 'current_time';
-                    if ($currTime > 0) {
+                    if ($actualWatch > 0) {
+                        $ruleApplied = 'actual_watch_seconds';
+                    } elseif ($currTime > 0) {
                         $ruleApplied = 'actual_tracked_time';
                     } elseif ($isFinished) {
                         if ($contentDurationSeconds !== null) {
@@ -150,7 +154,8 @@ class ManualPlaylistContentUserLearningHourService
                         $record->current_time,
                         $record->finish,
                         $record->progress,
-                        $contentDurationSeconds
+                        $contentDurationSeconds,
+                        $record->actual_watch_seconds ?? 0
                     );
 
                     $calculatedHour = $this->calculator->calculate($actualSeconds) ?? 0.0;
@@ -354,17 +359,26 @@ class ManualPlaylistContentUserLearningHourService
         $source = $criteria['calculation_source'] ?? $criteria['source'] ?? null;
         if (!empty($source) && $source !== 'all') {
             if ($source === 'actual') {
-                $query->where('playlist_content_users.current_time', '>', 0);
+                $query->where(function ($q) {
+                    $q->where('playlist_content_users.actual_watch_seconds', '>', 0)
+                      ->orWhere('playlist_content_users.current_time', '>', 0);
+                });
             } elseif ($source === 'historical') {
-                $query->where('playlist_content_users.current_time', '<=', 0)
-                      ->where(function ($q) {
-                          $q->where('playlist_content_users.finish', '1')
-                            ->orWhere('playlist_content_users.progress', '>=', 100);
-                      });
+                $query->where(function ($q) {
+                    $q->where('playlist_content_users.actual_watch_seconds', '<=', 0)
+                      ->orWhereNull('playlist_content_users.actual_watch_seconds');
+                })->where('playlist_content_users.current_time', '<=', 0)
+                  ->where(function ($q) {
+                      $q->where('playlist_content_users.finish', '1')
+                        ->orWhere('playlist_content_users.progress', '>=', 100);
+                  });
             } elseif ($source === 'zero') {
-                $query->where('playlist_content_users.current_time', '<=', 0)
-                      ->where('playlist_content_users.finish', '0')
-                      ->where('playlist_content_users.progress', '<', 100);
+                $query->where(function ($q) {
+                    $q->where('playlist_content_users.actual_watch_seconds', '<=', 0)
+                      ->orWhereNull('playlist_content_users.actual_watch_seconds');
+                })->where('playlist_content_users.current_time', '<=', 0)
+                  ->where('playlist_content_users.finish', '0')
+                  ->where('playlist_content_users.progress', '<', 100);
             }
         }
 

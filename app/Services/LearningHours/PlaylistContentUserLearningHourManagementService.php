@@ -66,17 +66,26 @@ class PlaylistContentUserLearningHourManagementService
         // 5. Calculation Source Filter
         if ($request->filled('calculation_source') && $request->calculation_source !== 'all') {
             if ($request->calculation_source === 'actual') {
-                $query->where('playlist_content_users.current_time', '>', 0);
+                $query->where(function ($q) {
+                    $q->where('playlist_content_users.actual_watch_seconds', '>', 0)
+                      ->orWhere('playlist_content_users.current_time', '>', 0);
+                });
             } elseif ($request->calculation_source === 'historical') {
-                $query->where('playlist_content_users.current_time', '<=', 0)
-                      ->where(function ($q) {
-                          $q->where('playlist_content_users.finish', '1')
-                            ->orWhere('playlist_content_users.progress', '>=', 100);
-                      });
+                $query->where(function ($q) {
+                    $q->where('playlist_content_users.actual_watch_seconds', '<=', 0)
+                      ->orWhereNull('playlist_content_users.actual_watch_seconds');
+                })->where('playlist_content_users.current_time', '<=', 0)
+                  ->where(function ($q) {
+                      $q->where('playlist_content_users.finish', '1')
+                        ->orWhere('playlist_content_users.progress', '>=', 100);
+                  });
             } elseif ($request->calculation_source === 'zero') {
-                $query->where('playlist_content_users.current_time', '<=', 0)
-                      ->where('playlist_content_users.finish', '0')
-                      ->where('playlist_content_users.progress', '<', 100);
+                $query->where(function ($q) {
+                    $q->where('playlist_content_users.actual_watch_seconds', '<=', 0)
+                      ->orWhereNull('playlist_content_users.actual_watch_seconds');
+                })->where('playlist_content_users.current_time', '<=', 0)
+                  ->where('playlist_content_users.finish', '0')
+                  ->where('playlist_content_users.progress', '<', 100);
             }
         }
 
@@ -146,14 +155,26 @@ class PlaylistContentUserLearningHourManagementService
         return Cache::remember('playlist_content_user_learning_hour_stats', 300, function () {
             $totalRecords = DB::table('playlist_content_users')->count();
             $totalHours = (float) (DB::table('playlist_content_users')->sum('learning_hour') ?? 0.0);
-            $actualTrackingCount = DB::table('playlist_content_users')->where('current_time', '>', 0)->count();
+            $actualTrackingCount = DB::table('playlist_content_users')
+                ->where(function ($q) {
+                    $q->where('actual_watch_seconds', '>', 0)
+                      ->orWhere('current_time', '>', 0);
+                })->count();
             $historicalFallbackCount = DB::table('playlist_content_users')
+                ->where(function ($q) {
+                    $q->where('actual_watch_seconds', '<=', 0)
+                      ->orWhereNull('actual_watch_seconds');
+                })
                 ->where('current_time', '<=', 0)
                 ->where(function ($q) {
                     $q->where('finish', '1')->orWhere('progress', '>=', 100);
                 })
                 ->count();
             $zeroCount = DB::table('playlist_content_users')
+                ->where(function ($q) {
+                    $q->where('actual_watch_seconds', '<=', 0)
+                      ->orWhereNull('actual_watch_seconds');
+                })
                 ->where('current_time', '<=', 0)
                 ->where('finish', '0')
                 ->where('progress', '<', 100)
@@ -225,8 +246,18 @@ class PlaylistContentUserLearningHourManagementService
      */
     public function resolveCalculationSource(PlaylistContentUser $row): array
     {
+        $actualWatch = (int) ($row->actual_watch_seconds ?? 0);
         $currTime = (int) ($row->current_time ?? 0);
         $isFinished = ((string) $row->finish === '1' || (int) $row->progress >= 100);
+
+        if ($actualWatch > 0) {
+            return [
+                'label'       => 'Actual Tracking',
+                'badge_class' => 'bg-green-lt text-green border-green',
+                'icon'        => 'ti-device-analytics',
+                'description' => 'Calculated from actual watched seconds: ' . $actualWatch . 's / 3600',
+            ];
+        }
 
         if ($currTime > 0) {
             return [

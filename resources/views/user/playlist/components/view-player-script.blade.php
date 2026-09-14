@@ -32,6 +32,10 @@
                     });
                 @endif
 
+                if (window.playlistWatchTimeTracker && typeof window.playlistWatchTimeTracker.destroy === 'function') {
+                    window.playlistWatchTimeTracker.destroy();
+                }
+
                 const watchTimeTracker = new VideoWatchTimeTracker({
                     player: player,
                     url: "{{ route('playlist.user.progress.update') }}",
@@ -41,6 +45,8 @@
                     heartbeatIntervalMs: 10000,
                     onUpdate: window.owlUpdateLearningUi
                 });
+
+                window.playlistWatchTimeTracker = watchTimeTracker;
 
                 player.on('loadeddata', function() {
                     // Resume: prefer the exact saved position, fall back to the
