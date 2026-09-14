@@ -997,7 +997,6 @@
 
 @section('script')
     <script src="{{ asset('js/learning-progress.js') }}"></script>
-    <script src="{{ asset('js/video-watch-time.js') }}"></script>
 
     <script>
         async function shareContent(title) {
@@ -1057,11 +1056,26 @@
         @if ($isContentScrollMode)
             <script src="{{ asset('js/document-scroll-mode.js') }}"></script>
         @endif
+        <script src="{{ asset('js/document-reading-tracker.js') }}"></script>
 
         <script>
             function hideContentPlayerSkeleton() {
                 $('.player-skeleton').addClass('d-none');
             }
+
+            if (window.contentDocumentReadingTracker && typeof window.contentDocumentReadingTracker.destroy === 'function') {
+                window.contentDocumentReadingTracker.destroy();
+            }
+
+            const documentReadingTracker = new DocumentReadingTracker({
+                url: "{{ route('content.user.progress.update') }}",
+                csrf: "{{ csrf_token() }}",
+                contentId: {{ (int) $content->id }},
+                heartbeatIntervalMs: 10000,
+                onUpdate: window.owlUpdateLearningUi
+            });
+
+            window.contentDocumentReadingTracker = documentReadingTracker;
 
             let fileName = "{{ $getcontentfile }}";
 
@@ -1305,6 +1319,7 @@
     @endif
 
     @if (($content->type == 'Video') || ($content->type == 'YouTube'))
+        <script src="{{ asset('js/video-watch-time.js') }}"></script>
         <script src="{{ $url_ytplayer_js }}"></script>
 
         <script>
@@ -1334,6 +1349,10 @@
                     onUpdate: window.owlUpdateLearningUi
                 });
 
+                if (window.contentWatchTimeTracker && typeof window.contentWatchTimeTracker.destroy === 'function') {
+                    window.contentWatchTimeTracker.destroy();
+                }
+
                 const watchTimeTracker = new VideoWatchTimeTracker({
                     player: player,
                     url: "{{ route('content.user.progress.update') }}",
@@ -1342,6 +1361,8 @@
                     heartbeatIntervalMs: 10000,
                     onUpdate: window.owlUpdateLearningUi
                 });
+
+                window.contentWatchTimeTracker = watchTimeTracker;
 
                 player.on('loadeddata', onDataLoaded);
                 player.on('ready', function() {

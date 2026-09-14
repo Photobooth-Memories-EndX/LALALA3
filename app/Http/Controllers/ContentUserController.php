@@ -716,61 +716,62 @@ class ContentUserController extends Controller
 
                 $contentUser->current_time = (int) round($currentTime);
             }
+        }
 
-            // Actual watch time tracking (MVP Hardened)
-            $deltaSeconds = $validated['delta_seconds'] ?? null;
-            $deltaToApply = 0;
-            if ($deltaSeconds !== null && (float) $deltaSeconds > 0) {
-                $heartbeatId = $validated['heartbeat_id'] ?? null;
-                $userId = (int) auth()->id();
-                $contentId = (int) $content->id;
+        // Actual watch / reading time tracking (MVP Hardened for Video & Document)
+        $deltaSeconds = $validated['delta_seconds'] ?? null;
+        $deltaToApply = 0;
+        if ($deltaSeconds !== null && (float) $deltaSeconds > 0) {
+            $heartbeatId = $validated['heartbeat_id'] ?? null;
+            $userId = (int) auth()->id();
+            $contentId = (int) $content->id;
+            $prefix = $validated['type'] === 'video' ? 'video' : 'document';
 
-                // 1. Idempotency: verify heartbeat_id via Cache (TTL: 10 mins)
-                $hbCacheKey = $heartbeatId !== null ? "video_hb:{$userId}:{$contentId}:{$heartbeatId}" : null;
-                $sessionKey = 'learning.video_last_hb.' . $content->id;
-                $lastHeartbeatSession = $request->hasSession() ? $request->session()->get($sessionKey) : null;
+            // 1. Idempotency: verify heartbeat_id via Cache (TTL: 10 mins)
+            $hbCacheKey = $heartbeatId !== null ? "{$prefix}_hb:{$userId}:{$contentId}:{$heartbeatId}" : null;
+            $sessionKey = 'learning.' . $prefix . '_last_hb.' . $content->id;
+            $lastHeartbeatSession = $request->hasSession() ? $request->session()->get($sessionKey) : null;
 
-                $isDuplicate = false;
-                if ($hbCacheKey !== null && Cache::has($hbCacheKey)) {
-                    $isDuplicate = true;
-                } elseif ($heartbeatId !== null && is_array($lastHeartbeatSession) && ($lastHeartbeatSession['id'] ?? null) === $heartbeatId) {
-                    $isDuplicate = true;
-                }
+            $isDuplicate = false;
+            if ($hbCacheKey !== null && Cache::has($hbCacheKey)) {
+                $isDuplicate = true;
+            } elseif ($heartbeatId !== null && is_array($lastHeartbeatSession) && ($lastHeartbeatSession['id'] ?? null) === $heartbeatId) {
+                $isDuplicate = true;
+            }
 
-                if (!$isDuplicate) {
-                    // 2. Server elapsed-time validation
-                    $nowTimestamp = (float) (now()->getPreciseTimestamp(3) / 1000);
-                    $timeCacheKey = "video_last_hb_time:{$userId}:{$contentId}";
-                    $lastHeartbeatTime = Cache::get($timeCacheKey);
+            if (!$isDuplicate) {
+                // 2. Server elapsed-time validation
+                $nowTimestamp = (float) (now()->getPreciseTimestamp(3) / 1000);
+                $timeCacheKey = "{$prefix}_last_hb_time:{$userId}:{$contentId}";
+                $lastHeartbeatTime = Cache::get($timeCacheKey);
 
-                    if ($lastHeartbeatTime !== null) {
-                        $serverElapsed = max(0.0, $nowTimestamp - (float) $lastHeartbeatTime);
-                        if ($serverElapsed <= 300.0) {
-                            $tolerance = $serverElapsed < 5.0 ? 2.0 : 4.0;
-                            $maxAllowedDelta = min(30.0, max(1.0, $serverElapsed + $tolerance));
-                        } else {
-                            // Reconnected after long pause (> 5 min)
-                            $maxAllowedDelta = 30.0;
-                        }
+                if ($lastHeartbeatTime !== null) {
+                    $serverElapsed = max(0.0, $nowTimestamp - (float) $lastHeartbeatTime);
+                    if ($serverElapsed <= 300.0) {
+                        $tolerance = $serverElapsed < 5.0 ? 2.0 : 4.0;
+                        $maxAllowedDelta = min(30.0, max(1.0, $serverElapsed + $tolerance));
                     } else {
-                        // First heartbeat of tracking session
+                        // Reconnected after long pause (> 5 min)
                         $maxAllowedDelta = 30.0;
                     }
+                } else {
+                    // First heartbeat of tracking session
+                    $maxAllowedDelta = 30.0;
+                }
 
-                    $clampedDelta = min((float) $deltaSeconds, $maxAllowedDelta);
-                    $deltaToApply = (int) round($clampedDelta);
+                $clampedDelta = min((float) $deltaSeconds, $maxAllowedDelta);
+                $deltaToApply = (int) round($clampedDelta);
 
-                    if ($hbCacheKey !== null) {
-                        Cache::put($hbCacheKey, true, now()->addMinutes(10));
-                    }
-                    Cache::put($timeCacheKey, $nowTimestamp, now()->addMinutes(30));
+                if ($hbCacheKey !== null) {
+                    Cache::put($hbCacheKey, true, now()->addMinutes(10));
+                }
+                Cache::put($timeCacheKey, $nowTimestamp, now()->addMinutes(30));
 
-                    if ($request->hasSession()) {
-                        $request->session()->put($sessionKey, [
-                            'id' => $heartbeatId,
-                            'time' => $nowTimestamp,
-                        ]);
-                    }
+                if ($request->hasSession()) {
+                    $request->session()->put($sessionKey, [
+                        'id' => $heartbeatId,
+                        'time' => $nowTimestamp,
+                    ]);
                 }
             }
         }
@@ -826,6 +827,12 @@ class ContentUserController extends Controller
                 }
                 if ($contentUser->total_pages !== null) {
                     $record->total_pages = (int) $contentUser->total_pages;
+                }
+
+                if ($deltaToApply > 0) {
+                    $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
+                    // For document: NO artificial baseline guessing from last_page / current_time (as instructed in Phase 12).
+                    $record->actual_watch_seconds = $currentActualWatch + $deltaToApply;
                 }
             }
 

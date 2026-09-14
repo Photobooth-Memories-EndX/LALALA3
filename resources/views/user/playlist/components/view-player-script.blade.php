@@ -77,6 +77,21 @@
                 var pdfjsLib = window["pdfjs-dist/build/pdf"];
                 pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
 
+                if (window.playlistDocumentReadingTracker && typeof window.playlistDocumentReadingTracker.destroy === 'function') {
+                    window.playlistDocumentReadingTracker.destroy();
+                }
+
+                const playlistDocumentReadingTracker = new DocumentReadingTracker({
+                    url: "{{ route('playlist.user.progress.update') }}",
+                    csrf: "{{ csrf_token() }}",
+                    contentId: {{ (int) $content->id }},
+                    trainingPlanId: {{ (int) ($playlist->id ?? $trainingplan->id) }},
+                    heartbeatIntervalMs: 10000,
+                    onUpdate: window.owlUpdateLearningUi
+                });
+
+                window.playlistDocumentReadingTracker = playlistDocumentReadingTracker;
+
                 let fileName = "{{ $vpGetContentFile }}";
                 let fileNameFixed = fileName
                     .replaceAll(' ', '%20')

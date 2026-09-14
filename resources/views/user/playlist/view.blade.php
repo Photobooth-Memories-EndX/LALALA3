@@ -661,6 +661,7 @@
         @if ($isPlaylistContentScrollMode)
             <script src="{{ asset('js/document-scroll-mode.js') }}"></script>
         @endif
+        <script src="{{ asset('js/document-reading-tracker.js') }}"></script>
     @endif
 
     @include('user.playlist.components.view-player-script')
