@@ -35,36 +35,43 @@ class ActualLearningHourCalculator
     }
 
     /**
-     * Resolve actual seconds from user tracking data, applying historical fallback rules:
+     * Resolve actual seconds from user tracking data, applying actual watch time and historical fallback rules:
      *
-     * 1. If current_time > 0: use current_time
-     * 2. If current_time = 0 AND is finished (finish = '1' or progress >= 100):
+     * 1. If actual_watch_seconds > 0: use actual_watch_seconds (authoritative watch time accumulator)
+     * 2. If actual_watch_seconds = 0 AND current_time > 0: use current_time (historical fallback)
+     * 3. If both = 0 AND is finished (finish = '1' or progress >= 100):
      *    use official content duration as historical fallback
-     * 3. If current_time = 0 AND not finished:
-     *    do not assume full duration; return 0 seconds
+     * 4. If both = 0 AND not finished: return 0 seconds
      *
      * @param int|float|null $currentTime
      * @param string|int|null $finish
      * @param int|float|null $progress
      * @param int|float|string|null $contentDuration Duration string (HH:MM:SS) or seconds
+     * @param int|float|null $actualWatchSeconds
      * @return int Total actual seconds
      */
     public function resolveActualSeconds(
         mixed $currentTime,
         mixed $finish = '0',
         mixed $progress = 0,
-        mixed $contentDuration = null
+        mixed $contentDuration = null,
+        mixed $actualWatchSeconds = null
     ): int {
+        $actualSec = (int) round((float) ($actualWatchSeconds ?? 0));
+        if ($actualSec > 0) {
+            return $actualSec;
+        }
+
         $curr = (int) round((float) ($currentTime ?? 0));
 
-        // 1. If current_time > 0, it is the authoritative tracked seconds
+        // Historical fallback 1: If current_time > 0, it is the tracked seconds for legacy records
         if ($curr > 0) {
             return $curr;
         }
 
         $isFinished = ((string) $finish === '1' || (int) $progress >= 100);
 
-        // 2. If current_time = 0 and finished, fallback to official content duration
+        // Historical fallback 2: If current_time = 0 and finished, fallback to official content duration
         if ($isFinished && $contentDuration !== null) {
             return $this->parseContentDurationToSeconds($contentDuration);
         }
@@ -81,15 +88,23 @@ class ActualLearningHourCalculator
      * @param string|int|null $finish
      * @param int|float|null $progress
      * @param int|float|string|null $contentDuration
+     * @param int|float|null $actualWatchSeconds
      * @return float
      */
     public function calculateFromTracking(
         mixed $currentTime,
         mixed $finish = '0',
         mixed $progress = 0,
-        mixed $contentDuration = null
+        mixed $contentDuration = null,
+        mixed $actualWatchSeconds = null
     ): float {
-        $actualSeconds = $this->resolveActualSeconds($currentTime, $finish, $progress, $contentDuration);
+        $actualSeconds = $this->resolveActualSeconds(
+            $currentTime,
+            $finish,
+            $progress,
+            $contentDuration,
+            $actualWatchSeconds
+        );
 
         return $this->calculate($actualSeconds) ?? 0.0;
     }
@@ -110,13 +125,14 @@ class ActualLearningHourCalculator
             $id = is_object($record) ? ($record->id ?? null) : ($record['id'] ?? null);
             $contentId = is_object($record) ? ($record->content_id ?? null) : ($record['content_id'] ?? null);
             $currentTime = is_object($record) ? ($record->current_time ?? 0) : ($record['current_time'] ?? 0);
+            $actualWatchSeconds = is_object($record) ? ($record->actual_watch_seconds ?? 0) : ($record['actual_watch_seconds'] ?? 0);
             $finish = is_object($record) ? ($record->finish ?? '0') : ($record['finish'] ?? '0');
             $progress = is_object($record) ? ($record->progress ?? 0) : ($record['progress'] ?? 0);
             $durationSeconds = is_object($record) ? ($record->duration_seconds ?? null) : ($record['duration_seconds'] ?? null);
 
             $contentDuration = $contentDurationsMap[$contentId] ?? $durationSeconds;
 
-            $hours = $this->calculateFromTracking($currentTime, $finish, $progress, $contentDuration);
+            $hours = $this->calculateFromTracking($currentTime, $finish, $progress, $contentDuration, $actualWatchSeconds);
 
             if ($id !== null) {
                 $results[$id] = $hours;

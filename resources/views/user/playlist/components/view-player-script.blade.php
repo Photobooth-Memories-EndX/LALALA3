@@ -32,6 +32,16 @@
                     });
                 @endif
 
+                const watchTimeTracker = new VideoWatchTimeTracker({
+                    player: player,
+                    url: "{{ route('playlist.user.progress.update') }}",
+                    csrf: "{{ csrf_token() }}",
+                    contentId: {{ (int) $content->id }},
+                    trainingPlanId: {{ (int) ($playlist->id ?? $trainingplan->id) }},
+                    heartbeatIntervalMs: 10000,
+                    onUpdate: window.owlUpdateLearningUi
+                });
+
                 player.on('loadeddata', function() {
                     // Resume: prefer the exact saved position, fall back to the
                     // legacy progress-percentage estimate.
@@ -52,41 +62,6 @@
                     if (player.duration) {
                         progressTracker.send({ duration_seconds: player.duration }, true);
                     }
-                });
-
-                player.on('play', function() {
-                    progressTracker.send({
-                        status: 'in_progress',
-                        current_time: player.currentTime,
-                        duration_seconds: player.duration
-                    }, true);
-                });
-
-                player.on('timeupdate', function() {
-                    if (!player.duration) return;
-
-                    progressTracker.send({
-                        current_time: player.currentTime,
-                        duration_seconds: player.duration
-                    });
-                });
-
-                player.on('pause', function() {
-                    if (player.ended) return;
-
-                    progressTracker.send({
-                        status: 'paused',
-                        current_time: player.currentTime,
-                        duration_seconds: player.duration
-                    }, true);
-                });
-
-                player.on('ended', function() {
-                    progressTracker.send({
-                        status: 'completed',
-                        current_time: player.duration,
-                        duration_seconds: player.duration
-                    }, true);
                 });
             @endif
         }

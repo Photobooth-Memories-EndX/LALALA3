@@ -21,6 +21,7 @@ class PlaylistContentUser extends Model
         'total_pages',
         'current_time',
         'duration_seconds',
+        'actual_watch_seconds',
         'afk_duration_seconds',
         'learning_hour',
         'completed_at',
@@ -37,6 +38,7 @@ class PlaylistContentUser extends Model
         'total_pages'      => 'integer',
         'current_time'     => 'integer',
         'duration_seconds' => 'integer',
+        'actual_watch_seconds' => 'integer',
         'afk_duration_seconds' => 'integer',
         'learning_hour'    => 'decimal:4',
         'completed_at'     => 'datetime',
@@ -76,15 +78,15 @@ class PlaylistContentUser extends Model
             }
             $contentDuration = $contentDuration ?? $record->duration_seconds;
 
-            // If current_time > 0 OR we have contentDuration, or record is in progress/unfinished:
-            // Calculate learning_hour in-memory via pure calculator.
-            if ((int) $record->current_time > 0 || $contentDuration !== null || !$record->isFinished()) {
+            $actualWatch = (int) ($record->actual_watch_seconds ?? 0);
+            if ($actualWatch > 0 || (int) $record->current_time > 0 || $contentDuration !== null || !$record->isFinished()) {
                 $calculator = app(ActualLearningHourCalculator::class);
                 $record->learning_hour = $calculator->calculateFromTracking(
                     $record->current_time,
                     $record->finish,
                     $record->progress,
-                    $contentDuration
+                    $contentDuration,
+                    $actualWatch
                 );
             }
         });

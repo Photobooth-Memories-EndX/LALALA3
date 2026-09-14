@@ -15,6 +15,8 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class ContentUserController extends Controller
 {
@@ -556,6 +558,8 @@ class ContentUserController extends Controller
             'total_pages'      => 'nullable|integer|min:1|max:100000',
             'current_time'     => 'nullable|numeric|min:0',
             'duration_seconds' => 'nullable|numeric|min:0',
+            'delta_seconds'    => 'nullable|numeric|min:0|max:120',
+            'heartbeat_id'     => 'nullable|string|max:64',
             'afk_seconds'      => 'nullable|numeric|min:0',
             'afk_duration_seconds' => 'nullable|numeric|min:0',
             'active_page'      => 'nullable|integer|min:1',
@@ -576,6 +580,7 @@ class ContentUserController extends Controller
         $pageCompleted = null;
         $remainingSeconds = null;
         $allowedPage = null;
+        $deltaToApply = 0;
 
         if ($validated['type'] === 'document') {
             $totalPages = (int) ($validated['total_pages'] ?? $contentUser->total_pages ?? 0);
@@ -711,41 +716,153 @@ class ContentUserController extends Controller
 
                 $contentUser->current_time = (int) round($currentTime);
             }
+
+            // Actual watch time tracking (MVP Hardened)
+            $deltaSeconds = $validated['delta_seconds'] ?? null;
+            $deltaToApply = 0;
+            if ($deltaSeconds !== null && (float) $deltaSeconds > 0) {
+                $heartbeatId = $validated['heartbeat_id'] ?? null;
+                $userId = (int) auth()->id();
+                $contentId = (int) $content->id;
+
+                // 1. Idempotency: verify heartbeat_id via Cache (TTL: 10 mins)
+                $hbCacheKey = $heartbeatId !== null ? "video_hb:{$userId}:{$contentId}:{$heartbeatId}" : null;
+                $sessionKey = 'learning.video_last_hb.' . $content->id;
+                $lastHeartbeatSession = $request->hasSession() ? $request->session()->get($sessionKey) : null;
+
+                $isDuplicate = false;
+                if ($hbCacheKey !== null && Cache::has($hbCacheKey)) {
+                    $isDuplicate = true;
+                } elseif ($heartbeatId !== null && is_array($lastHeartbeatSession) && ($lastHeartbeatSession['id'] ?? null) === $heartbeatId) {
+                    $isDuplicate = true;
+                }
+
+                if (!$isDuplicate) {
+                    // 2. Server elapsed-time validation
+                    $nowTimestamp = (float) (now()->getPreciseTimestamp(3) / 1000);
+                    $timeCacheKey = "video_last_hb_time:{$userId}:{$contentId}";
+                    $lastHeartbeatTime = Cache::get($timeCacheKey);
+
+                    if ($lastHeartbeatTime !== null) {
+                        $serverElapsed = max(0.0, $nowTimestamp - (float) $lastHeartbeatTime);
+                        if ($serverElapsed <= 300.0) {
+                            $tolerance = $serverElapsed < 5.0 ? 2.0 : 4.0;
+                            $maxAllowedDelta = min(30.0, max(1.0, $serverElapsed + $tolerance));
+                        } else {
+                            // Reconnected after long pause (> 5 min)
+                            $maxAllowedDelta = 30.0;
+                        }
+                    } else {
+                        // First heartbeat of tracking session
+                        $maxAllowedDelta = 30.0;
+                    }
+
+                    $clampedDelta = min((float) $deltaSeconds, $maxAllowedDelta);
+                    $deltaToApply = (int) round($clampedDelta);
+
+                    if ($hbCacheKey !== null) {
+                        Cache::put($hbCacheKey, true, now()->addMinutes(10));
+                    }
+                    Cache::put($timeCacheKey, $nowTimestamp, now()->addMinutes(30));
+
+                    if ($request->hasSession()) {
+                        $request->session()->put($sessionKey, [
+                            'id' => $heartbeatId,
+                            'time' => $nowTimestamp,
+                        ]);
+                    }
+                }
+            }
         }
 
-        // Progress never decreases (rewinding/re-reading keeps the highest reached).
-        $progress = $previousProgress;
+        // Atomic update and concurrency protection via DB transaction and lockForUpdate
+        DB::transaction(function () use (
+            $contentUser,
+            $validated,
+            $computed,
+            $previousProgress,
+            $deltaToApply
+        ) {
+            $record = ContentUser::where('id', $contentUser->id)->lockForUpdate()->first();
+            if (!$record) {
+                return;
+            }
 
-        if ($computed !== null) {
-            $progress = max($previousProgress, max(0, min(100, (int) round($computed))));
-        }
+            if ($validated['type'] === 'video') {
+                $recordDuration = (float) ($validated['duration_seconds'] ?? $record->duration_seconds ?? 0);
+                if ($recordDuration > 0) {
+                    $record->duration_seconds = (int) round($recordDuration);
+                }
 
-        // "completed" from the client (video ended) is only honored when the
-        // recomputed position actually backs it up.
-        if ($validated['type'] === 'video'
-            && ($validated['status'] ?? null) === 'completed'
-            && $computed !== null
-            && $computed >= 90) {
-            $progress = 100;
-        }
+                $recordCurrentTime = $validated['current_time'] ?? null;
+                if ($recordCurrentTime !== null) {
+                    $recordCurrentTime = (float) $recordCurrentTime;
+                    if ($recordDuration > 0) {
+                        $recordCurrentTime = min($recordCurrentTime, $recordDuration);
+                    }
+                    $record->current_time = (int) round($recordCurrentTime);
+                }
 
-        $contentUser->progress = $progress;
+                if ($deltaToApply > 0) {
+                    $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
+                    // Legacy baseline logic (safe & conservative, at most once)
+                    if ($currentActualWatch === 0 && !$record->wasRecentlyCreated && (int) $record->getOriginal('current_time') > 0) {
+                        $maxBaseline = $recordDuration > 0 ? (int) round($recordDuration) : (int) $record->getOriginal('current_time');
+                        $currentActualWatch = min((int) $record->getOriginal('current_time'), $maxBaseline);
+                    }
 
-        if ($progress >= 100) {
-            $contentUser->finish = '1';
-            $contentUser->learning_status = 'completed';
-        } elseif (($validated['status'] ?? null) === 'paused') {
-            $contentUser->learning_status = 'paused';
-        } elseif (($validated['status'] ?? null) === 'in_progress' || $computed !== null) {
-            $contentUser->learning_status = 'in_progress';
-        }
+                    $record->actual_watch_seconds = $currentActualWatch + $deltaToApply;
+                }
+            } else {
+                // Document sync
+                if ($contentUser->current_time !== null) {
+                    $record->current_time = (int) $contentUser->current_time;
+                }
+                if ($contentUser->duration_seconds !== null) {
+                    $record->duration_seconds = (int) $contentUser->duration_seconds;
+                }
+                if ($contentUser->last_page !== null) {
+                    $record->last_page = (int) $contentUser->last_page;
+                }
+                if ($contentUser->total_pages !== null) {
+                    $record->total_pages = (int) $contentUser->total_pages;
+                }
+            }
 
-        $afkDuration = $validated['afk_duration_seconds'] ?? $validated['afk_seconds'] ?? null;
-        if ($afkDuration !== null && (float) $afkDuration > 0) {
-            $contentUser->afk_duration_seconds = max((int) ($contentUser->afk_duration_seconds ?? 0), (int) round((float) $afkDuration));
-        }
+            // Monotonic rule: progress never decreases
+            $lockedPrevProgress = (int) $record->progress;
+            $progress = $lockedPrevProgress;
+            if ($computed !== null) {
+                $progress = max($lockedPrevProgress, max(0, min(100, (int) round($computed))));
+            }
 
-        $contentUser->save();
+            if ($validated['type'] === 'video'
+                && ($validated['status'] ?? null) === 'completed'
+                && $computed !== null
+                && $computed >= 90) {
+                $progress = 100;
+            }
+
+            $record->progress = $progress;
+
+            if ($progress >= 100) {
+                $record->finish = '1';
+                $record->learning_status = 'completed';
+            } elseif (($validated['status'] ?? null) === 'paused') {
+                $record->learning_status = 'paused';
+            } elseif (($validated['status'] ?? null) === 'in_progress' || $computed !== null) {
+                $record->learning_status = 'in_progress';
+            }
+
+            $afkDuration = $validated['afk_duration_seconds'] ?? $validated['afk_seconds'] ?? null;
+            if ($afkDuration !== null && (float) $afkDuration > 0) {
+                $record->afk_duration_seconds = max((int) ($record->afk_duration_seconds ?? 0), (int) round((float) $afkDuration));
+            }
+
+            $record->save();
+
+            $contentUser->refresh();
+        });
 
         return response()->json([
             'success'      => true,
@@ -753,6 +870,8 @@ class ContentUserController extends Controller
             'status'       => $contentUser->learning_status,
             'finish'       => (int) $contentUser->finish,
             'current_time' => (int) $contentUser->current_time,
+            'actual_watch_seconds' => (int) ($contentUser->actual_watch_seconds ?? 0),
+            'learning_hours' => (float) $contentUser->learning_hours,
             'last_page'    => $contentUser->last_page,
             'page_completed' => $pageCompleted,
             'remaining_seconds' => $remainingSeconds,

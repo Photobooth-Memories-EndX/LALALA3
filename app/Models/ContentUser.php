@@ -23,6 +23,7 @@ class ContentUser extends Model
         'total_pages',
         'current_time',
         'duration_seconds',
+        'actual_watch_seconds',
         'afk_duration_seconds',
         'learning_hours',
         'completed_at',
@@ -35,6 +36,7 @@ class ContentUser extends Model
         'total_pages' => 'integer',
         'current_time' => 'integer',
         'duration_seconds' => 'integer',
+        'actual_watch_seconds' => 'integer',
         'afk_duration_seconds' => 'integer',
         'learning_hours' => 'decimal:4',
         'completed_at' => 'datetime',
@@ -65,13 +67,15 @@ class ContentUser extends Model
             }
             $contentDuration = $contentDuration ?? $contentUser->duration_seconds;
 
-            if ((int) $contentUser->current_time > 0 || $contentDuration !== null || !$contentUser->isFinished()) {
+            $actualWatch = (int) ($contentUser->actual_watch_seconds ?? 0);
+            if ($actualWatch > 0 || (int) $contentUser->current_time > 0 || $contentDuration !== null || !$contentUser->isFinished()) {
                 $calculator = app(ActualLearningHourCalculator::class);
                 $contentUser->learning_hours = $calculator->calculateFromTracking(
                     $contentUser->current_time,
                     $contentUser->finish,
                     $contentUser->progress,
-                    $contentDuration
+                    $contentDuration,
+                    $actualWatch
                 );
             }
         });

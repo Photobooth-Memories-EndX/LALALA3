@@ -649,6 +649,7 @@
     })();
 </script>
     <script src="{{ asset('js/learning-progress.js') }}"></script>
+    <script src="{{ asset('js/video-watch-time.js') }}"></script>
     <script src="{{ $url_ytplayer_js }}"></script>
 
     @if (in_array($content->type, ['Document', 'SOP/Regulation']))

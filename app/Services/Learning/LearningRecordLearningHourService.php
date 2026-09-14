@@ -29,11 +29,14 @@ class LearningRecordLearningHourService
             $durationSeconds = DurationFormatter::toSeconds($cu->content->duration) ?? 0;
         }
 
+        $actualWatchSeconds = (int) ($cu->actual_watch_seconds ?? 0);
         $currentTime = (int) ($cu->current_time ?? 0);
         $progress = (int) ($cu->progress ?? 0);
         $isFinished = ((string) $cu->finish === '1' || $progress >= 100);
 
-        if ($currentTime > 0) {
+        if ($actualWatchSeconds > 0) {
+            $actualSeconds = $actualWatchSeconds;
+        } elseif ($currentTime > 0) {
             $actualSeconds = $currentTime;
         } elseif ($isFinished && $durationSeconds > 0) {
             $actualSeconds = $durationSeconds;
@@ -54,10 +57,11 @@ class LearningRecordLearningHourService
      * Rules:
      * Sum actual consumed seconds across all valid modules of the playlist for user.
      * Per module:
-     * 1. current_time > 0: use current_time
-     * 2. finished = 1 and current_time = 0: use full module duration
-     * 3. progress > 0 and current_time = 0: use (progress / 100) * module duration
-     * 4. fallback: if pcu.learning_hour > 0, use learning_hour * 3600
+     * 1. actual_watch_seconds > 0: use actual_watch_seconds
+     * 2. current_time > 0: use current_time
+     * 3. finished = 1 and current_time = 0: use full module duration
+     * 4. progress > 0 and current_time = 0: use (progress / 100) * module duration
+     * 5. fallback: if pcu.learning_hour > 0, use learning_hour * 3600
      *
      * @param int $userId
      * @param Collection<int, TrainingPlan> $completedPlaylists
@@ -116,11 +120,14 @@ class LearningRecordLearningHourService
                     if ($pcuDuration <= 0) {
                         $pcuDuration = $moduleDuration;
                     }
+                    $pcuActualWatch = (int) ($pcu->actual_watch_seconds ?? 0);
                     $pcuCurrentTime = (int) ($pcu->current_time ?? 0);
                     $pcuProgress = (int) ($pcu->progress ?? 0);
                     $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
 
-                    if ($pcuCurrentTime > 0) {
+                    if ($pcuActualWatch > 0) {
+                        $consumedPlaylistSeconds += $pcuActualWatch;
+                    } elseif ($pcuCurrentTime > 0) {
                         $consumedPlaylistSeconds += $pcuCurrentTime;
                     } elseif ($pcuFinished && $pcuDuration > 0) {
                         $consumedPlaylistSeconds += $pcuDuration;
@@ -135,11 +142,14 @@ class LearningRecordLearningHourService
                     if ($cuDuration <= 0) {
                         $cuDuration = $moduleDuration;
                     }
+                    $cuActualWatch = (int) ($cu->actual_watch_seconds ?? 0);
                     $cuCurrentTime = (int) ($cu->current_time ?? 0);
                     $cuProgress = (int) ($cu->progress ?? 0);
                     $cuFinished = ((string) $cu->finish === '1' || $cuProgress >= 100);
 
-                    if ($cuCurrentTime > 0) {
+                    if ($cuActualWatch > 0) {
+                        $consumedPlaylistSeconds += $cuActualWatch;
+                    } elseif ($cuCurrentTime > 0) {
                         $consumedPlaylistSeconds += $cuCurrentTime;
                     } elseif ($cuFinished && $cuDuration > 0) {
                         $consumedPlaylistSeconds += $cuDuration;

@@ -997,6 +997,7 @@
 
 @section('script')
     <script src="{{ asset('js/learning-progress.js') }}"></script>
+    <script src="{{ asset('js/video-watch-time.js') }}"></script>
 
     <script>
         async function shareContent(title) {
@@ -1333,6 +1334,15 @@
                     onUpdate: window.owlUpdateLearningUi
                 });
 
+                const watchTimeTracker = new VideoWatchTimeTracker({
+                    player: player,
+                    url: "{{ route('content.user.progress.update') }}",
+                    csrf: "{{ csrf_token() }}",
+                    contentId: {{ (int) $content->id }},
+                    heartbeatIntervalMs: 10000,
+                    onUpdate: window.owlUpdateLearningUi
+                });
+
                 player.on('loadeddata', onDataLoaded);
                 player.on('ready', function() {
                     hideContentPlayerSkeleton();
@@ -1359,47 +1369,6 @@
                     if (player.duration) {
                         progressTracker.send({ duration_seconds: player.duration }, true);
                     }
-                });
-
-                player.on('play', function() {
-                    progressTracker.send({
-                        status: 'in_progress',
-                        current_time: player.currentTime,
-                        duration_seconds: player.duration
-                    }, true);
-                });
-
-                // Throttled timeupdate untuk mencegah spam ke server
-                let lastProgressSync = 0;
-                player.on('timeupdate', function() {
-                    if (!player.duration) return;
-
-                    // Mengirim update setiap 5 detik sekali saja saat diputar
-                    if (Math.abs(player.currentTime - lastProgressSync) >= 5) {
-                        lastProgressSync = player.currentTime;
-                        progressTracker.sendDebounced({
-                            current_time: player.currentTime,
-                            duration_seconds: player.duration
-                        });
-                    }
-                });
-
-                player.on('pause', function() {
-                    if (player.ended) return;
-
-                    progressTracker.send({
-                        status: 'paused',
-                        current_time: player.currentTime,
-                        duration_seconds: player.duration
-                    }, true);
-                });
-
-                player.on('ended', function() {
-                    progressTracker.send({
-                        status: 'completed',
-                        current_time: player.duration,
-                        duration_seconds: player.duration
-                    }, true);
                 });
             });
         </script>
