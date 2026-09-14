@@ -77,6 +77,18 @@
         template.remove();
     }
 
+    function syncLearningCertificateHero() {
+        var template = document.querySelector(
+            '#learning-tab-content template[data-learning-certificate-hero]'
+        );
+        var heroRegion = document.querySelector('[data-learning-hero="certificate"]');
+
+        if (!template || !heroRegion) return;
+
+        heroRegion.replaceChildren(template.content.cloneNode(true));
+        template.remove();
+    }
+
     function loadLearningTab(tab) {
         if (_activeTab === tab) return;
 
@@ -115,6 +127,12 @@
 
         // Forward current URL query params so filters and pagination work
         var params = new URLSearchParams(window.location.search);
+        Array.from(params.keys()).forEach(function (key) {
+            if (tab !== 'ongoing' && key.indexOf('ongoing_') === 0) params.delete(key);
+            if (tab !== 'record' && key.indexOf('record_') === 0) params.delete(key);
+            if (tab !== 'assessment' && key.indexOf('assessment_') === 0) params.delete(key);
+            if (tab !== 'certificate' && key.indexOf('certificate_') === 0) params.delete(key);
+        });
         if (tab === 'ongoing' && _ongoingMode === 'mooc') {
             params.set('ongoing_mode', 'mooc');
         }
@@ -135,6 +153,7 @@
             syncLearningOngoingHero();
             syncLearningAssessmentHero();
             syncLearningRecordHero();
+            syncLearningCertificateHero();
             initLearningAssessment();
             initLearningCertificate();
             initLearningRecord();
@@ -333,10 +352,10 @@
         $('.learning-tab-btn').on('click', function () {
             var target = $(this).data('target');          // e.g. "#tab-ongoing"
             var tab    = target.replace('#tab-', '');     // → "ongoing"
-            var params = new URLSearchParams(window.location.search);
-            if (tab === 'ongoing') {
-                params.delete('learning_tab');
-            } else {
+            if (_activeTab === tab) return;
+
+            var params = new URLSearchParams();
+            if (tab !== 'ongoing') {
                 params.set('learning_tab', tab);
             }
             var query = params.toString();

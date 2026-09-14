@@ -106,12 +106,13 @@ class LearningRecordController extends Controller
      */
     private function applyRecordFilters(Collection $rows): Collection
     {
-        $search = mb_strtolower(trim((string) (request('record_search') ?? request('search') ?? '')));
+        $search = mb_strtolower(trim((string) (request('record_search') ?? request('search') ?? request('q') ?? '')));
         $type = (string) (request('record_filter_type') ?? request('type') ?? 'all');
         $classification = (string) (request('record_filter_classification') ?? request('classification') ?? 'all');
         $playlist = (string) (request('record_filter_playlist') ?? request('playlist') ?? 'all');
         $year = (string) (request('record_filter_year') ?? request('year') ?? 'all');
-        $month = (string) (request('record_filter_month') ?? request('month') ?? 'all');
+        $rawMonth = (string) (request('record_filter_month') ?? request('month') ?? 'all');
+        $month = \App\Support\LearningFilterHelper::resolveMonth($rawMonth);
         $program = (string) (request('record_filter_program') ?? request('program') ?? 'all');
         $learningHour = (string) (request('record_filter_learning_hour') ?? request('learningHour') ?? 'all');
         $duration = (string) (request('record_filter_duration') ?? request('duration') ?? 'all');
@@ -183,11 +184,14 @@ class LearningRecordController extends Controller
             if ($modalYear !== 'all' && (! $finish || (string) $finish->year !== $modalYear)) {
                 return false;
             }
-            if ($month !== 'all' && (! $finish || (string) $finish->month !== $month)) {
+            if ($month !== null && (! $finish || (int) $finish->month !== $month)) {
                 return false;
             }
-            if ($modalMonths !== [] && (! $finish || ! in_array((string) $finish->month, $modalMonths, true))) {
-                return false;
+            if ($modalMonths !== []) {
+                $modalMonthNums = array_filter(array_map([\App\Support\LearningFilterHelper::class, 'resolveMonth'], $modalMonths));
+                if (! $finish || ! in_array((int) $finish->month, $modalMonthNums, true)) {
+                    return false;
+                }
             }
             if ($program !== 'all' && $rowProgram !== $program) {
                 return false;
@@ -239,12 +243,24 @@ class LearningRecordController extends Controller
 
     private function recordTypeMatches(string $rowType, string $rowKind, string $filter): bool
     {
-        return match ($filter) {
-            'all' => true,
-            'Playlist' => $rowKind === 'playlist',
-            'Video' => in_array($rowType, ['Video', 'YouTube'], true),
-            default => $rowType === $filter,
-        };
+        $normalized = strtolower(trim($filter));
+        if ($normalized === 'all' || $normalized === '') {
+            return true;
+        }
+        if ($normalized === 'playlist' || $normalized === 'trainingplan') {
+            return $rowKind === 'playlist';
+        }
+        if ($normalized === 'content') {
+            return $rowKind === 'content';
+        }
+        if ($normalized === 'video') {
+            return in_array($rowType, ['Video', 'YouTube'], true);
+        }
+        if ($normalized === 'document') {
+            return strtolower($rowType) === 'document';
+        }
+
+        return strtolower($rowType) === $normalized;
     }
 
     private function recordRangeMatches(float $value, string $range): bool
@@ -307,6 +323,13 @@ class LearningRecordController extends Controller
             );
         }
 
+        $allFilteredCertificates = (clone $query)->get(['certificate_type']);
+        $certificateStats = [
+            'total' => $allFilteredCertificates->count(),
+            'playlist' => $allFilteredCertificates->where('certificate_type', 'playlist')->count(),
+            'content' => $allFilteredCertificates->where('certificate_type', 'content')->count(),
+        ];
+
         $userCertificates = $query
             ->paginate(10, ['*'], 'certificate_page')
             ->withQueryString();
@@ -330,7 +353,7 @@ class LearningRecordController extends Controller
                 ->pluck('issuer_name'),
         ];
 
-        return view('user.learning.dashboard-partials.certificate', compact('userCertificates', 'filterOptions'));
+        return view('user.learning.dashboard-partials.certificate', compact('userCertificates', 'filterOptions', 'certificateStats'));
     }
 
     private function certificateListQuery(int $userId): Builder
@@ -366,10 +389,12 @@ class LearningRecordController extends Controller
 
     private function applyCertificateFilters(Builder $query): Builder
     {
-        $search = trim((string) request('certificate_search', ''));
-        $type = (string) request('certificate_filter_type', 'all');
-        $year = (string) request('certificate_filter_year', 'all');
-        $month = (string) request('certificate_filter_month', 'all');
+        $search = trim((string) (request('certificate_search') ?? request('search') ?? request('q') ?? ''));
+        $rawType = (string) (request('certificate_filter_type') ?? request('type') ?? 'all');
+        $type = strtolower(trim($rawType));
+        $year = (string) (request('certificate_filter_year') ?? request('year') ?? 'all');
+        $rawMonth = (string) (request('certificate_filter_month') ?? request('month') ?? 'all');
+        $month = \App\Support\LearningFilterHelper::resolveMonth($rawMonth);
         $sort = (string) request('certificate_sort', 'issued_desc');
 
         // Note: Certificate Expiration Status filtering is soft-disabled per advisor decision.
@@ -388,7 +413,7 @@ class LearningRecordController extends Controller
             })
             ->when(in_array($type, ['content', 'playlist', 'global'], true), fn ($q) => $q->where('certificate_type', $type))
             ->when($year !== 'all' && ctype_digit($year), fn ($q) => $q->whereYear('issued_at', (int) $year))
-            ->when($month !== 'all' && ctype_digit($month), fn ($q) => $q->whereMonth('issued_at', (int) $month))
+            ->when($month !== null, fn ($q) => $q->whereMonth('issued_at', $month))
             ->when(request()->filled('certificate_number'), fn ($q) => $q->where('certificate_number', 'like', '%' . trim((string) request('certificate_number')) . '%'))
             ->when(request()->filled('certificate_credential'), fn ($q) => $q->where('credential_id', 'like', '%' . trim((string) request('certificate_credential')) . '%'))
             ->when(request()->filled('certificate_participant'), fn ($q) => $q->where('participant_name', 'like', '%' . trim((string) request('certificate_participant')) . '%'))
@@ -534,7 +559,7 @@ class LearningRecordController extends Controller
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
                 'finish_date'     => (int) $cu->finish === 1
-                    ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
+                    ? (optional($cu->updated_at ?? $cu->completed_at)->format('Y-m-d H:i:s') ?? '')
                     : '',
                 // Score & ambangnya dari CertificateEligibilityResult — angka
                 // yang sama dengan yang dipakai menentukan tombol Generate.

@@ -67,6 +67,28 @@
             return certificateFilterState;
         }
 
+        function resolveCertificateMonthNumber(val) {
+            if (!val || val === 'all') return null;
+            var str = String(val).trim().toLowerCase();
+            var n = parseInt(str, 10);
+            if (!isNaN(n) && n >= 1 && n <= 12) return n;
+            var months = {
+                january: 1, jan: 1,
+                february: 2, feb: 2,
+                march: 3, mar: 3,
+                april: 4, apr: 4,
+                may: 5,
+                june: 6, jun: 6,
+                july: 7, jul: 7,
+                august: 8, aug: 8,
+                september: 9, sep: 9, sept: 9,
+                october: 10, oct: 10,
+                november: 11, nov: 11,
+                december: 12, dec: 12
+            };
+            return months[str] || null;
+        }
+
         function readCertificateStateFromUrl() {
             var params = certificateParams();
             var nextState = {};
@@ -77,16 +99,34 @@
                     : certificateDefaults[key];
             });
 
-            if (params.has('q') && !params.has('certificate_search')) {
-                nextState['certificate_search'] = String(params.get('q'));
+            if (!params.has('certificate_search')) {
+                if (params.has('search')) {
+                    nextState['certificate_search'] = String(params.get('search'));
+                } else if (params.has('q')) {
+                    nextState['certificate_search'] = String(params.get('q'));
+                }
+            }
+
+            if (!params.has('certificate_filter_type') && params.has('type')) {
+                nextState['certificate_filter_type'] = String(params.get('type')).toLowerCase();
+            }
+
+            if (!params.has('certificate_filter_year') && params.has('year')) {
+                nextState['certificate_filter_year'] = String(params.get('year'));
+            }
+
+            if (!params.has('certificate_filter_month') && params.has('month')) {
+                var m = resolveCertificateMonthNumber(params.get('month'));
+                nextState['certificate_filter_month'] = m !== null ? String(m) : String(params.get('month'));
             }
 
             return replaceCertificateState(nextState);
         }
 
         function cleanCertificateParams(params) {
+            var filterKeys = ['certificate_search', 'search', 'q', 'type', 'year', 'month', 'sort', 'status'];
             Array.from(params.keys()).forEach(function (key) {
-                if (key.indexOf('certificate_') === 0) {
+                if (key.indexOf('certificate_') === 0 || filterKeys.indexOf(key) !== -1) {
                     params.delete(key);
                 }
             });

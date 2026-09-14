@@ -133,7 +133,7 @@ function initLearningRecord() {
             sortDir = requestedDirection;
         }
 
-        var urlQuick = params.get('record_quick') || params.get('quickFilter') || params.get('ongoing_mode');
+        var urlQuick = params.get('record_quick') || params.get('quickFilter');
         if (urlQuick && ['all', 'content', 'playlist'].indexOf(urlQuick) !== -1) {
             setQuickPill(urlQuick);
         }
@@ -325,12 +325,38 @@ function initLearningRecord() {
     function selectedTypeMatches(d, selectedTypes) {
         if (!selectedTypes || !selectedTypes.length || selectedTypes.indexOf('all') !== -1) return true;
 
-        var rowType = String(d.type || '');
+        var rowType = String(d.type || '').toLowerCase();
+        var rowKind = String(d.kind || '').toLowerCase();
         return selectedTypes.some(function (type) {
-            if (type === 'Playlist') return String(d.kind) === 'playlist';
-            if (type === 'Video') return rowType === 'Video' || rowType === 'YouTube';
-            return rowType === type;
+            var t = String(type).toLowerCase();
+            if (t === 'playlist') return rowKind === 'playlist';
+            if (t === 'content' || t === 'course') return rowKind === 'content';
+            if (t === 'video') return rowType === 'video' || rowType === 'youtube';
+            if (t === 'document') return rowType === 'document';
+            return rowType === t;
         });
+    }
+
+    function resolveMonthNumber(val) {
+        if (!val || val === 'all') return null;
+        var str = String(val).trim().toLowerCase();
+        var n = parseInt(str, 10);
+        if (!isNaN(n) && n >= 1 && n <= 12) return n;
+        var months = {
+            january: 1, jan: 1,
+            february: 2, feb: 2,
+            march: 3, mar: 3,
+            april: 4, apr: 4,
+            may: 5,
+            june: 6, jun: 6,
+            july: 7, jul: 7,
+            august: 8, aug: 8,
+            september: 9, sep: 9, sept: 9,
+            october: 10, oct: 10,
+            november: 11, nov: 11,
+            december: 12, dec: 12
+        };
+        return months[str] || null;
     }
 
     function dateMatches(raw, mode) {
@@ -366,10 +392,16 @@ function initLearningRecord() {
         var progress = rowNumber($row, 'sort-progress', 0);
         var finish = $row.attr('data-sort-finish') || '';
 
-        if (f.year !== 'all' && String(d.year) !== f.year) return false;
-        if (f.modalYear !== 'all' && String(d.year) !== f.modalYear) return false;
-        if (f.month !== 'all' && String(d.month) !== f.month) return false;
-        if (f.modalMonths.length && f.modalMonths.indexOf(String(d.month)) === -1) return false;
+        if (f.year !== 'all' && String(d.year) !== String(f.year)) return false;
+        if (f.modalYear !== 'all' && String(d.year) !== String(f.modalYear)) return false;
+        if (f.month !== 'all') {
+            var targetMonth = resolveMonthNumber(f.month);
+            if (targetMonth !== null && parseInt(d.month, 10) !== targetMonth) return false;
+        }
+        if (f.modalMonths.length) {
+            var targetModalMonths = f.modalMonths.map(resolveMonthNumber).filter(Boolean);
+            if (targetModalMonths.length && targetModalMonths.indexOf(parseInt(d.month, 10)) === -1) return false;
+        }
         if (f.duration !== 'all' && !rangeMatches(durationSeconds, f.duration)) return false;
         if (f.learningHour !== 'all' && !rangeMatches(learningHour, f.learningHour)) return false;
         if (f.program !== 'all' && String(d.learningProgram) !== f.program) return false;
@@ -392,10 +424,18 @@ function initLearningRecord() {
     // baris Content — Playlist tidak pernah ikut dievaluasi.
     function contentMatches($row, f) {
         var d = $row.data();
+        var rowType = String(d.type || '').toLowerCase();
+        var rowKind = String(d.kind || '').toLowerCase();
+        var filterType = String(f.type || '').toLowerCase();
 
+        if (rowKind !== 'content') return false;
         if (!selectedTypeMatches(d, f.modalTypes)) return false;
-        if (f.type !== 'all' && String(d.type) !== f.type) return false;
-        if (f.classification !== 'all' && String(d.classification) !== f.classification) return false;
+        if (filterType !== 'all' && filterType !== '' && filterType !== 'content' && filterType !== 'course') {
+            if (filterType === 'video' && !(rowType === 'video' || rowType === 'youtube')) return false;
+            if (filterType === 'document' && rowType !== 'document') return false;
+            if (filterType !== 'video' && filterType !== 'document' && rowType !== filterType) return false;
+        }
+        if (f.classification !== 'all' && String(d.classification).toLowerCase() !== String(f.classification).toLowerCase()) return false;
 
         return commonMatches($row, d, f);
     }
@@ -404,7 +444,9 @@ function initLearningRecord() {
     // baris Content tidak pernah ikut dievaluasi.
     function playlistMatches($row, f) {
         var d = $row.data();
+        var rowKind = String(d.kind || '').toLowerCase();
 
+        if (rowKind !== 'playlist') return false;
         if (!selectedTypeMatches(d, f.modalTypes)) return false;
         if (f.playlist !== 'all' && String(d.playlists || '').split(',').indexOf(f.playlist) === -1) {
             return false;
@@ -415,13 +457,21 @@ function initLearningRecord() {
 
     function allMatches($row, f) {
         var d = $row.data();
-        var rowType = String(d.type || '');
+        var rowType = String(d.type || '').toLowerCase();
+        var rowKind = String(d.kind || '').toLowerCase();
+        var filterType = String(f.type || '').toLowerCase();
 
         if (!selectedTypeMatches(d, f.modalTypes)) return false;
-        if (f.type === 'Playlist' && String(d.kind) !== 'playlist') return false;
-        if (f.type === 'Video' && !(rowType === 'Video' || rowType === 'YouTube')) return false;
-        if (f.type === 'Document' && rowType !== 'Document') return false;
-        if (f.classification !== 'all' && String(d.classification) !== f.classification) return false;
+        if (filterType !== 'all' && filterType !== '') {
+            if (filterType === 'playlist' && rowKind !== 'playlist') return false;
+            if ((filterType === 'content' || filterType === 'course') && rowKind !== 'content') return false;
+            if (filterType === 'video' && !(rowType === 'video' || rowType === 'youtube')) return false;
+            if (filterType === 'document' && rowType !== 'document') return false;
+            if (filterType !== 'playlist' && filterType !== 'content' && filterType !== 'course' && filterType !== 'video' && filterType !== 'document') {
+                if (rowType !== filterType) return false;
+            }
+        }
+        if (f.classification !== 'all' && String(d.classification).toLowerCase() !== String(f.classification).toLowerCase()) return false;
 
         if (f.playlist !== 'all' && String(d.playlists || '').split(',').indexOf(f.playlist) === -1) {
             return false;

@@ -10,11 +10,19 @@
         9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
     ];
     $types = ['all' => 'All', 'content' => 'Content', 'playlist' => 'Playlist', 'global' => 'Global'];
+    $rawType = request('certificate_filter_type', request('type', 'all'));
+    $type = strtolower(trim((string) $rawType));
+    if (!array_key_exists($type, $types)) {
+        $type = 'all';
+    }
+    $rawMonth = request('certificate_filter_month', request('month', 'all'));
+    $resolvedMonth = \App\Support\LearningFilterHelper::resolveMonth($rawMonth) ?? $rawMonth;
+
     $active = [
-        'type' => request('certificate_filter_type', 'all'),
-        'year' => request('certificate_filter_year', 'all'),
-        'month' => request('certificate_filter_month', 'all'),
-        'sort' => request('certificate_sort', 'all'),
+        'type' => $type,
+        'year' => request('certificate_filter_year', request('year', 'all')),
+        'month' => (string) $resolvedMonth,
+        'sort' => request('certificate_sort', request('sort', 'all')),
     ];
     $advancedKeys = [
         'certificate_issuer', 'certificate_date_from', 'certificate_date_to',
@@ -95,7 +103,7 @@
                                        id="certificate-search-input"
                                        name="certificate_search"
                                        placeholder="Certificate number, credential, participant, target or type..."
-                                       value="{{ request('certificate_search', request('q')) }}"
+                                       value="{{ request('certificate_search', request('search', request('q'))) }}"
                                        autocomplete="off">
                             </div>
                             <div id="certificate-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">

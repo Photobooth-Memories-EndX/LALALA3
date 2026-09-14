@@ -6,6 +6,7 @@ use App\Exports\AssessmentExport;
 use App\Models\Assesment;
 use App\Models\AssesmentResult;
 use App\Services\Learning\CompletedPlaylistService;
+use App\Support\LearningFilterHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -150,17 +151,25 @@ class LearningAssessmentController extends Controller
 
     private function applyFilters($query, Request $request, $userId)
     {
-        $type = $request->input('assessment_filter_type', $request->input('type', 'all'));
-        if (empty($type)) {
-            $type = 'all';
-        }
-        $status = $request->input('assessment_filter_status', 'all');
-        $score = $request->input('assessment_filter_score', 'all');
-        $result = $request->input('assessment_filter_result', 'all');
-        $date = $request->input('assessment_filter_date', 'all');
-        $availability = $request->input('assessment_filter_availability', 'all');
-        $search = trim((string) $request->input('assessment_search', ''));
+        $rawType = $request->input('assessment_filter_type', $request->input('type', 'all'));
+        $type = LearningFilterHelper::normalizeAssessmentType($rawType);
+
+        $rawStatus = $request->input('assessment_filter_status', $request->input('status', 'all'));
+        $status = LearningFilterHelper::normalizeAssessmentStatus($rawStatus);
+
+        $score = $request->input('assessment_filter_score', $request->input('score', 'all'));
+        $result = $request->input('assessment_filter_result', $request->input('result', 'all'));
+        $date = $request->input('assessment_filter_date', $request->input('date', 'all'));
+        $availability = $request->input('assessment_filter_availability', $request->input('availability', 'all'));
+        $search = trim((string) $request->input('assessment_search', $request->input('search', $request->input('q', ''))));
         $now = now();
+
+        $year = (string) $request->input('assessment_filter_year', $request->input('year', 'all'));
+        $rawMonth = (string) $request->input('assessment_filter_month', $request->input('month', 'all'));
+        $month = LearningFilterHelper::resolveMonth($rawMonth);
+
+        $batch = (string) $request->input('assessment_filter_batch', $request->input('batch', 'all'));
+        $grade = (string) $request->input('assessment_filter_grade', $request->input('grade', 'all'));
 
         $finalScore = fn ($q) => $q->where('user_id', $userId)->where('final', 1);
 
@@ -199,15 +208,15 @@ class LearningAssessmentController extends Controller
                 ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 0))
                 ->whereDoesntHave('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 1)))
             ->when($status === 'not_started', fn ($q) => $q->whereDoesntHave('scores', $finalScore))
-            ->when($request->filled('assessment_filter_year') && $request->input('assessment_filter_year') !== 'all',
-                fn ($q) => $q->whereYear('fromdate', $request->input('assessment_filter_year')))
-            ->when($request->filled('assessment_filter_month') && $request->input('assessment_filter_month') !== 'all',
-                fn ($q) => $q->whereMonth('fromdate', $request->input('assessment_filter_month')))
-            ->when($request->filled('assessment_filter_batch') && $request->input('assessment_filter_batch') !== 'all',
+            ->when($year !== 'all' && $year !== '' && ctype_digit($year),
+                fn ($q) => $q->whereYear('fromdate', (int) $year))
+            ->when($month !== null,
+                fn ($q) => $q->whereMonth('fromdate', $month))
+            ->when($batch !== 'all' && $batch !== '',
                 fn ($q) => $q->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)
-                    ->where('batch', $request->input('assessment_filter_batch'))))
-            ->when($request->filled('assessment_filter_grade') && $request->input('assessment_filter_grade') !== 'all',
-                fn ($q) => $q->where('passing_grade', $request->input('assessment_filter_grade')))
+                    ->where('batch', $batch)))
+            ->when($grade !== 'all' && $grade !== '',
+                fn ($q) => $q->where('passing_grade', $grade))
             ->when($score === 'none', fn ($q) => $q->whereDoesntHave('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->whereNotNull('score')))
             ->when($score === '0_59', fn ($q) => $q
                 ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->whereBetween('score', [0, 59.9999]))

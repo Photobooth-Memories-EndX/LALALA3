@@ -227,10 +227,10 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             'learning_hour'       => $formattedHours,
             'progress'            => (int) ($cu->progress ?? 0) . '%',
             'start_date'          => optional($cu->created_at)->format('Y-m-d H:i') ?? '',
-            'finish_date'         => (int) $cu->finish === 1 ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i') ?? '') : '',
+            'finish_date'         => (int) $cu->finish === 1 ? (optional($cu->updated_at ?? $cu->completed_at)->format('Y-m-d H:i') ?? '') : '',
             'score'               => $result?->score() ?? '',
             'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',
-            'date'                => $cu->updated_at,
+            'date'                => $cu->updated_at ?? $cu->completed_at,
             'duration_seconds'    => DurationFormatter::toSeconds($content->duration) ?? -1,
             'learning_hour_value' => $actualHours,
             'learning_status'     => (string) ($cu->learning_status ?? ''),
@@ -306,15 +306,18 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
 
     private function normalizeFilters(array $f): array
     {
+        $rawMonth = $f['month'] ?? $f['record_filter_month'] ?? 'all';
+        $monthNum = \App\Support\LearningFilterHelper::resolveMonth((string) $rawMonth);
+
         return [
-            'search'         => trim((string) ($f['search'] ?? $f['record_search'] ?? '')),
+            'search'         => trim((string) ($f['search'] ?? $f['record_search'] ?? $f['q'] ?? '')),
             'type'           => (string) ($f['type'] ?? $f['record_filter_type'] ?? 'all'),
             'classification' => (string) ($f['classification'] ?? $f['record_filter_classification'] ?? 'all'),
             'playlist'       => (string) ($f['playlist'] ?? $f['record_filter_playlist'] ?? 'all'),
             'year'           => (string) ($f['year'] ?? $f['record_filter_year'] ?? 'all'),
-            'month'          => (string) ($f['month'] ?? $f['record_filter_month'] ?? 'all'),
+            'month'          => $monthNum !== null ? (string) $monthNum : 'all',
             'modalYear'      => (string) ($f['modalYear'] ?? $f['record_filter_modal_year'] ?? 'all'),
-            'modalMonths'    => array_map('strval', array_values(array_filter((array) ($f['modalMonths'] ?? $f['record_filter_modal_month'] ?? [])))),
+            'modalMonths'    => array_map('strval', array_values(array_filter(array_map([\App\Support\LearningFilterHelper::class, 'resolveMonth'], (array) ($f['modalMonths'] ?? $f['record_filter_modal_month'] ?? []))))),
             'modalTypes'     => array_values(array_filter((array) ($f['modalTypes'] ?? $f['record_filter_modal_type'] ?? []), fn ($v) => $v !== 'all')),
             'program'        => (string) ($f['program'] ?? $f['record_filter_program'] ?? 'all'),
             'learningStatus' => array_values(array_filter((array) ($f['learningStatus'] ?? $f['record_filter_learning_status'] ?? []))),
@@ -346,18 +349,21 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             }
 
             // Type filter
-            $type = $f['type'];
-            if ($type !== 'all') {
-                if ($type === 'Playlist' && !$isPlaylist) {
+            $type = strtolower(trim($f['type']));
+            if ($type !== 'all' && $type !== '') {
+                if (($type === 'playlist' || $type === 'trainingplan') && !$isPlaylist) {
                     return false;
                 }
-                if ($type === 'Video' && !in_array($rowType, ['Video', 'YouTube'], true)) {
+                if ($type === 'content' && $isPlaylist) {
                     return false;
                 }
-                if ($type === 'Document' && $rowType !== 'Document') {
+                if ($type === 'video' && !in_array($rowType, ['Video', 'YouTube'], true)) {
                     return false;
                 }
-                if ($type !== 'Playlist' && $type !== 'Video' && $type !== 'Document' && $rowType !== $type) {
+                if ($type === 'document' && strtolower($rowType) !== 'document') {
+                    return false;
+                }
+                if (!in_array($type, ['playlist', 'trainingplan', 'content', 'video', 'document'], true) && strtolower($rowType) !== $type) {
                     return false;
                 }
             }
@@ -366,9 +372,12 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             if (!empty($f['modalTypes'])) {
                 $matchedType = false;
                 foreach ($f['modalTypes'] as $mt) {
-                    if ($mt === 'Playlist' && $isPlaylist) { $matchedType = true; break; }
-                    if ($mt === 'Video' && in_array($rowType, ['Video', 'YouTube'], true)) { $matchedType = true; break; }
-                    if ($rowType === $mt) { $matchedType = true; break; }
+                    $normMt = strtolower(trim($mt));
+                    if (($normMt === 'playlist' || $normMt === 'trainingplan') && $isPlaylist) { $matchedType = true; break; }
+                    if ($normMt === 'content' && !$isPlaylist) { $matchedType = true; break; }
+                    if ($normMt === 'video' && in_array($rowType, ['Video', 'YouTube'], true)) { $matchedType = true; break; }
+                    if ($normMt === 'document' && strtolower($rowType) === 'document') { $matchedType = true; break; }
+                    if (strtolower($rowType) === $normMt) { $matchedType = true; break; }
                 }
                 if (!$matchedType) {
                     return false;
@@ -392,10 +401,10 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             if ($f['modalYear'] !== 'all' && (!$date || (string) $date->year !== $f['modalYear'])) {
                 return false;
             }
-            if ($f['month'] !== 'all' && (!$date || (string) $date->month !== $f['month'])) {
+            if ($f['month'] !== 'all' && (!$date || (int) $date->month !== (int) $f['month'])) {
                 return false;
             }
-            if (!empty($f['modalMonths']) && (!$date || !in_array((string) $date->month, $f['modalMonths'], true))) {
+            if (!empty($f['modalMonths']) && (!$date || !in_array((string) (int) $date->month, $f['modalMonths'], true))) {
                 return false;
             }
 
