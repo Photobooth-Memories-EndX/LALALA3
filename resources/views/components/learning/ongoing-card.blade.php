@@ -35,6 +35,7 @@
 @php
     $cardType = $cardType ?? 'content';
     $isPlaylist = $cardType === 'playlist';
+    $isMooc = ! $isPlaylist && ($cardType === 'mooc' || str_contains(strtolower($type ?? ''), 'mooc') || str_contains(strtolower($type ?? ''), 'youtube'));
 
     $title = $title ?? '-';
     $classification = $classification ?? '-';

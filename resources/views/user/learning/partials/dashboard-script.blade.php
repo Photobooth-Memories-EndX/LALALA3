@@ -133,8 +133,8 @@
             if (tab !== 'assessment' && key.indexOf('assessment_') === 0) params.delete(key);
             if (tab !== 'certificate' && key.indexOf('certificate_') === 0) params.delete(key);
         });
-        if (tab === 'ongoing' && _ongoingMode === 'mooc') {
-            params.set('ongoing_mode', 'mooc');
+        if (tab === 'ongoing' && _ongoingMode) {
+            params.set('ongoing_mode', _ongoingMode);
         }
         var fetchUrl = '{{ route("user.learning.dashboard.partial", ["tab" => "__TAB__"]) }}'.replace('__TAB__', tab);
         if (params.toString()) {
@@ -187,8 +187,10 @@
 
         function getOngoingMode() {
             if (_ongoingMode === 'playlist') return 'playlist';
+            if (_ongoingMode === 'mooc') return 'mooc';
             var modeInput = document.querySelector('input[name="ongoing_mode"]');
             if (modeInput && modeInput.value === 'playlist') return 'playlist';
+            if (modeInput && modeInput.value === 'mooc') return 'mooc';
             var urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('ongoing_mode') || 'content';
         }
@@ -324,12 +326,10 @@
             }
         });
 
-        _ongoingMode = mode === 'mooc' ? 'mooc' : null;
+        _ongoingMode = (mode === 'playlist' || mode === 'mooc') ? mode : null;
 
-        if (mode === 'playlist') {
-            params.set('ongoing_mode', 'playlist');
-        } else if (mode === 'mooc') {
-            params.set('ongoing_mode', 'mooc');
+        if (_ongoingMode) {
+            params.set('ongoing_mode', _ongoingMode);
         }
 
         var qs = params.toString();
@@ -342,7 +342,8 @@
     // Back/forward browser: restore the tab encoded in the GET query.
     window.addEventListener('popstate', function () {
         var params = new URLSearchParams(window.location.search);
-        _ongoingMode = params.get('ongoing_mode') === 'mooc' ? 'mooc' : null;
+        var om = params.get('ongoing_mode');
+        _ongoingMode = (om === 'playlist' || om === 'mooc') ? om : null;
         _activeTab = null;
         loadLearningTab(learningTabFromUrl());
     });
@@ -350,8 +351,9 @@
     $(function () {
         // Restore the tab that initiated a full-page GET filter request.
         var initialParams = new URLSearchParams(window.location.search);
-        if (initialParams.get('ongoing_mode') === 'mooc') {
-            _ongoingMode = 'mooc';
+        var initialOngoingMode = initialParams.get('ongoing_mode');
+        if (initialOngoingMode === 'playlist' || initialOngoingMode === 'mooc') {
+            _ongoingMode = initialOngoingMode;
         }
         loadLearningTab(learningTabFromUrl());
 
