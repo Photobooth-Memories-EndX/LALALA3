@@ -475,8 +475,13 @@
         });
 
         $('#assessmentDownloadExcel').off('.learningAssessment').on('click.learningAssessment', function () {
-            var query = window.location.search || '';
-            window.location.href = @json(route('user.learning.assessment.export')) + query;
+            var state = collectAssessmentFilterState();
+            var search = $.trim($('#assessment-search-input, #assessmentSearch').val());
+            var params = buildAssessmentParams(state, search);
+            params.delete('learning_tab');
+            params.delete('assessment_page');
+            var query = params.toString();
+            window.location.href = @json(route('user.learning.assessment.export')) + (query ? '?' + query : '');
         });
 
         function initAssessmentScorePopovers() {

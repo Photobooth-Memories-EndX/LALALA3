@@ -35,17 +35,7 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
     {
         $export = new self();
         $export->mode = self::MODE_MY_LEARNING;
-        $export->assessments = $assessments
-            ->sort(function ($left, $right) {
-                $typeOrder = ['content' => 0, 'trainingplan' => 1, 'playlist' => 1, 'global' => 2];
-                $leftType = $typeOrder[strtolower((string) $left->type)] ?? 99;
-                $rightType = $typeOrder[strtolower((string) $right->type)] ?? 99;
-
-                return $leftType === $rightType
-                    ? strcasecmp((string) $left->title, (string) $right->title)
-                    : $leftType <=> $rightType;
-            })
-            ->values();
+        $export->assessments = $assessments->values();
         $export->userId = $userId;
 
         return $export;
@@ -76,7 +66,7 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $lastColumn = $this->mode === self::MODE_MY_LEARNING ? 'H' : 'J';
+                $lastColumn = $this->mode === self::MODE_MY_LEARNING ? 'I' : 'J';
                 $lastRow = max(1, $sheet->getHighestRow());
                 $range = "A1:{$lastColumn}{$lastRow}";
 
@@ -97,19 +87,23 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
                 if ($lastRow >= 2) {
                     $sheet->getDefaultRowDimension()->setRowHeight(-1);
                     $sheet->getStyle("A2:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("C2:H{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("B2:B{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
                     $sheet->getStyle("B2:B{$lastRow}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("C2:I{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("C2:C{$lastRow}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("D2:D{$lastRow}")->getAlignment()->setWrapText(true);
                     $sheet->getStyle("E2:E{$lastRow}")->getAlignment()->setWrapText(true);
                     $sheet->getStyle("H2:H{$lastRow}")->getAlignment()->setWrapText(true);
+                    $sheet->getStyle("I2:I{$lastRow}")->getAlignment()->setWrapText(true);
                 }
 
                 foreach ($this->statusRows as $row => $status) {
                     $color = match ($status) {
-                        'Passed' => 'C6EFCE',
-                        'Failed' => 'FFC7CE',
-                        default => 'FCE4D6',
+                        'Passed'   => 'C6EFCE',
+                        'Failed'   => 'FFC7CE',
+                        'Remedial' => 'FFF2CC',
+                        'Expired'  => 'E2E3E5',
+                        default    => 'FCE4D6', // Pending
                     };
                     $sheet->getStyle("H{$row}")->getFill()
                         ->setFillType(Fill::FILL_SOLID)
@@ -126,11 +120,14 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
             'Assessment',
             'Type',
             'Category',
-            'Date Time',
-            'Batch',
-            'Assessment Score',
+            'Date & Time',
+            'Score',
+            'Passing Grade',
             'Status',
+            'Action / Result',
         ]];
+
+        $now = now();
 
         foreach ($this->assessments ?? collect() as $index => $assessment) {
             $userScores = collect($assessment->scores ?? [])
@@ -147,6 +144,17 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
                     ->sortByDesc('score')
                     ->first();
             }
+
+            $userAttempts = $userScores->where('final', 1)->count();
+            if ($userAttempts === 0 && $userScores->count() > 0) {
+                $userAttempts = $userScores->count();
+            }
+
+            $activeDraft = $userScores->where('final', 0)->sortByDesc('id')->first();
+            $hasActiveDraft = ($activeDraft !== null);
+
+            $isCompleted = ($finalResult !== null);
+            $isPassed = ($finalResult && $finalResult->pass);
 
             $rawType = strtolower((string) ($assessment->type ?? ''));
             $contentFor = strtolower((string) ($assessment->assasment_content_for ?? 'content'));
@@ -175,22 +183,81 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
                 }
             }
 
-            $resultStatus = !$finalResult
-                ? 'Not Started'
-                : ($finalResult->pass ? 'Passed' : 'Failed');
-            $status = $resultStatus === 'Failed' && $assessment->passing_grade !== null
-                ? $resultStatus . "\nPassing Grade: " . $assessment->passing_grade
-                : $resultStatus;
-            $dateTime = ($assessment->timer ?? 'n') === 'y'
-                ? 'Start : ' . ($assessment->fromdate ? date('d/m/Y H:i', strtotime($assessment->fromdate)) : '-')
-                    . "\nFinish : " . ($assessment->todate ? date('d/m/Y H:i', strtotime($assessment->todate)) : '-')
-                : '-';
+            // Date & Time logic aligned with UI
+            $hasAccessPeriod = $assessment->hasAccessPeriod();
+            $hasTimeLimit = $assessment->hasTimeLimit();
+            $isExpired = false;
+
+            if ($hasAccessPeriod && !empty($assessment->fromdate) && !empty($assessment->todate)) {
+                $fromDateRaw = strlen(trim((string) $assessment->fromdate)) === 10
+                    ? trim((string) $assessment->fromdate) . ' 00:00:00'
+                    : (string) $assessment->fromdate;
+                $toDateRaw = strlen(trim((string) $assessment->todate)) === 10
+                    ? trim((string) $assessment->todate) . ' 23:59:59'
+                    : (string) $assessment->todate;
+
+                $fromDateCarbon = \Illuminate\Support\Carbon::parse($fromDateRaw);
+                $toDateCarbon = \Illuminate\Support\Carbon::parse($toDateRaw);
+
+                $isExpired = $now->gt($toDateCarbon);
+                $dateTime = 'From : ' . $fromDateCarbon->format('d/m/Y H:i') . "\nTo : " . $toDateCarbon->format('d/m/Y H:i');
+            } else {
+                $dateTime = $hasTimeLimit ? ('Time Limit: ' . $assessment->time_limit_minutes . ' mins') : '-';
+            }
+
+            if ($hasActiveDraft && $hasTimeLimit && $activeDraft->created_at) {
+                $timeLimitDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assessment->time_limit_minutes);
+                if ($now->gt($timeLimitDeadline)) {
+                    $isExpired = true;
+                }
+            }
+
+            $totalRemedials = (int) ($assessment->total_remedials ?? 0);
+            $maxAttempts = ($rawType === 'global') ? 1 : (1 + $totalRemedials);
+
+            // Status: Passed, Failed, Remedial, Expired, Pending
+            if ($isPassed) {
+                $status = 'Passed';
+            } elseif ($isExpired) {
+                $status = 'Expired';
+            } elseif ($isCompleted) {
+                if ($rawType !== 'global' && $userAttempts < $maxAttempts) {
+                    $status = 'Remedial';
+                } else {
+                    $status = 'Failed';
+                }
+            } else {
+                $status = 'Pending';
+            }
+
+            // Action / Result: Passed, Expired, Continue, Remedial, Failed, Start Test
+            if ($isPassed) {
+                $actionResult = 'Passed';
+            } elseif ($isExpired) {
+                $actionResult = 'Expired';
+            } elseif ($hasActiveDraft) {
+                $actionResult = 'Continue';
+            } elseif ($isCompleted) {
+                if ($userAttempts >= $maxAttempts && $rawType !== 'global') {
+                    $actionResult = 'Failed';
+                } elseif ($rawType !== 'global') {
+                    $actionResult = 'Remedial';
+                } else {
+                    $actionResult = 'Failed';
+                }
+            } else {
+                $actionResult = 'Start Test';
+            }
+
             $excelRow = $index + 2;
-            $this->statusRows[$excelRow] = $resultStatus;
+            $this->statusRows[$excelRow] = $status;
 
             $assessmentTitleCell = ($relatedTo !== '—' && $relatedTo !== '-')
                 ? ($assessment->title ?? '-') . "\nRelated to: " . $relatedTo
                 : ($assessment->title ?? '-');
+
+            $scoreValue = ($finalResult && $finalResult->score !== null) ? $finalResult->score : '-';
+            $passingGradeValue = ($assessment->passing_grade !== null && $assessment->passing_grade !== '') ? $assessment->passing_grade : '-';
 
             $rows[] = [
                 $index + 1,
@@ -198,9 +265,10 @@ class AssessmentExport implements FromArray, ShouldAutoSize, WithEvents, WithSty
                 $type,
                 $category,
                 $dateTime,
-                $finalResult->batch ?? '-',
-                $finalResult && $finalResult->score !== null ? $finalResult->score : '-',
+                $scoreValue,
+                $passingGradeValue,
                 $status,
+                $actionResult,
             ];
         }
 

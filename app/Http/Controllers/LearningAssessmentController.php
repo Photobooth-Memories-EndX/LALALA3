@@ -73,6 +73,7 @@ class LearningAssessmentController extends Controller
                 'scores'      => fn ($q) => $q->where('user_id', $userId),
                 'trainingplan',
             ])
+            ->withCount('questions')
             ->where('status', 'OK')
             ->where(function ($query) use ($user, $userId, $completedPlaylistIds) {
                 // 1. Assigned directly to employee, team, or department
