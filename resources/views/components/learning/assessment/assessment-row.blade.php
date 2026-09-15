@@ -152,18 +152,9 @@
     $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
     $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
 
-    $activeDraft = ($assessment->scores ?? null) 
-        ? collect($assessment->scores)->where('user_id', $currentUserId)->where('final', 0)->first() 
+    $activeDraft = ($assessment->scores ?? null)
+        ? collect($assessment->scores)->where('user_id', $currentUserId)->where('final', 0)->sortByDesc('id')->first()
         : null;
-
-    if (!$activeDraft) {
-        $activeDraft = \App\Models\AssesmentResult::where('user_id', $currentUserId)
-            ->where('assesment_id', $assessment->id)
-            ->where('batch', $assessment->batch)
-            ->where('final', 0)
-            ->latest('id')
-            ->first();
-    }
 
     $hasActiveDraft = ($activeDraft !== null);
 
@@ -182,7 +173,7 @@
 
     $totalCount = ($activeDraft && is_array($activeDraft->question_snapshot) && count($activeDraft->question_snapshot) > 0)
         ? count($activeDraft->question_snapshot)
-        : (isset($assessment->questions) ? $assessment->questions->count() : ($assessment->questions_count ?? 10));
+        : ($assessment->questions_count ?? ($assessment->relationLoaded('questions') ? $assessment->questions->count() : 10));
 
     $actionType = $hasActiveDraft
         ? 'continue'

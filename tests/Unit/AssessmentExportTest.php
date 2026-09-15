@@ -45,21 +45,24 @@ class AssessmentExportTest extends TestCase
         unlink($path);
 
         $this->assertSame(
-            ['No', 'Assessment', 'Date Time', 'Type', 'Batch', 'Assessment Score', 'Status'],
-            $sheet->rangeToArray('A1:G1')[0]
+            ['No', 'Assessment', 'Type', 'Category', 'Date & Time', 'Score', 'Passing Grade', 'Status', 'Action / Result'],
+            $sheet->rangeToArray('A1:I1')[0]
         );
-        $this->assertSame("Leadership Final\nLeadership Playlist", $sheet->getCell('B2')->getValue());
-        $this->assertSame("Start : 13/07/2026 12:00\nFinish : 15/07/2026 12:00", $sheet->getCell('C2')->getValue());
-        $this->assertSame('Playlist', $sheet->getCell('D2')->getValue());
+        $this->assertSame("Leadership Final\nRelated to: Leadership Playlist", $sheet->getCell('B2')->getValue());
+        $this->assertSame('Playlist Assessment', $sheet->getCell('C2')->getValue());
+        $this->assertSame('—', $sheet->getCell('D2')->getValue());
+        $this->assertSame("From : 13/07/2026 12:00\nTo : 15/07/2026 12:00", $sheet->getCell('E2')->getValue());
         $this->assertSame(85, $sheet->getCell('F2')->getValue());
-        $this->assertSame('Passed', $sheet->getCell('G2')->getValue());
+        $this->assertSame(80, $sheet->getCell('G2')->getValue());
+        $this->assertSame('Passed', $sheet->getCell('H2')->getValue());
+        $this->assertSame('Passed', $sheet->getCell('I2')->getValue());
         $this->assertSame('A2', $sheet->getFreezePane());
-        $this->assertSame('A1:G1', $sheet->getAutoFilter()->getRange());
+        $this->assertSame('A1:I1', $sheet->getAutoFilter()->getRange());
         $this->assertTrue($sheet->getStyle('B2')->getAlignment()->getWrapText());
-        $this->assertSame('C6EFCE', $sheet->getStyle('G2')->getFill()->getStartColor()->getRGB());
+        $this->assertSame('C6EFCE', $sheet->getStyle('H2')->getFill()->getStartColor()->getRGB());
     }
 
-    public function test_my_learning_rows_use_custom_type_order_then_assessment_title(): void
+    public function test_my_learning_rows_preserve_query_ordering(): void
     {
         $makeAssessment = function (string $title, string $type): Assesment {
             $assessment = (new Assesment())->forceFill([
@@ -81,7 +84,7 @@ class AssessmentExportTest extends TestCase
         ]), 7)->array();
 
         $this->assertSame(
-            ['Alpha Content', 'Zulu Content', 'Bravo Playlist', 'Zulu Global'],
+            ['Zulu Global', 'Zulu Content', 'Bravo Playlist', 'Alpha Content'],
             collect(array_slice($rows, 1))->pluck(1)->map(fn ($value) => strtok($value, "\n"))->all()
         );
     }
