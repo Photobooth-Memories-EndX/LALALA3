@@ -26,6 +26,12 @@
         this.heartbeatIntervalMs = options.heartbeatIntervalMs || 10000;
         this.onUpdate = options.onUpdate || function () {};
 
+        this.maxActualWatchSeconds = (typeof options.maxActualWatchSeconds === 'number') ? options.maxActualWatchSeconds : null;
+        this.accumulatedWatchSeconds = (typeof options.accumulatedWatchSeconds === 'number')
+            ? options.accumulatedWatchSeconds
+            : (typeof options.initialActualWatchSeconds === 'number' ? options.initialActualWatchSeconds : 0);
+        this.isCapped = options.isCapped === true || (this.maxActualWatchSeconds !== null && this.accumulatedWatchSeconds >= this.maxActualWatchSeconds);
+
         // Internal states
         this._isActive = true;
         this._isVisible = document.visibilityState === 'visible';
@@ -64,11 +70,20 @@
         if (this._lastTickTime !== null) {
             var elapsedSeconds = (now - this._lastTickTime) / 1000;
 
-            // Only accumulate while tracker is active and tab is visible
-            if (this._isActive && this._isVisible) {
+            // Only accumulate while tracker is active, tab is visible, and not capped
+            if (this._isActive && this._isVisible && !this.isCapped) {
                 // Clamping safeguard against system sleep / background throttle jump
                 if (elapsedSeconds > 0 && elapsedSeconds <= 30) {
-                    this._accumulatedDelta += elapsedSeconds;
+                    if (this.maxActualWatchSeconds !== null) {
+                        var remainingBeforeCap = Math.max(0, this.maxActualWatchSeconds - (this.accumulatedWatchSeconds + this._accumulatedDelta));
+                        var addable = Math.min(elapsedSeconds, remainingBeforeCap);
+                        this._accumulatedDelta += addable;
+                        if (this.accumulatedWatchSeconds + this._accumulatedDelta >= this.maxActualWatchSeconds) {
+                            this.isCapped = true;
+                        }
+                    } else {
+                        this._accumulatedDelta += elapsedSeconds;
+                    }
                 }
             }
         }
@@ -119,6 +134,11 @@
         var deltaToSend = this._accumulatedDelta;
         var intDelta = Math.round(deltaToSend);
 
+        if (this.maxActualWatchSeconds !== null && intDelta > 0) {
+            var remainingSeconds = Math.max(0, this.maxActualWatchSeconds - this.accumulatedWatchSeconds);
+            intDelta = Math.min(intDelta, remainingSeconds);
+        }
+
         // Skip flush if no delta accumulated and no explicit status to report
         if (intDelta <= 0 && !status) {
             return Promise.resolve(null);
@@ -127,6 +147,12 @@
         // Deduct the integer seconds being sent; keep any fractional remainder for next tick
         if (intDelta > 0) {
             this._accumulatedDelta = Math.max(0, this._accumulatedDelta - intDelta);
+            this.accumulatedWatchSeconds += intDelta;
+        }
+
+        if (this.maxActualWatchSeconds !== null && this.accumulatedWatchSeconds >= this.maxActualWatchSeconds) {
+            this.isCapped = true;
+            this._accumulatedDelta = 0;
         }
 
         var payload = {
@@ -160,8 +186,20 @@
                 return response.ok ? response.json() : null;
             })
             .then(function (result) {
-                if (result && result.success && typeof self.onUpdate === 'function') {
-                    self.onUpdate(result);
+                if (result) {
+                    if (result.is_capped !== undefined) {
+                        self.isCapped = Boolean(result.is_capped);
+                    }
+                    if (typeof result.actual_watch_seconds === 'number') {
+                        self.accumulatedWatchSeconds = result.actual_watch_seconds;
+                        if (self.maxActualWatchSeconds !== null && self.accumulatedWatchSeconds >= self.maxActualWatchSeconds) {
+                            self.isCapped = true;
+                            self._accumulatedDelta = 0;
+                        }
+                    }
+                    if (result.success && typeof self.onUpdate === 'function') {
+                        self.onUpdate(result);
+                    }
                 }
                 return result;
             })

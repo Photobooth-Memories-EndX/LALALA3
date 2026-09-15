@@ -776,18 +776,25 @@ class ContentUserController extends Controller
             }
         }
 
+        $maxCapSeconds = $content->max_actual_watch_seconds;
+        $maxLearningHours = $content->max_learning_hours;
+
         // Atomic update and concurrency protection via DB transaction and lockForUpdate
         DB::transaction(function () use (
             $contentUser,
+            $content,
             $validated,
             $computed,
             $previousProgress,
-            $deltaToApply
+            $deltaToApply,
+            $maxCapSeconds
         ) {
             $record = ContentUser::where('id', $contentUser->id)->lockForUpdate()->first();
             if (!$record) {
                 return;
             }
+
+            $record->setRelation('content', $content);
 
             if ($validated['type'] === 'video') {
                 $recordDuration = (float) ($validated['duration_seconds'] ?? $record->duration_seconds ?? 0);
@@ -812,7 +819,11 @@ class ContentUserController extends Controller
                         $currentActualWatch = min((int) $record->getOriginal('current_time'), $maxBaseline);
                     }
 
-                    $record->actual_watch_seconds = $currentActualWatch + $deltaToApply;
+                    $newActualWatch = $currentActualWatch + $deltaToApply;
+                    if ($maxCapSeconds !== null) {
+                        $newActualWatch = min($newActualWatch, $maxCapSeconds);
+                    }
+                    $record->actual_watch_seconds = $newActualWatch;
                 }
             } else {
                 // Document sync
@@ -832,7 +843,11 @@ class ContentUserController extends Controller
                 if ($deltaToApply > 0) {
                     $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
                     // For document: NO artificial baseline guessing from last_page / current_time (as instructed in Phase 12).
-                    $record->actual_watch_seconds = $currentActualWatch + $deltaToApply;
+                    $newActualWatch = $currentActualWatch + $deltaToApply;
+                    if ($maxCapSeconds !== null) {
+                        $newActualWatch = min($newActualWatch, $maxCapSeconds);
+                    }
+                    $record->actual_watch_seconds = $newActualWatch;
                 }
             }
 
@@ -871,19 +886,25 @@ class ContentUserController extends Controller
             $contentUser->refresh();
         });
 
+        $isCapped = $maxCapSeconds !== null && (int) ($contentUser->actual_watch_seconds ?? 0) >= $maxCapSeconds;
+
         return response()->json([
-            'success'      => true,
-            'progress'     => (int) $contentUser->progress,
-            'status'       => $contentUser->learning_status,
-            'finish'       => (int) $contentUser->finish,
-            'current_time' => (int) $contentUser->current_time,
+            'success'              => true,
+            'progress'             => (int) $contentUser->progress,
+            'status'               => $contentUser->learning_status,
+            'finish'               => (int) $contentUser->finish,
+            'current_time'         => (int) $contentUser->current_time,
             'actual_watch_seconds' => (int) ($contentUser->actual_watch_seconds ?? 0),
-            'learning_hours' => (float) $contentUser->learning_hours,
-            'last_page'    => $contentUser->last_page,
-            'page_completed' => $pageCompleted,
-            'remaining_seconds' => $remainingSeconds,
-            'allowed_page' => $allowedPage,
-            'duration_seconds' => $contentUser->duration_seconds,
+            'learning_hours'       => (float) $contentUser->learning_hours,
+            'actual_learning_hours'=> (float) $contentUser->learning_hours,
+            'is_capped'            => $isCapped,
+            'max_learning_hours'   => $maxLearningHours,
+            'max_actual_watch_seconds' => $maxCapSeconds,
+            'last_page'            => $contentUser->last_page,
+            'page_completed'       => $pageCompleted,
+            'remaining_seconds'    => $remainingSeconds,
+            'allowed_page'         => $allowedPage,
+            'duration_seconds'     => $contentUser->duration_seconds,
             'afk_duration_seconds' => (int) ($contentUser->afk_duration_seconds ?? 0),
         ]);
     }

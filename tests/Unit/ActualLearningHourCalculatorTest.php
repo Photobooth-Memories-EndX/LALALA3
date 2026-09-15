@@ -70,6 +70,37 @@ class ActualLearningHourCalculatorTest extends TestCase
         $this->assertCount(0, DB::getQueryLog(), 'Calculator must be pure and perform 0 database queries.');
     }
 
+    public function test_calculator_calculates_max_learning_hours_and_cap_seconds(): void
+    {
+        $this->assertNull($this->calculator->calculateMaxLearningHours(null));
+        $this->assertNull($this->calculator->calculateMaxLearningHours(0));
+        $this->assertNull($this->calculator->calculateMaxLearningHours(-0.5));
+
+        // 0.33 LH -> 0.66 LH -> 2376 seconds
+        $this->assertSame(0.66, $this->calculator->calculateMaxLearningHours(0.33));
+        $this->assertSame(2376, $this->calculator->calculateMaxCapSeconds(0.33));
+
+        // 0.5 LH -> 1.0 LH -> 3600 seconds
+        $this->assertSame(1.0, $this->calculator->calculateMaxLearningHours(0.5));
+        $this->assertSame(3600, $this->calculator->calculateMaxCapSeconds(0.5));
+
+        // 1.0 LH -> 2.0 LH -> 7200 seconds
+        $this->assertSame(2.0, $this->calculator->calculateMaxLearningHours(1.0));
+        $this->assertSame(7200, $this->calculator->calculateMaxCapSeconds(1.0));
+
+        // calculateFromTracking with maxLearningHours clamps result
+        // 3600 seconds = 1.0 LH. If max is 0.66, must return 0.66
+        $clampedHours = $this->calculator->calculateFromTracking(
+            currentTime: 0,
+            finish: '0',
+            progress: 50,
+            contentDuration: null,
+            actualWatchSeconds: 3600,
+            maxLearningHours: 0.66
+        );
+        $this->assertSame(0.66, $clampedHours);
+    }
+
     public function test_historical_fallback_resolves_actual_seconds_accurately(): void
     {
         // 1. If current_time > 0: use current_time regardless of finish

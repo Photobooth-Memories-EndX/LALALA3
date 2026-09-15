@@ -811,4 +811,156 @@ class VideoWatchTimeTrackingTest extends TestCase
         $legacyCu->refresh();
         $this->assertSame(620, (int) $legacyCu->actual_watch_seconds);
     }
+
+    /**
+     * Hardening Test 18: Actual learning hours capped at double content learning hour for Standalone Video.
+     */
+    public function test_actual_learning_hours_capped_at_double_content_learning_hour(): void
+    {
+        $video = Content::create([
+            'title'          => 'Capped Video Test',
+            'type'           => 'Video',
+            'duration'       => '00:20:00',
+            'active'         => 'Active',
+            'playlistonly'   => 'N',
+            'has_deadline'   => 0,
+            'learning_hours' => 0.33, // Max LH = 0.66, Max seconds = round(0.66 * 3600) = 2376
+        ]);
+
+        $this->assertEquals(0.66, (float) $video->max_learning_hours);
+        $this->assertEquals(2376, $video->max_actual_watch_seconds);
+
+        $cu = ContentUser::create([
+            'user_id'              => $this->user->id,
+            'content_id'           => $video->id,
+            'current_time'         => 600,
+            'duration_seconds'     => 1200,
+            'actual_watch_seconds' => 2370,
+            'progress'             => 50,
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('content.user.progress.update'), [
+            'content_id'       => $video->id,
+            'type'             => 'video',
+            'current_time'     => 620,
+            'duration_seconds' => 1200,
+            'delta_seconds'    => 20, // 2370 + 20 = 2390, exceeds 2376
+            'heartbeat_id'     => (string) Str::uuid(),
+            'status'           => 'in_progress',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'                  => true,
+            'actual_watch_seconds'     => 2376,
+            'learning_hours'           => 0.6600,
+            'actual_learning_hours'    => 0.6600,
+            'is_capped'                => true,
+            'max_learning_hours'       => 0.66,
+            'max_actual_watch_seconds' => 2376,
+        ]);
+
+        $cu->refresh();
+        $this->assertEquals(2376, $cu->actual_watch_seconds);
+        $this->assertEquals(0.6600, (float) $cu->learning_hours);
+    }
+
+    /**
+     * Hardening Test 19: Heartbeat payload clamped when exceeding cap for Video.
+     */
+    public function test_heartbeat_payload_clamped_when_exceeding_cap(): void
+    {
+        $video = Content::create([
+            'title'          => 'Capped Video Spoof Test',
+            'type'           => 'Video',
+            'duration'       => '00:20:00',
+            'active'         => 'Active',
+            'playlistonly'   => 'N',
+            'has_deadline'   => 0,
+            'learning_hours' => 0.33, // Cap = 2376
+        ]);
+
+        $cu = ContentUser::create([
+            'user_id'              => $this->user->id,
+            'content_id'           => $video->id,
+            'current_time'         => 800,
+            'duration_seconds'     => 1200,
+            'actual_watch_seconds' => 2376, // Already at cap
+            'progress'             => 66,
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('content.user.progress.update'), [
+            'content_id'       => $video->id,
+            'type'             => 'video',
+            'current_time'     => 810,
+            'duration_seconds' => 1200,
+            'delta_seconds'    => 10,
+            'heartbeat_id'     => (string) Str::uuid(),
+            'status'           => 'in_progress',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'              => true,
+            'actual_watch_seconds' => 2376,
+            'learning_hours'       => 0.6600,
+            'is_capped'            => true,
+        ]);
+
+        $cu->refresh();
+        $this->assertEquals(2376, $cu->actual_watch_seconds);
+    }
+
+    /**
+     * Hardening Test 20: Video progress and 100% completion still work even when learning hours capped.
+     */
+    public function test_progress_and_completion_still_work_even_when_learning_hours_capped(): void
+    {
+        $video = Content::create([
+            'title'          => 'Capped Video Completion Test',
+            'type'           => 'Video',
+            'duration'       => '00:10:00', // 600s
+            'active'         => 'Active',
+            'playlistonly'   => 'N',
+            'has_deadline'   => 0,
+            'learning_hours' => 0.1, // Max = 0.2 LH = 720 seconds
+        ]);
+
+        $cu = ContentUser::create([
+            'user_id'              => $this->user->id,
+            'content_id'           => $video->id,
+            'current_time'         => 300,
+            'duration_seconds'     => 600,
+            'actual_watch_seconds' => 720, // Already capped
+            'progress'             => 50,
+        ]);
+
+        // User finishes watching the video (current_time = 600, status = 'completed')
+        $response = $this->actingAs($this->user)->postJson(route('content.user.progress.update'), [
+            'content_id'       => $video->id,
+            'type'             => 'video',
+            'current_time'     => 600,
+            'duration_seconds' => 600,
+            'delta_seconds'    => 0, // No watch time delta because capped
+            'heartbeat_id'     => (string) Str::uuid(),
+            'status'           => 'completed',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'      => true,
+            'progress'     => 100,
+            'finish'       => 1,
+            'status'       => 'completed',
+            'current_time' => 600,
+            'is_capped'    => true,
+        ]);
+
+        $cu->refresh();
+        $this->assertEquals(100, $cu->progress);
+        $this->assertEquals('1', (string) $cu->finish);
+        $this->assertEquals(720, $cu->actual_watch_seconds);
+        $this->assertEquals(0.2000, (float) $cu->learning_hours);
+        $this->assertNotNull($cu->completed_at);
+    }
 }

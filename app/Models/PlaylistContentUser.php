@@ -73,8 +73,14 @@ class PlaylistContentUser extends Model
             // Content duration is read from loaded relation or the record's duration_seconds column.
             // If relation is not loaded, NEVER call $record->content()->first() to prevent N+1.
             $contentDuration = null;
-            if ($record->relationLoaded('content')) {
-                $contentDuration = $record->content?->duration;
+            $maxLearningHours = null;
+            if ($record->relationLoaded('content') && $record->content) {
+                $contentDuration = $record->content->duration;
+                $maxLearningHours = $record->content->max_learning_hours;
+                $maxCapSeconds = $record->content->max_actual_watch_seconds;
+                if ($maxCapSeconds !== null && $record->actual_watch_seconds !== null && $record->actual_watch_seconds > $maxCapSeconds) {
+                    $record->actual_watch_seconds = $maxCapSeconds;
+                }
             }
             $contentDuration = $contentDuration ?? $record->duration_seconds;
 
@@ -86,7 +92,8 @@ class PlaylistContentUser extends Model
                     $record->finish,
                     $record->progress,
                     $contentDuration,
-                    $actualWatch
+                    $actualWatch,
+                    $maxLearningHours
                 );
             }
         });

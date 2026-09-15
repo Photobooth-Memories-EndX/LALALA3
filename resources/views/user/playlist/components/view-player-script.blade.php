@@ -42,6 +42,8 @@
                     csrf: "{{ csrf_token() }}",
                     contentId: {{ (int) $content->id }},
                     trainingPlanId: {{ (int) ($playlist->id ?? $trainingplan->id) }},
+                    maxActualWatchSeconds: {{ $content->max_actual_watch_seconds !== null ? (int) $content->max_actual_watch_seconds : 'null' }},
+                    initialActualWatchSeconds: {{ (int) ($content_user->actual_watch_seconds ?? 0) }},
                     heartbeatIntervalMs: 10000,
                     onUpdate: window.owlUpdateLearningUi
                 });
@@ -86,6 +88,8 @@
                     csrf: "{{ csrf_token() }}",
                     contentId: {{ (int) $content->id }},
                     trainingPlanId: {{ (int) ($playlist->id ?? $trainingplan->id) }},
+                    maxActualWatchSeconds: {{ $content->max_actual_watch_seconds !== null ? (int) $content->max_actual_watch_seconds : 'null' }},
+                    initialActualWatchSeconds: {{ (int) ($content_user->actual_watch_seconds ?? 0) }},
                     heartbeatIntervalMs: 10000,
                     onUpdate: window.owlUpdateLearningUi
                 });

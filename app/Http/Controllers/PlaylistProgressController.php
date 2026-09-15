@@ -310,18 +310,25 @@ class PlaylistProgressController extends Controller
             }
         }
 
+        $maxCapSeconds = $content->max_actual_watch_seconds;
+        $maxLearningHours = $content->max_learning_hours;
+
         // Atomic update and concurrency protection via DB transaction and lockForUpdate
         DB::transaction(function () use (
             $playlistContentUser,
+            $content,
             $validated,
             $computed,
             $previousProgress,
-            $deltaToApply
+            $deltaToApply,
+            $maxCapSeconds
         ) {
             $record = PlaylistContentUser::where('id', $playlistContentUser->id)->lockForUpdate()->first();
             if (!$record) {
                 return;
             }
+
+            $record->setRelation('content', $content);
 
             if ($validated['type'] === 'video') {
                 $recordDuration = (float) ($validated['duration_seconds'] ?? $record->duration_seconds ?? 0);
@@ -346,7 +353,11 @@ class PlaylistProgressController extends Controller
                         $currentActualWatch = min((int) $record->getOriginal('current_time'), $maxBaseline);
                     }
 
-                    $record->actual_watch_seconds = $currentActualWatch + $deltaToApply;
+                    $newActualWatch = $currentActualWatch + $deltaToApply;
+                    if ($maxCapSeconds !== null) {
+                        $newActualWatch = min($newActualWatch, $maxCapSeconds);
+                    }
+                    $record->actual_watch_seconds = $newActualWatch;
                 }
             } else {
                 // Document sync
@@ -366,7 +377,11 @@ class PlaylistProgressController extends Controller
                 if ($deltaToApply > 0) {
                     $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
                     // For document: NO artificial baseline guessing from last_page / current_time (as instructed in Phase 12).
-                    $record->actual_watch_seconds = $currentActualWatch + $deltaToApply;
+                    $newActualWatch = $currentActualWatch + $deltaToApply;
+                    if ($maxCapSeconds !== null) {
+                        $newActualWatch = min($newActualWatch, $maxCapSeconds);
+                    }
+                    $record->actual_watch_seconds = $newActualWatch;
                 }
             }
 
@@ -405,22 +420,28 @@ class PlaylistProgressController extends Controller
             $playlistContentUser->refresh();
         });
 
+        $isCapped = $maxCapSeconds !== null && (int) ($playlistContentUser->actual_watch_seconds ?? 0) >= $maxCapSeconds;
+
         return response()->json([
-            'success'              => true,
-            'progress'             => (int) $playlistContentUser->progress,
-            'status'               => $playlistContentUser->learning_status,
-            'finish'               => (int) $playlistContentUser->finish,
-            'current_time'         => (int) $playlistContentUser->current_time,
-            'actual_watch_seconds' => (int) ($playlistContentUser->actual_watch_seconds ?? 0),
-            'learning_hour'        => (float) $playlistContentUser->learning_hour,
-            'last_page'            => $playlistContentUser->last_page,
-            'page_completed'       => $pageCompleted,
-            'remaining_seconds'    => $remainingSeconds,
-            'allowed_page'         => $allowedPage,
-            'duration_seconds'     => $playlistContentUser->duration_seconds,
-            'afk_duration_seconds' => (int) ($playlistContentUser->afk_duration_seconds ?? 0),
-            'trainingplan_id'      => (int) $playlistContentUser->trainingplan_id,
-            'content_id'           => (int) $playlistContentUser->content_id,
+            'success'                  => true,
+            'progress'                 => (int) $playlistContentUser->progress,
+            'status'                   => $playlistContentUser->learning_status,
+            'finish'                   => (int) $playlistContentUser->finish,
+            'current_time'             => (int) $playlistContentUser->current_time,
+            'actual_watch_seconds'     => (int) ($playlistContentUser->actual_watch_seconds ?? 0),
+            'learning_hour'            => (float) $playlistContentUser->learning_hour,
+            'actual_learning_hours'    => (float) $playlistContentUser->learning_hour,
+            'is_capped'                => $isCapped,
+            'max_learning_hours'       => $maxLearningHours,
+            'max_actual_watch_seconds' => $maxCapSeconds,
+            'last_page'                => $playlistContentUser->last_page,
+            'page_completed'           => $pageCompleted,
+            'remaining_seconds'        => $remainingSeconds,
+            'allowed_page'             => $allowedPage,
+            'duration_seconds'         => $playlistContentUser->duration_seconds,
+            'afk_duration_seconds'     => (int) ($playlistContentUser->afk_duration_seconds ?? 0),
+            'trainingplan_id'          => (int) $playlistContentUser->trainingplan_id,
+            'content_id'               => (int) $playlistContentUser->content_id,
         ]);
     }
 }

@@ -81,6 +81,37 @@ class ActualLearningHourCalculator
     }
 
     /**
+     * Calculate maximum allowable actual learning hours from catalog content learning hours (content.learning_hours * 2).
+     *
+     * @param mixed $baseHours
+     * @return float|null
+     */
+    public function calculateMaxLearningHours(mixed $baseHours): ?float
+    {
+        if ($baseHours === null || (float) $baseHours <= 0) {
+            return null;
+        }
+
+        return (float) round((float) $baseHours * 2, self::PRECISION);
+    }
+
+    /**
+     * Calculate maximum allowable actual watch seconds from catalog content learning hours.
+     *
+     * @param mixed $baseHours
+     * @return int|null
+     */
+    public function calculateMaxCapSeconds(mixed $baseHours): ?int
+    {
+        $maxHours = $this->calculateMaxLearningHours($baseHours);
+        if ($maxHours === null) {
+            return null;
+        }
+
+        return (int) round($maxHours * self::SECONDS_IN_HOUR);
+    }
+
+    /**
      * Calculate actual learning hours directly from tracking record attributes.
      * Pure and stateless. ZERO database queries.
      *
@@ -89,6 +120,7 @@ class ActualLearningHourCalculator
      * @param int|float|null $progress
      * @param int|float|string|null $contentDuration
      * @param int|float|null $actualWatchSeconds
+     * @param int|float|null $maxLearningHours
      * @return float
      */
     public function calculateFromTracking(
@@ -96,7 +128,8 @@ class ActualLearningHourCalculator
         mixed $finish = '0',
         mixed $progress = 0,
         mixed $contentDuration = null,
-        mixed $actualWatchSeconds = null
+        mixed $actualWatchSeconds = null,
+        mixed $maxLearningHours = null
     ): float {
         $actualSeconds = $this->resolveActualSeconds(
             $currentTime,
@@ -106,7 +139,13 @@ class ActualLearningHourCalculator
             $actualWatchSeconds
         );
 
-        return $this->calculate($actualSeconds) ?? 0.0;
+        $hours = $this->calculate($actualSeconds) ?? 0.0;
+
+        if ($maxLearningHours !== null && (float) $maxLearningHours > 0) {
+            $hours = min($hours, (float) $maxLearningHours);
+        }
+
+        return $hours;
     }
 
     /**

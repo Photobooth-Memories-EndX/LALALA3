@@ -62,8 +62,14 @@ class ContentUser extends Model
             // Content duration is read from loaded relation or the record's duration_seconds column.
             // If relation is not loaded, NEVER call $contentUser->content()->first() to prevent N+1.
             $contentDuration = null;
-            if ($contentUser->relationLoaded('content')) {
-                $contentDuration = $contentUser->content?->duration;
+            $maxLearningHours = null;
+            if ($contentUser->relationLoaded('content') && $contentUser->content) {
+                $contentDuration = $contentUser->content->duration;
+                $maxLearningHours = $contentUser->content->max_learning_hours;
+                $maxCapSeconds = $contentUser->content->max_actual_watch_seconds;
+                if ($maxCapSeconds !== null && $contentUser->actual_watch_seconds !== null && $contentUser->actual_watch_seconds > $maxCapSeconds) {
+                    $contentUser->actual_watch_seconds = $maxCapSeconds;
+                }
             }
             $contentDuration = $contentDuration ?? $contentUser->duration_seconds;
 
@@ -75,7 +81,8 @@ class ContentUser extends Model
                     $contentUser->finish,
                     $contentUser->progress,
                     $contentDuration,
-                    $actualWatch
+                    $actualWatch,
+                    $maxLearningHours
                 );
             }
         });

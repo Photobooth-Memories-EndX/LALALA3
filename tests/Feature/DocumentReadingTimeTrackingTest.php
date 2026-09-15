@@ -583,4 +583,121 @@ class DocumentReadingTimeTrackingTest extends TestCase
         $response->assertSee('VideoWatchTimeTracker');
         $response->assertDontSee('document-reading-tracker.js');
     }
+
+    /**
+     * Case 19: Actual learning hours capped at double content learning hour for Standalone PDF.
+     */
+    public function test_actual_learning_hours_capped_at_double_content_learning_hour(): void
+    {
+        // $this->docContent has learning_hours = 0.5 -> max LH = 1.0 -> max seconds = 3600
+        $this->assertEquals(0.5, (float) $this->docContent->learning_hours);
+        $this->assertEquals(1.0, (float) $this->docContent->max_learning_hours);
+        $this->assertEquals(3600, $this->docContent->max_actual_watch_seconds);
+
+        $cu = ContentUser::create([
+            'user_id'              => $this->user->id,
+            'content_id'           => $this->docContent->id,
+            'actual_watch_seconds' => 3590,
+            'progress'             => 50,
+            'last_page'            => 5,
+            'total_pages'          => 10,
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('content.user.progress.update'), [
+            'content_id'    => $this->docContent->id,
+            'type'          => 'document',
+            'delta_seconds' => 20, // 3590 + 20 = 3610, exceeding 3600
+            'heartbeat_id'  => (string) Str::uuid(),
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'                  => true,
+            'actual_watch_seconds'     => 3600,
+            'learning_hours'           => 1.0000,
+            'actual_learning_hours'    => 1.0000,
+            'is_capped'                => true,
+            'max_learning_hours'       => 1.0,
+            'max_actual_watch_seconds' => 3600,
+        ]);
+
+        $cu->refresh();
+        $this->assertEquals(3600, $cu->actual_watch_seconds);
+        $this->assertEquals(1.0000, (float) $cu->learning_hours);
+    }
+
+    /**
+     * Case 20: Heartbeat payload clamped when exceeding cap for PDF.
+     */
+    public function test_heartbeat_payload_clamped_when_exceeding_cap(): void
+    {
+        // Already reached cap of 3600
+        $cu = ContentUser::create([
+            'user_id'              => $this->user->id,
+            'content_id'           => $this->docContent->id,
+            'actual_watch_seconds' => 3600,
+            'progress'             => 60,
+            'last_page'            => 6,
+            'total_pages'          => 10,
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('content.user.progress.update'), [
+            'content_id'    => $this->docContent->id,
+            'type'          => 'document',
+            'delta_seconds' => 15,
+            'heartbeat_id'  => (string) Str::uuid(),
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'              => true,
+            'actual_watch_seconds' => 3600,
+            'learning_hours'       => 1.0000,
+            'is_capped'            => true,
+        ]);
+
+        $cu->refresh();
+        $this->assertEquals(3600, $cu->actual_watch_seconds);
+    }
+
+    /**
+     * Case 21: Progress and page completion still work even when learning hours capped.
+     */
+    public function test_progress_and_page_completion_still_work_even_when_learning_hours_capped(): void
+    {
+        $cu = ContentUser::create([
+            'user_id'              => $this->user->id,
+            'content_id'           => $this->docContent->id,
+            'actual_watch_seconds' => 3600, // Capped
+            'progress'             => 80,
+            'last_page'            => 8,
+            'total_pages'          => 10,
+        ]);
+
+        // User advances to last page (page 10 -> 100% progress) in scroll mode
+        $response = $this->actingAs($this->user)->postJson(route('content.user.progress.update'), [
+            'content_id'    => $this->docContent->id,
+            'type'          => 'document',
+            'last_page'     => 10,
+            'total_pages'   => 10,
+            'delta_seconds' => 0,
+            'heartbeat_id'  => (string) Str::uuid(),
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'   => true,
+            'progress'  => 100,
+            'finish'    => 1,
+            'status'    => 'completed',
+            'last_page' => 10,
+            'is_capped' => true,
+        ]);
+
+        $cu->refresh();
+        $this->assertEquals(100, $cu->progress);
+        $this->assertEquals('1', (string) $cu->finish);
+        $this->assertEquals(3600, $cu->actual_watch_seconds);
+        $this->assertNotNull($cu->completed_at);
+    }
 }

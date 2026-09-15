@@ -48,7 +48,12 @@ class LearningRecordLearningHourService
             $actualSeconds = 0;
         }
 
-        return round($actualSeconds / 3600, 4);
+        $calculatedHours = round($actualSeconds / 3600, 4);
+        if ($cu->content && $cu->content->max_learning_hours !== null) {
+            $calculatedHours = min($calculatedHours, $cu->content->max_learning_hours);
+        }
+
+        return $calculatedHours;
     }
 
     /**
@@ -125,17 +130,23 @@ class LearningRecordLearningHourService
                     $pcuProgress = (int) ($pcu->progress ?? 0);
                     $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
 
+                    $moduleSec = 0;
                     if ($pcuActualWatch > 0) {
-                        $consumedPlaylistSeconds += $pcuActualWatch;
+                        $moduleSec = $pcuActualWatch;
                     } elseif ($pcuCurrentTime > 0) {
-                        $consumedPlaylistSeconds += $pcuCurrentTime;
+                        $moduleSec = $pcuCurrentTime;
                     } elseif ($pcuFinished && $pcuDuration > 0) {
-                        $consumedPlaylistSeconds += $pcuDuration;
+                        $moduleSec = $pcuDuration;
                     } elseif ($pcuProgress > 0 && $pcuDuration > 0) {
-                        $consumedPlaylistSeconds += (int) round(($pcuProgress / 100) * $pcuDuration);
+                        $moduleSec = (int) round(($pcuProgress / 100) * $pcuDuration);
                     } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
-                        $consumedPlaylistSeconds += (int) round((float) $pcu->learning_hour * 3600);
+                        $moduleSec = (int) round((float) $pcu->learning_hour * 3600);
                     }
+
+                    if ($d->content && $d->content->max_actual_watch_seconds !== null) {
+                        $moduleSec = min($moduleSec, $d->content->max_actual_watch_seconds);
+                    }
+                    $consumedPlaylistSeconds += $moduleSec;
                 } elseif ($cu) {
                     // Fallback to historical ContentUser record if PCU is absent
                     $cuDuration = (int) ($cu->duration_seconds ?? 0);
@@ -147,17 +158,23 @@ class LearningRecordLearningHourService
                     $cuProgress = (int) ($cu->progress ?? 0);
                     $cuFinished = ((string) $cu->finish === '1' || $cuProgress >= 100);
 
+                    $moduleSec = 0;
                     if ($cuActualWatch > 0) {
-                        $consumedPlaylistSeconds += $cuActualWatch;
+                        $moduleSec = $cuActualWatch;
                     } elseif ($cuCurrentTime > 0) {
-                        $consumedPlaylistSeconds += $cuCurrentTime;
+                        $moduleSec = $cuCurrentTime;
                     } elseif ($cuFinished && $cuDuration > 0) {
-                        $consumedPlaylistSeconds += $cuDuration;
+                        $moduleSec = $cuDuration;
                     } elseif ($cuProgress > 0 && $cuDuration > 0) {
-                        $consumedPlaylistSeconds += (int) round(($cuProgress / 100) * $cuDuration);
+                        $moduleSec = (int) round(($cuProgress / 100) * $cuDuration);
                     } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
-                        $consumedPlaylistSeconds += (int) round((float) $cu->learning_hours * 3600);
+                        $moduleSec = (int) round((float) $cu->learning_hours * 3600);
                     }
+
+                    if ($d->content && $d->content->max_actual_watch_seconds !== null) {
+                        $moduleSec = min($moduleSec, $d->content->max_actual_watch_seconds);
+                    }
+                    $consumedPlaylistSeconds += $moduleSec;
                 }
             }
 

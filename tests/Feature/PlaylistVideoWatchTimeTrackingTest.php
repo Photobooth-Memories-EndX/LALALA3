@@ -732,4 +732,92 @@ class PlaylistVideoWatchTimeTrackingTest extends TestCase
         $this->assertSame(50, (int) $pcu->progress);
         $this->assertSame(0, (int) ($pcu->actual_watch_seconds ?? 0));
     }
+
+    /**
+     * Scenario 16: Playlist actual learning hours capped at double content learning hour (Video & PDF).
+     */
+    public function test_playlist_actual_learning_hours_capped_properly(): void
+    {
+        // $this->docContent has learning_hours = 0.5 -> max LH = 1.0 -> max seconds = 3600
+        $this->assertEquals(0.5, (float) $this->docContent->learning_hours);
+        $this->assertEquals(1.0, (float) $this->docContent->max_learning_hours);
+        $this->assertEquals(3600, $this->docContent->max_actual_watch_seconds);
+
+        $pcu = PlaylistContentUser::create([
+            'user_id'              => $this->user->id,
+            'trainingplan_id'      => $this->playlist->id,
+            'content_id'           => $this->docContent->id,
+            'actual_watch_seconds' => 3590,
+            'progress'             => 50,
+            'last_page'            => 5,
+            'total_pages'          => 10,
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id' => $this->playlist->id,
+            'content_id'      => $this->docContent->id,
+            'type'            => 'document',
+            'delta_seconds'   => 20, // 3590 + 20 = 3610 -> capped to 3600
+            'heartbeat_id'    => (string) Str::uuid(),
+            'status'          => 'in_progress',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'                  => true,
+            'actual_watch_seconds'     => 3600,
+            'learning_hour'            => 1.0000,
+            'actual_learning_hours'    => 1.0000,
+            'is_capped'                => true,
+            'max_learning_hours'       => 1.0,
+            'max_actual_watch_seconds' => 3600,
+        ]);
+
+        $pcu->refresh();
+        $this->assertEquals(3600, $pcu->actual_watch_seconds);
+        $this->assertEquals(1.0000, (float) $pcu->learning_hour);
+    }
+
+    /**
+     * Scenario 17: Playlist progress and completion still work even when learning hours capped.
+     */
+    public function test_playlist_progress_and_completion_still_work_even_when_learning_hours_capped(): void
+    {
+        $pcu = PlaylistContentUser::create([
+            'user_id'              => $this->user->id,
+            'trainingplan_id'      => $this->playlist->id,
+            'content_id'           => $this->videoContent->id, // 60s video, LH = 1.0 -> cap = 7200s
+            'current_time'         => 30,
+            'duration_seconds'     => 60,
+            'actual_watch_seconds' => 7200, // Capped
+            'progress'             => 50,
+        ]);
+
+        $response = $this->actingAs($this->user)->postJson(route('playlist.user.progress.update'), [
+            'trainingplan_id'  => $this->playlist->id,
+            'content_id'       => $this->videoContent->id,
+            'type'             => 'video',
+            'current_time'     => 60,
+            'duration_seconds' => 60,
+            'delta_seconds'    => 0,
+            'heartbeat_id'     => (string) Str::uuid(),
+            'status'           => 'completed',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'      => true,
+            'progress'     => 100,
+            'finish'       => 1,
+            'status'       => 'completed',
+            'current_time' => 60,
+            'is_capped'    => true,
+        ]);
+
+        $pcu->refresh();
+        $this->assertEquals(100, $pcu->progress);
+        $this->assertEquals('1', (string) $pcu->finish);
+        $this->assertEquals(7200, $pcu->actual_watch_seconds);
+        $this->assertNotNull($pcu->completed_at);
+    }
 }

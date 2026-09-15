@@ -41,6 +41,41 @@ class Content extends Model
         'learning_hours' => 'float',
     ];
 
+    /**
+     * Alias accessor for learning_hours (singular).
+     */
+    public function getLearningHourAttribute(): ?float
+    {
+        return $this->learning_hours !== null ? (float) $this->learning_hours : null;
+    }
+
+    /**
+     * Maximum actual learning hours allowed for this content (content.learning_hours * 2).
+     */
+    public function getMaxLearningHoursAttribute(): ?float
+    {
+        $hours = $this->learning_hours !== null ? (float) $this->learning_hours : null;
+        if (($hours === null || $hours <= 0) && !empty($this->duration)) {
+            $converted = app(\App\Services\LearningHours\LearningHourConverterService::class)->convert($this->duration);
+            $hours = $converted > 0 ? $converted : null;
+        }
+
+        if ($hours === null || $hours <= 0) {
+            return null;
+        }
+
+        return round($hours * 2, 4);
+    }
+
+    /**
+     * Maximum actual watch/reading seconds allowed for this content.
+     */
+    public function getMaxActualWatchSecondsAttribute(): ?int
+    {
+        $maxHours = $this->max_learning_hours;
+        return $maxHours !== null ? (int) round($maxHours * 3600) : null;
+    }
+
     public function classification()
     {
         return $this->belongsTo(Classification::class, "classification_id", "id");
