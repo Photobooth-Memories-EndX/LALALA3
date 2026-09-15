@@ -333,6 +333,7 @@ function initLearningRecord() {
             if (t === 'content' || t === 'course') return rowKind === 'content';
             if (t === 'video') return rowType === 'video' || rowType === 'youtube';
             if (t === 'document') return rowType === 'document';
+            if (t === 'mooc') return rowType === 'mooc' || rowType === 'youtube';
             return rowType === t;
         });
     }
@@ -433,7 +434,8 @@ function initLearningRecord() {
         if (filterType !== 'all' && filterType !== '' && filterType !== 'content' && filterType !== 'course') {
             if (filterType === 'video' && !(rowType === 'video' || rowType === 'youtube')) return false;
             if (filterType === 'document' && rowType !== 'document') return false;
-            if (filterType !== 'video' && filterType !== 'document' && rowType !== filterType) return false;
+            if (filterType === 'mooc' && !(rowType === 'mooc' || rowType === 'youtube')) return false;
+            if (filterType !== 'video' && filterType !== 'document' && filterType !== 'mooc' && rowType !== filterType) return false;
         }
         if (f.classification !== 'all' && String(d.classification).toLowerCase() !== String(f.classification).toLowerCase()) return false;
 

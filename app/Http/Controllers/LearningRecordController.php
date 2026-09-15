@@ -259,6 +259,9 @@ class LearningRecordController extends Controller
         if ($normalized === 'document') {
             return strtolower($rowType) === 'document';
         }
+        if ($normalized === 'mooc') {
+            return in_array(strtolower($rowType), ['mooc', 'youtube'], true);
+        }
 
         return strtolower($rowType) === $normalized;
     }
@@ -548,7 +551,7 @@ class LearningRecordController extends Controller
                 'playlist_names'  => $playlists->pluck('title')->filter()->values()->all(),
                 // Id playlist pemilik content — dipakai filter Playlist client-side.
                 'playlist_ids'    => $playlists->pluck('id')->values()->all(),
-                'type'            => $content->type ?? 'Content',
+                'type'            => \App\Support\ContentTypeHelper::label($content->type) ?: 'Content',
                 'classification'  => $content->classification->classification_name ?? '-',
                 'duration'        => DurationFormatter::formatForLearningRecord($content->duration),
                 'duration_sort'   => DurationFormatter::toSeconds($content->duration) ?? -1,
@@ -671,7 +674,7 @@ class LearningRecordController extends Controller
                     'content_id' => $item->content_id,
                     'title'      => $item->title ?? '-',
                     'slug'       => $item->slug,
-                    'type'       => $item->type ?? 'Content',
+                    'type'       => \App\Support\ContentTypeHelper::label($item->type) ?: 'Content',
                     'url'        => ($plan->slug && $item->slug)
                         ? route('playlist.user.view', [$plan->slug, $item->slug])
                         : null,

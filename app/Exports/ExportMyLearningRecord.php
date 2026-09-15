@@ -220,7 +220,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
 
         return [
             'category'            => 'Content',
-            'type'                => $playlistChild ? 'Content' : ($content->type ?? 'Content'),
+            'type'                => \App\Support\ContentTypeHelper::label($content->type) ?: 'Content',
             'title'               => $content->title ?? '-',
             'classification'      => optional($content->classification)->classification_name ?? '-',
             'duration'            => DurationFormatter::formatForLearningRecord($content->duration),
@@ -363,7 +363,10 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
                 if ($type === 'document' && strtolower($rowType) !== 'document') {
                     return false;
                 }
-                if (!in_array($type, ['playlist', 'trainingplan', 'content', 'video', 'document'], true) && strtolower($rowType) !== $type) {
+                if ($type === 'mooc' && !in_array(strtolower($rowType), ['mooc', 'youtube'], true)) {
+                    return false;
+                }
+                if (!in_array($type, ['playlist', 'trainingplan', 'content', 'video', 'document', 'mooc'], true) && strtolower($rowType) !== $type) {
                     return false;
                 }
             }
@@ -377,6 +380,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
                     if ($normMt === 'content' && !$isPlaylist) { $matchedType = true; break; }
                     if ($normMt === 'video' && in_array($rowType, ['Video', 'YouTube'], true)) { $matchedType = true; break; }
                     if ($normMt === 'document' && strtolower($rowType) === 'document') { $matchedType = true; break; }
+                    if ($normMt === 'mooc' && in_array(strtolower($rowType), ['mooc', 'youtube'], true)) { $matchedType = true; break; }
                     if (strtolower($rowType) === $normMt) { $matchedType = true; break; }
                 }
                 if (!$matchedType) {
