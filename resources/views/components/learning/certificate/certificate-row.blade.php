@@ -40,7 +40,7 @@
     </td>
     <td class="certificate-col-type text-center">
         <span class="badge {{ $typeStyles[$type] ?? 'bg-secondary-lt text-secondary' }} learning-record-badge certificate-type-badge {{ $type === 'playlist' ? 'certificate-playlist-badge' : '' }}"
-              @if($type === 'playlist') tabindex="0" role="button" data-toggle="popover" data-trigger="hover focus" data-placement="auto" data-html="true" data-content="{{ $popover }}" @endif>
+              @if($type === 'playlist') tabindex="0" role="button" data-bs-toggle="popover" data-trigger="hover focus" data-placement="auto" data-html="true" data-content="{{ $popover }}" @endif>
             {{ ucfirst($type) }}
         </span>
     </td>

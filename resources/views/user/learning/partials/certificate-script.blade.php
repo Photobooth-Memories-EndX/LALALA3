@@ -380,6 +380,8 @@
             } else if (filterType === 'month') {
                 $('input[name="certificate_filter_month"]').prop('checked', false).filter('[value="' + val + '"]').prop('checked', true);
             }
+
+            applyCertificateFilters();
         });
 
         $(document).off('change.learningCertificateRadio')
@@ -402,7 +404,7 @@
             .off('.learningCertificate')
             .on('input.learningCertificate change.learningCertificate', updateAdvancedCount);
         $('#certificateSort').off('.learningCertificate').on('change.learningCertificate', updateAdvancedCount);
-        $('#certificateApplyFilter, .certificate-apply-filter').off('.learningCertificate').on('click.learningCertificate', applyCertificateFilters);
+        $('#certificateApplyFilter, #certificateModalApplyFilter, .certificate-apply-filter').off('.learningCertificate').on('click.learningCertificate', applyCertificateFilters);
 
         $('#certificateMoreFiltersModal').off('show.bs.modal.learningCertificate').on('show.bs.modal.learningCertificate', function () {
             restoreCertificateInputs();
@@ -553,7 +555,7 @@
                 shareCertificate(url, title, text);
             });
 
-        $('[data-toggle="popover"].certificate-playlist-badge').popover({
+        $('[data-bs-toggle="popover"].certificate-playlist-badge, [data-toggle="popover"].certificate-playlist-badge').popover({
             container: 'body',
             boundary: 'viewport',
             html: true,

@@ -326,7 +326,9 @@ class LearningRecordController extends Controller
             );
         }
 
-        $allFilteredCertificates = (clone $query)->get(['certificate_type']);
+        $allFilteredCertificates = (clone $query)
+            ->without(['user', 'certificateSetting'])
+            ->get(['certificate_type']);
         $certificateStats = [
             'total' => $allFilteredCertificates->count(),
             'playlist' => $allFilteredCertificates->where('certificate_type', 'playlist')->count(),

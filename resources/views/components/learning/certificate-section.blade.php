@@ -52,7 +52,7 @@
                              data-certificate-filter="type" data-selected-value="{{ $active['type'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_type" value="{{ $active['type'] }}">
                             <button type="button" class="btn btn-filter-chip certificate-fast-filter-control dropdown-toggle {{ $active['type'] !== 'all' ? 'active' : '' }}"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Type: <span class="fw-semibold certificate-filter-value">{{ $types[$active['type']] ?? 'All' }}</span>
                             </button>
                             <div class="dropdown-menu">
@@ -66,7 +66,7 @@
                              data-certificate-filter="year" data-selected-value="{{ $active['year'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_year" value="{{ $active['year'] }}">
                             <button type="button" class="btn btn-filter-chip certificate-fast-filter-control dropdown-toggle {{ $active['year'] !== 'all' ? 'active' : '' }}"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Year: <span class="fw-semibold certificate-filter-value">{{ $active['year'] === 'all' ? 'All' : $active['year'] }}</span>
                             </button>
                             <div class="dropdown-menu certificate-dropdown-scroll">
@@ -81,7 +81,7 @@
                              data-certificate-filter="month" data-selected-value="{{ $active['month'] }}">
                             <input type="hidden" class="certificate-quick-value" name="certificate_filter_month" value="{{ $active['month'] }}">
                             <button type="button" class="btn btn-filter-chip certificate-fast-filter-control dropdown-toggle {{ $active['month'] !== 'all' ? 'active' : '' }}"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Month: <span class="fw-semibold certificate-filter-value">{{ $active['month'] === 'all' ? 'All' : ($months[(int) $active['month']] ?? 'All') }}</span>
                             </button>
                             <div class="dropdown-menu certificate-dropdown-scroll">
@@ -119,7 +119,7 @@
                             <i class="ti ti-search"></i>
                         </button>
                         <button type="button" class="btn btn-outline-primary btn-learning-secondary record-filter-action-btn certificate-filter-action-btn"
-                                data-toggle="modal" data-target="#certificateMoreFiltersModal"
+                                data-bs-toggle="modal" data-bs-target="#certificateMoreFiltersModal"
                                 title="More Filters" aria-label="More Filters">
                             <i class="ti ti-adjustments-horizontal"></i>
                             <span class="badge bg-primary text-white {{ $advancedCount ? '' : 'd-none' }}" id="certificateMoreFiltersCount">{{ $advancedCount ?: '' }}</span>
@@ -127,6 +127,10 @@
                         <button type="button" class="btn btn-outline-primary btn-learning-outline record-filter-action-btn certificate-filter-action-btn"
                                 id="certificateResetFilter" title="Reset Filter" aria-label="Reset Filter">
                             <i class="ti ti-refresh"></i>
+                        </button>
+                        <button type="button" class="btn btn-success btn-learning-success record-filter-action-btn certificate-filter-action-btn"
+                                id="certificateDownloadExcel" title="Download Excel" aria-label="Download Excel">
+                            <i class="ti ti-download"></i>
                         </button>
                     </div>
                 </div>
@@ -234,7 +238,7 @@
                     <button type="button" class="btn btn-outline-secondary btn-learning-outline" id="certificateModalReset">
                         <i class="ti ti-refresh"></i><span>Reset</span>
                     </button>
-                    <button type="button" class="btn btn-primary btn-learning-primary certificate-apply-filter" id="certificateApplyFilter">
+                    <button type="button" class="btn btn-primary btn-learning-primary certificate-apply-filter" id="certificateModalApplyFilter">
                         <i class="ti ti-search"></i><span>Apply Filter</span>
                     </button>
                 </div>
