@@ -9,6 +9,7 @@ use App\Services\Learning\CompletedPlaylistService;
 use App\Support\LearningFilterHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
@@ -253,7 +254,14 @@ class LearningAssessmentController extends Controller
     private function getFilterOptions($query): array
     {
         return [
-            'years' => (clone $query)->reorder()->whereNotNull('fromdate')->selectRaw('YEAR(fromdate) as year')->distinct()->orderByDesc('year')->pluck('year'),
+            'years' => (clone $query)->reorder()
+                ->whereNotNull('fromdate')
+                ->select(DB::raw('YEAR(fromdate) as year'))
+                ->distinct()
+                ->orderByDesc('year')
+                ->pluck('year')
+                ->unique()
+                ->values(),
             'batches' => collect([1, 2, 4]),
             'passingGrades' => (clone $query)->reorder()->whereNotNull('passing_grade')
                 ->select('passing_grade')

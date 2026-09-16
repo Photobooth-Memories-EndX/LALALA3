@@ -5,7 +5,7 @@
 
 @php
     $assessmentItems = collect($assessments ?? []);
-    $assessmentYears = collect($filterOptions['years'] ?? []);
+    $assessmentYears = collect($filterOptions['years'] ?? [])->unique()->values();
     $assessmentBatches = collect($filterOptions['batches'] ?? []);
     $assessmentPassingGrades = collect($filterOptions['passingGrades'] ?? []);
 
