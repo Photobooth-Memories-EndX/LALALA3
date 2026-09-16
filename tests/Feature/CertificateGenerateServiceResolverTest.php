@@ -216,7 +216,7 @@ class CertificateGenerateServiceResolverTest extends TestCase
 
         $setting = CertificateSetting::create(['certificate_type' => 'playlist', 'trainingplan_id' => $plan->id, 'minimum_progress' => 100, 'minimum_score' => 80, 'is_active' => true, 'issuer_name' => 'OWL Test']);
 
-        ContentUser::create(['user_id' => $this->userA->id, 'content_id' => $content->id, 'progress' => 100, 'finish' => '1']);
+        PlaylistContentUser::create(['user_id' => $this->userA->id, 'trainingplan_id' => $plan->id, 'content_id' => $content->id, 'progress' => 100, 'finish' => '1']);
 
         $certificate = $this->service->generate($setting, $this->userA);
         $this->assertInstanceOf(Certificate::class, $certificate);

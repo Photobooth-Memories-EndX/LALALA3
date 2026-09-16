@@ -4,43 +4,47 @@
     @include('main.monitoring.components.style')
 
     {{-- Page Header --}}
-    <div class="page-header d-print-none">
+    <div class="page-header d-print-none mb-0 pb-0">
         <div class="container-xl">
-            <!-- TOMBOL BACK KE DASHBOARD MANAGE -->
+            <!-- Back Navigation Link -->
             <div class="mb-3">
-                <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
-                    <i class="ti ti-arrow-left me-1 fs-5"></i> Back
+                <a href="{{ url('/manage') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1">
+                    <i class="ti ti-arrow-left fs-3"></i>
+                    <span>Back</span>
                 </a>
             </div>
 
-            <div class="row align-items-center">
-                <div class="col">
+            <!-- Playlist Management Hero Header Box (Matching Content Management) -->
+            <div class="card border-0 shadow-sm p-4 mb-3 rounded-3 bg-white">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                    <!-- Left Group: Large Icon Box + Title & Description -->
                     <div class="d-flex align-items-center gap-3">
-                        <div class="avatar avatar-lg bg-primary-lt">
-                            <i class="ti ti-playlist fs-2"></i>
+                        <!-- Playlist Icon Box (Equal size to Content: 72px x 72px) -->
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
+                             style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
+                            <i class="ti ti-playlist fs-1" style="font-size: 2rem !important;"></i>
                         </div>
+
+                        <!-- Title & Subtitle -->
                         <div>
-                            <h2 class="page-title mb-1">Playlist Management</h2>
-                            <div class="text-secondary">Manage learning playlists, content order, thumbnails, and training deadlines.</div>
+                            <h2 class="h3 fw-bold mb-1 text-dark">Playlist Management</h2>
+                            <p class="text-muted small mb-0">Manage learning playlists, content order, thumbnails, and training deadlines.</p>
                         </div>
                     </div>
-                </div>
-                <div class="col-auto d-flex gap-2">
-                    <form action="{{ route('learning-hours.sync') }}" method="POST" class="d-inline">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-primary" onclick="return confirm('Synchronize all Learning Hours?')">
-                            <i class="ti ti-refresh me-1"></i>Synchronize
-                        </button>
-                    </form>
-                    <a href="{{ route('playlist.create') }}" class="btn btn-primary">
-                        <i class="ti ti-plus me-1"></i>Add Playlist
-                    </a>
+
+                    <!-- Right Group: Action Button -->
+                    <div class="flex-shrink-0">
+                        <a href="{{ route('manage.playlist.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
+                            <i class="ti ti-plus fs-2"></i>
+                            <span>Add Playlist</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="page-body">
+    <div class="page-body mt-0 pt-0">
         <div class="container-xl">
 
             @if (session()->has('success'))
@@ -68,93 +72,66 @@
             @endif
 
             {{-- Stat Cards --}}
-            <div class="row row-cards mb-4">
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Total Playlist</div>
-                                    <div class="display-6 fw-bold">{{ number_format($totalTrainingPlan) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-primary-lt">
-                                    <i class="ti ti-playlist fs-2"></i>
-                                </span>
+            <div class="row g-3 mb-3">
+                <!-- Card 1: Total Playlist -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #0f4c81; color: #ffffff;">
+                                <i class="ti ti-playlist fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Playlist</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($totalTrainingPlan ?? 0) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Active</div>
-                                    <div class="display-6 fw-bold text-success">{{ number_format($activeTrainingPlan) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-success-lt">
-                                    <i class="ti ti-circle-check fs-2"></i>
-                                </span>
+
+                <!-- Card 2: Active -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
+                                <i class="ti ti-check fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Active</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($activeTrainingPlan ?? 0) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Inactive</div>
-                                    <div class="display-6 fw-bold text-warning">{{ number_format($inactiveTrainingPlan) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-warning-lt">
-                                    <i class="ti ti-circle-x fs-2"></i>
-                                </span>
+
+                <!-- Card 3: Inactive -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #e63946; color: #ffffff;">
+                                <i class="ti ti-x fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Inactive</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($inactiveTrainingPlan ?? 0) }}</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">With Deadline</div>
-                                    <div class="display-6 fw-bold text-info">{{ number_format($withDeadline) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-info-lt">
-                                    <i class="ti ti-clock fs-2"></i>
-                                </span>
+
+                <!-- Card 4: Total Materials -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                                 style="width: 44px; height: 44px; background-color: #0284c7; color: #ffffff;">
+                                <i class="ti ti-books fs-2"></i>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Expired Deadline</div>
-                                    <div class="display-6 fw-bold text-danger">{{ number_format($expiredDeadline) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-danger-lt">
-                                    <i class="ti ti-calendar-x fs-2"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card admin-gallery-stat h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-secondary text-uppercase fw-bold small mb-2">Total Materials</div>
-                                    <div class="display-6 fw-bold text-azure">{{ number_format($totalMaterials) }}</div>
-                                </div>
-                                <span class="avatar avatar-lg bg-azure-lt">
-                                    <i class="ti ti-books fs-2"></i>
-                                </span>
+                            <div>
+                                <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Materials</div>
+                                <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ number_format($totalMaterials ?? 0) }}</div>
                             </div>
                         </div>
                     </div>
@@ -202,22 +179,46 @@
 
                             <!-- Input Search Bar -->
                             <div class="col-12 col-md">
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="ti ti-search text-muted"></i></span>
-                                    <input type="text" name="search" class="form-control border-start-0 rounded-end-3" placeholder="Search playlist..." value="{{ request('search') ?? request('s') }}">
+                                <div class="position-relative manage-search-container flex-grow-1">
+                                    <div class="input-icon">
+                                        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                        <input type="text" id="manage-playlist-search-input" name="q" value="{{ request('q') ?? (request('search') ?? request('s')) }}"
+                                            class="form-control" placeholder="Search playlist..." autocomplete="off">
+                                    </div>
+                                    
+                                    <div id="manage-playlist-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" 
+                                         style="display: none; z-index: 2000; background-color: #ffffff;">
+                                        <!-- Container 1: Scrollable List Area (Max 280px height with vertical scrollbar) -->
+                                        <div id="manage-playlist-autocomplete-list" class="list-group list-group-flush" 
+                                             style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                                        
+                                        <!-- Container 2: Fixed/Sticky Bottom Footer -->
+                                        <div id="manage-playlist-search-footer" class="border-top p-2 text-center" 
+                                             style="display: none; position: sticky; bottom: 0; z-index: 2005; background-color: #f8f9fa;"></div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Action Buttons (Search, More Filter, Reset) -->
-                            <div class="col-auto d-flex gap-1">
-                                <button type="submit" class="btn btn-primary rounded-3 px-3" style="background-color: #0c5b9e; border-color: #0c5b9e;" title="Search">
-                                    <i class="ti ti-search"></i>
+                            <!-- Action Buttons (Search, More Filters & Reset) -->
+                            <div class="col-auto d-flex align-items-center gap-1 flex-shrink-0">
+                                <!-- 1. Search Submit Button -->
+                                <button type="submit" class="btn btn-primary btn-icon px-3" title="Search">
+                                    <i class="ti ti-search fs-2"></i>
                                 </button>
-                                <button type="button" class="btn btn-outline-primary rounded-3 px-3" style="border-color: #0c5b9e; color: #0c5b9e;" data-bs-toggle="modal" data-bs-target="#morePlaylistFiltersModal" title="More Filters">
-                                    <i class="ti ti-adjustments-horizontal"></i>
+
+                                <!-- 2. More Filters Modal Trigger Button (Icon Only - No Text) -->
+                                <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" data-bs-toggle="modal" data-bs-target="#morePlaylistFiltersModal" title="More Filters">
+                                    <i class="ti ti-adjustments-horizontal fs-2"></i>
+                                    @if(request('date_from') || request('date_to') || request('author') || request('category') || request('status') || request('sort'))
+                                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle">
+                                            <span class="visually-hidden">Active filter</span>
+                                        </span>
+                                    @endif
                                 </button>
-                                <a href="{{ route('playlist.index') }}" class="btn btn-outline-primary rounded-3 px-3 btn-quick-reset" style="border-color: #0c5b9e; color: #0c5b9e;" title="Reset Filter">
-                                    <i class="ti ti-refresh"></i>
+
+                                <!-- 3. Reset Button -->
+                                <a href="{{ route('playlist.index') }}" class="btn btn-outline-secondary btn-icon px-3" title="Reset Filters">
+                                    <i class="ti ti-refresh fs-2"></i>
                                 </a>
                             </div>
                         </div>
@@ -475,9 +476,18 @@
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer border-0 pt-0 d-flex gap-2">
-                        <a href="{{ route('playlist.index') }}" class="btn btn-outline-secondary rounded-pill flex-fill"><i class="ti ti-refresh me-1"></i> Reset</a>
-                        <button type="submit" class="btn btn-primary rounded-pill flex-fill" style="background-color: #0c5b9e; border-color: #0c5b9e;"><i class="ti ti-check me-1"></i> Apply Filter</button>
+                    <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                        <!-- Reset Button (Placed on the left of Apply Filter) -->
+                        <a href="{{ route('playlist.index') }}" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1">
+                            <i class="ti ti-rotate me-1"></i>
+                            <span>Reset</span>
+                        </a>
+
+                        <!-- Apply Filter Button -->
+                        <button type="submit" class="btn btn-primary px-3 d-inline-flex align-items-center gap-1">
+                            <i class="ti ti-check me-1"></i>
+                            <span>Apply Filter</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -541,5 +551,76 @@ body.theme-dark .card {
     opacity: 0.85;
     transform: translateX(-3px);
 }
+.manage-playlist-search-container {
+    position: relative;
+    width: 100%;
+}
+#manage-playlist-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 2000;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
+}
+#manage-playlist-autocomplete-list {
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    background-color: #ffffff !important;
+    scrollbar-width: thin;
+}
+#manage-playlist-search-results .dropdown-item {
+    padding: .6rem .85rem;
+    transition: background-color .15s ease;
+    text-decoration: none;
+}
+#manage-playlist-search-results .dropdown-item:hover,
+#manage-playlist-search-results .dropdown-item:focus {
+    background-color: rgba(15, 94, 156, .08);
+}
+#manage-playlist-search-results .dropdown-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+[data-bs-theme="dark"] #manage-playlist-search-results,
+body.dark-mode #manage-playlist-search-results,
+body.theme-dark #manage-playlist-search-results {
+    background: #1f2937;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+[data-bs-theme="dark"] #manage-playlist-search-results .dropdown-item,
+body.dark-mode #manage-playlist-search-results .dropdown-item,
+body.theme-dark #manage-playlist-search-results .dropdown-item {
+    color: #f8fafc;
+}
+[data-bs-theme="dark"] #manage-playlist-search-results .dropdown-item:not(:last-child),
+body.dark-mode #manage-playlist-search-results .dropdown-item:not(:last-child),
+body.theme-dark #manage-playlist-search-results .dropdown-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+[data-bs-theme="dark"] #manage-playlist-search-results .dropdown-item:hover,
+[data-bs-theme="dark"] #manage-playlist-search-results .dropdown-item:focus,
+body.dark-mode #manage-playlist-search-results .dropdown-item:hover,
+body.dark-mode #manage-playlist-search-results .dropdown-item:focus,
+body.theme-dark #manage-playlist-search-results .dropdown-item:hover,
+body.theme-dark #manage-playlist-search-results .dropdown-item:focus {
+    background: rgba(106, 174, 214, 0.16);
+}
+[data-bs-theme="dark"] #manage-playlist-search-results .dropdown-item .text-dark,
+body.dark-mode #manage-playlist-search-results .dropdown-item .text-dark,
+body.theme-dark #manage-playlist-search-results .dropdown-item .text-dark {
+    color: #f8fafc !important;
+}
 </style>
+@endsection
+
+@section('script')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Autocomplete is handled by standardized initManageAutocomplete
+});
+</script>
 @endsection

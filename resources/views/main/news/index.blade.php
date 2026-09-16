@@ -99,99 +99,157 @@
     opacity: 0.85;
     transform: translateX(-3px);
 }
+.manage-news-search-container {
+    position: relative;
+    width: 100%;
+}
+#manage-news-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 2000;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
+}
+#manage-news-autocomplete-list {
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    background-color: #ffffff !important;
+    scrollbar-width: thin;
+}
+#manage-news-search-results .dropdown-item {
+    padding: .6rem .85rem;
+    transition: background-color .15s ease;
+    text-decoration: none;
+}
+#manage-news-search-results .dropdown-item:hover,
+#manage-news-search-results .dropdown-item:focus {
+    background-color: rgba(15, 94, 156, .08);
+}
+#manage-news-search-results .dropdown-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+[data-bs-theme="dark"] #manage-news-search-results,
+body.dark-mode #manage-news-search-results,
+body.theme-dark #manage-news-search-results {
+    background: #1f2937;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+[data-bs-theme="dark"] #manage-news-search-results .dropdown-item,
+body.dark-mode #manage-news-search-results .dropdown-item,
+body.theme-dark #manage-news-search-results .dropdown-item {
+    color: #f8fafc;
+}
+[data-bs-theme="dark"] #manage-news-search-results .dropdown-item:not(:last-child),
+body.dark-mode #manage-news-search-results .dropdown-item:not(:last-child),
+body.theme-dark #manage-news-search-results .dropdown-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+[data-bs-theme="dark"] #manage-news-search-results .dropdown-item:hover,
+[data-bs-theme="dark"] #manage-news-search-results .dropdown-item:focus,
+body.dark-mode #manage-news-search-results .dropdown-item:hover,
+body.dark-mode #manage-news-search-results .dropdown-item:focus,
+body.theme-dark #manage-news-search-results .dropdown-item:hover,
+body.theme-dark #manage-news-search-results .dropdown-item:focus {
+    background: rgba(106, 174, 214, 0.16);
+}
+[data-bs-theme="dark"] #manage-news-search-results .dropdown-item .text-dark,
+body.dark-mode #manage-news-search-results .dropdown-item .text-dark,
+body.theme-dark #manage-news-search-results .dropdown-item .text-dark {
+    color: #f8fafc !important;
+}
 </style>
 @endsection
 
 @section('content')
 
-<div class="page-header d-print-none">
+<div class="page-header d-print-none mb-0 pb-0">
     <div class="container-xl">
-        <!-- TOMBOL BACK KE DASHBOARD MANAGE -->
+        <!-- Back Navigation Link -->
         <div class="mb-3">
-            <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
-                <i class="ti ti-arrow-left me-1 fs-5"></i> Back
+            <a href="{{ url('/manage') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1">
+                <i class="ti ti-arrow-left fs-3"></i><span>Back</span>
             </a>
         </div>
 
-        <div class="row align-items-center">
-            <div class="col">
+        <!-- News Management Hero Header Box -->
+        <div class="card border-0 shadow-sm p-4 mb-3 rounded-3 bg-white">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                 <div class="d-flex align-items-center gap-3">
-                    <div class="avatar avatar-lg bg-blue-lt">
-                        <i class="ti ti-news fs-2"></i>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
+                         style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
+                        <i class="ti ti-news" style="font-size: 2rem !important;"></i>
                     </div>
                     <div>
-                        <h2 class="page-title mb-1">News Management</h2>
-                        <div class="text-secondary">Manage company learning news and announcements</div>
+                        <h2 class="h3 fw-bold mb-1 text-dark">News Management</h2>
+                        <p class="text-muted small mb-0">Manage company learning news, articles, and announcements.</p>
                     </div>
                 </div>
-            </div>
-            <div class="col-auto">
-                <a href="{{ route('news.create') }}" class="btn btn-primary">
-                    <i class="ti ti-plus me-1"></i>Add News
-                </a>
+                <div class="flex-shrink-0">
+                    <a href="{{ route('news.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
+                        <i class="ti ti-plus fs-2"></i><span>Add News</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="page-body">
+<div class="page-body mt-0 pt-0">
     <div class="container-xl">
 
         <x-alert type="success" />
         <x-alert type="warning" />
 
-        {{-- Statistics --}}
-        <div class="row row-cards mb-4">
-            <div class="col-sm-6 col-xl-3">
-                <div class="card admin-news-stat">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-fill">
-                                <div class="text-secondary text-uppercase fw-bold small mb-1">Total News</div>
-                                <div class="display-6 fw-bold">{{ $totalNews ?? 0 }}</div>
-                            </div>
-                            <span class="avatar bg-blue-lt ms-3"><i class="ti ti-news"></i></span>
+        <!-- News Management 3-Column Stats Cards Grid -->
+        <div class="row g-3 mb-3">
+            <!-- Card 1: Total News -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #003b6d; color: #ffffff;">
+                            <i class="ti ti-news fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total News</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ $totalNews ?? 0 }}</div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card admin-news-stat">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-fill">
-                                <div class="text-secondary text-uppercase fw-bold small mb-1">Total Authors</div>
-                                <div class="display-6 fw-bold text-purple">{{ $totalAuthor ?? 0 }}</div>
-                            </div>
-                            <span class="avatar bg-purple-lt ms-3"><i class="ti ti-users"></i></span>
+
+            <!-- Card 2: Total Authors -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #38b000; color: #ffffff;">
+                            <i class="ti ti-users fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">Total Authors</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ $totalAuthors ?? ($totalAuthor ?? 0) }}</div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card admin-news-stat">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-fill">
-                                <div class="text-secondary text-uppercase fw-bold small mb-1">This Month</div>
-                                <div class="display-6 fw-bold text-success">
-                                    {{ isset($totalNews) ? \App\Models\News::whereMonth('created_at', now()->month)->count() : 0 }}
-                                </div>
-                            </div>
-                            <span class="avatar bg-success-lt ms-3"><i class="ti ti-calendar-stats"></i></span>
+
+            <!-- Card 3: This Month -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 rounded-3 bg-white">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 me-3" 
+                             style="width: 44px; height: 44px; background-color: #e63946; color: #ffffff;">
+                            <i class="ti ti-calendar-event fs-2"></i>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="card admin-news-stat">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-fill">
-                                <div class="text-secondary text-uppercase fw-bold small mb-1">Showing</div>
-                                <div class="display-6 fw-bold text-info">{{ $news->count() }}</div>
-                            </div>
-                            <span class="avatar bg-info-lt ms-3"><i class="ti ti-list"></i></span>
+                        <div>
+                            <div class="text-muted fw-semibold" style="font-size: 0.8rem; line-height: 1.2;">This Month</div>
+                            <div class="fw-bold fs-3 text-dark mt-1" style="line-height: 1.1;">{{ $thisMonthCount ?? (isset($totalNews) ? \App\Models\News::whereMonth('created_at', now()->month)->count() : 0) }}</div>
                         </div>
                     </div>
                 </div>
@@ -246,21 +304,44 @@
 
                         <!-- Search Bar -->
                         <div class="col-12 col-md">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="ti ti-search text-muted"></i></span>
-                                <input type="text" name="search" id="newsSearch" class="form-control border-start-0 rounded-end-3" placeholder="Search news title, description or author..." value="{{ request('search') }}">
+                            <div class="position-relative manage-search-container flex-grow-1">
+                                <div class="input-icon">
+                                    <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                    <input type="text" name="q" id="manage-news-search-input" class="form-control" placeholder="Search news..." value="{{ request('q') ?? request('search') }}" autocomplete="off">
+                                </div>
+                                <div id="manage-news-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" 
+                                     style="display: none; z-index: 2000; background-color: #ffffff;">
+                                    <!-- Container 1: Scrollable List Area (Max 280px height with vertical scrollbar) -->
+                                    <div id="manage-news-autocomplete-list" class="list-group list-group-flush" 
+                                         style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
+                                    
+                                    <!-- Container 2: Fixed/Sticky Bottom Footer -->
+                                    <div id="manage-news-search-footer" class="border-top p-2 text-center" 
+                                         style="display: none; position: sticky; bottom: 0; z-index: 2005; background-color: #f8f9fa;"></div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="col-auto d-flex gap-1">
-                            <button type="submit" class="btn btn-primary rounded-3 px-3" title="Search"><i class="ti ti-search"></i></button>
-                            <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-toggle="modal" data-bs-target="#moreFiltersModal" title="More Filters"><i class="ti ti-adjustments-horizontal"></i></button>
-                            <a href="{{ route('manage.news.index') }}" 
-                               class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center justify-content-center btn-quick-reset" 
-                               style="border-color: #0c5b9e !important; color: #0c5b9e !important; background-color: transparent;" 
-                               title="Reset Filter">
-                                <i class="ti ti-refresh" style="font-size: 1.1rem; color: #0c5b9e !important;"></i>
+                        <div class="col-auto d-flex align-items-center gap-1 flex-shrink-0">
+                            <!-- 1. Search Submit Button -->
+                            <button type="submit" class="btn btn-primary btn-icon px-3" title="Search">
+                                <i class="ti ti-search fs-2"></i>
+                            </button>
+
+                            <!-- 2. More Filters Modal Trigger Button (Icon Only - No Text) -->
+                            <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" data-bs-toggle="modal" data-bs-target="#moreFiltersModal" title="More Filters">
+                                <i class="ti ti-adjustments-horizontal fs-2"></i>
+                                @if(request('date_from') || request('date_to') || request('author') || request('category') || request('status'))
+                                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle">
+                                        <span class="visually-hidden">Active filter</span>
+                                    </span>
+                                @endif
+                            </button>
+
+                            <!-- 3. Reset Button -->
+                            <a href="{{ route('manage.news.index') }}" class="btn btn-outline-secondary btn-icon px-3" title="Reset Filters">
+                                <i class="ti ti-refresh fs-2"></i>
                             </a>
                         </div>
                     </div>
@@ -466,9 +547,18 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0 d-flex gap-2">
-                    <a href="{{ route('manage.news.index') }}" class="btn btn-outline-secondary rounded-pill flex-fill"><i class="ti ti-refresh me-1"></i> Reset</a>
-                    <button type="submit" class="btn btn-primary rounded-pill flex-fill"><i class="ti ti-check me-1"></i> Apply Filter</button>
+                <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                    <!-- Reset Button (Placed on the left of Apply Filter) -->
+                    <a href="{{ route('manage.news.index') }}" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1">
+                        <i class="ti ti-rotate me-1"></i>
+                        <span>Reset</span>
+                    </a>
+
+                    <!-- Apply Filter Button -->
+                    <button type="submit" class="btn btn-primary px-3 d-inline-flex align-items-center gap-1">
+                        <i class="ti ti-check me-1"></i>
+                        <span>Apply Filter</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -479,15 +569,8 @@
 
 @section('script')
 <script>
-var newsSearchTimer;
-var newsSearchInput = document.getElementById('newsSearch');
-if (newsSearchInput) {
-    newsSearchInput.addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') return;
-        clearTimeout(newsSearchTimer);
-        var form = document.getElementById('manageNewsFilterForm');
-        newsSearchTimer = setTimeout(function() { if (form) form.submit(); }, 450);
-    });
-}
+document.addEventListener('DOMContentLoaded', function () {
+    // Autocomplete is handled by standardized initManageAutocomplete
+});
 </script>
 @endsection

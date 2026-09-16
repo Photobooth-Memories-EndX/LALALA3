@@ -65,9 +65,10 @@ class PlaylistUserControllerResolverTest extends TestCase
             'content_order'   => 0,
         ]);
 
-        // Historical completion in content_users
-        ContentUser::create([
+        // Playlist completion in playlist_content_users
+        PlaylistContentUser::create([
             'user_id'         => $this->user->id,
+            'trainingplan_id' => $plan->id,
             'content_id'      => $content->id,
             'progress'        => 100,
             'finish'          => '1',
@@ -209,15 +210,15 @@ class PlaylistUserControllerResolverTest extends TestCase
     }
 
     /**
-     * TEST 5: Opening playlist view initializes PCU record with resolved Category A historical progress
+     * TEST 5: Opening untouched playlist view initializes PCU record safely at 0% without leaking Direct Content
      */
-    public function test_viewing_playlist_initializes_pcu_with_historical_progress(): void
+    public function test_viewing_untouched_playlist_initializes_pcu_safely_at_zero(): void
     {
         $plan = TrainingPlan::create(['title' => 'Init PCU Plan', 'slug' => 'init-pcu-plan-' . rand(1000, 9999), 'active' => 'Active']);
         $content = Content::create(['title' => 'Init PCU Content', 'slug' => 'init-pcu-content-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'Y']);
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $content->id, 'content_order' => 0]);
 
-        // User has historical 80% in content_users
+        // User has direct progress 80% in content_users
         ContentUser::create([
             'user_id'          => $this->user->id,
             'content_id'       => $content->id,
@@ -234,14 +235,14 @@ class PlaylistUserControllerResolverTest extends TestCase
         ]));
         $response->assertStatus(200);
 
-        // PCU record is initialized with the historical 80% (not 0%)
+        // PCU record is initialized at 0% for the playlist (clean isolation)
         $this->assertDatabaseHas('playlist_content_users', [
             'user_id'         => $this->user->id,
             'trainingplan_id' => $plan->id,
             'content_id'      => $content->id,
-            'progress'        => 80,
+            'progress'        => 0,
             'finish'          => '0',
-            'learning_status' => 'in_progress',
+            'learning_status' => 'not_started',
         ]);
     }
 }

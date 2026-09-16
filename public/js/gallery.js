@@ -150,6 +150,7 @@
         var filterRegion = document.querySelector('[data-gallery-filter-region]');
         if (resultRegion) resultRegion.innerHTML = payload.html;
         if (filterRegion && payload.filters_html) filterRegion.outerHTML = payload.filters_html;
+        document.dispatchEvent(new CustomEvent('gallery:updated'));
     }
 
     function loadUrl(target, options) {
@@ -268,7 +269,106 @@
         loadUrl(target);
     });
 
+    function escapeGalleryHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // -------------------------------------------------------------------
+    // AUTOCOMPLETE DISABLED: now handled exclusively by gallery-script.blade.php
+    // Removed to prevent:
+    //   1. Cross-triggering via [name="q"] matching #header-search-input
+    //   2. searchResults.innerHTML overwrite destroying #gallery-autocomplete-list
+    //      and #gallery-search-footer dual-container DOM structure
+    // -------------------------------------------------------------------
+    // var gallerySearchTimer = null;
+    //
+    // document.addEventListener('input', function (event) {
+    //     if (!event.target.matches('#gallery-search-input, #gallery-search, [name="q"]')) return;
+    //     var input = event.target;
+    //     var searchResults = document.getElementById('gallery-search-results');
+    //     var value = input.value.trim();
+    //     clearTimeout(gallerySearchTimer);
+    //     if (!searchResults) return;
+    //     if (value.length < 1) {
+    //         searchResults.style.display = 'none';
+    //         searchResults.innerHTML = '';
+    //         return;
+    //     }
+    //     gallerySearchTimer = setTimeout(function () {
+    //         fetch('/gallery/search-autocomplete?q=' + encodeURIComponent(value), {
+    //             headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    //         })
+    //         .then(function (response) {
+    //             if (!response.ok) throw new Error('HTTP ' + response.status);
+    //             return response.json();
+    //         })
+    //         .then(function (data) {
+    //             if (!data || data.length === 0) {
+    //                 searchResults.innerHTML = '<div class="dropdown-item text-muted small py-2 px-3">No event galleries found</div>';
+    //             } else {
+    //                 var html = '';
+    //                 data.forEach(function (item) {
+    //                     var photoLabel = (item.photo_count || 0) + ' ' + (item.photo_count === 1 ? 'Photo' : 'Photos');
+    //                     var subDetails = [];
+    //                     subDetails.push(photoLabel);
+    //                     if (item.category) subDetails.push(escapeGalleryHtml(item.category));
+    //                     if (item.event_date) subDetails.push(escapeGalleryHtml(item.event_date));
+    //                     html += '<a href="#" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle gallery-search-item" data-title="' + escapeGalleryHtml(item.title) + '">' +
+    //                         '<div class="d-flex align-items-center justify-content-between mb-1">' +
+    //                             '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeGalleryHtml(item.title) + '</span>' +
+    //                             '<span class="badge bg-purple-lt text-purple small flex-shrink-0">GALLERY</span>' +
+    //                         '</div>' +
+    //                         '<div class="text-muted text-truncate" style="font-size: 0.75rem;">' + subDetails.join(' &bull; ') + '</div>' +
+    //                     '</a>';
+    //                 });
+    //                 searchResults.innerHTML = html;
+    //             }
+    //             searchResults.style.display = 'block';
+    //         })
+    //         .catch(function () {
+    //             searchResults.style.display = 'none';
+    //         });
+    //     }, 250);
+    // });
+    //
+    // document.addEventListener('focusin', function (event) {
+    //     if (!event.target.matches('#gallery-search-input, #gallery-search, [name="q"]')) return;
+    //     var searchResults = document.getElementById('gallery-search-results');
+    //     if (searchResults && event.target.value.trim().length >= 1 && searchResults.children.length > 0) {
+    //         searchResults.style.display = 'block';
+    //     }
+    // });
+    //
+    // document.addEventListener('keydown', function (event) {
+    //     if (event.target.matches('#gallery-search-input, #gallery-search, [name="q"]') && event.key === 'Enter') {
+    //         var searchResults = document.getElementById('gallery-search-results');
+    //         if (searchResults) searchResults.style.display = 'none';
+    //     }
+    // });
+
     document.addEventListener('click', function (event) {
+        var searchItem = event.target.closest('.gallery-search-item');
+        if (searchItem) {
+            event.preventDefault();
+            var title = searchItem.getAttribute('data-title') || '';
+            var searchInput = document.getElementById('gallery-search-input') || document.getElementById('gallery-search') || (form() ? form().querySelector('[name="q"]') : null);
+            var searchResults = document.getElementById('gallery-search-results');
+            if (searchInput) searchInput.value = title;
+            if (searchResults) searchResults.style.display = 'none';
+            var currentForm = form();
+            if (currentForm) currentForm.requestSubmit();
+            return;
+        }
+
+        var searchInputEl = document.getElementById('gallery-search-input') || document.getElementById('gallery-search');
+        var searchResultsEl = document.getElementById('gallery-search-results');
+        if (searchInputEl && searchResultsEl && !searchInputEl.contains(event.target) && !searchResultsEl.contains(event.target)) {
+            searchResultsEl.style.display = 'none';
+        }
+
         var quickFilter = event.target.closest('.gallery-quick-filter-item');
         if (quickFilter) {
             event.preventDefault();
@@ -310,6 +410,11 @@
         var reset = event.target.closest('[data-gallery-reset]');
         if (reset && page()) {
             event.preventDefault();
+            var searchResultsReset = document.getElementById('gallery-search-results');
+            if (searchResultsReset) {
+                searchResultsReset.style.display = 'none';
+                searchResultsReset.innerHTML = '';
+            }
             loadUrl(new URL(reset.href, window.location.origin));
             return;
         }

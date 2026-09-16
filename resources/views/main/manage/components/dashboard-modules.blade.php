@@ -142,11 +142,11 @@
                 auth()->user()->isSuperAdmin()
             )
 
-                <div class="mt-5 mb-5">
+                <div class="mt-4 mb-4">
 
-                    <hr class="my-5">
+                    <hr class="my-4 admin-section-divider">
 
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
                             <h2 class="mb-1">Super Administrator Access</h2>
                             <div class="text-muted">
@@ -186,8 +186,8 @@
             @if(auth()->user()->canAccessManageModule('learning_hours_management'))
                 @include('main.manage.components.admin-menu-card', [
                     'title' => 'Learning Hour Management',
-                    'description' => 'Manage and calculate learning hours for Content User records.',
-                    'url' => route('manage.learning-hours.content-user.index'),
+                    'description' => 'Manage and monitor learning hours for Content User and Playlist Content User records.',
+                    'url' => route('manage.learning-hours.index'),
                     'button' => 'Manage Learning Hours',
                     'icon' => 'ti ti-clock-check'
                 ])

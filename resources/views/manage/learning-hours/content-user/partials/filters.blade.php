@@ -2,6 +2,14 @@
     <div class="card-body p-4">
         <form id="filter-form" class="row g-3 align-items-end" onsubmit="return false;">
             <div class="col-md-3 col-lg-2">
+                <label class="form-label small fw-bold text-muted text-uppercase">Source</label>
+                <select class="form-select" id="filter-source" name="source">
+                    <option value="direct" selected>Direct Content</option>
+                    <option value="playlist">Playlist Content</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 col-lg-2">
                 <label class="form-label small fw-bold text-muted text-uppercase">Calculation Status</label>
                 <select class="form-select" id="filter-lh-status" name="learning_hours_status">
                     <option value="all" selected>All Records</option>
@@ -39,7 +47,17 @@
                 </select>
             </div>
 
-            <div class="col-md-6 col-lg-4 d-flex flex-wrap gap-2 justify-content-md-end">
+            <div class="col-md-3 col-lg-2">
+                <label class="form-label small fw-bold text-muted text-uppercase">Completion Year</label>
+                <select class="form-select" id="filter-year" name="year">
+                    <option value="all" selected>All Years</option>
+                    @foreach($years as $y)
+                        <option value="{{ $y }}">{{ $y }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="col-md-6 col-lg-2 d-flex flex-wrap gap-2 justify-content-md-end ms-auto">
                 <button type="button" id="btn-apply-filters" class="btn btn-primary">
                     <i class="ti ti-adjustments-horizontal me-1"></i> Apply Filter
                 </button>

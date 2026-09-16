@@ -12,7 +12,7 @@
                     created by {{ $content->author ?? '-' }}
                 </div>
 
-                <h2 class="mb-2 fs-2 fw-bold text-dark">
+                <h2 class="mb-2 fs-2 fw-bold text-dark content-detail-title">
                     {{ $content->title }}
                 </h2>
 
@@ -40,9 +40,9 @@
             </button>
         </div>
 
-        <div class="rounded-4 p-4 p-md-5" style="background-color: #f8fafc; border: 1px solid #f1f5f9;">
-            <div class="text-muted small fw-bold mb-3">Overview</div>
-            <div class="text-dark lh-lg fs-5" style="color: #212529 !important; font-size: 1.05rem !important;">{!! $content->description !!}</div>
+        <div class="rounded-4 p-4 p-md-5 content-overview-box">
+            <div class="text-muted small fw-bold mb-3 content-overview-heading">Overview</div>
+            <div class="text-dark lh-lg fs-5 content-overview-text">{!! $content->description !!}</div>
         </div>
 
     </div>

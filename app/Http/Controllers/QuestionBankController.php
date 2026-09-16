@@ -3,16 +3,126 @@
 namespace App\Http\Controllers;
 
 use App\Models\QuestionBank;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class QuestionBankController extends Controller
 {
-    public function index()
+    /**
+     * AJAX live autocomplete search for Question Bank Management.
+     */
+    public function autocompleteSearch(Request $request): JsonResponse
     {
-        $questionBanks = QuestionBank::latest()->get();
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
 
-        return view('main.question_bank.index', compact('questionBanks'));
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $questionBanks = QuestionBank::withCount('questions')
+            ->where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%");
+            })
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        $results = $questionBanks->map(function ($item) {
+            return [
+                'id'              => $item->id,
+                'title'           => $item->title,
+                'name'            => $item->title,
+                'type'            => 'QUESTION BANK',
+                'slug'            => $item->slug,
+                'questions_count' => (int) ($item->questions_count ?? 0),
+                'created_date'    => $item->created_date ? Carbon::parse($item->created_date)->format('d M Y') : ($item->created_at ? $item->created_at->format('d M Y') : null),
+                'url'             => route('question.bank.edit', $item->slug ?? $item->id),
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
+    public function index(Request $request)
+    {
+        $query = QuestionBank::with('questions')->withCount('questions');
+
+        // Search Filter
+        $search = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
+        if ($search !== '') {
+            $queryNormalized = str_replace("'", "’", $search);
+            $queryOriginal = str_replace("’", "'", $search);
+            $query->where(function ($q) use ($search, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$search}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Total Questions Filter
+        if ($request->filled('total_questions')) {
+            $totalQ = $request->get('total_questions');
+            if ($totalQ === '1_20' || $totalQ === '1-20') {
+                $query->has('questions', '>=', 1)->has('questions', '<=', 20);
+            } elseif ($totalQ === '20_40' || $totalQ === '20-40') {
+                $query->has('questions', '>=', 20)->has('questions', '<=', 40);
+            } elseif ($totalQ === '40_50' || $totalQ === '40-50') {
+                $query->has('questions', '>=', 40)->has('questions', '<=', 50);
+            } elseif ($totalQ === '50_100' || $totalQ === '50-100') {
+                $query->has('questions', '>=', 50)->has('questions', '<=', 100);
+            } elseif ($totalQ === 'gt_100' || $totalQ === '100+') {
+                $query->has('questions', '>', 100);
+            }
+        }
+
+        // Date Period Filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Sort by Created Date
+        $sortCreated = $request->get('sort_created', 'all');
+        if ($sortCreated === 'oldest') {
+            $query->orderBy('created_at', 'asc')->orderBy('id', 'asc');
+        } elseif ($sortCreated === 'newest') {
+            $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+        } else {
+            // 'all' -> default order
+            $query->latest('id');
+        }
+
+        $totalQuestionBank = QuestionBank::count();
+        $totalQuestions = \App\Models\Question::count();
+        $avgQuestions = $totalQuestionBank > 0 ? round($totalQuestions / $totalQuestionBank, 1) : 0;
+        $activeQuestionBank = $totalQuestionBank; // Question banks are active once created
+        $questionBanks = $query->paginate(15)->withQueryString();
+        $showingCount = $questionBanks->total();
+
+        return view('main.question_bank.index', compact(
+            'questionBanks',
+            'totalQuestionBank',
+            'totalQuestions',
+            'avgQuestions',
+            'activeQuestionBank',
+            'showingCount'
+        ));
     }
 
     public function create() 
@@ -31,6 +141,14 @@ class QuestionBankController extends Controller
         $questionBank->title        = $request->input('title');
         $questionBank->created_date = $request->input('created_date');
         $questionBank->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => $request->title . " has already successfully created in the question bank.",
+                'redirect' => route('question.bank.index')
+            ]);
+        }
 
         return redirect()->route('question.bank.index')->with('success',  $request->title . " has already successfully created in the question bank.");
     }
@@ -54,6 +172,14 @@ class QuestionBankController extends Controller
         $questionBank->title        = $request->title;
         $questionBank->created_date = $request->created_date;
         $questionBank->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => "Question Bank has already successfully updated.",
+                'redirect' => route('question.bank.index')
+            ]);
+        }
 
         return redirect()->route('question.bank.index')->with('warning',  "Question Bank has already successfully updated.");
     }

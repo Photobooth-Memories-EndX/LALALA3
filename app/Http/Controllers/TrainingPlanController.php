@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -13,13 +14,103 @@ use Illuminate\Support\Str;
 
 class TrainingPlanController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for Playlist Management (All Playlists / Training Plans).
+     */
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $playlists = TrainingPlan::withCount('trainingplandetail as total_contents')
+            ->where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('url_link', 'LIKE', "%{$rawQuery}%")
+                  ->orWhereHas('trainingplandetail.content', function ($cq) use ($rawQuery) {
+                      $cq->where('title', 'LIKE', "%{$rawQuery}%");
+                  });
+            })
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        $results = $playlists->map(function ($item) {
+            return [
+                'id'             => $item->id,
+                'title'          => $item->title,
+                'name'           => $item->title,
+                'type'           => 'PLAYLIST',
+                'slug'           => $item->slug,
+                'active'         => $item->active,
+                'total_contents' => (int) ($item->total_contents ?? 0),
+                'learning_hours' => $item->learning_hours,
+                'url'            => route('playlist.edit', $item->slug ?? $item->id),
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
+    /**
+     * AJAX live autocomplete search for active published playlists.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->get('q', ''));
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        $keyword = '%' . $query . '%';
+
+        $playlists = TrainingPlan::withCount([
+                'trainingplandetail as total_contents' => function ($q) {
+                    $q->whereHas('content', fn ($cq) => $cq->where('active', 'Active'));
+                }
+            ])
+            ->where('active', 'Active')
+            ->whereHas('trainingplandetail.content', fn ($q) => $q->where('active', 'Active'))
+            ->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', $keyword)
+                    ->orWhere('slug', 'like', $keyword)
+                    ->orWhere('url_link', 'like', $keyword)
+                    ->orWhereHas('trainingplandetail.content', fn ($cq) => $cq->where('title', 'like', $keyword));
+            })
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
+        $results = $playlists->map(function ($playlist) {
+            return [
+                'id'             => $playlist->id,
+                'title'          => $playlist->title,
+                'type'           => 'PLAYLIST',
+                'slug'           => $playlist->slug,
+                'total_contents' => (int) ($playlist->total_contents ?? 0),
+                'learning_hours' => $playlist->learning_hours,
+                'url'            => route('playlist.edit', $playlist->slug ?? $playlist->id),
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
     public function index(Request $request)
     {
         $query = TrainingPlan::query()->withCount('trainingplandetail');
 
         // Search Filter
-        if ($request->filled('search') || $request->filled('s')) {
-            $search = $request->filled('search') ? $request->search : $request->s;
+        if ($request->filled('q') || $request->filled('search') || $request->filled('s')) {
+            $search = $request->filled('q') ? $request->q : ($request->filled('search') ? $request->search : $request->s);
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('slug', 'like', "%{$search}%")
@@ -190,7 +281,7 @@ class TrainingPlanController extends Controller
         $totalMaterials      = TrainingPlanDetail::count();
 
         return view('main.trainingplan.index', [
-            'title'               => 'Training Plan Management',
+            'title'               => 'Playlist Management',
             'trainingplans'       => $trainingplans,
             'authors'             => $authors,
             'totalTrainingPlan'   => $totalTrainingPlan,
@@ -299,6 +390,19 @@ class TrainingPlanController extends Controller
 
             DB::commit();
             $addmessage = $request->action == "publish" ? " and published" : "";
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'   => 200,
+                    'message'  => 'Playlist successfully saved' . $addmessage,
+                    'redirect' => route('playlist.index')
+                ]);
+            }
+
+            if ($request->action === 'draft') {
+                return to_route('playlist.index')->with('success', 'Playlist saved as draft successfully.');
+            }
+
             return to_route('playlist.edit', $trainingplan->slug)->with('success', 'Playlist successfully saved ' . $addmessage);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -405,8 +509,18 @@ class TrainingPlanController extends Controller
 
                     DB::commit();
 
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'status'   => 200,
+                            'message'  => 'Playlist unpublished successfully',
+                            'redirect' => route('playlist.index')
+                        ]);
+                    }
+
                     session()->flash('success', 'Playlist updated successfully');
                     return redirect()->route('playlist.edit', $trainingplan->slug);
+                } else if ($request->action == "draft") {
+                    $trainingplan->active = "Inactive";
                 }
 
                 $trainingplan->save();
@@ -434,6 +548,18 @@ class TrainingPlanController extends Controller
             app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
             app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
             DB::commit();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'   => 200,
+                    'message'  => 'Playlist updated successfully',
+                    'redirect' => route('playlist.index')
+                ]);
+            }
+
+            if ($request->action === 'draft') {
+                return to_route('playlist.index')->with('success', 'Playlist saved as draft successfully.');
+            }
 
             session()->flash('success', 'Playlist updated successfully');
             return redirect()->route('playlist.edit', $trainingplan->slug);

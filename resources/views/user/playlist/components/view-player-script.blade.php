@@ -103,7 +103,8 @@
                 let pdfFile = "{{ asset('storage/files/content/' . $content->id) }}/" + fileNameFixed;
 
                 var isDocument = @json($content->type === 'Document');
-                var rawPageDuration = {{ (int) ($content->page_duration ?? 30) }};
+                var rawDuration = @json($content->page_duration ?? ($content->duration_page ?? null));
+                var rawPageDuration = rawDuration !== null && rawDuration !== undefined ? Number(rawDuration) : 30;
                 var isPlaylistScrollMode = isDocument && rawPageDuration === 0;
 
                 if (isPlaylistScrollMode) {
@@ -120,6 +121,7 @@
                         nextButtonId: 'playlist-pdf-next-page',
                         completedPages: {{ (int) ($content_user->last_page ?? 0) }},
                         contentCompleted: {{ (int) ($content_user->finish ?? 0) }} === 1,
+                        totalPages: {{ (int) ($content->total_page ?? 0) }},
                         onPageProgress: function(readPage, totalPages) {
                             progressTracker.sendDebounced({
                                 last_page: readPage,
@@ -175,7 +177,7 @@
                 } else {
                     // EXISTING PLAYLIST DOCUMENT PAGINATION / SOP LOGIC (100% UNCHANGED)
                     var isTimedDocument = isDocument;
-                    var documentPageDuration = {{ max(1, (int) ($content->page_duration ?: 30)) }};
+                    var documentPageDuration = Math.max(1, rawPageDuration || 30);
                     @php
                         $vpInitialLastPage = (int) ($content_user->last_page ?? 0);
                         if ($vpInitialLastPage <= 0 && (int) ($content_user->progress ?? 0) > 0 && (int) ($content->total_page ?? 0) > 0) {
@@ -357,6 +359,9 @@
         e.preventDefault();
 
         var $btn = $(this);
+        if ($btn.hasClass('lesson-assessment-button')) {
+            return;
+        }
         var $modal = $('#assessmentAccessModal');
 
         var targetUrl = $btn.data('target-url') || $btn.attr('data-target-url');

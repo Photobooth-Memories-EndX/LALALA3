@@ -8,10 +8,11 @@
             <tr>
                 @php
                     $headers = [
-                        ['label' => 'NO', 'class' => 'text-center align-middle', 'style' => 'width: 60px;'],
+                        ['label' => 'NO', 'class' => 'text-center align-middle', 'style' => 'width: 50px;'],
                         ['label' => 'ASSESSMENT', 'class' => 'text-start align-middle', 'style' => ''],
-                        ['label' => 'DATE TIME', 'class' => 'text-start align-middle', 'style' => 'width: 170px;'],
-                        ['label' => 'TYPE', 'class' => 'text-center align-middle', 'style' => 'width: 95px;'],
+                        ['label' => 'TYPE', 'class' => 'text-center align-middle', 'style' => 'width: 155px;'],
+                        ['label' => 'CATEGORY', 'class' => 'text-center align-middle', 'style' => 'width: 110px;'],
+                        ['label' => 'DATE & TIME', 'class' => 'text-start align-middle', 'style' => 'width: 170px;'],
                         ['label' => 'SCORE', 'class' => 'text-center align-middle', 'style' => 'width: 95px;'],
                         ['label' => 'STATUS', 'class' => 'text-center align-middle', 'style' => 'width: 130px;'],
                     ];

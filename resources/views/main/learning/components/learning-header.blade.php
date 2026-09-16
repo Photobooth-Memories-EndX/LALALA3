@@ -16,11 +16,6 @@
                     <i class="ti ti-table" aria-hidden="true"></i>
                     <span>Open Learning Table</span>
                 </a>
-                <a href="{{ route('manage.index') }}"
-                   class="btn manage-learning-hero__action manage-learning-hero__action--secondary">
-                    <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
-                    <span>Back to Dashboard</span>
-                </a>
             </div>
         </div>
 
@@ -37,29 +32,71 @@
         </aside>
     </section>
 @else
-    <header class="learning-table-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-        <div>
-            <div class="text-uppercase text-muted small fw-semibold">Manage Learning</div>
-            <h1 class="page-title mb-1">{{ $title ?? 'Learning' }}</h1>
-            <div class="text-muted">Monitor progress, status, and completion without loading the full dataset at once.</div>
-        </div>
+    <!-- TOMBOL BACK RATA KIRI ATAS -->
+    <div class="mb-3">
+        <a href="{{ route('manage.index') }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none fw-medium">
+            <i class="ti ti-arrow-left"></i>
+            <span>Back</span>
+        </a>
+    </div>
 
-        <div class="d-flex gap-2">
-            <a href="{{ route('learning.manage.all') }}" class="btn btn-outline-primary">
-                <i class="ti ti-layout-grid me-1"></i>
-                All Learning
-            </a>
-            <a href="{{ route('manage.index') }}" class="btn btn-outline-secondary">
-                <i class="ti ti-arrow-left me-1"></i>
-                Back
-            </a>
+    <div class="card border-0 shadow-sm p-4 mb-3 rounded-3 bg-white manage-learning-header">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 manage-learning-icon-box"
+                     style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d; border-radius: 12px;">
+                    <i class="ti ti-school" style="font-size: 2rem !important;"></i>
+                </div>
+                <div>
+                    <h2 class="h3 fw-bold mb-1 text-dark">{{ $title ?? 'Manage Learning' }}</h2>
+                    <p class="text-muted small mb-0">Monitor learning progress, status, and employee training completion in OWL LMS.</p>
+                </div>
+            </div>
+            {{-- <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <a href="{{ route('learning.manage.index') }}" class="btn btn-outline-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2">
+                    <i class="ti ti-layout-dashboard fs-2"></i> Dashboard
+                </a>
+            </div> --}}
         </div>
-    </header>
+    </div>
 @endif
 
 @once
     @push('styles')
         <style>
+            [data-bs-theme="dark"] .manage-learning-header,
+            body.dark-mode .manage-learning-header,
+            body.theme-dark .manage-learning-header {
+                background-color: #1e293b !important;
+                color: #f8fafc !important;
+                border-color: rgba(255, 255, 255, 0.1) !important;
+            }
+
+            [data-bs-theme="dark"] .manage-learning-header .text-dark,
+            body.dark-mode .manage-learning-header .text-dark,
+            body.theme-dark .manage-learning-header .text-dark {
+                color: #f8fafc !important;
+            }
+
+            [data-bs-theme="dark"] .manage-learning-icon-box,
+            body.dark-mode .manage-learning-icon-box,
+            body.theme-dark .manage-learning-icon-box {
+                background-color: rgba(0, 59, 109, 0.35) !important;
+                color: #38bdf8 !important;
+            }
+
+            @media (max-width: 768px) {
+                .manage-learning-header {
+                    padding: 1.25rem !important;
+                }
+                .manage-learning-icon-box {
+                    width: 56px !important;
+                    height: 56px !important;
+                }
+                .manage-learning-icon-box i {
+                    font-size: 1.6rem !important;
+                }
+            }
             .manage-learning-hero {
                 display: grid;
                 grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);

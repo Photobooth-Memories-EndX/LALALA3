@@ -159,7 +159,9 @@ Top Learning
 
 <img
 src="https://img.youtube.com/vi/{{ $item->link }}/mqdefault.jpg"
-class="img-fluid rounded-top">
+class="img-fluid rounded-top"
+loading="lazy"
+onerror="this.onerror=null;this.src='{{ asset('default-video.jpg') }}'">
 
 @endif
 

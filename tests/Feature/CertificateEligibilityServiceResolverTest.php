@@ -125,12 +125,13 @@ class CertificateEligibilityServiceResolverTest extends TestCase
             'issuer_name'      => 'OWL Test',
         ]);
 
-        // Historical 100% in content_users, single active playlist -> Eligible via Category A
-        ContentUser::create([
-            'user_id'    => $this->userA->id,
-            'content_id' => $content->id,
-            'progress'   => 100,
-            'finish'     => '1',
+        // 100% in playlist_content_users -> Eligible
+        PlaylistContentUser::create([
+            'user_id'         => $this->userA->id,
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $content->id,
+            'progress'        => 100,
+            'finish'          => '1',
         ]);
 
         $result = $this->service->check($setting, $this->userA);

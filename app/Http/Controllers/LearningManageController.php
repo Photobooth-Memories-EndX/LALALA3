@@ -6,6 +6,8 @@ use App\Exports\LearningExport;
 use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
+use App\Models\PlaylistContentUser;
+use App\Models\User;
 use App\Services\Learning\LearningDatatableService;
 use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
@@ -14,34 +16,61 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class LearningManageController extends Controller
 {
+    public const PLAYLIST_CUTOFF = '2026-08-28 23:59:59';
+
     public function index()
     {
-        $totalLearning = ContentUser::count();
-        $ongoing = ContentUser::where('finish', '0')->count();
-        $finish = ContentUser::where('finish', '1')->count();
+        $cuTotal = ContentUser::count();
+        $cuOngoing = ContentUser::where('finish', '0')->count();
+        $cuFinish = ContentUser::where('finish', '1')->count();
+
+        $pcuTotal = PlaylistContentUser::count();
+        $pcuOngoing = PlaylistContentUser::where('finish', '0')->count();
+        $pcuFinish = PlaylistContentUser::where('finish', '1')->count();
+
+        $totalLearning = $cuTotal + $pcuTotal;
+        $ongoing = $cuOngoing + $pcuOngoing;
+        $finish = $cuFinish + $pcuFinish;
 
         $completionRate = $totalLearning > 0
             ? round(($finish / $totalLearning) * 100, 1)
             : 0;
+
+        $unifiedSubquery = DB::table('content_users')
+            ->select([
+                'id',
+                'content_id',
+                'finish',
+            ])
+            ->unionAll(
+                DB::table('playlist_content_users')
+                    ->select([
+                        'id',
+                        'content_id',
+                        'finish',
+                    ])
+            );
 
         $classification = DB::table('classification')
             ->leftJoin('content', function ($join) {
                 $join->on('content.classification_id', '=', 'classification.id')
                     ->whereNull('content.deleted_at');
             })
-            ->leftJoin('content_users', 'content_users.content_id', '=', 'content.id')
+            ->leftJoinSub($unifiedSubquery, 'learning_records', function ($join) {
+                $join->on('learning_records.content_id', '=', 'content.id');
+            })
             ->select([
                 'classification.id',
                 DB::raw('MIN(classification.classification_name) as classification_name'),
                 DB::raw('MIN(classification.slug) as slug'),
                 DB::raw('COUNT(DISTINCT content.id) as content_total'),
-                DB::raw('COUNT(content_users.id) as total_learning'),
+                DB::raw('COUNT(learning_records.id) as total_learning'),
 
                 DB::raw("
                     COALESCE(
                         SUM(
                             CASE 
-                                WHEN content_users.finish = '0' THEN 1 
+                                WHEN learning_records.finish = '0' THEN 1 
                                 ELSE 0 
                             END
                         ), 0
@@ -52,7 +81,7 @@ class LearningManageController extends Controller
                     COALESCE(
                         SUM(
                             CASE 
-                                WHEN content_users.finish = '1' THEN 1 
+                                WHEN learning_records.finish = '1' THEN 1 
                                 ELSE 0 
                             END
                         ), 0
@@ -63,7 +92,7 @@ class LearningManageController extends Controller
                     COALESCE(
                         SUM(
                             CASE 
-                                WHEN content_users.id IS NOT NULL 
+                                WHEN learning_records.id IS NOT NULL 
                                     AND content.duration IS NOT NULL 
                                     AND content.duration != ''
                                 THEN CASE
@@ -98,6 +127,11 @@ class LearningManageController extends Controller
 
     public function all(Request $request)
     {
+        if ($request->input('action') === 'download') {
+            return (new LearningExport($request->all(), '', ''))
+                ->download(now()->format('Ymd_His') . '_learning.xlsx');
+        }
+
         return view('main.learning.all', $this->learningViewData($request, 'All Learning'));
     }
 
@@ -106,15 +140,8 @@ class LearningManageController extends Controller
         $classification = Classification::where('slug', $slug)->firstOrFail();
 
         if ($request->input('action') === 'download') {
-            return Excel::download(
-                new LearningExport(
-                    'category',
-                    $this->normalizeExportFilter($request->input('status')),
-                    $this->normalizeExportFilter($request->input('year')),
-                    $slug
-                ),
-                now()->format('Ymd_His') . '_learning.xlsx'
-            );
+            return (new LearningExport($request->all(), 'category', $slug))
+                ->download(now()->format('Ymd_His') . '_learning.xlsx');
         }
 
         return view('main.learning.all', $this->learningViewData(
@@ -129,15 +156,8 @@ class LearningManageController extends Controller
         $contentModel = Content::where('slug', $slug)->first();
 
         if ($request->input('action') === 'download') {
-            return Excel::download(
-                new LearningExport(
-                    'content',
-                    $this->normalizeExportFilter($request->input('status')),
-                    $this->normalizeExportFilter($request->input('year')),
-                    $slug
-                ),
-                now()->format('Ymd_His') . '_learning.xlsx'
-            );
+            return (new LearningExport($request->all(), 'content', $slug))
+                ->download(now()->format('Ymd_His') . '_learning.xlsx');
         }
 
         return view('main.learning.all', $this->learningViewData(
@@ -145,6 +165,79 @@ class LearningManageController extends Controller
             'Content: ' . ($contentModel->title ?? $slug),
             $slug
         ));
+    }
+
+    public function searchEmployees(Request $request)
+    {
+        $query = trim((string) ($request->get('q') ?? ($request->get('search') ?? $request->get('employee_q', ''))));
+        if (!$query) {
+            return response()->json(['results' => []]);
+        }
+
+        $users = User::where('id_emp', 'LIKE', "%{$query}%")
+            ->orWhere('name', 'LIKE', "%{$query}%")
+            ->limit(15)
+            ->get(['id', 'id_emp', 'name']);
+
+        $results = $users->map(function ($user) use ($query) {
+            $isIdMatch = ($user->id_emp && str_contains(strtolower((string) $user->id_emp), strtolower($query)));
+
+            return [
+                'id'    => $user->id,
+                'title' => $isIdMatch ? (string) $user->id_emp : $user->name,
+                'label' => $isIdMatch ? (string) $user->id_emp : $user->name,
+                'type'  => $isIdMatch ? 'NIP' : 'EMPLOYEE',
+                'value' => $isIdMatch ? (string) $user->id_emp : $user->name,
+                'subtext' => $isIdMatch ? ($user->name ?? '') : ($user->id_emp ? "NIP: {$user->id_emp}" : ''),
+            ];
+        });
+
+        return response()->json(['results' => $results]);
+    }
+
+    public function searchTitles(Request $request)
+    {
+        $term = trim((string) ($request->input('q') ?? ($request->input('search') ?? $request->input('title_q', ''))));
+        $results = [];
+
+        $query = Content::with('classification:id,classification_name')
+            ->select('id', 'title', 'classification_id', 'slug')
+            ->whereNotNull('title')
+            ->where('title', '!=', '');
+
+        if ($term !== '') {
+            $queryNormalized = str_replace("'", "’", $term);
+            $queryOriginal = str_replace("’", "'", $term);
+            $query->where(function ($q) use ($term, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'like', "%{$term}%")
+                  ->orWhere('title', 'like', "%{$queryNormalized}%")
+                  ->orWhere('title', 'like', "%{$queryOriginal}%")
+                  ->orWhere('slug', 'like', "%{$term}%");
+            });
+        }
+
+        $contents = $query->limit(10)->get();
+
+        foreach ($contents as $content) {
+            $catName = $content->classification->classification_name ?? 'Content';
+            $results[] = [
+                'id'      => $content->title,
+                'value'   => $content->title,
+                'label'   => $content->title,
+                'title'   => $content->title,
+                'name'    => $content->title,
+                'text'    => $content->title,
+                'subtext' => $catName,
+            ];
+        }
+
+        return response()->json(['results' => $results]);
+    }
+
+    public function download(Request $request)
+    {
+        return (new LearningExport($request->all(), $request->input('type', ''), $request->input('slug', '')))
+            ->download(now()->format('Ymd_His') . '_learning_data.xlsx');
     }
 
     public function datatable(Request $request, LearningDatatableService $datatableService)

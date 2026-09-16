@@ -742,6 +742,168 @@ function initLearningRecord() {
         render();
     });
 
+    // ── Category Hover/Click Preview (Popup) ────────────────────────────────
+
+    function initCourseHoverPreview() {
+        var $popup = $('#learningRecordCoursePopup');
+        if (!$popup.length) {
+            $popup = $('<div id="learningRecordCoursePopup" class="learning-record-hover-popup" style="display:none;"></div>').appendTo('body');
+        }
+
+        var hideTimer = null;
+
+        function showPopup(trigger) {
+            clearTimeout(hideTimer);
+            var $trigger = $(trigger);
+            var $cell = $trigger.closest('.learning-record-category');
+            var $template = $cell.find('.course-preview-template');
+            if (!$template.length) {
+                $template = $trigger.closest('tr').find('.course-preview-template');
+            }
+
+            if (!$template.length) {
+                return;
+            }
+
+            var htmlContent = $.trim($template.html());
+            if (!htmlContent) {
+                return;
+            }
+
+            $popup.data('activeTrigger', trigger);
+
+            // Set fixed offscreen positioning first to measure intrinsic dimensions accurately
+            $popup.html(htmlContent).stop(true, true).css({
+                position: 'fixed',
+                top: '0px',
+                left: '0px',
+                right: 'auto',
+                bottom: 'auto',
+                display: 'block',
+                visibility: 'hidden',
+                opacity: 0
+            });
+
+            var rect = trigger.getBoundingClientRect();
+            var popupWidth = $popup.outerWidth();
+            var popupHeight = $popup.outerHeight();
+            var viewportWidth = window.innerWidth || document.documentElement.clientWidth || $(window).width();
+            var viewportHeight = window.innerHeight || document.documentElement.clientHeight || $(window).height();
+
+            var gap = 6;
+            var edge = 12;
+
+            // Anchor horizontally: center popup with trigger badge
+            var triggerCenterX = rect.left + (rect.width / 2);
+            var left = triggerCenterX - (popupWidth / 2);
+
+            // Constrain left within viewport edges
+            if (left + popupWidth > viewportWidth - edge) {
+                left = viewportWidth - popupWidth - edge;
+            }
+            if (left < edge) {
+                left = edge;
+            }
+
+            // Anchor vertically: prefer below, flip above if space below is tight and more space above
+            var spaceBelow = viewportHeight - rect.bottom;
+            var spaceAbove = rect.top;
+            var top;
+
+            if (spaceBelow < popupHeight + gap + edge && spaceAbove > spaceBelow) {
+                top = rect.top - popupHeight - gap;
+            } else {
+                top = rect.bottom + gap;
+            }
+
+            // Constrain top within viewport edges so popup never overflows outside the screen
+            if (top + popupHeight > viewportHeight - edge) {
+                top = Math.max(edge, viewportHeight - popupHeight - edge);
+            }
+            if (top < edge) {
+                top = edge;
+            }
+
+            $popup.css({
+                position: 'fixed',
+                top: Math.round(top) + 'px',
+                left: Math.round(left) + 'px',
+                right: 'auto',
+                bottom: 'auto',
+                visibility: 'visible'
+            }).animate({ opacity: 1 }, 120);
+        }
+
+        function hidePopup() {
+            clearTimeout(hideTimer);
+            $popup.data('activeTrigger', null);
+            $popup.stop(true, true).fadeOut(120, function () {
+                $popup.empty();
+            });
+        }
+
+        function scheduleHide() {
+            hideTimer = setTimeout(function () {
+                hidePopup();
+            }, 250); // 250ms grace period allows seamless movement from trigger to popup
+        }
+
+        $table.off('.categoryPreview')
+            .on('mouseenter.categoryPreview', '.category-preview-trigger', function () {
+                showPopup(this);
+            })
+            .on('mouseleave.categoryPreview', '.category-preview-trigger', function () {
+                scheduleHide();
+            })
+            .on('click.categoryPreview', '.category-preview-trigger', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if ($popup.is(':visible') && $popup.data('activeTrigger') === this) {
+                    hidePopup();
+                } else {
+                    showPopup(this);
+                }
+            });
+
+        $popup.off('.categoryPreview')
+            .on('mouseenter.categoryPreview', function () {
+                clearTimeout(hideTimer);
+            })
+            .on('mouseleave.categoryPreview', function () {
+                scheduleHide();
+            });
+
+        $(document).off('click.categoryPreviewDoc').on('click.categoryPreviewDoc', function (e) {
+            if ($popup.is(':visible') && !$(e.target).closest('#learningRecordCoursePopup, .category-preview-trigger').length) {
+                hidePopup();
+            }
+        });
+
+        function handleScrollEvent(e) {
+            if (!$popup.is(':visible')) return;
+            // If scroll originates inside the popup body (e.g. user scrolling the playlist item list), keep popup open
+            if (e.target && $(e.target).closest('#learningRecordCoursePopup').length) {
+                return;
+            }
+            hidePopup();
+        }
+
+        window.removeEventListener('scroll', handleScrollEvent, true);
+        window.addEventListener('scroll', handleScrollEvent, true);
+
+        $(window).off('resize.categoryPreview').on('resize.categoryPreview', function () {
+            if ($popup.is(':visible')) {
+                hidePopup();
+            }
+        });
+
+        $(document).off('keydown.categoryPreview').on('keydown.categoryPreview', function (e) {
+            if (e.key === 'Escape') {
+                hidePopup();
+            }
+        });
+    }
+
     restoreRecordFiltersFromUrl();
     applyModeVisibility(false);
     updateFilterBadge();
@@ -750,5 +912,6 @@ function initLearningRecord() {
         updateSortIcons();
     }
     updateExportUrl();
+    initCourseHoverPreview();
     render();
 }

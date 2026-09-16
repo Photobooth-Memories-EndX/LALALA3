@@ -44,6 +44,42 @@
                         <span>Edit Score</span>
                     </a>
 
+                    <div class="btn-group" id="bulkDuplicateGroup">
+                        <button type="button"
+                                id="btnOpenBulkDuplicate"
+                                class="btn btn-outline-primary d-inline-flex align-items-center"
+                                disabled
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalBulkDuplicateAssessment"
+                                data-toggle="modal"
+                                data-target="#modalBulkDuplicateAssessment"
+                                title="Duplicate selected active content assessments">
+                            <i class="fas fa-copy me-2 mr-2"></i>
+                            <span id="bulkDuplicateBtnText">Bulk Duplicate</span>
+                        </button>
+                        <button type="button"
+                                class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split"
+                                data-bs-toggle="dropdown"
+                                data-toggle="dropdown"
+                                aria-expanded="false"
+                                title="Bulk duplicate options">
+                            <span class="visually-hidden sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-right">
+                            <li>
+                                <a class="dropdown-item btn-open-bulk-all"
+                                   href="javascript:void(0)"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#modalBulkDuplicateAssessment"
+                                   data-toggle="modal"
+                                   data-target="#modalBulkDuplicateAssessment">
+                                    <i class="fas fa-layer-group me-2 mr-2 text-primary"></i>
+                                    Duplicate All Active Content ({{ $totalActiveContentCount ?? 39 }})
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
                     <a href="{{ route('assesment.create') }}"
                        class="btn btn-primary d-inline-flex align-items-center">
                         <i class="fas fa-plus me-2"></i>

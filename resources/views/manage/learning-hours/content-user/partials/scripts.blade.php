@@ -18,14 +18,16 @@ $(function () {
             [25, 50, 100, 250],
             [25, 50, 100, 250]
         ],
-        order: [[8, 'desc']], // order by updated_at by default
+        order: [[8, 'desc']], // order by completed_at by default
         ajax: {
             url: "{{ route('manage.learning-hours.content-user.datatable') }}",
             data: function (d) {
+                d.source = $('#filter-source').val();
                 d.learning_hours_status = $('#filter-lh-status').val();
                 d.status = $('#filter-status').val();
                 d.content_type = $('#filter-type').val();
                 d.classification_slug = $('#filter-classification').val();
+                d.year = $('#filter-year').val();
             }
         },
         columns: [
@@ -35,9 +37,11 @@ $(function () {
             { data: 'content_title', name: 'content.title' },
             { data: 'content_type', name: 'content.type' },
             { data: 'duration', name: 'content.duration' },
-            { data: 'learning_hours_badge', name: 'learning_hours' },
-            { data: 'status_badge', name: 'status' },
-            { data: 'calculated_date', name: 'updated_at' },
+            { data: 'progress_bar', name: 'content_users.progress' },
+            { data: 'learning_hours_badge', name: 'content_users.learning_hours' },
+            { data: 'completed_at', name: 'content_users.completed_at' },
+            { data: 'year', name: 'content_users.completed_at', orderable: false, searchable: false },
+            { data: 'status_badge', name: 'content_users.status' },
             { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
         ],
         language: {
@@ -55,7 +59,7 @@ $(function () {
         }
     });
 
-    // Checkbox selection
+    // Check All Checkbox
     $('#check-all').on('change', function () {
         const isChecked = $(this).is(':checked');
         $('.record-checkbox').each(function () {
@@ -97,10 +101,12 @@ $(function () {
 
     $('#btn-reset-filters').on('click', function () {
         $('#filter-form')[0].reset();
+        $('#filter-source').val('direct');
         $('#filter-lh-status').val('all');
         $('#filter-status').val('all');
         $('#filter-type').val('all');
         $('#filter-classification').val('all');
+        $('#filter-year').val('all');
         selectedIds.clear();
         updateBulkButtons();
         table.search('').draw();
@@ -130,7 +136,8 @@ $(function () {
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',
-                ids: ids
+                ids: ids,
+                context: $('#filter-source').val()
             },
             success: function (res) {
                 if (res.success) {
@@ -166,6 +173,7 @@ $(function () {
     // Recalculate Single Row
     $(document).on('click', '.btn-recalculate-single', function () {
         const id = $(this).data('id');
+        const context = $(this).data('context') || $('#filter-source').val();
         const $btn = $(this);
         const originalHtml = $btn.html();
 
@@ -176,7 +184,8 @@ $(function () {
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',
-                ids: [id]
+                ids: [id],
+                context: context
             },
             success: function (res) {
                 if (res.success) {
@@ -189,6 +198,18 @@ $(function () {
             },
             complete: function () {
                 $btn.prop('disabled', false).html(originalHtml);
+            }
+        });
+    });
+
+    // Source Filter Change
+    $('#filter-source').on('change', function () {
+        selectedIds.clear();
+        updateBulkButtons();
+        table.ajax.reload();
+        $.get("{{ route('manage.learning-hours.content-user.statistics') }}", { source: $(this).val() }, function (res) {
+            if (res.success && res.statistics) {
+                updateStatsUI(res.statistics);
             }
         });
     });

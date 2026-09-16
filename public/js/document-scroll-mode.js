@@ -2,8 +2,15 @@
  * OWL LMS - Document Scroll Mode (Continuous Vertical Reader)
  * Isolated controller for self-paced PDF reading with continuous vertical scrolling.
  */
-(function (window, document) {
+(function (global) {
     'use strict';
+    var window = global;
+    var document = global.document || {
+        getElementById: function () { return null; },
+        querySelector: function () { return null; },
+        querySelectorAll: function () { return []; },
+        addEventListener: function () {}
+    };
 
     function DocumentScrollMode(config) {
         this.config = Object.assign({
@@ -19,6 +26,7 @@
             nextButtonId: 'pdf-next-page',
             completedPages: 0,
             contentCompleted: false,
+            totalPages: 0,
             onPageProgress: null
         }, config || {});
 
@@ -26,8 +34,8 @@
         this.pdfUrl = '';
         this.rotation = 0;
         this.documentReady = false;
-        this.totalPages = 0;
-        this.currentPage = 1;
+        this.totalPages = Math.max(0, parseInt(this.config.totalPages, 10) || 0);
+        this.currentPage = Math.max(1, parseInt(this.config.completedPages, 10) || 1);
         this.maxPagesRead = Math.max(1, parseInt(this.config.completedPages, 10) || 1);
         this.contentCompleted = Boolean(this.config.contentCompleted);
         this.observer = null;
@@ -66,7 +74,10 @@
 
             onDocumentReady: function () {
                 var viewerInstance = this;
-                self.totalPages = viewerInstance.getPageCount();
+                var pageCount = viewerInstance.getPageCount();
+                if (pageCount > 0) {
+                    self.totalPages = pageCount;
+                }
 
                 if (self.contentCompleted && self.totalPages > 0) {
                     self.maxPagesRead = self.totalPages;
@@ -94,10 +105,11 @@
 
             onActivePageChanged: function (page, pageno) {
                 var pageNum = parseInt(pageno, 10) || 1;
+                var total = this.getPageCount() || self.totalPages;
                 self.currentPage = pageNum;
-                self.updatePageLabel(pageNum, this.getPageCount());
+                self.updatePageLabel(pageNum, total);
                 self.updateNavigationButtons(pageNum);
-                self.markPageRead(pageNum, this.getPageCount());
+                self.markPageRead(pageNum, total);
 
                 if (typeof handlers.onActivePageChanged === 'function') {
                     handlers.onActivePageChanged.call(this, page, pageno);
@@ -123,7 +135,10 @@
                 if (!pageNum) return;
 
                 if (entry.isIntersecting && entry.intersectionRatio >= 0.25) {
-                    visibleMap.set(pageNum, entry.intersectionRatio);
+                    visibleMap.set(pageNum, {
+                        ratio: entry.intersectionRatio,
+                        target: entry.target
+                    });
                     self.markPageRead(pageNum, self.totalPages);
                 } else if (!entry.isIntersecting || entry.intersectionRatio < 0.1) {
                     visibleMap.delete(pageNum);
@@ -134,12 +149,23 @@
             if (visibleMap.size > 0) {
                 var bestPage = null;
                 var bestRatio = -1;
-                visibleMap.forEach(function (ratio, p) {
+                visibleMap.forEach(function (data, p) {
+                    var ratio = typeof data === 'object' && data !== null ? data.ratio : data;
                     if (ratio > bestRatio) {
                         bestRatio = ratio;
                         bestPage = p;
                     }
                 });
+
+                // Stability check: if current page is still visible with ratio close to bestRatio,
+                // keep current page to avoid flickering between adjacent pages.
+                if (self.currentPage && visibleMap.has(self.currentPage)) {
+                    var currentItem = visibleMap.get(self.currentPage);
+                    var currentRatio = typeof currentItem === 'object' && currentItem !== null ? currentItem.ratio : currentItem;
+                    if (bestRatio - currentRatio < 0.08) {
+                        bestPage = self.currentPage;
+                    }
+                }
 
                 if (bestPage && bestPage !== self.currentPage) {
                     self.currentPage = bestPage;
@@ -191,10 +217,30 @@
         if (shell) {
             shell.classList.remove('owl-pdf-single-page');
             shell.classList.add('owl-pdf-scroll-mode');
+            shell.dataset.readingMode = 'scroll';
+
+            // In scroll mode, hide Previous/Next buttons and countdown timer
+            var navButtons = shell.querySelectorAll(
+                '[data-pdf-nav], .pdf-page-navigation-btn, .pdf-page-navigation-previous, .pdf-page-navigation-next, .pdf-tb-reading-timing'
+            );
+            navButtons.forEach(function (el) {
+                el.style.display = 'none';
+            });
+
+            // Ensure navigation bar is flex-centered and visible
+            var nav = shell.querySelector('.pdf-page-navigation');
+            if (nav) {
+                nav.classList.add('is-scroll-mode');
+                nav.style.display = 'flex';
+            }
         }
 
         this.bindControls();
         this.updateDownloadLink();
+
+        if (this.totalPages > 0) {
+            this.updatePageLabel(this.currentPage, this.totalPages);
+        }
 
         return this;
     };
@@ -274,36 +320,42 @@
     };
 
     DocumentScrollMode.prototype.updatePageLabel = function (page, totalPages) {
+        var pageNum = Math.max(1, parseInt(page, 10) || this.currentPage || 1);
+        var total = Math.max(0, parseInt(totalPages || this.totalPages || (this.viewer && typeof this.viewer.getPageCount === 'function' ? this.viewer.getPageCount() : 0), 10) || 0);
+
+        if (total > 0) {
+            this.totalPages = total;
+        }
+        this.currentPage = pageNum;
+
         var shell = this.getShell();
-        var label = shell ? shell.querySelector('.pageno') : null;
-        if (label) {
-            label.textContent = (page || 1) + ' / ' + (totalPages || this.totalPages || '--');
+        if (shell) {
+            var labels = shell.querySelectorAll('.pageno, .pdf-tb-pageno');
+            labels.forEach(function (label) {
+                label.textContent = total > 0 ? (pageNum + ' / ' + total) : (pageNum + ' / --');
+            });
         }
     };
 
     DocumentScrollMode.prototype.updateNavigationButtons = function (page) {
         var shell = this.getShell();
-        if (!shell) return;
-
-        page = Math.max(1, parseInt(page, 10) || 1);
-        var total = this.totalPages || (this.viewer ? this.viewer.getPageCount() : 0);
-
-        shell.querySelectorAll('[data-pdf-nav="previous"]').forEach(function (button) {
-            button.disabled = page <= 1;
-        });
-
-        shell.querySelectorAll('[data-pdf-nav="next"]').forEach(function (button) {
-            button.disabled = !total || page >= total;
-        });
+        if (shell) {
+            var navElements = shell.querySelectorAll('[data-pdf-nav], .pdf-page-navigation-btn, .pdf-page-navigation-previous, .pdf-page-navigation-next');
+            navElements.forEach(function (el) {
+                el.style.display = 'none';
+            });
+        }
     };
 
     DocumentScrollMode.prototype.scrollToPage = function (pageNum) {
         if (!this.viewer) return;
-        var total = this.totalPages || this.viewer.getPageCount();
-        pageNum = Math.max(1, Math.min(pageNum, total));
+        var total = this.totalPages || (typeof this.viewer.getPageCount === 'function' ? this.viewer.getPageCount() : 0);
+        pageNum = Math.max(1, Math.min(pageNum, total || 1));
 
         this.currentPage = pageNum;
-        this.viewer.scrollToPage(pageNum);
+        if (typeof this.viewer.scrollToPage === 'function') {
+            this.viewer.scrollToPage(pageNum);
+        }
         this.highlightActivePage(pageNum);
         this.updatePageLabel(pageNum, total);
         this.updateNavigationButtons(pageNum);
@@ -421,5 +473,10 @@
         });
     };
 
-    window.DocumentScrollMode = DocumentScrollMode;
-})(window, document);
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = DocumentScrollMode;
+    }
+    if (typeof window !== 'undefined') {
+        window.DocumentScrollMode = DocumentScrollMode;
+    }
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

@@ -40,11 +40,11 @@ class PlaylistInitializationSafetyTest extends TestCase
     }
 
     /**
-     * CASE 1 — Historical Initialization (Category A)
+     * CASE 1 — Untouched Playlist Initialization
      * Given CU = 80%, No PCU.
-     * When opened, PCU is initialized with 80%.
+     * When opened, PCU is initialized with 0% (clean isolation, no runtime fallback).
      */
-    public function test_case_1_historical_initialization_seeds_category_a(): void
+    public function test_case_1_untouched_playlist_initialization_starts_at_zero(): void
     {
         $plan = TrainingPlan::create(['title' => 'Case 1 Plan', 'slug' => 'case-1-plan-' . rand(1000, 9999), 'active' => 'Active']);
         $content = Content::create(['title' => 'Case 1 Content', 'slug' => 'case-1-content-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'Y']);
@@ -70,7 +70,7 @@ class PlaylistInitializationSafetyTest extends TestCase
             'user_id'         => $this->user->id,
             'trainingplan_id' => $plan->id,
             'content_id'      => $content->id,
-            'progress'        => 80,
+            'progress'        => 0,
             'finish'          => '0',
         ]);
     }

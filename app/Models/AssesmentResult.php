@@ -12,7 +12,13 @@ class AssesmentResult extends Model
     protected $casts = [
         'user_answer' => 'array',
         'question_snapshot' => 'array',
+        'afk_duration_seconds' => 'integer',
     ];
+
+    public function getAfkDurationAttribute(): int
+    {
+        return (int) ($this->afk_duration_seconds ?? 0);
+    }
     public function user()
     {
         return $this->belongsTo(User::class);

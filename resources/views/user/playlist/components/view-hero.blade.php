@@ -28,6 +28,27 @@
         $contentType === 'content'                                        => 'bg-red',
         default                                                           => 'bg-secondary',
     };
+
+    $classificationName = $content->classification->classification_name ?? 'Learning';
+    $classificationSlug = \Illuminate\Support\Str::slug($classificationName);
+
+    $continueThumb = $lastWatchedThumb;
+    $continueUrl = '#contentContainer';
+    $continueLabel = 'Continue Learning';
+
+    if (!empty($isPlaylistFullyCompleted)) {
+        $continueLabel = 'Playlist Completed';
+    } elseif (!empty($continueLearningContent) && $continueLearningContent->id !== $content->id) {
+        $continueUrl = route('playlist.user.view', [$playlist->slug, $continueLearningContent->slug]);
+        if ($continueLearningContent->type === 'YouTube' && !empty($continueLearningContent->link)) {
+            $continueThumb = 'http://img.youtube.com/vi/' . $continueLearningContent->link . '/mqdefault.jpg';
+        } else {
+            $cThumbPath = 'storage/files/content/' . $continueLearningContent->id . '/thumb.jpg';
+            $continueThumb = \File::exists(public_path($cThumbPath)) && !is_dir(public_path($cThumbPath))
+                ? asset($cThumbPath)
+                : asset('default-video.jpg');
+        }
+    }
 @endphp
 
 <div class="card border-0 shadow-sm overflow-hidden mb-3 view-hero-card">
@@ -69,18 +90,18 @@
                     </div>
 
                     <div class="view-hero-bottom">
-                        <span class="badge bg-white text-primary">
-                            {{ $content->classification->classification_name ?? 'Learning' }}
+                        <span class="badge bg-white text-primary classification-badge classification-badge-{{ $classificationSlug }}" data-classification="{{ $classificationName }}">
+                            {{ $classificationName }}
                         </span>
                         <span class="badge {{ $contentTypeBadgeClass }}">{{ \App\Support\ContentTypeHelper::label($content->type ?? 'Content') }}</span>
                     </div>
                 </div>
 
-                <a href="#contentContainer" class="view-hero-continue continue-learning-card rounded-4 p-3 shadow-sm border-0" style="background-color: #002b66 !important; border-color: rgba(255, 255, 255, 0.15) !important;">
-                    <span class="view-hero-continue-thumb ratio ratio-16x9 rounded-3 overflow-hidden" style="background-image: url('{{ $lastWatchedThumb }}')"></span>
+                <a href="{{ $continueUrl }}" class="view-hero-continue continue-learning-card rounded-4 p-3 shadow-sm border-0" style="background-color: #002b66 !important; border-color: rgba(255, 255, 255, 0.15) !important;">
+                    <span class="view-hero-continue-thumb ratio ratio-16x9 rounded-3 overflow-hidden" style="background-image: url('{{ $continueThumb }}')"></span>
                     <div class="text-center mt-2">
                         <span class="text-white fw-bold small text-uppercase" style="letter-spacing: 0.5px; color: #ffffff !important;">
-                            Continue Learning
+                            {{ $continueLabel }}
                         </span>
                     </div>
                 </a>

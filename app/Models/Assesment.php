@@ -55,6 +55,11 @@ class Assesment extends Model
         return $this->hasMany(Content::class, 'id', 'content_id');
     }
 
+    public function content()
+    {
+        return $this->belongsTo(Content::class, 'content_id');
+    }
+
     public function trainingplan()
     {
         return $this->belongsTo(TrainingPlan::class, 'trainingplan_id', 'id')->withTrashed()->withDefault();
@@ -63,8 +68,25 @@ class Assesment extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'has_access_period' => 'boolean',
+        'has_access_period'     => 'boolean',
+        'assasment_content_for' => 'string',
+        'afk_threshold_seconds' => 'integer',
     ];
+
+    protected $attributes = [
+        'assasment_content_for' => 'content',
+        'afk_threshold_seconds' => 60,
+    ];
+
+    public function getAfkThresholdSecondsAttribute($value): int
+    {
+        return !empty($value) && (int) $value > 0 ? (int) $value : 60;
+    }
+
+    public function getAfkDurationAttribute(): int
+    {
+        return (int) $this->afk_threshold_seconds;
+    }
 
     public function hasAccessPeriod(): bool
     {

@@ -231,5 +231,19 @@ public function canManageLms()
     {
         return $this->hasMany(AssesmentResult::class);
     }
+
+    /**
+     * Virtual aggregate accessor for user cumulative AFK duration in seconds.
+     * Computed dynamically to prevent data drift and schema bloat on users table.
+     */
+    public function getTotalAfkDurationSecondsAttribute(): int
+    {
+        return (int) $this->assesmentResults()->sum('afk_duration_seconds');
+    }
+
+    public function getAfkDurationSecondsAttribute(): int
+    {
+        return $this->total_afk_duration_seconds;
+    }
 }
 

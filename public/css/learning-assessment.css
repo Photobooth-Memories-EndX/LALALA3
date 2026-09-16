@@ -53,7 +53,8 @@
 }
 
 .assessment-filter-dropdown-type .dropdown-menu {
-    width: 140px;
+    min-width: 100%;
+    width: max-content;
 }
 
 .assessment-filter-dropdown-status .dropdown-menu {
@@ -121,7 +122,7 @@
 .assessment-filter-dropdown-type .assessment-fast-filter-control {
     width: max-content;
     min-width: 105px;
-    max-width: 165px;
+    max-width: none;
 }
 
 .assessment-filter-dropdown-status .assessment-fast-filter-control {
@@ -146,6 +147,39 @@
     width: auto;
     min-width: 0;
     flex: 1 1 180px;
+}
+
+.assessment-search-container {
+    position: relative;
+    width: 100%;
+}
+
+#assessment-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1085;
+    max-height: 300px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+    padding: .35rem 0;
+    border: 1px solid rgba(0, 0, 0, .08);
+    background: #ffffff;
+}
+
+#assessment-search-results .dropdown-item {
+    padding: .6rem .85rem;
+    transition: background-color .15s ease;
+    text-decoration: none;
+}
+
+#assessment-search-results .dropdown-item:hover,
+#assessment-search-results .dropdown-item:focus {
+    background-color: rgba(15, 94, 156, .08);
+}
+
+#assessment-search-results .dropdown-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
 }
 
 .assessment-toolbar-search .input-icon,
@@ -217,7 +251,7 @@
 
     .assessment-filter-dropdown-type .assessment-fast-filter-control {
         min-width: 84px;
-        max-width: 115px;
+        max-width: none;
     }
 
     .assessment-filter-dropdown-status .assessment-fast-filter-control {
@@ -698,6 +732,35 @@ body.dark-mode #assessmentFilterBar .assessment-fast-filter-control.active {
     border-color: #6aaed6 !important;
     background: rgba(106, 174, 214, 0.16) !important;
     color: #bfdbfe !important;
+}
+
+[data-bs-theme="dark"] #assessment-search-results,
+body.dark-mode #assessment-search-results {
+    background: #152235;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item,
+body.dark-mode #assessment-search-results .dropdown-item {
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item:not(:last-child),
+body.dark-mode #assessment-search-results .dropdown-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item:hover,
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item:focus,
+body.dark-mode #assessment-search-results .dropdown-item:hover,
+body.dark-mode #assessment-search-results .dropdown-item:focus {
+    background: rgba(106, 174, 214, 0.14);
+}
+
+[data-bs-theme="dark"] #assessment-search-results .dropdown-item .text-dark,
+body.dark-mode #assessment-search-results .dropdown-item .text-dark {
+    color: #f1f5f9 !important;
 }
 
 [data-bs-theme="dark"] #assessmentFilterBar .assessment-toolbar-search .form-control::placeholder,
@@ -1341,6 +1404,31 @@ body.dark-mode #assessmentConfirmationModal .modal-footer {
     margin-top: 2px;
 }
 
+.assessment-info-popover-related {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(100, 116, 139, 0.25);
+}
+
+.assessment-info-popover-related-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+.assessment-info-popover-related-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
 [data-bs-theme="dark"] .popover.assessment-info-popover,
 body.dark-mode .popover.assessment-info-popover {
     background-color: #1e293b !important;
@@ -1356,6 +1444,124 @@ body.dark-mode .assessment-info-popover-title {
 [data-bs-theme="dark"] .assessment-info-popover-meta,
 body.dark-mode .assessment-info-popover-meta {
     color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .assessment-info-popover-related,
+body.dark-mode .assessment-info-popover-related {
+    border-top-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .assessment-info-popover-related-label,
+body.dark-mode .assessment-info-popover-related-label {
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .assessment-info-popover-related-value,
+body.dark-mode .assessment-info-popover-related-value {
+    color: #e2e8f0 !important;
+}
+
+/* Dark Mode Support for Assessment Title & Subtitle */
+[data-bs-theme="dark"] .assessment-title,
+[data-bs-theme="dark"] .assessment-title-link,
+[data-bs-theme="dark"] .assessment-title-link:visited,
+body.dark-mode .assessment-title,
+body.dark-mode .assessment-title-link,
+body.dark-mode .assessment-title-link:visited,
+body.theme-dark .assessment-title,
+body.theme-dark .assessment-title-link,
+body.theme-dark .assessment-title-link:visited {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .assessment-row:hover .assessment-title-link,
+[data-bs-theme="dark"] .assessment-title-link:hover,
+[data-bs-theme="dark"] .assessment-title-link:focus,
+body.dark-mode .assessment-row:hover .assessment-title-link,
+body.dark-mode .assessment-title-link:hover,
+body.dark-mode .assessment-title-link:focus,
+body.theme-dark .assessment-row:hover .assessment-title-link,
+body.theme-dark .assessment-title-link:hover,
+body.theme-dark .assessment-title-link:focus {
+    color: #38bdf8 !important;
+    text-decoration-color: #38bdf8 !important;
+}
+
+[data-bs-theme="dark"] .assessment-subtitle,
+[data-bs-theme="dark"] .assessment-subtitle .text-muted,
+body.dark-mode .assessment-subtitle,
+body.dark-mode .assessment-subtitle .text-muted,
+body.theme-dark .assessment-subtitle,
+body.theme-dark .assessment-subtitle .text-muted {
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .assessment-table tbody tr.assessment-row:hover,
+body.dark-mode .assessment-table tbody tr.assessment-row:hover,
+body.theme-dark .assessment-table tbody tr.assessment-row:hover {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-bs-theme="dark"] .assessment-table tbody tr.assessment-row:hover > td,
+body.dark-mode .assessment-table tbody tr.assessment-row:hover > td,
+body.theme-dark .assessment-table tbody tr.assessment-row:hover > td {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Dark Mode Modals Support */
+[data-bs-theme="dark"] #assessmentConfirmationModal .modal-content,
+[data-bs-theme="dark"] #continueAssessmentModal .modal-content,
+body.dark-mode #assessmentConfirmationModal .modal-content,
+body.dark-mode #continueAssessmentModal .modal-content,
+body.theme-dark #assessmentConfirmationModal .modal-content,
+body.theme-dark #continueAssessmentModal .modal-content {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal .bg-light,
+[data-bs-theme="dark"] #continueAssessmentModal .bg-light,
+body.dark-mode #assessmentConfirmationModal .bg-light,
+body.dark-mode #continueAssessmentModal .bg-light,
+body.theme-dark #assessmentConfirmationModal .bg-light,
+body.theme-dark #continueAssessmentModal .bg-light {
+    background-color: #0f172a !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal .text-dark,
+[data-bs-theme="dark"] #continueAssessmentModal .text-dark,
+body.dark-mode #assessmentConfirmationModal .text-dark,
+body.dark-mode #continueAssessmentModal .text-dark,
+body.theme-dark #assessmentConfirmationModal .text-dark,
+body.theme-dark #continueAssessmentModal .text-dark {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal #assessmentModalName,
+[data-bs-theme="dark"] #continueAssessmentModal #continueModalName,
+body.dark-mode #assessmentConfirmationModal #assessmentModalName,
+body.dark-mode #continueAssessmentModal #continueModalName,
+body.theme-dark #assessmentConfirmationModal #assessmentModalName,
+body.theme-dark #continueAssessmentModal #continueModalName {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal ol,
+[data-bs-theme="dark"] #continueAssessmentModal ol,
+body.dark-mode #assessmentConfirmationModal ol,
+body.dark-mode #continueAssessmentModal ol,
+body.theme-dark #assessmentConfirmationModal ol,
+body.theme-dark #continueAssessmentModal ol {
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] #assessmentConfirmationModal .border-bottom,
+[data-bs-theme="dark"] #continueAssessmentModal .border-bottom,
+body.dark-mode #assessmentConfirmationModal .border-bottom,
+body.dark-mode #continueAssessmentModal .border-bottom,
+body.theme-dark #assessmentConfirmationModal .border-bottom,
+body.theme-dark #continueAssessmentModal .border-bottom {
+    border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 @media (max-width: 576px) {
@@ -1378,4 +1584,50 @@ body.dark-mode .assessment-info-popover-meta {
         font-size: 1rem !important;
     }
 }
+
+/* Assessment Related To, Type & Category Badges */
+.assessment-related-to {
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: #64748b;
+    margin-top: 3px;
+}
+
+[data-bs-theme="dark"] .assessment-related-to,
+body.dark-mode .assessment-related-to,
+body.theme-dark .assessment-related-to {
+    color: #94a3b8 !important;
+}
+
+.assessment-type-badge,
+.assessment-category-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    letter-spacing: 0.02em;
+    border-radius: 6px;
+}
+
+[data-bs-theme="dark"] .assessment-category-badge.bg-purple-lt,
+body.dark-mode .assessment-category-badge.bg-purple-lt,
+body.theme-dark .assessment-category-badge.bg-purple-lt {
+    background-color: rgba(174, 62, 201, 0.18) !important;
+    color: #d0bfff !important;
+}
+
+[data-bs-theme="dark"] .assessment-category-badge.bg-teal-lt,
+body.dark-mode .assessment-category-badge.bg-teal-lt,
+body.theme-dark .assessment-category-badge.bg-teal-lt {
+    background-color: rgba(12, 166, 120, 0.18) !important;
+    color: #63e6be !important;
+}
+
+[data-bs-theme="dark"] .assessment-category-badge.bg-indigo-lt,
+body.dark-mode .assessment-category-badge.bg-indigo-lt,
+body.theme-dark .assessment-category-badge.bg-indigo-lt {
+    background-color: rgba(66, 99, 235, 0.18) !important;
+    color: #91a7ff !important;
+}
+
+
 

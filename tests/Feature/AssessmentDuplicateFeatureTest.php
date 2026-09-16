@@ -27,6 +27,12 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $expectedTitle = $original->title . ' Copy 1';
         $duplicate = Assesment::where('title', $expectedTitle)->first();
         $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('global', $original->type);
+        $this->assertSame('OK', $original->status);
 
         // Cleanup
         if ($duplicate) {
@@ -54,8 +60,112 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $expectedTitle = $original->title . ' Copy 1';
         $duplicate = Assesment::where('title', $expectedTitle)->first();
         $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('global', $original->type);
+        $this->assertSame('OK', $original->status);
 
         // Cleanup
+        if ($duplicate) {
+            $duplicate->delete();
+        }
+        $original->delete();
+    }
+
+    public function test_duplicate_feature_content_assessment_results_in_type_null_and_status_not(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        $original = Assesment::create([
+            'title'                 => 'Feature Content Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug));
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('content', $original->type);
+        $this->assertSame('OK', $original->status);
+
+        if ($duplicate) {
+            $duplicate->delete();
+        }
+        $original->delete();
+    }
+
+    public function test_duplicate_feature_trainingplan_assessment_results_in_type_null_and_status_not(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        $original = Assesment::create([
+            'title'                 => 'Feature TP Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'trainingplan',
+            'assasment_content_for' => 'content',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug));
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('trainingplan', $original->type);
+        $this->assertSame('OK', $original->status);
+
+        if ($duplicate) {
+            $duplicate->delete();
+        }
+        $original->delete();
+    }
+
+    public function test_duplicate_feature_inactive_assessment_retains_status_not(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        $original = Assesment::create([
+            'title'  => 'Feature Inactive Test ' . uniqid(),
+            'status' => 'NOT',
+            'type'   => 'global',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug));
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertNull($duplicate->type);
+        $this->assertSame('NOT', $duplicate->status);
+
+        $original->refresh();
+        $this->assertSame('global', $original->type);
+        $this->assertSame('NOT', $original->status);
+
         if ($duplicate) {
             $duplicate->delete();
         }
@@ -72,6 +182,581 @@ class AssessmentDuplicateFeatureTest extends TestCase
         $response->assertSee('Duplicate Assessment');
         $response->assertSee('modalDuplicateAssessment');
         $response->assertSee('Are you sure you want to duplicate this assessment?');
+        $response->assertSee('Assessment Target:');
+        $response->assertDontSee('duplicateContextSection');
+        $response->assertDontSee('duplicate_target_content');
+        $response->assertDontSee('duplicate_target_playlist');
+        $response->assertDontSee('duplicate_trainingplan_id');
         $response->assertDontSee('onclick="return confirm(\'Clone this assessment ?\')"');
+    }
+
+    public function test_assessment_index_renders_null_type_as_dash_badge(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        $nullAssessment = Assesment::create([
+            'title'  => 'Null Type Rendering Test ' . uniqid(),
+            'type'   => null,
+            'status' => 'NOT',
+        ]);
+
+        $globalAssessment = Assesment::create([
+            'title'  => 'Global Type Rendering Test ' . uniqid(),
+            'type'   => 'global',
+            'status' => 'OK',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('assesment.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('<span class="owl-badge owl-badge-null">-</span>', false);
+        $response->assertSee('owl-badge-green', false);
+
+        $nullAssessment->delete();
+        $globalAssessment->delete();
+    }
+
+    public function test_admin_can_duplicate_content_as_direct(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+        $tp = \App\Models\TrainingPlan::first();
+
+        // Create dedicated source content registered in exactly one playlist
+        $sourceContent = \App\Models\Content::create([
+            'title'             => 'Feature Source Content ' . uniqid(),
+            'type'              => 'Document',
+            'duration'          => '00:15:00',
+            'learning_hours'    => 0.5,
+            'classification_id' => 1,
+        ]);
+
+        \App\Models\TrainingPlanDetail::create([
+            'trainingplan_id' => $tp->id,
+            'content_id'      => $sourceContent->id,
+            'content_order'   => 1,
+        ]);
+
+        // Source assessment has assasment_content_for = 'content' and trainingplan_id = null
+        $original = Assesment::create([
+            'title'                 => 'Feature Direct Content Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => $sourceContent->id,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
+        ]);
+
+        $contentCountBefore = \App\Models\Content::count();
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), []);
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertSame('content', $duplicate->type);
+        // Required behavior: assasment_content_for becomes 'playlist'
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
+        // Required behavior: trainingplan_id is resolved from source content's TrainingPlanDetail
+        $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
+        $this->assertNotNull($duplicate->content_id);
+        $this->assertNotEquals($sourceContent->id, (int) $duplicate->content_id);
+
+        // A new Content record is created
+        $this->assertSame($contentCountBefore + 1, \App\Models\Content::count());
+
+        // TrainingPlanDetail is created for the new content in the target playlist
+        $this->assertTrue(\App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->exists());
+
+        // Original remains untouched
+        $original->refresh();
+        $this->assertSame('content', $original->assasment_content_for);
+        $this->assertNull($original->trainingplan_id);
+        $this->assertSame($sourceContent->id, (int) $original->content_id);
+
+        if ($duplicate) {
+            \App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->delete();
+            $newContent = \App\Models\Content::find($duplicate->content_id);
+            $duplicate->delete();
+            if ($newContent) {
+                $newContent->delete();
+            }
+        }
+        \App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $sourceContent->id)->delete();
+        $original->delete();
+        $sourceContent->delete();
+    }
+
+    public function test_admin_can_duplicate_content_as_playlist(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+        $tp = \App\Models\TrainingPlan::first();
+
+        $original = Assesment::create([
+            'title'                 => 'Feature Playlist Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
+        ]);
+
+        $contentCountBefore = \App\Models\Content::count();
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), [
+                'target_context'  => 'playlist',
+                'trainingplan_id' => $tp->id,
+            ]);
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertSame('content', $duplicate->type);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
+        $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
+        $this->assertNotNull($duplicate->content_id);
+        $this->assertNotEquals(45, (int) $duplicate->content_id);
+
+        // A new Content record is created
+        $this->assertSame($contentCountBefore + 1, \App\Models\Content::count());
+
+        // TrainingPlanDetail is ensured
+        $this->assertTrue(\App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->exists());
+
+        // Original remains untouched
+        $original->refresh();
+        $this->assertSame('content', $original->assasment_content_for);
+        $this->assertNull($original->trainingplan_id);
+        $this->assertSame(45, (int) $original->content_id);
+
+        if ($duplicate) {
+            \App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->delete();
+            $newContent = \App\Models\Content::find($duplicate->content_id);
+            $duplicate->delete();
+            if ($newContent) {
+                $newContent->delete();
+            }
+        }
+        $original->delete();
+    }
+
+    public function test_duplicate_content_as_playlist_requires_valid_trainingplan_id(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        $original = Assesment::create([
+            'title'      => 'Feature Missing TP ' . uniqid(),
+            'status'     => 'OK',
+            'type'       => 'content',
+            'content_id' => 45,
+        ]);
+
+        // Case 1: trainingplan_id missing
+        $response1 = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), [
+                'target_context' => 'playlist',
+            ]);
+        $response1->assertSessionHasErrors(['trainingplan_id']);
+
+        // Case 2: trainingplan_id invalid / non-existent
+        $response2 = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), [
+                'target_context'  => 'playlist',
+                'trainingplan_id' => 99999999,
+            ]);
+        $response2->assertSessionHasErrors(['trainingplan_id']);
+
+        $original->delete();
+    }
+
+    public function test_duplicate_global_rejects_target_context_playlist(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+        $tp = \App\Models\TrainingPlan::first();
+
+        $original = Assesment::create([
+            'title'  => 'Feature Global Reject ' . uniqid(),
+            'status' => 'OK',
+            'type'   => 'global',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), [
+                'target_context'  => 'playlist',
+                'trainingplan_id' => $tp->id,
+            ]);
+
+        $response->assertSessionHasErrors(['target_context']);
+
+        $original->delete();
+    }
+
+    public function test_duplicate_trainingplan_rejects_target_context_playlist(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+        $tp = \App\Models\TrainingPlan::first();
+
+        $original = Assesment::create([
+            'title'           => 'Feature TP Reject ' . uniqid(),
+            'status'          => 'OK',
+            'type'            => 'trainingplan',
+            'trainingplan_id' => $tp->id,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), [
+                'target_context'  => 'playlist',
+                'trainingplan_id' => $tp->id,
+            ]);
+
+        $response->assertSessionHasErrors(['target_context']);
+
+        $original->delete();
+    }
+
+    public function test_admin_can_duplicate_direct_content_assessment_without_target_context_parameters(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        // Create standalone content not in any playlist
+        $standaloneContent = \App\Models\Content::create([
+            'title'             => 'Standalone Content ' . uniqid(),
+            'type'              => 'Document',
+            'duration'          => '00:10:00',
+            'learning_hours'    => 0.5,
+            'classification_id' => 1,
+        ]);
+
+        $original = Assesment::create([
+            'title'                 => 'Direct Content No Params ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => $standaloneContent->id,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
+        ]);
+
+        $contentCountBefore = \App\Models\Content::count();
+
+        // Post without target_context parameters: standalone content remains assasment_content_for = 'content'
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), []);
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertSame('content', $duplicate->type);
+        $this->assertSame('content', $duplicate->assasment_content_for);
+        $this->assertNull($duplicate->trainingplan_id);
+        $this->assertNotNull($duplicate->content_id);
+        $this->assertNotEquals($standaloneContent->id, (int) $duplicate->content_id);
+
+        // A new Content record is created
+        $this->assertSame($contentCountBefore + 1, \App\Models\Content::count());
+
+        // Original remains untouched
+        $original->refresh();
+        $this->assertSame('content', $original->assasment_content_for);
+        $this->assertNull($original->trainingplan_id);
+        $this->assertSame($standaloneContent->id, (int) $original->content_id);
+
+        if ($duplicate) {
+            $newContent = \App\Models\Content::find($duplicate->content_id);
+            $duplicate->delete();
+            if ($newContent) {
+                $newContent->delete();
+            }
+        }
+        $original->delete();
+        $standaloneContent->delete();
+    }
+
+    public function test_duplicate_content_in_multiple_playlists_without_target_fails_with_ambiguity_warning(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+
+        // Content 45 belongs to multiple playlists (8, 10)
+        $original = Assesment::create([
+            'title'                 => 'Multi Playlist Content ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => null,
+        ]);
+
+        // Duplicating without explicit trainingplan_id must be rejected
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), []);
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('danger');
+
+        // But specifying trainingplan_id explicitly succeeds
+        $response2 = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), [
+                'target_context'  => 'playlist',
+                'trainingplan_id' => 10,
+            ]);
+
+        $response2->assertRedirect(route('assesment.index'));
+        $response2->assertSessionHas('success');
+
+        $duplicate = Assesment::where('title', $original->title . ' Copy 1')->first();
+        $this->assertNotNull($duplicate);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
+        $this->assertSame(10, (int) $duplicate->trainingplan_id);
+
+        if ($duplicate) {
+            \App\Models\TrainingPlanDetail::where('trainingplan_id', 10)->where('content_id', $duplicate->content_id)->delete();
+            $newContent = \App\Models\Content::find($duplicate->content_id);
+            $duplicate->delete();
+            if ($newContent) {
+                $newContent->delete();
+            }
+        }
+        $original->delete();
+    }
+
+    public function test_admin_can_duplicate_playlist_assessment_with_target_playlist(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+        $tp = \App\Models\TrainingPlan::first();
+
+        $original = Assesment::create([
+            'title'                 => 'Playlist Assessment Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $tp->id,
+        ]);
+
+        $contentCountBefore = \App\Models\Content::count();
+
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), [
+                'target_context'  => 'playlist',
+                'trainingplan_id' => $tp->id,
+            ]);
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertSame('content', $duplicate->type);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
+        $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
+        $this->assertNotNull($duplicate->content_id);
+        $this->assertNotEquals(45, (int) $duplicate->content_id);
+
+        // A new Content record is created
+        $this->assertSame($contentCountBefore + 1, \App\Models\Content::count());
+
+        // TrainingPlanDetail exists
+        $this->assertTrue(\App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->exists());
+
+        // Original remains untouched
+        $original->refresh();
+        $this->assertSame('playlist', $original->assasment_content_for);
+        $this->assertSame((int) $tp->id, (int) $original->trainingplan_id);
+        $this->assertSame(45, (int) $original->content_id);
+
+        if ($duplicate) {
+            \App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->delete();
+            $newContent = \App\Models\Content::find($duplicate->content_id);
+            $duplicate->delete();
+            if ($newContent) {
+                $newContent->delete();
+            }
+        }
+        $original->delete();
+    }
+
+    public function test_admin_can_duplicate_playlist_assessment_without_parameters_preserves_playlist_and_content(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+        $tp = \App\Models\TrainingPlan::first();
+
+        $original = Assesment::create([
+            'title'           => 'Playlist Standard Modal ' . uniqid(),
+            'status'          => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $tp->id,
+        ]);
+
+        $contentCountBefore = \App\Models\Content::count();
+
+        // Post without parameters (standard modal submit)
+        $response = $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), []);
+
+        $response->assertRedirect(route('assesment.index'));
+        $response->assertSessionHas('success', 'Assessment duplicated successfully.');
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+        $this->assertSame('content', $duplicate->type);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
+        $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
+        $this->assertNotNull($duplicate->content_id);
+        $this->assertNotEquals(45, (int) $duplicate->content_id);
+
+        // A new Content record is created
+        $this->assertSame($contentCountBefore + 1, \App\Models\Content::count());
+
+        // TrainingPlanDetail exists
+        $this->assertTrue(\App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->exists());
+
+        // Duplicating again creates another valid duplicate without conflict
+        $this->actingAs($admin)->post(route('assesment.duplicate', $original->slug), []);
+        $expectedTitle2 = $original->title . ' Copy 2';
+        $duplicate2 = Assesment::where('title', $expectedTitle2)->first();
+        $this->assertNotNull($duplicate2);
+        $this->assertNotEquals($duplicate->id, $duplicate2->id);
+        $this->assertNotEquals($duplicate->content_id, $duplicate2->content_id);
+        $this->assertTrue(\App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate2->content_id)->exists());
+
+        // Original remains untouched
+        $original->refresh();
+        $this->assertSame('playlist', $original->assasment_content_for);
+        $this->assertSame((int) $tp->id, (int) $original->trainingplan_id);
+        $this->assertSame(45, (int) $original->content_id);
+
+        if ($duplicate2) {
+            \App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate2->content_id)->delete();
+            $newContent2 = \App\Models\Content::find($duplicate2->content_id);
+            $duplicate2->delete();
+            if ($newContent2) {
+                $newContent2->delete();
+            }
+        }
+        if ($duplicate) {
+            \App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->delete();
+            $newContent = \App\Models\Content::find($duplicate->content_id);
+            $duplicate->delete();
+            if ($newContent) {
+                $newContent->delete();
+            }
+        }
+        $original->delete();
+    }
+
+    public function test_duplicate_assessment_edit_page_shows_retained_playlist_and_learning_content(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+        $tp = \App\Models\TrainingPlan::first();
+
+        $original = Assesment::create([
+            'title'                 => 'Edit Page Retained Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $tp->id,
+        ]);
+
+        // Duplicate assessment
+        $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), []);
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+
+        // Access edit page
+        $editResponse = $this->actingAs($admin)
+            ->get(route('assesment.edit', $duplicate->slug));
+
+        $editResponse->assertStatus(200);
+
+        // Both playlist and content should be retained and linked
+        $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
+        $this->assertNotNull($duplicate->content_id);
+        $this->assertNotEquals(45, (int) $duplicate->content_id);
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
+
+        // Verify playlist option is selected
+        $editResponse->assertSee('value="' . $tp->id . '" selected', false);
+
+        if ($duplicate) {
+            \App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->delete();
+            $newContent = \App\Models\Content::find($duplicate->content_id);
+            $duplicate->delete();
+            if ($newContent) {
+                $newContent->delete();
+            }
+        }
+        $original->delete();
+    }
+
+    public function test_duplicate_playlist_assessment_preserves_questions_and_question_banks(): void
+    {
+        $admin = User::where('role', '2')->first() ?? User::where('role', '3')->first() ?? User::first();
+        $tp = \App\Models\TrainingPlan::first();
+
+        $original = Assesment::create([
+            'title'                 => 'Playlist Questions Test ' . uniqid(),
+            'status'                => 'OK',
+            'type'                  => 'content',
+            'content_id'            => 45,
+            'assasment_content_for' => 'playlist',
+            'trainingplan_id'       => $tp->id,
+            'passing_grade'         => 85,
+        ]);
+
+        $question = \App\Models\AssesmentQuestion::create([
+            'assesment_id' => $original->id,
+            'question'     => 'Sample Question 1',
+            'option'       => ['A' => 'Opt A', 'B' => 'Opt B'],
+            'answer'       => 'A',
+            'status'       => '1',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('assesment.duplicate', $original->slug), []);
+
+        $expectedTitle = $original->title . ' Copy 1';
+        $duplicate = Assesment::where('title', $expectedTitle)->first();
+        $this->assertNotNull($duplicate);
+
+        // Configuration preserved
+        $this->assertSame('playlist', $duplicate->assasment_content_for);
+        $this->assertSame((int) $tp->id, (int) $duplicate->trainingplan_id);
+        $this->assertNotNull($duplicate->content_id);
+        $this->assertNotEquals(45, (int) $duplicate->content_id);
+        $this->assertSame(85, (int) $duplicate->passing_grade);
+
+        // Questions duplicated
+        $dupQuestions = \App\Models\AssesmentQuestion::where('assesment_id', $duplicate->id)->get();
+        $this->assertCount(1, $dupQuestions);
+        $this->assertSame('Sample Question 1', $dupQuestions->first()->question);
+        $this->assertNotEquals($question->id, $dupQuestions->first()->id);
+
+        // Cleanup
+        \App\Models\AssesmentQuestion::where('assesment_id', $duplicate->id)->delete();
+        \App\Models\AssesmentQuestion::where('assesment_id', $original->id)->delete();
+        \App\Models\TrainingPlanDetail::where('trainingplan_id', $tp->id)->where('content_id', $duplicate->content_id)->delete();
+        $newContent = \App\Models\Content::find($duplicate->content_id);
+        $duplicate->delete();
+        if ($newContent) {
+            $newContent->delete();
+        }
+        $original->delete();
     }
 }

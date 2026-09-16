@@ -56,6 +56,39 @@
     flex: 1 1 auto;
 }
 
+.playlist-search-container {
+    position: relative;
+    width: 100%;
+}
+
+#playlist-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1085;
+    max-height: 300px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+    padding: .35rem 0;
+    border: 1px solid rgba(0, 0, 0, .08);
+    background: #ffffff;
+}
+
+#playlist-search-results .dropdown-item {
+    padding: .6rem .85rem;
+    transition: background-color .15s ease;
+    text-decoration: none;
+}
+
+#playlist-search-results .dropdown-item:hover,
+#playlist-search-results .dropdown-item:focus {
+    background-color: rgba(15, 94, 156, .08);
+}
+
+#playlist-search-results .dropdown-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+
 .playlist-filter-search .input-icon,
 .playlist-filter-search .form-control {
     width: 100%;
@@ -223,33 +256,107 @@
     }
 }
 
-[data-bs-theme="dark"] .playlist-filter-card,
-[data-theme="dark"] .playlist-filter-card,
-body.theme-dark .playlist-filter-card,
-body.dark-mode .playlist-filter-card,
-body.dark .playlist-filter-card {
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card {
+    background: #152235 !important;
+    border-color: rgba(255, 255, 255, .08) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .25) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-fast-filter-label {
+    color: #cbd5e1 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card .form-control,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card .form-select {
+    background: #192d45 !important;
     border-color: rgba(255, 255, 255, .12) !important;
+    color: #f1f5f9 !important;
 }
 
-[data-bs-theme="dark"] .playlist-filter-card .form-control,
-[data-bs-theme="dark"] .playlist-filter-card .form-select,
-[data-theme="dark"] .playlist-filter-card .form-control,
-[data-theme="dark"] .playlist-filter-card .form-select,
-body.theme-dark .playlist-filter-card .form-control,
-body.theme-dark .playlist-filter-card .form-select,
-body.dark-mode .playlist-filter-card .form-control,
-body.dark-mode .playlist-filter-card .form-select,
-body.dark .playlist-filter-card .form-control,
-body.dark .playlist-filter-card .form-select {
-    border-color: rgba(255, 255, 255, .16);
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card .form-control::placeholder {
+    color: #94a3b8 !important;
 }
 
-[data-bs-theme="dark"] .playlist-filter-count,
-[data-theme="dark"] .playlist-filter-count,
-body.theme-dark .playlist-filter-count,
-body.dark-mode .playlist-filter-count,
-body.dark .playlist-filter-count {
-    border-color: var(--tblr-bg-surface-dark, #182433);
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card .input-icon-addon {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card .form-select option {
+    background: #152235 !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card .playlist-filter-action-btn.btn-outline-primary {
+    background: #192d45 !important;
+    border-color: rgba(148, 163, 184, .28) !important;
+    color: #e2e8f0 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card .playlist-filter-action-btn.btn-outline-primary i {
+    color: #e2e8f0 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card .playlist-filter-action-btn.btn-outline-primary:hover {
+    background: #203a57 !important;
+    border-color: rgba(147, 197, 253, .55) !important;
+    color: #93c5fd !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-card .playlist-filter-action-btn.btn-outline-primary:hover i {
+    color: #93c5fd !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-filter-count {
+    background-color: #0c5b9e !important;
+    border-color: #152235 !important;
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] #playlist-search-results,
+[data-theme="dark"] #playlist-search-results,
+body.theme-dark #playlist-search-results,
+body.dark-mode #playlist-search-results,
+body.dark #playlist-search-results {
+    background: #152235;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item,
+[data-theme="dark"] #playlist-search-results .dropdown-item,
+body.theme-dark #playlist-search-results .dropdown-item,
+body.dark-mode #playlist-search-results .dropdown-item,
+body.dark #playlist-search-results .dropdown-item {
+    color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item:not(:last-child),
+[data-theme="dark"] #playlist-search-results .dropdown-item:not(:last-child),
+body.theme-dark #playlist-search-results .dropdown-item:not(:last-child),
+body.dark-mode #playlist-search-results .dropdown-item:not(:last-child),
+body.dark #playlist-search-results .dropdown-item:not(:last-child) {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item:hover,
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item:focus,
+[data-theme="dark"] #playlist-search-results .dropdown-item:hover,
+[data-theme="dark"] #playlist-search-results .dropdown-item:focus,
+body.theme-dark #playlist-search-results .dropdown-item:hover,
+body.theme-dark #playlist-search-results .dropdown-item:focus,
+body.dark-mode #playlist-search-results .dropdown-item:hover,
+body.dark-mode #playlist-search-results .dropdown-item:focus,
+body.dark #playlist-search-results .dropdown-item:hover,
+body.dark #playlist-search-results .dropdown-item:focus {
+    background: rgba(106, 174, 214, 0.14);
+}
+
+[data-bs-theme="dark"] #playlist-search-results .dropdown-item .text-dark,
+[data-theme="dark"] #playlist-search-results .dropdown-item .text-dark,
+body.theme-dark #playlist-search-results .dropdown-item .text-dark,
+body.dark-mode #playlist-search-results .dropdown-item .text-dark,
+body.dark #playlist-search-results .dropdown-item .text-dark {
+    color: #f1f5f9 !important;
 }
 
 /* Pagination and shared Playlist surfaces */
@@ -555,6 +662,260 @@ body.dark .playlist-card-placeholder-text {
     .playlist-progress-badge {
         min-width: 96px;
     }
+}
+
+/* ============================================================
+   PLAYLIST CARD & METADATA DARK MODE (LISTING)
+   ============================================================ */
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card {
+    background: #152235 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f1f5f9 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(96, 165, 250, 0.3) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .card-body {
+    background: transparent !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .playlist-title,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .playlist-title a {
+    color: #f8fafc !important;
+    transition: color 0.15s ease;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .playlist-title a:hover {
+    color: #93c5fd !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .text-muted {
+    color: #cbd5e1 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .text-muted span,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .text-muted div {
+    color: #cbd5e1 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .text-muted i {
+    color: #94a3b8 !important;
+}
+
+/* Progress bar & percentage */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .progress {
+    background: #1e293b !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .progress-bar {
+    background-color: #0c5b9e !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .progress-wrapper .text-primary {
+    color: #60a5fa !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .progress-wrapper .text-muted {
+    color: #94a3b8 !important;
+}
+
+/* "+ X more contents" */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .playlist-content-list .text-primary {
+    color: #60a5fa !important;
+    font-weight: 500;
+}
+
+/* Deadline Badges */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .badge.bg-danger-lt {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #fca5a5 !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .badge.bg-warning-lt {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #fde047 !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .badge.bg-secondary-lt {
+    background: rgba(148, 163, 184, 0.15) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(148, 163, 184, 0.3) !important;
+}
+
+/* Start Learning / Action buttons in card footer */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .card-footer .btn-primary {
+    background: #0c5b9e !important;
+    border-color: #0c5b9e !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(12, 91, 158, 0.3);
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .card-footer .btn-primary:hover {
+    background: #09477d !important;
+    border-color: #09477d !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .card-footer .btn-danger-lt {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #f87171 !important;
+    opacity: 1 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-card .card-footer .btn-secondary {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+}
+
+/* More Filters Modal Dark Mode */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .modal-content {
+    background: #152235 !important;
+    border: 1px solid #334155 !important;
+    color: #f1f5f9 !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .modal-title {
+    color: #f8fafc !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .modal-title i {
+    color: #60a5fa !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .learning-filter-group .fw-semibold {
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .form-label.text-muted {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .form-control,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .form-select {
+    background: #192d45 !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .form-control::placeholder {
+    color: #64748b !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .form-check-label {
+    color: #cbd5e1 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .form-check-input {
+    background-color: #192d45 !important;
+    border-color: #475569 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal .form-check-input:checked {
+    background-color: #0c5b9e !important;
+    border-color: #0c5b9e !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal hr {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal #playlistResetMoreFilters {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal #playlistResetMoreFilters:hover {
+    background: #24354a !important;
+    color: #f8fafc !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal #playlistApplyMoreFilters {
+    background: #0c5b9e !important;
+    border-color: #0c5b9e !important;
+    color: #ffffff !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistMoreFiltersModal #playlistApplyMoreFilters:hover {
+    background: #09477d !important;
+    border-color: #09477d !important;
+}
+
+/* Pagination Dark Mode */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-pagination .page-link {
+    background: #152235 !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-pagination .page-item.active .page-link {
+    background: #0c5b9e !important;
+    border-color: #0c5b9e !important;
+    color: #ffffff !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-pagination .page-item:hover:not(.active):not(.disabled) .page-link {
+    background: #192d45 !important;
+    border-color: #60a5fa !important;
+    color: #93c5fd !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-pagination .page-item.disabled .page-link {
+    background: #152235 !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    color: #475569 !important;
+}
+
+/* Empty State Dark Mode */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistFilterEmpty .card,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-pagination + .card,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .page-body > .container-xl > .card.border-0.shadow-sm.rounded-4 {
+    background: #152235 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistFilterEmpty h3,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .page-body > .container-xl > .card.border-0.shadow-sm.rounded-4 h3 {
+    color: #f8fafc !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistFilterEmpty .text-muted,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .page-body > .container-xl > .card.border-0.shadow-sm.rounded-4 .text-muted {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistFilterEmpty .btn-outline-secondary,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .page-body > .container-xl > .card.border-0.shadow-sm.rounded-4 .btn-outline-secondary {
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+/* Specific Classification Badge - Basic & Common Duties (Dark Mode) */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-hero-bottom .classification-badge-basic-common-duties,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-hero-bottom [data-classification="Basic & Common Duties" i],
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-hero-card .classification-badge-basic-common-duties,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-hero-card [data-classification="Basic & Common Duties" i] {
+    background: rgba(34, 197, 94, 0.14) !important;
+    color: #4ade80 !important;
+    border: 1px solid rgba(34, 197, 94, 0.30) !important;
 }
 
 /* Playlist PDF Reader Orientation & Sizing Utilities */
@@ -933,4 +1294,244 @@ body.dark-mode .assessment-access-modal__cancel-btn:hover {
         flex-direction: row;
     }
 }
+
+/* ==========================================================================
+   Playlist Listing — Comprehensive Dark Mode System
+   ========================================================================== */
+
+/* 1. Quick Filter Card */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card {
+    background: #152235 !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    color: #f1f5f9 !important;
+    box-shadow: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .card-body {
+    background: #152235 !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-fast-filter-label {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .playlist-filter-control {
+    background-color: #192d45 !important;
+    border: 1px solid rgba(148, 163, 184, 0.3) !important;
+    color: #e2e8f0 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .playlist-filter-control:hover {
+    border-color: rgba(147, 197, 253, 0.55) !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .playlist-filter-control:focus {
+    border-color: #6aaed6 !important;
+    box-shadow: 0 0 0 3px rgba(106, 174, 214, 0.25) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .playlist-filter-search .form-control {
+    background-color: #192d45 !important;
+    border: 1px solid rgba(148, 163, 184, 0.3) !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .playlist-filter-search .form-control::placeholder {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .playlist-filter-search .input-icon-addon {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .playlist-filter-search .form-control:focus {
+    border-color: #6aaed6 !important;
+    box-shadow: 0 0 0 3px rgba(106, 174, 214, 0.25) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .playlist-filter-action-btn:not(.btn-primary) {
+    background-color: #192d45 !important;
+    border: 1px solid rgba(148, 163, 184, 0.28) !important;
+    color: #e2e8f0 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-card .playlist-filter-action-btn:not(.btn-primary):hover {
+    background-color: #203a57 !important;
+    border-color: rgba(147, 197, 253, 0.55) !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-filter-count {
+    border-color: #152235 !important;
+}
+
+/* 2. Playlist Grid & Cards */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card {
+    background: #152235 !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    color: #f1f5f9 !important;
+    box-shadow: none !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .card-body {
+    background: #152235 !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .playlist-title a {
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .playlist-title a:hover {
+    color: #93c5fd !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .small.text-muted,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .small.text-muted span {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .small.text-muted i {
+    color: #cbd5e1 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .playlist-content-list {
+    color: #cbd5e1 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .playlist-content-list .text-primary {
+    color: #60a5fa !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .progress {
+    background: #1a3356 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .progress-wrapper .text-primary {
+    color: #60a5fa !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .progress-wrapper .text-muted {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .badge.bg-danger-lt {
+    background: rgba(239, 68, 68, 0.18) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.30) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .badge.bg-warning-lt {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.30) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .badge.bg-secondary-lt {
+    background: rgba(148, 163, 184, 0.15) !important;
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .btn-secondary:disabled {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #64748b !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-card .btn-danger-lt:disabled {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+    color: #f87171 !important;
+}
+
+/* 3. More Filters Modal */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .modal-content {
+    background-color: #152235 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .modal-header {
+    background-color: #152235 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .modal-title {
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .modal-body {
+    background-color: #152235 !important;
+    color: #e2e8f0 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .fw-semibold {
+    color: #e2e8f0 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal hr {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .form-label.small.text-muted {
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .form-check-label {
+    color: #e2e8f0 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .form-select,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) #playlistMoreFiltersModal .form-control {
+    background-color: #192d45 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #f1f5f9 !important;
+}
+
+/* 4. Playlist Pagination */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-pagination .page-item .page-link {
+    background: #152235 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #93c5fd !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-pagination .page-item.active .page-link {
+    background: #6AAED6 !important;
+    border-color: #6AAED6 !important;
+    color: #ffffff !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-pagination .page-item.disabled .page-link {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    color: #475569 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+    background: #203a57 !important;
+    color: #bfdbfe !important;
+    border-color: rgba(96, 165, 250, 0.35) !important;
+}
+
+/* 5. Empty State */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-empty-card {
+    background: #152235 !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-empty-card h3 {
+    color: #f1f5f9 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .playlist-empty-card p {
+    color: #94a3b8 !important;
+}
+
 

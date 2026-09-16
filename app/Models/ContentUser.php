@@ -22,7 +22,9 @@ class ContentUser extends Model
         'total_pages',
         'current_time',
         'duration_seconds',
+        'afk_duration_seconds',
         'learning_hours',
+        'completed_at',
         'learning_status',
     ];
 
@@ -32,8 +34,45 @@ class ContentUser extends Model
         'total_pages' => 'integer',
         'current_time' => 'integer',
         'duration_seconds' => 'integer',
+        'afk_duration_seconds' => 'integer',
         'learning_hours' => 'decimal:1',
+        'completed_at' => 'datetime',
     ];
+
+    public function getAfkDurationAttribute(): int
+    {
+        return (int) ($this->afk_duration_seconds ?? 0);
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (ContentUser $contentUser) {
+            if ($contentUser->isFinished() && $contentUser->completed_at === null) {
+                $contentUser->completed_at = now();
+            }
+
+            $content = $contentUser->relationLoaded('content') ? $contentUser->content : $contentUser->content()->first();
+            if ($content) {
+                $masterHours = $content->learning_hours;
+                if ($masterHours === null && !empty($content->duration)) {
+                    $masterHours = app(\App\Services\Learning\LearningHourService::class)->calculate($content->duration);
+                }
+
+                if ($masterHours !== null) {
+                    $masterFloat = (float) $masterHours;
+                    $progress = (int) ($contentUser->progress ?? 0);
+
+                    if ($contentUser->isFinished()) {
+                        $contentUser->learning_hours = $masterFloat;
+                    } elseif ($progress > 0) {
+                        $contentUser->learning_hours = round($masterFloat * ($progress / 100), 1);
+                    } else {
+                        $contentUser->learning_hours = 0.0;
+                    }
+                }
+            }
+        });
+    }
 
     public function content()
     {

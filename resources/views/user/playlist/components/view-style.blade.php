@@ -1019,5 +1019,532 @@
     body.dark-mode .playlist-comment-modal .modal-header {
         border-color: rgba(148, 163, 184, .18);
     }
+
+    /* ============================================================
+       PLAYLIST DETAIL / VIEW DARK MODE SYSTEM
+       ============================================================ */
+
+    /* 1. Page Background & Back Link */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .learning-view-page {
+        background: #0f172a !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .learning-view-page a[href*="playlist"].text-primary {
+        color: #60a5fa !important;
+        transition: color 0.15s ease;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .learning-view-page a[href*="playlist"].text-primary:hover {
+        color: #93c5fd !important;
+    }
+
+    /* 1.1 Classification Badge - Basic & Common Duties (Dark Mode Only) */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-hero-bottom .classification-badge-basic-common-duties,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-hero-bottom [data-classification="Basic & Common Duties" i],
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-hero-card .classification-badge-basic-common-duties,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-hero-card [data-classification="Basic & Common Duties" i] {
+        background: rgba(34, 197, 94, 0.14) !important;
+        color: #4ade80 !important;
+        border: 1px solid rgba(34, 197, 94, 0.30) !important;
+    }
+
+    /* 2. Main Containers & Cards */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-playlist-card,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-player-card,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-content-info-card,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-ai-card,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-card {
+        background: #152235 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #f1f5f9 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-playlist-card .card-body,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-player-card .card-body,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .card-body,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-content-info-card .card-body,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-ai-card .card-body {
+        background: transparent !important;
+        color: #f1f5f9 !important;
+    }
+
+    /* 3. Content List Sidebar */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-playlist-card h3 {
+        color: #f8fafc !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-playlist-card .text-body {
+        color: #f1f5f9 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-playlist-card .text-muted {
+        color: #94a3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-playlist-card .progress {
+        background: #334155 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-playlist-card .progress-bar {
+        background: #0c5b9e !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistSearchInput {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+        color: #f1f5f9 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistSearchInput::placeholder {
+        color: #64748b !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistSearchBox .input-icon-addon {
+        color: #94a3b8 !important;
+    }
+
+    /* CRITICAL: Sidebar lesson items & text-dark override */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item {
+        color: #e2e8f0 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item .content-title-two-lines,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item .content-title-two-lines.text-dark {
+        color: #f1f5f9 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item .content-title-two-lines.text-secondary {
+        color: #cbd5e1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item .lesson-title span.fw-bold {
+        color: #94a3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item:hover {
+        background: rgba(30, 64, 175, .16) !important;
+        color: #f8fafc !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .20) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item.is-active {
+        background: rgba(37, 99, 235, .22) !important;
+        border-color: #60a5fa !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, .28) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item.is-active .content-title-two-lines {
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item.is-active .lesson-title span.fw-bold {
+        color: #93c5fd !important;
+    }
+
+    /* Inactive lesson item override (removes bg-light white clash) */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item.is-inactive,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item.is-inactive.bg-light {
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        opacity: 0.65 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item .lesson-meta {
+        color: #94a3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item .lesson-progress {
+        background: #334155 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-lesson-item .lesson-progress .progress-bar {
+        background: #0c5b9e !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .lesson-assessment-button.btn-outline-primary {
+        border-color: #60a5fa !important;
+        color: #93c5fd !important;
+        background: rgba(96, 165, 250, 0.08) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .lesson-assessment-button.btn-outline-primary:hover {
+        background: #0c5b9e !important;
+        border-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .lesson-assessment-button.disabled,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .lesson-assessment-button[aria-disabled="true"],
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .lesson-assessment-button:disabled {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+        color: #94a3b8 !important;
+        opacity: 1 !important;
+    }
+
+    /* 4. PDF Viewer UI Wrapper & Controls */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .owl-pdf-toolbar,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-pdf-toolbar {
+        background: #152235 !important;
+        border-bottom: 1px solid #334155 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .owl-pdf-toolbar .pdf-tb-btn,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-pdf-toolbar .pdf-tb-btn {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border-color: rgba(148, 163, 184, 0.25) !important;
+        color: #e2e8f0 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .owl-pdf-toolbar .pdf-tb-btn:hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-pdf-toolbar .pdf-tb-btn:hover {
+        background: #0c5b9e !important;
+        border-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .owl-pdf-toolbar .pdf-tb-btn:disabled,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-pdf-toolbar .pdf-tb-btn:disabled {
+        background: rgba(255, 255, 255, 0.02) !important;
+        border-color: rgba(255, 255, 255, 0.06) !important;
+        color: #64748b !important;
+        opacity: 1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .owl-pdf-toolbar .pdf-tb-zoomval {
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
+        color: #cbd5e1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .owl-pdf-toolbar .pdf-tb-sep {
+        background: rgba(148, 163, 184, 0.25) !important;
+    }
+
+    /* PDF Bottom Navigation Bar */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation {
+        background: #152235 !important;
+        border-top: 1px solid #334155 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-page {
+        background: rgba(34, 197, 94, 0.15) !important;
+        border: 1px solid rgba(34, 197, 94, 0.35) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-page .pdf-tb-stat-label {
+        color: #86efac !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-page strong,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-page .pdf-tb-pageno {
+        color: #4ade80 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-self-paced {
+        background: rgba(59, 130, 246, 0.15) !important;
+        border: 1px solid rgba(59, 130, 246, 0.35) !important;
+        color: #93c5fd !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-self-paced .pdf-tb-stat-label {
+        color: #93c5fd !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-self-paced strong {
+        color: #60a5fa !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-self-paced i {
+        color: #60a5fa !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-minimum,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-countdown {
+        background: rgba(148, 163, 184, 0.12) !important;
+        border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-minimum .pdf-tb-stat-label,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-countdown .pdf-tb-stat-label {
+        color: #cbd5e1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-minimum strong,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation .pdf-tb-stat-countdown strong {
+        color: #f1f5f9 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation-btn {
+        background: #0c5b9e !important;
+        border-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation-btn:hover {
+        background: #09477d !important;
+        border-color: #09477d !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation-btn:disabled,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .pdf-page-navigation-btn.disabled {
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
+        color: #64748b !important;
+        opacity: 1 !important;
+    }
+
+    /* 5. Action Buttons (view-navigation-card) */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn:disabled,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn.disabled,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .certificate-action-button:disabled,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .certificate-action-wrapper.is-disabled .btn,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn-outline-secondary:disabled {
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
+        color: #94a3b8 !important;
+        opacity: 1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn:disabled i,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .btn-outline-secondary:disabled i,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-navigation-card .certificate-action-button:disabled i {
+        color: #94a3b8 !important;
+    }
+
+    /* 6. Content Information & Share */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-content-info-card h2 {
+        color: #f8fafc !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-content-info-card .text-muted {
+        color: #94a3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .overview-inline-meta {
+        color: #94a3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .overview-inline-meta .overview-meta-button {
+        color: #94a3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .overview-inline-meta .overview-meta-button:hover {
+        color: #60a5fa !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .overview-inline-meta .overview-meta-separator {
+        color: #64748b !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-content-info-card .btn-outline-secondary {
+        border-color: rgba(148, 163, 184, 0.25) !important;
+        color: #94a3b8 !important;
+        background: transparent !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-content-info-card .btn-outline-secondary:hover {
+        border-color: #60a5fa !important;
+        color: #ffffff !important;
+        background: rgba(59, 130, 246, 0.15) !important;
+    }
+
+    /* 7. Overview Card */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .chapter-description-box {
+        background: #111827 !important;
+        border: 1px solid #334155 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .chapter-description-box h4 {
+        color: #f8fafc !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .chapter-description-box .overview-text,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistOverviewText {
+        color: #cbd5e1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .chapter-description-box .overview-toggle,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .chapter-description-box a.btn-link,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .chapter-description-box button.btn-link {
+        color: #60a5fa !important;
+        text-decoration: none;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .chapter-description-box .overview-toggle:hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .chapter-description-box a.btn-link:hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .chapter-description-box button.btn-link:hover {
+        color: #93c5fd !important;
+        text-decoration: underline;
+    }
+
+    /* 8. Completion Requirements */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #playlistCompletionRequirementsTitle {
+        color: #f8fafc !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) section[aria-labelledby="playlistCompletionRequirementsTitle"] .border.rounded-3 {
+        background: #111827 !important;
+        border-color: #334155 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) section[aria-labelledby="playlistCompletionRequirementsTitle"] .small.fw-semibold {
+        color: #e2e8f0 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) section[aria-labelledby="playlistCompletionRequirementsTitle"] .badge.bg-blue-lt {
+        background: rgba(59, 130, 246, 0.15) !important;
+        color: #93c5fd !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) section[aria-labelledby="playlistCompletionRequirementsTitle"] .badge.bg-success-lt {
+        background: rgba(34, 197, 94, 0.15) !important;
+        color: #86efac !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) section[aria-labelledby="playlistCompletionRequirementsTitle"] .badge.bg-danger-lt {
+        background: rgba(239, 68, 68, 0.15) !important;
+        color: #fca5a5 !important;
+    }
+
+    /* 9. AI Assistant Panel */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-ai-card .border-bottom,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-ai-card .border-top {
+        border-color: #334155 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-ai-card .fw-bold {
+        color: #f8fafc !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-ai-card .text-muted {
+        color: #94a3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-message-box {
+        background: rgba(15, 23, 42, 0.75) !important;
+        border: 1px solid rgba(148, 163, 184, 0.16) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-message-box .text-dark,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-message-box span.fw-semibold {
+        color: #f8fafc !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-message-box .text-secondary {
+        color: #cbd5e1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-suggestion-btn,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-ai-card .btn-light.border.ai-suggestion-btn {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border: 1px solid rgba(148, 163, 184, 0.22) !important;
+        color: #cbd5e1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-suggestion-btn i {
+        color: #60a5fa !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-suggestion-btn:hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .view-ai-card .btn-light.border.ai-suggestion-btn:hover {
+        background: #05507d !important;
+        border-color: #05507d !important;
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-suggestion-btn:hover i {
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #aiChatInput {
+        background: #111827 !important;
+        border-color: rgba(148, 163, 184, 0.25) !important;
+        color: #f8fafc !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #aiChatInput::placeholder {
+        color: #64748b !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-input-group .btn-primary {
+        background: #0c5b9e !important;
+        border-color: #0c5b9e !important;
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .ai-input-group .btn-primary:hover {
+        background: #09477d !important;
+        border-color: #09477d !important;
+    }
+
+    /* 10. Scrollbar */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-scroll-area {
+        scrollbar-color: #475569 #152235;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-scroll-area::-webkit-scrollbar-track {
+        background: #152235;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-scroll-area::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 999px;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-scroll-area::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+    }
+
+    /* 11. Panel Toggles & Modals */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .panel-header-toggle {
+        background: #192d45 !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #cbd5e1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .panel-header-toggle:hover {
+        background: #203a57 !important;
+        border-color: rgba(96, 165, 250, 0.4) !important;
+        color: #f1f5f9 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .restore-toggle-btn {
+        background: #192d45 !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #cbd5e1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .restore-toggle-btn:hover {
+        background: #203a57 !important;
+        border-color: rgba(96, 165, 250, 0.4) !important;
+        color: #f1f5f9 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-comment-modal .modal-content {
+        background: #152235 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #f1f5f9 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-comment-modal .modal-header {
+        background: #152235 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-comment-modal .modal-title {
+        color: #f1f5f9 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-comment-modal .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .playlist-comment-modal .modal-body {
+        background: #152235 !important;
+        color: #e2e8f0 !important;
+    }
 </style>
 

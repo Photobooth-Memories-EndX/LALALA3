@@ -11,8 +11,10 @@ use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
+use App\Services\AssessmentAccessService;
 use App\Services\CertificateEligibilityService;
 use App\Services\Learning\LearningProgressResolver;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -23,6 +25,48 @@ class PlaylistUserController extends Controller
 {
     public function __construct(private LearningProgressResolver $resolver)
     {
+    }
+
+    /**
+     * AJAX live autocomplete search for active published playlists.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->get('q', ''));
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        $keyword = '%' . $query . '%';
+
+        $playlists = TrainingPlan::withCount([
+                'trainingplandetail as total_contents' => function ($q) {
+                    $q->whereHas('content', fn ($cq) => $cq->where('active', 'Active'));
+                }
+            ])
+            ->where('active', 'Active')
+            ->whereHas('trainingplandetail.content', fn ($q) => $q->where('active', 'Active'))
+            ->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', $keyword)
+                    ->orWhere('slug', 'like', $keyword)
+                    ->orWhere('url_link', 'like', $keyword)
+                    ->orWhereHas('trainingplandetail.content', fn ($cq) => $cq->where('title', 'like', $keyword));
+            })
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
+        $results = $playlists->map(function ($playlist) {
+            return [
+                'id'             => $playlist->id,
+                'title'          => $playlist->title,
+                'slug'           => $playlist->slug,
+                'total_contents' => (int) ($playlist->total_contents ?? 0),
+                'learning_hours' => $playlist->learning_hours,
+            ];
+        });
+
+        return response()->json($results->values());
     }
 
     public function index()
@@ -156,7 +200,39 @@ class PlaylistUserController extends Controller
         ]);
     }
 
-    public function view($slug, $vidslug, CertificateEligibilityService $certificateEligibility)
+    /**
+     * Show/redirect to the first accessible video of the playlist, or back to playlist index.
+     */
+    public function show($slug)
+    {
+        $trainingplan = TrainingPlan::where('active', 'Active')
+            ->where(function ($q) use ($slug) {
+                $q->where('slug', $slug)
+                  ->orWhere('id', $slug);
+            })
+            ->first();
+
+        if (!$trainingplan) {
+            return redirect()->route('playlist.user.index');
+        }
+
+        $firstDetail = $trainingplan->trainingplandetail()
+            ->whereHas('content', fn ($q) => $q->where('active', 'Active'))
+            ->orderByRaw('CAST(content_order AS UNSIGNED) ASC')
+            ->with('content')
+            ->first();
+
+        if ($firstDetail && $firstDetail->content) {
+            return redirect()->route('playlist.user.view', [
+                'slug'    => $trainingplan->slug,
+                'vidslug' => $firstDetail->content->slug,
+            ]);
+        }
+
+        return redirect()->route('playlist.user.index');
+    }
+
+    public function view($slug, $vidslug, CertificateEligibilityService $certificateEligibility, AssessmentAccessService $assessmentAccessService)
     {
         $userId = Auth::id();
 
@@ -250,7 +326,8 @@ class PlaylistUserController extends Controller
         $contentAssessmentProgress = $certificateEligibility->contentAssessmentProgress(
             $content_all->pluck('content_id'),
             Auth::user(),
-            $playlistCertificateSetting
+            $playlistCertificateSetting,
+            (int) $trainingplan->id
         );
         $assessmentsByContent = $contentAssessmentProgress['assessmentsByContent'];
 
@@ -337,6 +414,148 @@ class PlaylistUserController extends Controller
             ->where('content_id', $content->id)
             ->count();
 
+        // Resolve all content assessments associated with this playlist
+        $playlistContentAssessments = Assesment::where('type', 'content')
+            ->where('assasment_content_for', 'playlist')
+            ->where('trainingplan_id', $trainingplan->id)
+            ->whereIn('content_id', $content_all->pluck('content_id'))
+            ->get()
+            ->keyBy('content_id');
+
+        $contentAssessmentStates = [];
+        $authUser = Auth::user();
+
+        foreach ($content_all as $item) {
+            $cId = $item->content_id;
+            $cAssessment = $playlistContentAssessments->get($cId);
+            if (!$cAssessment) {
+                continue;
+            }
+
+            $denialReason = $assessmentAccessService->denialReason($cAssessment, $authUser, null, (int) $trainingplan->id);
+
+            $activeDraft = AssesmentResult::where('user_id', $userId)
+                ->where('assesment_id', $cAssessment->id)
+                ->where('batch', $cAssessment->batch)
+                ->where('final', 0)
+                ->latest('id')
+                ->first();
+
+            $finalAttempts = AssesmentResult::where('user_id', $userId)
+                ->where('assesment_id', $cAssessment->id)
+                ->where('batch', $cAssessment->batch)
+                ->where('final', 1)
+                ->count();
+
+            $hasPassed = AssesmentResult::where('user_id', $userId)
+                ->where('assesment_id', $cAssessment->id)
+                ->where('batch', $cAssessment->batch)
+                ->where('final', 1)
+                ->where('pass', 1)
+                ->exists();
+
+            $isPassed = ($denialReason === AssessmentAccessService::REASON_PASSED) || $hasPassed;
+            $isExpired = ($denialReason === AssessmentAccessService::REASON_EXPIRED);
+            $isInactive = ($denialReason === AssessmentAccessService::REASON_INACTIVE);
+            $isBeforeStart = ($denialReason === AssessmentAccessService::REASON_BEFORE_START);
+            $isMaxAttempts = ($denialReason === AssessmentAccessService::REASON_MAX_ATTEMPTS);
+
+            if ($isPassed) {
+                $state = 'passed';
+            } elseif ($isExpired) {
+                $state = 'expired';
+            } elseif ($isInactive) {
+                $state = 'inactive';
+            } elseif ($isBeforeStart) {
+                $state = 'before_start';
+            } elseif ($isMaxAttempts) {
+                $state = 'max_attempts';
+            } else {
+                $state = 'active';
+            }
+
+            if ($activeDraft && !$isExpired) {
+                $actionType = 'continue';
+            } elseif ($finalAttempts > 0) {
+                $actionType = 'remedial';
+            } else {
+                $actionType = 'start';
+            }
+
+            $answeredCount = 0;
+            $totalQuestions = 0;
+            if ($activeDraft) {
+                $userAnswer = is_array($activeDraft->user_answer)
+                    ? $activeDraft->user_answer
+                    : json_decode($activeDraft->user_answer ?? '[]', true);
+                $answeredCount = is_array($userAnswer)
+                    ? count(array_filter($userAnswer, fn ($a) => !empty($a) || $a === '0' || $a === 0))
+                    : 0;
+
+                $qSnap = is_array($activeDraft->question_snapshot)
+                    ? $activeDraft->question_snapshot
+                    : json_decode($activeDraft->question_snapshot ?? '[]', true);
+                $totalQuestions = is_array($qSnap) && count($qSnap) > 0
+                    ? count($qSnap)
+                    : $cAssessment->questions()->count();
+            }
+
+            $batchDisplay = !empty($cAssessment->batch) && $cAssessment->batch !== '-'
+                ? (str_contains(strtolower((string) $cAssessment->batch), 'batch') ? $cAssessment->batch : 'Batch ' . $cAssessment->batch)
+                : '-';
+            $fromDateVal = !empty($cAssessment->fromdate) ? date('d M Y, H:i', strtotime($cAssessment->fromdate)) : '-';
+            $toDateVal = !empty($cAssessment->todate) ? date('d M Y, H:i', strtotime($cAssessment->todate)) : '-';
+            $passingGradeVal = $cAssessment->passing_grade !== null && $cAssessment->passing_grade !== '' ? $cAssessment->passing_grade : '-';
+            $maxAttempts = (string) ($cAssessment->type ?? '') === 'global' ? 1 : (1 + (int) ($cAssessment->total_remedials ?? 0));
+            $attemptsDisplay = $finalAttempts . ' / ' . $maxAttempts . ' Attempts';
+            $duration = $cAssessment->time_limit_minutes ?? 60;
+
+            $contentAssessmentStates[$cId] = [
+                'assessment'      => $cAssessment,
+                'assessmentId'    => $cAssessment->id,
+                'title'           => $cAssessment->title,
+                'slug'            => $cAssessment->slug,
+                'state'           => $state,
+                'actionType'      => $actionType,
+                'isPassed'        => $isPassed,
+                'isExpired'       => $isExpired,
+                'isInactive'      => $isInactive,
+                'isBeforeStart'   => $isBeforeStart,
+                'isMaxAttempts'   => $isMaxAttempts,
+                'activeDraft'     => $activeDraft,
+                'finalAttempts'   => $finalAttempts,
+                'maxAttempts'     => $maxAttempts,
+                'attemptsDisplay' => $attemptsDisplay,
+                'batchDisplay'    => $batchDisplay,
+                'fromDateVal'     => $fromDateVal,
+                'toDateVal'       => $toDateVal,
+                'passingGrade'    => $passingGradeVal,
+                'duration'        => $duration,
+                'answeredCount'   => $answeredCount,
+                'totalQuestions'  => $totalQuestions,
+            ];
+        }
+
+        // Continue Learning Resolution:
+        $currentProgress = $progressByContentId[$content->id] ?? 0;
+        $isCurrentFinished = $currentProgress >= 100;
+
+        $nextUnfinishedContent = null;
+        foreach ($content_all as $item) {
+            $itemContent = $item->content;
+            if (!$itemContent || $itemContent->active !== 'Active') {
+                continue;
+            }
+            $itemProgress = $progressByContentId[$item->content_id] ?? 0;
+            if ($itemProgress < 100) {
+                $nextUnfinishedContent = $itemContent;
+                break;
+            }
+        }
+
+        $continueLearningContent = !$isCurrentFinished ? $content : $nextUnfinishedContent;
+        $isPlaylistFullyCompleted = $nextUnfinishedContent === null && $completedContent === $totalContent;
+
         return view('user.playlist.view', [
             'playlist'                       => $trainingplan,
             'content'                        => $content,
@@ -365,6 +584,9 @@ class PlaylistUserController extends Controller
             'playlistCertificateSetting'     => $playlistCertificateSetting,
             'playlistCertificateEligibility' => $playlistCertificateEligibility,
             'assessmentAttemptCounts'        => $assessmentAttemptCounts,
+            'contentAssessmentStates'        => $contentAssessmentStates,
+            'continueLearningContent'        => $continueLearningContent,
+            'isPlaylistFullyCompleted'       => $isPlaylistFullyCompleted,
         ]);
     }
 

@@ -4,15 +4,16 @@
             <table id="learning-table" class="table table-vcenter table-striped card-table w-100">
                 <thead>
                     <tr>
-                        <th>No</th>
-                        <th>Status</th>
-                        <th>Employee</th>
-                        <th>Learning Title</th>
-                        <th>Classification</th>
-                        <th>Duration</th>
-                        <th>Date</th>
-                        <th>Progress</th>
-                        <th>Action</th>
+                        <th class="text-center" style="width: 50px;">NO</th>
+                        <th class="text-center">STATUS</th>
+                        <th class="text-center">ID</th>
+                        <th>EMPLOYEE</th>
+                        <th>LEARNING TITLE</th>
+                        <th>CLASSIFICATION</th>
+                        <th class="text-center">CATEGORY</th>
+                        <th class="text-center">DURATION</th>
+                        <th class="text-center">DATE</th>
+                        <th class="text-center">PROGRESS</th>
                     </tr>
                 </thead>
                 <tbody></tbody>

@@ -16,11 +16,24 @@
     ];
 
     $quickFilters = [
-        'type' => ['all' => 'All', 'content' => 'Content', 'playlist' => 'Playlist', 'global' => 'Global'],
+        'type' => [
+            'all' => 'All',
+            'content_content' => 'Content (All Content)',
+            'content_playlist' => 'Content (Playlist)',
+            'trainingplan' => 'Playlist',
+            'global' => 'Global',
+        ],
         'status' => ['all' => 'All', 'not_started' => 'Pending', 'passed' => 'Passed', 'failed' => 'Failed'],
     ];
+
+    $rawActiveType = request('assessment_filter_type', request('type', 'all'));
+    $normalizedType = match ($rawActiveType) {
+        'playlist' => 'trainingplan',
+        default => $rawActiveType,
+    };
+
     $activeFilters = [
-        'type' => request('assessment_filter_type', 'all'),
+        'type' => $normalizedType,
         'status' => request('assessment_filter_status', 'all'),
         'year' => request('assessment_filter_year', 'all'),
         'month' => request('assessment_filter_month', 'all'),
@@ -46,8 +59,8 @@
                             <div class="dropdown assessment-filter-dropdown assessment-filter-dropdown-{{ $filter }}"
                                  data-assessment-filter="{{ $filter }}" data-selected-value="{{ $activeFilters[$filter] }}">
                                 <button type="button" class="btn btn-filter-chip assessment-fast-filter-control dropdown-toggle {{ $activeFilters[$filter] !== 'all' ? 'active' : '' }}"
-                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    {{ ucfirst($filter) }}: <span class="fw-semibold">{{ $options[$activeFilters[$filter]] ?? 'All' }}</span>
+                                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    {{ ucfirst($filter) }}: <span class="fw-semibold">{{ $options[$activeFilters[$filter]] ?? ($filter === 'type' && $activeFilters[$filter] === 'content' ? 'Content' : 'All') }}</span>
                                 </button>
                                 <div class="dropdown-menu">
                                     @foreach ($options as $value => $label)
@@ -61,7 +74,7 @@
                         <div class="dropdown assessment-filter-dropdown assessment-filter-dropdown-year"
                              data-assessment-filter="year" data-selected-value="{{ $activeFilters['year'] }}">
                             <button type="button" class="btn btn-filter-chip assessment-fast-filter-control dropdown-toggle {{ $activeFilters['year'] !== 'all' ? 'active' : '' }}"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Year: <span class="fw-semibold">{{ $activeFilters['year'] === 'all' ? 'All' : $activeFilters['year'] }}</span>
                             </button>
                             <div class="dropdown-menu assessment-quick-dropdown-scroll">
@@ -75,7 +88,7 @@
                         <div class="dropdown assessment-filter-dropdown assessment-filter-dropdown-month"
                              data-assessment-filter="month" data-selected-value="{{ $activeFilters['month'] }}">
                             <button type="button" class="btn btn-filter-chip assessment-fast-filter-control dropdown-toggle {{ $activeFilters['month'] !== 'all' ? 'active' : '' }}"
-                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Month: <span class="fw-semibold">{{ $activeFilters['month'] === 'all' ? 'All' : ($months[(int) $activeFilters['month']] ?? 'All') }}</span>
                             </button>
                             <div class="dropdown-menu assessment-quick-dropdown-scroll">
@@ -88,15 +101,22 @@
                     </div>
 
                     <div class="assessment-toolbar-search">
-                        <label class="visually-hidden" for="assessmentSearch">Search assessments</label>
-                        <div class="input-icon">
-                            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                            <input type="search"
-                                   class="form-control"
-                                   id="assessmentSearch"
-                                   placeholder="Search assessment..."
-                                   value="{{ request('assessment_search') }}"
-                                   autocomplete="off">
+                        <label class="visually-hidden" for="assessment-search-input">Search assessments</label>
+                        <div class="position-relative assessment-search-container flex-grow-1 search-input-wrapper">
+                            <div class="input-icon">
+                                <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                                <input type="text"
+                                       class="form-control module-search-input"
+                                       id="assessment-search-input"
+                                       name="assessment_search"
+                                       placeholder="Search assessment..."
+                                       value="{{ request('assessment_search', request('q')) }}"
+                                       autocomplete="off">
+                            </div>
+                            <div id="assessment-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">
+                                <div class="autocomplete-list-group list-group list-group-flush"></div>
+                                <div class="search-footer border-top bg-light p-2 text-center sticky-bottom"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -106,7 +126,7 @@
                             <i class="ti ti-search"></i>
                         </button>
                         <button type="button" class="btn btn-outline-primary btn-learning-secondary assessment-filter-action-btn position-relative"
-                                data-toggle="modal" data-target="#assessmentMoreFiltersModal"
+                                data-bs-toggle="modal" data-bs-target="#assessmentMoreFiltersModal"
                                 title="More Filters" aria-label="More Filters">
                             <i class="ti ti-adjustments-horizontal"></i>
                             <span class="badge bg-primary text-white {{ $activeAdvancedCount ? '' : 'd-none' }}" id="assessmentMoreFiltersCount">{{ $activeAdvancedCount ?: '' }}</span>
@@ -237,7 +257,7 @@
                         <h2 class="modal-title fw-bold text-dark mb-1" id="assessmentMoreFiltersTitle" style="font-size: 26px;">More Filters</h2>
                         <div class="text-muted" style="font-size: 14px;">Advanced Filter</div>
                     </div>
-                    <button type="button" class="modal-close-btn" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="modal-close-btn" data-bs-dismiss="modal" aria-label="Close">
                         <i class="ti ti-x"></i>
                     </button>
                 </div>

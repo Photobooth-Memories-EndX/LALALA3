@@ -8,18 +8,73 @@ use App\Models\Classification;
 use App\Models\Comment;
 use App\Models\Content;
 use App\Models\ContentUser;
+use App\Services\AssessmentAccessService;
 use App\Services\LearningAnalyticsService;
 use App\Support\DurationFormatter;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ContentUserController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for active published content items.
+     */
+    public function autocomplete(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->get('q', ''));
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        $todayDate = Carbon::today()->toDateString();
+        $keyword = '%' . $query . '%';
+
+        $contents = Content::with(['classification'])
+            ->where('active', 'Active')
+            ->where(function ($q) {
+                $q->where('playlistonly', 'N')
+                    ->orWhereNull('playlistonly');
+            })
+            ->notExpired($todayDate)
+            ->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', $keyword)
+                    ->orWhere('author', 'like', $keyword)
+                    ->orWhere('description', 'like', $keyword)
+                    ->orWhereHas('classification', fn ($c) => $c->where('classification_name', 'like', $keyword));
+            })
+            ->latest('created_at')
+            ->limit(10)
+            ->get();
+
+        $results = $contents->map(function ($content) {
+            $rawType = strtolower((string) ($content->type ?? 'video'));
+            $typeLabel = match ($rawType) {
+                'document', 'doc', 'pdf' => 'Document',
+                'video'                  => 'Video',
+                'youtube'                => 'MOOC',
+                default                  => ucwords(str_replace('_', ' ', $rawType)),
+            };
+
+            return [
+                'id'         => $content->id,
+                'title'      => $content->title,
+                'slug'       => $content->slug,
+                'type'       => $rawType,
+                'type_label' => $typeLabel,
+                'author'     => $content->author,
+                'category'   => $content->classification->classification_name ?? null,
+                'duration'   => $content->duration,
+            ];
+        });
+
+        return response()->json($results->values());
+    }
 
     public function index(Request $request, LearningAnalyticsService $analyticsService)
     {
-        $filterSearch = $request->s ?: $request->search;
+        $filterSearch = $request->s ?: ($request->q ?: $request->search);
         $filterType = $request->type;
         $filterClassification = $request->classification;
         $filterDateOrder = $request->date_order ?? 'newest';
@@ -63,10 +118,6 @@ class ContentUserController extends Controller
 
         $queryContent = Content::with(['classification'])
             ->where('active', 'Active')
-            ->where(function ($query) {
-                $query->where('playlistonly', 'N')
-                    ->orWhereNull('playlistonly');
-            })
             ->notExpired($todayDate);
 
         if ($filterSearch) {
@@ -249,7 +300,7 @@ class ContentUserController extends Controller
         ), $heroSummary));
     }
 
-        public function view($slug)
+    public function view($slug, AssessmentAccessService $assessmentAccess)
     {
         $content = Content::findBySlug($slug);
 
@@ -276,7 +327,12 @@ class ContentUserController extends Controller
             'content_id' => $content->id
         ]);
 
-        $queryAssessment = Assesment::query()->where('type', 'content');
+        $queryAssessment = Assesment::query()
+            ->where('type', 'content')
+            ->where(function ($q) {
+                $q->where('assasment_content_for', 'content')
+                  ->orWhereNull('assasment_content_for');
+            });
 
         $assesment = $queryAssessment
             ->where('content_id', $content->id)
@@ -291,14 +347,117 @@ class ContentUserController extends Controller
                 ->where('user_id', Auth::user()->id);
         }
 
-        $assessmentCount = $queryAssessmentResult
+        $assessmentCount = (clone $queryAssessmentResult)
             ->where('final', 1)
             ->count();
 
-        $assessmentLatestScores = $queryAssessmentResult
+        $assessmentLatestScores = (clone $queryAssessmentResult)
             ->latest()
             ->first()
             ->score ?? 0;
+
+        // Determine assessment access status using canonical AssessmentAccessService & model rules
+        $activeDraft = null;
+        $isExpired = false;
+        $isInactive = false;
+        $isBeforeStart = false;
+        $effectiveDeadline = null;
+        $actionType = 'start';
+        $canStart = false;
+        $canContinue = false;
+        $canRemedial = false;
+        $maxAttempts = 1;
+        $isPassed = false;
+        $answeredCount = 0;
+        $totalCount = 0;
+        $denialReason = null;
+
+        if (isset($assesment)) {
+            $user = Auth::user();
+            $maxAttempts = (string) ($assesment->type ?? '') === 'global' ? 1 : (1 + (int) ($assesment->total_remedials ?? 0));
+            $isInactive = strtoupper(trim((string) ($assesment->status ?? ''))) === 'NOT';
+
+            $activeDraft = AssesmentResult::where('user_id', $user->id)
+                ->where('assesment_id', $assesment->id)
+                ->where('batch', $assesment->batch)
+                ->where('final', 0)
+                ->latest('id')
+                ->first();
+
+            $hasAccessPeriod = $assesment->hasAccessPeriod() && !empty($assesment->todate);
+            $hasTimeLimit = $assesment->timer === 'y' && !empty($assesment->time_limit_minutes) && (int) $assesment->time_limit_minutes > 0;
+
+            if ($activeDraft) {
+                if ($hasAccessPeriod && $hasTimeLimit) {
+                    $periodDeadline = Carbon::parse($assesment->todate);
+                    $timeLimitDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
+                    $effectiveDeadline = $periodDeadline->min($timeLimitDeadline);
+                } elseif ($hasAccessPeriod) {
+                    $effectiveDeadline = Carbon::parse($assesment->todate);
+                } elseif ($hasTimeLimit) {
+                    $effectiveDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assesment->time_limit_minutes);
+                }
+
+                if ($effectiveDeadline !== null && now()->format('Y-m-d H:i:s') > $effectiveDeadline->format('Y-m-d H:i:s')) {
+                    $isExpired = true;
+                }
+
+                $userAnswer = is_array($activeDraft->user_answer) ? $activeDraft->user_answer : [];
+                $answeredCount = count(array_filter($userAnswer, fn($v) => $v !== null && $v !== ''));
+
+                $snapshot = is_array($activeDraft->question_snapshot) ? $activeDraft->question_snapshot : [];
+                $totalCount = count($snapshot) > 0 ? count($snapshot) : ($assesment->questions()->count() ?: 10);
+            } else {
+                if ($hasAccessPeriod && !empty($assesment->fromdate) && !empty($assesment->todate)) {
+                    $nowStr = now()->format('Y-m-d H:i:s');
+                    $fromStr = Carbon::parse($assesment->fromdate)->format('Y-m-d H:i:s');
+                    $toStr = Carbon::parse($assesment->todate)->format('Y-m-d H:i:s');
+                    if ($nowStr < $fromStr) {
+                        $isBeforeStart = true;
+                    } elseif ($nowStr > $toStr) {
+                        $isExpired = true;
+                    }
+                }
+                $totalCount = $assesment->questions()->count() ?: 10;
+            }
+
+            // Sync with canonical AssessmentAccessService
+            $denialReason = $assessmentAccess->denialReason($assesment, $user);
+            if ($denialReason === AssessmentAccessService::REASON_INACTIVE) {
+                $isInactive = true;
+            } elseif ($denialReason === AssessmentAccessService::REASON_EXPIRED) {
+                $isExpired = true;
+            } elseif ($denialReason === AssessmentAccessService::REASON_BEFORE_START) {
+                $isBeforeStart = true;
+            }
+
+            $meetsProgressRequirement = $content_user ? $content_user->meetsAssessmentProgressRequirement() : true;
+            $isPassed = (bool) (clone $queryAssessmentResult)->where('pass', 1)->exists();
+            if (!$isPassed && $assessmentLatestScores >= ($assesment->passing_grade ?? 80)) {
+                $isPassed = true;
+            }
+
+            if ($isPassed) {
+                $actionType = 'passed';
+            } elseif ($isInactive) {
+                $actionType = 'inactive';
+            } elseif ($isExpired) {
+                $actionType = 'expired';
+            } elseif ($isBeforeStart) {
+                $actionType = 'before_start';
+            } elseif ($activeDraft) {
+                $actionType = 'continue';
+                $canContinue = !$isExpired && !$isInactive && !$isBeforeStart;
+            } elseif ($assessmentCount >= $maxAttempts) {
+                $actionType = 'max_attempts';
+            } elseif ($assessmentCount > 0) {
+                $actionType = 'remedial';
+                $canRemedial = !$isExpired && !$isInactive && !$isBeforeStart && $meetsProgressRequirement;
+            } else {
+                $actionType = 'start';
+                $canStart = !$isExpired && !$isInactive && !$isBeforeStart && $meetsProgressRequirement;
+            }
+        }
 
         // comment pagination + reply + like
         $comment = Comment::with([
@@ -335,7 +494,21 @@ class ContentUserController extends Controller
             'discussionCount',
             'totalCommentCount',
             'bookmarkCount',
-            'isBookmarked'
+            'isBookmarked',
+            'activeDraft',
+            'isExpired',
+            'isInactive',
+            'isBeforeStart',
+            'canStart',
+            'canContinue',
+            'canRemedial',
+            'actionType',
+            'effectiveDeadline',
+            'maxAttempts',
+            'isPassed',
+            'answeredCount',
+            'totalCount',
+            'denialReason'
         ));
     }
 
@@ -383,6 +556,8 @@ class ContentUserController extends Controller
             'total_pages'      => 'nullable|integer|min:1|max:100000',
             'current_time'     => 'nullable|numeric|min:0',
             'duration_seconds' => 'nullable|numeric|min:0',
+            'afk_seconds'      => 'nullable|numeric|min:0',
+            'afk_duration_seconds' => 'nullable|numeric|min:0',
             'active_page'      => 'nullable|integer|min:1',
             'completed_page'   => 'nullable|integer|min:1',
             'page_elapsed_seconds' => 'nullable|numeric|min:0|max:300',
@@ -565,6 +740,11 @@ class ContentUserController extends Controller
             $contentUser->learning_status = 'in_progress';
         }
 
+        $afkDuration = $validated['afk_duration_seconds'] ?? $validated['afk_seconds'] ?? null;
+        if ($afkDuration !== null && (float) $afkDuration > 0) {
+            $contentUser->afk_duration_seconds = max((int) ($contentUser->afk_duration_seconds ?? 0), (int) round((float) $afkDuration));
+        }
+
         $contentUser->save();
 
         return response()->json([
@@ -578,6 +758,7 @@ class ContentUserController extends Controller
             'remaining_seconds' => $remainingSeconds,
             'allowed_page' => $allowedPage,
             'duration_seconds' => $contentUser->duration_seconds,
+            'afk_duration_seconds' => (int) ($contentUser->afk_duration_seconds ?? 0),
         ]);
     }
 

@@ -5,28 +5,33 @@
     @include('main.monitoring.components.style')
     @include('main.monitoring.components.datatable-assets')
 
-    {{-- Header --}}
-    <div class="page-header d-print-none mb-3">
+    {{-- Page Header --}}
+    <div class="page-header d-print-none mb-0 pb-0">
         <div class="container-xl">
-            <div class="row align-items-center">
-                <div class="col">
-                    <div class="page-pretitle">Manage</div>
-                    <h2 class="owl-page-title mb-1">Monitoring System</h2>
-                    <div class="owl-page-subtitle">
-                       Monitor user learning progress, assessments, playlists, and certificates.
+            <!-- Back Navigation Link -->
+            <a href="{{ route('manage.dashboard') }}" class="btn btn-link p-0 mb-3 text-decoration-none d-inline-flex align-items-center gap-1 fw-semibold text-primary">
+                <i class="ti ti-arrow-left fs-2"></i> Back
+            </a>
+
+            <!-- Monitoring System Hero Header Card -->
+            <div class="card border border-light-subtle shadow-sm p-4 mb-3 rounded-3 bg-white hero-header-card">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0 hero-icon-box"
+                             style="width: 72px; height: 72px; background-color: #eef2ff; color: #003b6d;">
+                            <i class="ti ti-chart-line" style="font-size: 2rem !important;"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 fw-bold mb-1 text-dark header-title">Monitoring System</h2>
+                            <p class="text-muted small mb-0 header-subtitle">Monitor user learning progress, assessments, playlists, and certificates.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="col-auto ms-auto">
-                    <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
-                        <li class="breadcrumb-item"><a href="#">Manage</a></li>
-                        <li class="breadcrumb-item active" aria-current="page"><a href="#">Monitoring</a></li>
-                    </ol>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="page-body">
+    <div class="page-body mt-0 pt-0">
         <div class="container-xl">
 
             {{-- Alert scope khusus role 4 --}}

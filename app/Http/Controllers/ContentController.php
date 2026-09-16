@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Content;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\Classification;
 use App\Models\ContentUser;
@@ -14,6 +15,56 @@ use Illuminate\Support\Facades\Log;
 
 class ContentController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for content repository (Content Management).
+     */
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('s') ?? $request->get('search') ?? ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $contents = Content::with('classification')
+            ->where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('content.title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('content.title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('content.title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('content.description', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('content.author', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('content.slug', 'LIKE', "%{$rawQuery}%");
+            })
+            ->latest('content.id')
+            ->limit(10)
+            ->get();
+
+        $results = $contents->map(function ($item) {
+            return [
+                'id'             => $item->id,
+                'title'          => $item->title,
+                'name'           => $item->title,
+                'type'           => strtoupper($item->type ?? 'CONTENT'),
+                'type_label'     => \App\Support\ContentTypeHelper::label($item->type),
+                'slug'           => $item->slug,
+                'author'         => $item->author,
+                'active'         => $item->active,
+                'classification' => $item->classification->classification_name ?? null,
+                'url'            => url('/manage/content') . '?q=' . urlencode($item->title),
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
     public function index(Request $request)
     {
         $query = Content::query()->with('classification')->withCount('allComments');
@@ -23,7 +74,7 @@ class ContentController extends Controller
         $thirtyDaysFromToday = $today->copy()->addDays(30)->toDateString();
 
         // Search Filter
-        $search = $request->s ?: $request->search;
+        $search = $request->q ?: ($request->s ?: $request->search);
         if (filled($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('content.title', 'like', "%{$search}%")
@@ -505,12 +556,17 @@ class ContentController extends Controller
                 return to_route('content.edit', $slug)->with('success', 'Content successfully saved')->with('warning', 'Cannot publish because content doesn\'t have media.');
             }
         } else {
-
             $addmessage = "";
         }
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'Content successfully saved' . $addmessage,
+                'redirect' => route('content.index')
+            ]);
+        }
 
-        //
         return to_route('content.index')->with('success', 'Content successfully saved' . $addmessage . '');
     }
     public function destroy(Content $content)
@@ -535,9 +591,16 @@ class ContentController extends Controller
             ?: ($content->exists ? $content : Content::findOrFail($request->id));
 
         if ($targetContent->isPublished()) {
-            if ($request->action === 'unpublish') {
+            if ($request->action === 'unpublish' || $request->action === 'draft') {
                 $targetContent->active = 'Inactive';
                 $targetContent->save();
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'status'   => 200,
+                        'message'  => 'Content successfully saved as draft.',
+                        'redirect' => route('content.index')
+                    ]);
+                }
                 return to_route('content.edit', $targetContent->slug)->with('success', 'Content successfully unpublished');
             }
 
@@ -715,6 +778,18 @@ class ContentController extends Controller
             ]);
 
         app(\App\Services\PlaylistDurationService::class)->refreshForContent((int) $targetId);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => $message,
+                'redirect' => route('content.index')
+            ]);
+        }
+
+        if ($request->action === 'draft') {
+            return to_route('content.index')->with('success', 'Content saved as draft successfully.');
+        }
 
         return to_route('content.edit', $targetContent->slug)->with('success', $message)->with($redir, $redirmessage);
     }

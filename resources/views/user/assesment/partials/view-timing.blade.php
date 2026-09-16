@@ -3,12 +3,25 @@
     $hasTimer = $assesment->hasTimeLimit();
     $hasDeadline = $hasPeriod || $hasTimer;
 
-    $assessmentTypeLabel = match (strtolower((string) ($assesment->type ?? ''))) {
-        'content' => 'Content Assessment',
-        'trainingplan', 'playlist' => 'Playlist Assessment',
-        'global' => 'Global Assessment',
-        default => !empty($assesment->type) ? ucwords(str_replace('_', ' ', $assesment->type)) . ' Assessment' : 'Assessment',
-    };
+    $subHeadingDisplay = 'Assessment';
+    $typeBadgeDisplay  = 'Content Assessment';
+
+    if (($assesment->type ?? '') === 'global') {
+        $subHeadingDisplay = 'Global Assessment';
+        $typeBadgeDisplay  = 'Global Assessment';
+    } elseif (($assesment->type ?? '') === 'content') {
+        $contentFor = $assesment->assesment_content_for ?? ($assesment->assessment_content_for ?? 'content');
+        if ($contentFor === 'playlist') {
+            $subHeadingDisplay = 'Assessment (Playlist)';
+            $typeBadgeDisplay  = 'Content Assessment (Playlist)';
+        } else {
+            $subHeadingDisplay = 'Assessment (All Content)';
+            $typeBadgeDisplay  = 'Content Assessment (All Content)';
+        }
+    } elseif (!empty($assesment->type)) {
+        $subHeadingDisplay = ucwords(str_replace('_', ' ', $assesment->type)) . ' Assessment';
+        $typeBadgeDisplay  = $subHeadingDisplay;
+    }
 
     $isGlobal = ($assesment->type ?? '') === 'global';
     $calcCurrentAttempt = $currentAttempt ?? 1;
@@ -21,7 +34,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-start gap-3">
                     <div class="flex-fill">
-                        <div class="text-muted small mb-1">Assessment</div>
+                        <div class="text-muted small mb-1">{{ $subHeadingDisplay }}</div>
                         <h2 class="mb-1">{{ $assesment->title ?? '-' }}</h2>
 
                         <div class="d-flex flex-wrap gap-2">
@@ -30,7 +43,7 @@
                             </span>
 
                             <span class="badge bg-cyan-lt text-cyan">
-                                Type: {{ $assessmentTypeLabel }}
+                                Type: {{ $typeBadgeDisplay }}
                             </span>
 
                             @if ($isGlobal)

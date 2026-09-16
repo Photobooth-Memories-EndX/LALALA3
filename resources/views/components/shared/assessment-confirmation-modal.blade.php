@@ -5,21 +5,21 @@
      aria-labelledby="assessmentConfirmationModalTitle"
      aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document" style="max-width: 480px !important; width: 100%;">
-        <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-content rounded-4 border-0 shadow assessment-modal-shell">
             <div class="modal-header border-0 pb-0 px-4 pt-4">
                 <div class="d-flex align-items-center gap-2">
-                    <div class="modal-title-icon d-inline-flex align-items-center justify-content-center rounded-circle p-2" 
+                    <div class="modal-title-icon d-inline-flex align-items-center justify-content-center rounded-circle p-2 assessment-modal-icon-box" 
                          id="assessmentModalHeaderIconBox" 
                          style="width: 40px; height: 40px; background-color: rgba(40, 190, 88, 0.12); color: #28be58;">
                         <i class="ti ti-player-play fs-2" id="assessmentModalHeaderIconInner"></i>
                     </div>
                     <div>
-                        <h5 class="modal-title fw-bold mb-0" id="assessmentConfirmationModalTitle" style="color: #28be58 !important;">Start Assessment</h5>
-                        <div class="text-muted small" id="assessmentModalSubtitle">Confirmation</div>
+                        <h5 class="modal-title fw-bold mb-0 assessment-modal-title" id="assessmentConfirmationModalTitle" style="color: #28be58 !important;">Start Assessment</h5>
+                        <div class="text-muted small assessment-modal-subtitle" id="assessmentModalSubtitle">Confirmation</div>
                     </div>
                 </div>
                 <button type="button"
-                        class="btn-close close modal-close-btn border-0 bg-transparent text-muted ms-auto"
+                        class="btn-close close modal-close-btn border-0 bg-transparent text-muted ms-auto assessment-modal-close"
                         data-dismiss="modal"
                         data-bs-dismiss="modal"
                         aria-label="Close">
@@ -29,20 +29,20 @@
 
             <div class="modal-body px-4 py-3">
                 <!-- INFORMATION SECTION -->
-                <h6 class="fw-bold text-dark text-uppercase mb-2" style="font-size: 0.85rem; letter-spacing: 0.5px; color: #000000 !important;">
+                <h6 class="fw-bold text-dark text-uppercase mb-2 assessment-modal-section-title" style="font-size: 0.85rem; letter-spacing: 0.5px;">
                     INFORMATION
                 </h6>
-                <div class="bg-light rounded-3 p-3 mb-3">
+                <div class="bg-light rounded-3 p-3 mb-3 assessment-info-card">
                     <!-- ASSESSMENT TITLE / CONTENT HEADER -->
-                    <div class="assessment-title-wrapper mb-3 pb-2 border-bottom">
-                        <div class="text-dark small fw-bold text-uppercase mb-1" 
+                    <div class="assessment-title-wrapper mb-3 pb-2 border-bottom assessment-card-divider">
+                        <div class="text-dark small fw-bold text-uppercase mb-1 assessment-card-badge" 
                              id="assessmentModalTypeHeader" 
-                             style="font-size: 0.75rem; color: #212529 !important; letter-spacing: 0.5px;">
+                             style="font-size: 0.75rem; letter-spacing: 0.5px;">
                             ASSESSMENT CONTENT
                         </div>
-                        <h5 class="fw-bold text-dark mb-0 fs-5" 
+                        <h5 class="fw-bold text-dark mb-0 fs-5 assessment-card-name" 
                             id="assessmentModalName" 
-                            style="font-size: 1.1rem !important; line-height: 1.4; color: #1a1d20 !important;">
+                            style="font-size: 1.1rem !important; line-height: 1.4;">
                             -
                         </h5>
                     </div>
@@ -51,38 +51,38 @@
                     <div class="row g-2">
                         <!-- Date & Time (Stacked) -->
                         <div class="col-12 col-sm-6">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">DATE & TIME</strong>
-                            <div class="text-dark small" id="assessmentModalDateTime" style="color: #212529 !important; line-height: 1.35;">
+                            <strong class="text-dark d-block mb-1 assessment-card-label" style="font-size: 0.75rem;">DATE & TIME</strong>
+                            <div class="text-dark small assessment-card-value" id="assessmentModalDateTime" style="line-height: 1.35;">
                                 -
                             </div>
                         </div>
 
                         <!-- Passing Grade -->
                         <div class="col-6 col-sm-6">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">PASSING GRADE</strong>
-                            <div class="text-dark fw-bold small" id="assessmentModalPassingGrade" style="color: #212529 !important;">
+                            <strong class="text-dark d-block mb-1 assessment-card-label" style="font-size: 0.75rem;">PASSING GRADE</strong>
+                            <div class="text-dark fw-bold small assessment-card-value" id="assessmentModalPassingGrade">
                                 -
                             </div>
                         </div>
 
                         <!-- Duration -->
                         <div class="col-6 col-sm-6">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">DURATION</strong>
-                            <div class="text-dark small" id="assessmentModalDuration" style="color: #212529 !important;">
+                            <strong class="text-dark d-block mb-1 assessment-card-label" style="font-size: 0.75rem;">DURATION</strong>
+                            <div class="text-dark small assessment-card-value" id="assessmentModalDuration">
                                 -
                             </div>
                         </div>
 
                         <!-- Batch (Global) atau Attempt (Content) -->
                         <div class="col-12 col-sm-6" id="assessmentModalBatchContainer" style="display: none;">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">BATCH</strong>
-                            <div class="text-dark small" id="assessmentModalBatch" style="color: #212529 !important;">
+                            <strong class="text-dark d-block mb-1 assessment-card-label" style="font-size: 0.75rem;">BATCH</strong>
+                            <div class="text-dark small assessment-card-value" id="assessmentModalBatch">
                                 -
                             </div>
                         </div>
                         <div class="col-12 col-sm-6" id="assessmentModalAttemptContainer">
-                            <strong class="text-dark d-block mb-1" style="font-size: 0.75rem; color: #212529 !important;">ATTEMPT</strong>
-                            <div class="text-dark small" id="assessmentModalAttempt" style="color: #212529 !important;">
+                            <strong class="text-dark d-block mb-1 assessment-card-label" style="font-size: 0.75rem;">ATTEMPT</strong>
+                            <div class="text-dark small assessment-card-value" id="assessmentModalAttempt">
                                 -
                             </div>
                         </div>
@@ -90,19 +90,19 @@
                 </div>
 
                 <!-- REQUIREMENTS / NOTICE SECTION -->
-                <h6 class="fw-bold text-dark text-uppercase mt-3 mb-2" id="assessmentModalNoticeHeader" style="font-size: 0.85rem; letter-spacing: 0.5px; color: #000000 !important;">
+                <h6 class="fw-bold text-dark text-uppercase mt-3 mb-2 assessment-modal-section-title" id="assessmentModalNoticeHeader" style="font-size: 0.85rem; letter-spacing: 0.5px;">
                     REQUIREMENTS
                 </h6>
                 <div id="assessmentModalNoticeContent">
                     <!-- Global Start Notice (English) -->
-                    <ol class="small text-dark ps-3 mb-0" id="assessmentNoticeGlobalStart" style="color: #212529 !important; display: none;">
+                    <ol class="small text-dark ps-3 mb-0 assessment-modal-list" id="assessmentNoticeGlobalStart" style="display: none;">
                         <li>Make sure you are in a safe and conducive environment, and that your device is ready to use.</li>
                         <li><em>Once started, the assessment cannot be exited until it is completed or the time expires.</em></li>
                         <li>The assessment will take place according to the stated date & time.</li>
                         <li>If an error occurs on your device or the connection is interrupted, your answers will be saved. Re-enter the assessment to continue as long as time is still available.</li>
                     </ol>
                     <!-- Start Requirements (English) -->
-                    <ol class="small text-dark ps-3 mb-0" id="assessmentNoticeStart" style="color: #212529 !important;">
+                    <ol class="small text-dark ps-3 mb-0 assessment-modal-list" id="assessmentNoticeStart">
                         <li>Ensure yourself, your device, and your environment are in a safe and conducive condition.</li>
                         <li>The assessment will take place according to the stated duration.</li>
                         <li>Once started, the assessment cannot be exited until it is completed or time expires.</li>
@@ -110,7 +110,7 @@
                         <li>Perform your best by utilizing the available opportunity.</li>
                     </ol>
                     <!-- Remedial Requirements (English) -->
-                    <ol class="small text-dark ps-3 mb-0" id="assessmentNoticeRemedial" style="color: #212529 !important; display: none;">
+                    <ol class="small text-dark ps-3 mb-0 assessment-modal-list" id="assessmentNoticeRemedial" style="display: none;">
                         <li>Ensure yourself, your device, and your environment are in a safe and conducive condition.</li>
                         <li>Remedial will take place according to the stated duration.</li>
                         <li>Once started, remedial cannot be exited until it is completed or time expires.</li>
@@ -122,13 +122,13 @@
 
             <div class="modal-footer border-0 pt-0 px-4 pb-4">
                 <button type="button"
-                        class="btn btn-light rounded-pill px-4 text-secondary"
+                        class="btn btn-light rounded-pill px-4 text-secondary assessment-btn-cancel"
                         data-dismiss="modal"
                         data-bs-dismiss="modal">
                     Cancel
                 </button>
                 <button type="button"
-                        class="btn rounded-pill px-4 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1"
+                        class="btn rounded-pill px-4 fw-semibold text-white shadow-sm d-inline-flex align-items-center gap-1 assessment-btn-action"
                         id="btnConfirmAssessmentAction"
                         style="background-color: #28be58 !important; border-color: #28be58 !important;">
                     <i class="ti ti-player-play fs-6"></i>
@@ -139,6 +139,223 @@
     </div>
 </div>
 
+<style>
+    /* ==========================================================================
+       Assessment Confirmation Modal Theme Styling (Light & Dark Mode)
+       ========================================================================== */
+    .assessment-modal-section-title {
+        color: #000000;
+    }
+    .assessment-card-badge {
+        color: #212529;
+    }
+    .assessment-card-name {
+        color: #1a1d20;
+    }
+    .assessment-card-label {
+        color: #212529;
+    }
+    .assessment-card-value {
+        color: #212529;
+    }
+    .assessment-modal-list {
+        color: #212529;
+    }
+
+    /* Dark Mode Overrides */
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-shell,
+    body.dark-mode #assessmentConfirmationModal .assessment-modal-shell,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-shell,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-modal-shell,
+    body.theme-dark #assessmentConfirmationModal .assessment-modal-shell {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45) !important;
+        color: var(--tblr-body-color, #fcfdfe) !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-subtitle,
+    body.dark-mode #assessmentConfirmationModal .assessment-modal-subtitle,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-subtitle,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-modal-subtitle,
+    body.theme-dark #assessmentConfirmationModal .assessment-modal-subtitle {
+        color: #94a3b8 !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-close,
+    body.dark-mode #assessmentConfirmationModal .assessment-modal-close,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-close,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-modal-close,
+    body.theme-dark #assessmentConfirmationModal .assessment-modal-close {
+        color: #94a3b8 !important;
+        opacity: 0.85;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-close:hover,
+    body.dark-mode #assessmentConfirmationModal .assessment-modal-close:hover,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-close:hover,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-modal-close:hover,
+    body.theme-dark #assessmentConfirmationModal .assessment-modal-close:hover {
+        color: #ffffff !important;
+        opacity: 1;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-close .ti,
+    body.dark-mode #assessmentConfirmationModal .assessment-modal-close .ti,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-close .ti,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-modal-close .ti,
+    body.theme-dark #assessmentConfirmationModal .assessment-modal-close .ti {
+        color: inherit !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-section-title,
+    body.dark-mode #assessmentConfirmationModal .assessment-modal-section-title,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-section-title,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-modal-section-title,
+    body.theme-dark #assessmentConfirmationModal .assessment-modal-section-title {
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-info-card,
+    body.dark-mode #assessmentConfirmationModal .assessment-info-card,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-info-card,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-info-card,
+    body.theme-dark #assessmentConfirmationModal .assessment-info-card {
+        background-color: #1f2e42 !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-divider,
+    body.dark-mode #assessmentConfirmationModal .assessment-card-divider,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-divider,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-card-divider,
+    body.theme-dark #assessmentConfirmationModal .assessment-card-divider {
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-badge,
+    body.dark-mode #assessmentConfirmationModal .assessment-card-badge,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-badge,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-card-badge,
+    body.theme-dark #assessmentConfirmationModal .assessment-card-badge {
+        color: #94a3b8 !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-name,
+    body.dark-mode #assessmentConfirmationModal .assessment-card-name,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-name,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-card-name,
+    body.theme-dark #assessmentConfirmationModal .assessment-card-name {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-label,
+    body.dark-mode #assessmentConfirmationModal .assessment-card-label,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-label,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-card-label,
+    body.theme-dark #assessmentConfirmationModal .assessment-card-label {
+        color: #94a3b8 !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-value,
+    body.dark-mode #assessmentConfirmationModal .assessment-card-value,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-card-value,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-card-value,
+    body.theme-dark #assessmentConfirmationModal .assessment-card-value {
+        color: #f1f5f9 !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-list,
+    body.dark-mode #assessmentConfirmationModal .assessment-modal-list,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-list,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-modal-list,
+    body.theme-dark #assessmentConfirmationModal .assessment-modal-list {
+        color: #cbd5e1 !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-list li::marker,
+    body.dark-mode #assessmentConfirmationModal .assessment-modal-list li::marker,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-list li::marker,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-modal-list li::marker,
+    body.theme-dark #assessmentConfirmationModal .assessment-modal-list li::marker {
+        color: #94a3b8 !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-list em,
+    body.dark-mode #assessmentConfirmationModal .assessment-modal-list em,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-modal-list em,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-modal-list em,
+    body.theme-dark #assessmentConfirmationModal .assessment-modal-list em {
+        color: #f1f5f9 !important;
+    }
+
+    /* Dark Mode Cancel Button */
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-btn-cancel,
+    body.dark-mode #assessmentConfirmationModal .assessment-btn-cancel,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-btn-cancel,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-btn-cancel,
+    body.theme-dark #assessmentConfirmationModal .assessment-btn-cancel {
+        background-color: #253549 !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] #assessmentConfirmationModal .assessment-btn-cancel:hover,
+    body.dark-mode #assessmentConfirmationModal .assessment-btn-cancel:hover,
+    body[data-bs-theme="dark"] #assessmentConfirmationModal .assessment-btn-cancel:hover,
+    [data-theme="dark"] #assessmentConfirmationModal .assessment-btn-cancel:hover,
+    body.theme-dark #assessmentConfirmationModal .assessment-btn-cancel:hover {
+        background-color: #2e415a !important;
+        color: #ffffff !important;
+    }
+
+    /* Assessment Popover Dark Mode */
+    [data-bs-theme="dark"] .popover.assessment-info-popover,
+    body.dark-mode .popover.assessment-info-popover,
+    body[data-bs-theme="dark"] .popover.assessment-info-popover,
+    [data-theme="dark"] .popover.assessment-info-popover,
+    body.theme-dark .popover.assessment-info-popover {
+        background-color: #1f2e42 !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45) !important;
+        color: #f1f5f9 !important;
+    }
+
+    [data-bs-theme="dark"] .popover.assessment-info-popover .popover-body,
+    body.dark-mode .popover.assessment-info-popover .popover-body,
+    body[data-bs-theme="dark"] .popover.assessment-info-popover .popover-body,
+    [data-theme="dark"] .popover.assessment-info-popover .popover-body,
+    body.theme-dark .popover.assessment-info-popover .popover-body {
+        background-color: transparent !important;
+        color: #f1f5f9 !important;
+    }
+
+    [data-bs-theme="dark"] .popover.assessment-info-popover .assessment-info-popover-header,
+    body.dark-mode .popover.assessment-info-popover .assessment-info-popover-header,
+    body[data-bs-theme="dark"] .popover.assessment-info-popover .assessment-info-popover-header,
+    [data-theme="dark"] .popover.assessment-info-popover .assessment-info-popover-header,
+    body.theme-dark .popover.assessment-info-popover .assessment-info-popover-header {
+        color: #94a3b8 !important;
+    }
+
+    [data-bs-theme="dark"] .popover.assessment-info-popover .assessment-info-popover-title,
+    body.dark-mode .popover.assessment-info-popover .assessment-info-popover-title,
+    body[data-bs-theme="dark"] .popover.assessment-info-popover .assessment-info-popover-title,
+    [data-theme="dark"] .popover.assessment-info-popover .assessment-info-popover-title,
+    body.theme-dark .popover.assessment-info-popover .assessment-info-popover-title {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] .popover.assessment-info-popover .assessment-info-popover-meta,
+    body.dark-mode .popover.assessment-info-popover .assessment-info-popover-meta,
+    body[data-bs-theme="dark"] .popover.assessment-info-popover .assessment-info-popover-meta,
+    [data-theme="dark"] .popover.assessment-info-popover .assessment-info-popover-meta,
+    body.theme-dark .popover.assessment-info-popover .assessment-info-popover-meta {
+        color: #cbd5e1 !important;
+    }
+</style>
+
+@push('scripts')
 <script>
     (function ($) {
         'use strict';
@@ -197,8 +414,14 @@
         $(document)
             .off('click.assessmentConfirmation', '.btn-start-test, .btn-remedial, .btn-continue-test, .btn-assessment-start, .btn-assessment-remedial, .btn-assessment-continue, [data-assessment-trigger="true"]')
             .on('click.assessmentConfirmation', '.btn-start-test, .btn-remedial, .btn-continue-test, .btn-assessment-start, .btn-assessment-remedial, .btn-assessment-continue, [data-assessment-trigger="true"]', function (e) {
-                e.preventDefault();
                 var $btn = $(this);
+
+                if ($btn.prop('disabled') || $btn.hasClass('disabled') || $btn.attr('aria-disabled') === 'true') {
+                    e.preventDefault();
+                    return false;
+                }
+
+                e.preventDefault();
 
                 var assessmentId = $btn.data('assessment-id') || $btn.attr('data-assessment-id');
                 if (!assessmentId) return;
@@ -260,6 +483,17 @@
                 var answeredCount = $btn.data('assessment-answered-count') || $row.attr('data-assessment-answered-count') || 0;
                 var totalCount = $btn.data('assessment-total-count') || $row.attr('data-assessment-total-count') || 0;
 
+                var isExpired = $btn.data('assessment-is-expired') === true || String($btn.attr('data-assessment-is-expired')) === 'true';
+                var isInactive = $btn.data('assessment-is-inactive') === true || String($btn.attr('data-assessment-is-inactive')) === 'true';
+                var isBeforeStart = $btn.data('assessment-is-before-start') === true || String($btn.attr('data-assessment-is-before-start')) === 'true';
+
+                if (!isExpired && toDate && toDate !== '-') {
+                    var parsedToDate = new Date(toDate);
+                    if (!isNaN(parsedToDate.getTime()) && new Date().getTime() > parsedToDate.getTime()) {
+                        isExpired = true;
+                    }
+                }
+
                 var actionType = $btn.data('assessment-action-type');
                 if (!actionType) {
                     if ($btn.hasClass('btn-continue-test') || $btn.hasClass('btn-assessment-continue')) {
@@ -297,6 +531,21 @@
                             $continueModal.find('#continueModalNoticeTitle').text('REQUIREMENTS');
                             $continueModal.find('#continueNoticeGlobal').hide();
                             $continueModal.find('#continueNoticeContent').show();
+                        }
+
+                        var $continueBtn = $continueModal.find('#btnConfirmContinueAssessment');
+                        if (isExpired || isInactive || isBeforeStart) {
+                            $continueBtn.addClass('disabled')
+                                .prop('disabled', true)
+                                .attr('aria-disabled', 'true')
+                                .attr('tabindex', '-1')
+                                .attr('style', 'background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important; cursor: not-allowed !important; pointer-events: none;');
+                        } else {
+                            $continueBtn.removeClass('disabled')
+                                .prop('disabled', false)
+                                .attr('aria-disabled', 'false')
+                                .removeAttr('tabindex')
+                                .attr('style', 'background-color: #0c5b9e !important; border-color: #0c5b9e !important; color: #ffffff !important; cursor: pointer; pointer-events: auto;');
                         }
 
                         $continueModal.find('#btnConfirmContinueAssessment').attr('href', targetUrl);
@@ -365,6 +614,20 @@
                             .html('<i class="ti ti-player-play fs-6"></i> <span>Start Test</span>');
                     }
 
+                    var $actionBtn = $confirmModal.find('#btnConfirmAssessmentAction');
+                    if (isExpired || isInactive || isBeforeStart) {
+                        $actionBtn.addClass('disabled')
+                            .prop('disabled', true)
+                            .attr('aria-disabled', 'true')
+                            .attr('tabindex', '-1')
+                            .attr('style', 'background-color: #6c757d !important; border-color: #6c757d !important; color: #ffffff !important; cursor: not-allowed !important; pointer-events: none;');
+                    } else {
+                        $actionBtn.removeClass('disabled')
+                            .prop('disabled', false)
+                            .attr('aria-disabled', 'false')
+                            .removeAttr('tabindex');
+                    }
+
                     $confirmModal.data('target-url', targetUrl);
                     $confirmModal.data('assessment-id', assessmentId);
 
@@ -375,6 +638,11 @@
         $(document)
             .off('click.assessmentConfirmSubmit', '#btnConfirmAssessmentAction')
             .on('click.assessmentConfirmSubmit', '#btnConfirmAssessmentAction', function (e) {
+                var $btn = $(this);
+                if ($btn.prop('disabled') || $btn.hasClass('disabled') || $btn.attr('aria-disabled') === 'true') {
+                    e.preventDefault();
+                    return false;
+                }
                 e.preventDefault();
                 var $modal = $('#assessmentConfirmationModal');
                 var targetUrl = $modal.data('target-url');
@@ -386,6 +654,11 @@
         $(document)
             .off('click.continueConfirmSubmit', '#btnConfirmContinueAssessment')
             .on('click.continueConfirmSubmit', '#btnConfirmContinueAssessment', function (e) {
+                var $btn = $(this);
+                if ($btn.prop('disabled') || $btn.hasClass('disabled') || $btn.attr('aria-disabled') === 'true') {
+                    e.preventDefault();
+                    return false;
+                }
                 var $modal = $('#continueAssessmentModal');
                 var targetUrl = $modal.data('target-url');
                 if (targetUrl && targetUrl !== '#' && targetUrl !== 'javascript:void(0);') {
@@ -415,12 +688,22 @@
                     batchDisplay = batchStr.toLowerCase().indexOf('batch') !== -1 ? batchStr : 'Batch ' + batchStr;
                 }
 
+                var relatedTo = $el.data('assessment-related-to') || $row.attr('data-assessment-related-to') || '';
+                var relatedSection = '';
+                if (relatedTo && String(relatedTo).trim() !== '' && String(relatedTo).trim() !== '—' && String(relatedTo).trim() !== '-') {
+                    relatedSection = '<div class="assessment-info-popover-related">' +
+                        '<div class="assessment-info-popover-related-label">Related to</div>' +
+                        '<div class="assessment-info-popover-related-value">' + $('<div>').text(relatedTo).html() + '</div>' +
+                        '</div>';
+                }
+
                 var popoverHtml = '<div class="assessment-info-popover-card">' +
                     '<div class="assessment-info-popover-header">Assessment Info</div>' +
                     '<div class="assessment-info-popover-title">' + $('<div>').text(title).html() + '</div>' +
                     '<div class="assessment-info-popover-meta">' +
                     '<i class="ti ti-layers-intersect"></i> ' + $('<div>').text(batchDisplay).html() +
                     '</div>' +
+                    relatedSection +
                     '</div>';
 
                 if (typeof $.fn.popover === 'function') {
@@ -445,5 +728,6 @@
         $(document).on('draw.dt', function () {
             initAssessmentNamePopovers();
         });
-    })(jQuery);
+    })(window.jQuery || jQuery);
 </script>
+@endpush

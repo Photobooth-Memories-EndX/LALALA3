@@ -54,48 +54,92 @@
     $isCompleted = $finalResult != null;
     $isPassed = $finalResult && $finalResult->pass;
 
-    $typeLabel = match (strtolower((string) ($assessment->type ?? ''))) {
-        'trainingplan', 'playlist' => 'Playlist',
-        'youtube'                  => 'MOOC',
-        default                    => ucwords(str_replace('_', ' ', $assessment->type ?? '-')),
-    };
+    $rawType = strtolower((string) ($assessment->type ?? ''));
+    $contentFor = strtolower((string) ($assessment->assasment_content_for ?? 'content'));
+    $hasTrainingPlanId = !empty($assessment->trainingplan_id);
+
+    // Strict user-facing Type & Category classifications:
+    // 1. Global Assessment:
+    //    Type: Global Assessment, Category: Global, Filter: global
+    // 2. Playlist Assessment:
+    //    Type: Playlist Assessment, Category: —, Filter: trainingplan
+    // 3. Content Assessment (content_for = playlist):
+    //    Type: Content Assessment, Category: Playlist, Filter: content_playlist
+    // 4. Content Assessment (content_for = content):
+    //    Type: Content Assessment, Category: All Content, Filter: content_content
+    if ($rawType === 'global') {
+        $typeDisplay = 'Global Assessment';
+        $categoryDisplay = 'Global';
+        $relatedToDisplay = '—';
+        $filterType = 'global';
+    } elseif ($rawType === 'trainingplan') {
+        $typeDisplay = 'Playlist Assessment';
+        $categoryDisplay = '—';
+        $tpTitle = $assessment->trainingplan->title ?? null;
+        $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
+        $relatedToDisplay = !empty($tpTitle) ? $tpTitle : (!empty($cTitle) ? $cTitle : '—');
+        $filterType = 'trainingplan';
+    } else {
+        // rawType === 'content' or fallback
+        $typeDisplay = 'Content Assessment';
+        $cTitle = $assessment->content->title ?? ($assessment->contents->first()->title ?? null);
+
+        if ($contentFor === 'playlist') {
+            $categoryDisplay = 'Playlist';
+            $tpTitle = $assessment->trainingplan->title ?? null;
+            $relatedToDisplay = !empty($tpTitle) ? $tpTitle : (!empty($cTitle) ? $cTitle : '—');
+            $filterType = 'content_playlist';
+        } else {
+            $categoryDisplay = 'All Content';
+            $relatedToDisplay = !empty($cTitle) ? $cTitle : '—';
+            $filterType = 'content_content';
+        }
+    }
+
+    $typeLabel = $typeDisplay;
 
     $assessmentUrl = !empty($assessment->slug)
         ? route('assesment.user.view', $assessment->slug)
         : null;
 
-    $filterType = match (strtolower((string) ($assessment->type ?? ''))) {
-        'trainingplan', 'playlist' => 'playlist',
-        'content' => 'content',
-        'global' => 'global',
-        default => strtolower((string) ($assessment->type ?? '')),
-    };
     $filterStatus = $isPassed ? 'passed' : ($isCompleted ? 'failed' : 'not_started');
     $filterDate = $assessment->fromdate ?? null;
     $filterTimestamp = $filterDate ? strtotime((string) $filterDate) : false;
     $filterYear = $filterTimestamp ? date('Y', $filterTimestamp) : '';
     $filterMonth = $filterTimestamp ? date('n', $filterTimestamp) : '';
     $contentTitles = collect($assessment->contents ?? [])->pluck('title')->filter();
+    if (!empty($assessment->content?->title)) {
+        $contentTitles->push($assessment->content->title);
+    }
     $searchText = collect([
         $assessment->title ?? null,
         $assessment->trainingplan->title ?? null,
-    ])->merge($contentTitles)->filter()->implode(' ');
-    $now = time();
+        $typeDisplay,
+        $categoryDisplay !== '—' ? $categoryDisplay : null,
+        $relatedToDisplay !== '—' ? $relatedToDisplay : null,
+    ])->merge($contentTitles)->filter()->unique()->implode(' ');
+
+    $nowCarbon = now();
     $hasAccessPeriod = $assessment->hasAccessPeriod();
     $hasTimeLimit = $assessment->hasTimeLimit();
 
     if ($hasAccessPeriod && !empty($assessment->fromdate) && !empty($assessment->todate)) {
-        $fromDateRaw = (strlen(trim((string) $assessment->fromdate)) === 10 ? trim((string) $assessment->fromdate) . ' 23:59:59' : (string) $assessment->fromdate);
-        $toDateRaw = (strlen(trim((string) $assessment->todate)) === 10 ? trim((string) $assessment->todate) . ' 23:59:59' : (string) $assessment->todate);
-        $fromDate = strtotime($fromDateRaw);
-        $toDate = strtotime($toDateRaw);
+        $fromDateRaw = strlen(trim((string) $assessment->fromdate)) === 10
+            ? trim((string) $assessment->fromdate) . ' 00:00:00'
+            : (string) $assessment->fromdate;
+        $toDateRaw = strlen(trim((string) $assessment->todate)) === 10
+            ? trim((string) $assessment->todate) . ' 23:59:59'
+            : (string) $assessment->todate;
 
-        $isExpired = $toDate ? ($now > $toDate) : false;
-        $isUpcoming = $fromDate ? ($now < $fromDate) : false;
+        $fromDateCarbon = \Illuminate\Support\Carbon::parse($fromDateRaw);
+        $toDateCarbon = \Illuminate\Support\Carbon::parse($toDateRaw);
+
+        $isUpcoming = $nowCarbon->lt($fromDateCarbon);
+        $isExpired = $nowCarbon->gt($toDateCarbon);
         $availability = $isUpcoming ? 'upcoming' : ($isExpired ? 'expired' : 'available');
 
-        $fromDateDisplay = date('d M Y, H:i', strtotime($assessment->fromdate));
-        $toDateDisplay = date('d M Y, H:i', strtotime($assessment->todate));
+        $fromDateDisplay = $fromDateCarbon->format('d M Y, H:i');
+        $toDateDisplay = $toDateCarbon->format('d M Y, H:i');
     } else {
         $isExpired = false;
         $isUpcoming = false;
@@ -108,20 +152,20 @@
     $maxAttempts = (string) ($assessment->type ?? '') === 'global' ? 1 : (1 + $totalRemedials);
     $scoreDisplay = $finalResult && $finalResult->score !== null ? $finalResult->score : '-';
 
-    $activeDraft = ($assessment->scores ?? null) 
-        ? collect($assessment->scores)->where('user_id', $currentUserId)->where('final', 0)->first() 
+    $activeDraft = ($assessment->scores ?? null)
+        ? collect($assessment->scores)->where('user_id', $currentUserId)->where('final', 0)->sortByDesc('id')->first()
         : null;
 
-    if (!$activeDraft) {
-        $activeDraft = \App\Models\AssesmentResult::where('user_id', $currentUserId)
-            ->where('assesment_id', $assessment->id)
-            ->where('batch', $assessment->batch)
-            ->where('final', 0)
-            ->latest('id')
-            ->first();
-    }
+    $hasActiveDraft = ($activeDraft !== null);
 
-    $hasSnapshot = $activeDraft && (!empty($activeDraft->user_answer) || !empty($activeDraft->question_snapshot));
+    // If active draft exists and time limit is enabled, check timer deadline
+    if ($hasActiveDraft && $hasTimeLimit && $activeDraft->created_at) {
+        $timeLimitDeadline = $activeDraft->created_at->copy()->addMinutes((int) $assessment->time_limit_minutes);
+        if ($nowCarbon->gt($timeLimitDeadline)) {
+            $isExpired = true;
+            $availability = 'expired';
+        }
+    }
 
     $answeredCount = ($activeDraft && is_array($activeDraft->user_answer))
         ? count(array_filter($activeDraft->user_answer, fn($v) => $v !== null && $v !== ''))
@@ -129,13 +173,17 @@
 
     $totalCount = ($activeDraft && is_array($activeDraft->question_snapshot) && count($activeDraft->question_snapshot) > 0)
         ? count($activeDraft->question_snapshot)
-        : (isset($assessment->questions) ? $assessment->questions->count() : ($assessment->questions_count ?? 10));
+        : ($assessment->questions_count ?? ($assessment->relationLoaded('questions') ? $assessment->questions->count() : 10));
+
+    $actionType = $hasActiveDraft
+        ? 'continue'
+        : ($isCompleted && !$isPassed && (string)($assessment->type ?? '') !== 'global' && $userAttempts < $maxAttempts ? 'remedial' : 'start');
 @endphp
 
 <tr class="assessment-row"
     data-assessment-id="{{ $assessment->id }}"
     data-assessment-title="{{ $assessment->title ?? '' }}"
-    data-assessment-type="{{ $assessment->type ?? '' }}"
+    data-assessment-type="{{ $filterType }}"
     data-assessment-type-label="{{ $typeLabel }}"
     data-assessment-status="{{ $filterStatus }}"
     data-assessment-year="{{ $filterYear }}"
@@ -150,10 +198,12 @@
     data-assessment-user-attempts="{{ $userAttempts }}"
     data-assessment-max-attempts="{{ $maxAttempts }}"
     data-assessment-score="{{ $finalResult->score ?? '' }}"
-    data-assessment-has-snapshot="{{ $hasSnapshot ? 'true' : 'false' }}"
+    data-assessment-has-snapshot="{{ $hasActiveDraft ? 'true' : 'false' }}"
     data-assessment-answered-count="{{ $answeredCount }}"
     data-assessment-total-count="{{ $totalCount }}"
-    data-assessment-action-type="{{ $hasSnapshot ? 'continue' : ($isCompleted && !$isPassed && (string)($assessment->type ?? '') !== 'global' ? 'remedial' : 'start') }}"
+    data-assessment-action-type="{{ $actionType }}"
+    data-assessment-category="{{ $categoryDisplay }}"
+    data-assessment-related-to="{{ $relatedToDisplay }}"
     data-assessment-availability="{{ $availability }}">
     <td class="text-center text-muted align-middle">{{ $index }}</td>
 
@@ -161,12 +211,14 @@
         @if ($assessmentUrl)
             <a href="javascript:void(0);"
                role="button"
-               class="fw-semibold text-primary assessment-title assessment-title-link assessment-name"
+               class="fw-semibold assessment-title assessment-title-link assessment-name"
                data-assessment-id="{{ $assessment->id }}"
                data-assessment-title="{{ $assessment->title ?? '' }}"
                data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
-               data-assessment-type="{{ $assessment->type ?? '' }}"
+               data-assessment-type="{{ $filterType }}"
                data-assessment-type-label="{{ $typeLabel }}"
+               data-assessment-category="{{ $categoryDisplay }}"
+               data-assessment-related-to="{{ $relatedToDisplay }}"
                data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
                data-assessment-from-date="{{ $fromDateDisplay }}"
                data-assessment-to-date="{{ $toDateDisplay }}"
@@ -175,12 +227,14 @@
                 {{ $assessment->title ?? '-' }}
             </a>
         @else
-            <div class="fw-semibold text-primary assessment-title assessment-name"
+            <div class="fw-semibold assessment-title assessment-name"
                  data-assessment-id="{{ $assessment->id }}"
                  data-assessment-title="{{ $assessment->title ?? '' }}"
                  data-assessment-batch="{{ $finalResult->batch ?? ($assessment->batch ?? '-') }}"
-                 data-assessment-type="{{ $assessment->type ?? '' }}"
+                 data-assessment-type="{{ $filterType }}"
                  data-assessment-type-label="{{ $typeLabel }}"
+                 data-assessment-category="{{ $categoryDisplay }}"
+                 data-assessment-related-to="{{ $relatedToDisplay }}"
                  data-assessment-passing-grade="{{ $assessment->passing_grade ?? '-' }}"
                  data-assessment-from-date="{{ $fromDateDisplay }}"
                  data-assessment-to-date="{{ $toDateDisplay }}"
@@ -189,10 +243,19 @@
                 {{ $assessment->title ?? '-' }}
             </div>
         @endif
+    </td>
 
-        <div class="text-primary small opacity-75 assessment-subtitle">
-            {{ $assessment->trainingplan->title ?? 'Assessment' }}
-        </div>
+    <td class="text-center align-middle" data-order="{{ $typeDisplay }}">
+        <x-learning.assessment.assessment-type
+            :type="$filterType"
+            :label="$typeDisplay"
+        />
+    </td>
+
+    <td class="text-center align-middle" data-order="{{ $categoryDisplay }}">
+        <x-learning.assessment.assessment-category
+            :category="$categoryDisplay"
+        />
     </td>
 
     <td class="text-start align-middle small lh-sm" data-order="{{ $assessment->fromdate ? strtotime($assessment->fromdate) : 0 }}">
@@ -212,13 +275,6 @@
         @elseif (!$hasAccessPeriod)
             <span class="text-muted">No Deadline</span>
         @endif
-    </td>
-
-    <td class="text-center align-middle">
-        <x-learning.assessment.assessment-type
-            :type="$assessment->type"
-            :label="$typeLabel"
-        />
     </td>
 
     <td class="text-center align-middle score-column">
@@ -260,7 +316,7 @@
             :is-completed="$isCompleted"
             :is-passed="$isPassed"
             :is-expired="$isExpired"
-            :has-snapshot="$hasSnapshot"
+            :has-snapshot="$hasActiveDraft"
             :answered-count="$answeredCount"
             :total-count="$totalCount"
             :duration="$assessment->duration ?? ($assessment->time_limit_minutes ?? 60)"
@@ -270,7 +326,7 @@
             :assessment-id="$assessment->id"
             :assessment-title="$assessment->title ?? ''"
             :assessment-batch="$finalResult->batch ?? ($assessment->batch ?? '-')"
-            :assessment-type="$assessment->type ?? ''"
+            :assessment-type="$filterType"
             :type-label="$typeLabel"
             :passing-grade="$assessment->passing_grade ?? '-'"
             :from-date="$fromDateDisplay"

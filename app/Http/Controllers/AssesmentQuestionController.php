@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\AssessmentDuplicateService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class AssesmentQuestionController extends Controller
 {
@@ -347,13 +348,66 @@ class AssesmentQuestionController extends Controller
         ))->with('no', (request('page', 1) - 1) * $entries);
     }
 
-    public function clone(Assesment $assesment, AssessmentDuplicateService $duplicateService)
+    public function clone(Request $request, Assesment $assesment, AssessmentDuplicateService $duplicateService)
     {
+        $overrides = [];
+
+        if ($assesment->type === 'content') {
+            if ($request->filled('target_context')) {
+                $rules = [
+                    'target_context' => 'required|in:content,playlist',
+                ];
+
+                if ($request->input('target_context') === 'playlist') {
+                    $rules['trainingplan_id'] = 'required|integer|exists:trainingplan,id';
+                }
+
+                $validated = $request->validate($rules);
+
+                if ($validated['target_context'] === 'playlist') {
+                    $overrides = [
+                        'assasment_content_for' => 'playlist',
+                        'trainingplan_id'       => (int) $validated['trainingplan_id'],
+                    ];
+                } else {
+                    $overrides = [
+                        'assasment_content_for' => 'content',
+                        'trainingplan_id'       => null,
+                    ];
+                }
+            } elseif ($request->filled('trainingplan_id')) {
+                $rules = [
+                    'trainingplan_id' => 'required|integer|exists:trainingplan,id',
+                ];
+                $validated = $request->validate($rules);
+                $overrides = [
+                    'assasment_content_for' => 'playlist',
+                    'trainingplan_id'       => (int) $validated['trainingplan_id'],
+                ];
+            }
+        } else {
+            // Source is global or trainingplan: reject target_context = playlist
+            if ($request->input('target_context') === 'playlist') {
+                throw ValidationException::withMessages([
+                    'target_context' => 'Hanya Assessment bertipe Content yang dapat diduplikasi ke Playlist.',
+                ]);
+            }
+        }
+
         try {
-            $duplicateService->duplicate($assesment);
+            $duplicateService->duplicateIndividual($assesment, $overrides);
 
             return redirect()->route('assesment.index')
                 ->with('success', 'Assessment duplicated successfully.');
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\InvalidArgumentException $e) {
+            Log::warning('Failed to duplicate assessment due to validation error: ' . $e->getMessage(), [
+                'assessment_id' => $assesment->id,
+            ]);
+
+            return redirect()->route('assesment.index')
+                ->with('danger', 'Failed to duplicate assessment. ' . $e->getMessage());
         } catch (\Throwable $e) {
             Log::error('Failed to duplicate assessment: ' . $e->getMessage(), [
                 'assessment_id' => $assesment->id,

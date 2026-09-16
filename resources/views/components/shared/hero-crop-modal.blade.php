@@ -1,7 +1,7 @@
 @once
     @push('styles')
         <link rel="stylesheet"
-              href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
+              href="{{ asset('vendor/cropperjs/cropper.min.css') }}">
         <style>
             .hero-crop-modal .modal-content {
                 overflow: hidden;
@@ -176,6 +176,6 @@
     </div>
 
     @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+        <script src="{{ asset('vendor/cropperjs/cropper.min.js') }}"></script>
     @endpush
 @endonce

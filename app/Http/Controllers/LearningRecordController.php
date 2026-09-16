@@ -51,10 +51,11 @@ class LearningRecordController extends Controller
         $completedPlaylists = $this->completedPlaylistService->forUser($userId);
         $completedContents  = $this->getCompletedContents($userId);
         $cert               = $this->certificateContext($eligibilityService);
+        $playlistContents   = $this->playlistContentsData($completedPlaylists);
+        $firstContentSlugs  = $playlistContents->map(fn ($items) => $items->first()?->slug);
 
         // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
-        // sebagai antrean prioritas: baris yang siap Generate Certificate
-        // selalu paling atas, di dalam tiap kelompok Finish Date terbaru dulu.
+        // berdasarkan record/completion terbaru (finish_date desc).
         // Murni pengurutan Collection — query dan business logic tidak berubah.
         $allRows = $this->mergeLearningRecord(
             $this->buildContentRows($completedContents, $cert),
@@ -63,13 +64,11 @@ class LearningRecordController extends Controller
                 $cert,
                 // Slug content pertama tiap playlist — untuk link badge Playlist
                 // (route playlist.user.view butuh pasangan slug playlist + content).
-                $this->playlistFirstContentSlug($completedPlaylists),
-                $completedContents
+                $firstContentSlugs,
+                $completedContents,
+                $playlistContents
             )
-        )->sortBy([
-            ['cert_priority', 'asc'],
-            ['finish_date', 'desc'],
-        ])->values();
+        )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
         $rows = $this->applyRecordFilters($allRows);
 
         return view('user.learning.dashboard-partials.record', [
@@ -187,14 +186,15 @@ class LearningRecordController extends Controller
         $sort = (string) request('record_sort', '');
         $direction = (string) request('record_sort_direction', 'asc');
         $sortKeys = [
-            'title' => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
-            'type' => fn (array $row) => mb_strtolower((string) ($row['type'] ?? '')),
+            'title'          => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
+            'category'       => fn (array $row) => mb_strtolower((string) ($row['category'] ?? '')),
+            'type'           => fn (array $row) => mb_strtolower((string) ($row['type'] ?? '')),
             'classification' => fn (array $row) => mb_strtolower((string) ($row['classification'] ?? '')),
-            'duration' => fn (array $row) => (float) ($row['duration_sort'] ?? -1),
-            'learning-hour' => fn (array $row) => (float) ($row['learning_hour_bucket'] ?? -1),
-            'progress' => fn (array $row) => (float) ($row['progress'] ?? -1),
-            'finish' => fn (array $row) => (string) ($row['finish_date'] ?? ''),
-            'score' => fn (array $row) => (float) ($row['score'] ?? -1),
+            'duration'       => fn (array $row) => (float) ($row['duration_sort'] ?? -1),
+            'learning-hour'  => fn (array $row) => (float) ($row['learning_hour_bucket'] ?? -1),
+            'progress'       => fn (array $row) => (float) ($row['progress'] ?? -1),
+            'finish'         => fn (array $row) => (string) ($row['finish_date'] ?? ''),
+            'score'          => fn (array $row) => (float) ($row['score'] ?? -1),
         ];
 
         if (isset($sortKeys[$sort]) && in_array($direction, ['asc', 'desc'], true)) {
@@ -479,10 +479,13 @@ class LearningRecordController extends Controller
             $playlists = $content->relationLoaded('trainingPlans')
                 ? $content->trainingPlans
                 : collect();
-            $learningHourBucket = $this->learningHourService->bucket($content->duration);
+            $learningHoursVal = ($content->learning_hours !== null && $content->learning_hours !== '')
+                ? (float) $content->learning_hours
+                : (float) $this->learningHourService->bucket($content->duration);
 
             return [
                 'row_kind'        => 'content',
+                'category'        => 'Content',
                 'title'           => $content->title ?? '-',
                 'slug'            => $content->slug,
                 'playlist_url'    => null,
@@ -494,9 +497,9 @@ class LearningRecordController extends Controller
                 'classification'  => $content->classification->classification_name ?? '-',
                 'duration'        => DurationFormatter::formatForLearningRecord($content->duration),
                 'duration_sort'   => DurationFormatter::toSeconds($content->duration) ?? -1,
-                'learning_hour'   => $this->learningHourService->formatHours($learningHourBucket),
-                'learning_hour_bucket' => $learningHourBucket,
-                'learning_hour_value'  => $this->learningHourService->value($learningHourBucket),
+                'learning_hour'   => $this->learningHourService->formatHours($learningHoursVal),
+                'learning_hour_bucket' => $learningHoursVal,
+                'learning_hour_value'  => $this->learningHourService->value($learningHoursVal),
                 'progress'        => (int) ($cu->progress ?? 0),
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
@@ -512,6 +515,7 @@ class LearningRecordController extends Controller
                 'cert_priority'   => $certPriority,
                 'cert_action_url' => route('certificate.generate', $cu->id),
                 'cert_is_form'    => false,
+                'playlist_items'  => [],
             ];
         })->values();
     }
@@ -543,6 +547,36 @@ class LearningRecordController extends Controller
     }
 
     /**
+     * Seluruh content tiap playlist terurut berdasarkan content_order — satu batch query
+     * untuk seluruh playlist selesai (0 N+1).
+     *
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Support\Collection>
+     */
+    private function playlistContentsData(Collection $playlists): Collection
+    {
+        $planIds = $playlists->pluck('id')->all();
+
+        if (empty($planIds)) {
+            return collect();
+        }
+
+        return DB::table('trainingplandetail as tpd')
+            ->join('content as c', 'c.id', '=', 'tpd.content_id')
+            ->whereIn('tpd.trainingplan_id', $planIds)
+            ->whereNull('c.deleted_at')
+            ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
+            ->get([
+                'tpd.trainingplan_id as plan_id',
+                'c.id as content_id',
+                'c.title as title',
+                'c.slug as slug',
+                'c.type as type',
+                'tpd.content_order as content_order',
+            ])
+            ->groupBy('plan_id');
+    }
+
+    /**
      * Normalisasi Playlist selesai menjadi baris tabel dengan struktur kolom
      * yang sama seperti baris Content.
      */
@@ -550,10 +584,13 @@ class LearningRecordController extends Controller
         Collection $playlists,
         array $cert,
         Collection $firstContentSlugs,
-        Collection $contentUsers
+        Collection $contentUsers,
+        ?Collection $allPlaylistContents = null
     ): Collection
     {
-        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers) {
+        $allPlaylistContents = $allPlaylistContents ?? $this->playlistContentsData($playlists);
+
+        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
             $eligible    = $eligibility?->eligible ?? false;
@@ -567,28 +604,46 @@ class LearningRecordController extends Controller
                 ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i:s')
                 : '';
 
-            $firstSlug = $firstContentSlugs->get($plan->id);
+            $planContents = $allPlaylistContents->get($plan->id, collect());
+            $firstSlug = $firstContentSlugs->get($plan->id) ?? $planContents->first()?->slug;
+
+            $playlistItems = $planContents->map(function ($item) use ($plan) {
+                return [
+                    'content_id' => $item->content_id,
+                    'title'      => $item->title ?? '-',
+                    'slug'       => $item->slug,
+                    'type'       => $item->type ?? 'Content',
+                    'url'        => ($plan->slug && $item->slug)
+                        ? route('playlist.user.view', [$plan->slug, $item->slug])
+                        : null,
+                ];
+            })->values()->all();
+
             $durationSeconds = (int) ($plan->total_duration_seconds ?? 0);
-            $learningHourBucket = $this->learningHourService->bucketFromSeconds($durationSeconds);
+            $learningHoursVal = ($plan->learning_hours !== null && $plan->learning_hours !== '')
+                ? (float) $plan->learning_hours
+                : (float) $this->learningHourService->bucketFromSeconds($durationSeconds);
 
             return [
                 'row_kind'        => 'playlist',
+                'category'        => 'Playlist',
                 'title'           => $plan->title ?? '-',
                 'slug'            => null,
                 // Link badge Playlist di kolom Type (route lama, tanpa route baru).
                 'playlist_url'    => ($plan->slug && $firstSlug)
                     ? route('playlist.user.view', [$plan->slug, $firstSlug])
                     : null,
+                'playlist_items'  => $playlistItems,
                 'subtitle'        => (int) $plan->finished_items . ' / ' . (int) $plan->total_items . ' content selesai',
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],
                 'type'            => 'Playlist',
-                'classification'  => 'Playlist',
+                'classification'  => '-',
                 'duration'        => $this->formatDurationSeconds($durationSeconds),
                 'duration_sort'   => $durationSeconds,
-                'learning_hour'   => $this->learningHourService->formatHours($learningHourBucket),
-                'learning_hour_bucket' => $learningHourBucket,
-                'learning_hour_value'  => $this->learningHourService->value($learningHourBucket),
+                'learning_hour'   => $this->learningHourService->formatHours($learningHoursVal),
+                'learning_hour_bucket' => $learningHoursVal,
+                'learning_hour_value'  => $this->learningHourService->value($learningHoursVal),
                 'progress'        => 100,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'start_date'      => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',

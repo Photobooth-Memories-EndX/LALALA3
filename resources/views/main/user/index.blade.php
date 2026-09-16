@@ -1,10 +1,23 @@
 @extends('layouts.sidebar-master')
 
 @section('content')
+@include('main.monitoring.components.style')
 
-@include('main.user.partials.header')
+{{-- Page Header --}}
+<div class="page-header d-print-none mb-0 pb-0">
+    <div class="container-xl">
+        <!-- Back Navigation Link -->
+        <div class="mb-3">
+            <a href="{{ url('/manage') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1">
+                <i class="ti ti-arrow-left fs-3"></i><span>Back</span>
+            </a>
+        </div>
 
-<div class="page-body">
+        @include('main.user.partials.header')
+    </div>
+</div>
+
+<div class="page-body mt-0 pt-0">
     <div class="container-xl">
 
         <x-alert type="success" />
@@ -18,7 +31,7 @@
 
         @include('main.user.partials.stats')
 
-        @include('main.user.partials.user-card')
+        @include('main.user.partials.table')
 
     </div>
 </div>

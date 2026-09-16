@@ -37,14 +37,14 @@
                 @endif
 
                 {{-- MAIN CONTENT CARD (PLAYLIST STYLE) --}}
-                <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white p-4 p-md-5">
+                <div class="card border-0 shadow-sm rounded-4 mb-4 owl-article-main-card p-4 p-md-5">
                     <!-- 1. Meta Atas Judul -->
                     <div class="text-muted small mb-1">
                         {{ $news->created_at ? $news->created_at->format('d F Y') : '-' }} created by {{ $news->user->name ?? 'Training Team' }}
                     </div>
 
                     <!-- 2. Judul (Tanpa Tombol Share) -->
-                    <h2 class="fw-bold text-dark fs-3 mb-2">{{ $news->title ?? '-' }}</h2>
+                    <h2 class="fw-bold fs-3 mb-2 owl-article-title-heading">{{ $news->title ?? '-' }}</h2>
 
                     <!-- 3. Meta Stats Bawah Judul -->
                     <div class="d-flex align-items-center gap-2 text-muted small mb-4">
@@ -57,9 +57,9 @@
                     </div>
 
                     <!-- 4. Kontainer Overview Style Playlist -->
-                    <div class="rounded-4 p-4 p-md-5" style="background-color: #f8fafc; border: 1px solid #f1f5f9;">
+                    <div class="rounded-4 p-4 p-md-5 owl-overview-box">
                         <div class="text-muted small fw-bold mb-3">Overview</div>
-                        <div class="news-content text-dark fs-5 lh-lg" style="color: #212529 !important; font-size: 1.05rem !important;">
+                        <div class="news-content fs-5 lh-lg owl-overview-text">
                             {!! nl2br(e($news->description ?? '')) !!}
                         </div>
                     </div>
@@ -128,33 +128,25 @@
 
 @section('script')
 
-<button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
-    <i class="ti ti-moon-stars"></i>
-</button>
-
 <script>
 (function(){
-    function initDarkMode() {
-        const isDarkMode = localStorage.getItem('owl-dark-mode') === 'true';
-        const toggle = document.getElementById('darkModeToggle');
-        if (isDarkMode) {
-            document.body.classList.add('dark-mode');
-            updateToggleIcon(true);
-        }
-        if (toggle) {
-            toggle.addEventListener('click', function() {
-                document.body.classList.toggle('dark-mode');
-                const isNowDark = document.body.classList.contains('dark-mode');
-                localStorage.setItem('owl-dark-mode', isNowDark);
-                updateToggleIcon(isNowDark);
-            });
-        }
+    function updateThemeDOM(isDark) {
+        const theme = isDark ? 'dark' : 'light';
+        document.documentElement.dataset.bsTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        document.body.dataset.bsTheme = theme;
+        document.body.classList.toggle('dark-mode', isDark);
     }
 
-    function updateToggleIcon(isDark) {
-        const toggle = document.getElementById('darkModeToggle');
-        if (toggle) {
-            toggle.innerHTML = isDark ? '<i class="ti ti-sun"></i>' : '<i class="ti ti-moon-stars"></i>';
+    function initDarkMode() {
+        const storedTheme = localStorage.getItem('owl-dark-mode');
+        const isDarkMode = storedTheme === 'dark' || storedTheme === 'true' ||
+            document.body.classList.contains('dark-mode') ||
+            document.documentElement.dataset.bsTheme === 'dark' ||
+            document.body.dataset.bsTheme === 'dark';
+
+        if (isDarkMode) {
+            updateThemeDOM(true);
         }
     }
 

@@ -6,12 +6,12 @@
     } elseif ($list->type == 'global') {
         $typeClass = 'owl-badge-green';
     } else {
-        $typeClass = 'badge-secondary';
+        $typeClass = 'owl-badge-null';
     }
 
     $typeLabels = [
         'trainingplan' => 'Playlist',
-        'content' => 'Content',
+        'content' => ($list->assasment_content_for === 'playlist') ? 'Content (Playlist)' : 'Content (All Content)',
         'global' => 'Global',
     ];
     $typeLabel = $typeLabels[$list->type] ?? ucwords($list->type ?? '');
@@ -37,6 +37,32 @@
 @endphp
 
 <tr>
+    @php
+        $isEligible = ($list->type === 'content' && $list->status === 'OK');
+    @endphp
+    <td class="text-center">
+        @if ($isEligible)
+            <input type="checkbox"
+                   class="form-check-input assessment-select-checkbox"
+                   name="selected_assessments[]"
+                   value="{{ $list->id }}"
+                   data-title="{{ $list->title }}"
+                   data-content-id="{{ $list->content_id }}"
+                   data-content-title="{{ $list->content->title ?? ($list->contents->first()->title ?? 'Content ' . $list->content_id) }}"
+                   data-type="{{ $list->type }}"
+                   data-content-for="{{ $list->assasment_content_for }}"
+                   data-trainingplan-id="{{ $list->trainingplan_id ?? '' }}"
+                   title="Select for duplicate"
+                   data-toggle="tooltip">
+        @else
+            <input type="checkbox"
+                   class="form-check-input assessment-select-checkbox-disabled"
+                   disabled
+                   title="{{ $list->type !== 'content' ? 'Only Content assessments can be duplicated' : 'Inactive assessments cannot be duplicated' }}"
+                   data-toggle="tooltip">
+        @endif
+    </td>
+
     <td class="text-center text-muted">
         {{ $iteration }}
     </td>
@@ -70,9 +96,13 @@
     </td>
 
     <td class="text-center">
-        <span class="owl-badge {{ $typeClass }}">
-            {{ $typeLabel }}
-        </span>
+        @if (is_null($list->type))
+            <span class="owl-badge owl-badge-null">-</span>
+        @else
+            <span class="owl-badge {{ $typeClass }}">
+                {{ $typeLabel }}
+            </span>
+        @endif
     </td>
 
     <td class="text-center">

@@ -63,9 +63,10 @@ class CompletedPlaylistServiceResolverTest extends TestCase
         $c = Content::create(['title' => 'Comp Hist Content', 'slug' => 'comp-hist-c-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'Y']);
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c->id, 'content_order' => 0]);
 
-        // Historical completion in content_users (Category A)
-        ContentUser::create([
+        // Playlist completion in playlist_content_users
+        PlaylistContentUser::create([
             'user_id'         => $this->userA->id,
+            'trainingplan_id' => $plan->id,
             'content_id'      => $c->id,
             'progress'        => 100,
             'finish'          => '1',

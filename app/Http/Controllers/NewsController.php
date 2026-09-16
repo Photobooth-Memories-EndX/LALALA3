@@ -4,10 +4,66 @@ namespace App\Http\Controllers;
 
 use App\Models\News;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NewsController extends Controller
 {
+    /**
+     * AJAX live autocomplete search for News Management (All News Articles).
+     */
+    public function autocompleteSearch(Request $request): JsonResponse
+    {
+        $rawQuery = trim((string) ($request->get('q') ?? $request->get('search') ?? $request->get('s') ?? ''));
+        if (empty($rawQuery)) {
+            return response()->json([]);
+        }
+
+        // Replace straight apostrophe with curly apostrophe and vice versa for flexible matching
+        $queryNormalized = str_replace("'", "’", $rawQuery);
+        $queryOriginal = str_replace("’", "'", $rawQuery);
+
+        $news = News::with('user')
+            ->where(function ($q) use ($rawQuery, $queryNormalized, $queryOriginal) {
+                $q->where('title', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('title', 'LIKE', "%{$queryNormalized}%")
+                  ->orWhere('title', 'LIKE', "%{$queryOriginal}%")
+                  ->orWhere('description', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('slug', 'LIKE', "%{$rawQuery}%")
+                  ->orWhere('category', 'LIKE', "%{$rawQuery}%")
+                  ->orWhereHas('user', function ($uq) use ($rawQuery) {
+                      $uq->where('name', 'LIKE', "%{$rawQuery}%");
+                  });
+            })
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        $results = $news->map(function ($item) {
+            return [
+                'id'         => $item->id,
+                'title'      => $item->title,
+                'name'       => $item->title,
+                'type'       => 'NEWS',
+                'slug'       => $item->slug,
+                'active'     => $item->active ?? $item->status,
+                'status'     => $item->status ?? $item->active,
+                'category'   => $item->category,
+                'author'     => $item->user->name ?? null,
+                'created_at' => $item->created_at ? $item->created_at->format('d M Y') : null,
+                'views'      => (int) ($item->views ?? 0),
+                'url'        => route('news.edit', $item->slug ?? $item->id),
+            ];
+        });
+
+        return response()->json($results->values());
+    }
+
+    public function autocomplete(Request $request): JsonResponse
+    {
+        return $this->autocompleteSearch($request);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -20,8 +76,8 @@ class NewsController extends Controller
         | Search News
         |--------------------------------------------------------------------------
         */
-        if ($request->filled('search')) {
-            $search = $request->search;
+        if ($request->filled('q') || $request->filled('search') || $request->filled('s')) {
+            $search = $request->q ?: ($request->search ?: $request->s);
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', '%' . $search . '%')
                   ->orWhere('description', 'like', '%' . $search . '%')
@@ -128,6 +184,8 @@ class NewsController extends Controller
         */
         $totalNews = News::count();
         $totalAuthor = News::distinct('user_id')->count();
+        $totalAuthors = $totalAuthor;
+        $thisMonthCount = News::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
 
         $authors = User::whereHas('news')
             ->orderBy('name')
@@ -157,7 +215,9 @@ class NewsController extends Controller
                 'categories',
                 'show',
                 'totalNews',
-                'totalAuthor'
+                'totalAuthor',
+                'totalAuthors',
+                'thisMonthCount'
             )
         );
     }
@@ -175,50 +235,43 @@ class NewsController extends Controller
      */
     public function store(Request $request)
     {
+        $isDraft = $request->input('action') === 'draft' || $request->input('action') === 'save';
+
         $request->validate([
-
-            'title'       => 'required',
-
+            'title'       => $isDraft ? 'nullable|string|max:255' : 'required|string|max:255',
             'category'    => 'nullable|string|max:255',
-
-            'description' => 'required',
-
-            'image'       =>
-                'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-
+            'description' => $isDraft ? 'nullable' : 'required',
+            'image'       => $isDraft ? 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048' : 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $news = new News();
-
         $news->user_id = auth()->id();
-
-        $news->title = $request->title;
-
+        $news->title = $request->input('title') ?: 'Draft News ' . date('Y-m-d H:i');
         $news->category = $request->category;
-
         $news->status = 'approved';
-
-        $news->description = $request->description;
+        $news->active = $isDraft ? 'Inactive' : 'Active';
+        $news->description = $request->input('description') ?? '';
 
         if ($request->hasFile('image')) {
-
             $file = $request->file('image');
-
-            $extension =
-                $file->getClientOriginalExtension();
-
-            $filename =
-                time() . '.' . $extension;
-
+            $extension = $file->getClientOriginalExtension();
+            $filename = time() . '.' . $extension;
             $file->move(
                 public_path('storage/news'),
                 $filename
             );
-
             $news->image = $filename;
         }
 
         $news->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'News created successfully.',
+                'redirect' => route('manage.news.index')
+            ]);
+        }
 
         return redirect()
             ->route('manage.news.index')
@@ -278,6 +331,12 @@ class NewsController extends Controller
 
         $news->description = $request->description;
 
+        if ($request->input('action') === 'publish') {
+            $news->active = 'Active';
+        } elseif ($request->input('action') === 'unpublish' || $request->input('action') === 'draft') {
+            $news->active = 'Inactive';
+        }
+
         if ($request->hasFile('image')) {
 
             $src =
@@ -314,6 +373,20 @@ class NewsController extends Controller
         }
 
         $news->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 200,
+                'message'  => 'News saved successfully.',
+                'redirect' => route('manage.news.index')
+            ]);
+        }
+
+        if ($request->input('action') === 'unpublish') {
+            return redirect()
+                ->route('news.edit', $news->slug)
+                ->with('success', 'News article successfully unpublished.');
+        }
 
         return redirect()
             ->route('manage.news.index')

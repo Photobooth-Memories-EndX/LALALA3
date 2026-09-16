@@ -125,6 +125,7 @@
             initLearningAssessment();
             initLearningCertificate();
             initLearningRecord();
+            initOngoingSearchAutocomplete();
         })
         .catch(function () {
             _activeTab = null;
@@ -133,6 +134,114 @@
             );
         });
     }
+
+    // ── Live Autocomplete Search for Ongoing Learning ───────────────────────────
+    function initOngoingSearchAutocomplete() {
+        var searchInput = document.getElementById('ongoing-search-input');
+        var searchResults = document.getElementById('ongoing-search-results');
+        var debounceTimer = null;
+
+        if (!searchInput || !searchResults) return;
+
+        var listEl = searchResults.querySelector('.autocomplete-list-group') || searchResults;
+        var footerEl = searchResults.querySelector('.search-footer');
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getOngoingMode() {
+            if (_ongoingMode === 'playlist') return 'playlist';
+            var modeInput = document.querySelector('input[name="ongoing_mode"]');
+            if (modeInput && modeInput.value === 'playlist') return 'playlist';
+            var urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('ongoing_mode') || 'content';
+        }
+
+        searchInput.addEventListener('input', function () {
+            var query = this.value.trim();
+
+            clearTimeout(debounceTimer);
+
+            if (query.length < 1) {
+                searchResults.style.display = 'none';
+                if (listEl) listEl.innerHTML = '';
+                if (footerEl) footerEl.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(function () {
+                var mode = getOngoingMode();
+                fetch('/user/learning/ongoing/search-autocomplete?q=' + encodeURIComponent(query) + '&mode=' + encodeURIComponent(mode), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function (response) {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.json();
+                })
+                .then(function (data) {
+                    var html = '';
+                    if (data && data.length > 0) {
+                        data.forEach(function (item) {
+                            var badgeType = item.type === 'playlist' ? 'bg-teal-lt text-teal' : 'bg-primary-lt text-primary';
+                            var typeLabel = item.type ? escapeHtml(item.type.toUpperCase()) : 'CONTENT';
+
+                            html += '<a href="' + escapeHtml(item.url) + '" class="dropdown-item py-2 px-3 text-wrap border-bottom-subtle ongoing-search-item" data-title="' + escapeHtml(item.title) + '">' +
+                                '<div class="d-flex align-items-center justify-content-between mb-1">' +
+                                    '<span class="text-dark small fw-semibold text-truncate me-2">' + escapeHtml(item.title) + '</span>' +
+                                    (item.progress !== undefined ? '<span class="badge ' + badgeType + ' small flex-shrink-0">' + item.progress + '%</span>' : '') +
+                                '</div>' +
+                                '<div class="d-flex align-items-center justify-content-between text-muted" style="font-size: 0.75rem;">' +
+                                    '<span class="text-truncate">' + escapeHtml(item.category || '') + '</span>' +
+                                    '<span class="badge bg-secondary-lt text-secondary" style="font-size: 0.65rem;">' + typeLabel + '</span>' +
+                                '</div>' +
+                            '</a>';
+                        });
+                    }
+                    if (listEl) listEl.innerHTML = html;
+
+                    var keyword = searchInput.value.trim();
+                    if (footerEl) {
+                        if (data && data.length > 0) {
+                            footerEl.innerHTML = `
+                                <a href="/my-learning?learning_tab=ongoing&q=${encodeURIComponent(keyword)}" class="dropdown-item fw-semibold text-primary py-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="ti ti-search"></i>
+                                    <span>See all results for "${keyword}"</span>
+                                </a>
+                            `;
+                            footerEl.style.display = 'block';
+                        } else {
+                            footerEl.innerHTML = '<div class="dropdown-item text-muted disabled py-2">No items found</div>';
+                            footerEl.style.display = 'block';
+                        }
+                    }
+                    searchResults.style.display = 'block';
+                })
+                .catch(function () {
+                    searchResults.style.display = 'none';
+                });
+            }, 250);
+        });
+
+        // Show dropdown again on focus if query exists
+        searchInput.addEventListener('focus', function () {
+            if (this.value.trim().length >= 1 && ((listEl && listEl.children.length > 0) || (footerEl && footerEl.style.display !== 'none'))) {
+                searchResults.style.display = 'block';
+            }
+        });
+    }
+
+    // Hide dropdown menu when clicking outside search container
+    document.addEventListener('click', function (e) {
+        var searchInput = document.getElementById('ongoing-search-input');
+        var searchResults = document.getElementById('ongoing-search-results');
+        if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
 
     // ── Quick dropdown filters Learning On Going (Type / Status / Year / Month) ──
     // Terapkan pilihan via AJAX (tanpa reload halaman): perbarui query string di URL

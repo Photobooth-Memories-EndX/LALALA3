@@ -56,11 +56,18 @@
                     <div class="assessment-filter-field assessment-filter-field-type">
                         <select name="type" id="assessmentQuickType" class="form-select form-control assessment-filter-control" aria-label="Type">
                             <option value="">All Types</option>
-                            @foreach ($types as $type)
-                                <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
-                                    {{ $type === 'trainingplan' ? 'Playlist' : ucwords($type) }}
-                                </option>
-                            @endforeach
+                            <option value="content_content" {{ request('type') == 'content_content' ? 'selected' : '' }}>
+                                Content (All Content)
+                            </option>
+                            <option value="content_playlist" {{ request('type') == 'content_playlist' ? 'selected' : '' }}>
+                                Content (Playlist)
+                            </option>
+                            <option value="trainingplan" {{ request('type') == 'trainingplan' ? 'selected' : '' }}>
+                                Playlist
+                            </option>
+                            <option value="global" {{ request('type') == 'global' ? 'selected' : '' }}>
+                                Global
+                            </option>
                         </select>
                     </div>
 
@@ -134,6 +141,9 @@
             <table class="table table-hover table-vcenter owl-table mb-0" id="MyTable">
                 <thead>
                     <tr>
+                        <th class="text-center" style="width: 40px;">
+                            <input type="checkbox" id="checkAllAssessments" class="form-check-input" title="Select all eligible visible assessments" data-toggle="tooltip">
+                        </th>
                         <th class="text-center" style="width: 50px;">No</th>
                         <th>Assessment</th>
                         <th class="text-center" style="width: 100px;">Type</th>

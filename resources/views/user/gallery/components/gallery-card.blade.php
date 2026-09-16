@@ -50,9 +50,10 @@
 
             <div class="mt-auto pt-2">
                 {{-- AUTHOR ICON & NAME --}}
-                <div class="small text-muted mb-2 d-flex align-items-center">
-                    <i class="ti ti-users me-1"></i>
-                    <span>Author : {{ $uploaderName }}</span>
+                <div class="gallery-card-author mb-2 d-flex align-items-center">
+                    <i class="ti ti-users me-1 gallery-card-author-icon" aria-hidden="true"></i>
+                    <span class="gallery-card-author-label">Author :</span>
+                    <span class="gallery-card-author-name ms-1">{{ $uploaderName }}</span>
                 </div>
 
                 <div class="gallery-event-meta mb-3">
@@ -67,7 +68,7 @@
                     </span>
                 </div>
 
-                <a href="{{ route('gallery.user.view', array_merge(['slug' => $list->slug], request()->query())) }}" class="btn btn-primary w-100 rounded-pill">
+                <a href="{{ route('gallery.user.view', array_merge(['slug' => $list->slug], request()->query())) }}" class="btn btn-primary btn-learning-primary w-100 rounded-pill">
                     <i class="ti ti-eye me-1"></i> View Gallery
                 </a>
             </div>

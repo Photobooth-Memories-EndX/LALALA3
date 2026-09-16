@@ -122,12 +122,13 @@ class LearningRecordIntegrationTest extends TestCase
             'issuer_name'      => 'OWL Test',
         ]);
 
-        // User A only has historical content_users record
-        ContentUser::create([
-            'user_id'    => $this->userA->id,
-            'content_id' => $c->id,
-            'progress'   => 100,
-            'finish'     => '1',
+        // User A completes playlist via playlist_content_users
+        PlaylistContentUser::create([
+            'user_id'         => $this->userA->id,
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $c->id,
+            'progress'        => 100,
+            'finish'          => '1',
         ]);
 
         $this->actingAs($this->userA);
@@ -199,50 +200,37 @@ class LearningRecordIntegrationTest extends TestCase
         TrainingPlanDetail::create(['trainingplan_id' => $planA->id, 'content_id' => $c->id, 'content_order' => 0]);
         TrainingPlanDetail::create(['trainingplan_id' => $planB->id, 'content_id' => $c->id, 'content_order' => 0]);
 
-        $settingA = CertificateSetting::create(['certificate_type' => 'playlist', 'trainingplan_id' => $planA->id, 'minimum_progress' => 100, 'minimum_score' => 80, 'is_active' => true, 'issuer_name' => 'OWL Test']);
-        $settingB = CertificateSetting::create(['certificate_type' => 'playlist', 'trainingplan_id' => $planB->id, 'minimum_progress' => 100, 'minimum_score' => 80, 'is_active' => true, 'issuer_name' => 'OWL Test']);
+        // Completed in Plan A (PCU = 100%)
+        PlaylistContentUser::create(['user_id' => $this->userA->id, 'trainingplan_id' => $planA->id, 'content_id' => $c->id, 'progress' => 100, 'finish' => '1']);
 
-        // Historical 100% in content_users without PCU
-        ContentUser::create(['user_id' => $this->userA->id, 'content_id' => $c->id, 'progress' => 100, 'finish' => '1']);
+        $completedPlaylists = app(CompletedPlaylistService::class)->forUser((int) $this->userA->id);
 
-        $this->actingAs($this->userA);
-
-        $reflection = new \ReflectionClass($this->controller);
-        $method = $reflection->getMethod('certificateContext');
-        $method->setAccessible(true);
-        $certContext = $method->invoke($this->controller, $this->eligibilityService);
-
-        // Neither Plan A nor Plan B should be eligible due to ambiguity
-        $this->assertFalse($certContext['eligibility'][$settingA->id]->eligible);
-        $this->assertFalse($certContext['eligibility'][$settingB->id]->eligible);
+        $this->assertTrue($completedPlaylists->contains('id', $planA->id));
+        $this->assertFalse($completedPlaylists->contains('id', $planB->id));
     }
 
     /**
-     * TEST 5: Direct Content Learning Record is unchanged.
+     * TEST 5: Direct Content Learning Record is unchanged (CU finish = 1).
      */
     public function test_direct_content_learning_record_is_unchanged(): void
     {
-        $c = Content::create(['title' => 'Direct Content LR', 'slug' => 'dir-c-lr-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'N']);
-        $setting = CertificateSetting::create(['certificate_type' => 'content', 'content_id' => $c->id, 'minimum_progress' => 100, 'minimum_score' => 80, 'is_active' => true, 'issuer_name' => 'OWL Test']);
-
-        ContentUser::create([
-            'user_id'         => $this->userA->id,
-            'content_id'      => $c->id,
-            'progress'        => 100,
-            'finish'          => '1',
-            'learning_status' => 'completed',
+        $c = Content::create(['title' => 'Direct Content', 'slug' => 'dir-c-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'duration' => '00:10:00', 'learning_hours' => 0.5]);
+        $cu = ContentUser::create([
+            'user_id'    => $this->userA->id,
+            'content_id' => $c->id,
+            'progress'   => 100,
+            'finish'     => '1',
+            'status'     => 'mandatory',
         ]);
 
         $this->actingAs($this->userA);
 
         $reflection = new \ReflectionClass($this->controller);
-        $method = $reflection->getMethod('certificateContext');
+        $method = $reflection->getMethod('getCompletedContents');
         $method->setAccessible(true);
-        $certContext = $method->invoke($this->controller, $this->eligibilityService);
+        $completed = $method->invoke($this->controller, (int) $this->userA->id);
 
-        $this->assertTrue($certContext['settings']->contains('id', $setting->id));
-        $this->assertTrue($certContext['byContent']->has($c->id));
-        $this->assertTrue($certContext['eligibility'][$setting->id]->eligible);
+        $this->assertTrue($completed->contains('id', $cu->id));
     }
 
     /**
@@ -250,13 +238,12 @@ class LearningRecordIntegrationTest extends TestCase
      */
     public function test_completed_playlist_appears_in_export_when_completed_via_pcu(): void
     {
-        $plan = TrainingPlan::create(['title' => 'Export PCU Plan', 'slug' => 'exp-pcu-plan-' . rand(1000, 9999), 'active' => 'Active']);
-        $c = Content::create(['title' => 'Export PCU Content', 'slug' => 'exp-pcu-c-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'Y']);
+        $plan = TrainingPlan::create(['title' => 'Export PCU Plan', 'slug' => 'exp-pcu-plan-' . rand(1000, 9999), 'active' => 'Active', 'total_duration_seconds' => 3600, 'learning_hours' => 1.0]);
+        $c = Content::create(['title' => 'Export PCU Content', 'slug' => 'exp-pcu-c-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'Y', 'duration' => '01:00:00', 'learning_hours' => 1.0]);
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c->id, 'content_order' => 0]);
 
         CertificateSetting::create(['certificate_type' => 'playlist', 'trainingplan_id' => $plan->id, 'minimum_progress' => 100, 'minimum_score' => 80, 'is_active' => true, 'issuer_name' => 'OWL Test']);
 
-        // User A completes via PCU only
         PlaylistContentUser::create([
             'user_id'         => $this->userA->id,
             'trainingplan_id' => $plan->id,
@@ -271,32 +258,31 @@ class LearningRecordIntegrationTest extends TestCase
         $array = $export->array();
 
         $rows = collect($array);
-        $playlistRow = $rows->firstWhere(2, 'Export PCU Plan');
+        $playlistRow = $rows->firstWhere(1, 'Export PCU Plan');
 
         $this->assertNotNull($playlistRow, 'Playlist completed via PCU must appear in export array.');
-        $this->assertEquals('Playlist', $playlistRow[1]);
-        $this->assertEquals('100%', $playlistRow[6]);
-        $this->assertEquals('Available', $playlistRow[10]);
+        $this->assertEquals('Playlist', $playlistRow[2]);
+        $this->assertEquals('Playlist', $playlistRow[3]);
+        $this->assertEquals('-', $playlistRow[4]);
+        $this->assertEquals('100%', $playlistRow[7]);
+        $this->assertEquals('Available', $playlistRow[11]);
     }
 
     /**
-     * TEST 7: Historical Category A playlist appears in export.
+     * TEST 7: Completed playlist with multiple modules appears in export.
      */
-    public function test_historical_category_a_playlist_appears_in_export(): void
+    public function test_completed_playlist_with_multiple_modules_appears_in_export(): void
     {
-        $plan = TrainingPlan::create(['title' => 'Export Hist Plan', 'slug' => 'exp-hist-plan-' . rand(1000, 9999), 'active' => 'Active']);
-        $c = Content::create(['title' => 'Export Hist Content', 'slug' => 'exp-hist-c-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'Y']);
-        TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c->id, 'content_order' => 0]);
+        $plan = TrainingPlan::create(['title' => 'Export Multi Plan', 'slug' => 'exp-multi-plan-' . rand(1000, 9999), 'active' => 'Active', 'total_duration_seconds' => 7200, 'learning_hours' => 2.0]);
+        $c1 = Content::create(['title' => 'Export Multi C1', 'slug' => 'exp-multi-c1-' . rand(1000, 9999), 'type' => 'Video', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'Y', 'duration' => '01:00:00', 'learning_hours' => 1.0]);
+        $c2 = Content::create(['title' => 'Export Multi C2', 'slug' => 'exp-multi-c2-' . rand(1000, 9999), 'type' => 'Document', 'classification_id' => $this->classification->id, 'active' => 'Active', 'playlistonly' => 'Y', 'duration' => '01:00:00', 'learning_hours' => 1.0]);
+        TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
+        TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c2->id, 'content_order' => 1]);
 
         CertificateSetting::create(['certificate_type' => 'playlist', 'trainingplan_id' => $plan->id, 'minimum_progress' => 100, 'minimum_score' => 80, 'is_active' => true, 'issuer_name' => 'OWL Test']);
 
-        // Historical completion in content_users
-        ContentUser::create([
-            'user_id'    => $this->userA->id,
-            'content_id' => $c->id,
-            'progress'   => 100,
-            'finish'     => '1',
-        ]);
+        PlaylistContentUser::create(['user_id' => $this->userA->id, 'trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'progress' => 100, 'finish' => '1']);
+        PlaylistContentUser::create(['user_id' => $this->userA->id, 'trainingplan_id' => $plan->id, 'content_id' => $c2->id, 'progress' => 100, 'finish' => '1']);
 
         $this->actingAs($this->userA);
 
@@ -304,12 +290,14 @@ class LearningRecordIntegrationTest extends TestCase
         $array = $export->array();
 
         $rows = collect($array);
-        $playlistRow = $rows->firstWhere(2, 'Export Hist Plan');
+        $playlistRow = $rows->firstWhere(1, 'Export Multi Plan');
 
-        $this->assertNotNull($playlistRow, 'Historical Category A playlist must appear in export array.');
-        $this->assertEquals('Playlist', $playlistRow[1]);
-        $this->assertEquals('100%', $playlistRow[6]);
-        $this->assertEquals('Available', $playlistRow[10]);
+        $this->assertNotNull($playlistRow, 'Multi-module completed playlist must appear in export array.');
+        $this->assertEquals('Playlist', $playlistRow[2]);
+        $this->assertEquals('Playlist', $playlistRow[3]);
+        $this->assertEquals('-', $playlistRow[4]);
+        $this->assertEquals('100%', $playlistRow[7]);
+        $this->assertEquals('Available', $playlistRow[11]);
     }
 
     /**
@@ -333,8 +321,8 @@ class LearningRecordIntegrationTest extends TestCase
         $array = $export->array();
 
         $rows = collect($array);
-        $this->assertNotNull($rows->firstWhere(2, 'Export Iso Plan A'), 'Plan A must appear in export.');
-        $this->assertNull($rows->firstWhere(2, 'Export Iso Plan B'), 'Plan B must not appear in export.');
+        $this->assertNotNull($rows->firstWhere(1, 'Export Iso Plan A'), 'Plan A must appear in export.');
+        $this->assertNull($rows->firstWhere(1, 'Export Iso Plan B'), 'Plan B must not appear in export.');
     }
 
     /**

@@ -36,16 +36,17 @@
     // Kolom tabel; 'sort' = key data-sort-* pada baris (learning-record.js),
     // 'type' = cara membandingkan nilai saat sorting (text/number/duration).
     $columns = [
-        ['label' => 'No',             'width' => '4%'],
-        ['label' => 'Course',        'width' => '23%', 'sort' => 'title',          'type' => 'text'],
-        ['label' => 'Type',           'width' => '9%',  'sort' => 'type',           'type' => 'text'],
-        ['label' => 'Classification', 'width' => '10%', 'sort' => 'classification', 'type' => 'text'],
-        ['label' => 'Duration',       'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
-        ['label' => 'Learning Hour',  'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
-        ['label' => 'Progress',       'width' => '9%',  'sort' => 'progress',       'type' => 'number'],
-        ['label' => 'Date Time',    'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
-        ['label' => 'Assessment Score',     'width' => '10%',  'sort' => 'score',          'type' => 'number'],
-        ['label' => 'Certificate',    'width' => '11%'],
+        ['label' => 'No',               'width' => '4%'],
+        ['label' => 'Course',           'width' => '24%', 'sort' => 'title',          'type' => 'text'],
+        ['label' => 'Type',             'width' => '8%',  'sort' => 'type',           'type' => 'text'],
+        ['label' => 'Category',         'width' => '8%',  'sort' => 'category',       'type' => 'text'],
+        ['label' => 'Classification',   'width' => '10%', 'sort' => 'classification', 'type' => 'text'],
+        ['label' => 'Duration',         'width' => '8%',  'sort' => 'duration',       'type' => 'duration'],
+        ['label' => 'Learning Hour',    'width' => '8%',  'sort' => 'learning-hour',  'type' => 'number'],
+        ['label' => 'Progress',         'width' => '7%',  'sort' => 'progress',       'type' => 'number'],
+        ['label' => 'Date Time',        'width' => '12%', 'sort' => 'finish',         'type' => 'text'],
+        ['label' => 'Assessment Score', 'width' => '8%',  'sort' => 'score',          'type' => 'number'],
+        ['label' => 'Certificate',      'width' => '8%'],
     ];
 @endphp
 
@@ -68,6 +69,28 @@
     box-sizing: border-box !important;
     max-width: 100% !important;
 }
+/* Compact Learning Record Type Badges (Video, Document, Playlist) under Title */
+.learning-record-type-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    min-height: 20px !important;
+    min-width: unset !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    text-decoration: none !important;
+}
+.learning-record-type-badge.record-playlist-link:hover {
+    opacity: 0.85;
+    text-decoration: none !important;
+}
 .learning-classification-badge {
     display: inline-flex !important;
     align-items: center !important;
@@ -85,6 +108,219 @@
     line-height: 1.18 !important;
     border-radius: 999px !important;
     box-sizing: border-box !important;
+}
+
+/* Table Horizontal Scroll & Full Course Title Readability */
+.learning-record-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100% !important;
+}
+.learning-record-table {
+    min-width: 1280px !important;
+    width: 100% !important;
+}
+.learning-record-course-cell {
+    min-width: 280px;
+    white-space: normal !important;
+}
+.learning-record-title {
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.4 !important;
+}
+.learning-record-link {
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    text-decoration: none;
+    display: inline;
+}
+.learning-record-link:hover {
+    text-decoration: underline;
+}
+.learning-record-program {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.3;
+    margin-top: 3px;
+    display: block;
+}
+
+/* Category Preview Trigger */
+.category-preview-trigger {
+    cursor: pointer !important;
+    user-select: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+.category-preview-trigger:hover {
+    opacity: 0.9;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+}
+
+/* Learning Record Course Hover Popup */
+.learning-record-hover-popup {
+    position: fixed;
+    z-index: 99999;
+    background: #ffffff;
+    border: 1px solid #dce1e7;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.14), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    max-width: 380px;
+    min-width: 240px;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: #1e293b;
+    pointer-events: auto;
+    box-sizing: border-box;
+}
+/* Invisible hover bridges to guarantee continuous hover transition between trigger and popup */
+.learning-record-hover-popup::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: transparent;
+}
+.learning-record-hover-popup::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: transparent;
+}
+.course-preview-popover {
+    padding: 12px 14px;
+    box-sizing: border-box;
+}
+.course-preview-popover.course-preview-content {
+    padding: 12px 14px;
+}
+.course-preview-header {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.course-preview-content .course-preview-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+.course-preview-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.35;
+    word-break: break-word;
+}
+.course-preview-body {
+    max-height: 220px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+    box-sizing: border-box;
+}
+.course-preview-body::-webkit-scrollbar {
+    width: 5px;
+}
+.course-preview-body::-webkit-scrollbar-track {
+    background: #f8fafc;
+    border-radius: 4px;
+}
+.course-preview-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.course-preview-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+.course-preview-playlist-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.course-preview-playlist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+    box-sizing: border-box;
+}
+.course-preview-playlist-item:hover {
+    background-color: #f1f5f9;
+}
+.course-preview-playlist-number {
+    flex: 0 0 auto;
+    min-width: 22px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+    line-height: 1.4;
+    text-align: right;
+    user-select: none;
+}
+.course-preview-playlist-link {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: #206bc4;
+    text-decoration: none;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    display: block;
+    word-break: break-word;
+}
+.course-preview-playlist-link:hover {
+    color: #1a569d;
+    text-decoration: underline;
+}
+
+/* Dark mode overrides for hover popup */
+body.dark-mode .learning-record-hover-popup,
+[data-bs-theme="dark"] .learning-record-hover-popup {
+    background: #1e293b;
+    border-color: #334155;
+    color: #f1f5f9;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+}
+body.dark-mode .course-preview-header,
+[data-bs-theme="dark"] .course-preview-header {
+    border-bottom-color: #334155;
+}
+body.dark-mode .course-preview-title,
+[data-bs-theme="dark"] .course-preview-title {
+    color: #f8fafc;
+}
+body.dark-mode .course-preview-body::-webkit-scrollbar-track,
+[data-bs-theme="dark"] .course-preview-body::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+body.dark-mode .course-preview-body::-webkit-scrollbar-thumb,
+[data-bs-theme="dark"] .course-preview-body::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+body.dark-mode .course-preview-playlist-item:hover,
+[data-bs-theme="dark"] .course-preview-playlist-item:hover {
+    background-color: #334155;
+}
+body.dark-mode .course-preview-playlist-number,
+[data-bs-theme="dark"] .course-preview-playlist-number {
+    color: #94a3b8;
+}
+body.dark-mode .course-preview-playlist-link,
+[data-bs-theme="dark"] .course-preview-playlist-link {
+    color: #60a5fa;
+}
+body.dark-mode .course-preview-playlist-link:hover,
+[data-bs-theme="dark"] .course-preview-playlist-link:hover {
+    color: #93c5fd;
 }
 
 /* Certificate Action Buttons */
@@ -330,7 +566,7 @@
                         <x-learning.record-row :row="$row" :index="$loop->iteration" />
                     @empty
                         <tr id="recordEmptyRow">
-                            <td colspan="10" class="text-center text-muted py-4">
+                            <td colspan="11" class="text-center text-muted py-4">
                                 No completed learning found.
                             </td>
                         </tr>
@@ -339,7 +575,7 @@
                     @if ($rows->isNotEmpty())
                         {{-- Ditampilkan jQuery saat kombinasi filter tidak menghasilkan baris. --}}
                         <tr id="recordNoMatchRow" class="d-none">
-                            <td colspan="10" class="text-center text-muted py-4">
+                            <td colspan="11" class="text-center text-muted py-4">
                                 No records match your search or filter.
                             </td>
                         </tr>

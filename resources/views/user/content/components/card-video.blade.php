@@ -52,14 +52,11 @@
 
 <div class="card content-card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
     <div class="position-relative">
-        {{-- Temporary deployment hide: Playlist badge hidden on All Content --}}
-        {{--
-        @if ($isPlaylistOnly)
+        {{-- @if ($isPlaylistOnly)
             <span class="badge bg-green text-white position-absolute top-0 start-0 m-3 shadow-sm" style="pointer-events: none; z-index: 2;">
                 <i class="ti ti-playlist me-1"></i>Playlist
             </span>
-        @endif
-        --}}
+        @endif --}}
 
         @if ($isExpired)
             <div class="content-card-thumb" style="background-image: url('{{ $thumbnail }}')"></div>
@@ -147,7 +144,7 @@
                 </button>
             @else
                 <a href="{{ $cardUrl }}"
-                   class="btn btn-primary w-100 rounded-pill">
+                   class="btn btn-primary btn-learning-primary w-100 rounded-pill">
                     <i class="ti ti-player-play me-1"></i>
                     Start Learning
                 </a>

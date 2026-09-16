@@ -68,34 +68,93 @@ class LearningAssessmentController extends Controller
         return Assesment::with([
                 'assesments_assigned',
                 'contents',
+                'content',
                 'scores'      => fn ($q) => $q->where('user_id', $userId),
                 'trainingplan',
             ])
+            ->withCount('questions')
+            ->where('status', 'OK')
             ->where(function ($query) use ($user, $userId, $completedPlaylistIds) {
+                // 1. Assigned directly to employee, team, or department
                 $query->whereHas('assesments_assigned', function ($q) use ($user) {
                     $q->where('assigned_id', $user->id_emp)
                         ->orWhere('assigned_id', $user->id_team ?? $user->id_tean)
                         ->orWhere('assigned_id', $user->id_department);
                 })
-                ->orWhereHas('contents', function ($q) use ($userId) {
-                    $q->whereHas('contentuser', function ($q) use ($userId) {
-                        $q->where('progress', '>=', 100)->where('user_id', $userId);
+                // 2. Content Assessment -> resolve via Content relation
+                ->orWhere(function ($cq) use ($userId) {
+                    $cq->where(function ($sub) {
+                        $sub->where('assasment_content_for', 'content')
+                            ->orWhere(function ($fallback) {
+                                $fallback->where('type', 'content')
+                                    ->where(function ($s) {
+                                        $s->whereNull('assasment_content_for')
+                                            ->orWhere('assasment_content_for', 'content');
+                                    });
+                            });
+                    })
+                    ->where('type', '!=', 'global')
+                    ->whereHas('contents', function ($q) use ($userId) {
+                        $q->whereHas('contentuser', function ($cu) use ($userId) {
+                            $cu->where('progress', '>=', 100)->where('user_id', $userId);
+                        });
                     });
                 })
-                ->orWhere(function ($q) use ($completedPlaylistIds) {
-                    $q->where('type', 'trainingplan')
-                        ->where('status', 'OK')
-                        ->whereIn('trainingplan_id', $completedPlaylistIds);
+                // 3. Playlist Assessment -> resolve via Playlist relation
+                ->orWhere(function ($pq) use ($userId, $completedPlaylistIds) {
+                    $pq->where(function ($sub) {
+                        $sub->where('assasment_content_for', 'playlist')
+                            ->orWhere('type', 'trainingplan');
+                    })
+                    ->where('type', '!=', 'global')
+                    ->where('status', 'OK')
+                    ->where(function ($matchQ) use ($completedPlaylistIds, $userId) {
+                        // Option A: User completed the playlist
+                        $matchQ->whereIn('trainingplan_id', $completedPlaylistIds)
+                            // Option B: Assessment is attached to a lesson in the playlist, and user completed that lesson
+                            ->orWhere(function ($lessonQ) use ($userId) {
+                                $lessonQ->whereNotNull('trainingplan_id')
+                                    ->whereNotNull('content_id')
+                                    ->where(function ($progQ) use ($userId) {
+                                        $progQ->whereHas('content', function ($cQ) use ($userId) {
+                                            $cQ->whereHas('playlistContentUsers', function ($pcu) use ($userId) {
+                                                $pcu->where('user_id', $userId)
+                                                    ->where(fn ($w) => $w->where('finish', '1')->orWhere('progress', '>=', 100));
+                                            })->orWhereHas('contentuser', function ($cu) use ($userId) {
+                                                $cu->where('user_id', $userId)
+                                                    ->where(fn ($w) => $w->where('finish', '1')->orWhere('progress', '>=', 100));
+                                            });
+                                        });
+                                    });
+                            });
+                    });
                 })
+                // 4. Scores already taken
                 ->orWhereHas('scores', function ($q) use ($userId) {
                     $q->where('user_id', $userId);
+                })
+                // 5. Global Assessment -> resolve as Global without Content/Playlist relation
+                ->orWhere(function ($q) use ($user) {
+                    $q->where('type', 'global')
+                        ->where('status', 'OK')
+                        ->where(function ($sq) use ($user) {
+                            $sq->doesntHave('assesments_assigned')
+                                ->orWhereHas('assesments_assigned', function ($aq) use ($user) {
+                                    $aq->where('assigned_id', $user->id_emp)
+                                        ->orWhere('assigned_id', $user->id_team ?? $user->id_tean)
+                                        ->orWhere('assigned_id', $user->id_department);
+                                });
+                        });
                 });
             });
     }
 
     private function applyFilters($query, Request $request, $userId)
     {
-        $type = $request->input('assessment_filter_type', 'all');
+        $type = $request->input('assessment_filter_type', $request->input('type', 'all'));
+        if (empty($type)) {
+            $type = 'all';
+        }
         $status = $request->input('assessment_filter_status', 'all');
         $score = $request->input('assessment_filter_score', 'all');
         $result = $request->input('assessment_filter_result', 'all');
@@ -115,7 +174,27 @@ class LearningAssessmentController extends Controller
                         ->orWhereHas('trainingplan', fn ($playlist) => $playlist->where('title', 'like', $keyword));
                 });
             })
-            ->when($type !== 'all', fn ($q) => $q->where('type', $type === 'playlist' ? 'trainingplan' : $type))
+            ->when($type !== 'all', function ($q) use ($type) {
+                if ($type === 'content_content') {
+                    $q->where('type', 'content')
+                        ->where(function ($sub) {
+                            $sub->where('assasment_content_for', 'content')
+                                ->orWhereNull('assasment_content_for');
+                        });
+                } elseif ($type === 'content_playlist') {
+                    $q->where('type', 'content')
+                        ->where('assasment_content_for', 'playlist');
+                } elseif ($type === 'trainingplan' || $type === 'playlist') {
+                    $q->where('type', 'trainingplan');
+                } elseif ($type === 'global') {
+                    $q->where('type', 'global');
+                } elseif ($type === 'content') {
+                    // Backward compatibility for legacy URL ?assessment_filter_type=content or ?type=content
+                    $q->where('type', 'content');
+                } else {
+                    $q->where('type', $type);
+                }
+            })
             ->when($status === 'passed', fn ($q) => $q->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 1)))
             ->when($status === 'failed', fn ($q) => $q
                 ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 0))

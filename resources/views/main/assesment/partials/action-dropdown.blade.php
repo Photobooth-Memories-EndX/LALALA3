@@ -25,11 +25,14 @@
             <span>Edit Assessment</span>
         </a>
 
-                <button
+        <button
             type="button"
             class="dropdown-item btn-duplicate-assessment"
             data-url="{{ route('assesment.clone', $list->slug) }}"
             data-title="{{ $list->title }}"
+            data-type="{{ $list->type }}"
+            data-content-for="{{ $list->assasment_content_for ?? 'content' }}"
+            data-trainingplan-id="{{ $list->trainingplan_id ?? '' }}"
             data-toggle="modal"
             data-target="#modalDuplicateAssessment"
             data-bs-toggle="modal"

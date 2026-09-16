@@ -28,6 +28,82 @@
     box-shadow: 0 0 0 2px #05507D, 0 8px 24px rgba(0, 0, 0, 0.16) !important;
 }
 
+/* In scroll mode, hide Previous and Next navigation buttons, but keep the page indicator visible and centered */
+.owl-pdf-reader.owl-pdf-scroll-mode .pdf-page-navigation,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-navigation,
+.owl-pdf-scroll-mode .pdf-page-navigation,
+.pdf-page-navigation.is-scroll-mode {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 10px 16px;
+}
+
+.owl-pdf-reader.owl-pdf-scroll-mode [data-pdf-nav],
+.owl-pdf-reader.owl-pdf-scroll-mode .pdf-page-navigation-btn,
+.owl-pdf-reader.owl-pdf-scroll-mode .pdf-page-navigation-previous,
+.owl-pdf-reader.owl-pdf-scroll-mode .pdf-page-navigation-next,
+.owl-pdf-reader[data-reading-mode="scroll"] [data-pdf-nav],
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-navigation-btn,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-navigation-previous,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-navigation-next,
+.owl-pdf-scroll-mode [data-pdf-nav],
+.owl-pdf-scroll-mode .pdf-page-navigation-btn,
+.owl-pdf-scroll-mode .pdf-page-navigation-previous,
+.owl-pdf-scroll-mode .pdf-page-navigation-next,
+.pdf-page-navigation.is-scroll-mode [data-pdf-nav],
+.pdf-page-navigation.is-scroll-mode .pdf-page-navigation-btn,
+.pdf-page-navigation.is-scroll-mode .pdf-page-navigation-previous,
+.pdf-page-navigation.is-scroll-mode .pdf-page-navigation-next {
+    display: none !important;
+}
+
+.owl-pdf-reader.owl-pdf-scroll-mode .pdf-page-navigation-status,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-page-navigation-status,
+.owl-pdf-scroll-mode .pdf-page-navigation-status,
+.pdf-page-navigation.is-scroll-mode .pdf-page-navigation-status {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: 0 auto !important;
+    width: auto !important;
+}
+
+.owl-pdf-reader.owl-pdf-scroll-mode .pdf-tb-stat-page,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-tb-stat-page,
+.owl-pdf-scroll-mode .pdf-tb-stat-page,
+.pdf-page-navigation.is-scroll-mode .pdf-tb-stat-page {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 132px !important;
+    gap: 12px !important;
+    padding: 5px 14px !important;
+}
+
+.owl-pdf-reader.owl-pdf-scroll-mode .pdf-tb-stat-page .pdf-tb-stat-label,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-tb-stat-page .pdf-tb-stat-label,
+.owl-pdf-scroll-mode .pdf-tb-stat-page .pdf-tb-stat-label,
+.pdf-page-navigation.is-scroll-mode .pdf-tb-stat-page .pdf-tb-stat-label {
+    letter-spacing: .04em !important;
+    line-height: 1 !important;
+}
+
+.owl-pdf-reader.owl-pdf-scroll-mode .pdf-tb-pageno,
+.owl-pdf-reader.owl-pdf-scroll-mode .pageno,
+.owl-pdf-reader[data-reading-mode="scroll"] .pdf-tb-pageno,
+.owl-pdf-reader[data-reading-mode="scroll"] .pageno,
+.owl-pdf-scroll-mode .pdf-tb-pageno,
+.owl-pdf-scroll-mode .pageno,
+.pdf-page-navigation.is-scroll-mode .pdf-tb-pageno,
+.pdf-page-navigation.is-scroll-mode .pageno {
+    display: inline-block !important;
+    min-width: 56px !important;
+    text-align: center !important;
+    font-variant-numeric: tabular-nums !important;
+    line-height: 1 !important;
+}
+
 /* Self-paced badge styling */
 .pdf-page-navigation .pdf-tb-stat-self-paced {
     color: #05507D !important;

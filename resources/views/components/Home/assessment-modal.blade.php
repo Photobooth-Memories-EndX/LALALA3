@@ -11,7 +11,7 @@
             </div>
 
             <div class="modal-body py-3">
-                <div class="alert alert-success border-0 small mb-3" role="alert" style="background-color: #e8f5e9; color: #2e7d32 !important;">
+                <div class="alert alert-success border-0 small mb-3" role="alert">
                     <i class="ti ti-info-circle me-1"></i> Please input the unique code to access the assessment.
                 </div>
                 <input type="text"

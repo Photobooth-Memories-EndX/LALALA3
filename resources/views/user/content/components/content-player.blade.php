@@ -49,9 +49,11 @@
             {{-- DOCUMENT --}}
             @elseif ($content->type == 'Document' || $content->type == 'SOP/Regulation')
                 @php
-                    $isScrollMode = ($content->type === 'Document' && (int) ($content->page_duration ?? 30) === 0);
+                    $rawDuration = $content->page_duration ?? ($content->duration_page ?? null);
+                    $durationValue = $rawDuration !== null ? (int) $rawDuration : 30;
+                    $isScrollMode = ($content->type === 'Document' && $durationValue === 0);
                     $shellModeClass = $isScrollMode ? 'owl-pdf-scroll-mode' : 'owl-pdf-single-page';
-                    $pageDurationVal = $isScrollMode ? 0 : (int) ($content->page_duration ?: 30);
+                    $pageDurationVal = $isScrollMode ? 0 : $durationValue;
                 @endphp
 
                 <div class="pdfviewer owl-pdf-reader owl-pdf-mode-portrait {{ $shellModeClass }}"
@@ -64,6 +66,10 @@
                         'showReadingMode' => true,
                         'showPageTiming' => $content->type === 'Document',
                         'pageDuration' => $pageDurationVal,
+                        'isScrollMode' => $isScrollMode,
+                        'showPagination' => !$isScrollMode,
+                        'totalPages' => (int) ($content->total_page ?? 0),
+                        'currentPage' => (int) ($content_user->last_page ?? 1),
                     ])
 
                     {{-- PDF VIEWER --}}
