@@ -208,6 +208,8 @@
                     d.learning_source = $('#learn-category').val();
                     d.status = $('#learn-status').val();
                     d.year = $('#learn-year').val();
+                    d.entries = $('#learn-entries').val() || defaultEntries;
+                    d.length = parseInt($('#learn-entries').val(), 10) || defaultEntries;
                     d.classification_slug = $('#classification-slug').val();
                     d.content_slug = $('#content-slug').val();
                     d.from_date = $('#filter-from-date').val();
@@ -288,17 +290,37 @@
 
         // ── 3. Quick Filter Event Listeners ───────────────────────────────
         $('#btn-apply-filter').on('click', function () {
+            // Synchronize text inputs with hidden filter values if user typed directly
+            const empInput = $('#manage-employee-input').val().trim();
+            if (empInput && !$('#learn-employee').val()) {
+                $('#learn-employee').val(empInput);
+            } else if (!empInput) {
+                $('#learn-employee').val('');
+            }
+
+            const titleInput = $('#manage-title-input').val().trim();
+            if (titleInput && !$('#learn-title').val()) {
+                $('#learn-title').val(titleInput);
+            } else if (!titleInput) {
+                $('#learn-title').val('');
+            }
+
+            $('#manage-employee-dropdown, #manage-title-dropdown').hide();
+
+            const currentLength = parseInt($('#learn-entries').val(), 10) || defaultEntries;
+
             updateUrlParams({
                 employee_id: $('#learn-employee').val() || null,
                 learning_title: $('#learn-title').val() || null,
                 category: $('#learn-category').val() !== 'all' ? $('#learn-category').val() : null,
                 status: $('#learn-status').val() !== 'all' ? $('#learn-status').val() : null,
                 year: $('#learn-year').val() !== 'all' ? $('#learn-year').val() : null,
+                entries: currentLength !== defaultEntries ? currentLength : null,
             });
             learningTable.ajax.reload(null, true);
         });
 
-        $('#learn-title').on('keypress', function (e) {
+        $('#learn-title, #manage-title-input').on('keypress', function (e) {
             if (e.which === 13) {
                 e.preventDefault();
                 $('#btn-apply-filter').trigger('click');
@@ -307,7 +329,8 @@
 
         $('#learn-entries').on('change', function () {
             const nextLength = parseInt($(this).val(), 10) || defaultEntries;
-            learningTable.page.len(nextLength).draw();
+            updateUrlParams({ entries: nextLength !== defaultEntries ? nextLength : null });
+            learningTable.page.len(nextLength).page(0).draw(false);
         });
 
         // ── 4. More Filters Modal Events ──────────────────────────────────
@@ -315,7 +338,9 @@
             // 1. Gather all active field values from modal inputs
             const fromDate = $('#modal-from-date').val() || '';
             const toDate = $('#modal-to-date').val() || '';
-            const programType = $('input[name="modal_program_type"]:checked').val() || 'all';
+            const programType = $('input[name="modal_program_type"]:checked').val() 
+                || $('input[name="modal_status"]:checked').val() 
+                || 'all';
             const progressRange = $('input[name="modal_progress_range"]:checked').val() || 'all';
             const duration = $('input[name="modal_duration"]:checked').val() || 'all';
 
@@ -341,7 +366,7 @@
                 duration: duration !== 'all' ? duration : null
             });
 
-            // 6. Reload DataTable with page reset
+            // 6. Reload DataTable with page reset to page 1
             learningTable.ajax.reload(null, true);
         });
 
@@ -349,7 +374,7 @@
             // 1. Clear modal input selections back to default
             $('#modal-from-date').val('');
             $('#modal-to-date').val('');
-            $('input[name="modal_program_type"][value="all"]').prop('checked', true);
+            $('input[name="modal_program_type"][value="all"], input[name="modal_status"][value="all"]').prop('checked', true);
             $('input[name="modal_progress_range"][value="all"]').prop('checked', true);
             $('input[name="modal_duration"][value="all"]').prop('checked', true);
 
@@ -375,7 +400,7 @@
             // 5. Close modal
             hideMoreFiltersModal();
 
-            // 6. Reload DataTable without modal filter constraints
+            // 6. Reload DataTable without modal filter constraints, resetting to page 1
             learningTable.ajax.reload(null, true);
         });
 
@@ -400,7 +425,7 @@
             // Reset Modal inputs & hidden filter inputs
             $('#modal-from-date, #filter-from-date').val('');
             $('#modal-to-date, #filter-to-date').val('');
-            $('input[name="modal_program_type"][value="all"]').prop('checked', true);
+            $('input[name="modal_program_type"][value="all"], input[name="modal_status"][value="all"]').prop('checked', true);
             $('#filter-program-type').val('all');
             $('input[name="modal_progress_range"][value="all"]').prop('checked', true);
             $('#filter-progress-range').val('all');
@@ -414,7 +439,7 @@
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
-            learningTable.page.len(defaultEntries).draw();
+            learningTable.page.len(defaultEntries).page(0).draw(false);
         });
 
         // ── 6. Filtered Data Download Handler (Export Excel) ─────────────
