@@ -600,3 +600,27 @@ body.dark-mode .course-preview-playlist-link:hover,
         </div>
     @endif
 </div>
+
+{{-- Inactive / Expired Content Modal --}}
+<div class="modal modal-blur fade" id="learningRecordBlockedModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-status bg-warning"></div>
+            <div class="modal-body text-center py-4">
+                <i class="ti ti-alert-triangle text-warning" style="font-size: 3rem;" aria-hidden="true"></i>
+                <h3 class="blocked-modal-title mt-3 mb-2 fw-bold">Content Inactive</h3>
+                <div class="text-secondary mb-2 fw-medium blocked-course-title"></div>
+                <div class="text-muted small blocked-modal-message">This content is currently inactive.</div>
+            </div>
+            <div class="modal-footer">
+                <div class="w-100">
+                    <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal" data-dismiss="modal">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

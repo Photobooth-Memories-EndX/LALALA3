@@ -1044,6 +1044,37 @@ function initLearningRecord() {
         });
     }
 
+    function initBlockedContentModal() {
+        $(document).off('click.learningRecordBlocked', '.learning-record-blocked-trigger')
+            .on('click.learningRecordBlocked', '.learning-record-blocked-trigger', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var $el = $(this);
+                var status = String($el.data('status') || 'INACTIVE').toUpperCase();
+                var message = $el.data('message') || (status === 'EXPIRED' ? 'This content period has expired.' : 'This content is currently inactive.');
+                var title = $el.data('title') || 'Course';
+
+                var $modal = $('#learningRecordBlockedModal');
+                if ($modal.length) {
+                    $modal.find('.blocked-modal-title').text(status === 'EXPIRED' ? 'Content Period Expired' : 'Content Inactive');
+                    $modal.find('.blocked-course-title').text(title);
+                    $modal.find('.blocked-modal-message').text(message);
+
+                    if (typeof $ !== 'undefined' && $.fn && typeof $.fn.modal === 'function') {
+                        $modal.modal('show');
+                    } else if (window.bootstrap && window.bootstrap.Modal) {
+                        var instance = window.bootstrap.Modal.getInstance($modal[0]) || new window.bootstrap.Modal($modal[0]);
+                        instance.show();
+                    } else {
+                        $modal.addClass('show').css('display', 'block');
+                        $('body').addClass('modal-open');
+                    }
+                } else {
+                    alert(message);
+                }
+            });
+    }
+
     restoreRecordFiltersFromUrl();
     applyModeVisibility(false);
     updateFilterBadge();
@@ -1053,5 +1084,6 @@ function initLearningRecord() {
     }
     updateExportUrl();
     initCourseHoverPreview();
+    initBlockedContentModal();
     render();
 }

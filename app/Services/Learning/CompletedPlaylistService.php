@@ -26,9 +26,10 @@ class CompletedPlaylistService
      */
     public function forUser(int $userId): Collection
     {
-        $plans = TrainingPlan::with([
+        $plans = TrainingPlan::withTrashed()
+            ->with([
                 'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
-                'trainingplandetail.content' => fn ($q) => $q->where('active', 'Active'),
+                'trainingplandetail.content' => fn ($q) => $q->withTrashed(),
             ])
             ->select([
                 'trainingplan.id',
@@ -38,16 +39,19 @@ class CompletedPlaylistService
                 'trainingplan.total_duration_seconds',
                 'trainingplan.learning_hours',
                 'trainingplan.active',
+                'trainingplan.has_deadline',
+                'trainingplan.from_date',
+                'trainingplan.to_date',
                 'trainingplan.created_at',
+                'trainingplan.deleted_at',
             ])
-            ->where('active', 'Active')
             ->get();
 
         $completed = collect();
 
         foreach ($plans as $plan) {
             $validDetails = $plan->trainingplandetail->filter(
-                fn ($d) => !empty($d->content) && $d->content->exists && $d->content->active === 'Active'
+                fn ($d) => !empty($d->content) && $d->content->exists
             );
 
             $total = $validDetails->count();

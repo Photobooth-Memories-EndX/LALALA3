@@ -63,7 +63,7 @@
     <td><x-learning.record-title-cell :row="$row" /></td>
 
     <td class="learning-record-type text-center">
-        <x-learning.record-type-badge :type="$row['type']" :url="$row['playlist_url'] ?? null" />
+        <x-learning.record-type-badge :type="$row['type']" :url="(($row['can_open'] ?? true) ? ($row['playlist_url'] ?? null) : null)" />
     </td>
 
     <td class="learning-record-category text-center position-relative">
@@ -96,8 +96,16 @@
                                 @foreach ($row['playlist_items'] as $item)
                                     <li class="course-preview-playlist-item">
                                         <span class="course-preview-playlist-number">{{ $loop->iteration }}.</span>
-                                        @if (!empty($item['url']))
+                                        @if (!empty($item['url']) && ($item['can_open'] ?? true))
                                             <a href="{{ $item['url'] }}" class="course-preview-playlist-link">
+                                                {{ $item['title'] }}
+                                            </a>
+                                        @elseif (!empty($item['url']))
+                                            <a href="javascript:void(0);"
+                                               class="course-preview-playlist-link learning-record-blocked-trigger text-muted text-decoration-none"
+                                               data-status="{{ $item['access_status'] ?? 'INACTIVE' }}"
+                                               data-message="{{ $item['modal_message'] ?? 'This content is currently inactive.' }}"
+                                               data-title="{{ $item['title'] ?? '-' }}">
                                                 {{ $item['title'] }}
                                             </a>
                                         @else
