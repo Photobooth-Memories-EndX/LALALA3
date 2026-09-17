@@ -80,7 +80,7 @@
             <!-- Hidden inputs from More Filters Modal to preserve in quick filter submit/export -->
             <input type="hidden" id="filter-from-date" name="from_date" value="{{ request('from_date') ?? request('date_from') }}">
             <input type="hidden" id="filter-to-date" name="to_date" value="{{ request('to_date') ?? request('date_to') }}">
-            <input type="hidden" id="filter-program-type" name="program_type" value="{{ request('program_type') ?? (request('program') ?? 'all') }}">
+            <input type="hidden" id="filter-program-type" name="program_type" value="{{ request('program_type') ?? (request('program') ?? (in_array(request('status'), ['mandatory', 'optional', 'playlist'], true) ? request('status') : 'all')) }}">
             <input type="hidden" id="filter-progress-range" name="progress_range" value="{{ request('progress_range', 'all') }}">
             <input type="hidden" id="filter-duration" name="duration" value="{{ request('duration', 'all') }}">
 
@@ -206,22 +206,31 @@
                         </div>
                     </div>
 
-                    <!-- Learning Program (program_type) -->
+                    <!-- Status -->
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small d-block">Learning Program</label>
-                        @php $currProgram = request('program_type') ?? (request('program') ?? 'all'); @endphp
+                        <label class="form-label fw-bold text-dark small d-block">Status</label>
+                        @php
+                            $currProgram = request('program_type') ?? (request('program') ?? (request('status_type') ?? 'all'));
+                            if ($currProgram === 'all' && in_array(request('status'), ['mandatory', 'optional', 'playlist'], true)) {
+                                $currProgram = request('status');
+                            }
+                        @endphp
                         <div class="d-flex flex-wrap gap-3 align-items-center">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_program_type" id="progAll" value="all" {{ ($currProgram === 'all' || blank($currProgram)) ? 'checked' : '' }}>
-                                <label class="form-check-label text-dark" for="progAll">All Program</label>
+                                <input class="form-check-input" type="radio" name="modal_program_type" id="statusAll" value="all" {{ ($currProgram === 'all' || blank($currProgram)) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="statusAll">All</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_program_type" id="progMandatory" value="mandatory" {{ $currProgram === 'mandatory' ? 'checked' : '' }}>
-                                <label class="form-check-label text-dark" for="progMandatory">Mandatory Learning</label>
+                                <input class="form-check-input" type="radio" name="modal_program_type" id="statusMandatory" value="mandatory" {{ $currProgram === 'mandatory' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="statusMandatory">Mandatory</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="modal_program_type" id="progOptional" value="optional" {{ $currProgram === 'optional' ? 'checked' : '' }}>
-                                <label class="form-check-label text-dark" for="progOptional">Optional Learning</label>
+                                <input class="form-check-input" type="radio" name="modal_program_type" id="statusOptional" value="optional" {{ $currProgram === 'optional' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="statusOptional">Optional</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_program_type" id="statusPlaylist" value="playlist" {{ $currProgram === 'playlist' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="statusPlaylist">Playlist</label>
                             </div>
                         </div>
                     </div>

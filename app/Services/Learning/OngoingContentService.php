@@ -57,11 +57,14 @@ class OngoingContentService
                     $durationSeconds = \App\Support\DurationFormatter::toSeconds($cu->content->duration) ?? 0;
                 }
 
+                $actualWatchSeconds = (int) ($cu->actual_watch_seconds ?? 0);
                 $currentTime = (int) ($cu->current_time ?? 0);
                 $progress = (int) ($cu->progress ?? 0);
                 $isFinished = ((string) $cu->finish === '1' || $progress >= 100);
 
-                if ($currentTime > 0) {
+                if ($actualWatchSeconds > 0) {
+                    $actualSeconds = $actualWatchSeconds;
+                } elseif ($currentTime > 0) {
                     $actualSeconds = $currentTime;
                 } elseif ($isFinished && $durationSeconds > 0) {
                     $actualSeconds = $durationSeconds;

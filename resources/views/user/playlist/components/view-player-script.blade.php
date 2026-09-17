@@ -32,6 +32,24 @@
                     });
                 @endif
 
+                if (window.playlistWatchTimeTracker && typeof window.playlistWatchTimeTracker.destroy === 'function') {
+                    window.playlistWatchTimeTracker.destroy();
+                }
+
+                const watchTimeTracker = new VideoWatchTimeTracker({
+                    player: player,
+                    url: "{{ route('playlist.user.progress.update') }}",
+                    csrf: "{{ csrf_token() }}",
+                    contentId: {{ (int) $content->id }},
+                    trainingPlanId: {{ (int) ($playlist->id ?? $trainingplan->id) }},
+                    maxActualWatchSeconds: {{ $content->max_actual_watch_seconds !== null ? (int) $content->max_actual_watch_seconds : 'null' }},
+                    initialActualWatchSeconds: {{ (int) ($content_user->actual_watch_seconds ?? 0) }},
+                    heartbeatIntervalMs: 10000,
+                    onUpdate: window.owlUpdateLearningUi
+                });
+
+                window.playlistWatchTimeTracker = watchTimeTracker;
+
                 player.on('loadeddata', function() {
                     // Resume: prefer the exact saved position, fall back to the
                     // legacy progress-percentage estimate.
@@ -53,41 +71,6 @@
                         progressTracker.send({ duration_seconds: player.duration }, true);
                     }
                 });
-
-                player.on('play', function() {
-                    progressTracker.send({
-                        status: 'in_progress',
-                        current_time: player.currentTime,
-                        duration_seconds: player.duration
-                    }, true);
-                });
-
-                player.on('timeupdate', function() {
-                    if (!player.duration) return;
-
-                    progressTracker.send({
-                        current_time: player.currentTime,
-                        duration_seconds: player.duration
-                    });
-                });
-
-                player.on('pause', function() {
-                    if (player.ended) return;
-
-                    progressTracker.send({
-                        status: 'paused',
-                        current_time: player.currentTime,
-                        duration_seconds: player.duration
-                    }, true);
-                });
-
-                player.on('ended', function() {
-                    progressTracker.send({
-                        status: 'completed',
-                        current_time: player.duration,
-                        duration_seconds: player.duration
-                    }, true);
-                });
             @endif
         }
 
@@ -95,6 +78,23 @@
             if (typeof PDFjsViewer !== 'undefined' && document.querySelector('.playlist-pdfjs-viewer')) {
                 var pdfjsLib = window["pdfjs-dist/build/pdf"];
                 pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ asset('js/pdf.worker.min.js') }}";
+
+                if (window.playlistDocumentReadingTracker && typeof window.playlistDocumentReadingTracker.destroy === 'function') {
+                    window.playlistDocumentReadingTracker.destroy();
+                }
+
+                const playlistDocumentReadingTracker = new DocumentReadingTracker({
+                    url: "{{ route('playlist.user.progress.update') }}",
+                    csrf: "{{ csrf_token() }}",
+                    contentId: {{ (int) $content->id }},
+                    trainingPlanId: {{ (int) ($playlist->id ?? $trainingplan->id) }},
+                    maxActualWatchSeconds: {{ $content->max_actual_watch_seconds !== null ? (int) $content->max_actual_watch_seconds : 'null' }},
+                    initialActualWatchSeconds: {{ (int) ($content_user->actual_watch_seconds ?? 0) }},
+                    heartbeatIntervalMs: 10000,
+                    onUpdate: window.owlUpdateLearningUi
+                });
+
+                window.playlistDocumentReadingTracker = playlistDocumentReadingTracker;
 
                 let fileName = "{{ $vpGetContentFile }}";
                 let fileNameFixed = fileName

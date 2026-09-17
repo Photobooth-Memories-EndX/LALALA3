@@ -111,6 +111,7 @@ class PlaylistContentUserBatchCalculatorService
                     'finish',
                     'current_time',
                     'duration_seconds',
+                    'actual_watch_seconds',
                     'learning_hour',
                     'completed_at',
                     'created_at',
@@ -146,10 +147,13 @@ class PlaylistContentUserBatchCalculatorService
 
                 $isFinished = ((string) $record->finish === '1' || (int) $record->progress >= 100);
                 $currTime = (int) ($record->current_time ?? 0);
+                $actualWatch = (int) ($record->actual_watch_seconds ?? 0);
 
                 // Rule and fallback tracking
                 $ruleApplied = 'current_time';
-                if ($currTime > 0) {
+                if ($actualWatch > 0) {
+                    $ruleApplied = 'actual_watch_seconds';
+                } elseif ($currTime > 0) {
                     $ruleApplied = 'actual_tracked_time';
                 } elseif ($isFinished) {
                     if ($contentDurationSeconds !== null) {
@@ -172,7 +176,8 @@ class PlaylistContentUserBatchCalculatorService
                     $record->current_time,
                     $record->finish,
                     $record->progress,
-                    $contentDurationSeconds
+                    $contentDurationSeconds,
+                    $record->actual_watch_seconds ?? 0
                 );
 
                 $calculatedHour = $this->calculator->calculate($actualSeconds) ?? 0.0;

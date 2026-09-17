@@ -29,11 +29,14 @@ class LearningRecordLearningHourService
             $durationSeconds = DurationFormatter::toSeconds($cu->content->duration) ?? 0;
         }
 
+        $actualWatchSeconds = (int) ($cu->actual_watch_seconds ?? 0);
         $currentTime = (int) ($cu->current_time ?? 0);
         $progress = (int) ($cu->progress ?? 0);
         $isFinished = ((string) $cu->finish === '1' || $progress >= 100);
 
-        if ($currentTime > 0) {
+        if ($actualWatchSeconds > 0) {
+            $actualSeconds = $actualWatchSeconds;
+        } elseif ($currentTime > 0) {
             $actualSeconds = $currentTime;
         } elseif ($isFinished && $durationSeconds > 0) {
             $actualSeconds = $durationSeconds;
@@ -45,7 +48,12 @@ class LearningRecordLearningHourService
             $actualSeconds = 0;
         }
 
-        return round($actualSeconds / 3600, 4);
+        $calculatedHours = round($actualSeconds / 3600, 4);
+        if ($cu->content && $cu->content->max_learning_hours !== null) {
+            $calculatedHours = min($calculatedHours, $cu->content->max_learning_hours);
+        }
+
+        return $calculatedHours;
     }
 
     /**
@@ -54,10 +62,11 @@ class LearningRecordLearningHourService
      * Rules:
      * Sum actual consumed seconds across all valid modules of the playlist for user.
      * Per module:
-     * 1. current_time > 0: use current_time
-     * 2. finished = 1 and current_time = 0: use full module duration
-     * 3. progress > 0 and current_time = 0: use (progress / 100) * module duration
-     * 4. fallback: if pcu.learning_hour > 0, use learning_hour * 3600
+     * 1. actual_watch_seconds > 0: use actual_watch_seconds
+     * 2. current_time > 0: use current_time
+     * 3. finished = 1 and current_time = 0: use full module duration
+     * 4. progress > 0 and current_time = 0: use (progress / 100) * module duration
+     * 5. fallback: if pcu.learning_hour > 0, use learning_hour * 3600
      *
      * @param int $userId
      * @param Collection<int, TrainingPlan> $completedPlaylists
@@ -116,38 +125,56 @@ class LearningRecordLearningHourService
                     if ($pcuDuration <= 0) {
                         $pcuDuration = $moduleDuration;
                     }
+                    $pcuActualWatch = (int) ($pcu->actual_watch_seconds ?? 0);
                     $pcuCurrentTime = (int) ($pcu->current_time ?? 0);
                     $pcuProgress = (int) ($pcu->progress ?? 0);
                     $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
 
-                    if ($pcuCurrentTime > 0) {
-                        $consumedPlaylistSeconds += $pcuCurrentTime;
+                    $moduleSec = 0;
+                    if ($pcuActualWatch > 0) {
+                        $moduleSec = $pcuActualWatch;
+                    } elseif ($pcuCurrentTime > 0) {
+                        $moduleSec = $pcuCurrentTime;
                     } elseif ($pcuFinished && $pcuDuration > 0) {
-                        $consumedPlaylistSeconds += $pcuDuration;
+                        $moduleSec = $pcuDuration;
                     } elseif ($pcuProgress > 0 && $pcuDuration > 0) {
-                        $consumedPlaylistSeconds += (int) round(($pcuProgress / 100) * $pcuDuration);
+                        $moduleSec = (int) round(($pcuProgress / 100) * $pcuDuration);
                     } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
-                        $consumedPlaylistSeconds += (int) round((float) $pcu->learning_hour * 3600);
+                        $moduleSec = (int) round((float) $pcu->learning_hour * 3600);
                     }
+
+                    if ($d->content && $d->content->max_actual_watch_seconds !== null) {
+                        $moduleSec = min($moduleSec, $d->content->max_actual_watch_seconds);
+                    }
+                    $consumedPlaylistSeconds += $moduleSec;
                 } elseif ($cu) {
                     // Fallback to historical ContentUser record if PCU is absent
                     $cuDuration = (int) ($cu->duration_seconds ?? 0);
                     if ($cuDuration <= 0) {
                         $cuDuration = $moduleDuration;
                     }
+                    $cuActualWatch = (int) ($cu->actual_watch_seconds ?? 0);
                     $cuCurrentTime = (int) ($cu->current_time ?? 0);
                     $cuProgress = (int) ($cu->progress ?? 0);
                     $cuFinished = ((string) $cu->finish === '1' || $cuProgress >= 100);
 
-                    if ($cuCurrentTime > 0) {
-                        $consumedPlaylistSeconds += $cuCurrentTime;
+                    $moduleSec = 0;
+                    if ($cuActualWatch > 0) {
+                        $moduleSec = $cuActualWatch;
+                    } elseif ($cuCurrentTime > 0) {
+                        $moduleSec = $cuCurrentTime;
                     } elseif ($cuFinished && $cuDuration > 0) {
-                        $consumedPlaylistSeconds += $cuDuration;
+                        $moduleSec = $cuDuration;
                     } elseif ($cuProgress > 0 && $cuDuration > 0) {
-                        $consumedPlaylistSeconds += (int) round(($cuProgress / 100) * $cuDuration);
+                        $moduleSec = (int) round(($cuProgress / 100) * $cuDuration);
                     } elseif ((float) ($cu->learning_hours ?? 0) > 0) {
-                        $consumedPlaylistSeconds += (int) round((float) $cu->learning_hours * 3600);
+                        $moduleSec = (int) round((float) $cu->learning_hours * 3600);
                     }
+
+                    if ($d->content && $d->content->max_actual_watch_seconds !== null) {
+                        $moduleSec = min($moduleSec, $d->content->max_actual_watch_seconds);
+                    }
+                    $consumedPlaylistSeconds += $moduleSec;
                 }
             }
 

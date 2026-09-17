@@ -10,6 +10,8 @@ use App\Support\DurationFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class PlaylistProgressController extends Controller
 {
@@ -29,6 +31,8 @@ class PlaylistProgressController extends Controller
             'total_pages'          => 'nullable|integer|min:1|max:100000',
             'current_time'         => 'nullable|numeric|min:0',
             'duration_seconds'     => 'nullable|numeric|min:0',
+            'delta_seconds'        => 'nullable|numeric|min:0|max:120',
+            'heartbeat_id'         => 'nullable|string|max:64',
             'afk_seconds'          => 'nullable|numeric|min:0',
             'afk_duration_seconds' => 'nullable|numeric|min:0',
             'active_page'          => 'nullable|integer|min:1',
@@ -103,6 +107,7 @@ class PlaylistProgressController extends Controller
         $pageCompleted = null;
         $remainingSeconds = null;
         $allowedPage = null;
+        $deltaToApply = 0;
 
         // 5. Progress calculation
         if ($validated['type'] === 'document') {
@@ -246,53 +251,197 @@ class PlaylistProgressController extends Controller
             }
         }
 
-        // Monotonic rule: progress never decreases
-        $progress = $previousProgress;
+        // Actual watch / reading time tracking (MVP Hardened for Video & Document)
+        $deltaSeconds = $validated['delta_seconds'] ?? null;
+        $deltaToApply = 0;
+        if ($deltaSeconds !== null && (float) $deltaSeconds > 0) {
+            $heartbeatId = $validated['heartbeat_id'] ?? null;
+            $userId = (int) Auth::id();
+            $tpId = (int) $trainingplan->id;
+            $contentId = (int) $content->id;
+            $prefix = $validated['type'] === 'video' ? 'playlist_video' : 'playlist_document';
 
-        if ($computed !== null) {
-            $progress = max($previousProgress, max(0, min(100, (int) round($computed))));
+            // 1. Idempotency: verify heartbeat_id via Cache (TTL: 10 mins)
+            $hbCacheKey = $heartbeatId !== null ? "{$prefix}_hb:{$userId}:{$tpId}:{$contentId}:{$heartbeatId}" : null;
+            $sessionKey = 'learning.' . $prefix . '_last_hb.' . $trainingplan->id . '.' . $content->id;
+            $lastHeartbeatSession = $request->hasSession() ? $request->session()->get($sessionKey) : null;
+
+            $isDuplicate = false;
+            if ($hbCacheKey !== null && Cache::has($hbCacheKey)) {
+                $isDuplicate = true;
+            } elseif ($heartbeatId !== null && is_array($lastHeartbeatSession) && ($lastHeartbeatSession['id'] ?? null) === $heartbeatId) {
+                $isDuplicate = true;
+            }
+
+            if (!$isDuplicate) {
+                // 2. Server elapsed-time validation
+                $nowTimestamp = (float) (now()->getPreciseTimestamp(3) / 1000);
+                $timeCacheKey = "{$prefix}_last_hb_time:{$userId}:{$tpId}:{$contentId}";
+                $lastHeartbeatTime = Cache::get($timeCacheKey);
+
+                if ($lastHeartbeatTime !== null) {
+                    $serverElapsed = max(0.0, $nowTimestamp - (float) $lastHeartbeatTime);
+                    if ($serverElapsed <= 300.0) {
+                        $tolerance = $serverElapsed < 5.0 ? 2.0 : 4.0;
+                        $maxAllowedDelta = min(30.0, max(1.0, $serverElapsed + $tolerance));
+                    } else {
+                        // Reconnected after long pause (> 5 min)
+                        $maxAllowedDelta = 30.0;
+                    }
+                } else {
+                    // First heartbeat of tracking session
+                    $maxAllowedDelta = 30.0;
+                }
+
+                $clampedDelta = min((float) $deltaSeconds, $maxAllowedDelta);
+                $deltaToApply = (int) round($clampedDelta);
+
+                if ($hbCacheKey !== null) {
+                    Cache::put($hbCacheKey, true, now()->addMinutes(10));
+                }
+                Cache::put($timeCacheKey, $nowTimestamp, now()->addMinutes(30));
+
+                if ($request->hasSession()) {
+                    $request->session()->put($sessionKey, [
+                        'id' => $heartbeatId,
+                        'time' => $nowTimestamp,
+                    ]);
+                }
+            }
         }
 
-        // Video completed status with >= 90% threshold
-        if ($validated['type'] === 'video'
-            && ($validated['status'] ?? null) === 'completed'
-            && $computed !== null
-            && $computed >= 90) {
-            $progress = 100;
-        }
+        $maxCapSeconds = $content->max_actual_watch_seconds;
+        $maxLearningHours = $content->max_learning_hours;
 
-        $playlistContentUser->progress = $progress;
+        // Atomic update and concurrency protection via DB transaction and lockForUpdate
+        DB::transaction(function () use (
+            $playlistContentUser,
+            $content,
+            $validated,
+            $computed,
+            $previousProgress,
+            $deltaToApply,
+            $maxCapSeconds
+        ) {
+            $record = PlaylistContentUser::where('id', $playlistContentUser->id)->lockForUpdate()->first();
+            if (!$record) {
+                return;
+            }
 
-        if ($progress >= 100) {
-            $playlistContentUser->finish = '1';
-            $playlistContentUser->learning_status = 'completed';
-        } elseif (($validated['status'] ?? null) === 'paused') {
-            $playlistContentUser->learning_status = 'paused';
-        } elseif (($validated['status'] ?? null) === 'in_progress' || $computed !== null) {
-            $playlistContentUser->learning_status = 'in_progress';
-        }
+            $record->setRelation('content', $content);
 
-        $afkDuration = $validated['afk_duration_seconds'] ?? $validated['afk_seconds'] ?? null;
-        if ($afkDuration !== null && (float) $afkDuration > 0) {
-            $playlistContentUser->afk_duration_seconds = max((int) ($playlistContentUser->afk_duration_seconds ?? 0), (int) round((float) $afkDuration));
-        }
+            if ($validated['type'] === 'video') {
+                $recordDuration = (float) ($validated['duration_seconds'] ?? $record->duration_seconds ?? 0);
+                if ($recordDuration > 0) {
+                    $record->duration_seconds = (int) round($recordDuration);
+                }
 
-        $playlistContentUser->save();
+                $recordCurrentTime = $validated['current_time'] ?? null;
+                if ($recordCurrentTime !== null) {
+                    $recordCurrentTime = (float) $recordCurrentTime;
+                    if ($recordDuration > 0) {
+                        $recordCurrentTime = min($recordCurrentTime, $recordDuration);
+                    }
+                    $record->current_time = (int) round($recordCurrentTime);
+                }
+
+                if ($deltaToApply > 0) {
+                    $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
+                    // Legacy baseline logic (safe & conservative, at most once)
+                    if ($currentActualWatch === 0 && !$playlistContentUser->wasRecentlyCreated && (int) $record->getOriginal('current_time') > 0) {
+                        $maxBaseline = $recordDuration > 0 ? (int) round($recordDuration) : (int) $record->getOriginal('current_time');
+                        $currentActualWatch = min((int) $record->getOriginal('current_time'), $maxBaseline);
+                    }
+
+                    $newActualWatch = $currentActualWatch + $deltaToApply;
+                    if ($maxCapSeconds !== null) {
+                        $newActualWatch = min($newActualWatch, $maxCapSeconds);
+                    }
+                    $record->actual_watch_seconds = $newActualWatch;
+                }
+            } else {
+                // Document sync
+                if ($playlistContentUser->current_time !== null) {
+                    $record->current_time = (int) $playlistContentUser->current_time;
+                }
+                if ($playlistContentUser->duration_seconds !== null) {
+                    $record->duration_seconds = (int) $playlistContentUser->duration_seconds;
+                }
+                if ($playlistContentUser->last_page !== null) {
+                    $record->last_page = (int) $playlistContentUser->last_page;
+                }
+                if ($playlistContentUser->total_pages !== null) {
+                    $record->total_pages = (int) $playlistContentUser->total_pages;
+                }
+
+                if ($deltaToApply > 0) {
+                    $currentActualWatch = (int) ($record->actual_watch_seconds ?? 0);
+                    // For document: NO artificial baseline guessing from last_page / current_time (as instructed in Phase 12).
+                    $newActualWatch = $currentActualWatch + $deltaToApply;
+                    if ($maxCapSeconds !== null) {
+                        $newActualWatch = min($newActualWatch, $maxCapSeconds);
+                    }
+                    $record->actual_watch_seconds = $newActualWatch;
+                }
+            }
+
+            // Monotonic rule: progress never decreases
+            $lockedPrevProgress = (int) $record->progress;
+            $progress = $lockedPrevProgress;
+            if ($computed !== null) {
+                $progress = max($lockedPrevProgress, max(0, min(100, (int) round($computed))));
+            }
+
+            if ($validated['type'] === 'video'
+                && ($validated['status'] ?? null) === 'completed'
+                && $computed !== null
+                && $computed >= 90) {
+                $progress = 100;
+            }
+
+            $record->progress = $progress;
+
+            if ($progress >= 100) {
+                $record->finish = '1';
+                $record->learning_status = 'completed';
+            } elseif (($validated['status'] ?? null) === 'paused') {
+                $record->learning_status = 'paused';
+            } elseif (($validated['status'] ?? null) === 'in_progress' || $computed !== null) {
+                $record->learning_status = 'in_progress';
+            }
+
+            $afkDuration = $validated['afk_duration_seconds'] ?? $validated['afk_seconds'] ?? null;
+            if ($afkDuration !== null && (float) $afkDuration > 0) {
+                $record->afk_duration_seconds = max((int) ($record->afk_duration_seconds ?? 0), (int) round((float) $afkDuration));
+            }
+
+            $record->save();
+
+            $playlistContentUser->refresh();
+        });
+
+        $isCapped = $maxCapSeconds !== null && (int) ($playlistContentUser->actual_watch_seconds ?? 0) >= $maxCapSeconds;
 
         return response()->json([
-            'success'              => true,
-            'progress'             => (int) $playlistContentUser->progress,
-            'status'               => $playlistContentUser->learning_status,
-            'finish'               => (int) $playlistContentUser->finish,
-            'current_time'         => (int) $playlistContentUser->current_time,
-            'last_page'            => $playlistContentUser->last_page,
-            'page_completed'       => $pageCompleted,
-            'remaining_seconds'    => $remainingSeconds,
-            'allowed_page'         => $allowedPage,
-            'duration_seconds'     => $playlistContentUser->duration_seconds,
-            'afk_duration_seconds' => (int) ($playlistContentUser->afk_duration_seconds ?? 0),
-            'trainingplan_id'      => (int) $playlistContentUser->trainingplan_id,
-            'content_id'           => (int) $playlistContentUser->content_id,
+            'success'                  => true,
+            'progress'                 => (int) $playlistContentUser->progress,
+            'status'                   => $playlistContentUser->learning_status,
+            'finish'                   => (int) $playlistContentUser->finish,
+            'current_time'             => (int) $playlistContentUser->current_time,
+            'actual_watch_seconds'     => (int) ($playlistContentUser->actual_watch_seconds ?? 0),
+            'learning_hour'            => (float) $playlistContentUser->learning_hour,
+            'actual_learning_hours'    => (float) $playlistContentUser->learning_hour,
+            'is_capped'                => $isCapped,
+            'max_learning_hours'       => $maxLearningHours,
+            'max_actual_watch_seconds' => $maxCapSeconds,
+            'last_page'                => $playlistContentUser->last_page,
+            'page_completed'           => $pageCompleted,
+            'remaining_seconds'        => $remainingSeconds,
+            'allowed_page'             => $allowedPage,
+            'duration_seconds'         => $playlistContentUser->duration_seconds,
+            'afk_duration_seconds'     => (int) ($playlistContentUser->afk_duration_seconds ?? 0),
+            'trainingplan_id'          => (int) $playlistContentUser->trainingplan_id,
+            'content_id'               => (int) $playlistContentUser->content_id,
         ]);
     }
 }

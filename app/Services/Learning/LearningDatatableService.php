@@ -76,14 +76,15 @@ class LearningDatatableService
             }
         }
 
-        // 2. Program Type Filter Pushdown
-        $programType = $filters['program_type'] ?? ($filters['program'] ?? null);
+        // 2. Program Type / Status Filter Pushdown
+        $programType = $filters['program_type'] ?? ($filters['program'] ?? ($filters['status_type'] ?? null));
         if (filled($programType) && $programType !== 'all') {
-            if ($programType === 'mandatory' || $programType === 'optional') {
-                $cuSelect->where('cu.status', $programType);
+            $programTypeStr = strtolower(trim((string) $programType));
+            if (in_array($programTypeStr, ['mandatory', 'optional'], true)) {
+                $cuSelect->where('cu.status', $programTypeStr);
                 $pcuSelect->whereRaw('1 = 0');
-            } else {
-                $cuSelect->where('cu.status', $programType);
+            } elseif ($programTypeStr === 'playlist') {
+                $cuSelect->whereRaw('1 = 0');
             }
         }
 
@@ -97,6 +98,18 @@ class LearningDatatableService
         // 4. Date Range Filter Pushdown
         $fromDate = $filters['from_date'] ?? ($filters['date_from'] ?? null);
         $toDate = $filters['to_date'] ?? ($filters['date_to'] ?? null);
+        if (filled($fromDate)) {
+            try {
+                $fromDate = Carbon::parse(str_replace('/', '-', $fromDate))->format('Y-m-d');
+            } catch (\Throwable $e) {
+            }
+        }
+        if (filled($toDate)) {
+            try {
+                $toDate = Carbon::parse(str_replace('/', '-', $toDate))->format('Y-m-d');
+            } catch (\Throwable $e) {
+            }
+        }
         if (filled($fromDate) && filled($toDate)) {
             $cuSelect->whereBetween('cu.created_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
             $pcuSelect->whereBetween('pcu.created_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
@@ -391,21 +404,29 @@ class LearningDatatableService
 
     public function make(Request $request)
     {
+        $entries = (int) ($request->input('entries') ?: $request->input('length', 25));
+        if ($entries > 0) {
+            $request->merge(['length' => $entries]);
+            request()->merge(['length' => $entries]);
+        }
+        app()->forgetInstance('datatables.request');
+
         $categoryParam = strtolower(trim((string) ($request->input('category') ?? ($request->input('learning_source') ?? ($request->input('source') ?? 'all')))));
 
-        $hasFilters = filled($request->input('status'))
-            || filled($request->input('program_type'))
-            || filled($request->input('program'))
-            || filled($request->input('year'))
+        $hasFilters = (filled($request->input('status')) && $request->input('status') !== 'all')
+            || (filled($request->input('program_type')) && $request->input('program_type') !== 'all')
+            || (filled($request->input('program')) && $request->input('program') !== 'all')
+            || (filled($request->input('status_type')) && $request->input('status_type') !== 'all')
+            || (filled($request->input('year')) && $request->input('year') !== 'all')
             || filled($request->input('from_date'))
             || filled($request->input('to_date'))
-            || filled($request->input('progress_range'))
-            || filled($request->input('duration'))
+            || (filled($request->input('progress_range')) && $request->input('progress_range') !== 'all')
+            || (filled($request->input('duration')) && $request->input('duration') !== 'all')
             || filled($request->input('classification_slug'))
             || filled($request->input('content_slug'))
-            || filled($request->input('employee_id'))
-            || filled($request->input('user_id'))
-            || filled($request->input('employee'))
+            || (filled($request->input('employee_id')) && $request->input('employee_id') !== 'all')
+            || (filled($request->input('user_id')) && $request->input('user_id') !== 'all')
+            || (filled($request->input('employee')) && $request->input('employee') !== 'all')
             || filled($request->input('learning_title'))
             || filled($request->input('title'))
             || filled($request->input('content_title'))

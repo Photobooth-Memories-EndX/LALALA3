@@ -113,11 +113,14 @@ class OngoingPlaylistService
                     if ($pcuDuration <= 0) {
                         $pcuDuration = $moduleDuration;
                     }
+                    $pcuActualWatch = (int) ($pcu->actual_watch_seconds ?? 0);
                     $pcuCurrentTime = (int) ($pcu->current_time ?? 0);
                     $pcuProgress = (int) ($pcu->progress ?? 0);
                     $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
 
-                    if ($pcuCurrentTime > 0) {
+                    if ($pcuActualWatch > 0) {
+                        $consumedPlaylistSeconds += $pcuActualWatch;
+                    } elseif ($pcuCurrentTime > 0) {
                         $consumedPlaylistSeconds += $pcuCurrentTime;
                     } elseif ($pcuFinished && $pcuDuration > 0) {
                         $consumedPlaylistSeconds += $pcuDuration;
