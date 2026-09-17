@@ -65,8 +65,18 @@ class PlaylistContentUser extends Model
     {
         static::saving(function (PlaylistContentUser $record) {
             // Set completed_at on completion if not already set (immutable once set)
-            if ($record->isFinished() && $record->completed_at === null) {
-                $record->completed_at = now();
+            if ($record->isFinished()) {
+                if ($record->exists && $record->getOriginal('completed_at') !== null) {
+                    $record->completed_at = $record->getOriginal('completed_at');
+                } elseif ($record->completed_at === null) {
+                    $wasAlreadyFinished = $record->exists && (
+                        (string) $record->getOriginal('finish') === '1' ||
+                        (int) $record->getOriginal('progress') >= 100
+                    );
+                    $record->completed_at = $wasAlreadyFinished
+                        ? ($record->getOriginal('updated_at') ?? $record->getOriginal('created_at') ?? now())
+                        : now();
+                }
             }
 
             // Calculate actual learning_hour without executing any database query.

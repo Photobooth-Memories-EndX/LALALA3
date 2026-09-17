@@ -144,12 +144,12 @@ class OngoingPlaylistService
             $pcuTimestamps = PlaylistContentUser::where('user_id', $userId)
                 ->where('trainingplan_id', $plan->id)
                 ->whereIn('content_id', $contentIds)
-                ->selectRaw('MAX(updated_at) as last_act, MAX(CASE WHEN finish = "1" OR progress >= 100 THEN updated_at END) as last_fin')
+                ->selectRaw('MAX(updated_at) as last_act, MAX(CASE WHEN finish = "1" OR progress >= 100 THEN (CASE WHEN completed_at IS NOT NULL AND completed_at <= updated_at THEN completed_at ELSE updated_at END) END) as last_fin')
                 ->first();
 
             $cuTimestamps = ContentUser::where('user_id', $userId)
                 ->whereIn('content_id', $contentIds)
-                ->selectRaw('MAX(updated_at) as last_act, MAX(CASE WHEN finish = "1" OR progress >= 100 THEN updated_at END) as last_fin')
+                ->selectRaw('MAX(updated_at) as last_act, MAX(CASE WHEN finish = "1" OR progress >= 100 THEN (CASE WHEN completed_at IS NOT NULL AND completed_at <= updated_at THEN completed_at ELSE updated_at END) END) as last_fin')
                 ->first();
 
             $lastActivity = $pcuTimestamps?->last_act ?? $cuTimestamps?->last_act ?? null;

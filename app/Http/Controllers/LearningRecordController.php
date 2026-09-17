@@ -473,7 +473,7 @@ class LearningRecordController extends Controller
             ->pluck('classification.classification_name');
 
         $years = (clone $base)
-            ->selectRaw('DISTINCT YEAR(content_users.updated_at) as y')
+            ->selectRaw('DISTINCT YEAR(COALESCE(content_users.completed_at, content_users.updated_at)) as y')
             ->orderByDesc('y')->pluck('y')
             ->merge($completedPlaylists->map(
                 fn ($p) => $p->last_finished_at ? Carbon::parse($p->last_finished_at)->year : null
@@ -564,7 +564,7 @@ class LearningRecordController extends Controller
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
                 'finish_date'     => (int) $cu->finish === 1
-                    ? (optional($cu->updated_at ?? $cu->completed_at)->format('Y-m-d H:i:s') ?? '')
+                    ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
                     : '',
                 // Score & ambangnya dari CertificateEligibilityResult — angka
                 // yang sama dengan yang dipakai menentukan tombol Generate.
@@ -861,7 +861,7 @@ class LearningRecordController extends Controller
                 // playlist -> content terakhir dalam playlist, global -> hasil assessment.
                 $finishedAt = null;
                 if ($setting->certificate_type === 'content') {
-                    $finishedAt = $eligibility->learning?->updated_at;
+                    $finishedAt = $eligibility->learning?->completed_at ?? $eligibility->learning?->updated_at;
                 } elseif ($setting->certificate_type === 'playlist') {
                     $raw        = $playlistFinishDates->get($setting->trainingplan_id);
                     $finishedAt = $raw ? Carbon::parse($raw) : null;

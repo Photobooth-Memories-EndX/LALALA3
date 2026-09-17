@@ -80,18 +80,20 @@ class CompletedPlaylistService
                 ->where('trainingplan_id', $plan->id)
                 ->whereIn('content_id', $contentIds)
                 ->where(fn ($q) => $q->where('finish', '1')->orWhere('progress', '>=', 100))
-                ->selectRaw('MAX(updated_at) as last_fin')
+                ->selectRaw('MAX(CASE WHEN completed_at IS NOT NULL AND completed_at <= updated_at THEN completed_at ELSE updated_at END) as last_fin, COUNT(*) as fin_count')
                 ->first();
 
             $cuTimestamps = ContentUser::where('user_id', $userId)
                 ->whereIn('content_id', $contentIds)
                 ->where(fn ($q) => $q->where('finish', '1')->orWhere('progress', '>=', 100))
-                ->selectRaw('MAX(updated_at) as last_fin')
+                ->selectRaw('MAX(CASE WHEN completed_at IS NOT NULL AND completed_at <= updated_at THEN completed_at ELSE updated_at END) as last_fin')
                 ->first();
 
             $lastFinished = $pcuTimestamps?->last_fin ?? $cuTimestamps?->last_fin ?? $plan->created_at;
             if ($pcuTimestamps?->last_fin && $cuTimestamps?->last_fin) {
-                $lastFinished = max($pcuTimestamps->last_fin, $cuTimestamps->last_fin);
+                $lastFinished = ((int) ($pcuTimestamps->fin_count ?? 0) >= $total)
+                    ? $pcuTimestamps->last_fin
+                    : max($pcuTimestamps->last_fin, $cuTimestamps->last_fin);
             }
             $plan->last_finished_at = $lastFinished;
 

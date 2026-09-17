@@ -54,8 +54,18 @@ class ContentUser extends Model
     protected static function booted(): void
     {
         static::saving(function (ContentUser $contentUser) {
-            if ($contentUser->isFinished() && $contentUser->completed_at === null) {
-                $contentUser->completed_at = now();
+            if ($contentUser->isFinished()) {
+                if ($contentUser->exists && $contentUser->getOriginal('completed_at') !== null) {
+                    $contentUser->completed_at = $contentUser->getOriginal('completed_at');
+                } elseif ($contentUser->completed_at === null) {
+                    $wasAlreadyFinished = $contentUser->exists && (
+                        (int) $contentUser->getOriginal('finish') === 1 ||
+                        (int) $contentUser->getOriginal('progress') >= 100
+                    );
+                    $contentUser->completed_at = $wasAlreadyFinished
+                        ? ($contentUser->getOriginal('updated_at') ?? $contentUser->getOriginal('created_at') ?? now())
+                        : now();
+                }
             }
 
             // Calculate actual learning_hours without executing any database query.
