@@ -169,6 +169,26 @@ class LearningDatatableService
             $pcuSelect->whereIn('pcu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
         }
 
+        // 6b. Content Type Filter Pushdown (Document / Video / MOOC)
+        $typeFilter = $filters['type'] ?? ($filters['content_type'] ?? null);
+        if (filled($typeFilter) && $typeFilter !== 'all') {
+            $typeStr = strtolower(trim((string) $typeFilter));
+            $typeContentIds = DB::table('content')
+                ->where(function ($q) use ($typeStr) {
+                    if ($typeStr === 'document') {
+                        $q->where('type', 'Document');
+                    } elseif ($typeStr === 'video') {
+                        $q->whereIn('type', ['Video', 'YouTube']);
+                    } else {
+                        $q->where('type', $typeStr);
+                    }
+                })
+                ->pluck('id')
+                ->toArray();
+            $cuSelect->whereIn('cu.content_id', !empty($typeContentIds) ? $typeContentIds : [-1]);
+            $pcuSelect->whereIn('pcu.content_id', !empty($typeContentIds) ? $typeContentIds : [-1]);
+        }
+
         // 7. Content Filter Pushdown (via indexed content_id)
         $contentSlug = $filters['content_slug'] ?? ($type === 'content' ? $slug : null);
         if (filled($contentSlug)) {
@@ -414,6 +434,7 @@ class LearningDatatableService
         $categoryParam = strtolower(trim((string) ($request->input('category') ?? ($request->input('learning_source') ?? ($request->input('source') ?? 'all')))));
 
         $hasFilters = (filled($request->input('status')) && $request->input('status') !== 'all')
+            || (filled($request->input('type')) && $request->input('type') !== 'all')
             || (filled($request->input('program_type')) && $request->input('program_type') !== 'all')
             || (filled($request->input('program')) && $request->input('program') !== 'all')
             || (filled($request->input('status_type')) && $request->input('status_type') !== 'all')
@@ -457,6 +478,7 @@ class LearningDatatableService
             ->addColumn('id_emp', fn ($row) => $this->idEmpColumn($row))
             ->addColumn('employee', fn ($row) => $this->employeeColumn($row))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
+            ->addColumn('type_badge', fn ($row) => $this->typeBadge($row))
             ->addColumn('classification_name', fn ($row) => $this->classificationColumn($row))
             ->addColumn('category_badge', fn ($row) => $this->categoryBadge($row))
             ->addColumn('duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
@@ -467,6 +489,7 @@ class LearningDatatableService
             ->orderColumn('id_emp', 'u.id_emp $1')
             ->orderColumn('employee', 'u.name $1')
             ->orderColumn('learning_title', 'c.title $1')
+            ->orderColumn('type_badge', 'c.type $1')
             ->orderColumn('classification_name', 'cl.classification_name $1')
             ->orderColumn('category_badge', 'unified.category_source $1')
             ->orderColumn('duration', 'c.duration $1')
@@ -477,12 +500,25 @@ class LearningDatatableService
                 'id_emp',
                 'employee',
                 'learning_title',
+                'type_badge',
                 'classification_name',
                 'category_badge',
                 'progress_bar',
                 'action',
             ])
             ->make(true);
+    }
+
+    private function typeBadge($row): string
+    {
+        $rawType = (string) ($row->content_type ?? '');
+        $type = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+
+        if ($type === 'Video') {
+            return '<span class="badge" style="background-color: #f59e0b; color: #ffffff; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;">Video</span>';
+        }
+
+        return '<span class="badge" style="background-color: #0ea5e9; color: #ffffff; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;">Document</span>';
     }
 
     private function statusBadge($row): string

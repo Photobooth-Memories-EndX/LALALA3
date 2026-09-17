@@ -8,6 +8,7 @@
             <th>Department</th>
             <th>Team</th>
             <th>Title</th>
+            <th>Type</th>
             <th>Classification</th>
             <th>Category</th>
             <th>Duration</th>
@@ -30,6 +31,11 @@
                         (Playlist: {{ $list->playlist_title }})
                     @endif
                 </td>
+                @php
+                    $rawType = (string) ($list->content_type ?? ($list->content->type ?? ''));
+                    $mappedType = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+                @endphp
+                <td>{{ $mappedType }}</td>
                 <td>{{ $list->classification_name ?? ($list->content->classification->classification_name ?? '-') }}</td>
                 <td>{{ $list->category_source ?? 'All Content' }}</td>
                 <td>{{ \App\Support\DurationFormatter::format($list->content_duration ?? ($list->content->duration ?? null)) }}</td>

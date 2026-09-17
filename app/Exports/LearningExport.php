@@ -79,6 +79,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             'Department',
             'Team',
             'Title',
+            'Type',
             'Classification',
             'Category',
             'Duration',
@@ -96,6 +97,9 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             $title .= ' (Playlist: ' . $row->playlist_title . ')';
         }
 
+        $rawType = (string) ($row->content_type ?? '');
+        $type = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+
         return [
             $this->rowNumber,
             $row->status ?? '-',
@@ -104,6 +108,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             $row->user_department ?? '-',
             $row->user_team ?? '-',
             $title,
+            $type,
             $row->classification_name ?? '-',
             $row->category_source ?? 'All Content',
             DurationFormatter::format($row->content_duration ?? null),
@@ -127,11 +132,12 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
             'E' => 20,
             'F' => 20,
             'G' => 45,
-            'H' => 25,
-            'I' => 15,
-            'J' => 12,
-            'K' => 20,
-            'L' => 10,
+            'H' => 14,
+            'I' => 25,
+            'J' => 15,
+            'K' => 12,
+            'L' => 20,
+            'M' => 10,
         ];
     }
 
@@ -249,7 +255,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
 
         // Header row
         $headers = $this->headings();
-        $colLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        $colLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
         fwrite($sfh, '<row r="1">' . "\n");
         foreach ($headers as $i => $h) {
             $c = $colLetters[$i] . '1';
@@ -282,6 +288,9 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
                     $title .= ' (Playlist: ' . $row->playlist_title . ')';
                 }
 
+                $rawType = (string) ($row->content_type ?? '');
+                $type = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+
                 $duration = DurationFormatter::format($row->content_duration ?? null);
                 $progress = ($row->progress ?? 0) . '%';
 
@@ -292,6 +301,7 @@ class LearningExport implements FromQuery, WithHeadings, WithMapping, WithChunkR
                     $row->user_department ?? '-',
                     $row->user_team ?? '-',
                     $title,
+                    $type,
                     $row->classification_name ?? '-',
                     $row->category_source ?? 'All Content',
                     $duration,

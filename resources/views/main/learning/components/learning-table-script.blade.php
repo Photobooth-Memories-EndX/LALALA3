@@ -191,8 +191,8 @@
                 [10, 25, 50, 100],
                 [10, 25, 50, 100]
             ],
-            order: [[8, 'desc']],
-            dom: '<"table-responsive"t><"d-flex flex-wrap align-items-center justify-content-between p-3"ip>',
+            order: [[9, 'desc']],
+            dom: '<"table-responsive"t>',
             ajax: {
                 url: "{{ route('learning.manage.datatable') }}",
                 type: 'GET',
@@ -207,9 +207,10 @@
                     d.category = $('#learn-category').val();
                     d.learning_source = $('#learn-category').val();
                     d.status = $('#learn-status').val();
+                    d.type = $('#filter-type').val();
                     d.year = $('#learn-year').val();
-                    d.entries = $('#learn-entries').val() || defaultEntries;
-                    d.length = parseInt($('#learn-entries').val(), 10) || defaultEntries;
+                    d.entries = $('#table-entries-select').val() || defaultEntries;
+                    d.length = parseInt($('#table-entries-select').val(), 10) || defaultEntries;
                     d.classification_slug = $('#classification-slug').val();
                     d.content_slug = $('#content-slug').val();
                     d.from_date = $('#filter-from-date').val();
@@ -225,6 +226,7 @@
                 { data: 'id_emp', name: 'u.id_emp', className: 'text-center' },
                 { data: 'employee', name: 'u.name' },
                 { data: 'learning_title', name: 'c.title' },
+                { data: 'type_badge', name: 'c.type', className: 'text-center' },
                 { data: 'classification_name', name: 'cl.classification_name' },
                 { data: 'category_badge', name: 'unified.category_source', className: 'text-center' },
                 { data: 'duration', name: 'c.duration', className: 'text-center' },
@@ -233,6 +235,96 @@
             ],
             language: {
                 processing: '<div class="py-4 text-center"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Loading learning data...</div></div>'
+            },
+            drawCallback: function (settings) {
+                const api = this.api();
+                const pageInfo = api.page.info();
+
+                // Format number with commas
+                const formatNum = (num) => (num || 0).toLocaleString();
+
+                // Render DataTables info next to bottom-left entries dropdown
+                if (pageInfo.recordsTotal > 0 && pageInfo.recordsDisplay > 0) {
+                    const start = pageInfo.start + 1;
+                    const end = pageInfo.end;
+                    const total = pageInfo.recordsDisplay;
+                    $('#learning-table-info-container').html(
+                        `<span class="text-muted small">Showing ${formatNum(start)} to ${formatNum(end)} of ${formatNum(total)} entries</span>`
+                    );
+                } else {
+                    $('#learning-table-info-container').html(
+                        '<span class="text-muted small">Showing 0 to 0 of 0 entries</span>'
+                    );
+                }
+
+                // Render Pagination
+                const $paginationContainer = $('#learning-table-pagination-container');
+                $paginationContainer.empty();
+
+                if (pageInfo.pages > 1) {
+                    let paginationHtml = '<ul class="pagination pagination-sm mb-0">';
+
+                    // Previous Button
+                    const prevDisabled = pageInfo.page === 0 ? 'disabled' : '';
+                    paginationHtml += `
+                        <li class="page-item ${prevDisabled}">
+                            <a class="page-link" href="javascript:void(0);" data-page="${pageInfo.page - 1}" aria-label="Previous">
+                                <i class="ti ti-chevron-left"></i>
+                            </a>
+                        </li>
+                    `;
+
+                    // Page Numbers
+                    const currentPage = pageInfo.page;
+                    const totalPages = pageInfo.pages;
+                    let startPage = Math.max(0, currentPage - 2);
+                    let endPage = Math.min(totalPages - 1, currentPage + 2);
+
+                    if (startPage > 0) {
+                        paginationHtml += `<li class="page-item"><a class="page-link" href="javascript:void(0);" data-page="0">1</a></li>`;
+                        if (startPage > 1) {
+                            paginationHtml += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+                        }
+                    }
+
+                    for (let p = startPage; p <= endPage; p++) {
+                        const active = p === currentPage ? 'active' : '';
+                        paginationHtml += `
+                            <li class="page-item ${active}">
+                                <a class="page-link" href="javascript:void(0);" data-page="${p}">${p + 1}</a>
+                            </li>
+                        `;
+                    }
+
+                    if (endPage < totalPages - 1) {
+                        if (endPage < totalPages - 2) {
+                            paginationHtml += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+                        }
+                        paginationHtml += `<li class="page-item"><a class="page-link" href="javascript:void(0);" data-page="${totalPages - 1}">${totalPages}</a></li>`;
+                    }
+
+                    // Next Button
+                    const nextDisabled = pageInfo.page >= totalPages - 1 ? 'disabled' : '';
+                    paginationHtml += `
+                        <li class="page-item ${nextDisabled}">
+                            <a class="page-link" href="javascript:void(0);" data-page="${pageInfo.page + 1}" aria-label="Next">
+                                <i class="ti ti-chevron-right"></i>
+                            </a>
+                        </li>
+                    `;
+
+                    paginationHtml += '</ul>';
+                    $paginationContainer.html(paginationHtml);
+                }
+            }
+        });
+
+        // Pagination click handler
+        $(document).on('click', '#learning-table-pagination-container .page-link', function (e) {
+            e.preventDefault();
+            const page = $(this).data('page');
+            if (page !== undefined && page !== null && page >= 0) {
+                learningTable.page(page).draw('page');
             }
         });
 
@@ -307,13 +399,14 @@
 
             $('#manage-employee-dropdown, #manage-title-dropdown').hide();
 
-            const currentLength = parseInt($('#learn-entries').val(), 10) || defaultEntries;
+            const currentLength = parseInt($('#table-entries-select').val(), 10) || defaultEntries;
 
             updateUrlParams({
                 employee_id: $('#learn-employee').val() || null,
                 learning_title: $('#learn-title').val() || null,
                 category: $('#learn-category').val() !== 'all' ? $('#learn-category').val() : null,
                 status: $('#learn-status').val() !== 'all' ? $('#learn-status').val() : null,
+                type: $('#filter-type').val() !== 'all' ? $('#filter-type').val() : null,
                 year: $('#learn-year').val() !== 'all' ? $('#learn-year').val() : null,
                 entries: currentLength !== defaultEntries ? currentLength : null,
             });
@@ -327,7 +420,11 @@
             }
         });
 
-        $('#learn-entries').on('change', function () {
+        $('#filter-type, #learn-category, #learn-status, #learn-year').on('change', function () {
+            $('#btn-apply-filter').trigger('click');
+        });
+
+        $('#table-entries-select').on('change', function () {
             const nextLength = parseInt($(this).val(), 10) || defaultEntries;
             updateUrlParams({ entries: nextLength !== defaultEntries ? nextLength : null });
             learningTable.page.len(nextLength).page(0).draw(false);
@@ -419,8 +516,9 @@
             // Reset Quick Filter dropdowns
             $('#learn-category').val('all');
             $('#learn-status').val('all');
+            $('#filter-type').val('all');
             $('#learn-year').val('all');
-            $('#learn-entries').val(defaultEntries);
+            $('#table-entries-select').val(defaultEntries);
 
             // Reset Modal inputs & hidden filter inputs
             $('#modal-from-date, #filter-from-date').val('');
@@ -458,6 +556,9 @@
 
             const statusVal = $('#learn-status').val();
             if (statusVal && statusVal !== 'all') params.append('status', statusVal);
+
+            const typeVal = $('#filter-type').val();
+            if (typeVal && typeVal !== 'all') params.append('type', typeVal);
 
             const yearVal = $('#learn-year').val();
             if (yearVal && yearVal !== 'all') params.append('year', yearVal);
