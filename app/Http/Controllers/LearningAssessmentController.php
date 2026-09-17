@@ -67,6 +67,16 @@ class LearningAssessmentController extends Controller
 
     private function getUserAssessmentQuery($user, $userId, $completedPlaylistIds = null)
     {
+        if ($completedPlaylistIds === null) {
+            $completedPlaylistIds = $this->completedPlaylistService
+                ->forUser((int) $userId)
+                ->pluck('id');
+        }
+
+        $completedPlaylistIdArray = $completedPlaylistIds instanceof \Illuminate\Support\Collection
+            ? $completedPlaylistIds->all()
+            : (array) $completedPlaylistIds;
+
         return Assesment::with([
                 'assesments_assigned',
                 'contents',
@@ -76,8 +86,44 @@ class LearningAssessmentController extends Controller
                 'trainingplan',
             ])
             ->withCount('questions')
-            ->whereHas('scores', function ($q) use ($userId) {
-                $q->where('user_id', $userId);
+            ->where(function ($root) use ($userId, $completedPlaylistIdArray) {
+                // SOURCE A — HISTORY: User has at least one record in assesment_results
+                $root->whereHas('scores', function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                })
+                // SOURCE B — READY TO START: Active assessment without result, prerequisite 100% complete
+                ->orWhere(function ($ready) use ($userId, $completedPlaylistIdArray) {
+                    $ready->where('status', 'OK')
+                        ->whereDoesntHave('scores', function ($q) use ($userId) {
+                            $q->where('user_id', $userId);
+                        })
+                        ->where(function ($sourceB) use ($userId, $completedPlaylistIdArray) {
+                            // 1. Direct Content Assessment: Content is 100% completed by user
+                            $sourceB->where(function ($cq) use ($userId) {
+                                $cq->where('type', 'content')
+                                    ->where(function ($sub) {
+                                        $sub->where('assasment_content_for', 'content')
+                                            ->orWhereNull('assasment_content_for');
+                                    })
+                                    ->whereNotNull('content_id')
+                                    ->whereHas('contents', function ($q) use ($userId) {
+                                        $q->whereHas('contentuser', function ($cu) use ($userId) {
+                                            $cu->where('user_id', $userId)
+                                                ->where(fn ($w) => $w->where('progress', '>=', 100)->orWhere('finish', '1'));
+                                        });
+                                    });
+                            })
+                            // 2. Playlist Assessment: Total playlist contents 100% completed by user
+                            ->orWhere(function ($pq) use ($completedPlaylistIdArray) {
+                                $pq->where(function ($sub) {
+                                    $sub->where('assasment_content_for', 'playlist')
+                                        ->orWhere('type', 'trainingplan');
+                                })
+                                ->whereNotNull('trainingplan_id')
+                                ->whereIn('trainingplan_id', !empty($completedPlaylistIdArray) ? $completedPlaylistIdArray : [-1]);
+                            });
+                        });
+                });
             });
     }
 
