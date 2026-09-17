@@ -56,6 +56,16 @@ class MyLearningAssessmentYearDistinctTest extends TestCase
                 'assigned_description' => 'Test',
             ]);
 
+            \App\Models\AssesmentResult::create([
+                'user_id'      => $this->user->id,
+                'assesment_id' => $a->id,
+                'score'        => 80,
+                'pass'         => 1,
+                'final'        => 1,
+                'batch'        => 1,
+                'user_answer'  => [],
+            ]);
+
             return $a;
         };
 

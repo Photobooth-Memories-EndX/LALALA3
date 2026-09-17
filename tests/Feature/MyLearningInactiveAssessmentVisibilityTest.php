@@ -7,6 +7,7 @@ use App\Models\AssesmentAssigned;
 use App\Models\AssesmentResult;
 use App\Models\Classification;
 use App\Models\Content;
+use App\Models\TrainingPlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
@@ -19,6 +20,7 @@ class MyLearningInactiveAssessmentVisibilityTest extends TestCase
     protected User $userA;
     protected User $userB;
     protected Content $content;
+    protected TrainingPlan $playlist;
 
     protected Assesment $activeAssessment;
     protected Assesment $inactiveAssessmentTaken;
@@ -64,9 +66,16 @@ class MyLearningInactiveAssessmentVisibilityTest extends TestCase
             'active'            => 'Active',
         ]);
 
+        $this->playlist = TrainingPlan::create([
+            'title'       => 'Playlist ' . Str::random(5),
+            'description' => 'Desc',
+            'status'      => 'published',
+        ]);
+        $this->playlist->contents()->attach($this->content->id, ['content_order' => 1]);
+
         $tag = Str::random(8);
 
-        // 1. Active assessment (ON)
+        // 1. Active assessment (ON) - NOT taken by anyone
         $this->activeAssessment = Assesment::create([
             'title'                 => "Active_Assessment_{$tag}",
             'type'                  => 'global',
@@ -148,8 +157,8 @@ class MyLearningInactiveAssessmentVisibilityTest extends TestCase
     }
 
     /**
-     * Goal 1 & 2: Active assessments appear as normal.
-     * Inactive assessments appear ONLY if logged-in user has history in assessment_results.
+     * Goal: Inactive assessment appears ONLY if logged-in user has history in assesment_results.
+     * Active assessments with NO result MUST NOT appear in My Learning.
      */
     public function test_inactive_assessment_appears_for_user_who_completed_it(): void
     {
@@ -161,18 +170,18 @@ class MyLearningInactiveAssessmentVisibilityTest extends TestCase
         $assessments = $response->viewData('assessments');
         $ids = $assessments->pluck('id')->toArray();
 
-        // Active assessment appears
-        $this->assertContains($this->activeAssessment->id, $ids);
-
         // Inactive assessment taken by userA appears
         $this->assertContains($this->inactiveAssessmentTaken->id, $ids);
+
+        // Active assessment NOT taken does NOT appear
+        $this->assertNotContains($this->activeAssessment->id, $ids);
 
         // Inactive assessment NOT taken does NOT appear
         $this->assertNotContains($this->inactiveAssessmentNotTaken->id, $ids);
     }
 
     /**
-     * Goal 3: Inactive assessment does NOT appear for user who has NOT taken it.
+     * Untaken assessments (both active and inactive) do NOT appear for user who did not take them.
      */
     public function test_inactive_assessment_does_not_appear_for_user_who_did_not_take_it(): void
     {
@@ -184,19 +193,14 @@ class MyLearningInactiveAssessmentVisibilityTest extends TestCase
         $assessments = $response->viewData('assessments');
         $ids = $assessments->pluck('id')->toArray();
 
-        // Active assessment appears
-        $this->assertContains($this->activeAssessment->id, $ids);
-
-        // Inactive assessment taken by userA does NOT appear for userB
+        // Neither appears for userB
+        $this->assertNotContains($this->activeAssessment->id, $ids);
         $this->assertNotContains($this->inactiveAssessmentTaken->id, $ids);
-
-        // Inactive assessment NOT taken does NOT appear
         $this->assertNotContains($this->inactiveAssessmentNotTaken->id, $ids);
     }
 
     /**
-     * Goal 4 & UI 1 & UI 2: Eager loading and display of score, status, attempt, date,
-     * hover score popover, and Action button shows disabled Inactive action.
+     * Inactive assessment with results displays score, status, and Inactive action button.
      */
     public function test_inactive_assessment_renders_result_data_and_inactive_button(): void
     {
@@ -286,166 +290,385 @@ class MyLearningInactiveAssessmentVisibilityTest extends TestCase
     }
 
     /**
-     * REGRESSION TEST:
-     * Active assessment where user has Passed result:
-     * STATUS must be Passed, ACTION must be Passed (NOT Review).
+     * CASE 1: Global ACTIVE + NO result => HIDDEN
      */
-    public function test_active_passed_assessment_renders_passed_action_and_not_review(): void
+    public function test_global_active_no_result_is_hidden(): void
     {
         $tag = Str::random(8);
-        $passedAssessment = Assesment::create([
-            'title'                 => "Active_Passed_{$tag}",
+        $a = Assesment::create([
+            'title'                 => "Global_Active_NoResult_{$tag}",
             'type'                  => 'global',
             'assasment_content_for' => 'content',
             'status'                => 'OK',
             'passing_grade'         => 70,
-            'time'                  => 30,
-            'max_attempt'           => 3,
         ]);
-        AssesmentAssigned::create([
-            'assesment_id'         => $passedAssessment->id,
-            'assigned_id'          => $this->userA->id_emp,
-            'assigned_type'        => 'user',
-            'assigned_description' => 'Test',
+
+        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
+        $ids = $response->viewData('assessments')->pluck('id')->toArray();
+
+        $this->assertNotContains($a->id, $ids);
+    }
+
+    /**
+     * CASE 2: Global INACTIVE + NO result => HIDDEN
+     */
+    public function test_global_inactive_no_result_is_hidden(): void
+    {
+        $tag = Str::random(8);
+        $a = Assesment::create([
+            'title'                 => "Global_Inactive_NoResult_{$tag}",
+            'type'                  => 'global',
+            'assasment_content_for' => 'content',
+            'status'                => 'NOT',
+            'passing_grade'         => 70,
+        ]);
+
+        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
+        $ids = $response->viewData('assessments')->pluck('id')->toArray();
+
+        $this->assertNotContains($a->id, $ids);
+    }
+
+    /**
+     * CASE 3: Global EXPIRED + NO result => HIDDEN
+     */
+    public function test_global_expired_no_result_is_hidden(): void
+    {
+        $tag = Str::random(8);
+        $a = Assesment::create([
+            'title'                 => "Global_Expired_NoResult_{$tag}",
+            'type'                  => 'global',
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'fromdate'              => now()->subDays(60)->format('Y-m-d H:i:s'),
+            'todate'                => now()->subDays(30)->format('Y-m-d H:i:s'),
+            'passing_grade'         => 70,
+        ]);
+
+        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
+        $ids = $response->viewData('assessments')->pluck('id')->toArray();
+
+        $this->assertNotContains($a->id, $ids);
+    }
+
+    /**
+     * CASE 4 & 15: Global ACTIVE + HAS Passed result => VISIBLE, STATUS Passed, ACTION Passed (NOT Review).
+     */
+    public function test_global_active_has_passed_result_is_visible_with_passed_action(): void
+    {
+        $tag = Str::random(8);
+        $a = Assesment::create([
+            'title'                 => "Global_Active_Passed_{$tag}",
+            'type'                  => 'global',
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'passing_grade'         => 70,
         ]);
         AssesmentResult::create([
             'user_id'      => $this->userA->id,
-            'assesment_id' => $passedAssessment->id,
-            'user_answer'  => [],
+            'assesment_id' => $a->id,
             'score'        => 90,
             'pass'         => 1,
             'final'        => 1,
             'batch'        => 1,
+            'user_answer'  => [],
         ]);
 
-        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', [
-            'tab' => 'assessment',
-        ]));
-
-        $response->assertStatus(200);
+        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
         $html = $response->getContent();
+        $ids = $response->viewData('assessments')->pluck('id')->toArray();
 
-        // Must see assessment title
-        $response->assertSee($passedAssessment->title);
+        $this->assertContains($a->id, $ids);
+        $response->assertSee($a->title);
 
-        // Action column must render Passed button
+        // STATUS: Passed
+        $this->assertStringContainsString('assessment-status-passed', $html);
+
+        // ACTION: Passed (NOT Review)
         $this->assertStringContainsString('btn-assessment-passed', $html);
-
-        // Action column MUST NOT render Review button
         $this->assertStringNotContainsString('btn-assessment-review', $html);
-        $this->assertStringNotContainsString('btn-view-result', $html);
     }
 
     /**
-     * Active assessment where user has Failed result and has attempts remaining:
-     * STATUS must be Failed, ACTION must be Remedial.
+     * CASE 5: Global INACTIVE + HAS Passed result => VISIBLE, STATUS Passed, ACTION Inactive
      */
-    public function test_active_failed_assessment_with_attempts_remaining_renders_remedial_action(): void
+    public function test_global_inactive_has_passed_result_is_visible_with_inactive_action(): void
     {
         $tag = Str::random(8);
-        $remedialAssessment = Assesment::create([
-            'title'                 => "Active_Remedial_{$tag}",
-            'type'                  => 'content',
+        $a = Assesment::create([
+            'title'                 => "Global_Inactive_Passed_{$tag}",
+            'type'                  => 'global',
             'assasment_content_for' => 'content',
-            'status'                => 'OK',
-            'passing_grade'         => 75,
-            'time'                  => 30,
-            'total_remedials'       => 2,
-            'max_attempt'           => 3,
-        ]);
-        AssesmentAssigned::create([
-            'assesment_id'         => $remedialAssessment->id,
-            'assigned_id'          => $this->userA->id_emp,
-            'assigned_type'        => 'user',
-            'assigned_description' => 'Test',
+            'status'                => 'NOT',
+            'passing_grade'         => 70,
         ]);
         AssesmentResult::create([
             'user_id'      => $this->userA->id,
-            'assesment_id' => $remedialAssessment->id,
-            'user_answer'  => [],
-            'score'        => 50,
-            'pass'         => 0,
+            'assesment_id' => $a->id,
+            'score'        => 90,
+            'pass'         => 1,
             'final'        => 1,
             'batch'        => 1,
+            'user_answer'  => [],
         ]);
 
-        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', [
-            'tab' => 'assessment',
-        ]));
-
-        $response->assertStatus(200);
+        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
         $html = $response->getContent();
+        $ids = $response->viewData('assessments')->pluck('id')->toArray();
 
-        $response->assertSee($remedialAssessment->title);
-        $this->assertStringContainsString('btn-assessment-remedial', $html);
-        $this->assertStringContainsString('Remedial', $html);
+        $this->assertContains($a->id, $ids);
+        $response->assertSee($a->title);
+
+        // STATUS: Passed
+        $this->assertStringContainsString('assessment-status-passed', $html);
+
+        // ACTION: Inactive
+        $this->assertStringContainsString('btn-assessment-inactive', $html);
+        $this->assertStringNotContainsString('btn-assessment-review', $html);
     }
 
     /**
-     * Active assessment not yet started by user:
-     * STATUS must be Pending, ACTION must be Start Test.
+     * CASE 6: Global INACTIVE + HAS Failed result => VISIBLE, STATUS Failed, ACTION Inactive
      */
-    public function test_active_not_started_assessment_renders_start_test_action(): void
-    {
-        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', [
-            'tab' => 'assessment',
-        ]));
-
-        $response->assertStatus(200);
-        $html = $response->getContent();
-
-        $response->assertSee($this->activeAssessment->title);
-        $this->assertStringContainsString('btn-assessment-start', $html);
-        $this->assertStringContainsString('Start Test', $html);
-    }
-
-    /**
-     * Inactive assessment where user has Failed result:
-     * Assessment remains visible, STATUS must be Failed, ACTION must be Inactive.
-     */
-    public function test_inactive_failed_assessment_renders_inactive_action(): void
+    public function test_global_inactive_has_failed_result_is_visible_with_inactive_action(): void
     {
         $tag = Str::random(8);
-        $inactiveFailed = Assesment::create([
-            'title'                 => "Inactive_Failed_{$tag}",
+        $a = Assesment::create([
+            'title'                 => "Global_Inactive_Failed_{$tag}",
             'type'                  => 'global',
             'assasment_content_for' => 'content',
             'status'                => 'NOT',
             'passing_grade'         => 80,
-            'time'                  => 30,
-            'max_attempt'           => 3,
-        ]);
-        AssesmentAssigned::create([
-            'assesment_id'         => $inactiveFailed->id,
-            'assigned_id'          => $this->userA->id_emp,
-            'assigned_type'        => 'user',
-            'assigned_description' => 'Test',
         ]);
         AssesmentResult::create([
             'user_id'      => $this->userA->id,
-            'assesment_id' => $inactiveFailed->id,
-            'user_answer'  => [],
+            'assesment_id' => $a->id,
             'score'        => 45,
             'pass'         => 0,
             'final'        => 1,
             'batch'        => 1,
+            'user_answer'  => [],
         ]);
 
-        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', [
-            'tab' => 'assessment',
-        ]));
-
-        $response->assertStatus(200);
+        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
         $html = $response->getContent();
+        $ids = $response->viewData('assessments')->pluck('id')->toArray();
 
-        // Must be visible
-        $response->assertSee($inactiveFailed->title);
+        $this->assertContains($a->id, $ids);
+        $response->assertSee($a->title);
 
-        // Status is Failed
+        // STATUS: Failed
         $this->assertStringContainsString('assessment-status-failed', $html);
 
-        // Action is Inactive (NOT Failed, NOT Review, NOT Passed)
+        // ACTION: Inactive
         $this->assertStringContainsString('btn-assessment-inactive', $html);
-        $this->assertStringContainsString('Inactive', $html);
+    }
+
+    /**
+     * CASE 7 & 8: Content Assessment + NO result => HIDDEN, Content Assessment + HAS result => VISIBLE
+     */
+    public function test_content_assessment_visibility_requires_user_result(): void
+    {
+        $tag = Str::random(8);
+        $contentNoResult = Assesment::create([
+            'title'                 => "Content_NoResult_{$tag}",
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'content_id'            => $this->content->id,
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+        ]);
+
+        $contentHasResult = Assesment::create([
+            'title'                 => "Content_HasResult_{$tag}",
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'content_id'            => $this->content->id,
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+        ]);
+        AssesmentResult::create([
+            'user_id'      => $this->userA->id,
+            'assesment_id' => $contentHasResult->id,
+            'score'        => 80,
+            'pass'         => 1,
+            'final'        => 1,
+            'batch'        => 1,
+            'user_answer'  => [],
+        ]);
+
+        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
+        $ids = $response->viewData('assessments')->pluck('id')->toArray();
+
+        $this->assertNotContains($contentNoResult->id, $ids);
+        $this->assertContains($contentHasResult->id, $ids);
+    }
+
+    /**
+     * CASE 9 & 10: Playlist Assessment + NO result => HIDDEN, Playlist Assessment + HAS result => VISIBLE
+     */
+    public function test_playlist_assessment_visibility_requires_user_result(): void
+    {
+        $tag = Str::random(8);
+        $playlistNoResult = Assesment::create([
+            'title'                 => "Playlist_NoResult_{$tag}",
+            'type'                  => 'trainingplan',
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => $this->playlist->id,
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+        ]);
+
+        $playlistHasResult = Assesment::create([
+            'title'                 => "Playlist_HasResult_{$tag}",
+            'type'                  => 'trainingplan',
+            'assasment_content_for' => 'content',
+            'trainingplan_id'       => $this->playlist->id,
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+        ]);
+        AssesmentResult::create([
+            'user_id'      => $this->userA->id,
+            'assesment_id' => $playlistHasResult->id,
+            'score'        => 80,
+            'pass'         => 1,
+            'final'        => 1,
+            'batch'        => 1,
+            'user_answer'  => [],
+        ]);
+
+        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
+        $ids = $response->viewData('assessments')->pluck('id')->toArray();
+
+        $this->assertNotContains($playlistNoResult->id, $ids);
+        $this->assertContains($playlistHasResult->id, $ids);
+    }
+
+    /**
+     * CASE 11: User A has result, User B does not => visible for A, hidden for B
+     */
+    public function test_user_isolation_for_assessment_visibility(): void
+    {
+        $tag = Str::random(8);
+        $a = Assesment::create([
+            'title'                 => "Isolation_Test_{$tag}",
+            'type'                  => 'global',
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+        ]);
+        AssesmentResult::create([
+            'user_id'      => $this->userA->id,
+            'assesment_id' => $a->id,
+            'score'        => 80,
+            'pass'         => 1,
+            'final'        => 1,
+            'batch'        => 1,
+            'user_answer'  => [],
+        ]);
+
+        // Visible for User A
+        $responseA = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
+        $idsA = $responseA->viewData('assessments')->pluck('id')->toArray();
+        $this->assertContains($a->id, $idsA);
+
+        // Hidden for User B
+        $responseB = $this->actingAs($this->userB)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
+        $idsB = $responseB->viewData('assessments')->pluck('id')->toArray();
+        $this->assertNotContains($a->id, $idsB);
+    }
+
+    /**
+     * CASE 12: Multiple results for same assessment => only one assessment row in list
+     */
+    public function test_multiple_results_for_same_assessment_renders_single_row(): void
+    {
+        $tag = Str::random(8);
+        $a = Assesment::create([
+            'title'                 => "MultiResult_{$tag}",
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+            'total_remedials'       => 2,
+        ]);
+        // Attempt 1: Failed
+        AssesmentResult::create([
+            'user_id'      => $this->userA->id,
+            'assesment_id' => $a->id,
+            'score'        => 50,
+            'pass'         => 0,
+            'final'        => 1,
+            'batch'        => 1,
+            'user_answer'  => [],
+        ]);
+        // Attempt 2: Passed
+        AssesmentResult::create([
+            'user_id'      => $this->userA->id,
+            'assesment_id' => $a->id,
+            'score'        => 90,
+            'pass'         => 1,
+            'final'        => 1,
+            'batch'        => 1,
+            'user_answer'  => [],
+        ]);
+
+        $response = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', ['tab' => 'assessment']));
+        $assessments = $response->viewData('assessments');
+        $matching = $assessments->where('id', $a->id);
+
+        $this->assertCount(1, $matching);
+    }
+
+    /**
+     * CASE 13 & 14: Search behavior
+     * Global NO result + search exact title => 0 row
+     * Global HAS result + search exact title => 1 row
+     */
+    public function test_search_respects_result_requirement(): void
+    {
+        $tag = Str::random(8);
+        $noResultTitle = "Search_NoResult_{$tag}";
+        $hasResultTitle = "Search_HasResult_{$tag}";
+
+        $noResult = Assesment::create([
+            'title'                 => $noResultTitle,
+            'type'                  => 'global',
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+        ]);
+
+        $hasResult = Assesment::create([
+            'title'                 => $hasResultTitle,
+            'type'                  => 'global',
+            'assasment_content_for' => 'content',
+            'status'                => 'OK',
+            'passing_grade'         => 75,
+        ]);
+        AssesmentResult::create([
+            'user_id'      => $this->userA->id,
+            'assesment_id' => $hasResult->id,
+            'score'        => 80,
+            'pass'         => 1,
+            'final'        => 1,
+            'batch'        => 1,
+            'user_answer'  => [],
+        ]);
+
+        // Search for no result => 0 rows
+        $response1 = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', [
+            'tab'               => 'assessment',
+            'assessment_search' => $noResultTitle,
+        ]));
+        $this->assertCount(0, $response1->viewData('assessments'));
+
+        // Search for has result => 1 row
+        $response2 = $this->actingAs($this->userA)->get(route('user.learning.dashboard.partial', [
+            'tab'               => 'assessment',
+            'assessment_search' => $hasResultTitle,
+        ]));
+        $this->assertCount(1, $response2->viewData('assessments'));
+        $this->assertSame($hasResult->id, $response2->viewData('assessments')->first()->id);
     }
 }

@@ -133,6 +133,15 @@ class MyLearningAssessmentExportFilterTest extends TestCase
             'assigned_type'        => 'user',
             'assigned_description' => 'Test',
         ]);
+        AssesmentResult::create([
+            'user_id'      => $this->user->id,
+            'assesment_id' => $this->assessmentPending->id,
+            'score'        => null,
+            'pass'         => 0,
+            'final'        => 0,
+            'batch'        => 1,
+            'user_answer'  => [],
+        ]);
     }
 
     public function test_export_endpoint_returns_download_and_applies_status_filter(): void
@@ -176,7 +185,7 @@ class MyLearningAssessmentExportFilterTest extends TestCase
             $this->assertStringContainsString('AssessmentPending', $array[1][1]);
             $this->assertSame('Playlist Assessment', $array[1][2]);
             $this->assertSame('Pending', $array[1][7]);
-            $this->assertSame('Start Test', $array[1][8]);
+            $this->assertSame('Continue', $array[1][8]);
             return true;
         });
     }
