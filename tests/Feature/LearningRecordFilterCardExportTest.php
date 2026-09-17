@@ -198,7 +198,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $totalRow = end($data);
 
         $this->assertCount(3, $exportItems);
-        $this->assertEquals('0.35 h', $totalRow[6]);
+        $this->assertEquals(0.35, $totalRow[6]);
     }
 
     public function test_year_2023_filter_controls_table_card_and_export(): void
@@ -221,7 +221,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $totalRow = end($data);
 
         $this->assertCount(1, $exportItems);
-        $this->assertEquals('0.05 h', $totalRow[6]);
+        $this->assertEquals(0.05, $totalRow[6]);
     }
 
     public function test_year_2025_filter_controls_table_card_and_export(): void
@@ -244,7 +244,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $totalRow = end($data);
 
         $this->assertCount(2, $exportItems);
-        $this->assertEquals('0.30 h', $totalRow[6]);
+        $this->assertEquals(0.30, $totalRow[6]);
     }
 
     public function test_combined_type_and_year_filter_matches(): void
@@ -267,7 +267,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $totalRow = end($data);
 
         $this->assertCount(1, $exportItems);
-        $this->assertEquals('0.10 h', $totalRow[6]);
+        $this->assertEquals(0.10, $totalRow[6]);
     }
 
     public function test_search_and_year_filter_matches(): void
@@ -289,7 +289,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $totalRow = end($data);
 
         $this->assertCount(1, $exportItems);
-        $this->assertEquals('0.05 h', $totalRow[6]);
+        $this->assertEquals(0.05, $totalRow[6]);
     }
 
     public function test_classification_filter_controls_table_card_and_export(): void
@@ -312,7 +312,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $totalRow = end($data);
 
         $this->assertCount(1, $exportItems);
-        $this->assertEquals('0.05 h', $totalRow[6]);
+        $this->assertEquals(0.05, $totalRow[6]);
     }
 
     public function test_quick_filter_mode_controls_table_card_and_export(): void
@@ -334,7 +334,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $dataContent = $exportContent->array();
         $itemsContent = array_filter(array_slice($dataContent, 1, -2), fn ($r) => !empty($r[0]));
         $this->assertCount(2, $itemsContent);
-        $this->assertEquals('0.15 h', end($dataContent)[6]);
+        $this->assertEquals(0.15, end($dataContent)[6]);
 
         // Mode: Playlist only
         request()->replace(['record_quick' => 'playlist']);
@@ -351,7 +351,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $dataPl = $exportPl->array();
         $itemsPl = array_filter(array_slice($dataPl, 1, -2), fn ($r) => !empty($r[0]));
         $this->assertCount(1, $itemsPl);
-        $this->assertEquals('0.20 h', end($dataPl)[6]);
+        $this->assertEquals(0.20, end($dataPl)[6]);
     }
 
     public function test_non_matching_filter_yields_zero_across_all(): void
@@ -374,7 +374,7 @@ class LearningRecordFilterCardExportTest extends TestCase
         $totalRow = end($data);
 
         $this->assertCount(0, $exportItems);
-        $this->assertEquals('0.00 h', $totalRow[6]);
+        $this->assertEquals(0.0, $totalRow[6]);
     }
 
     public function test_real_database_user_consistency_across_years(): void
@@ -402,8 +402,8 @@ class LearningRecordFilterCardExportTest extends TestCase
             $this->assertEquals($rows->count(), $stats['courseCompleted'] + $stats['playlistCompleted']);
 
             // 2. Table Hours == Card Hours == Export Total Row
-            $expectedHoursStr = number_format($stats['totalLearningHours'], 2, '.', '') . ' h';
-            $this->assertEquals($expectedHoursStr, $totalRow[6], "Mismatch in hours for year {$targetYear}");
+            $expectedHours = round((float) $stats['totalLearningHours'], 2);
+            $this->assertEquals($expectedHours, $totalRow[6], "Mismatch in hours for year {$targetYear}");
         }
     }
 }

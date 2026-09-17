@@ -266,7 +266,7 @@ class MyLearningRecordDatabaseLearningHourTest extends TestCase
         $this->assertEquals('Document', $contentRow[2]); // Type
         $this->assertEquals('Content', $contentRow[3]); // Category
         $this->assertEquals('Safety & Environment', $contentRow[4]); // Classification
-        $this->assertEquals('0.25 h', $contentRow[6]); // Learning Hour
+        $this->assertEquals(0.25, $contentRow[6]); // Learning Hour
         $this->assertEquals('100%', $contentRow[7]); // Progress
     }
 

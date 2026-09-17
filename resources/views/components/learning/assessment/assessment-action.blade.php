@@ -1,8 +1,10 @@
 @props([
     'url' => null,
+    'resultUrl' => null,
     'isCompleted' => false,
     'isPassed' => false,
     'isExpired' => false,
+    'isInactive' => false,
     'hasSnapshot' => false,
     'answeredCount' => 0,
     'totalCount' => 0,
@@ -25,7 +27,12 @@
 @endphp
 
 <div class="d-flex flex-column align-items-center justify-content-center">
-    @if ($isPassed)
+    @if ($isInactive)
+        <button type="button" class="btn btn-sm assessment-action-btn btn-assessment-inactive" disabled>
+            <i class="ti ti-ban"></i>
+            <span>Inactive</span>
+        </button>
+    @elseif ($isPassed)
         <button type="button" class="btn btn-sm assessment-action-btn btn-assessment-passed" disabled>
             <i class="ti ti-check"></i>
             <span>Passed</span>
@@ -121,7 +128,7 @@
         </button>
     @endif
 
-    @if (!$isPassed && !$isExpired)
+    @if (!$isPassed && !$isExpired && !$isInactive)
         @if ($maxAttemptsDisplay > 0)
             <span class="badge badge-outline-secondary rounded-pill px-2 py-1 mt-2 assessment-remedial-badge">
                 {{ $userAttempts }}/{{ $maxAttemptsDisplay }} Attempts

@@ -646,6 +646,7 @@
                 var $actionBtn = $row.find('.btn-start-test, .btn-remedial, .btn-continue-test, .btn-assessment-start, .btn-assessment-remedial, .btn-assessment-continue').first();
                 if ($actionBtn.length && !$actionBtn.prop('disabled') && !$actionBtn.hasClass('disabled') && $actionBtn.attr('aria-disabled') !== 'true') {
                     $actionBtn.trigger('click');
+                    return;
                 }
             });
 

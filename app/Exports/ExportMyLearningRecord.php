@@ -85,7 +85,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             '',
             '',
             DurationFormatter::fromSeconds($durationSeconds),
-            number_format($learningHours, 2, '.', '') . ' h',
+            round($learningHours, 2),
             '',
             '',
             '',
@@ -152,6 +152,9 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             $sheet->getStyle('F' . $summaryRow . ':G' . $summaryRow)
                 ->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle('G2:G' . $summaryRow)
+                ->getNumberFormat()
+                ->setFormatCode('0.00');
         }];
     }
 
@@ -216,22 +219,25 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         $setting = $cert['content']->get($content->id);
         $result = $setting ? ($cert['results'][$setting->id] ?? null) : null;
         $actualHours = $hourService->calculateContent($cu);
-        $formattedHours = number_format($actualHours, 2, '.', '') . ' h';
+        $durationSeconds = DurationFormatter::toSeconds($content->duration);
+        $durationFormatted = $durationSeconds !== null
+            ? DurationFormatter::fromSeconds($durationSeconds)
+            : '00:00:00';
 
         return [
             'category'            => 'Content',
             'type'                => \App\Support\ContentTypeHelper::label($content->type) ?: 'Content',
             'title'               => $content->title ?? '-',
             'classification'      => optional($content->classification)->classification_name ?? '-',
-            'duration'            => DurationFormatter::formatForLearningRecord($content->duration),
-            'learning_hour'       => $formattedHours,
+            'duration'            => $durationFormatted,
+            'learning_hour'       => round($actualHours, 2),
             'progress'            => (int) ($cu->progress ?? 0) . '%',
             'start_date'          => optional($cu->created_at)->format('Y-m-d H:i') ?? '',
             'finish_date'         => (int) $cu->finish === 1 ? (optional($cu->updated_at ?? $cu->completed_at)->format('Y-m-d H:i') ?? '') : '',
             'score'               => $result?->score() ?? '',
             'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',
             'date'                => $cu->updated_at ?? $cu->completed_at,
-            'duration_seconds'    => DurationFormatter::toSeconds($content->duration) ?? -1,
+            'duration_seconds'    => $durationSeconds ?? -1,
             'learning_hour_value' => $actualHours,
             'learning_status'     => (string) ($cu->learning_status ?? ''),
             'playlist_ids'        => $content->trainingPlans->pluck('id')->map(fn ($id) => (string) $id)->all(),
@@ -251,7 +257,6 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
         $seconds = (int) ($plan->total_duration_seconds ?? 0);
         $actualHours = $playlistActualHours?->get($plan->id)
             ?? $hourService->calculatePlaylistSingle((int) Auth::id(), $plan);
-        $formattedHours = number_format($actualHours, 2, '.', '') . ' h';
         $setting = $cert['playlist']->get($plan->id);
         $result = $setting ? ($cert['results'][$setting->id] ?? null) : null;
         $children = $plan->trainingplandetail->sortBy('content_order')
@@ -272,7 +277,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             'title'               => $plan->title ?? '-',
             'classification'      => '-',
             'duration'            => DurationFormatter::fromSeconds($seconds),
-            'learning_hour'       => $formattedHours,
+            'learning_hour'       => round($actualHours, 2),
             'progress'            => '100%',
             'start_date'          => $startDate,
             'finish_date'         => $plan->last_finished_at ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i') : '',
