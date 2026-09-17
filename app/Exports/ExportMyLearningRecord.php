@@ -167,7 +167,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
 
     private function completedPlaylists(int $userId): Collection
     {
-        return app(CompletedPlaylistService::class)->forUser($userId);
+        return app(CompletedPlaylistService::class)->forLearningRecord($userId);
     }
 
     private function certificateContext($user, CertificateEligibilityService $service): array

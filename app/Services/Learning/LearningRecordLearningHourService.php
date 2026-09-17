@@ -108,7 +108,7 @@ class LearningRecordLearningHourService
             }
 
             $validDetails = $plan->trainingplandetail->filter(
-                fn ($d) => !empty($d->content) && $d->content->exists && $d->content->active === 'Active'
+                fn ($d) => !empty($d->content) && $d->content->exists
             );
 
             $planPcus = $userPcuMap->get($plan->id, collect())->keyBy('content_id');

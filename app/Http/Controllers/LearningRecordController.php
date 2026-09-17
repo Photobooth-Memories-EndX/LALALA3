@@ -55,7 +55,7 @@ class LearningRecordController extends Controller
     {
         $userId = (int) Auth::id();
 
-        $completedPlaylists = $this->completedPlaylistService->forUser($userId);
+        $completedPlaylists = $this->completedPlaylistService->forLearningRecord($userId);
         $completedContents  = $this->getCompletedContents($userId);
         $cert               = $this->certificateContext($eligibilityService);
         $playlistContents   = $this->playlistContentsData($completedPlaylists);

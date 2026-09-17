@@ -44,7 +44,7 @@ class LearningController extends Controller
 
         $ongoingLearning = $analyticsService->ongoingLearningCount((int) $userId);
 
-        $completedPlaylists = $completedPlaylistService->forUser((int) $userId);
+        $completedPlaylists = $completedPlaylistService->forLearningRecord((int) $userId);
         $completedPlaylistLearning = $completedPlaylists->count();
 
         $recordHourService = app(\App\Services\Learning\LearningRecordLearningHourService::class);

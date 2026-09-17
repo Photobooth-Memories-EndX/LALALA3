@@ -24,11 +24,15 @@ class CompletedPlaylistService
     /**
      * @return \Illuminate\Support\Collection<int, TrainingPlan>
      */
-    public function forUser(int $userId): Collection
+    public function forUser(int $userId, bool $includeInactive = false): Collection
     {
-        $plans = TrainingPlan::with([
+        $plansQuery = TrainingPlan::with([
                 'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
-                'trainingplandetail.content' => fn ($q) => $q->where('active', 'Active'),
+                'trainingplandetail.content' => function ($q) use ($includeInactive) {
+                    if (!$includeInactive) {
+                        $q->where('active', 'Active');
+                    }
+                },
             ])
             ->select([
                 'trainingplan.id',
@@ -39,15 +43,19 @@ class CompletedPlaylistService
                 'trainingplan.learning_hours',
                 'trainingplan.active',
                 'trainingplan.created_at',
-            ])
-            ->where('active', 'Active')
-            ->get();
+            ]);
+
+        if (!$includeInactive) {
+            $plansQuery->where('active', 'Active');
+        }
+
+        $plans = $plansQuery->get();
 
         $completed = collect();
 
         foreach ($plans as $plan) {
             $validDetails = $plan->trainingplandetail->filter(
-                fn ($d) => !empty($d->content) && $d->content->exists && $d->content->active === 'Active'
+                fn ($d) => !empty($d->content) && $d->content->exists && ($includeInactive || $d->content->active === 'Active')
             );
 
             $total = $validDetails->count();
@@ -101,5 +109,16 @@ class CompletedPlaylistService
         }
 
         return $completed->sortByDesc('last_finished_at')->values();
+    }
+
+    /**
+     * Dedicated historical resolver for Learning Record and Dashboard summary.
+     * Preserves completed playlists and their child modules regardless of active/inactive status.
+     *
+     * @return \Illuminate\Support\Collection<int, TrainingPlan>
+     */
+    public function forLearningRecord(int $userId): Collection
+    {
+        return $this->forUser($userId, includeInactive: true);
     }
 }
