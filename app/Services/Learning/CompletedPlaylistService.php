@@ -24,26 +24,42 @@ class CompletedPlaylistService
     /**
      * @return \Illuminate\Support\Collection<int, TrainingPlan>
      */
-    public function forUser(int $userId, bool $includeInactive = false): Collection
-    {
-        $plansQuery = TrainingPlan::with([
-                'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
-                'trainingplandetail.content' => function ($q) use ($includeInactive) {
-                    if (!$includeInactive) {
-                        $q->where('active', 'Active');
-                    }
-                },
-            ])
-            ->select([
-                'trainingplan.id',
-                'trainingplan.title',
-                'trainingplan.slug',
-                'trainingplan.thumbnail',
-                'trainingplan.total_duration_seconds',
-                'trainingplan.learning_hours',
-                'trainingplan.active',
-                'trainingplan.created_at',
-            ]);
+    public function forUser(
+        int $userId,
+        bool $includeInactive = false,
+        bool $withTrashed = false
+    ): Collection {
+        $plansQuery = TrainingPlan::query();
+
+        if ($withTrashed) {
+            $plansQuery->withTrashed();
+        }
+
+        $plansQuery->with([
+            'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
+            'trainingplandetail.content' => function ($q) use ($includeInactive, $withTrashed) {
+                if ($withTrashed) {
+                    $q->withTrashed();
+                }
+                if (!$includeInactive) {
+                    $q->where('active', 'Active');
+                }
+            },
+        ])
+        ->select([
+            'trainingplan.id',
+            'trainingplan.title',
+            'trainingplan.slug',
+            'trainingplan.thumbnail',
+            'trainingplan.total_duration_seconds',
+            'trainingplan.learning_hours',
+            'trainingplan.active',
+            'trainingplan.has_deadline',
+            'trainingplan.from_date',
+            'trainingplan.to_date',
+            'trainingplan.created_at',
+            'trainingplan.deleted_at',
+        ]);
 
         if (!$includeInactive) {
             $plansQuery->where('active', 'Active');
@@ -55,7 +71,13 @@ class CompletedPlaylistService
 
         foreach ($plans as $plan) {
             $validDetails = $plan->trainingplandetail->filter(
-                fn ($d) => !empty($d->content) && $d->content->exists && ($includeInactive || $d->content->active === 'Active')
+                fn ($d) =>
+                    !empty($d->content)
+                    && $d->content->exists
+                    && (
+                        $includeInactive
+                        || $d->content->active === 'Active'
+                    )
             );
 
             $total = $validDetails->count();
@@ -113,12 +135,16 @@ class CompletedPlaylistService
 
     /**
      * Dedicated historical resolver for Learning Record and Dashboard summary.
-     * Preserves completed playlists and their child modules regardless of active/inactive status.
+     * Preserves completed playlists and their child modules regardless of active/inactive or soft-deleted status.
      *
      * @return \Illuminate\Support\Collection<int, TrainingPlan>
      */
     public function forLearningRecord(int $userId): Collection
     {
-        return $this->forUser($userId, includeInactive: true);
+        return $this->forUser(
+            $userId,
+            includeInactive: true,
+            withTrashed: true
+        );
     }
 }

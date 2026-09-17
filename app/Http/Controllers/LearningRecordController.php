@@ -499,11 +499,12 @@ class LearningRecordController extends Controller
     private function getCompletedContents(int $userId)
     {
         return ContentUser::with([
+                'content' => fn ($q) => $q->withTrashed(),
                 'content.classification',
                 // Playlist pemilik content — untuk badge di kolom Class (bebas N+1).
                 // Catatan: relasi assesment/scores TIDAK dimuat lagi — score kini
                 // diambil dari CertificateEligibilityResult (satu source of truth).
-                'content.trainingPlans' => fn ($q) => $q->select('trainingplan.id', 'trainingplan.title'),
+                'content.trainingPlans' => fn ($q) => $q->withTrashed()->select('trainingplan.id', 'trainingplan.title'),
             ])
             ->where('user_id', $userId)
             ->where('finish', '1')
@@ -543,6 +544,23 @@ class LearningRecordController extends Controller
             $actualHours = $this->recordLhService()->calculateContent($cu);
             $formattedHours = $this->recordLhService()->formatHours($actualHours);
 
+            $isInactive = ($content->active !== 'Active') || !is_null($content->deleted_at);
+            $isExpired  = !$isInactive && $content->isExpired();
+
+            if ($isInactive) {
+                $accessStatus = 'INACTIVE';
+                $canOpen = false;
+                $modalMessage = 'This content is currently inactive.';
+            } elseif ($isExpired) {
+                $accessStatus = 'EXPIRED';
+                $canOpen = false;
+                $modalMessage = 'This content period has expired.';
+            } else {
+                $accessStatus = 'ACTIVE';
+                $canOpen = true;
+                $modalMessage = '';
+            }
+
             return [
                 'row_kind'        => 'content',
                 'category'        => 'Content',
@@ -576,6 +594,9 @@ class LearningRecordController extends Controller
                 'cert_action_url' => route('certificate.generate', $cu->id),
                 'cert_is_form'    => false,
                 'playlist_items'  => [],
+                'access_status'   => $accessStatus,
+                'can_open'        => $canOpen,
+                'modal_message'   => $modalMessage,
             ];
         })->values();
     }
@@ -599,7 +620,6 @@ class LearningRecordController extends Controller
         return DB::table('trainingplandetail as tpd')
             ->join('content as c', 'c.id', '=', 'tpd.content_id')
             ->whereIn('tpd.trainingplan_id', $planIds)
-            ->whereNull('c.deleted_at')
             ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
             ->get(['tpd.trainingplan_id as plan_id', 'c.slug as slug'])
             ->groupBy('plan_id')
@@ -623,7 +643,6 @@ class LearningRecordController extends Controller
         return DB::table('trainingplandetail as tpd')
             ->join('content as c', 'c.id', '=', 'tpd.content_id')
             ->whereIn('tpd.trainingplan_id', $planIds)
-            ->whereNull('c.deleted_at')
             ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
             ->get([
                 'tpd.trainingplan_id as plan_id',
@@ -631,6 +650,11 @@ class LearningRecordController extends Controller
                 'c.title as title',
                 'c.slug as slug',
                 'c.type as type',
+                'c.active as active',
+                'c.has_deadline as has_deadline',
+                'c.from_date as from_date',
+                'c.to_date as to_date',
+                'c.deleted_at as deleted_at',
                 'tpd.content_order as content_order',
             ])
             ->groupBy('plan_id');
@@ -659,7 +683,7 @@ class LearningRecordController extends Controller
 
             $startDate = $playlistStartDates?->get($plan->id)
                 ?? $contentUsers
-                    ->filter(fn (ContentUser $cu) => $cu->content->trainingPlans->contains('id', $plan->id))
+                    ->filter(fn (ContentUser $cu) => $cu->content && $cu->content->trainingPlans->contains('id', $plan->id))
                     ->pluck('created_at')
                     ->filter()
                     ->min()
@@ -668,18 +692,46 @@ class LearningRecordController extends Controller
                 ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i:s')
                 : '';
 
+            $isPlanInactive = ($plan->active !== 'Active') || !is_null($plan->deleted_at);
+            $isPlanExpired  = !$isPlanInactive && $plan->isExpired();
+
+            if ($isPlanInactive) {
+                $accessStatus = 'INACTIVE';
+                $canOpen = false;
+                $modalMessage = 'This playlist is currently inactive.';
+            } elseif ($isPlanExpired) {
+                $accessStatus = 'EXPIRED';
+                $canOpen = false;
+                $modalMessage = 'This playlist period has expired.';
+            } else {
+                $accessStatus = 'ACTIVE';
+                $canOpen = true;
+                $modalMessage = '';
+            }
+
             $planContents = $allPlaylistContents->get($plan->id, collect());
             $firstSlug = $firstContentSlugs->get($plan->id) ?? $planContents->first()?->slug;
 
-            $playlistItems = $planContents->map(function ($item) use ($plan) {
+            $playlistItems = $planContents->map(function ($item) use ($plan, $isPlanInactive, $isPlanExpired) {
+                $itemInactive = ($item->active ?? 'Active') !== 'Active' || !is_null($item->deleted_at ?? null);
+                $itemHasDeadline = (bool) ($item->has_deadline ?? false);
+                $itemExpired = $itemHasDeadline && !empty($item->to_date) && now()->toDateString() > Carbon::parse($item->to_date)->format('Y-m-d');
+
+                $itemAccessStatus = ($isPlanInactive || $itemInactive) ? 'INACTIVE' : (($isPlanExpired || $itemExpired) ? 'EXPIRED' : 'ACTIVE');
+                $itemCanOpen = $itemAccessStatus === 'ACTIVE';
+                $itemModalMessage = $itemAccessStatus === 'INACTIVE' ? 'This content is currently inactive.' : ($itemAccessStatus === 'EXPIRED' ? 'This content period has expired.' : '');
+
                 return [
-                    'content_id' => $item->content_id,
-                    'title'      => $item->title ?? '-',
-                    'slug'       => $item->slug,
-                    'type'       => \App\Support\ContentTypeHelper::label($item->type) ?: 'Content',
-                    'url'        => ($plan->slug && $item->slug)
+                    'content_id'    => $item->content_id,
+                    'title'         => $item->title ?? '-',
+                    'slug'          => $item->slug,
+                    'type'          => \App\Support\ContentTypeHelper::label($item->type) ?: 'Content',
+                    'url'           => ($plan->slug && $item->slug)
                         ? route('playlist.user.view', [$plan->slug, $item->slug])
                         : null,
+                    'access_status' => $itemAccessStatus,
+                    'can_open'      => $itemCanOpen,
+                    'modal_message' => $itemModalMessage,
                 ];
             })->values()->all();
 
@@ -698,7 +750,7 @@ class LearningRecordController extends Controller
                     ? route('playlist.user.view', [$plan->slug, $firstSlug])
                     : null,
                 'playlist_items'  => $playlistItems,
-                'subtitle'        => (int) $plan->finished_items . ' / ' . (int) $plan->total_items . ' content selesai',
+                'subtitle'        => (int) ($plan->finished_items ?? 0) . ' / ' . (int) ($plan->total_items ?? count($playlistItems)) . ' content selesai',
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],
                 'type'            => 'Playlist',
@@ -724,6 +776,9 @@ class LearningRecordController extends Controller
                 'cert_priority'   => $eligible ? 1 : 2,
                 'cert_action_url' => $setting ? route('certificate.generate.setting', $setting) : null,
                 'cert_is_form'    => true,
+                'access_status'   => $accessStatus,
+                'can_open'        => $canOpen,
+                'modal_message'   => $modalMessage,
             ];
         })->values();
     }

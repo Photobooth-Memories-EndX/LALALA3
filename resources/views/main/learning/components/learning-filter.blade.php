@@ -1,6 +1,7 @@
 @php
     $currentCategory = request('category') ?? (request('learning_source') ?? (request('source', 'all')));
     $currentStatus = request('status', 'all');
+    $currentType = request('type', 'all');
     $currentYear = request('year', 'all');
     $currentEntries = (int) ($entries ?? 25);
     $currentEmployeeId = request('employee_id') ?? request('user_id');
@@ -134,21 +135,21 @@
                     </select>
                 </div>
 
-                <!-- 4. Year Dropdown -->
+                <!-- 4. Type Dropdown -->
+                <div style="min-width: 125px; flex-shrink: 0;">
+                    <select class="form-select rounded-3" id="filter-type" name="type">
+                        <option value="all" {{ ($currentType === 'all' || blank($currentType)) ? 'selected' : '' }}>Type: All</option>
+                        <option value="Document" {{ strtolower((string) $currentType) === 'document' ? 'selected' : '' }}>Document</option>
+                        <option value="Video" {{ strtolower((string) $currentType) === 'video' ? 'selected' : '' }}>Video</option>
+                    </select>
+                </div>
+
+                <!-- 5. Year Dropdown -->
                 <div style="min-width: 105px; flex-shrink: 0;">
                     <select class="form-select rounded-3" id="learn-year" name="year">
                         <option value="all" {{ $currentYear === 'all' ? 'selected' : '' }}>All Year</option>
                         @foreach ($years as $year)
                             <option value="{{ $year }}" {{ (string) $currentYear === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- 5. Entries Dropdown -->
-                <div style="min-width: 115px; flex-shrink: 0;">
-                    <select class="form-select rounded-3" id="learn-entries" name="entries">
-                        @foreach ([10, 25, 50, 100] as $option)
-                            <option value="{{ $option }}" {{ $currentEntries === $option ? 'selected' : '' }}>{{ $option }} Entries</option>
                         @endforeach
                     </select>
                 </div>

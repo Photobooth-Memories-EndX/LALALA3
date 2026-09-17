@@ -543,4 +543,114 @@ class LearningRecordHistoricalPreservationTest extends TestCase
         $this->assertTrue($recordPlaylists->contains('id', $planActive->id));
         $this->assertTrue($recordPlaylists->contains('id', $planInactive->id));
     }
+
+    /**
+     * Test 9: Completed Soft Deleted Playlist remains visible as historical record with blocked access,
+     * while completely excluded from Assessment callers.
+     */
+    public function test_9_completed_soft_deleted_playlist_behavior(): void
+    {
+        $plan = TrainingPlan::create([
+            'title'                  => 'Completed Soft Deleted Plan Test',
+            'slug'                   => 'plan-soft-del-' . rand(1000, 9999),
+            'active'                 => 'Active',
+            'total_duration_seconds' => 1800,
+            'learning_hours'         => 0.5,
+        ]);
+
+        $mod = Content::create([
+            'title'             => 'Soft Del Mod',
+            'slug'              => 'sd-mod-' . rand(1000, 9999),
+            'type'              => 'video',
+            'duration'          => '00:30:00',
+            'classification_id' => $this->classification->id,
+            'active'            => 'Active',
+            'playlistonly'      => 'Y',
+        ]);
+
+        TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $mod->id, 'content_order' => 1]);
+
+        PlaylistContentUser::create([
+            'user_id'              => $this->user->id,
+            'trainingplan_id'      => $plan->id,
+            'content_id'           => $mod->id,
+            'progress'             => 100,
+            'finish'               => '1',
+            'duration_seconds'     => 1800,
+            'actual_watch_seconds' => 1800,
+            'completed_at'         => Carbon::parse('2026-08-18 09:00:00'),
+        ]);
+
+        // Soft delete the plan!
+        $plan->delete();
+        $this->assertSoftDeleted('trainingplan', ['id' => $plan->id]);
+
+        $service = app(CompletedPlaylistService::class);
+
+        // Assessment caller: must NOT receive soft deleted plan
+        $assessmentPlaylists = $service->forUser($this->user->id);
+        $this->assertFalse($assessmentPlaylists->contains('id', $plan->id));
+
+        // Learning Record caller: MUST receive completed soft deleted plan
+        $recordPlaylists = $service->forLearningRecord($this->user->id);
+        $this->assertTrue($recordPlaylists->contains('id', $plan->id));
+
+        // UI Check: verify it appears in table with blocked access
+        $this->actingAs($this->user);
+        $response = $this->get(route('user.learning.dashboard.partial', ['tab' => 'record']));
+        $response->assertStatus(200);
+        $html = $response->getContent();
+        $this->assertStringContainsString('Completed Soft Deleted Plan Test', $html);
+    }
+
+    /**
+     * Test 10: Incomplete Soft Deleted Playlist MUST NOT appear in Learning Record.
+     */
+    public function test_10_incomplete_soft_deleted_playlist_must_not_appear(): void
+    {
+        $plan = TrainingPlan::create([
+            'title'                  => 'Incomplete Soft Deleted Plan',
+            'slug'                   => 'incomp-soft-del-' . rand(1000, 9999),
+            'active'                 => 'Active',
+            'total_duration_seconds' => 1800,
+            'learning_hours'         => 0.5,
+        ]);
+
+        $mod = Content::create([
+            'title'             => 'Incomp Mod For Soft Del',
+            'slug'              => 'inc-sd-mod-' . rand(1000, 9999),
+            'type'              => 'video',
+            'duration'          => '00:30:00',
+            'classification_id' => $this->classification->id,
+            'active'            => 'Active',
+            'playlistonly'      => 'Y',
+        ]);
+
+        TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $mod->id, 'content_order' => 1]);
+
+        // Incomplete progress
+        PlaylistContentUser::create([
+            'user_id'              => $this->user->id,
+            'trainingplan_id'      => $plan->id,
+            'content_id'           => $mod->id,
+            'progress'             => 40,
+            'finish'               => '0',
+            'duration_seconds'     => 1800,
+            'actual_watch_seconds' => 720,
+        ]);
+
+        // Soft delete the plan
+        $plan->delete();
+
+        $service = app(CompletedPlaylistService::class);
+        $recordPlaylists = $service->forLearningRecord($this->user->id);
+        $this->assertFalse($recordPlaylists->contains('id', $plan->id));
+
+        // UI Check
+        $this->actingAs($this->user);
+        $response = $this->get(route('user.learning.dashboard.partial', ['tab' => 'record']));
+        $response->assertStatus(200);
+        $this->assertStringNotContainsString('Incomplete Soft Deleted Plan', $response->getContent());
+    }
 }
+
