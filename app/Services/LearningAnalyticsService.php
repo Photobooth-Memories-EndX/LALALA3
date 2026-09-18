@@ -6,6 +6,7 @@ use App\Models\AssesmentResult;
 use App\Models\Certificate;
 use App\Models\ContentUser;
 use App\Services\Learning\LearningHourService;
+use App\Services\Learning\LearningRecordLearningHourService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -31,8 +32,15 @@ class LearningAnalyticsService
         END
     ";
 
-    public function __construct(private readonly LearningHourService $learningHourService)
+    public function __construct(
+        private readonly LearningHourService $learningHourService,
+        private readonly ?LearningRecordLearningHourService $recordLearningHourService = null,
+    ) {
+    }
+
+    private function recordLhService(): LearningRecordLearningHourService
     {
+        return $this->recordLearningHourService ?? app(LearningRecordLearningHourService::class);
     }
 
     /*
@@ -520,7 +528,7 @@ class LearningAnalyticsService
      */
     public function userLearningHours(int $userId): float
     {
-        return $this->learningHourService->getTotalLearningHours($userId);
+        return $this->recordLhService()->getTotalLearningHours($userId);
     }
 
     /**
