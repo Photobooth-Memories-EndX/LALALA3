@@ -58,15 +58,23 @@
 .autocomplete-sticky-footer {
     position: sticky !important;
     bottom: 0 !important;
-    z-index: 2055 !important;
+    z-index: 10 !important;
     background-color: #f8fafc !important;
     border-top: 1px solid #e2e8f0 !important;
     padding: 8px 12px !important;
 }
+
+/* Modal Z-Index Safeguards */
+.modal-backdrop {
+    z-index: 1050 !important;
+}
+#moreLearningFiltersModal {
+    z-index: 1060 !important;
+}
 </style>
 
-<div class="card border-0 shadow-sm rounded-4 mb-4" style="overflow: visible !important;">
-    <div class="card-body p-3" style="overflow: visible !important;">
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-3">
         <!-- Label Header Quick Filter -->
         <div class="text-secondary small fw-semibold mb-2" style="color: #6c757d !important; font-size: 0.85rem;">
             Quick Filter
@@ -85,15 +93,15 @@
             <input type="hidden" id="filter-progress-range" name="progress_range" value="{{ request('progress_range', 'all') }}">
             <input type="hidden" id="filter-duration" name="duration" value="{{ request('duration', 'all') }}">
 
-            <div class="d-flex align-items-center gap-2 flex-wrap position-relative">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <!-- Employee / NIP Search Input Container -->
-                <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 280px; z-index: 2040;">
+                <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 280px;">
                     <input type="text" id="manage-employee-input" name="employee_q" value="{{ request('employee_q') ?? ($currentEmployeeText ?: $currentEmployeeId) }}" 
                            class="form-control rounded-3" placeholder="Search employee or NIP..." autocomplete="off">
                     <input type="hidden" id="learn-employee" name="employee_id" value="{{ $currentEmployeeId }}">
                     
                     <div id="manage-employee-dropdown" class="dropdown-menu shadow-lg w-100 position-absolute mt-1 p-0 overflow-hidden" 
-                         style="display: none; z-index: 2050; background-color: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1;">
+                         style="display: none; z-index: 1000; background-color: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1;">
                         <div id="manage-employee-list" class="list-group list-group-flush"></div>
                         <div id="manage-employee-footer" class="autocomplete-sticky-footer text-center" style="display: none;">
                             <!-- See all results link generated via JS -->
@@ -102,13 +110,13 @@
                 </div>
 
                 <!-- Learning Title Search Input Container -->
-                <div class="position-relative flex-grow-1" style="min-width: 240px; max-width: 320px; z-index: 2040;">
+                <div class="position-relative flex-grow-1" style="min-width: 240px; max-width: 320px;">
                     <input type="text" id="manage-title-input" name="title_q" value="{{ request('title_q') ?? (request('learning_title') ?? request('title')) }}" 
                            class="form-control rounded-3" placeholder="Search learning title..." autocomplete="off">
                     <input type="hidden" id="learn-title" name="learning_title" value="{{ $currentLearningTitle }}">
                     
                     <div id="manage-title-dropdown" class="dropdown-menu shadow-lg w-100 position-absolute mt-1 p-0 overflow-hidden" 
-                         style="display: none; z-index: 2050; background-color: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1;">
+                         style="display: none; z-index: 1000; background-color: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1;">
                         <div id="manage-title-list" class="list-group list-group-flush"></div>
                         <div id="manage-title-footer" class="autocomplete-sticky-footer text-center" style="display: none;">
                             <!-- See all results link generated via JS -->
