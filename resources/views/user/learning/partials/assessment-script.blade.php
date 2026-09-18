@@ -451,7 +451,7 @@
             .off('.learningAssessment')
             .on('change.learningAssessment input.learningAssessment', updateAdvancedFilterBadge);
 
-        $('#assessmentModalReset, #assessmentResetFilter').off('.learningAssessment').on('click.learningAssessment', function () {
+        $('#btn-reset-assessment-modal, #assessmentModalReset, .assessment-modal-reset, #assessmentResetFilter').off('.learningAssessment').on('click.learningAssessment', function () {
             clearTimeout(window.learningAssessmentSearchTimer);
             $('#assessment-search-input, #assessmentSearch').val('');
             var searchResults = document.getElementById('assessment-search-results');

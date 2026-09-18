@@ -156,144 +156,46 @@
 
     <x-learning.assessment.assessment-table :assessments="$assessmentItems" />
 
-    <style>
-        #assessmentMoreFiltersModal .modal-dialog {
-            max-width: 800px;
-            width: 100%;
-        }
-        @media (max-width: 768px) {
-            #assessmentMoreFiltersModal .modal-dialog {
-                max-width: 90%;
-            }
-        }
-        @media (max-width: 576px) {
-            #assessmentMoreFiltersModal .modal-dialog {
-                max-width: 100%;
-                margin: 0.5rem;
-            }
-        }
-        #assessmentMoreFiltersModal .modal-content {
-            border-radius: 16px !important;
-            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15) !important;
-            padding: 32px !important;
-            animation: modalSlideUp 200ms ease-out forwards;
-        }
-        @keyframes modalSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        #assessmentMoreFiltersModal .modal-close-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
-            color: #64748b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            font-size: 1.2rem;
-            outline: none;
-            cursor: pointer;
-        }
-        #assessmentMoreFiltersModal .modal-close-btn:hover {
-            background: #f1f5f9;
-            color: #0f172a;
-            border-color: #cbd5e1;
-        }
-        #assessmentMoreFiltersModal .filter-section-title {
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #64748b;
-            margin-bottom: 12px;
-        }
-        #assessmentMoreFiltersModal .filter-divider {
-            border-bottom: 1px solid #E9ECEF;
-            padding-bottom: 24px;
-            margin-bottom: 32px;
-        }
-        #assessmentMoreFiltersModal .custom-form-control {
-            height: 48px;
-            border-radius: 10px;
-            border: 1px solid #dfe3e8;
-            padding-left: 16px;
-            padding-right: 16px;
-            font-size: 14px;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        #assessmentMoreFiltersModal .custom-form-control:focus {
-            border-color: #206bc4;
-            box-shadow: 0 0 0 3px rgba(32, 107, 196, 0.15);
-        }
-        #assessmentMoreFiltersModal .radio-gap {
-            gap: 36px;
-        }
-        #assessmentMoreFiltersModal .modal-footer-custom {
-            padding-top: 28px;
-            border-top: 1px solid #E9ECEF;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        #assessmentMoreFiltersModal .modal-footer-custom .btn {
-            height: 48px;
-            border-radius: 10px;
-            padding-left: 28px;
-            padding-right: 28px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
-
     <div class="modal fade" id="assessmentMoreFiltersModal" tabindex="-1" role="dialog"
          aria-labelledby="assessmentMoreFiltersTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-0">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered learning-filter-modal" role="document">
+            <div class="modal-content rounded-4 border-0 shadow">
                 <!-- Header -->
-                <div class="d-flex justify-content-between align-items-start pb-3 mb-3">
-                    <div>
-                        <h2 class="modal-title fw-bold text-dark mb-1" id="assessmentMoreFiltersTitle" style="font-size: 26px;">More Filters</h2>
-                        <div class="text-muted" style="font-size: 14px;">Advanced Filter</div>
-                    </div>
-                    <button type="button" class="modal-close-btn" data-bs-dismiss="modal" aria-label="Close">
-                        <i class="ti ti-x"></i>
-                    </button>
+                <div class="modal-header border-0 pb-0">
+                    <h3 class="modal-title fw-semibold d-flex align-items-center gap-1" id="assessmentMoreFiltersTitle" style="font-size: 1.1rem;">
+                        <i class="ti ti-adjustments-horizontal text-primary me-1"></i>
+                        All Filters
+                    </h3>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
                 <!-- Body -->
-                <div class="modal-body p-0">
+                <div class="modal-body pt-2">
+                    <p class="text-muted extra-small mb-4">
+                        All filters can be combined with the search &amp; the filter chip above.
+                    </p>
+
                     <!-- SECTION 1: ASSESSMENT SCORE -->
-                    <div class="filter-divider">
-                        <div class="filter-section-title">
+                    <div class="learning-filter-group">
+                        <div class="fw-semibold text-dark small mb-2">
                             Assessment Score
                         </div>
-                        <div class="d-flex flex-wrap align-items-center radio-gap">
+                        <div class="d-flex flex-wrap align-items-center gap-3">
                             @foreach (['all' => 'All', '0_59' => '< 60', '60_79' => '60 – 79', '80_100' => '80 – 100'] as $value => $label)
-                                <label class="form-check form-check-inline mb-0 cursor-pointer">
+                                <label class="form-check mb-0 cursor-pointer">
                                     <input class="form-check-input" type="radio" name="assessmentModalScore" value="{{ $value }}" {{ $activeFilters['score'] === $value ? 'checked' : '' }}>
-                                    <span class="form-check-label text-dark fw-medium fs-4 ms-1">{{ $label }}</span>
+                                    <span class="form-check-label">{{ $label }}</span>
                                 </label>
                             @endforeach
                         </div>
                     </div>
 
+                    <hr class="my-3 text-light-subtle">
+
                     <!-- SECTION 2: BATCH -->
-                    <div class="filter-divider">
-                        <div class="filter-section-title">
-                            Batch
-                        </div>
-                        <select class="form-select custom-form-control w-100" name="assessmentModalBatch" id="assessmentModalBatch">
+                    <div class="learning-filter-group">
+                        <label class="form-label fw-semibold text-dark small mb-2" for="assessmentModalBatch">Batch</label>
+                        <select class="form-select rounded-3 w-100" name="assessmentModalBatch" id="assessmentModalBatch">
                             <option value="all" {{ $activeFilters['batch'] === 'all' ? 'selected' : '' }}>All</option>
                             @foreach ($assessmentBatches as $batch)
                                 <option value="{{ $batch }}" {{ (string) $activeFilters['batch'] === (string) $batch ? 'selected' : '' }}>Batch {{ $batch }}</option>
@@ -301,12 +203,12 @@
                         </select>
                     </div>
 
+                    <hr class="my-3 text-light-subtle">
+
                     <!-- SECTION 3: SORT BY -->
-                    <div class="filter-divider">
-                        <div class="filter-section-title">
-                            Sort By
-                        </div>
-                        <select class="form-select custom-form-control w-100" name="assessmentModalDate" id="assessmentModalDate">
+                    <div class="learning-filter-group">
+                        <label class="form-label fw-semibold text-dark small mb-2" for="assessmentModalDate">Sort By</label>
+                        <select class="form-select rounded-3 w-100" name="assessmentModalDate" id="assessmentModalDate">
                             <option value="all" {{ $activeFilters['date'] === 'all' ? 'selected' : '' }}>All</option>
                             <option value="newest" {{ $activeFilters['date'] === 'newest' ? 'selected' : '' }}>Newest</option>
                             <option value="oldest" {{ $activeFilters['date'] === 'oldest' ? 'selected' : '' }}>Oldest</option>
@@ -318,19 +220,21 @@
                         </select>
                     </div>
 
+                    <hr class="my-3 text-light-subtle">
+
                     <!-- SECTION 4: PERIOD -->
-                    <div class="mb-4">
-                        <div class="filter-section-title">
+                    <div class="learning-filter-group">
+                        <div class="fw-semibold text-dark small mb-2">
                             Period
                         </div>
                         <div class="row g-3">
                             <div class="col-12 col-md-6 mb-2 mb-md-0">
-                                <label class="form-label text-muted small mb-2 fw-medium" for="assessmentFilterFromDate" style="font-size: 13px;">From Date</label>
-                                <input type="date" class="form-control custom-form-control" id="assessmentFilterFromDate" name="assessmentFilterFromDate" value="{{ request('assessment_filter_from_date') }}">
+                                <label class="form-label text-muted small mb-1 fw-medium" for="assessmentFilterFromDate" style="font-size: 13px;">From Date</label>
+                                <input type="date" class="form-control rounded-3" id="assessmentFilterFromDate" name="assessmentFilterFromDate" value="{{ request('assessment_filter_from_date') }}">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label text-muted small mb-2 fw-medium" for="assessmentFilterToDate" style="font-size: 13px;">To Date</label>
-                                <input type="date" class="form-control custom-form-control" id="assessmentFilterToDate" name="assessmentFilterToDate" value="{{ request('assessment_filter_to_date') }}">
+                                <label class="form-label text-muted small mb-1 fw-medium" for="assessmentFilterToDate" style="font-size: 13px;">To Date</label>
+                                <input type="date" class="form-control rounded-3" id="assessmentFilterToDate" name="assessmentFilterToDate" value="{{ request('assessment_filter_to_date') }}">
                             </div>
                         </div>
                     </div>
@@ -372,12 +276,15 @@
                 </div>
 
                 <!-- Footer -->
-                <div class="modal-footer-custom">
-                    <button type="button" class="btn btn-outline-primary btn-learning-outline" id="assessmentModalReset">
-                        <i class="ti ti-refresh me-2"></i><span>Reset</span>
+                <div class="modal-footer border-top pt-3 d-flex justify-content-end align-items-center gap-2">
+                    <!-- Reset Button (Placed on the right next to Apply Filter) -->
+                    <button type="button" id="btn-reset-assessment-modal" class="btn btn-outline-secondary px-3 rounded-3 d-inline-flex align-items-center gap-1 assessment-modal-reset">
+                        <i class="ti ti-refresh fs-2"></i> Reset
                     </button>
-                    <button type="button" class="btn btn-primary btn-learning-primary assessment-apply-filter">
-                        <i class="ti ti-search me-2"></i><span>Apply Filter</span>
+
+                    <!-- Apply Filter Button -->
+                    <button type="submit" class="btn btn-primary px-4 rounded-3 d-inline-flex align-items-center gap-1 assessment-apply-filter" style="background-color: #003b6d; border-color: #003b6d;" data-bs-dismiss="modal">
+                        <i class="ti ti-search fs-2"></i> Apply Filter
                     </button>
                 </div>
             </div>
