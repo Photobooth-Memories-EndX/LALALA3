@@ -10,6 +10,7 @@ use App\Models\TrainingPlan;
 use App\Services\CertificateEligibilityService;
 use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningHourService;
+use App\Services\Learning\LearningRecordLearningHourService;
 use App\Support\DurationFormatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -37,7 +38,13 @@ class LearningRecordController extends Controller
     public function __construct(
         private readonly LearningHourService $learningHourService,
         private readonly CompletedPlaylistService $completedPlaylistService,
+        private readonly ?LearningRecordLearningHourService $recordLearningHourService = null,
     ) {
+    }
+
+    private function recordLhService(): LearningRecordLearningHourService
+    {
+        return $this->recordLearningHourService ?? app(LearningRecordLearningHourService::class);
     }
 
     /**
@@ -48,11 +55,17 @@ class LearningRecordController extends Controller
     {
         $userId = (int) Auth::id();
 
-        $completedPlaylists = $this->completedPlaylistService->forUser($userId);
+        $completedPlaylists = $this->completedPlaylistService->forLearningRecord($userId);
         $completedContents  = $this->getCompletedContents($userId);
         $cert               = $this->certificateContext($eligibilityService);
         $playlistContents   = $this->playlistContentsData($completedPlaylists);
         $firstContentSlugs  = $playlistContents->map(fn ($items) => $items->first()?->slug);
+        $playlistStartDates = \App\Models\PlaylistContentUser::where('user_id', $userId)
+            ->whereIn('trainingplan_id', $completedPlaylists->pluck('id'))
+            ->groupBy('trainingplan_id')
+            ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
+            ->pluck('min_created', 'trainingplan_id');
+        $playlistActualHours = $this->recordLhService()->calculatePlaylistsBatch($userId, $completedPlaylists);
 
         // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
         // berdasarkan record/completion terbaru (finish_date desc).
@@ -66,16 +79,25 @@ class LearningRecordController extends Controller
                 // (route playlist.user.view butuh pasangan slug playlist + content).
                 $firstContentSlugs,
                 $completedContents,
-                $playlistContents
+                $playlistContents,
+                $playlistStartDates,
+                $playlistActualHours
             )
         )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
         $rows = $this->applyRecordFilters($allRows);
+
+        $recordStats = [
+            'courseCompleted'    => $rows->where('row_kind', 'content')->count(),
+            'playlistCompleted'  => $rows->where('row_kind', 'playlist')->count(),
+            'totalLearningHours' => round((float) $rows->sum(fn (array $r) => (float) ($r['learning_hour_value'] ?? 0)), 2),
+        ];
 
         return view('user.learning.dashboard-partials.record', [
             'rows'             => $rows,
             // Section prioritas paling atas: certificate yang sudah memenuhi syarat.
             'certificateReady' => $this->certificateReady($cert, $completedPlaylists),
             'filterOptions'    => $this->recordFilterOptions($userId, $completedPlaylists, $allRows),
+            'recordStats'      => $recordStats,
         ]);
     }
 
@@ -84,23 +106,25 @@ class LearningRecordController extends Controller
      */
     private function applyRecordFilters(Collection $rows): Collection
     {
-        $search = mb_strtolower(trim((string) request('record_search', '')));
-        $type = (string) request('record_filter_type', 'all');
-        $classification = (string) request('record_filter_classification', 'all');
-        $playlist = (string) request('record_filter_playlist', 'all');
-        $year = (string) request('record_filter_year', 'all');
-        $month = (string) request('record_filter_month', 'all');
-        $program = (string) request('record_filter_program', 'all');
-        $learningHour = (string) request('record_filter_learning_hour', 'all');
-        $duration = (string) request('record_filter_duration', 'all');
-        $modalYear = (string) request('record_filter_modal_year', 'all');
-        $score = (string) request('record_filter_score', 'all');
-        $certificate = (string) request('record_filter_certificate', 'all');
-        $completion = (string) request('record_filter_completion', 'all');
-        $modalTypes = array_values(array_filter((array) request('record_filter_modal_type', []), fn ($value) => $value !== 'all'));
-        $learningStatuses = array_values(array_filter((array) request('record_filter_learning_status', [])));
-        $progressRanges = array_values(array_filter((array) request('record_filter_progress', [])));
-        $modalMonths = array_map('strval', array_values(array_filter((array) request('record_filter_modal_month', []))));
+        $search = mb_strtolower(trim((string) (request('record_search') ?? request('search') ?? request('q') ?? '')));
+        $type = (string) (request('record_filter_type') ?? request('type') ?? 'all');
+        $classification = (string) (request('record_filter_classification') ?? request('classification') ?? 'all');
+        $playlist = (string) (request('record_filter_playlist') ?? request('playlist') ?? 'all');
+        $year = (string) (request('record_filter_year') ?? request('year') ?? 'all');
+        $rawMonth = (string) (request('record_filter_month') ?? request('month') ?? 'all');
+        $month = \App\Support\LearningFilterHelper::resolveMonth($rawMonth);
+        $program = (string) (request('record_filter_program') ?? request('program') ?? 'all');
+        $learningHour = (string) (request('record_filter_learning_hour') ?? request('learningHour') ?? 'all');
+        $duration = (string) (request('record_filter_duration') ?? request('duration') ?? 'all');
+        $modalYear = (string) (request('record_filter_modal_year') ?? request('modalYear') ?? 'all');
+        $score = (string) (request('record_filter_score') ?? request('scoreTest') ?? 'all');
+        $certificate = (string) (request('record_filter_certificate') ?? request('certificate') ?? 'all');
+        $completion = (string) (request('record_filter_completion') ?? request('completion') ?? 'all');
+        $modalTypes = array_values(array_filter((array) (request('record_filter_modal_type') ?? request('modalTypes') ?? []), fn ($value) => $value !== 'all'));
+        $learningStatuses = array_values(array_filter((array) (request('record_filter_learning_status') ?? request('learningStatus') ?? [])));
+        $progressRanges = array_values(array_filter((array) (request('record_filter_progress') ?? request('progressRanges') ?? [])));
+        $modalMonths = array_map('strval', array_values(array_filter((array) (request('record_filter_modal_month') ?? request('modalMonths') ?? []))));
+        $quickFilter = (string) (request('record_quick') ?? request('quickFilter') ?? request('ongoing_mode') ?? 'all');
 
         $filtered = $rows->filter(function (array $row) use (
             $search,
@@ -119,10 +143,18 @@ class LearningRecordController extends Controller
             $modalTypes,
             $learningStatuses,
             $progressRanges,
-            $modalMonths
+            $modalMonths,
+            $quickFilter
         ) {
             $rowType = (string) ($row['type'] ?? '');
             $rowKind = (string) ($row['row_kind'] ?? '');
+
+            if ($quickFilter === 'content' && $rowKind === 'playlist') {
+                return false;
+            }
+            if ($quickFilter === 'playlist' && $rowKind !== 'playlist') {
+                return false;
+            }
             $finish = ! empty($row['finish_date']) ? Carbon::parse($row['finish_date']) : null;
             $progress = (int) ($row['progress'] ?? 0);
             $rowStatus = $progress >= 100 ? 'completed' : ($progress <= 0 ? 'not_started' : 'ongoing');
@@ -152,11 +184,14 @@ class LearningRecordController extends Controller
             if ($modalYear !== 'all' && (! $finish || (string) $finish->year !== $modalYear)) {
                 return false;
             }
-            if ($month !== 'all' && (! $finish || (string) $finish->month !== $month)) {
+            if ($month !== null && (! $finish || (int) $finish->month !== $month)) {
                 return false;
             }
-            if ($modalMonths !== [] && (! $finish || ! in_array((string) $finish->month, $modalMonths, true))) {
-                return false;
+            if ($modalMonths !== []) {
+                $modalMonthNums = array_filter(array_map([\App\Support\LearningFilterHelper::class, 'resolveMonth'], $modalMonths));
+                if (! $finish || ! in_array((int) $finish->month, $modalMonthNums, true)) {
+                    return false;
+                }
             }
             if ($program !== 'all' && $rowProgram !== $program) {
                 return false;
@@ -208,12 +243,27 @@ class LearningRecordController extends Controller
 
     private function recordTypeMatches(string $rowType, string $rowKind, string $filter): bool
     {
-        return match ($filter) {
-            'all' => true,
-            'Playlist' => $rowKind === 'playlist',
-            'Video' => in_array($rowType, ['Video', 'YouTube'], true),
-            default => $rowType === $filter,
-        };
+        $normalized = strtolower(trim($filter));
+        if ($normalized === 'all' || $normalized === '') {
+            return true;
+        }
+        if ($normalized === 'playlist' || $normalized === 'trainingplan') {
+            return $rowKind === 'playlist';
+        }
+        if ($normalized === 'content') {
+            return $rowKind === 'content';
+        }
+        if ($normalized === 'video') {
+            return in_array($rowType, ['Video', 'YouTube'], true);
+        }
+        if ($normalized === 'document') {
+            return strtolower($rowType) === 'document';
+        }
+        if ($normalized === 'mooc') {
+            return in_array(strtolower($rowType), ['mooc', 'youtube'], true);
+        }
+
+        return strtolower($rowType) === $normalized;
     }
 
     private function recordRangeMatches(float $value, string $range): bool
@@ -276,6 +326,15 @@ class LearningRecordController extends Controller
             );
         }
 
+        $allFilteredCertificates = (clone $query)
+            ->without(['user', 'certificateSetting'])
+            ->get(['certificate_type']);
+        $certificateStats = [
+            'total' => $allFilteredCertificates->count(),
+            'playlist' => $allFilteredCertificates->where('certificate_type', 'playlist')->count(),
+            'content' => $allFilteredCertificates->where('certificate_type', 'content')->count(),
+        ];
+
         $userCertificates = $query
             ->paginate(10, ['*'], 'certificate_page')
             ->withQueryString();
@@ -299,7 +358,7 @@ class LearningRecordController extends Controller
                 ->pluck('issuer_name'),
         ];
 
-        return view('user.learning.dashboard-partials.certificate', compact('userCertificates', 'filterOptions'));
+        return view('user.learning.dashboard-partials.certificate', compact('userCertificates', 'filterOptions', 'certificateStats'));
     }
 
     private function certificateListQuery(int $userId): Builder
@@ -335,10 +394,12 @@ class LearningRecordController extends Controller
 
     private function applyCertificateFilters(Builder $query): Builder
     {
-        $search = trim((string) request('certificate_search', ''));
-        $type = (string) request('certificate_filter_type', 'all');
-        $year = (string) request('certificate_filter_year', 'all');
-        $month = (string) request('certificate_filter_month', 'all');
+        $search = trim((string) (request('certificate_search') ?? request('search') ?? request('q') ?? ''));
+        $rawType = (string) (request('certificate_filter_type') ?? request('type') ?? 'all');
+        $type = strtolower(trim($rawType));
+        $year = (string) (request('certificate_filter_year') ?? request('year') ?? 'all');
+        $rawMonth = (string) (request('certificate_filter_month') ?? request('month') ?? 'all');
+        $month = \App\Support\LearningFilterHelper::resolveMonth($rawMonth);
         $sort = (string) request('certificate_sort', 'issued_desc');
 
         // Note: Certificate Expiration Status filtering is soft-disabled per advisor decision.
@@ -357,7 +418,7 @@ class LearningRecordController extends Controller
             })
             ->when(in_array($type, ['content', 'playlist', 'global'], true), fn ($q) => $q->where('certificate_type', $type))
             ->when($year !== 'all' && ctype_digit($year), fn ($q) => $q->whereYear('issued_at', (int) $year))
-            ->when($month !== 'all' && ctype_digit($month), fn ($q) => $q->whereMonth('issued_at', (int) $month))
+            ->when($month !== null, fn ($q) => $q->whereMonth('issued_at', $month))
             ->when(request()->filled('certificate_number'), fn ($q) => $q->where('certificate_number', 'like', '%' . trim((string) request('certificate_number')) . '%'))
             ->when(request()->filled('certificate_credential'), fn ($q) => $q->where('credential_id', 'like', '%' . trim((string) request('certificate_credential')) . '%'))
             ->when(request()->filled('certificate_participant'), fn ($q) => $q->where('participant_name', 'like', '%' . trim((string) request('certificate_participant')) . '%'))
@@ -412,7 +473,7 @@ class LearningRecordController extends Controller
             ->pluck('classification.classification_name');
 
         $years = (clone $base)
-            ->selectRaw('DISTINCT YEAR(content_users.updated_at) as y')
+            ->selectRaw('DISTINCT YEAR(COALESCE(content_users.completed_at, content_users.updated_at)) as y')
             ->orderByDesc('y')->pluck('y')
             ->merge($completedPlaylists->map(
                 fn ($p) => $p->last_finished_at ? Carbon::parse($p->last_finished_at)->year : null
@@ -424,7 +485,7 @@ class LearningRecordController extends Controller
             'classifications' => $classifications,
             'playlists'       => $completedPlaylists->map(fn ($p) => ['id' => $p->id, 'title' => $p->title])->values(),
             'years'           => $years,
-            'learningHours'   => $this->learningHourService->filterOptions($rows->pluck('learning_hour_bucket')),
+            'learningHours'   => $this->recordLhService()->filterOptions($rows->pluck('learning_hour_bucket')),
         ];
     }
 
@@ -438,11 +499,12 @@ class LearningRecordController extends Controller
     private function getCompletedContents(int $userId)
     {
         return ContentUser::with([
+                'content' => fn ($q) => $q->withTrashed(),
                 'content.classification',
                 // Playlist pemilik content — untuk badge di kolom Class (bebas N+1).
                 // Catatan: relasi assesment/scores TIDAK dimuat lagi — score kini
                 // diambil dari CertificateEligibilityResult (satu source of truth).
-                'content.trainingPlans' => fn ($q) => $q->select('trainingplan.id', 'trainingplan.title'),
+                'content.trainingPlans' => fn ($q) => $q->withTrashed()->select('trainingplan.id', 'trainingplan.title'),
             ])
             ->where('user_id', $userId)
             ->where('finish', '1')
@@ -479,9 +541,25 @@ class LearningRecordController extends Controller
             $playlists = $content->relationLoaded('trainingPlans')
                 ? $content->trainingPlans
                 : collect();
-            $learningHoursVal = ($content->learning_hours !== null && $content->learning_hours !== '')
-                ? (float) $content->learning_hours
-                : (float) $this->learningHourService->bucket($content->duration);
+            $actualHours = $this->recordLhService()->calculateContent($cu);
+            $formattedHours = $this->recordLhService()->formatHours($actualHours);
+
+            $isInactive = ($content->active !== 'Active') || !is_null($content->deleted_at);
+            $isExpired  = !$isInactive && $content->isExpired();
+
+            if ($isInactive) {
+                $accessStatus = 'INACTIVE';
+                $canOpen = false;
+                $modalMessage = 'This content is currently inactive.';
+            } elseif ($isExpired) {
+                $accessStatus = 'EXPIRED';
+                $canOpen = false;
+                $modalMessage = 'This content period has expired.';
+            } else {
+                $accessStatus = 'ACTIVE';
+                $canOpen = true;
+                $modalMessage = '';
+            }
 
             return [
                 'row_kind'        => 'content',
@@ -493,18 +571,18 @@ class LearningRecordController extends Controller
                 'playlist_names'  => $playlists->pluck('title')->filter()->values()->all(),
                 // Id playlist pemilik content — dipakai filter Playlist client-side.
                 'playlist_ids'    => $playlists->pluck('id')->values()->all(),
-                'type'            => $content->type ?? 'Content',
+                'type'            => \App\Support\ContentTypeHelper::label($content->type) ?: 'Content',
                 'classification'  => $content->classification->classification_name ?? '-',
                 'duration'        => DurationFormatter::formatForLearningRecord($content->duration),
                 'duration_sort'   => DurationFormatter::toSeconds($content->duration) ?? -1,
-                'learning_hour'   => $this->learningHourService->formatHours($learningHoursVal),
-                'learning_hour_bucket' => $learningHoursVal,
-                'learning_hour_value'  => $this->learningHourService->value($learningHoursVal),
+                'learning_hour'   => $formattedHours,
+                'learning_hour_bucket' => $actualHours,
+                'learning_hour_value'  => $actualHours,
                 'progress'        => (int) ($cu->progress ?? 0),
                 'min_progress'    => $setting ? (int) $setting->minimum_progress : 0,
                 'start_date'      => optional($cu->created_at)->format('Y-m-d H:i:s') ?? '',
                 'finish_date'     => (int) $cu->finish === 1
-                    ? (optional($cu->updated_at)->format('Y-m-d H:i:s') ?? '')
+                    ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
                     : '',
                 // Score & ambangnya dari CertificateEligibilityResult — angka
                 // yang sama dengan yang dipakai menentukan tombol Generate.
@@ -516,6 +594,9 @@ class LearningRecordController extends Controller
                 'cert_action_url' => route('certificate.generate', $cu->id),
                 'cert_is_form'    => false,
                 'playlist_items'  => [],
+                'access_status'   => $accessStatus,
+                'can_open'        => $canOpen,
+                'modal_message'   => $modalMessage,
             ];
         })->values();
     }
@@ -539,7 +620,6 @@ class LearningRecordController extends Controller
         return DB::table('trainingplandetail as tpd')
             ->join('content as c', 'c.id', '=', 'tpd.content_id')
             ->whereIn('tpd.trainingplan_id', $planIds)
-            ->whereNull('c.deleted_at')
             ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
             ->get(['tpd.trainingplan_id as plan_id', 'c.slug as slug'])
             ->groupBy('plan_id')
@@ -563,7 +643,6 @@ class LearningRecordController extends Controller
         return DB::table('trainingplandetail as tpd')
             ->join('content as c', 'c.id', '=', 'tpd.content_id')
             ->whereIn('tpd.trainingplan_id', $planIds)
-            ->whereNull('c.deleted_at')
             ->orderByRaw('CAST(tpd.content_order AS UNSIGNED) ASC')
             ->get([
                 'tpd.trainingplan_id as plan_id',
@@ -571,6 +650,11 @@ class LearningRecordController extends Controller
                 'c.title as title',
                 'c.slug as slug',
                 'c.type as type',
+                'c.active as active',
+                'c.has_deadline as has_deadline',
+                'c.from_date as from_date',
+                'c.to_date as to_date',
+                'c.deleted_at as deleted_at',
                 'tpd.content_order as content_order',
             ])
             ->groupBy('plan_id');
@@ -585,44 +669,76 @@ class LearningRecordController extends Controller
         array $cert,
         Collection $firstContentSlugs,
         Collection $contentUsers,
-        ?Collection $allPlaylistContents = null
+        ?Collection $allPlaylistContents = null,
+        ?Collection $playlistStartDates = null,
+        ?Collection $playlistActualHours = null
     ): Collection
     {
         $allPlaylistContents = $allPlaylistContents ?? $this->playlistContentsData($playlists);
 
-        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents) {
+        return $playlists->map(function (TrainingPlan $plan) use ($cert, $firstContentSlugs, $contentUsers, $allPlaylistContents, $playlistStartDates, $playlistActualHours) {
             $setting     = $cert['byPlaylist']->get($plan->id);
             $eligibility = $setting ? ($cert['eligibility'][$setting->id] ?? null) : null;
             $eligible    = $eligibility?->eligible ?? false;
 
-            $startDate = $contentUsers
-                ->filter(fn (ContentUser $cu) => $cu->content->trainingPlans->contains('id', $plan->id))
-                ->pluck('created_at')
-                ->filter()
-                ->min();
+            $startDate = $playlistStartDates?->get($plan->id)
+                ?? $contentUsers
+                    ->filter(fn (ContentUser $cu) => $cu->content && $cu->content->trainingPlans->contains('id', $plan->id))
+                    ->pluck('created_at')
+                    ->filter()
+                    ->min()
+                ?? $plan->created_at;
             $finishDate = $plan->last_finished_at
                 ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i:s')
                 : '';
 
+            $isPlanInactive = ($plan->active !== 'Active') || !is_null($plan->deleted_at);
+            $isPlanExpired  = !$isPlanInactive && $plan->isExpired();
+
+            if ($isPlanInactive) {
+                $accessStatus = 'INACTIVE';
+                $canOpen = false;
+                $modalMessage = 'This playlist is currently inactive.';
+            } elseif ($isPlanExpired) {
+                $accessStatus = 'EXPIRED';
+                $canOpen = false;
+                $modalMessage = 'This playlist period has expired.';
+            } else {
+                $accessStatus = 'ACTIVE';
+                $canOpen = true;
+                $modalMessage = '';
+            }
+
             $planContents = $allPlaylistContents->get($plan->id, collect());
             $firstSlug = $firstContentSlugs->get($plan->id) ?? $planContents->first()?->slug;
 
-            $playlistItems = $planContents->map(function ($item) use ($plan) {
+            $playlistItems = $planContents->map(function ($item) use ($plan, $isPlanInactive, $isPlanExpired) {
+                $itemInactive = ($item->active ?? 'Active') !== 'Active' || !is_null($item->deleted_at ?? null);
+                $itemHasDeadline = (bool) ($item->has_deadline ?? false);
+                $itemExpired = $itemHasDeadline && !empty($item->to_date) && now()->toDateString() > Carbon::parse($item->to_date)->format('Y-m-d');
+
+                $itemAccessStatus = ($isPlanInactive || $itemInactive) ? 'INACTIVE' : (($isPlanExpired || $itemExpired) ? 'EXPIRED' : 'ACTIVE');
+                $itemCanOpen = $itemAccessStatus === 'ACTIVE';
+                $itemModalMessage = $itemAccessStatus === 'INACTIVE' ? 'This content is currently inactive.' : ($itemAccessStatus === 'EXPIRED' ? 'This content period has expired.' : '');
+
                 return [
-                    'content_id' => $item->content_id,
-                    'title'      => $item->title ?? '-',
-                    'slug'       => $item->slug,
-                    'type'       => $item->type ?? 'Content',
-                    'url'        => ($plan->slug && $item->slug)
+                    'content_id'    => $item->content_id,
+                    'title'         => $item->title ?? '-',
+                    'slug'          => $item->slug,
+                    'type'          => \App\Support\ContentTypeHelper::label($item->type) ?: 'Content',
+                    'url'           => ($plan->slug && $item->slug)
                         ? route('playlist.user.view', [$plan->slug, $item->slug])
                         : null,
+                    'access_status' => $itemAccessStatus,
+                    'can_open'      => $itemCanOpen,
+                    'modal_message' => $itemModalMessage,
                 ];
             })->values()->all();
 
             $durationSeconds = (int) ($plan->total_duration_seconds ?? 0);
-            $learningHoursVal = ($plan->learning_hours !== null && $plan->learning_hours !== '')
-                ? (float) $plan->learning_hours
-                : (float) $this->learningHourService->bucketFromSeconds($durationSeconds);
+            $actualHours = $playlistActualHours?->get($plan->id)
+                ?? (float) $this->recordLhService()->calculatePlaylistSingle((int) Auth::id(), $plan);
+            $formattedHours = $this->recordLhService()->formatHours($actualHours);
 
             return [
                 'row_kind'        => 'playlist',
@@ -634,16 +750,16 @@ class LearningRecordController extends Controller
                     ? route('playlist.user.view', [$plan->slug, $firstSlug])
                     : null,
                 'playlist_items'  => $playlistItems,
-                'subtitle'        => (int) $plan->finished_items . ' / ' . (int) $plan->total_items . ' content selesai',
+                'subtitle'        => (int) ($plan->finished_items ?? 0) . ' / ' . (int) ($plan->total_items ?? count($playlistItems)) . ' content selesai',
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],
                 'type'            => 'Playlist',
                 'classification'  => '-',
                 'duration'        => $this->formatDurationSeconds($durationSeconds),
                 'duration_sort'   => $durationSeconds,
-                'learning_hour'   => $this->learningHourService->formatHours($learningHoursVal),
-                'learning_hour_bucket' => $learningHoursVal,
-                'learning_hour_value'  => $this->learningHourService->value($learningHoursVal),
+                'learning_hour'   => $formattedHours,
+                'learning_hour_bucket' => $actualHours,
+                'learning_hour_value'  => $actualHours,
                 'progress'        => 100,
                 'min_progress'    => $setting ? (int) ($setting->minimum_progress ?? 0) : 0,
                 'start_date'      => $startDate ? Carbon::parse($startDate)->format('Y-m-d H:i:s') : '',
@@ -660,6 +776,9 @@ class LearningRecordController extends Controller
                 'cert_priority'   => $eligible ? 1 : 2,
                 'cert_action_url' => $setting ? route('certificate.generate.setting', $setting) : null,
                 'cert_is_form'    => true,
+                'access_status'   => $accessStatus,
+                'can_open'        => $canOpen,
+                'modal_message'   => $modalMessage,
             ];
         })->values();
     }
@@ -797,7 +916,7 @@ class LearningRecordController extends Controller
                 // playlist -> content terakhir dalam playlist, global -> hasil assessment.
                 $finishedAt = null;
                 if ($setting->certificate_type === 'content') {
-                    $finishedAt = $eligibility->learning?->updated_at;
+                    $finishedAt = $eligibility->learning?->completed_at ?? $eligibility->learning?->updated_at;
                 } elseif ($setting->certificate_type === 'playlist') {
                     $raw        = $playlistFinishDates->get($setting->trainingplan_id);
                     $finishedAt = $raw ? Carbon::parse($raw) : null;

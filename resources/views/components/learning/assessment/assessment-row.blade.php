@@ -9,8 +9,9 @@
     $historyScores = collect();
     $currentUserId = Auth::id();
 
-    if (($assessment->scores ?? null) != null) {
-        $userScores = collect($assessment->scores)->filter(function ($scoreItem) use ($currentUserId) {
+    $scoresRelation = $assessment->scores ?? $assessment->assessmentResults ?? null;
+    if ($scoresRelation != null) {
+        $userScores = collect($scoresRelation)->filter(function ($scoreItem) use ($currentUserId) {
             return (string) ($scoreItem->user_id ?? '') === (string) $currentUserId;
         });
 
@@ -52,7 +53,8 @@
     $latestScores = $historyScores->take(5);
 
     $isCompleted = $finalResult != null;
-    $isPassed = $finalResult && $finalResult->pass;
+    $isPassed = $finalResult && (bool) ($finalResult->pass ?? ($finalResult->score !== null && $assessment->passing_grade !== null && (float) $finalResult->score >= (float) $assessment->passing_grade));
+    $isInactive = strtoupper(trim((string) ($assessment->status ?? ''))) === 'NOT';
 
     $rawType = strtolower((string) ($assessment->type ?? ''));
     $contentFor = strtolower((string) ($assessment->assasment_content_for ?? 'content'));
@@ -100,6 +102,10 @@
 
     $assessmentUrl = !empty($assessment->slug)
         ? route('assesment.user.view', $assessment->slug)
+        : null;
+
+    $resultUrl = !empty($assessment->slug)
+        ? route('assesment.user.result', $assessment->slug)
         : null;
 
     $filterStatus = $isPassed ? 'passed' : ($isCompleted ? 'failed' : 'not_started');
@@ -258,21 +264,32 @@
         />
     </td>
 
-    <td class="text-start align-middle small lh-sm" data-order="{{ $assessment->fromdate ? strtotime($assessment->fromdate) : 0 }}">
-        @if ($hasAccessPeriod && !empty($assessment->fromdate) && !empty($assessment->todate))
+    <td class="text-start align-middle small lh-sm" data-order="{{ $finalResult?->created_at ? (is_a($finalResult->created_at, '\DateTimeInterface') ? $finalResult->created_at->getTimestamp() : strtotime($finalResult->created_at)) : ($assessment->fromdate ? strtotime($assessment->fromdate) : 0) }}">
+        @if ($finalResult && $finalResult->created_at)
             <div>
-                <span class="text-muted fw-medium">From:</span> {{ date('d/m/y H:i', strtotime($assessment->fromdate)) }}
+                <span class="text-muted fw-medium">Taken:</span> {{ is_a($finalResult->created_at, '\DateTimeInterface') ? $finalResult->created_at->format('d/m/y H:i') : date('d/m/y H:i', strtotime((string) $finalResult->created_at)) }}
             </div>
-            <div>
-                <span class="text-muted fw-medium">To:</span> {{ date('d/m/y H:i', strtotime($assessment->todate)) }}
+        @endif
+
+        @if ($hasAccessPeriod && !empty($assessment->fromdate) && !empty($assessment->todate))
+            <div class="{{ $finalResult ? 'mt-1 text-muted' : '' }}">
+                <span class="{{ $finalResult ? '' : 'text-muted' }} fw-medium">{{ $finalResult ? 'Period:' : 'From:' }}</span> {{ date('d/m/y H:i', strtotime($assessment->fromdate)) }}
+                @if ($finalResult)
+                    – {{ date('d/m/y H:i', strtotime($assessment->todate)) }}
+                @else
+                    </div>
+                    <div>
+                        <span class="text-muted fw-medium">To:</span> {{ date('d/m/y H:i', strtotime($assessment->todate)) }}
+                    </div>
+                @endif
             </div>
         @endif
 
         @if ($hasTimeLimit)
-            <div class="{{ $hasAccessPeriod ? 'mt-1' : '' }}">
+            <div class="{{ $hasAccessPeriod || $finalResult ? 'mt-1' : '' }}">
                 <span class="badge bg-blue-lt text-blue"><i class="ti ti-clock me-1"></i>{{ $assessment->time_limit_minutes }} mins</span>
             </div>
-        @elseif (!$hasAccessPeriod)
+        @elseif (!$hasAccessPeriod && !$finalResult)
             <span class="text-muted">No Deadline</span>
         @endif
     </td>
@@ -313,9 +330,11 @@
     <td class="text-center align-middle">
         <x-learning.assessment.assessment-action
             :url="$assessmentUrl"
+            :result-url="$resultUrl"
             :is-completed="$isCompleted"
             :is-passed="$isPassed"
             :is-expired="$isExpired"
+            :is-inactive="$isInactive"
             :has-snapshot="$hasActiveDraft"
             :answered-count="$answeredCount"
             :total-count="$totalCount"

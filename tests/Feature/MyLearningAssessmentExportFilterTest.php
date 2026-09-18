@@ -7,6 +7,7 @@ use App\Models\AssesmentAssigned;
 use App\Models\AssesmentResult;
 use App\Models\Classification;
 use App\Models\Content;
+use App\Models\ContentUser;
 use App\Models\TrainingPlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -133,6 +134,15 @@ class MyLearningAssessmentExportFilterTest extends TestCase
             'assigned_type'        => 'user',
             'assigned_description' => 'Test',
         ]);
+        AssesmentResult::create([
+            'user_id'      => $this->user->id,
+            'assesment_id' => $this->assessmentPending->id,
+            'score'        => null,
+            'pass'         => 0,
+            'final'        => 0,
+            'batch'        => 1,
+            'user_answer'  => [],
+        ]);
     }
 
     public function test_export_endpoint_returns_download_and_applies_status_filter(): void
@@ -176,7 +186,7 @@ class MyLearningAssessmentExportFilterTest extends TestCase
             $this->assertStringContainsString('AssessmentPending', $array[1][1]);
             $this->assertSame('Playlist Assessment', $array[1][2]);
             $this->assertSame('Pending', $array[1][7]);
-            $this->assertSame('Start Test', $array[1][8]);
+            $this->assertSame('Continue', $array[1][8]);
             return true;
         });
     }
@@ -236,6 +246,59 @@ class MyLearningAssessmentExportFilterTest extends TestCase
             // 2026-06-30 is in the past, so it is expired
             $this->assertSame('Expired', $array[1][7]);
             $this->assertSame('Expired', $array[1][8]);
+            return true;
+        });
+    }
+
+    public function test_export_shows_start_test_for_untaken_eligible_assessment(): void
+    {
+        Excel::fake();
+
+        $contentUntaken = Content::create([
+            'title'             => 'Untaken Content ' . Str::random(5),
+            'type'              => 'video',
+            'classification_id' => $this->content->classification_id,
+            'active'            => 'Active',
+        ]);
+
+        ContentUser::create([
+            'user_id'    => $this->user->id,
+            'content_id' => $contentUntaken->id,
+            'progress'   => 100,
+            'finish'     => '1',
+        ]);
+
+        $tag = Str::random(6);
+        $assessmentUntaken = Assesment::create([
+            'title'                 => "AssessmentUntaken_{$tag}",
+            'type'                  => 'content',
+            'assasment_content_for' => 'content',
+            'content_id'            => $contentUntaken->id,
+            'status'                => 'OK',
+            'fromdate'              => now()->subDays(2)->format('Y-m-d H:i:s'),
+            'todate'                => now()->addDays(20)->format('Y-m-d H:i:s'),
+            'passing_grade'         => 70,
+        ]);
+
+        AssesmentAssigned::create([
+            'assesment_id'         => $assessmentUntaken->id,
+            'assigned_id'          => $this->user->id_emp,
+            'assigned_type'        => 'user',
+            'assigned_description' => 'Test',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('user.learning.assessment.export', [
+            'assessment_search' => "AssessmentUntaken_{$tag}",
+        ]));
+
+        $response->assertSuccessful();
+
+        Excel::assertDownloaded('Assessment_List_' . now()->format('Y-m-d') . '.xlsx', function ($export) use ($tag) {
+            $array = $export->array();
+            $this->assertCount(2, $array);
+            $this->assertStringContainsString("AssessmentUntaken_{$tag}", $array[1][1]);
+            $this->assertSame('Pending', $array[1][7]);
+            $this->assertSame('Start Test', $array[1][8]);
             return true;
         });
     }

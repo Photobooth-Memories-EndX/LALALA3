@@ -24,30 +24,60 @@ class CompletedPlaylistService
     /**
      * @return \Illuminate\Support\Collection<int, TrainingPlan>
      */
-    public function forUser(int $userId): Collection
-    {
-        $plans = TrainingPlan::with([
-                'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
-                'trainingplandetail.content' => fn ($q) => $q->where('active', 'Active'),
-            ])
-            ->select([
-                'trainingplan.id',
-                'trainingplan.title',
-                'trainingplan.slug',
-                'trainingplan.thumbnail',
-                'trainingplan.total_duration_seconds',
-                'trainingplan.learning_hours',
-                'trainingplan.active',
-                'trainingplan.created_at',
-            ])
-            ->where('active', 'Active')
-            ->get();
+    public function forUser(
+        int $userId,
+        bool $includeInactive = false,
+        bool $withTrashed = false
+    ): Collection {
+        $plansQuery = TrainingPlan::query();
+
+        if ($withTrashed) {
+            $plansQuery->withTrashed();
+        }
+
+        $plansQuery->with([
+            'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
+            'trainingplandetail.content' => function ($q) use ($includeInactive, $withTrashed) {
+                if ($withTrashed) {
+                    $q->withTrashed();
+                }
+                if (!$includeInactive) {
+                    $q->where('active', 'Active');
+                }
+            },
+        ])
+        ->select([
+            'trainingplan.id',
+            'trainingplan.title',
+            'trainingplan.slug',
+            'trainingplan.thumbnail',
+            'trainingplan.total_duration_seconds',
+            'trainingplan.learning_hours',
+            'trainingplan.active',
+            'trainingplan.has_deadline',
+            'trainingplan.from_date',
+            'trainingplan.to_date',
+            'trainingplan.created_at',
+            'trainingplan.deleted_at',
+        ]);
+
+        if (!$includeInactive) {
+            $plansQuery->where('active', 'Active');
+        }
+
+        $plans = $plansQuery->get();
 
         $completed = collect();
 
         foreach ($plans as $plan) {
             $validDetails = $plan->trainingplandetail->filter(
-                fn ($d) => !empty($d->content) && $d->content->exists && $d->content->active === 'Active'
+                fn ($d) =>
+                    !empty($d->content)
+                    && $d->content->exists
+                    && (
+                        $includeInactive
+                        || $d->content->active === 'Active'
+                    )
             );
 
             $total = $validDetails->count();
@@ -80,18 +110,20 @@ class CompletedPlaylistService
                 ->where('trainingplan_id', $plan->id)
                 ->whereIn('content_id', $contentIds)
                 ->where(fn ($q) => $q->where('finish', '1')->orWhere('progress', '>=', 100))
-                ->selectRaw('MAX(updated_at) as last_fin')
+                ->selectRaw('MAX(CASE WHEN completed_at IS NOT NULL AND completed_at <= updated_at THEN completed_at ELSE updated_at END) as last_fin, COUNT(*) as fin_count')
                 ->first();
 
             $cuTimestamps = ContentUser::where('user_id', $userId)
                 ->whereIn('content_id', $contentIds)
                 ->where(fn ($q) => $q->where('finish', '1')->orWhere('progress', '>=', 100))
-                ->selectRaw('MAX(updated_at) as last_fin')
+                ->selectRaw('MAX(CASE WHEN completed_at IS NOT NULL AND completed_at <= updated_at THEN completed_at ELSE updated_at END) as last_fin')
                 ->first();
 
             $lastFinished = $pcuTimestamps?->last_fin ?? $cuTimestamps?->last_fin ?? $plan->created_at;
             if ($pcuTimestamps?->last_fin && $cuTimestamps?->last_fin) {
-                $lastFinished = max($pcuTimestamps->last_fin, $cuTimestamps->last_fin);
+                $lastFinished = ((int) ($pcuTimestamps->fin_count ?? 0) >= $total)
+                    ? $pcuTimestamps->last_fin
+                    : max($pcuTimestamps->last_fin, $cuTimestamps->last_fin);
             }
             $plan->last_finished_at = $lastFinished;
 
@@ -99,5 +131,20 @@ class CompletedPlaylistService
         }
 
         return $completed->sortByDesc('last_finished_at')->values();
+    }
+
+    /**
+     * Dedicated historical resolver for Learning Record and Dashboard summary.
+     * Preserves completed playlists and their child modules regardless of active/inactive or soft-deleted status.
+     *
+     * @return \Illuminate\Support\Collection<int, TrainingPlan>
+     */
+    public function forLearningRecord(int $userId): Collection
+    {
+        return $this->forUser(
+            $userId,
+            includeInactive: true,
+            withTrashed: true
+        );
     }
 }

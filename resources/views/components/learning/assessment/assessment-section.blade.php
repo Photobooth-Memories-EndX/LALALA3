@@ -5,7 +5,7 @@
 
 @php
     $assessmentItems = collect($assessments ?? []);
-    $assessmentYears = collect($filterOptions['years'] ?? []);
+    $assessmentYears = collect($filterOptions['years'] ?? [])->unique()->values();
     $assessmentBatches = collect($filterOptions['batches'] ?? []);
     $assessmentPassingGrades = collect($filterOptions['passingGrades'] ?? []);
 
@@ -32,17 +32,26 @@
         default => $rawActiveType,
     };
 
+    $rawActiveStatus = request('assessment_filter_status', request('status', 'all'));
+    $normalizedStatus = match (strtolower(trim($rawActiveStatus))) {
+        'pending' => 'not_started',
+        default => $rawActiveStatus,
+    };
+
+    $rawActiveMonth = request('assessment_filter_month', request('month', 'all'));
+    $resolvedMonth = \App\Support\LearningFilterHelper::resolveMonth($rawActiveMonth) ?? $rawActiveMonth;
+
     $activeFilters = [
         'type' => $normalizedType,
-        'status' => request('assessment_filter_status', 'all'),
-        'year' => request('assessment_filter_year', 'all'),
-        'month' => request('assessment_filter_month', 'all'),
-        'batch' => request('assessment_filter_batch', 'all'),
-        'grade' => request('assessment_filter_grade', 'all'),
-        'score' => request('assessment_filter_score', 'all'),
-        'result' => request('assessment_filter_result', 'all'),
-        'date' => request('assessment_filter_date', 'all'),
-        'availability' => request('assessment_filter_availability', 'all'),
+        'status' => $normalizedStatus,
+        'year' => request('assessment_filter_year', request('year', 'all')),
+        'month' => (string) $resolvedMonth,
+        'batch' => request('assessment_filter_batch', request('batch', 'all')),
+        'grade' => request('assessment_filter_grade', request('grade', 'all')),
+        'score' => request('assessment_filter_score', request('score', 'all')),
+        'result' => request('assessment_filter_result', request('result', 'all')),
+        'date' => request('assessment_filter_date', request('date', 'all')),
+        'availability' => request('assessment_filter_availability', request('availability', 'all')),
     ];
     $activeAdvancedCount = collect($activeFilters)->only(['batch', 'grade', 'score', 'result', 'date', 'availability'])->filter(fn ($value) => $value !== 'all')->count();
 @endphp
@@ -110,7 +119,7 @@
                                        id="assessment-search-input"
                                        name="assessment_search"
                                        placeholder="Search assessment..."
-                                       value="{{ request('assessment_search', request('q')) }}"
+                                       value="{{ request('assessment_search', request('search', request('q'))) }}"
                                        autocomplete="off">
                             </div>
                             <div id="assessment-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 module-search-dropdown" style="display: none; max-height: 380px; overflow-y: auto; z-index: 1050; padding: 0;">

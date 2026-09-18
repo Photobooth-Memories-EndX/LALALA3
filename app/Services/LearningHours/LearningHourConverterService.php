@@ -4,18 +4,17 @@ namespace App\Services\LearningHours;
 
 class LearningHourConverterService
 {
-    public const STEP = 0.5;
-    public const BUCKET_SECONDS = 1800;
-
     public function __construct(
-        protected ?DurationParserService $parser = null
+        protected ?DurationParserService $parser = null,
+        protected ?ActualLearningHourCalculator $calculator = null
     ) {
         $this->parser ??= new DurationParserService();
+        $this->calculator ??= new ActualLearningHourCalculator();
     }
 
     /**
-     * Convert HH:MM:SS / MM:SS string or numeric seconds to learning hours float.
-     * Output is always a multiple of step (0, 0.5, 1, 1.5, 2, 2.5, etc.).
+     * Convert HH:MM:SS / MM:SS string or numeric seconds to actual learning hours float.
+     * Formula: round(total_seconds / 3600, 4) via ActualLearningHourCalculator.
      */
     public function convert(string|int|float|null $duration): float
     {
@@ -43,7 +42,8 @@ class LearningHourConverterService
     }
 
     /**
-     * Convert duration in total seconds to learning hours float.
+     * Convert duration in total seconds to actual learning hours float.
+     * Delegates to ActualLearningHourCalculator (round(seconds / 3600, 4)).
      */
     public function convertFromSeconds(?int $seconds): float
     {
@@ -53,18 +53,6 @@ class LearningHourConverterService
             return 0.0;
         }
 
-        $step = self::STEP;
-        $bucketSeconds = self::BUCKET_SECONDS;
-
-        try {
-            if (function_exists('config') && function_exists('app') && app()->bound('config')) {
-                $step = (float) config('learning_hours.step', self::STEP);
-                $bucketSeconds = (int) config('learning_hours.bucket_seconds', self::BUCKET_SECONDS);
-            }
-        } catch (\Throwable $e) {
-            // Fallback to constants
-        }
-
-        return (float) (ceil($seconds / $bucketSeconds) * $step);
+        return $this->calculator->calculate($seconds) ?? 0.0;
     }
 }

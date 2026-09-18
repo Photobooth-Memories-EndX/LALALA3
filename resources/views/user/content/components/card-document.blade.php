@@ -44,8 +44,8 @@
         $learningHoursVal = $durationSec > 0 ? round($durationSec / 3600, 1) : 0.5;
     }
     $learningHoursNum = (float) $learningHoursVal;
-    $learningHoursDisplay = ($learningHoursNum == (int) $learningHoursNum) ? (int) $learningHoursNum : $learningHoursNum;
-    $learningHoursText = $learningHoursDisplay . ' ' . ($learningHoursNum == 1 ? 'Hour' : 'Hours');
+    $learningHoursDisplay = number_format($learningHoursNum, 2);
+    $learningHoursText = $learningHoursDisplay . ' Hours';
 
     $authorName = $item->author ?? 'Training Team';
 

@@ -5,11 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
+use App\Services\LearningHours\PlaylistLearningHourService;
+use App\Services\PlaylistDurationService;
+use App\Support\ContentTypeHelper;
+use App\Support\DurationFormatter;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class TrainingPlanController extends Controller
@@ -106,6 +113,48 @@ class TrainingPlanController extends Controller
 
     public function index(Request $request)
     {
+        // Validate Duration and Learning Hours Range Filters
+        $validator = Validator::make($request->all(), [
+            'duration_from'       => ['nullable', 'regex:/^(\d+):([0-5]\d):([0-5]\d)$/'],
+            'duration_to'         => ['nullable', 'regex:/^(\d+):([0-5]\d):([0-5]\d)$/'],
+            'learning_hours_from' => ['nullable', 'numeric', 'min:0'],
+            'learning_hours_to'   => ['nullable', 'numeric', 'min:0'],
+        ], [
+            'duration_from.regex'         => 'The Duration From must be in the format HH:MM:SS.',
+            'duration_to.regex'           => 'The Duration To must be in the format HH:MM:SS.',
+            'learning_hours_from.numeric' => 'The Learning Hours From must be a valid number.',
+            'learning_hours_from.min'     => 'The Learning Hours From must be at least 0.',
+            'learning_hours_to.numeric'   => 'The Learning Hours To must be a valid number.',
+            'learning_hours_to.min'       => 'The Learning Hours To must be at least 0.',
+        ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $durationFrom = $request->input('duration_from');
+            $durationTo = $request->input('duration_to');
+            if ($durationFrom && $durationTo && preg_match('/^(\d+):([0-5]\d):([0-5]\d)$/', $durationFrom) && preg_match('/^(\d+):([0-5]\d):([0-5]\d)$/', $durationTo)) {
+                $fromSec = DurationFormatter::toSeconds($durationFrom);
+                $toSec = DurationFormatter::toSeconds($durationTo);
+                if ($fromSec !== null && $toSec !== null && $fromSec > $toSec) {
+                    $validator->errors()->add('duration_from', 'Duration From cannot be greater than Duration To.');
+                }
+            }
+
+            $lhFrom = $request->input('learning_hours_from');
+            $lhTo = $request->input('learning_hours_to');
+            if ($lhFrom !== null && $lhFrom !== '' && is_numeric($lhFrom) && $lhTo !== null && $lhTo !== '' && is_numeric($lhTo)) {
+                if ((float) $lhFrom > (float) $lhTo) {
+                    $validator->errors()->add('learning_hours_from', 'Learning Hours From cannot be greater than Learning Hours To.');
+                }
+            }
+        });
+
+        if ($validator->fails()) {
+            return redirect()->route('playlist.index', $request->except(['duration_from', 'duration_to', 'learning_hours_from', 'learning_hours_to']))
+                ->withErrors($validator)
+                ->withInput()
+                ->with('error', $validator->errors()->first());
+        }
+
         $query = TrainingPlan::query()->withCount('trainingplandetail');
 
         // Search Filter
@@ -185,7 +234,35 @@ class TrainingPlanController extends Controller
             });
         }
 
-        // Duration Filter
+        // Playlist Duration Range Filter (HH:MM:SS -> total_duration_seconds)
+        if ($request->filled('duration_from')) {
+            $fromSec = DurationFormatter::toSeconds($request->duration_from);
+            if ($fromSec !== null) {
+                $query->whereNotNull('total_duration_seconds')
+                      ->where('total_duration_seconds', '>=', $fromSec);
+            }
+        }
+        if ($request->filled('duration_to')) {
+            $toSec = DurationFormatter::toSeconds($request->duration_to);
+            if ($toSec !== null) {
+                $query->whereNotNull('total_duration_seconds')
+                      ->where('total_duration_seconds', '<=', $toSec);
+            }
+        }
+
+        // Learning Hours Range Filter (learning_hours)
+        if ($request->filled('learning_hours_from')) {
+            $lhFrom = (float) $request->learning_hours_from;
+            $query->whereNotNull('learning_hours')
+                  ->where('learning_hours', '>=', $lhFrom);
+        }
+        if ($request->filled('learning_hours_to')) {
+            $lhTo = (float) $request->learning_hours_to;
+            $query->whereNotNull('learning_hours')
+                  ->where('learning_hours', '<=', $lhTo);
+        }
+
+        // Legacy Duration Filter (fallback)
         if ($request->filled('duration') && $request->duration !== 'all') {
             if ($request->duration === 'under_10' || $request->duration === 'lt10') {
                 $query->where('total_duration_seconds', '<', 600);
@@ -293,29 +370,35 @@ class TrainingPlanController extends Controller
         ]);
     }
 
-    public function order($slug)
+    public function order(mixed $slug)
     {
-        $content = Content::whereNull('deleted_at')->orderBy('title')->get();
-        $trainingplan = TrainingPlan::with([
-            'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
-            'trainingplandetail.content'
-        ])->whereNull('deleted_at')->firstWhere('slug', $slug);
-        $trainingplandetail = TrainingPlanDetail::with('content')
+        $trainingplan = TrainingPlan::where('slug', $slug)->orWhere('id', $slug)->first();
+
+        if (!$trainingplan) {
+            abort(404, 'Playlist not found.');
+        }
+
+        $trainingplandetail = TrainingPlanDetail::with(['content' => function ($q) {
+                $q->withTrashed();
+            }])
             ->where('trainingplan_id', $trainingplan->id)
             ->orderByRaw('CAST(content_order AS UNSIGNED) ASC')
             ->get();
 
         return view('main.trainingplan.order', [
-            "title" =>  "Edit Playlist",
-            "slug" =>  $trainingplan->slug,
-            "trainingplandetail" =>  $trainingplandetail,
-            "content" =>  $content
+            'title'              => 'Order Playlist Content',
+            'slug'               => $trainingplan->slug,
+            'trainingplan'       => $trainingplan,
+            'trainingplandetail' => $trainingplandetail,
+            'isLocked'           => false,
         ]);
     }
 
     public function create()
     {
-        $content = Content::whereNull('deleted_at')->orderBy('title')->get();
+        $content = Content::whereNull('deleted_at')
+            ->orderBy('title')
+            ->get(['id', 'title', 'active', 'duration']);
 
         return view('main.trainingplan.create', [
             "title" =>  "Add Playlist",
@@ -326,13 +409,19 @@ class TrainingPlanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title'          => 'required',
-            'total_duration' => 'nullable',
-            'learning_hours' => 'nullable',
-            'thumbnail'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'has_deadline'   => 'nullable|boolean',
-            'from_date'      => 'nullable|date|required_if:has_deadline,1',
-            'to_date'        => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+            'title'                  => 'required',
+            'url_link'               => 'nullable|url',
+            'total_duration'         => ['nullable', 'regex:/^\d+:([0-5]\d):([0-5]\d)$/'],
+            'total_duration_seconds' => ['nullable', 'integer', 'min:0'],
+            'learning_hours'         => ['nullable', 'numeric', 'min:0'],
+            'thumbnail'              => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'has_deadline'           => 'nullable|boolean',
+            'from_date'              => 'nullable|date|required_if:has_deadline,1',
+            'to_date'                => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+        ], [
+            'total_duration.regex'   => 'The total duration format must be HH:MM:SS (e.g. 01:30:00).',
+            'learning_hours.numeric' => 'The learning hours must be a valid number.',
+            'learning_hours.min'     => 'The learning hours must be at least 0.',
         ]);
 
         DB::beginTransaction();
@@ -340,12 +429,14 @@ class TrainingPlanController extends Controller
         try {
             $hasDeadline = $request->boolean('has_deadline');
 
-            $parser = app(\App\Services\LearningHours\DurationParserService::class);
-            $durationInput = $request->input('total_duration', $request->input('total_duration_seconds'));
-            $totalSeconds = ($durationInput !== null && trim((string) $durationInput) !== '')
-                ? $parser->toSeconds((string) $durationInput)
-                : 0;
-            $learningHours = (float) $request->input('learning_hours', 0);
+            $totalSeconds = 0;
+            if ($request->filled('total_duration')) {
+                $totalSeconds = DurationFormatter::toSeconds($request->input('total_duration')) ?? 0;
+            } elseif ($request->filled('total_duration_seconds')) {
+                $totalSeconds = (int) $request->input('total_duration_seconds');
+            }
+
+            $learningHours = $request->filled('learning_hours') ? (float) $request->input('learning_hours') : 0.0;
 
             $trainingplan = new TrainingPlan();
             $trainingplan->title                  = $request->title;
@@ -395,7 +486,7 @@ class TrainingPlanController extends Controller
                 return response()->json([
                     'status'   => 200,
                     'message'  => 'Playlist successfully saved' . $addmessage,
-                    'redirect' => route('playlist.index')
+                    'redirect' => $request->action === 'draft' ? route('playlist.index') : route('playlist.edit', $trainingplan->slug)
                 ]);
             }
 
@@ -424,7 +515,9 @@ class TrainingPlanController extends Controller
             }
         }
 
-        $content = Content::whereNull('deleted_at')->orderBy('title')->get();
+        $content = Content::whereNull('deleted_at')
+            ->orderBy('title')
+            ->get(['id', 'title', 'active', 'duration']);
         $trainingplan = TrainingPlan::with([
             'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
             'trainingplandetail.content'
@@ -454,29 +547,137 @@ class TrainingPlanController extends Controller
             }
         }
 
+        // Handle Unpublish action immediately without requiring form field validation
+        if ($request->action === 'unpublish') {
+            $trainingplan->active = 'Inactive';
+            $trainingplan->save();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'   => 200,
+                    'message'  => 'Playlist unpublished successfully',
+                    'redirect' => route('playlist.index')
+                ]);
+            }
+
+            session()->flash('success', 'Playlist unpublished successfully');
+            return redirect()->route('playlist.edit', $trainingplan->slug);
+        }
+
+        // Active Playlist Security: reject general modification tampering while published
+        // Note: Content ordering is explicitly permitted for Active playlists (ACTIVE != ORDERING LOCKED)
+        if ($trainingplan->active === 'Active' && $request->savetype !== 'reorder') {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'  => 422,
+                    'success' => false,
+                    'message' => 'Cannot modify an active playlist. Please unpublish the playlist before making changes.',
+                ], 422);
+            }
+
+            return redirect()->route('playlist.edit', $trainingplan->slug)
+                ->with('warning', 'Cannot modify an active playlist. Please unpublish the playlist before making changes.');
+        }
+
         DB::beginTransaction();
 
         try {
             if ($request->savetype == "reorder") {
-                foreach ($request->order as $key => $value) {
-                    TrainingPlanDetail::where('id', $key)->update([
-                        'content_order' => $value
+                $rawOrder = $request->input('order');
+                if (!is_array($rawOrder) || empty($rawOrder)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'order' => ['The order data is required and must be an array.'],
                     ]);
                 }
+
+                // Retrieve all valid TrainingPlanDetail IDs for this playlist
+                $playlistDetails = TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)->get()->keyBy('id');
+                $validDetailIds = $playlistDetails->keys()->map(fn ($id) => (string) $id)->all();
+
+                $submittedDetailIds = array_map(fn ($k) => (string) $k, array_keys($rawOrder));
+                $submittedValues = array_values($rawOrder);
+
+                // Reject if foreign detail IDs exist or IDs from another playlist
+                $foreignIds = array_diff($submittedDetailIds, $validDetailIds);
+                if (!empty($foreignIds)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'order' => ['The submitted order contains invalid or foreign material IDs for this playlist.'],
+                    ]);
+                }
+
+                // Check for non-numeric, negative, or non-integer sequence values
+                foreach ($rawOrder as $detailId => $seq) {
+                    if (!is_numeric($seq) || (int) $seq < 0 || (int) $seq != $seq) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'order' => ['Each sequence order must be a non-negative integer.'],
+                        ]);
+                    }
+                }
+
+                // Check for duplicate sequence values
+                if (count($submittedValues) !== count(array_unique($submittedValues))) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'order' => ['Duplicate sequence values are not allowed.'],
+                    ]);
+                }
+
+                // Sort by sequence ascending so DOM order is respected
+                asort($rawOrder, SORT_NUMERIC);
+
+                // Sequential re-indexing (0, 1, 2, ...) to ensure 0-based gapless storage
+                $normalizedIndex = 0;
+                foreach ($rawOrder as $detailId => $seq) {
+                    TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)
+                        ->where('id', $detailId)
+                        ->update([
+                            'content_order' => (string) $normalizedIndex,
+                        ]);
+                    $normalizedIndex++;
+                }
+
+                DB::commit();
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'status'   => 200,
+                        'success'  => true,
+                        'message'  => 'Playlist order updated successfully.',
+                        'redirect' => route('manage.playlist.order', $trainingplan->fresh()->slug ?? $trainingplan->slug),
+                    ]);
+                }
+
+                session()->flash('success', 'Playlist order updated successfully.');
+                return redirect()->route('manage.playlist.order', $trainingplan->fresh()->slug ?? $trainingplan->slug);
             } else {
                 $request->validate([
-                    'title'          => 'required',
-                    'learning_hours' => 'nullable',
-                    'thumbnail'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-                    'has_deadline'   => 'nullable|boolean',
-                    'from_date'      => 'nullable|date|required_if:has_deadline,1',
-                    'to_date'        => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+                    'title'                  => 'required',
+                    'total_duration'         => ['nullable', 'regex:/^\d+:([0-5]\d):([0-5]\d)$/'],
+                    'total_duration_seconds' => ['nullable', 'integer', 'min:0'],
+                    'learning_hours'         => ['nullable', 'numeric', 'min:0'],
+                    'thumbnail'              => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+                    'has_deadline'           => 'nullable|boolean',
+                    'from_date'              => 'nullable|date|required_if:has_deadline,1',
+                    'to_date'                => 'nullable|date|required_if:has_deadline,1|after_or_equal:from_date',
+                ], [
+                    'total_duration.regex'   => 'The total duration format must be HH:MM:SS (e.g. 01:30:00).',
+                    'learning_hours.numeric' => 'The learning hours must be a valid number.',
+                    'learning_hours.min'     => 'The learning hours must be at least 0.',
                 ]);
 
                 $hasDeadline = $request->boolean('has_deadline');
 
-                // Handle thumbnail upload
+                // Handle thumbnail upload & removal
                 $thumbnailPath = $trainingplan->thumbnail;
+                if ($request->boolean('remove_thumbnail') && !$request->hasFile('thumbnail')) {
+                    $old = $trainingplan->thumbnail;
+                    if ($old
+                        && !Str::startsWith($old, ['http://', 'https://'])
+                        && File::exists(public_path('storage/' . $old))) {
+                        File::delete(public_path('storage/' . $old));
+                    }
+                    $thumbnailPath = null;
+                }
+
                 if ($request->hasFile('thumbnail')) {
                     $old = $trainingplan->thumbnail;
                     if ($old
@@ -494,32 +695,35 @@ class TrainingPlanController extends Controller
                     $thumbnailPath = 'files/training_plan/' . $filename;
                 }
 
-                $trainingplan->title          = $request->input('title');
-                $trainingplan->url_link       = $request->url_link;
-                $trainingplan->thumbnail      = $thumbnailPath;
-                $trainingplan->has_deadline   = $hasDeadline;
-                $trainingplan->from_date      = $hasDeadline ? $request->from_date : null;
-                $trainingplan->to_date        = $hasDeadline ? $request->to_date : null;
+                $totalSeconds = null;
+                if ($request->filled('total_duration')) {
+                    $totalSeconds = DurationFormatter::toSeconds($request->input('total_duration'));
+                } elseif ($request->filled('total_duration_seconds')) {
+                    $totalSeconds = (int) $request->input('total_duration_seconds');
+                }
+
+                $learningHours = null;
+                if ($request->filled('learning_hours')) {
+                    $learningHours = (float) $request->input('learning_hours');
+                }
+
+                $trainingplan->title        = $request->input('title');
+                $trainingplan->url_link     = $request->url_link;
+                $trainingplan->thumbnail    = $thumbnailPath;
+                $trainingplan->has_deadline = $hasDeadline;
+                $trainingplan->from_date    = $hasDeadline ? $request->from_date : null;
+                $trainingplan->to_date      = $hasDeadline ? $request->to_date : null;
+
+                if ($totalSeconds !== null) {
+                    $trainingplan->total_duration_seconds = $totalSeconds;
+                }
+                if ($learningHours !== null) {
+                    $trainingplan->learning_hours = $learningHours;
+                }
 
                 if ($request->action == "publish") {
                     $trainingplan->active = "Active";
-                } else if ($request->action == "unpublish") {
-                    $trainingplan->active = "Inactive";
-                    $trainingplan->save();
-
-                    DB::commit();
-
-                    if ($request->ajax() || $request->wantsJson()) {
-                        return response()->json([
-                            'status'   => 200,
-                            'message'  => 'Playlist unpublished successfully',
-                            'redirect' => route('playlist.index')
-                        ]);
-                    }
-
-                    session()->flash('success', 'Playlist updated successfully');
-                    return redirect()->route('playlist.edit', $trainingplan->slug);
-                } else if ($request->action == "draft") {
+                } else if ($request->action == "unpublish" || $request->action == "draft") {
                     $trainingplan->active = "Inactive";
                 }
 
@@ -543,10 +747,27 @@ class TrainingPlanController extends Controller
                         ]
                     );
                 }
+
+                // Ensure manual/submitted duration & learning hours set by admin on Update are preserved
+                $forceAttributes = [];
+                if ($totalSeconds !== null) {
+                    $forceAttributes['total_duration_seconds'] = $totalSeconds;
+                } else {
+                    app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
+                }
+
+                if ($learningHours !== null) {
+                    $forceAttributes['learning_hours'] = $learningHours;
+                } else {
+                    app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
+                }
+
+                if (!empty($forceAttributes)) {
+                    TrainingPlan::where('id', $trainingplan->id)->update($forceAttributes);
+                    $trainingplan->forceFill($forceAttributes);
+                }
             }
 
-            app(\App\Services\PlaylistDurationService::class)->refresh((int) $trainingplan->id);
-            app(\App\Services\LearningHours\PlaylistLearningHourService::class)->syncPlaylist($trainingplan);
             DB::commit();
 
             if ($request->ajax() || $request->wantsJson()) {
@@ -562,7 +783,10 @@ class TrainingPlanController extends Controller
             }
 
             session()->flash('success', 'Playlist updated successfully');
-            return redirect()->route('playlist.edit', $trainingplan->slug);
+            return redirect()->route('playlist.edit', $trainingplan->fresh()->slug ?? $trainingplan->slug);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error edit playlist: ' . $e->getMessage());
@@ -572,11 +796,89 @@ class TrainingPlanController extends Controller
         }
     }
 
-    public function destroy(TrainingPlan $trainingplan)
+    public function destroy(Request $request, mixed $trainingplan = null)
     {
-        $trainingplan->delete();
+        if (!$trainingplan instanceof TrainingPlan) {
+            $param = $trainingplan ?? $request->route('trainingplan');
+            if ($param instanceof TrainingPlan) {
+                $trainingplan = $param;
+            } else {
+                $trainingplan = TrainingPlan::withTrashed()->where('slug', $param)->orWhere('id', $param)->first();
+            }
+        }
 
-        return to_route('playlist.index')->with('success', 'Playlist successfully deleted');
+        if (!$trainingplan) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Playlist not found.',
+                ], 404);
+            }
+
+            return to_route('playlist.index')->with('warning', 'Playlist not found.');
+        }
+
+        if ($trainingplan->trashed()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This playlist has already been deleted.',
+                ], 404);
+            }
+
+            return to_route('playlist.index')->with('warning', 'This playlist has already been deleted.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $thumbnailPath = $trainingplan->thumbnail;
+
+            // Remove/detach TrainingPlanDetail records belonging to this playlist
+            TrainingPlanDetail::where('trainingplan_id', $trainingplan->id)->delete();
+
+            // Soft-delete the TrainingPlan
+            $trainingplan->delete();
+
+            DB::commit();
+
+            // Filesystem cleanup after successful DB commit
+            if ($thumbnailPath && !Str::startsWith($thumbnailPath, ['http://', 'https://'])) {
+                $rel = ltrim($thumbnailPath, '/');
+                $fullPath = public_path('storage/' . $rel);
+                if (File::exists($fullPath)) {
+                    try {
+                        File::delete($fullPath);
+                    } catch (\Throwable $fileEx) {
+                        Log::warning('Failed to delete thumbnail file for deleted playlist: ' . $fileEx->getMessage(), [
+                            'playlist_id' => $trainingplan->id,
+                            'path'        => $fullPath,
+                        ]);
+                    }
+                }
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Playlist deleted successfully.',
+                ]);
+            }
+
+            return to_route('playlist.index')->with('success', 'Playlist deleted successfully.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete playlist: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->with('warning', 'Failed to delete playlist: ' . $e->getMessage());
+        }
     }
 
     public function thumbnailTest()
@@ -625,6 +927,14 @@ class TrainingPlanController extends Controller
                     $trainingplan = TrainingPlan::where('slug', $param)->orWhere('id', $param)->first();
                 }
             }
+        }
+
+        if ($trainingplan && $trainingplan->exists && $trainingplan->active === 'Active') {
+            return response()->json([
+                'status'  => 422,
+                'success' => false,
+                'message' => 'Cannot synchronize duration or learning hours while playlist is active. Please unpublish first.',
+            ], 422);
         }
 
         if ($request->has('content')) {
@@ -681,4 +991,204 @@ class TrainingPlanController extends Controller
             'message'                => 'No playlist or contents to synchronize.',
         ]);
     }
+
+    public const DURATION_SYNC_LOCK_KEY = 'playlist_duration_sync_lock';
+    public const DURATION_SYNC_LOCK_TTL = 120; // 2 minutes
+
+    /**
+     * AJAX bulk / single playlist duration synchronization endpoint.
+     */
+    public function synchronizeDurations(Request $request, PlaylistDurationService $service): JsonResponse
+    {
+        $lock = Cache::lock(self::DURATION_SYNC_LOCK_KEY, self::DURATION_SYNC_LOCK_TTL);
+
+        if (!$lock->get()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Another playlist duration synchronization is currently in progress. Please wait until it completes.',
+            ], 429);
+        }
+
+        try {
+            @set_time_limit(300);
+
+            $ids = null;
+            if ($request->filled('ids')) {
+                $ids = (array) $request->input('ids');
+            } elseif ($request->filled('id')) {
+                $ids = [(int) $request->input('id')];
+            }
+
+            $result = $service->synchronizeAll($ids);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Playlist durations synchronized successfully.',
+                'data'    => $result,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Playlist duration synchronization failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to synchronize playlist durations. Please try again later.',
+            ], 500);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    public const LEARNING_HOURS_SYNC_LOCK_KEY = 'playlist_learning_hours_sync_lock';
+    public const LEARNING_HOURS_SYNC_LOCK_TTL = 300; // 5 minutes
+
+    /**
+     * AJAX bulk playlist learning hours synchronization endpoint.
+     */
+    public function synchronizeAllLearningHours(Request $request, PlaylistLearningHourService $service): JsonResponse|RedirectResponse
+    {
+        $lock = Cache::lock(self::LEARNING_HOURS_SYNC_LOCK_KEY, self::LEARNING_HOURS_SYNC_LOCK_TTL);
+
+        if (!$lock->get()) {
+            $message = 'Another playlist learning hours synchronization is currently in progress. Please wait until it completes.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 429);
+            }
+
+            return redirect()->back()->with('error', $message);
+        }
+
+        try {
+            @set_time_limit(300);
+
+            // Synchronize learning hours only without modifying total_duration_seconds
+            $result = $service->syncAll(false);
+
+            $message = "Playlist Learning Hours synchronized successfully.\n"
+                . "Updated: {$result['updated']}, Skipped: {$result['skipped']}, Total: {$result['total']}";
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Playlist Learning Hours synchronized successfully.',
+                    'data'    => [
+                        'total'            => $result['total'],
+                        'updated'          => $result['updated'],
+                        'skipped'          => $result['skipped'],
+                        'playlist_total'   => $result['total'],
+                        'playlist_updated' => $result['updated'],
+                        'playlist_skipped' => $result['skipped'],
+                    ],
+                ]);
+            }
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Throwable $e) {
+            Log::error('Playlist Learning Hours synchronization failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            $errorMessage = 'Failed to synchronize playlist learning hours: ' . $e->getMessage();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', $errorMessage);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * AJAX read-only playlist detail / quick view endpoint.
+     */
+    public function details(mixed $id): JsonResponse
+    {
+        $plan = TrainingPlan::with([
+            'trainingplandetail' => fn ($q) => $q->orderByRaw('CAST(content_order AS UNSIGNED) ASC'),
+            'trainingplandetail.content' => fn ($q) => $q->select('id', 'title', 'slug', 'duration', 'type', 'active', 'learning_hours')
+        ])->where(function ($q) use ($id) {
+            if (is_numeric($id)) {
+                $q->where('id', (int) $id);
+            } else {
+                $q->where('slug', $id);
+            }
+        })->first();
+
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Playlist not found.',
+            ], 404);
+        }
+
+        $deadlineText = 'No Deadline';
+        $isExpired = false;
+        if ($plan->has_deadline && $plan->from_date && $plan->to_date) {
+            $deadlineText = $plan->from_date->format('d/m/Y') . ' – ' . $plan->to_date->format('d/m/Y');
+            $isExpired = now()->gt($plan->to_date);
+        }
+
+        $materials = [];
+        $orderIndex = 1;
+        foreach ($plan->trainingplandetail as $detail) {
+            $content = $detail->content;
+            if (!$content || !$content->id || (method_exists($content, 'trashed') && $content->trashed())) {
+                continue;
+            }
+
+            $materials[] = [
+                'id'             => $content->id,
+                'order'          => (int) ($detail->content_order ?? $orderIndex),
+                'display_order'  => $orderIndex++,
+                'title'          => $content->title ?? '-',
+                'slug'           => $content->slug,
+                'type'           => $content->type ?? 'Other',
+                'type_label'     => ContentTypeHelper::label($content->type),
+                'duration'       => DurationFormatter::format($content->duration),
+                'duration_raw'   => $content->duration ?? '00:00:00',
+                'learning_hours' => $content->learning_hours !== null ? number_format((float) $content->learning_hours, 4, '.', '') . ' h' : '-',
+                'active'         => $content->active,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'                     => $plan->id,
+                'title'                  => $plan->title,
+                'slug'                   => $plan->slug,
+                'status'                 => $plan->active,
+                'active'                 => $plan->active,
+                'has_deadline'           => (bool) $plan->has_deadline,
+                'deadline'               => $deadlineText,
+                'deadline_formatted'     => $deadlineText,
+                'is_expired'             => $isExpired,
+                'from_date'              => $plan->from_date ? $plan->from_date->format('d/m/Y') : null,
+                'to_date'                => $plan->to_date ? $plan->to_date->format('d/m/Y') : null,
+                'url_link'               => $plan->url_link,
+                'thumbnail_url'          => $plan->thumbnail_url,
+                'created_at'             => $plan->created_at ? $plan->created_at->format('d/m/Y H:i') : null,
+                'created_at_formatted'   => $plan->created_at ? $plan->created_at->format('d/m/Y') : null,
+                'updated_at'             => $plan->updated_at ? $plan->updated_at->format('d/m/Y H:i') : null,
+                'total_duration'         => DurationFormatter::fromSeconds((int) ($plan->total_duration_seconds ?? 0)),
+                'total_duration_seconds' => (int) ($plan->total_duration_seconds ?? 0),
+                'learning_hours'         => number_format((float) ($plan->learning_hours ?? 0), 4, '.', '') . ' h',
+                'learning_hours_value'   => (float) ($plan->learning_hours ?? 0),
+                'materials_count'        => count($materials),
+                'materials'              => $materials,
+                'edit_url'               => route('playlist.edit', $plan->slug ?? $plan->id),
+                'order_url'              => route('manage.playlist.order', $plan->slug ?? $plan->id),
+            ],
+        ]);
+    }
 }
+

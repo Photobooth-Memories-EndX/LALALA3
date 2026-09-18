@@ -5,7 +5,7 @@
         <option value="">All Type</option>
         <option value="Document" {{ $filterType == 'Document' ? 'selected' : '' }}>Document</option>
         <option value="Video" {{ $filterType == 'Video' ? 'selected' : '' }}>Video</option>
-        <option value="YouTube" {{ $filterType == 'YouTube' ? 'selected' : '' }}>MOOC</option>
+        <option value="YouTube" {{ in_array($filterType, ['YouTube', 'MOOC'], true) ? 'selected' : '' }}>MOOC</option>
     </select>
 </div>
 

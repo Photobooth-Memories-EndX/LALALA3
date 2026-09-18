@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Classification;
 use App\Models\Content;
 use App\Models\ContentUser;
+use App\Models\PlaylistContentUser;
 use App\Models\TrainingPlan;
 use App\Models\TrainingPlanDetail;
 use App\Models\User;
@@ -208,7 +209,7 @@ class PlaylistAndContentStatusFilterTest extends TestCase
     {
         $plan = TrainingPlan::create([
             'title'  => 'Ordering Test Playlist',
-            'active' => 'Active',
+            'active' => 'Inactive',
         ]);
 
         $c1 = Content::create(['title' => 'Chapter Alpha', 'duration' => '00:10:00', 'active' => 'Active']);
@@ -245,5 +246,105 @@ class PlaylistAndContentStatusFilterTest extends TestCase
         $this->assertSame(2, (int) $freshDetails[2]->content_order);
 
         $this->assertEquals(['Chapter Gamma', 'Chapter Alpha', 'Chapter Beta'], $plan->fresh()->contents->pluck('title')->all());
+    }
+
+    /**
+     * POIN 6: SOFT-DELETED CONTENT DOES NOT APPEAR IN LEARNER SIDEBAR
+     * - Playlist contains multiple contents.
+     * - One referenced content is soft-deleted.
+     * - Learner sidebar renders without crashing (200 OK).
+     * - Soft-deleted content is not rendered as a blank or ghost item.
+     * - Remaining active contents are rendered properly.
+     * - Existing PlaylistContentUser progress records remain untouched.
+     */
+    public function test_soft_deleted_content_does_not_appear_in_learner_sidebar(): void
+    {
+        $plan = TrainingPlan::create([
+            'title'                  => 'Sidebar Soft-Delete Safety Plan',
+            'active'                 => 'Active',
+            'total_duration_seconds' => 3600,
+            'learning_hours'         => 1.0,
+        ]);
+
+        $c1 = Content::create([
+            'title'             => 'Active Lesson Alpha',
+            'type'              => 'Video',
+            'duration'          => '00:20:00',
+            'active'            => 'Active',
+            'classification_id' => $this->classification->id,
+        ]);
+
+        $c2 = Content::create([
+            'title'             => 'Doomed Soft-Deleted Lesson Beta',
+            'type'              => 'Video',
+            'duration'          => '00:20:00',
+            'active'            => 'Active',
+            'classification_id' => $this->classification->id,
+        ]);
+
+        $c3 = Content::create([
+            'title'             => 'Active Lesson Gamma',
+            'type'              => 'Video',
+            'duration'          => '00:20:00',
+            'active'            => 'Active',
+            'classification_id' => $this->classification->id,
+        ]);
+
+        $d1 = TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
+        $d2 = TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c2->id, 'content_order' => 1]);
+        $d3 = TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c3->id, 'content_order' => 2]);
+
+        // Pre-create user progress records for lessons
+        $pcu1 = PlaylistContentUser::create([
+            'user_id'         => $this->user->id,
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $c1->id,
+            'progress'        => 100,
+            'finish'          => '1',
+            'learning_status' => 'completed',
+        ]);
+
+        $pcu2 = PlaylistContentUser::create([
+            'user_id'         => $this->user->id,
+            'trainingplan_id' => $plan->id,
+            'content_id'      => $c2->id,
+            'progress'        => 50,
+            'finish'          => '0',
+            'learning_status' => 'in_progress',
+        ]);
+
+        // Soft-delete Content 2
+        $c2->delete();
+        $this->assertSoftDeleted('content', ['id' => $c2->id]);
+
+        // Access learner playlist view on Lesson 1
+        $response = $this->get(route('playlist.user.view', [$plan->slug, $c1->slug]));
+
+        $response->assertOk();
+
+        // Active lessons must be visible in the sidebar
+        $response->assertSee('Active Lesson Alpha');
+        $response->assertSee('Active Lesson Gamma');
+
+        // Soft-deleted lesson must NOT appear anywhere in the sidebar
+        $response->assertDontSee('Doomed Soft-Deleted Lesson Beta');
+
+        // Verify no empty/blank data-title or title attributes exist for missing content
+        $response->assertDontSee('data-title=""', false);
+        $response->assertDontSee('title=""', false);
+
+        // Verify existing progress in database remains completely intact
+        $freshPcu1 = $pcu1->fresh();
+        $this->assertEquals(100, $freshPcu1->progress);
+        $this->assertEquals('1', (string) $freshPcu1->finish);
+
+        $freshPcu2 = $pcu2->fresh();
+        $this->assertEquals(50, $freshPcu2->progress);
+        $this->assertEquals('0', (string) $freshPcu2->finish);
+
+        // Verify TrainingPlanDetail records remain in database (not deleted silently)
+        $this->assertDatabaseHas('trainingplandetail', ['id' => $d1->id]);
+        $this->assertDatabaseHas('trainingplandetail', ['id' => $d2->id]);
+        $this->assertDatabaseHas('trainingplandetail', ['id' => $d3->id]);
     }
 }

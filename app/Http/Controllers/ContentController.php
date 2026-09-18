@@ -248,7 +248,7 @@ class ContentController extends Controller
         }
 
         // Learning Hour Filter
-        $lhFilter = $request->get('learning_hour');
+        $lhFilter = $request->get('learning_hour') ?: ($request->get('filter_learning_hours') ?: $request->get('learning_hours'));
         if (filled($lhFilter) && $lhFilter !== 'all') {
             if ($lhFilter === 'lt1h') {
                 $query->where('content.learning_hours', '<', 1);
@@ -256,7 +256,19 @@ class ContentController extends Controller
                 $query->where('content.learning_hours', '>=', 1)->where('content.learning_hours', '<=', 3);
             } elseif ($lhFilter === 'gt3h') {
                 $query->where('content.learning_hours', '>', 3);
+            } elseif ($lhFilter === 'has_lh' || $lhFilter === 'has') {
+                $query->whereNotNull('content.learning_hours');
+            } elseif ($lhFilter === 'missing_lh' || $lhFilter === 'missing') {
+                $query->whereNull('content.learning_hours');
             }
+        }
+
+        // Min & Max Numeric Learning Hour Filter
+        if ($request->filled('min_learning_hour')) {
+            $query->where('content.learning_hours', '>=', (float) $request->min_learning_hour);
+        }
+        if ($request->filled('max_learning_hour')) {
+            $query->where('content.learning_hours', '<=', (float) $request->max_learning_hour);
         }
 
         // Sort Views (Radio in Modal)
@@ -297,6 +309,14 @@ class ContentController extends Controller
                 break;
             case 'title':
                 $query->orderBy('content.title');
+                break;
+            case 'lh_asc':
+            case 'learning_hours_asc':
+                $query->orderBy('content.learning_hours', 'asc');
+                break;
+            case 'lh_desc':
+            case 'learning_hours_desc':
+                $query->orderBy('content.learning_hours', 'desc');
                 break;
             default:
                 $query->orderByRaw("
@@ -459,19 +479,13 @@ class ContentController extends Controller
                 'required',
                 'numeric',
                 'min:0',
-                function ($attribute, $value, $fail) {
-                    if (fmod((float) $value * 2, 1.0) !== 0.0) {
-                        $fail('Learning Hours must be in increments of 0.5.');
-                    }
-                },
             ],
         ]);
 
-        if ($request->type == "YouTube") {
-            parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
-            // $ytid = "https://www.youtube.com/embed/" . $ytarray['v'];
-            $ytid = $ytarray['v'];
+        if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
+            [$linkToStore, $ytid] = $this->normalizeCourseLink($request->link);
         } else {
+            $linkToStore = null;
             $ytid = null;
         }
         $hasDeadline = $request->boolean('has_deadline');
@@ -504,7 +518,7 @@ class ContentController extends Controller
             'total_page'       => $documentTotalPages,
             'description'      => $request->description ?? '',
             'playlistonly'     => ($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N',
-            'link'             => $ytid,
+            'link'             => $linkToStore,
             'has_deadline'     => $hasDeadline,
             'from_date'        => $hasDeadline ? $request->from_date : null,
             'to_date'          => $hasDeadline ? $request->to_date : null,
@@ -516,11 +530,18 @@ class ContentController extends Controller
         if (!File::isDirectory($path)) {
             File::makeDirectory($path, 0777, true, true);
         }
-        if ($request->type == "YouTube") {
-            $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
-            $image = file_get_contents($url);
-            $thumbpath = public_path('storage/files/content/' . $newid . '/thumb.jpg');
-            file_put_contents($thumbpath, $image);
+        if (in_array($request->type, ['YouTube', 'MOOC'], true) && !empty($ytid)) {
+            try {
+                $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+                $context = stream_context_create(['http' => ['timeout' => 3]]);
+                $image = @file_get_contents($url, false, $context);
+                if ($image) {
+                    $thumbpath = public_path('storage/files/content/' . $newid . '/thumb.jpg');
+                    file_put_contents($thumbpath, $image);
+                }
+            } catch (\Throwable $e) {
+                // Ignore network failure or blocked YouTube
+            }
         }
         if ($request->has('documents')) {
             foreach ($request->documents as $doc) {
@@ -545,7 +566,7 @@ class ContentController extends Controller
                         'active' => 'Active'
                     ]);
                 $addmessage = " and published";
-            } else if ($request->type == "YouTube") {
+            } else if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
                 Content::where('id', $newid)
                     ->update([
                         'active' => 'Active'
@@ -638,18 +659,25 @@ class ContentController extends Controller
 
         $path = public_path('storage/files/content/' . $request->id . '');
         $arraydoc = array();
-        if ($request->type == "YouTube") {
-            parse_str(parse_url($request->link, PHP_URL_QUERY), $ytarray);
-            $ytid = $ytarray['v'];
+        if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
+            [$linkToStore, $ytid] = $this->normalizeCourseLink($request->link);
             Content::where('id', $request->contentid)
                 ->update(['file' => null]);
-            if ($request->action != 'unpublish') {
-                $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
-                $image = file_get_contents($url);
-                $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
-                file_put_contents($thumbpath, $image);
+            if ($request->action != 'unpublish' && !empty($ytid)) {
+                try {
+                    $url = "https://img.youtube.com/vi/$ytid/hqdefault.jpg";
+                    $context = stream_context_create(['http' => ['timeout' => 3]]);
+                    $image = @file_get_contents($url, false, $context);
+                    if ($image) {
+                        $thumbpath = public_path('storage/files/content/' . $request->contentid . '/thumb.jpg');
+                        file_put_contents($thumbpath, $image);
+                    }
+                } catch (\Throwable $e) {
+                    // Ignore network failure
+                }
             }
         } else {
+            $linkToStore = null;
             $ytid = null;
             $arraythumbnail = [];
             $targetDir = public_path('storage/files/content/' . $request->contentid);
@@ -707,7 +735,7 @@ class ContentController extends Controller
                 $active = "Active";
                 $redir = "-";
                 $redirmessage = "-";
-            } else if ($request->type == "YouTube") {
+            } else if (in_array($request->type, ['YouTube', 'MOOC'], true)) {
                 $message = "Content successfully saved and published";
                 $active = "Active";
                 $redir = "-";
@@ -771,7 +799,7 @@ class ContentController extends Controller
                 'description'      => $request->description ?? ($targetContent->description ?? ''),
                 'playlistonly'     => $request->has('playlistonly') ? (($request->playlistonly === 'Y' || $request->playlistonly === 1 || $request->playlistonly === '1') ? 'Y' : 'N') : ($targetContent->playlistonly ?? 'N'),
                 'active'           => $active,
-                'link'             => $ytid,
+                'link'             => $linkToStore,
                 'has_deadline'     => $hasDeadlineUpdate,
                 'from_date'        => $hasDeadlineUpdate ? $request->from_date : null,
                 'to_date'          => $hasDeadlineUpdate ? $request->to_date : null,
@@ -914,5 +942,108 @@ class ContentController extends Controller
             'learning_hours' => $content->learning_hours,
             'message' => 'Total page updated successfully.',
         ]);
+    }
+
+    /**
+     * AJAX Content Detail Modal Endpoint.
+     */
+    public function details(Request $request, $id): JsonResponse
+    {
+        $content = is_numeric($id)
+            ? Content::with(['classification', 'trainingPlans'])->find($id)
+            : Content::with(['classification', 'trainingPlans'])->where('slug', $id)->first();
+
+        if (!$content) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Content not found.',
+            ], 404);
+        }
+
+        $formattedDuration = DurationFormatter::format($content->duration);
+        $formattedLh = $content->learning_hours !== null
+            ? number_format((float) $content->learning_hours, 4, '.', '') . ' h'
+            : '-';
+
+        $playlists = $content->trainingPlans->map(function ($tp) {
+            return [
+                'id'    => $tp->id,
+                'title' => $tp->title ?? $tp->name,
+                'slug'  => $tp->slug,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'                       => $content->id,
+                'title'                    => $content->title,
+                'slug'                     => $content->slug,
+                'type'                     => $content->type,
+                'type_label'               => \App\Support\ContentTypeHelper::label($content->type),
+                'classification'           => $content->classification->classification_name ?? '-',
+                'active'                   => $content->active,
+                'status'                   => $content->active,
+                'date'                     => $content->date ? Carbon::parse($content->date)->format('d/m/Y') : '-',
+                'created_at'               => $content->created_at ? $content->created_at->format('d/m/Y H:i') : '-',
+                'updated_at'               => $content->updated_at ? $content->updated_at->format('d/m/Y H:i') : '-',
+                'duration'                 => $content->duration ?? '00:00:00',
+                'duration_formatted'       => $formattedDuration,
+                'learning_hours'           => $content->learning_hours !== null ? (float) $content->learning_hours : null,
+                'learning_hours_formatted' => $formattedLh,
+                'page_duration'            => (int) ($content->page_duration ?? 0),
+                'total_page'               => (int) ($content->total_page ?? 0),
+                'description'              => $content->description,
+                'author'                   => $content->author ?? '-',
+                'views'                    => (int) ($content->views ?? 0),
+                'views_formatted'          => number_format($content->views ?? 0),
+                'has_deadline'             => (bool) $content->has_deadline,
+                'from_date'                => $content->from_date ? $content->from_date->format('d/m/Y') : '-',
+                'to_date'                  => $content->to_date ? $content->to_date->format('d/m/Y') : '-',
+                'is_expired'               => $content->isExpired(),
+                'exam'                     => $content->exam,
+                'exam_label'               => $content->exam === 'OK' ? 'With Exam (OK)' : 'Without Exam (NOT)',
+                'playlistonly'             => $content->playlistonly,
+                'playlist_label'           => $content->playlistonly === 'Y' ? 'Playlist Only' : 'General Content',
+                'playlists'                => $playlists,
+                'edit_url'                 => route('content.edit', $content),
+            ],
+        ]);
+    }
+
+    /**
+     * Normalize link input for MOOC/YouTube content.
+     * Returns [$linkToStore, $youtubeId].
+     */
+    private function normalizeCourseLink(?string $link): array
+    {
+        $link = trim((string) $link);
+        if ($link === '') {
+            return [null, null];
+        }
+
+        // 1. YouTube URL with query param or short link
+        if (str_contains($link, 'youtube.com') || str_contains($link, 'youtu.be')) {
+            $parsedQuery = parse_url($link, PHP_URL_QUERY);
+            $ytid = null;
+            if ($parsedQuery) {
+                parse_str($parsedQuery, $ytarray);
+                $ytid = $ytarray['v'] ?? null;
+            }
+            if (!$ytid && preg_match('#youtu\.be/([A-Za-z0-9_-]{6,15})#', $link, $matches)) {
+                $ytid = $matches[1];
+            }
+            if ($ytid) {
+                return [$ytid, $ytid];
+            }
+        }
+
+        // 2. Plain YouTube ID (legacy 11-char ID without slashes or colons)
+        if (!str_contains($link, '/') && !str_contains($link, ':') && strlen($link) === 11) {
+            return [$link, $link];
+        }
+
+        // 3. External URL: store full URL, no YouTube ID
+        return [$link, null];
     }
 }

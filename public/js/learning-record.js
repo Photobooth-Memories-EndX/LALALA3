@@ -123,13 +123,47 @@ function initLearningRecord() {
 
     function restoreRecordFiltersFromUrl() {
         var params = new URLSearchParams(window.location.search);
-        $('#recordSearch').val(params.get('record_search') || '');
+        var searchVal = params.get('record_search') || params.get('search') || '';
+        $('#recordSearch').val(searchVal);
         var requestedSort = String(params.get('record_sort') || '');
         var requestedDirection = String(params.get('record_sort_direction') || '');
         if ($table.find('th[data-sort-key="' + requestedSort + '"]').length
             && (requestedDirection === 'asc' || requestedDirection === 'desc')) {
             sortKey = requestedSort;
             sortDir = requestedDirection;
+        }
+
+        var urlQuick = params.get('record_quick') || params.get('quickFilter');
+        if (urlQuick && ['all', 'content', 'playlist'].indexOf(urlQuick) !== -1) {
+            setQuickPill(urlQuick);
+        }
+
+        var urlType = params.get('record_filter_type') || params.get('type');
+        if (urlType) {
+            $('#recordFilterType, #hidden_record_filter_type').val(urlType);
+            var $typeItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_type"][data-value="' + urlType + '"]');
+            if ($typeItem.length) updateQuickDropdown($typeItem);
+        }
+
+        var urlClassification = params.get('record_filter_classification') || params.get('classification');
+        if (urlClassification) {
+            $('#recordFilterClassification, #hidden_record_filter_classification').val(urlClassification);
+            var $classItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_classification"][data-value="' + urlClassification + '"]');
+            if ($classItem.length) updateQuickDropdown($classItem);
+        }
+
+        var urlYear = params.get('record_filter_year') || params.get('year') || params.get('record_filter_modal_year');
+        if (urlYear) {
+            $('#recordFilterYear, #hidden_record_filter_year').val(urlYear);
+            var $yearItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_year"][data-value="' + urlYear + '"]');
+            if ($yearItem.length) updateQuickDropdown($yearItem);
+        }
+
+        var urlMonth = params.get('record_filter_month') || params.get('month');
+        if (urlMonth) {
+            $('#recordFilterMonth, #hidden_record_filter_month').val(urlMonth);
+            var $monthItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_month"][data-value="' + urlMonth + '"]');
+            if ($monthItem.length) updateQuickDropdown($monthItem);
         }
 
         setCheckedValues('recordModalType[]', queryArray(params, recordArrayParams.modalTypes), 'all');
@@ -180,6 +214,10 @@ function initLearningRecord() {
             });
         });
 
+        if (quickFilter && quickFilter !== 'all') {
+            params.set('record_quick', quickFilter);
+        }
+
         params.delete('record_page');
         if (sortKey && (sortDir === 'asc' || sortDir === 'desc')) {
             params.set('record_sort', sortKey);
@@ -200,13 +238,60 @@ function initLearningRecord() {
         var params = new URLSearchParams();
         Object.keys(state).forEach(function (key) {
             if (Array.isArray(state[key])) {
-                state[key].forEach(function (value) { params.append(key + '[]', value); });
+                state[key].forEach(function (value) {
+                    params.append(key + '[]', value);
+                    if (recordArrayParams[key]) {
+                        params.append(recordArrayParams[key] + '[]', value);
+                    }
+                });
             } else if (state[key] !== 'all' && state[key] !== '') {
                 params.set(key, state[key]);
+                if (recordScalarParams[key]) {
+                    params.set(recordScalarParams[key], state[key]);
+                }
             }
         });
+        if (state.search) {
+            params.set('search', state.search);
+            params.set('record_search', state.search);
+        }
+        if (quickFilter && quickFilter !== 'all') {
+            params.set('quickFilter', quickFilter);
+            params.set('record_quick', quickFilter);
+        }
         var baseUrl = $('#recordDownloadExcel').data('export-url') || '/my-learning/learning-record/export';
         $('#recordDownloadExcel').attr('href', baseUrl + (params.toString() ? '?' + params.toString() : ''));
+    }
+
+    function updateSummaryCards(matched) {
+        var courseCount = 0;
+        var playlistCount = 0;
+        var totalHours = 0;
+
+        $.each(matched, function (_, tr) {
+            var $tr = $(tr);
+            var kind = $tr.attr('data-kind') || $tr.data('kind');
+            if (kind === 'content') {
+                courseCount++;
+            } else if (kind === 'playlist') {
+                playlistCount++;
+            }
+            var lh = parseFloat($tr.attr('data-learning-hour') || $tr.attr('data-sort-learning-hour') || 0);
+            if (!isNaN(lh) && lh > 0) {
+                totalHours += lh;
+            }
+        });
+
+        var formattedHours = (Math.round(totalHours * 100) / 100).toFixed(2);
+
+        $('[data-record-stat="hours"], [data-learning-hero="record"] .learning-hero-ds-card--primary .learning-hero-ds-value')
+            .text(formattedHours);
+
+        $('[data-record-stat="course"], [data-learning-hero="record"] .learning-hero-ds-card--secondary .learning-hero-ds-value')
+            .text(courseCount.toLocaleString());
+
+        $('[data-record-stat="playlist"], [data-learning-hero="record"] .learning-hero-ds-card--success .learning-hero-ds-value')
+            .text(playlistCount.toLocaleString());
     }
 
     function activeRows() {
@@ -240,12 +325,39 @@ function initLearningRecord() {
     function selectedTypeMatches(d, selectedTypes) {
         if (!selectedTypes || !selectedTypes.length || selectedTypes.indexOf('all') !== -1) return true;
 
-        var rowType = String(d.type || '');
+        var rowType = String(d.type || '').toLowerCase();
+        var rowKind = String(d.kind || '').toLowerCase();
         return selectedTypes.some(function (type) {
-            if (type === 'Playlist') return String(d.kind) === 'playlist';
-            if (type === 'Video') return rowType === 'Video' || rowType === 'YouTube';
-            return rowType === type;
+            var t = String(type).toLowerCase();
+            if (t === 'playlist') return rowKind === 'playlist';
+            if (t === 'content' || t === 'course') return rowKind === 'content';
+            if (t === 'video') return rowType === 'video' || rowType === 'youtube';
+            if (t === 'document') return rowType === 'document';
+            if (t === 'mooc') return rowType === 'mooc' || rowType === 'youtube';
+            return rowType === t;
         });
+    }
+
+    function resolveMonthNumber(val) {
+        if (!val || val === 'all') return null;
+        var str = String(val).trim().toLowerCase();
+        var n = parseInt(str, 10);
+        if (!isNaN(n) && n >= 1 && n <= 12) return n;
+        var months = {
+            january: 1, jan: 1,
+            february: 2, feb: 2,
+            march: 3, mar: 3,
+            april: 4, apr: 4,
+            may: 5,
+            june: 6, jun: 6,
+            july: 7, jul: 7,
+            august: 8, aug: 8,
+            september: 9, sep: 9, sept: 9,
+            october: 10, oct: 10,
+            november: 11, nov: 11,
+            december: 12, dec: 12
+        };
+        return months[str] || null;
     }
 
     function dateMatches(raw, mode) {
@@ -281,10 +393,16 @@ function initLearningRecord() {
         var progress = rowNumber($row, 'sort-progress', 0);
         var finish = $row.attr('data-sort-finish') || '';
 
-        if (f.year !== 'all' && String(d.year) !== f.year) return false;
-        if (f.modalYear !== 'all' && String(d.year) !== f.modalYear) return false;
-        if (f.month !== 'all' && String(d.month) !== f.month) return false;
-        if (f.modalMonths.length && f.modalMonths.indexOf(String(d.month)) === -1) return false;
+        if (f.year !== 'all' && String(d.year) !== String(f.year)) return false;
+        if (f.modalYear !== 'all' && String(d.year) !== String(f.modalYear)) return false;
+        if (f.month !== 'all') {
+            var targetMonth = resolveMonthNumber(f.month);
+            if (targetMonth !== null && parseInt(d.month, 10) !== targetMonth) return false;
+        }
+        if (f.modalMonths.length) {
+            var targetModalMonths = f.modalMonths.map(resolveMonthNumber).filter(Boolean);
+            if (targetModalMonths.length && targetModalMonths.indexOf(parseInt(d.month, 10)) === -1) return false;
+        }
         if (f.duration !== 'all' && !rangeMatches(durationSeconds, f.duration)) return false;
         if (f.learningHour !== 'all' && !rangeMatches(learningHour, f.learningHour)) return false;
         if (f.program !== 'all' && String(d.learningProgram) !== f.program) return false;
@@ -307,10 +425,19 @@ function initLearningRecord() {
     // baris Content — Playlist tidak pernah ikut dievaluasi.
     function contentMatches($row, f) {
         var d = $row.data();
+        var rowType = String(d.type || '').toLowerCase();
+        var rowKind = String(d.kind || '').toLowerCase();
+        var filterType = String(f.type || '').toLowerCase();
 
+        if (rowKind !== 'content') return false;
         if (!selectedTypeMatches(d, f.modalTypes)) return false;
-        if (f.type !== 'all' && String(d.type) !== f.type) return false;
-        if (f.classification !== 'all' && String(d.classification) !== f.classification) return false;
+        if (filterType !== 'all' && filterType !== '' && filterType !== 'content' && filterType !== 'course') {
+            if (filterType === 'video' && !(rowType === 'video' || rowType === 'youtube')) return false;
+            if (filterType === 'document' && rowType !== 'document') return false;
+            if (filterType === 'mooc' && !(rowType === 'mooc' || rowType === 'youtube')) return false;
+            if (filterType !== 'video' && filterType !== 'document' && filterType !== 'mooc' && rowType !== filterType) return false;
+        }
+        if (f.classification !== 'all' && String(d.classification).toLowerCase() !== String(f.classification).toLowerCase()) return false;
 
         return commonMatches($row, d, f);
     }
@@ -319,7 +446,9 @@ function initLearningRecord() {
     // baris Content tidak pernah ikut dievaluasi.
     function playlistMatches($row, f) {
         var d = $row.data();
+        var rowKind = String(d.kind || '').toLowerCase();
 
+        if (rowKind !== 'playlist') return false;
         if (!selectedTypeMatches(d, f.modalTypes)) return false;
         if (f.playlist !== 'all' && String(d.playlists || '').split(',').indexOf(f.playlist) === -1) {
             return false;
@@ -330,13 +459,21 @@ function initLearningRecord() {
 
     function allMatches($row, f) {
         var d = $row.data();
-        var rowType = String(d.type || '');
+        var rowType = String(d.type || '').toLowerCase();
+        var rowKind = String(d.kind || '').toLowerCase();
+        var filterType = String(f.type || '').toLowerCase();
 
         if (!selectedTypeMatches(d, f.modalTypes)) return false;
-        if (f.type === 'Playlist' && String(d.kind) !== 'playlist') return false;
-        if (f.type === 'Video' && !(rowType === 'Video' || rowType === 'YouTube')) return false;
-        if (f.type === 'Document' && rowType !== 'Document') return false;
-        if (f.classification !== 'all' && String(d.classification) !== f.classification) return false;
+        if (filterType !== 'all' && filterType !== '') {
+            if (filterType === 'playlist' && rowKind !== 'playlist') return false;
+            if ((filterType === 'content' || filterType === 'course') && rowKind !== 'content') return false;
+            if (filterType === 'video' && !(rowType === 'video' || rowType === 'youtube')) return false;
+            if (filterType === 'document' && rowType !== 'document') return false;
+            if (filterType !== 'playlist' && filterType !== 'content' && filterType !== 'course' && filterType !== 'video' && filterType !== 'document') {
+                if (rowType !== filterType) return false;
+            }
+        }
+        if (f.classification !== 'all' && String(d.classification).toLowerCase() !== String(f.classification).toLowerCase()) return false;
 
         if (f.playlist !== 'all' && String(d.playlists || '').split(',').indexOf(f.playlist) === -1) {
             return false;
@@ -469,6 +606,9 @@ function initLearningRecord() {
             ? playlistMatches
             : (quickFilter === 'content' ? contentMatches : allMatches);
         var matched = activeRows().filter(function (tr) { return matcher($(tr), f); });
+
+        updateSummaryCards(matched);
+        updateExportUrl();
 
         if (f.activitySort === 'newest' || f.activitySort === 'oldest' || f.activitySort === 'recent') {
             matched.sort(function (a, b) {
@@ -904,6 +1044,37 @@ function initLearningRecord() {
         });
     }
 
+    function initBlockedContentModal() {
+        $(document).off('click.learningRecordBlocked', '.learning-record-blocked-trigger')
+            .on('click.learningRecordBlocked', '.learning-record-blocked-trigger', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var $el = $(this);
+                var status = String($el.data('status') || 'INACTIVE').toUpperCase();
+                var message = $el.data('message') || (status === 'EXPIRED' ? 'This content period has expired.' : 'This content is currently inactive.');
+                var title = $el.data('title') || 'Course';
+
+                var $modal = $('#learningRecordBlockedModal');
+                if ($modal.length) {
+                    $modal.find('.blocked-modal-title').text(status === 'EXPIRED' ? 'Content Period Expired' : 'Content Inactive');
+                    $modal.find('.blocked-course-title').text(title);
+                    $modal.find('.blocked-modal-message').text(message);
+
+                    if (typeof $ !== 'undefined' && $.fn && typeof $.fn.modal === 'function') {
+                        $modal.modal('show');
+                    } else if (window.bootstrap && window.bootstrap.Modal) {
+                        var instance = window.bootstrap.Modal.getInstance($modal[0]) || new window.bootstrap.Modal($modal[0]);
+                        instance.show();
+                    } else {
+                        $modal.addClass('show').css('display', 'block');
+                        $('body').addClass('modal-open');
+                    }
+                } else {
+                    alert(message);
+                }
+            });
+    }
+
     restoreRecordFiltersFromUrl();
     applyModeVisibility(false);
     updateFilterBadge();
@@ -913,5 +1084,6 @@ function initLearningRecord() {
     }
     updateExportUrl();
     initCourseHoverPreview();
+    initBlockedContentModal();
     render();
 }

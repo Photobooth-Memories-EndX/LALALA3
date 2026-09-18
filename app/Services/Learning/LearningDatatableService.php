@@ -76,14 +76,15 @@ class LearningDatatableService
             }
         }
 
-        // 2. Program Type Filter Pushdown
-        $programType = $filters['program_type'] ?? ($filters['program'] ?? null);
+        // 2. Program Type / Status Filter Pushdown
+        $programType = $filters['program_type'] ?? ($filters['program'] ?? ($filters['status_type'] ?? null));
         if (filled($programType) && $programType !== 'all') {
-            if ($programType === 'mandatory' || $programType === 'optional') {
-                $cuSelect->where('cu.status', $programType);
+            $programTypeStr = strtolower(trim((string) $programType));
+            if (in_array($programTypeStr, ['mandatory', 'optional'], true)) {
+                $cuSelect->where('cu.status', $programTypeStr);
                 $pcuSelect->whereRaw('1 = 0');
-            } else {
-                $cuSelect->where('cu.status', $programType);
+            } elseif ($programTypeStr === 'playlist') {
+                $cuSelect->whereRaw('1 = 0');
             }
         }
 
@@ -97,6 +98,18 @@ class LearningDatatableService
         // 4. Date Range Filter Pushdown
         $fromDate = $filters['from_date'] ?? ($filters['date_from'] ?? null);
         $toDate = $filters['to_date'] ?? ($filters['date_to'] ?? null);
+        if (filled($fromDate)) {
+            try {
+                $fromDate = Carbon::parse(str_replace('/', '-', $fromDate))->format('Y-m-d');
+            } catch (\Throwable $e) {
+            }
+        }
+        if (filled($toDate)) {
+            try {
+                $toDate = Carbon::parse(str_replace('/', '-', $toDate))->format('Y-m-d');
+            } catch (\Throwable $e) {
+            }
+        }
         if (filled($fromDate) && filled($toDate)) {
             $cuSelect->whereBetween('cu.created_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
             $pcuSelect->whereBetween('pcu.created_at', [$fromDate . ' 00:00:00', $toDate . ' 23:59:59']);
@@ -154,6 +167,26 @@ class LearningDatatableService
                 ->toArray();
             $cuSelect->whereIn('cu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
             $pcuSelect->whereIn('pcu.content_id', !empty($classContentIds) ? $classContentIds : [-1]);
+        }
+
+        // 6b. Content Type Filter Pushdown (Document / Video / MOOC)
+        $typeFilter = $filters['type'] ?? ($filters['content_type'] ?? null);
+        if (filled($typeFilter) && $typeFilter !== 'all') {
+            $typeStr = strtolower(trim((string) $typeFilter));
+            $typeContentIds = DB::table('content')
+                ->where(function ($q) use ($typeStr) {
+                    if ($typeStr === 'document') {
+                        $q->where('type', 'Document');
+                    } elseif ($typeStr === 'video') {
+                        $q->whereIn('type', ['Video', 'YouTube']);
+                    } else {
+                        $q->where('type', $typeStr);
+                    }
+                })
+                ->pluck('id')
+                ->toArray();
+            $cuSelect->whereIn('cu.content_id', !empty($typeContentIds) ? $typeContentIds : [-1]);
+            $pcuSelect->whereIn('pcu.content_id', !empty($typeContentIds) ? $typeContentIds : [-1]);
         }
 
         // 7. Content Filter Pushdown (via indexed content_id)
@@ -391,21 +424,30 @@ class LearningDatatableService
 
     public function make(Request $request)
     {
+        $entries = (int) ($request->input('entries') ?: $request->input('length', 25));
+        if ($entries > 0) {
+            $request->merge(['length' => $entries]);
+            request()->merge(['length' => $entries]);
+        }
+        app()->forgetInstance('datatables.request');
+
         $categoryParam = strtolower(trim((string) ($request->input('category') ?? ($request->input('learning_source') ?? ($request->input('source') ?? 'all')))));
 
-        $hasFilters = filled($request->input('status'))
-            || filled($request->input('program_type'))
-            || filled($request->input('program'))
-            || filled($request->input('year'))
+        $hasFilters = (filled($request->input('status')) && $request->input('status') !== 'all')
+            || (filled($request->input('type')) && $request->input('type') !== 'all')
+            || (filled($request->input('program_type')) && $request->input('program_type') !== 'all')
+            || (filled($request->input('program')) && $request->input('program') !== 'all')
+            || (filled($request->input('status_type')) && $request->input('status_type') !== 'all')
+            || (filled($request->input('year')) && $request->input('year') !== 'all')
             || filled($request->input('from_date'))
             || filled($request->input('to_date'))
-            || filled($request->input('progress_range'))
-            || filled($request->input('duration'))
+            || (filled($request->input('progress_range')) && $request->input('progress_range') !== 'all')
+            || (filled($request->input('duration')) && $request->input('duration') !== 'all')
             || filled($request->input('classification_slug'))
             || filled($request->input('content_slug'))
-            || filled($request->input('employee_id'))
-            || filled($request->input('user_id'))
-            || filled($request->input('employee'))
+            || (filled($request->input('employee_id')) && $request->input('employee_id') !== 'all')
+            || (filled($request->input('user_id')) && $request->input('user_id') !== 'all')
+            || (filled($request->input('employee')) && $request->input('employee') !== 'all')
             || filled($request->input('learning_title'))
             || filled($request->input('title'))
             || filled($request->input('content_title'))
@@ -436,6 +478,7 @@ class LearningDatatableService
             ->addColumn('id_emp', fn ($row) => $this->idEmpColumn($row))
             ->addColumn('employee', fn ($row) => $this->employeeColumn($row))
             ->addColumn('learning_title', fn ($row) => $this->learningTitleColumn($row))
+            ->addColumn('type_badge', fn ($row) => $this->typeBadge($row))
             ->addColumn('classification_name', fn ($row) => $this->classificationColumn($row))
             ->addColumn('category_badge', fn ($row) => $this->categoryBadge($row))
             ->addColumn('duration', fn ($row) => e(DurationFormatter::format($row->content_duration ?? null)))
@@ -446,6 +489,7 @@ class LearningDatatableService
             ->orderColumn('id_emp', 'u.id_emp $1')
             ->orderColumn('employee', 'u.name $1')
             ->orderColumn('learning_title', 'c.title $1')
+            ->orderColumn('type_badge', 'c.type $1')
             ->orderColumn('classification_name', 'cl.classification_name $1')
             ->orderColumn('category_badge', 'unified.category_source $1')
             ->orderColumn('duration', 'c.duration $1')
@@ -456,12 +500,25 @@ class LearningDatatableService
                 'id_emp',
                 'employee',
                 'learning_title',
+                'type_badge',
                 'classification_name',
                 'category_badge',
                 'progress_bar',
                 'action',
             ])
             ->make(true);
+    }
+
+    private function typeBadge($row): string
+    {
+        $rawType = (string) ($row->content_type ?? '');
+        $type = in_array(strtolower($rawType), ['video', 'youtube', 'mooc'], true) ? 'Video' : 'Document';
+
+        if ($type === 'Video') {
+            return '<span class="badge" style="background-color: #f59e0b; color: #ffffff; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;">Video</span>';
+        }
+
+        return '<span class="badge" style="background-color: #0ea5e9; color: #ffffff; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px;">Document</span>';
     }
 
     private function statusBadge($row): string

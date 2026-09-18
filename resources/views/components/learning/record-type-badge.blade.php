@@ -9,7 +9,7 @@
 
     $class = match (true) {
         $normalizedType === 'playlist'                              => 'bg-green text-white',
-        in_array($normalizedType, ['video', 'youtube'], true)       => 'bg-yellow text-white',
+        in_array($normalizedType, ['video', 'youtube', 'mooc'], true)       => 'bg-yellow text-white',
         in_array($normalizedType, ['document', 'pdf', 'sop/regulation'], true)
                                                                     => 'bg-cyan text-white',
         $normalizedType === 'content'                               => 'bg-purple-lt text-purple',

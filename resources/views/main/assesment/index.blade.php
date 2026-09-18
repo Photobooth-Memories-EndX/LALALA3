@@ -25,6 +25,7 @@
     </div>
 
     @include('main.assesment.partials.modal-duplicate')
+    @include('main.assesment.partials.modal-delete')
 
 @endsection
 

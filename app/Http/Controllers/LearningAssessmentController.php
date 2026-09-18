@@ -6,8 +6,10 @@ use App\Exports\AssessmentExport;
 use App\Models\Assesment;
 use App\Models\AssesmentResult;
 use App\Services\Learning\CompletedPlaylistService;
+use App\Support\LearningFilterHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
@@ -63,87 +65,63 @@ class LearningAssessmentController extends Controller
         );
     }
 
-    private function getUserAssessmentQuery($user, $userId, $completedPlaylistIds)
+    private function getUserAssessmentQuery($user, $userId, $completedPlaylistIds = null)
     {
+        if ($completedPlaylistIds === null) {
+            $completedPlaylistIds = $this->completedPlaylistService
+                ->forUser((int) $userId)
+                ->pluck('id');
+        }
+
+        $completedPlaylistIdArray = $completedPlaylistIds instanceof \Illuminate\Support\Collection
+            ? $completedPlaylistIds->all()
+            : (array) $completedPlaylistIds;
+
         return Assesment::with([
                 'assesments_assigned',
                 'contents',
                 'content',
-                'scores'      => fn ($q) => $q->where('user_id', $userId),
+                'scores'            => fn ($q) => $q->where('user_id', $userId)->latest('id'),
+                'assessmentResults' => fn ($q) => $q->where('user_id', $userId)->latest('id'),
                 'trainingplan',
             ])
             ->withCount('questions')
-            ->where('status', 'OK')
-            ->where(function ($query) use ($user, $userId, $completedPlaylistIds) {
-                // 1. Assigned directly to employee, team, or department
-                $query->whereHas('assesments_assigned', function ($q) use ($user) {
-                    $q->where('assigned_id', $user->id_emp)
-                        ->orWhere('assigned_id', $user->id_team ?? $user->id_tean)
-                        ->orWhere('assigned_id', $user->id_department);
-                })
-                // 2. Content Assessment -> resolve via Content relation
-                ->orWhere(function ($cq) use ($userId) {
-                    $cq->where(function ($sub) {
-                        $sub->where('assasment_content_for', 'content')
-                            ->orWhere(function ($fallback) {
-                                $fallback->where('type', 'content')
-                                    ->where(function ($s) {
-                                        $s->whereNull('assasment_content_for')
-                                            ->orWhere('assasment_content_for', 'content');
-                                    });
-                            });
-                    })
-                    ->where('type', '!=', 'global')
-                    ->whereHas('contents', function ($q) use ($userId) {
-                        $q->whereHas('contentuser', function ($cu) use ($userId) {
-                            $cu->where('progress', '>=', 100)->where('user_id', $userId);
-                        });
-                    });
-                })
-                // 3. Playlist Assessment -> resolve via Playlist relation
-                ->orWhere(function ($pq) use ($userId, $completedPlaylistIds) {
-                    $pq->where(function ($sub) {
-                        $sub->where('assasment_content_for', 'playlist')
-                            ->orWhere('type', 'trainingplan');
-                    })
-                    ->where('type', '!=', 'global')
-                    ->where('status', 'OK')
-                    ->where(function ($matchQ) use ($completedPlaylistIds, $userId) {
-                        // Option A: User completed the playlist
-                        $matchQ->whereIn('trainingplan_id', $completedPlaylistIds)
-                            // Option B: Assessment is attached to a lesson in the playlist, and user completed that lesson
-                            ->orWhere(function ($lessonQ) use ($userId) {
-                                $lessonQ->whereNotNull('trainingplan_id')
-                                    ->whereNotNull('content_id')
-                                    ->where(function ($progQ) use ($userId) {
-                                        $progQ->whereHas('content', function ($cQ) use ($userId) {
-                                            $cQ->whereHas('playlistContentUsers', function ($pcu) use ($userId) {
-                                                $pcu->where('user_id', $userId)
-                                                    ->where(fn ($w) => $w->where('finish', '1')->orWhere('progress', '>=', 100));
-                                            })->orWhereHas('contentuser', function ($cu) use ($userId) {
-                                                $cu->where('user_id', $userId)
-                                                    ->where(fn ($w) => $w->where('finish', '1')->orWhere('progress', '>=', 100));
-                                            });
-                                        });
-                                    });
-                            });
-                    });
-                })
-                // 4. Scores already taken
-                ->orWhereHas('scores', function ($q) use ($userId) {
+            ->where(function ($root) use ($userId, $completedPlaylistIdArray) {
+                // SOURCE A — HISTORY: User has at least one record in assesment_results
+                $root->whereHas('scores', function ($q) use ($userId) {
                     $q->where('user_id', $userId);
                 })
-                // 5. Global Assessment -> resolve as Global without Content/Playlist relation
-                ->orWhere(function ($q) use ($user) {
-                    $q->where('type', 'global')
-                        ->where('status', 'OK')
-                        ->where(function ($sq) use ($user) {
-                            $sq->doesntHave('assesments_assigned')
-                                ->orWhereHas('assesments_assigned', function ($aq) use ($user) {
-                                    $aq->where('assigned_id', $user->id_emp)
-                                        ->orWhere('assigned_id', $user->id_team ?? $user->id_tean)
-                                        ->orWhere('assigned_id', $user->id_department);
-                                });
+                // SOURCE B — READY TO START: Active assessment without result, prerequisite 100% complete
+                ->orWhere(function ($ready) use ($userId, $completedPlaylistIdArray) {
+                    $ready->where('status', 'OK')
+                        ->whereDoesntHave('scores', function ($q) use ($userId) {
+                            $q->where('user_id', $userId);
+                        })
+                        ->where(function ($sourceB) use ($userId, $completedPlaylistIdArray) {
+                            // 1. Direct Content Assessment: Content is 100% completed by user
+                            $sourceB->where(function ($cq) use ($userId) {
+                                $cq->where('type', 'content')
+                                    ->where(function ($sub) {
+                                        $sub->where('assasment_content_for', 'content')
+                                            ->orWhereNull('assasment_content_for');
+                                    })
+                                    ->whereNotNull('content_id')
+                                    ->whereHas('contents', function ($q) use ($userId) {
+                                        $q->whereHas('contentuser', function ($cu) use ($userId) {
+                                            $cu->where('user_id', $userId)
+                                                ->where(fn ($w) => $w->where('progress', '>=', 100)->orWhere('finish', '1'));
+                                        });
+                                    });
+                            })
+                            // 2. Playlist Assessment: Total playlist contents 100% completed by user
+                            ->orWhere(function ($pq) use ($completedPlaylistIdArray) {
+                                $pq->where(function ($sub) {
+                                    $sub->where('assasment_content_for', 'playlist')
+                                        ->orWhere('type', 'trainingplan');
+                                })
+                                ->whereNotNull('trainingplan_id')
+                                ->whereIn('trainingplan_id', !empty($completedPlaylistIdArray) ? $completedPlaylistIdArray : [-1]);
+                            });
                         });
                 });
             });
@@ -151,17 +129,25 @@ class LearningAssessmentController extends Controller
 
     private function applyFilters($query, Request $request, $userId)
     {
-        $type = $request->input('assessment_filter_type', $request->input('type', 'all'));
-        if (empty($type)) {
-            $type = 'all';
-        }
-        $status = $request->input('assessment_filter_status', 'all');
-        $score = $request->input('assessment_filter_score', 'all');
-        $result = $request->input('assessment_filter_result', 'all');
-        $date = $request->input('assessment_filter_date', 'all');
-        $availability = $request->input('assessment_filter_availability', 'all');
-        $search = trim((string) $request->input('assessment_search', ''));
+        $rawType = $request->input('assessment_filter_type', $request->input('type', 'all'));
+        $type = LearningFilterHelper::normalizeAssessmentType($rawType);
+
+        $rawStatus = $request->input('assessment_filter_status', $request->input('status', 'all'));
+        $status = LearningFilterHelper::normalizeAssessmentStatus($rawStatus);
+
+        $score = $request->input('assessment_filter_score', $request->input('score', 'all'));
+        $result = $request->input('assessment_filter_result', $request->input('result', 'all'));
+        $date = $request->input('assessment_filter_date', $request->input('date', 'all'));
+        $availability = $request->input('assessment_filter_availability', $request->input('availability', 'all'));
+        $search = trim((string) $request->input('assessment_search', $request->input('search', $request->input('q', ''))));
         $now = now();
+
+        $year = (string) $request->input('assessment_filter_year', $request->input('year', 'all'));
+        $rawMonth = (string) $request->input('assessment_filter_month', $request->input('month', 'all'));
+        $month = LearningFilterHelper::resolveMonth($rawMonth);
+
+        $batch = (string) $request->input('assessment_filter_batch', $request->input('batch', 'all'));
+        $grade = (string) $request->input('assessment_filter_grade', $request->input('grade', 'all'));
 
         $finalScore = fn ($q) => $q->where('user_id', $userId)->where('final', 1);
 
@@ -200,15 +186,15 @@ class LearningAssessmentController extends Controller
                 ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 0))
                 ->whereDoesntHave('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 1)))
             ->when($status === 'not_started', fn ($q) => $q->whereDoesntHave('scores', $finalScore))
-            ->when($request->filled('assessment_filter_year') && $request->input('assessment_filter_year') !== 'all',
-                fn ($q) => $q->whereYear('fromdate', $request->input('assessment_filter_year')))
-            ->when($request->filled('assessment_filter_month') && $request->input('assessment_filter_month') !== 'all',
-                fn ($q) => $q->whereMonth('fromdate', $request->input('assessment_filter_month')))
-            ->when($request->filled('assessment_filter_batch') && $request->input('assessment_filter_batch') !== 'all',
+            ->when($year !== 'all' && $year !== '' && ctype_digit($year),
+                fn ($q) => $q->whereYear('fromdate', (int) $year))
+            ->when($month !== null,
+                fn ($q) => $q->whereMonth('fromdate', $month))
+            ->when($batch !== 'all' && $batch !== '',
                 fn ($q) => $q->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)
-                    ->where('batch', $request->input('assessment_filter_batch'))))
-            ->when($request->filled('assessment_filter_grade') && $request->input('assessment_filter_grade') !== 'all',
-                fn ($q) => $q->where('passing_grade', $request->input('assessment_filter_grade')))
+                    ->where('batch', $batch)))
+            ->when($grade !== 'all' && $grade !== '',
+                fn ($q) => $q->where('passing_grade', $grade))
             ->when($score === 'none', fn ($q) => $q->whereDoesntHave('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->whereNotNull('score')))
             ->when($score === '0_59', fn ($q) => $q
                 ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->whereBetween('score', [0, 59.9999]))
@@ -244,7 +230,14 @@ class LearningAssessmentController extends Controller
     private function getFilterOptions($query): array
     {
         return [
-            'years' => (clone $query)->reorder()->whereNotNull('fromdate')->selectRaw('YEAR(fromdate) as year')->distinct()->orderByDesc('year')->pluck('year'),
+            'years' => (clone $query)->reorder()
+                ->whereNotNull('fromdate')
+                ->select(DB::raw('YEAR(fromdate) as year'))
+                ->distinct()
+                ->orderByDesc('year')
+                ->pluck('year')
+                ->unique()
+                ->values(),
             'batches' => collect([1, 2, 4]),
             'passingGrades' => (clone $query)->reorder()->whereNotNull('passing_grade')
                 ->select('passing_grade')
@@ -270,7 +263,7 @@ class LearningAssessmentController extends Controller
         $failed = 0;
 
         foreach ($assessments as $assessment) {
-            $userScores = collect($assessment->getRelation('scores') ?? [])
+            $userScores = collect($assessment->getRelation('scores') ?? $assessment->getRelation('assessmentResults') ?? [])
                 ->filter(fn ($score) => (string) ($score->user_id ?? '') === (string) $userId);
 
             $finalResult = $userScores
@@ -286,7 +279,8 @@ class LearningAssessmentController extends Controller
             }
 
             if ($finalResult !== null) {
-                if ($finalResult->pass) {
+                $isPassed = (bool) ($finalResult->pass ?? ($finalResult->score !== null && $assessment->passing_grade !== null && (float) $finalResult->score >= (float) $assessment->passing_grade));
+                if ($isPassed) {
                     $passed++;
                 } else {
                     $failed++;

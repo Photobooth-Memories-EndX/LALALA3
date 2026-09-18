@@ -55,6 +55,12 @@ class OngoingPlaylistService
             ->orderBy('trainingplan.title')
             ->get();
 
+        $planIds = $plans->pluck('id')->all();
+        $userPcuMap = PlaylistContentUser::where('user_id', $userId)
+            ->whereIn('trainingplan_id', $planIds)
+            ->get()
+            ->groupBy('trainingplan_id');
+
         $result = collect();
 
         foreach ($plans as $plan) {
@@ -91,16 +97,59 @@ class OngoingPlaylistService
             $seconds = max(0, (int) ($plan->total_duration_seconds ?? 0));
             $plan->duration = \App\Support\DurationFormatter::fromSeconds($seconds);
 
+            // Calculate actual consumed learning hours from playlist_content_users
+            $planPcus = $userPcuMap->get($plan->id, collect())->keyBy('content_id');
+            $consumedPlaylistSeconds = 0;
+            $calculatedTotalSeconds = 0;
+
+            foreach ($validDetails as $d) {
+                $cid = $d->content_id;
+                $pcu = $planPcus->get($cid);
+                $moduleDuration = \App\Support\DurationFormatter::toSeconds($d->content?->duration ?? '') ?? 0;
+                $calculatedTotalSeconds += $moduleDuration;
+
+                if ($pcu) {
+                    $pcuDuration = (int) ($pcu->duration_seconds ?? 0);
+                    if ($pcuDuration <= 0) {
+                        $pcuDuration = $moduleDuration;
+                    }
+                    $pcuActualWatch = (int) ($pcu->actual_watch_seconds ?? 0);
+                    $pcuCurrentTime = (int) ($pcu->current_time ?? 0);
+                    $pcuProgress = (int) ($pcu->progress ?? 0);
+                    $pcuFinished = ((string) $pcu->finish === '1' || $pcuProgress >= 100);
+
+                    if ($pcuActualWatch > 0) {
+                        $consumedPlaylistSeconds += $pcuActualWatch;
+                    } elseif ($pcuCurrentTime > 0) {
+                        $consumedPlaylistSeconds += $pcuCurrentTime;
+                    } elseif ($pcuFinished && $pcuDuration > 0) {
+                        $consumedPlaylistSeconds += $pcuDuration;
+                    } elseif ($pcuProgress > 0 && $pcuDuration > 0) {
+                        $consumedPlaylistSeconds += (int) round(($pcuProgress / 100) * $pcuDuration);
+                    } elseif ((float) ($pcu->learning_hour ?? 0) > 0) {
+                        $consumedPlaylistSeconds += (int) round((float) $pcu->learning_hour * 3600);
+                    }
+                }
+            }
+
+            $planTotalSec = max(0, (int) ($plan->total_duration_seconds ?? 0));
+            if ($planTotalSec <= 0) {
+                $planTotalSec = $calculatedTotalSeconds;
+            }
+
+            $plan->current_learning_hours = round($consumedPlaylistSeconds / 3600, 4);
+            $plan->total_learning_hours   = $planTotalSec > 0 ? round($planTotalSec / 3600, 4) : 0.0;
+
             // Fetch activity timestamps
             $pcuTimestamps = PlaylistContentUser::where('user_id', $userId)
                 ->where('trainingplan_id', $plan->id)
                 ->whereIn('content_id', $contentIds)
-                ->selectRaw('MAX(updated_at) as last_act, MAX(CASE WHEN finish = "1" OR progress >= 100 THEN updated_at END) as last_fin')
+                ->selectRaw('MAX(updated_at) as last_act, MAX(CASE WHEN finish = "1" OR progress >= 100 THEN (CASE WHEN completed_at IS NOT NULL AND completed_at <= updated_at THEN completed_at ELSE updated_at END) END) as last_fin')
                 ->first();
 
             $cuTimestamps = ContentUser::where('user_id', $userId)
                 ->whereIn('content_id', $contentIds)
-                ->selectRaw('MAX(updated_at) as last_act, MAX(CASE WHEN finish = "1" OR progress >= 100 THEN updated_at END) as last_fin')
+                ->selectRaw('MAX(updated_at) as last_act, MAX(CASE WHEN finish = "1" OR progress >= 100 THEN (CASE WHEN completed_at IS NOT NULL AND completed_at <= updated_at THEN completed_at ELSE updated_at END) END) as last_fin')
                 ->first();
 
             $lastActivity = $pcuTimestamps?->last_act ?? $cuTimestamps?->last_act ?? null;
@@ -155,11 +204,13 @@ class OngoingPlaylistService
             $plan->first_content_slug = $firstSlugs[$plan->id] ?? null;
 
             return [
-                'card_type'     => 'playlist',
-                'plan'          => $plan,
-                'sort_activity' => $plan->last_activity_at ? strtotime($plan->last_activity_at) : 0,
-                'sort_progress' => (int) $plan->progress_percent,
-                'sort_duration' => (int) $plan->total_duration_seconds,
+                'card_type'              => 'playlist',
+                'plan'                   => $plan,
+                'current_learning_hours' => $plan->current_learning_hours,
+                'total_learning_hours'   => $plan->total_learning_hours,
+                'sort_activity'          => $plan->last_activity_at ? strtotime($plan->last_activity_at) : 0,
+                'sort_progress'          => (int) $plan->progress_percent,
+                'sort_duration'          => (int) $plan->total_duration_seconds,
             ];
         })->values();
     }

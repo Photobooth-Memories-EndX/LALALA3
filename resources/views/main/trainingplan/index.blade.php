@@ -33,8 +33,16 @@
                     </div>
 
                     <!-- Right Group: Action Button -->
-                    <div class="flex-shrink-0">
-                        <a href="{{ route('manage.playlist.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
+                    <div class="flex-shrink-0 d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalSyncPlaylistLearningHours" id="btnSyncPlaylistLearningHours">
+                            <i class="ti ti-refresh fs-2"></i>
+                            <span>Sync Learning Hours</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalSyncPlaylistDuration" id="btnSyncPlaylistDuration">
+                            <i class="ti ti-clock-check fs-2"></i>
+                            <span>Sync Playlist Durations</span>
+                        </button>
+                        <a href="{{ route('playlist.create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
                             <i class="ti ti-plus fs-2"></i>
                             <span>Add Playlist</span>
                         </a>
@@ -66,6 +74,22 @@
                 <div class="alert alert-important alert-warning alert-dismissible mb-3" role="alert">
                     <div class="d-flex">
                         <div>{{ session('warning') }}</div>
+                    </div>
+                    <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
+                </div>
+            @endif
+
+            @if (session()->has('error'))
+                <div class="alert alert-important alert-danger alert-dismissible mb-3" role="alert">
+                    <div class="d-flex">
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div style="white-space: pre-line;">{{ session('error') }}</div>
                     </div>
                     <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>
@@ -209,7 +233,16 @@
                                 <!-- 2. More Filters Modal Trigger Button (Icon Only - No Text) -->
                                 <button type="button" class="btn btn-outline-primary btn-icon px-3 position-relative" data-bs-toggle="modal" data-bs-target="#morePlaylistFiltersModal" title="More Filters">
                                     <i class="ti ti-adjustments-horizontal fs-2"></i>
-                                    @if(request('date_from') || request('date_to') || request('author') || request('category') || request('status') || request('sort'))
+                                    @php
+                                        $hasMoreFilters = request('author_id') || request('author') ||
+                                            request('created_from') || request('created_to') ||
+                                            request('period_from') || request('period_to') ||
+                                            request('sort') || request('sort_views') ||
+                                            request('duration') ||
+                                            request('duration_from') || request('duration_to') ||
+                                            request('learning_hours_from') || request('learning_hours_to');
+                                    @endphp
+                                    @if($hasMoreFilters)
                                         <span class="position-absolute top-0 start-100 translate-middle p-1 bg-primary border border-light rounded-circle">
                                             <span class="visually-hidden">Active filter</span>
                                         </span>
@@ -242,22 +275,23 @@
                             <table class="table table-hover owl-table mb-0">
                                 <thead>
                                     <tr>
-                                        <th style="width:48px">No</th>
-                                        <th style="width:80px">Thumbnail</th>
-                                        <th>Title</th>
-                                        <th>Slug</th>
-                                        <th class="text-center" style="width:90px">Materials</th>
-                                        <th style="width:90px">Status</th>
-                                        <th>Deadline</th>
-                                        <th>URL Link</th>
-                                        <th style="width:110px">Created At</th>
-                                        <th style="width:120px">Action</th>
+                                        <th style="width:40px" class="text-center">No</th>
+                                        <th style="width:75px">Thumbnail</th>
+                                        <th style="min-width:170px;">Title</th>
+                                        <th class="text-center" style="width:85px">Materials</th>
+                                        <th style="width:85px">Status</th>
+                                        <th style="width:130px">Deadline</th>
+                                        <th style="width:120px">URL Link</th>
+                                        <th style="width:105px" class="text-nowrap">Total Duration</th>
+                                        <th style="width:105px" class="text-nowrap">Learning Hours</th>
+                                        <th style="width:95px" class="text-nowrap">Created At</th>
+                                        <th style="width:115px" class="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($trainingplans as $list)
                                         <tr>
-                                            <td>{{ $trainingplans->firstItem() + $loop->index }}</td>
+                                            <td class="text-center text-muted small">{{ $trainingplans->firstItem() + $loop->index }}</td>
                                             <td>
                                                 @if($list->thumbnail_url)
                                                     <img src="{{ $list->thumbnail_url }}"
@@ -274,12 +308,13 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <span class="monitoring-link fw-semibold">
+                                                <span class="monitoring-link fw-semibold d-inline-block text-truncate"
+                                                    style="max-width: 210px;"
+                                                    title="{{ $list->title }}"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-placement="top">
                                                     {{ Str::limit($list->title, 35) }}
                                                 </span>
-                                            </td>
-                                            <td>
-                                                <code class="text-muted" style="font-size:11px;">{{ Str::limit($list->slug, 30) }}</code>
                                             </td>
                                             <td class="text-center">
                                                 <span class="badge bg-azure-lt text-azure">
@@ -304,35 +339,61 @@
                                             </td>
                                             <td>
                                                 @if($list->url_link)
-                                                    <a href="{{ $list->url_link }}" target="_blank" class="text-truncate d-inline-block" style="max-width:140px;" title="{{ $list->url_link }}">
-                                                        <i class="ti ti-external-link me-1"></i>{{ Str::limit($list->url_link, 20) }}
+                                                    <a href="{{ $list->url_link }}" target="_blank" class="text-truncate d-inline-block" style="max-width:115px;" title="{{ $list->url_link }}">
+                                                        <i class="ti ti-external-link me-1"></i>{{ Str::limit($list->url_link, 18) }}
                                                     </a>
                                                 @else
                                                     <span class="text-muted">—</span>
                                                 @endif
                                             </td>
-                                            <td class="text-secondary small">
-                                                {{ $list->created_at->format('d/m/Y') }}
+                                            <td class="font-monospace text-nowrap small text-dark">
+                                                {{ \App\Support\DurationFormatter::fromSeconds((int) ($list->total_duration_seconds ?? 0)) }}
                                             </td>
-                                            <td>
-                                                <div class="d-flex gap-1 flex-wrap">
+                                            <td class="font-monospace text-nowrap small text-primary fw-medium">
+                                                {{ number_format((float) ($list->learning_hours ?? 0), 4, '.', '') }} h
+                                            </td>
+                                            <td class="text-secondary small text-nowrap">
+                                                {{ $list->created_at ? $list->created_at->format('d/m/Y') : '—' }}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-inline-flex gap-1 align-items-center flex-nowrap">
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary owl-action-btn btn-view-playlist-detail p-1"
+                                                        style="width:28px;height:28px;"
+                                                        data-id="{{ $list->id }}"
+                                                        title="View Detail"
+                                                        aria-label="View playlist details">
+                                                        <i class="ti ti-eye"></i>
+                                                    </button>
                                                     <a href="{{ route('playlist.edit', $list->slug) }}"
-                                                        class="btn btn-sm btn-info owl-action-btn" title="Edit">
+                                                        class="btn btn-sm btn-info owl-action-btn p-1"
+                                                        style="width:28px;height:28px;"
+                                                        title="Edit"
+                                                        aria-label="Edit playlist">
                                                         <i class="ti ti-edit"></i>
                                                     </a>
-                                                    <a href="{{ route('playlist.order', $list->slug) }}"
-                                                        class="btn btn-sm btn-secondary owl-action-btn" title="Order Content">
+                                                    <a href="{{ route('manage.playlist.order', $list->slug) }}"
+                                                        class="btn btn-sm btn-secondary owl-action-btn p-1"
+                                                        style="width:28px;height:28px;"
+                                                        title="Order Content"
+                                                        aria-label="Order content">
                                                         <i class="ti ti-arrows-sort"></i>
                                                     </a>
-                                                    <form action="{{ route('playlist.destroy', $list->slug) }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit"
-                                                            class="btn btn-sm btn-danger owl-action-btn" title="Delete"
-                                                            onclick="return confirm('Are you sure want to delete this data?')">
-                                                            <i class="ti ti-trash"></i>
-                                                        </button>
-                                                    </form>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-danger owl-action-btn p-1 btn-delete-playlist"
+                                                        style="width:28px;height:28px;"
+                                                        title="Delete"
+                                                        aria-label="Delete playlist"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalDeletePlaylist"
+                                                        data-id="{{ $list->id }}"
+                                                        data-slug="{{ $list->slug }}"
+                                                        data-title="{{ $list->title }}"
+                                                        data-materials-count="{{ $list->trainingplandetail_count ?? ($list->trainingplandetail ? $list->trainingplandetail->count() : 0) }}"
+                                                        data-status="{{ $list->active }}"
+                                                        data-delete-url="{{ route('playlist.destroy', $list->slug) }}">
+                                                        <i class="ti ti-trash"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -449,31 +510,80 @@
                             </div>
                         </div>
 
-                        <!-- Playlist Duration Radio -->
-                        <div class="mb-2">
-                            <label class="form-label fw-bold text-dark small d-block">Playlist Duration</label>
-                            <div class="d-flex flex-wrap gap-3 align-items-center">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="durAll" value="" {{ !request('duration') ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="durAll">All Durations</label>
+                        <!-- Playlist Duration Range (HH:MM:SS) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark small d-flex align-items-center gap-1">
+                                <i class="ti ti-clock me-1 text-primary"></i> Playlist Duration
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1" style="font-size: 11px;">From</label>
+                                    <input type="text"
+                                           name="duration_from"
+                                           class="form-control rounded-3 font-monospace @error('duration_from') is-invalid @enderror"
+                                           placeholder="HH:MM:SS"
+                                           value="{{ old('duration_from', request('duration_from')) }}"
+                                           pattern="^(\d+):([0-5]\d):([0-5]\d)$"
+                                           title="Format: HH:MM:SS (e.g. 00:30:00)">
+                                    @error('duration_from')
+                                        <div class="invalid-feedback small">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="dur10" value="under_10" {{ request('duration') == 'under_10' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="dur10">&lt; 10 Menit</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="dur30" value="10_30" {{ request('duration') == '10_30' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="dur30">10 - 30 Menit</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="dur60" value="30_60" {{ request('duration') == '30_60' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="dur60">30 - 60 Menit</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="duration" id="durAbove60" value="above_60" {{ request('duration') == 'above_60' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-dark" for="durAbove60">&gt; 1 Jam</label>
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1" style="font-size: 11px;">To</label>
+                                    <input type="text"
+                                           name="duration_to"
+                                           class="form-control rounded-3 font-monospace @error('duration_to') is-invalid @enderror"
+                                           placeholder="HH:MM:SS"
+                                           value="{{ old('duration_to', request('duration_to')) }}"
+                                           pattern="^(\d+):([0-5]\d):([0-5]\d)$"
+                                           title="Format: HH:MM:SS (e.g. 02:00:00)">
+                                    @error('duration_to')
+                                        <div class="invalid-feedback small">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
+                            <small class="text-muted d-block mt-1" style="font-size: 11px;">
+                                Filter by actual duration in <code>HH:MM:SS</code> format (e.g. <code>00:30:00</code> to <code>02:00:00</code>).
+                            </small>
+                        </div>
+
+                        <!-- Learning Hours Range Filter -->
+                        <div class="mb-2">
+                            <label class="form-label fw-bold text-dark small d-flex align-items-center gap-1">
+                                <i class="ti ti-calculator me-1 text-primary"></i> Learning Hours
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1" style="font-size: 11px;">From</label>
+                                    <input type="number"
+                                           step="0.0001"
+                                           min="0"
+                                           name="learning_hours_from"
+                                           class="form-control rounded-3 font-monospace @error('learning_hours_from') is-invalid @enderror"
+                                           placeholder="0.00"
+                                           value="{{ old('learning_hours_from', request('learning_hours_from')) }}">
+                                    @error('learning_hours_from')
+                                        <div class="invalid-feedback small">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label text-muted small mb-1" style="font-size: 11px;">To</label>
+                                    <input type="number"
+                                           step="0.0001"
+                                           min="0"
+                                           name="learning_hours_to"
+                                           class="form-control rounded-3 font-monospace @error('learning_hours_to') is-invalid @enderror"
+                                           placeholder="10.00"
+                                           value="{{ old('learning_hours_to', request('learning_hours_to')) }}">
+                                    @error('learning_hours_to')
+                                        <div class="invalid-feedback small">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1" style="font-size: 11px;">
+                                Filter by calculated learning hours (e.g. <code>1.00</code> to <code>4.00</code>).
+                            </small>
                         </div>
                     </div>
                     <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
@@ -493,6 +603,18 @@
             </div>
         </div>
     </div>
+
+    {{-- Playlist Duration Synchronization Modal --}}
+    @include('main.trainingplan.components.playlist-sync-duration-modal')
+
+    {{-- Playlist Learning Hours Synchronization Modal --}}
+    @include('main.trainingplan.components.playlist-sync-learning-hours-modal')
+
+    {{-- Playlist Detail Modal --}}
+    @include('main.trainingplan.components.playlist-detail-modal')
+
+    {{-- Playlist Delete Confirmation Modal --}}
+    @include('main.trainingplan.components.playlist-delete-modal')
 
 @endsection
 
@@ -614,6 +736,21 @@ body.dark-mode #manage-playlist-search-results .dropdown-item .text-dark,
 body.theme-dark #manage-playlist-search-results .dropdown-item .text-dark {
     color: #f8fafc !important;
 }
+.owl-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.owl-action-btn:hover {
+    transform: translateY(-1px);
+}
+[data-bs-theme="dark"] .table td.text-dark,
+body.dark-mode .table td.text-dark,
+body.theme-dark .table td.text-dark {
+    color: #f8fafc !important;
+}
 </style>
 @endsection
 
@@ -621,6 +758,20 @@ body.theme-dark #manage-playlist-search-results .dropdown-item .text-dark {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Autocomplete is handled by standardized initManageAutocomplete
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+
+    @if ($errors->has('duration_from') || $errors->has('duration_to') || $errors->has('learning_hours_from') || $errors->has('learning_hours_to'))
+        var filterModalEl = document.getElementById('morePlaylistFiltersModal');
+        if (filterModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var filterModal = bootstrap.Modal.getOrCreateInstance(filterModalEl);
+            filterModal.show();
+        }
+    @endif
 });
 </script>
 @endsection

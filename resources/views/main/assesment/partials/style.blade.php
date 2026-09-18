@@ -1202,4 +1202,55 @@
         border-color: #334155 !important;
         color: #94a3b8 !important;
     }
+
+    /* =========================================================================
+       Delete Assessment Confirmation Modal Styling & Dark Mode
+       ========================================================================= */
+    #deleteAssessmentModal .modal-content {
+        position: relative;
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] #deleteAssessmentModal .modal-content,
+    [data-theme="dark"] #deleteAssessmentModal .modal-content,
+    body.dark-mode #deleteAssessmentModal .modal-content,
+    body.theme-dark #deleteAssessmentModal .modal-content {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        color: #dce6f1 !important;
+        border: 1px solid #25384d !important;
+    }
+
+    [data-bs-theme="dark"] #deleteAssessmentModal .modal-footer,
+    [data-theme="dark"] #deleteAssessmentModal .modal-footer,
+    body.dark-mode #deleteAssessmentModal .modal-footer,
+    body.theme-dark #deleteAssessmentModal .modal-footer {
+        background-color: var(--tblr-bg-surface-secondary, #1f2d3d) !important;
+        border-color: #25384d !important;
+    }
+
+    [data-bs-theme="dark"] #deleteAssessmentModal .bg-light,
+    [data-bs-theme="dark"] #deleteAssessmentModal .bg-white,
+    [data-theme="dark"] #deleteAssessmentModal .bg-light,
+    [data-theme="dark"] #deleteAssessmentModal .bg-white,
+    body.dark-mode #deleteAssessmentModal .bg-light,
+    body.dark-mode #deleteAssessmentModal .bg-white,
+    body.theme-dark #deleteAssessmentModal .bg-light,
+    body.theme-dark #deleteAssessmentModal .bg-white {
+        background-color: var(--tblr-bg-surface-secondary, #1f2d3d) !important;
+        border-color: #25384d !important;
+    }
+
+    [data-bs-theme="dark"] #deleteAssessmentModal .text-dark,
+    [data-theme="dark"] #deleteAssessmentModal .text-dark,
+    body.dark-mode #deleteAssessmentModal .text-dark,
+    body.theme-dark #deleteAssessmentModal .text-dark {
+        color: #ffffff !important;
+    }
+
+    [data-bs-theme="dark"] #deleteAssessmentModal .btn-close,
+    [data-theme="dark"] #deleteAssessmentModal .btn-close,
+    body.dark-mode #deleteAssessmentModal .btn-close,
+    body.theme-dark #deleteAssessmentModal .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
 </style>

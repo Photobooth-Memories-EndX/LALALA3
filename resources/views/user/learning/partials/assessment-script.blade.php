@@ -9,8 +9,45 @@
 
         var assessmentFilterParams = new URLSearchParams(window.location.search);
 
+        function resolveAssessmentMonthNumber(val) {
+            if (!val || val === 'all') return null;
+            var str = String(val).trim().toLowerCase();
+            var n = parseInt(str, 10);
+            if (!isNaN(n) && n >= 1 && n <= 12) return n;
+            var months = {
+                january: 1, jan: 1,
+                february: 2, feb: 2,
+                march: 3, mar: 3,
+                april: 4, apr: 4,
+                may: 5,
+                june: 6, jun: 6,
+                july: 7, jul: 7,
+                august: 8, aug: 8,
+                september: 9, sep: 9, sept: 9,
+                october: 10, oct: 10,
+                november: 11, nov: 11,
+                december: 12, dec: 12
+            };
+            return months[str] || null;
+        }
+
         function filterValue(name) {
-            return String(assessmentFilterParams.get('assessment_filter_' + name) || (name === 'type' ? assessmentFilterParams.get('type') : null) || 'all');
+            var val = assessmentFilterParams.get('assessment_filter_' + name);
+            if (val === null || val === undefined || val === '') {
+                val = assessmentFilterParams.get(name);
+            }
+            if (val === null || val === undefined || val === '') {
+                return 'all';
+            }
+            var s = String(val).trim();
+            if (name === 'status' && s.toLowerCase() === 'pending') {
+                return 'not_started';
+            }
+            if (name === 'month') {
+                var m = resolveAssessmentMonthNumber(s);
+                return m !== null ? String(m) : s;
+            }
+            return s;
         }
 
         function rowAttribute(row, name) {
@@ -230,8 +267,9 @@
 
         function buildAssessmentParams(state, search) {
             var params = new URLSearchParams(window.location.search);
+            var genericKeys = ['assessment_search', 'type', 'status', 'year', 'month', 'batch', 'grade', 'score', 'result', 'date', 'availability', 'search', 'q'];
             Array.from(params.keys()).forEach(function (key) {
-                if (key.indexOf('assessment_filter_') === 0 || key === 'assessment_search' || key === 'type') {
+                if (key.indexOf('assessment_filter_') === 0 || genericKeys.indexOf(key) !== -1) {
                     params.delete(key);
                 }
             });
@@ -427,8 +465,9 @@
             resetAdvancedFilters();
 
             var params = new URLSearchParams(window.location.search);
+            var genericKeys = ['assessment_search', 'type', 'status', 'year', 'month', 'batch', 'grade', 'score', 'result', 'date', 'availability', 'search', 'q'];
             Array.from(params.keys()).forEach(function (key) {
-                if (key.indexOf('assessment_filter_') === 0 || key === 'assessment_search' || key === 'type') {
+                if (key.indexOf('assessment_filter_') === 0 || genericKeys.indexOf(key) !== -1) {
                     params.delete(key);
                 }
             });
@@ -607,6 +646,7 @@
                 var $actionBtn = $row.find('.btn-start-test, .btn-remedial, .btn-continue-test, .btn-assessment-start, .btn-assessment-remedial, .btn-assessment-continue').first();
                 if ($actionBtn.length && !$actionBtn.prop('disabled') && !$actionBtn.hasClass('disabled') && $actionBtn.attr('aria-disabled') !== 'true') {
                     $actionBtn.trigger('click');
+                    return;
                 }
             });
 

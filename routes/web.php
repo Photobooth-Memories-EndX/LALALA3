@@ -395,6 +395,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::group(['middleware' => 'mpermission:content_repository'], function () {
         Route::get('content/search-autocomplete', [ContentController::class, 'autocompleteSearch'])->name('manage.content.autocomplete');
         Route::get('content/autocomplete', [ContentController::class, 'autocompleteSearch']);
+        Route::get('content/{content}/details', [ContentController::class, 'details'])->name('content.details');
         Route::resource('content', ContentController::class);
         Route::post('content/thumbnail/upload', [ContentController::class, 'uploadthumbnailajax'])->name('content.uploadthumbnailajax');
         Route::get('content/thumbnail/upload/delete', [ContentController::class, 'deletethumbnailajax'])->name('content.deletethumbnailajax');
@@ -407,20 +408,22 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::post('content/{content}/synchronize-learning-hours', [ContentController::class, 'synchronizeLearningHours'])->name('content.synchronize-learning-hours');
         Route::get('content/ajax/document-pdf-list', [ContentController::class, 'documentPdfList'])->name('content.document-pdf-list');
         Route::post('content/ajax/sync-total-page', [ContentController::class, 'syncTotalPage'])->name('content.sync-total-page');
+        Route::post('learning-hours/sync', [LearningHourSyncController::class, 'sync'])->name('learning-hours.sync');
     });
 
     Route::group(['middleware' => 'mpermission:playlist_learning_path'], function () {
         Route::get('playlist/search-autocomplete', [TrainingPlanController::class, 'autocompleteSearch'])->name('manage.trainingplan.autocomplete');
-        Route::get('playlist/autocomplete', [TrainingPlanController::class, 'autocompleteSearch']);
-        Route::get('playlist/order/{slug}', [TrainingPlanController::class, 'order'])->name('playlist.order');
+        Route::get('playlist/{playlist}/order', [TrainingPlanController::class, 'order'])->name('manage.playlist.order');
         Route::get('playlist-thumbnail-test', [TrainingPlanController::class, 'thumbnailTest'])->name('playlist.thumbnailTest');
+        Route::post('playlist/synchronize-durations', [TrainingPlanController::class, 'synchronizeDurations'])->name('manage.playlist.synchronize-durations');
+        Route::post('playlist/synchronize-learning-hours', [TrainingPlanController::class, 'synchronizeAllLearningHours'])->name('manage.playlist.synchronize-learning-hours');
+        Route::get('playlist/{id}/details', [TrainingPlanController::class, 'details'])->name('manage.playlist.details');
         Route::post('playlist/{trainingplan?}/synchronize-learning-hours', [TrainingPlanController::class, 'synchronizeLearningHours'])->name('playlist.synchronize-learning-hours');
         Route::resource('playlist', TrainingPlanController::class)->parameters(['playlist' => 'trainingplan']);
-        Route::get('playlist/create', [TrainingPlanController::class, 'create'])->name('manage.playlist.create');
+        Route::get('playlist/create', [TrainingPlanController::class, 'create'])->name('playlist.create');
+        Route::get('playlist/new', [TrainingPlanController::class, 'create'])->name('manage.playlist.create');
         Route::get('playlist/index', [TrainingPlanController::class, 'index'])->name('manage.playlist.index');
     });
-
-    Route::post('learning-hours/sync', [LearningHourSyncController::class, 'sync'])->name('learning-hours.sync');
 
     Route::group(['middleware' => 'mpermission:event_documentation'], function () {
         Route::get('eventphoto/search-autocomplete', [EventPhotoController::class, 'autocompleteSearch'])->name('manage.eventphoto.autocomplete');

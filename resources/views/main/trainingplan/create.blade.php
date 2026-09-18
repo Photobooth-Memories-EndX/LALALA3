@@ -1,19 +1,8 @@
 @extends('layouts.sidebar-master')
 
-@push('styles')
-    <link rel="stylesheet" href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}">
-    @include('main.trainingplan.components.tomselect-content-style')
-    <style>
-        .btn-back {
-            color: #0c5b9e !important;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-        .btn-back:hover {
-            opacity: 0.85;
-            transform: translateX(-3px);
-        }
-    </style>
-@endpush
+@php
+    $title = $title ?? 'Add Playlist';
+@endphp
 
 @section('content')
     @include('main.monitoring.components.style')
@@ -21,18 +10,26 @@
     {{-- Page Header --}}
     <div class="page-header d-print-none mb-3">
         <div class="container-xl">
-            <!-- TOMBOL BACK RATA KIRI ATAS -->
-            <div class="mb-3">
-                <a href="{{ route('playlist.index') }}" class="btn-back d-inline-flex align-items-center text-primary text-decoration-none fw-semibold small">
-                    <i class="ti ti-arrow-left me-1 fs-5"></i> Back
-                </a>
-            </div>
-
-            <div class="row align-items-center">
-                <div class="col">
-                    <div class="page-pretitle">Manage / Playlist</div>
-                    <h2 class="owl-page-title mb-1">{{ $title }}</h2>
-                    <div class="owl-page-subtitle">Create a new playlist by combining multiple learning materials.</div>
+            <div style="max-width: 1100px; margin: 0 auto;">
+                <div class="mb-3">
+                    <a href="{{ route('playlist.index') }}" class="btn-back d-inline-flex align-items-center gap-1 text-decoration-none">
+                        <i class="ti ti-arrow-left"></i>
+                        <span>Back</span>
+                    </a>
+                </div>
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="page-pretitle">Manage / Playlist</div>
+                        <h2 class="owl-page-title mb-1">{{ $title }}</h2>
+                        <div class="owl-page-subtitle">Create a new playlist by combining multiple learning materials.</div>
+                    </div>
+                    <div class="col-auto ms-auto">
+                        <ol class="breadcrumb breadcrumb-arrows mb-0" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item"><a href="javascript:;">Manage</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('playlist.index') }}">Playlist</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
         </div>
@@ -40,195 +37,41 @@
 
     <div class="page-body">
         <div class="container-xl">
-            <form action="{{ route('playlist.store') }}" method="post" autocomplete="off" id="trainingPlanForm" enctype="multipart/form-data">
-                @csrf
-                @method('POST')
+            <div style="max-width: 1100px; margin: 0 auto;">
 
-                <div class="row g-3">
+                <x-alert type="success" />
+                <x-alert type="warning" />
+                <x-alert type="danger" />
 
-                    {{-- Kolom Kiri: Konten Playlist --}}
-                    <div class="col-lg-8">
+                <form action="{{ route('playlist.store') }}" method="post" autocomplete="off" id="trainingPlanForm" enctype="multipart/form-data">
+                    @csrf
+                    @method('POST')
 
-                        {{-- Informasi Playlist --}}
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Informasi Playlist</h3>
-                            </div>
-                            <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
 
-                                <x-alert type='warning'/>
+                            {{-- ① Playlist Information --}}
+                            @include('main.trainingplan.components.playlist-create-information')
 
-                                <div class="mb-3">
-                                    <label for="title" class="form-label required">Title</label>
-                                    <input type="text" class="form-control @error('title') is-invalid @enderror" placeholder="Enter playlist title"
-                                        name="title" id="title" value="{{ old('title') }}" required>
-                                    @error('title')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="mb-3">
-                                    <label for="url-link" class="form-label">URL Link</label>
-                                    <input type="text" name="url_link" id="url-link" class="form-control @error('url_link') is-invalid @enderror"
-                                        placeholder="https://..." value="{{ old('url_link') }}">
-                                    <small class="form-hint">Optional. An external link related to this playlist.</small>
-                                    @error('url_link')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="mb-3">
-                                    <label for="total_duration" class="form-label">Playlist Total Duration (HH:MM:SS)</label>
-                                    <input type="text"
-                                        class="form-control @error('total_duration') is-invalid @enderror"
-                                        id="total_duration"
-                                        name="total_duration"
-                                        placeholder="00:00:00"
-                                        value="{{ old('total_duration', '00:00:00') }}">
-                                    <small class="form-hint">Format: HH:MM:SS (contoh: 02:30:00). Dapat diisi manual.</small>
-                                    @error('total_duration')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="mb-3">
-                                    <label for="learning_hours" class="form-label">Learning Hours</label>
-                                    <input type="text"
-                                        class="form-control @error('learning_hours') is-invalid @enderror"
-                                        id="learning_hours"
-                                        name="learning_hours"
-                                        placeholder="0"
-                                        value="{{ old('learning_hours', 0) }}">
-                                    <small class="form-hint">Learning Hours dapat diisi manual.</small>
-                                    <div class="invalid-feedback" id="learning_hours_error" style="{{ $errors->has('learning_hours') ? 'display:block;' : '' }}">
-                                        @error('learning_hours')
-                                            {{ $message }}
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            {{-- ② Thumbnail & Live Preview --}}
+                            @include('main.trainingplan.components.playlist-create-thumbnail')
 
-                        {{-- Konten / Playlist --}}
-                        <div class="card owl-main-card">
-                            <div class="card-header">
-                                <div>
-                                    <h3 class="card-title">Konten Playlist</h3>
-                                    <p class="text-muted mb-0" style="font-size:13px;">
-                                        Select content, then drag and drop items to arrange the section order.
-                                    </p>
-                                </div>
-                                <span class="badge bg-blue-lt text-blue">Drag &amp; Drop</span>
-                            </div>
-                            <div class="card-body">
-                                <label for="select-content" class="form-label">Content</label>
-                                <div class="playlist-content-select-wrapper">
-                                    <select class="form-select js-content-select" id="select-content" name="content[]" multiple>
-                                        @unless (count($content) == 0)
-                                            @foreach ($content as $list)
-                                                <option value="{{ $list->id }}" data-status="{{ $list->active }}">{{ $list->title }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="" disabled>No content available</option>
-                                        @endunless
-                                    </select>
-                                </div>
-                                <div class="d-flex justify-content-between mt-2">
-                                    <small class="form-hint">Type to search content. Drag items to reorder sections.</small>
-                                    <small class="content-select-count" id="content-count-label"></small>
-                                </div>
-                                <div class="mt-3">
-                                    <button type="submit" form="trainingPlanForm" class="btn btn-primary w-100" name="action" value="save" formnovalidate>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"></path>
-                                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                            <path d="M14 4l0 4l-6 0l0 -4"></path>
-                                        </svg>
-                                        Save Playlist
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                            {{-- ③ Duration & Learning Hours --}}
+                            @include('main.trainingplan.components.playlist-create-duration')
 
-                    </div>
+                            {{-- ④ Playlist Content --}}
+                            @include('main.trainingplan.components.playlist-create-content', [
+                                'content' => $content,
+                            ])
 
-                    {{-- Kolom Kanan: Thumbnail + Deadline + Aksi --}}
-                    <div class="col-lg-4">
+                            {{-- ⑤ Deadline & Actions --}}
+                            @include('main.trainingplan.components.playlist-create-action')
 
-                        {{-- Thumbnail Playlist --}}
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Thumbnail Playlist</h3>
-                            </div>
-                            <div class="card-body">
-                                <div>
-                                    <label class="form-label">Upload Thumbnail</label>
-                                    <input type="file" name="thumbnail" id="thumbnail" class="form-control"
-                                        accept="image/jpg,image/jpeg,image/png,image/webp">
-                                    <small class="form-hint">Optional. Format: JPG, PNG, WEBP — maks. 2 MB.</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Deadline Playlist --}}
-                        <div class="card owl-main-card mb-3">
-                            <div class="card-header">
-                                <h3 class="card-title">Deadline Playlist</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-check cursor-pointer">
-                                        <input type="hidden" name="has_deadline" value="0">
-                                        <input class="form-check-input" type="checkbox" id="has_deadline"
-                                            name="has_deadline" value="1"
-                                            @if(old('has_deadline')) checked @endif>
-                                        <span class="form-check-label fw-medium">Set Deadline?</span>
-                                    </label>
-                                    <small class="form-hint d-block mt-1">If checked, specify the date range below.</small>
-                                </div>
-                                <div id="deadline-fields" style="{{ old('has_deadline') ? '' : 'display:none;' }}">
-                                    <div class="mb-2">
-                                        <label class="form-label">From Date</label>
-                                        <input type="date" class="form-control" name="from_date" id="from_date"
-                                            value="{{ old('from_date') }}">
-                                    </div>
-                                    <div>
-                                        <label class="form-label">To Date</label>
-                                        <input type="date" class="form-control" name="to_date" id="to_date"
-                                            value="{{ old('to_date') }}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card owl-main-card">
-                            <div class="card-header">
-                                <h3 class="card-title">Action</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-success" name="action" value="save" formnovalidate>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2z"></path>
-                                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
-                                            <path d="M14 4l0 4l-6 0l0 -4"></path>
-                                        </svg>
-                                        Save (Draft)
-                                    </button>
-                                    <button type="submit" class="btn btn-primary" name="action" value="publish">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M7 11v8a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-7a1 1 0 0 1 1 -1h3a4 4 0 0 0 4 -4v-1a2 2 0 0 1 4 0v5h3a2 2 0 0 1 2 2l-1 5a2 3 0 0 1 -2 2h-7a3 3 0 0 1 -3 -3"></path>
-                                        </svg>
-                                        Save & Publish
-                                    </button>
-                                    <a href="{{ route('playlist.index') }}" class="btn btn-light">Cancel</a>
-                                </div>
-                            </div>
                         </div>
                     </div>
+                </form>
 
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -252,14 +95,14 @@
                 </div>
                 <div class="modal-footer border-0 pt-0 d-flex justify-content-between align-items-center">
                     <button type="button" class="btn btn-outline-danger d-inline-flex align-items-center gap-1" id="btnDiscardAndLeave">
-                        <i class="ti ti-trash"></i> Discard & Leave
+                        <i class="ti ti-trash"></i> Discard &amp; Leave
                     </button>
                     <div class="d-flex align-items-center gap-2">
                         <button type="button" class="btn btn-info text-white" id="btnKeepEditing" data-bs-dismiss="modal" data-dismiss="modal">
                             Keep Editing
                         </button>
                         <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-1" id="btnSaveDraftAndExit">
-                            <i class="ti ti-device-floppy"></i> <span class="btn-save-text">Save as Draft & Exit</span>
+                            <i class="ti ti-device-floppy"></i> <span class="btn-save-text">Save as Draft &amp; Exit</span>
                         </button>
                     </div>
                 </div>
@@ -268,11 +111,30 @@
     </div>
 @endsection
 
-@push('scripts')
+@section('style')
+    <link rel="stylesheet" href="{{ asset('Tabler/dist/css/tabler-vendors.min.css?1684106062') }}">
+    @include('main.trainingplan.components.tomselect-content-style')
+    <style>
+        .btn-back {
+            color: #0c5b9e !important;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .btn-back:hover {
+            opacity: 0.85;
+            transform: translateX(-3px);
+        }
+    </style>
+@endsection
+
+@section('script')
     <script src="{{ asset('Tabler/dist/libs/tom-select/dist/js/tom-select.complete.min.js?1684106062') }}"></script>
-    <script src="{{ asset('vendor/sortablejs/Sortable.min.js') }}"></script>
+    <script src="{{ asset('Tabler/dist/libs/fslightbox/index.js?1684106062') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
     <script>
+        var activeContentOrdered = @json(old('content', []));
+
         document.addEventListener('DOMContentLoaded', function () {
+            // ── TomSelect + SortableJS Initialization ───────────────────────
             document.querySelectorAll('.js-content-select').forEach(function (selectEl) {
                 if (selectEl.tomselect) return;
 
@@ -285,9 +147,9 @@
                     closeAfterSelect: false,
                     sortField: [],
                     dropdownParent: 'body',
-                    placeholder: 'Type to search content...',
+                    placeholder: 'Type to search materials...',
                     searchField: ['text'],
-                    maxOptions: 80,
+                    maxOptions: 100,
                     render: {
                         item: function (data, escape) {
                             var status = data.status || (data.$option ? data.$option.getAttribute('data-status') : null);
@@ -298,7 +160,7 @@
 
                             return '<div class="playlist-section-item-inner d-flex align-items-center justify-content-between w-100">' +
                                 '<div class="d-flex align-items-center gap-2 text-truncate me-2 min-w-0 flex-grow-1">' +
-                                '<span class="playlist-drag-handle" title="Tarik untuk mengubah urutan">&#9776;</span>' +
+                                '<span class="playlist-drag-handle" title="Drag to rearrange order">&#9776;</span>' +
                                 '<span class="playlist-section-badge"></span>' +
                                 '<span class="playlist-section-title fw-semibold text-truncate" title="' + escape(data.text) + '">' + escape(data.text) + '</span>' +
                                 '</div>' +
@@ -317,14 +179,23 @@
                             return '<div class="playlist-option-item d-flex align-items-center justify-content-between"><span>' + escape(data.text) + '</span>' + statusBadge + '</div>';
                         },
                         no_results: function () {
-                            return '<div class="p-2 text-muted" style="font-size:13px;">Konten tidak ditemukan</div>';
+                            return '<div class="p-2 text-muted" style="font-size:13px;">No materials found</div>';
                         }
                     },
                     onInitialize: function () {
-                        this.wrapper.classList.add('playlist-ts-wrapper');
-                        enablePlaylistSortable(this);
-                        updatePlaylistSectionNumbers(this);
-                        updateCountLabel(this);
+                        var self = this;
+                        self.wrapper.classList.add('playlist-ts-wrapper');
+
+                        if (Array.isArray(activeContentOrdered) && activeContentOrdered.length > 0) {
+                            self.clear(true);
+                            activeContentOrdered.forEach(function (id) {
+                                self.addItem(String(id), true);
+                            });
+                        }
+
+                        enablePlaylistSortable(self);
+                        updatePlaylistSectionNumbers(self);
+                        updateCountLabel(self);
                     },
                     onItemAdd: function () {
                         updatePlaylistSectionNumbers(this);
@@ -337,10 +208,8 @@
                 });
 
                 function enablePlaylistSortable(tomInstance) {
-                    if (typeof Sortable === 'undefined') {
-                        console.error('SortableJS belum dimuat.');
-                        return;
-                    }
+                    if (typeof Sortable === 'undefined') return;
+
                     new Sortable(tomInstance.control, {
                         animation: 180,
                         handle: '.playlist-drag-handle',
@@ -377,7 +246,7 @@
                     var total = Object.keys(tomInstance.options).length;
                     var label = document.getElementById('content-count-label');
                     if (!label) return;
-                    label.textContent = count > 0 ? count + ' dari ' + total + ' konten dipilih' : '';
+                    label.textContent = count > 0 ? count + ' of ' + total + ' materials selected' : '';
                 }
 
                 var formEl = selectEl.closest('form');
@@ -397,103 +266,171 @@
                     });
                 }
             });
-        });
-    </script>
-    <script>
-        (function () {
-            var cb = document.getElementById('has_deadline');
-            var fields = document.getElementById('deadline-fields');
-            if (!cb || !fields) return;
-            cb.addEventListener('change', function () {
-                if (this.checked) {
-                    fields.style.display = '';
-                } else {
-                    fields.style.display = 'none';
-                    var fd = document.getElementById('from_date');
-                    var td = document.getElementById('to_date');
-                    if (fd) fd.value = '';
-                    if (td) td.value = '';
-                }
-            });
-        })();
-    </script>
-    <script>
-        (function () {
-            var $input = $('#learning_hours');
-            var $form = $('#trainingPlanForm');
 
-            function isValidLearningHours(val) {
-                if (val === '' || val === null || val === undefined) return false;
-                var num = parseFloat(val);
-                if (isNaN(num)) return false;
-                if (num < 0) return false;
-                if (num === 0) return true;
-
-                var timesTwo = Math.round(num * 10000) / 10000 * 2;
-                return Math.abs(timesTwo - Math.round(timesTwo)) < 0.0001;
-            }
-
-            function validateInput() {
-                var val = $input.val();
-                var $errorDiv = $('#learning_hours_error');
-
-                if (!isValidLearningHours(val)) {
-                    $input.addClass('is-invalid');
-                    if ($errorDiv.length) {
-                        $errorDiv.html('Learning Hours must be 0 or in increments of 0.5.<br><small class="text-muted">Examples: 0, 0.5, 1, 1.5, 2, 2.5</small>').show();
-                    }
-                    return false;
-                } else {
-                    $input.removeClass('is-invalid');
-                    if ($errorDiv.length) {
-                        $errorDiv.empty().hide();
-                    }
-                    return true;
-                }
-            }
-
-            $input.on('input change blur', function () {
-                validateInput();
-            });
-
-            if ($form.length) {
-                $form.on('submit', function (e) {
-                    if (!validateInput()) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        $input.focus();
-                        return false;
+            // ── Deadline toggle ─────────────────────────────────────────────
+            (function () {
+                var cb = document.getElementById('has_deadline');
+                var fields = document.getElementById('deadline-fields');
+                if (!cb || !fields) return;
+                cb.addEventListener('change', function () {
+                    if (this.checked) {
+                        fields.style.display = '';
+                    } else {
+                        fields.style.display = 'none';
+                        var fd = document.getElementById('from_date');
+                        var td = document.getElementById('to_date');
+                        if (fd) fd.value = '';
+                        if (td) td.value = '';
                     }
                 });
-            }
-        })();
+            })();
 
-        $(document).ready(function() {
-            function showToast(message, type) {
-                let bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-                let icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+            // ── Thumbnail Live Preview & Remove ─────────────────────────────
+            (function () {
+                var input = document.getElementById('playlist_thumbnail_input');
+                var linkEl = document.getElementById('playlistThumbnailLink');
+                var imgEl = document.getElementById('playlistThumbnailImg');
+                var emptyEl = document.getElementById('playlistThumbnailEmpty');
+                var removeBtn = document.getElementById('btn-remove-selected-thumb');
+                var removeWrapper = document.getElementById('remove-selected-thumb-wrapper');
 
-                let toastHtml = `
-                    <div class="toast owl-toast ${bgClass} text-white align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
-                        <div class="toast-body d-flex align-items-center justify-content-between p-3">
-                            <div class="d-flex align-items-center">
-                                <i class="fas ${icon} me-2 fs-4"></i>
-                                <span>${message}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                if ($('#owl-toast-wrapper').length === 0) {
-                    $('body').append('<div id="owl-toast-wrapper" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; width: 320px;"></div>');
+                if (input) {
+                    input.addEventListener('change', function (e) {
+                        var file = e.target.files && e.target.files[0];
+                        if (file) {
+                            var objectUrl = URL.createObjectURL(file);
+                            if (imgEl && linkEl) {
+                                imgEl.src = objectUrl;
+                                linkEl.href = objectUrl;
+                                linkEl.style.display = 'flex';
+                                if (emptyEl) emptyEl.style.display = 'none';
+                                if (removeWrapper) removeWrapper.style.display = 'block';
+                                if (window.refreshFsLightbox) {
+                                    refreshFsLightbox();
+                                }
+                            }
+                        }
+                    });
                 }
 
-                let $toast = $(toastHtml);
-                $('#owl-toast-wrapper').append($toast);
-                $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
-            }
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (input) input.value = '';
+                        if (linkEl) linkEl.style.display = 'none';
+                        if (imgEl) imgEl.src = '';
+                        if (emptyEl) emptyEl.style.display = 'flex';
+                        if (removeWrapper) removeWrapper.style.display = 'none';
+                        if (window.refreshFsLightbox) {
+                            refreshFsLightbox();
+                        }
+                    });
+                }
+            })();
         });
 
+        // ── Toast Notifications ─────────────────────────────────────────────
+        function showPlaylistToast(message, type) {
+            let bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+            let icon = type === 'success' ? 'fa-check-circle' : 'fa-times-circle';
+
+            let toastHtml = `
+                <div class="toast owl-toast ${bgClass} text-white align-items-center mb-2 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-body d-flex align-items-center justify-content-between p-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas ${icon} me-2 fs-4"></i>
+                            <span>${message}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if ($('#owl-toast-wrapper').length === 0) {
+                $('body').append('<div id="owl-toast-wrapper" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999; width: 320px;"></div>');
+            }
+
+            let $toast = $(toastHtml);
+            $('#owl-toast-wrapper').append($toast);
+            $toast.fadeIn(200).delay(3000).fadeOut(400, function() { $(this).remove(); });
+        }
+
+        // ── Namespaced Synchronize Button Handler ───────────────────────────
+        $(document)
+            .off('click.playlistSync', '#btn-sync-playlist, #btn-sync-playlist-lh')
+            .on('click.playlistSync', '#btn-sync-playlist, #btn-sync-playlist-lh', function(e) {
+                e.preventDefault();
+                let $btn = $(this);
+                let url = $btn.data('url');
+
+                if (!url || $btn.data('loading')) return;
+
+                $btn.data('loading', true);
+                let $form = $btn.closest('form');
+                if (!$form.length) {
+                    $form = $('#trainingPlanForm');
+                }
+
+                // Obtain current ordered content IDs from active TomSelect instance
+                let selectedContents = [];
+                let selectEl = document.querySelector('.js-content-select');
+                if (selectEl && selectEl.tomselect) {
+                    selectedContents = selectEl.tomselect.items ? Array.from(selectEl.tomselect.items) : [];
+                } else {
+                    $form.find('input[name="content[]"]:checked, select[name="content[]"] option:selected, input.js-content-ordered').each(function() {
+                        selectedContents.push($(this).val());
+                    });
+                }
+
+                $btn.prop('disabled', true);
+                $btn.find('.icon-sync').attr('class', 'spinner-border spinner-border-sm me-1 icon-sync');
+                $btn.find('.btn-text').text('Synchronizing...');
+                $('body').css('cursor', 'wait');
+
+                let csrfToken = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        _token: csrfToken,
+                        content: selectedContents
+                    },
+                    success: function(res) {
+                        if (res && res.success) {
+                            if (res.duration !== undefined) {
+                                $form.find('[name="total_duration"]').val(res.duration);
+                            }
+                            if (res.learning_hours !== undefined) {
+                                $form.find('[name="learning_hours"]').val(res.learning_hours);
+                            }
+                            showPlaylistToast(res.message || 'Playlist duration & learning hours synchronized successfully.', 'success');
+                        } else {
+                            showPlaylistToast(res && res.message ? res.message : 'Unable to synchronize duration & learning hours.', 'danger');
+                        }
+                    },
+                    error: function(xhr) {
+                        let message = 'Unable to synchronize duration & learning hours.';
+                        if (xhr && xhr.responseJSON) {
+                            if (xhr.responseJSON.errors) {
+                                message = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                            } else if (xhr.responseJSON.message) {
+                                message = xhr.responseJSON.message;
+                            }
+                        }
+                        showPlaylistToast(message, 'danger');
+                    },
+                    complete: function() {
+                        $btn.find('.icon-sync').attr('class', 'ti ti-refresh me-1 icon-sync');
+                        $btn.find('.btn-text').text('Synchronize');
+                        $btn.prop('disabled', false);
+                        $btn.data('loading', false);
+                        $('body').css('cursor', 'default');
+                    }
+                });
+            });
+
+        // ── Unsaved Changes Confirmation Modal ──────────────────────────────
         function openUnsavedChangesModal() {
             var modalEl = document.getElementById('unsavedChangesModal');
             if (!modalEl) return;
@@ -648,4 +585,4 @@
             }
         });
     </script>
-@endpush
+@endsection

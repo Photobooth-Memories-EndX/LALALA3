@@ -164,6 +164,23 @@ class MyLearningAssessmentTypeFilterTest extends TestCase
             'assigned_type'        => 'user',
             'assigned_description' => 'Test',
         ]);
+
+        foreach ([
+            $this->assessmentDirectContent,
+            $this->assessmentPlaylistContent,
+            $this->assessmentPurePlaylist,
+            $this->assessmentGlobal,
+        ] as $a) {
+            \App\Models\AssesmentResult::create([
+                'user_id'      => $this->user->id,
+                'assesment_id' => $a->id,
+                'score'        => 80,
+                'pass'         => 1,
+                'final'        => 1,
+                'batch'        => 1,
+                'user_answer'  => [],
+            ]);
+        }
     }
 
     /**
@@ -436,7 +453,7 @@ class MyLearningAssessmentTypeFilterTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('user.learning.dashboard.partial', [
             'tab'                      => 'assessment',
             'assessment_filter_type'   => 'content_playlist',
-            'assessment_filter_status' => 'not_started',
+            'assessment_filter_status' => 'passed',
         ]));
 
         $response->assertStatus(200);

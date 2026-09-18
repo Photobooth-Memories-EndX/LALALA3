@@ -51,6 +51,8 @@
                             :continue-url="$continueUrl"
                             :thumbnail="$plThumbnail"
                             :learning-hours="$plan->learning_hours ?? null"
+                            :current-learning-hours="$plan->current_learning_hours ?? ($card['current_learning_hours'] ?? null)"
+                            :total-learning-hours="$plan->total_learning_hours ?? ($card['total_learning_hours'] ?? null)"
                         />
                     </div>
                 @endforeach

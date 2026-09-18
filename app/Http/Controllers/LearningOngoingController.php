@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ContentUser;
 use App\Services\Learning\OngoingContentService;
 use App\Services\Learning\OngoingPlaylistService;
+use App\Support\LearningFilterHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -166,6 +167,23 @@ class LearningOngoingController extends Controller
     }
 
     /**
+     * Mode MOOC — HTML fragment card MOOC Learning On Going.
+     */
+    public function mooc()
+    {
+        $userId  = (int) Auth::id();
+        $filters = $this->contentFilterState();
+
+        $cards = $this->contentService->moocCards($userId, $filters);
+
+        $ongoingMoocs = $this->paginateOngoingCards(
+            $this->sortOngoingCards($cards, $filters['progress_sort'], $filters['activity_sort'])
+        );
+
+        return view('user.learning.dashboard-partials.ongoing-mooc', compact('ongoingMoocs'));
+    }
+
+    /**
      * Filter mode Content — search, type (Video/Document), quick status,
      * year/month, serta seluruh filter modal All Filters. Tanpa unsur playlist.
      *
@@ -173,10 +191,30 @@ class LearningOngoingController extends Controller
      */
     private function contentFilterState(): array
     {
+        $rawMonths = request('ongoing_month', request('month', []));
+        if (!is_array($rawMonths)) {
+            $rawMonths = [$rawMonths];
+        }
+        $resolvedMonths = [];
+        foreach ($rawMonths as $m) {
+            $res = LearningFilterHelper::resolveMonth((string) $m);
+            if ($res !== null) {
+                $resolvedMonths[] = $res;
+            }
+        }
+
+        $rawTypes = request('ongoing_type', request('type', []));
+        if (!is_array($rawTypes)) {
+            $rawTypes = [$rawTypes];
+        }
+
+        $status = request('ongoing_status', request('status', 'all'));
+        $quickStatus = (string) request('ongoing_quick_status', request('status', 'all'));
+
         return [
-            'search'        => trim((string) request('ongoing_search', request('q', ''))),
-            'status'        => request('ongoing_status', 'all'),
-            'year'          => request('ongoing_year', 'all'),
+            'search'        => trim((string) request('ongoing_search', request('search', request('q', '')))),
+            'status'        => $status,
+            'year'          => request('ongoing_year', request('year', 'all')),
             'activity_sort' => request('ongoing_activity_sort', 'newest_activity'),
             'progress_sort' => request('ongoing_progress_sort', 'all'),
 
@@ -185,15 +223,15 @@ class LearningOngoingController extends Controller
             'learning_hour' => request('ongoing_learning_hour', 'all'),
 
             // Quick filter Status (dropdown cepat): all|not_started|ongoing|completed|paused.
-            'quick_status' => (string) request('ongoing_quick_status', 'all'),
+            'quick_status' => $quickStatus,
 
             // Type content asli (Video, Document, YouTube, dll) — multi.
-            'types' => array_map('strval', array_filter((array) request('ongoing_type', []))),
+            'types' => array_map('strval', array_filter($rawTypes)),
 
             'learning_status'  => array_filter((array) request('ongoing_learning_status', [])),
             'progress_buckets' => array_filter((array) request('ongoing_progress', [])),
             'durations'        => array_filter((array) request('ongoing_duration', [])),
-            'months'           => array_filter((array) request('ongoing_month', [])),
+            'months'           => $resolvedMonths,
             'current_times'    => array_filter((array) request('ongoing_current_time', [])),
             'last_pages'       => array_filter((array) request('ongoing_last_page', [])),
             'total_pages'      => array_filter((array) request('ongoing_total_pages', [])),
@@ -208,17 +246,29 @@ class LearningOngoingController extends Controller
      */
     private function playlistFilterState(): array
     {
+        $rawMonths = request('ongoing_month', request('month', []));
+        if (!is_array($rawMonths)) {
+            $rawMonths = [$rawMonths];
+        }
+        $resolvedMonths = [];
+        foreach ($rawMonths as $m) {
+            $res = LearningFilterHelper::resolveMonth((string) $m);
+            if ($res !== null) {
+                $resolvedMonths[] = $res;
+            }
+        }
+
         return [
-            'search'           => trim((string) request('ongoing_search', request('q', ''))),
-            'status'           => request('ongoing_status', 'all'),
-            'quick_status'     => (string) request('ongoing_quick_status', 'all'),
-            'year'             => request('ongoing_year', 'all'),
+            'search'           => trim((string) request('ongoing_search', request('search', request('q', '')))),
+            'status'           => request('ongoing_status', request('status', 'all')),
+            'quick_status'     => (string) request('ongoing_quick_status', request('status', 'all')),
+            'year'             => request('ongoing_year', request('year', 'all')),
             'activity_sort'    => request('ongoing_activity_sort', 'newest_activity'),
             'progress_sort'    => request('ongoing_progress_sort', 'all'),
             'date_from'        => request('ongoing_date_from', request('ongoing_from_date')),
             'date_to'          => request('ongoing_date_to', request('ongoing_to_date')),
             'learning_hour'    => request('ongoing_learning_hour', 'all'),
-            'months'           => array_filter((array) request('ongoing_month', [])),
+            'months'           => $resolvedMonths,
             'progress_buckets' => array_filter((array) request('ongoing_progress', [])),
             'durations'        => array_filter((array) request('ongoing_duration', [])),
         ];

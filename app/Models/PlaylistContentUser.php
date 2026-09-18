@@ -21,6 +21,7 @@ class PlaylistContentUser extends Model
         'total_pages',
         'current_time',
         'duration_seconds',
+        'actual_watch_seconds',
         'afk_duration_seconds',
         'learning_hour',
         'completed_at',
@@ -37,6 +38,7 @@ class PlaylistContentUser extends Model
         'total_pages'      => 'integer',
         'current_time'     => 'integer',
         'duration_seconds' => 'integer',
+        'actual_watch_seconds' => 'integer',
         'afk_duration_seconds' => 'integer',
         'learning_hour'    => 'decimal:4',
         'completed_at'     => 'datetime',
@@ -63,28 +65,45 @@ class PlaylistContentUser extends Model
     {
         static::saving(function (PlaylistContentUser $record) {
             // Set completed_at on completion if not already set (immutable once set)
-            if ($record->isFinished() && $record->completed_at === null) {
-                $record->completed_at = now();
+            if ($record->isFinished()) {
+                if ($record->exists && $record->getOriginal('completed_at') !== null) {
+                    $record->completed_at = $record->getOriginal('completed_at');
+                } elseif ($record->completed_at === null) {
+                    $wasAlreadyFinished = $record->exists && (
+                        (string) $record->getOriginal('finish') === '1' ||
+                        (int) $record->getOriginal('progress') >= 100
+                    );
+                    $record->completed_at = $wasAlreadyFinished
+                        ? ($record->getOriginal('updated_at') ?? $record->getOriginal('created_at') ?? now())
+                        : now();
+                }
             }
 
             // Calculate actual learning_hour without executing any database query.
             // Content duration is read from loaded relation or the record's duration_seconds column.
             // If relation is not loaded, NEVER call $record->content()->first() to prevent N+1.
             $contentDuration = null;
-            if ($record->relationLoaded('content')) {
-                $contentDuration = $record->content?->duration;
+            $maxLearningHours = null;
+            if ($record->relationLoaded('content') && $record->content) {
+                $contentDuration = $record->content->duration;
+                $maxLearningHours = $record->content->max_learning_hours;
+                $maxCapSeconds = $record->content->max_actual_watch_seconds;
+                if ($maxCapSeconds !== null && $record->actual_watch_seconds !== null && $record->actual_watch_seconds > $maxCapSeconds) {
+                    $record->actual_watch_seconds = $maxCapSeconds;
+                }
             }
             $contentDuration = $contentDuration ?? $record->duration_seconds;
 
-            // If current_time > 0 OR we have contentDuration, or record is in progress/unfinished:
-            // Calculate learning_hour in-memory via pure calculator.
-            if ((int) $record->current_time > 0 || $contentDuration !== null || !$record->isFinished()) {
+            $actualWatch = (int) ($record->actual_watch_seconds ?? 0);
+            if ($actualWatch > 0 || (int) $record->current_time > 0 || $contentDuration !== null || !$record->isFinished()) {
                 $calculator = app(ActualLearningHourCalculator::class);
                 $record->learning_hour = $calculator->calculateFromTracking(
                     $record->current_time,
                     $record->finish,
                     $record->progress,
-                    $contentDuration
+                    $contentDuration,
+                    $actualWatch,
+                    $maxLearningHours
                 );
             }
         });
@@ -97,7 +116,7 @@ class PlaylistContentUser extends Model
 
     public function trainingPlan()
     {
-        return $this->belongsTo(TrainingPlan::class, 'trainingplan_id');
+        return $this->belongsTo(TrainingPlan::class, 'trainingplan_id')->withTrashed();
     }
 
     public function content()

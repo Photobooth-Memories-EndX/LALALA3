@@ -18,10 +18,8 @@
         $learningHoursVal = $durationSeconds > 0 ? round($durationSeconds / 3600, 1) : 0.5;
     }
     $learningHoursNum = (float) $learningHoursVal;
-    $learningHoursDisplay = ($learningHoursNum == (int) $learningHoursNum)
-        ? (int) $learningHoursNum
-        : $learningHoursNum;
-    $learningHoursText = $learningHoursDisplay . ' ' . ($learningHoursNum == 1 ? 'Hour' : 'Hours');
+    $learningHoursDisplay = number_format($learningHoursNum, 2);
+    $learningHoursText = $learningHoursDisplay . ' Hours';
 
     $learningStatusLabels = [
         'not_started' => 'Not Started',

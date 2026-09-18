@@ -47,27 +47,35 @@
                     <option value="">-- Select Type --</option>
                     <option value="Video" @selected(old('type', $content->type ?? '') === 'Video')>Video</option>
                     <option value="Document" @selected(old('type', $content->type ?? '') === 'Document')>Document</option>
-                    <option value="YouTube" @selected(old('type', $content->type ?? '') === 'YouTube')>MOOC</option>
+                    <option value="YouTube" @selected(in_array(old('type', $content->type ?? ''), ['YouTube', 'MOOC']))>MOOC</option>
                     <option value="SOP/Regulation" @selected(old('type', $content->type ?? '') === 'SOP/Regulation')>SOP/Regulation</option>
                 </select>
             </div>
 
-            {{-- YouTube Link (Appears when Type = YouTube) --}}
-            <div class="col-12" style="display: none;" id="linkrow">
-                <label class="form-label" for="link">YouTube Link</label>
+            {{-- External Course Link (Appears when Type = YouTube/MOOC) --}}
+            <div class="col-12" style="{{ in_array(old('type', $content->type ?? ''), ['YouTube', 'MOOC']) ? 'display: block;' : 'display: none;' }}" id="linkrow">
+                <label class="form-label" for="link">External Course Link</label>
                 <div class="input-group">
                     <span class="input-group-text">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon text-red" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                            <path d="M2 8a4 4 0 0 1 4 -4h12a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-12a4 4 0 0 1 -4 -4v-8z"></path>
-                            <path d="M10 9l5 3l-5 3z"></path>
-                        </svg>
+                        <i class="ti ti-world text-primary" style="font-size: 1.1rem;"></i>
                     </span>
-                    <input type="text" class="form-control" placeholder="https://www.youtube.com/watch?v=..."
+                    @php
+                        $legacyLink = $content->link ?? '';
+                        $formattedLink = '';
+                        if (filled($legacyLink)) {
+                            if (str_starts_with($legacyLink, 'http://') || str_starts_with($legacyLink, 'https://')) {
+                                $formattedLink = $legacyLink;
+                            } else {
+                                $formattedLink = 'https://www.youtube.com/watch?v=' . $legacyLink;
+                            }
+                        }
+                    @endphp
+                    <input type="text" class="form-control" placeholder="https://..."
                         name="link" id="link"
-                        value="{{ old('link', isset($content->link) ? 'https://www.youtube.com/watch?v=' . $content->link : '') }}"
+                        value="{{ old('link', $formattedLink) }}"
                         {{ $isLocked ? 'disabled' : '' }}>
                 </div>
+                <small class="form-hint">Enter the full URL to the external course platform (e.g. Coursera, edX, or other online learning platform).</small>
             </div>
 
             {{-- 4. Content Description --}}
@@ -78,10 +86,10 @@
 
             {{-- 5. Only Show on Playlist --}}
             <div class="col-12">
-                <label class="form-check cursor-pointer">
-                    <input type="hidden" name="playlistonly" value="N">
-                    <input class="form-check-input" type="checkbox" name="playlistonly" value="Y"
-                        @checked(old('playlistonly', $content->playlistonly ?? '') === 'Y')
+                <label class="form-check {{ $isLocked ? 'cursor-not-allowed' : 'cursor-pointer' }}" for="playlistonly">
+                    <input type="hidden" name="playlistonly" value="N" {{ $isLocked ? 'disabled' : '' }}>
+                    <input class="form-check-input" type="checkbox" name="playlistonly" id="playlistonly" value="Y"
+                        @checked(in_array(old('playlistonly', $content->playlistonly ?? 'N'), ['Y', '1', 1, true, 'yes', 'Yes'], true))
                         {{ $isLocked ? 'disabled' : '' }}>
                     <span class="form-check-label">Only show on Playlist</span>
                 </label>

@@ -8,7 +8,9 @@
 <div class="row row-cards">
     @forelse ($contents as $item)
         <div class="col-12 col-md-6 col-lg-4 col-xl-3 content-grid-item">
-            @if (in_array($item->type, ['Video', 'YouTube']))
+            @if (in_array($item->type, ['YouTube', 'MOOC']))
+                @include('user.content.components.card-mooc', ['item' => $item])
+            @elseif ($item->type === 'Video')
                 @include('user.content.components.card-video', ['item' => $item])
             @else
                 @include('user.content.components.card-document', ['item' => $item])

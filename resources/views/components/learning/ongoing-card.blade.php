@@ -26,11 +26,16 @@
     'continueUrl' => null,
     'learningHours' => null,
     'learning_hours' => null,
+    'currentLearningHours' => null,
+    'totalLearningHours' => null,
+    'current_learning_hours' => null,
+    'total_learning_hours' => null,
 ])
 
 @php
     $cardType = $cardType ?? 'content';
     $isPlaylist = $cardType === 'playlist';
+    $isMooc = ! $isPlaylist && ($cardType === 'mooc' || str_contains(strtolower($type ?? ''), 'mooc') || str_contains(strtolower($type ?? ''), 'youtube'));
 
     $title = $title ?? '-';
     $classification = $classification ?? '-';
@@ -60,13 +65,21 @@
         $periodString = 'No Period';
     }
 
+    $curLh = $currentLearningHours ?? $current_learning_hours ?? null;
+    $totLh = $totalLearningHours ?? $total_learning_hours ?? null;
     $rawLearningHours = $learningHours ?? $learning_hours ?? null;
 
-    if (!is_null($rawLearningHours) && $rawLearningHours !== '' && is_numeric($rawLearningHours)) {
+    if (!is_null($curLh) && !is_null($totLh)) {
+        $curFormatted = number_format((float) $curLh, 2, '.', '');
+        $totFormatted = number_format((float) $totLh, 2, '.', '');
+        $learningHourDisplay = $curFormatted . ' / ' . $totFormatted . ' Hours';
+    } elseif (!is_null($rawLearningHours) && $rawLearningHours !== '' && is_numeric($rawLearningHours)) {
         $lhVal = ((float) $rawLearningHours == (int) $rawLearningHours)
             ? (int) $rawLearningHours
             : (float) $rawLearningHours;
         $learningHourDisplay = $lhVal . ' ' . ($lhVal == 1 ? 'Hour' : 'Hours');
+    } elseif (!is_null($rawLearningHours) && is_string($rawLearningHours) && str_contains($rawLearningHours, '/')) {
+        $learningHourDisplay = str_contains($rawLearningHours, 'Hour') ? $rawLearningHours : $rawLearningHours . ' Hours';
     } else {
         $learningHourDisplay = '-';
     }
@@ -117,7 +130,13 @@
         $typeLabel = ucwords(str_replace('_', ' ', $type));
         $typeLower = strtolower($typeLabel);
 
-        if (str_contains($typeLower, 'video') || str_contains($typeLower, 'youtube')) {
+        $isMooc = str_contains($typeLower, 'mooc') || str_contains($typeLower, 'youtube') || ($cardType ?? '') === 'mooc';
+
+        if ($isMooc) {
+            $placeholderIcon = 'ti ti-world';
+            $typeBadgeClass = 'bg-indigo text-white';
+            $typeLabel = 'MOOC';
+        } elseif (str_contains($typeLower, 'video')) {
             $placeholderIcon = 'ti ti-video';
             $typeBadgeClass = 'bg-yellow text-white';
         } elseif (
@@ -230,18 +249,26 @@
         @endif
 
         <div class="learning-card-progress">
-            <div class="d-flex justify-content-between small mb-1">
+            <div class="d-flex justify-content-between align-items-center small mb-1">
                 @if ($isPlaylist)
                     <span class="text-muted">{{ $completedCount }} / {{ $moduleCount }} Completed</span>
+                    <span class="fw-semibold">{{ $progress }}%</span>
+                @elseif ($isMooc)
+                    <span class="text-muted">Status</span>
+                    <span class="badge bg-blue-lt text-blue fw-semibold">
+                        {{ $progress >= 100 ? 'Completed' : 'In Progress' }}
+                    </span>
                 @else
                     <span class="text-muted">Progress</span>
+                    <span class="fw-semibold">{{ $progress }}%</span>
                 @endif
-                <span class="fw-semibold">{{ $progress }}%</span>
             </div>
 
-            <div class="progress progress-sm learning-progress-bar">
-                <div class="progress-bar bg-primary" style="width: {{ $progress }}%"></div>
-            </div>
+            @if (! $isMooc)
+                <div class="progress progress-sm learning-progress-bar">
+                    <div class="progress-bar bg-primary" style="width: {{ $progress }}%"></div>
+                </div>
+            @endif
         </div>
 
         @php
@@ -257,13 +284,13 @@
             {{-- Card Playlist: seluruh card dapat diklik (stretched-link) menuju
                  halaman playlist /playlist/{playlistSlug}/{contentSlug}. --}}
             <a href="{{ $cardUrl }}" class="btn btn-primary btn-learning-primary btn-learning-lg learning-continue-btn w-100 mt-auto {{ $isPlaylist ? 'stretched-link' : '' }}">
-                <i class="ti ti-player-play"></i>
-                Continue Learning
+                <i class="{{ $isMooc ? 'ti ti-world' : 'ti ti-player-play' }}"></i>
+                {{ $isMooc ? 'Continue Course' : 'Continue Learning' }}
             </a>
         @else
             <button type="button" class="btn btn-primary btn-learning-primary btn-learning-lg learning-continue-btn w-100 mt-auto" disabled>
-                <i class="ti ti-player-play"></i>
-                Continue Learning
+                <i class="{{ $isMooc ? 'ti ti-world' : 'ti ti-player-play' }}"></i>
+                {{ $isMooc ? 'Continue Course' : 'Continue Learning' }}
             </button>
         @endif
     </div>

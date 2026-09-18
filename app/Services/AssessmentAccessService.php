@@ -235,6 +235,16 @@ final class AssessmentAccessService
             return null;
         }
 
+        // If user has already completed this assessment, allow viewing their result
+        $hasCompletedResult = AssesmentResult::where('user_id', $user->id)
+            ->where('assesment_id', $assessment->id)
+            ->where('final', 1)
+            ->exists();
+
+        if ($hasCompletedResult) {
+            return null;
+        }
+
         if (strtoupper(trim((string) ($assessment->status ?? ''))) === 'NOT') {
             return self::REASON_INACTIVE;
         }

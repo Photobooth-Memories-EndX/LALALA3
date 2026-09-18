@@ -68,7 +68,7 @@ class PlaylistTotalDurationTest extends TestCase
             'title'                  => 'Test Edit Sync',
             'total_duration_seconds' => 0,
             'learning_hours'         => 0.0,
-            'active'                 => 'Active',
+            'active'                 => 'Inactive',
         ]);
 
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
@@ -82,12 +82,12 @@ class PlaylistTotalDurationTest extends TestCase
             'success'                => true,
             'total_duration_seconds' => 8100,
             'duration'               => '02:15:00',
-            'learning_hours'         => 2.5,
+            'learning_hours'         => 2.25,
         ]);
 
         $plan->refresh();
         $this->assertSame(8100, $plan->total_duration_seconds);
-        $this->assertEquals(2.5, $plan->learning_hours);
+        $this->assertEquals(2.25, $plan->learning_hours);
     }
 
     /**
@@ -98,7 +98,7 @@ class PlaylistTotalDurationTest extends TestCase
         $c1 = Content::create(['title' => 'C1', 'duration' => '00:30:00', 'active' => 'Active']);
         $c2 = Content::create(['title' => 'C2', 'duration' => '01:00:00', 'active' => 'Active']);
 
-        $plan = TrainingPlan::create(['title' => 'Test Content Payload', 'active' => 'Active']);
+        $plan = TrainingPlan::create(['title' => 'Test Content Payload', 'active' => 'Inactive']);
 
         // 00:30:00 + 01:00:00 = 5400s (01:30:00), 1.5 learning hours
         $response = $this->postJson(route('playlist.synchronize-learning-hours', $plan->slug), [
@@ -123,7 +123,7 @@ class PlaylistTotalDurationTest extends TestCase
             'title'                  => 'Empty Playlist',
             'total_duration_seconds' => 500,
             'learning_hours'         => 1.0,
-            'active'                 => 'Active',
+            'active'                 => 'Inactive',
         ]);
 
         $response = $this->postJson(route('playlist.synchronize-learning-hours', $plan->slug));
@@ -146,7 +146,7 @@ class PlaylistTotalDurationTest extends TestCase
         $c2 = Content::create(['title' => 'C2', 'duration' => null, 'active' => 'Active']);
         $c3 = Content::create(['title' => 'C3', 'duration' => '01:00:00', 'active' => 'Active']);
 
-        $plan = TrainingPlan::create(['title' => 'Playlist Null Duration', 'active' => 'Active']);
+        $plan = TrainingPlan::create(['title' => 'Playlist Null Duration', 'active' => 'Inactive']);
 
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c1->id, 'content_order' => 0]);
         TrainingPlanDetail::create(['trainingplan_id' => $plan->id, 'content_id' => $c2->id, 'content_order' => 1]);
