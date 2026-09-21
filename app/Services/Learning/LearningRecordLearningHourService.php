@@ -10,6 +10,45 @@ use Illuminate\Support\Collection;
 
 class LearningRecordLearningHourService
 {
+    public function __construct(
+        private readonly ?CompletedPlaylistService $completedPlaylistService = null
+    ) {
+    }
+
+    private function completedPlaylistsService(): CompletedPlaylistService
+    {
+        return $this->completedPlaylistService ?? app(CompletedPlaylistService::class);
+    }
+
+    /**
+     * Canonical total actual completed learning hours for a user.
+     * Reused by Home, Learning Record, My Learning Dashboard, and Monitoring.
+     *
+     * @param int $userId
+     * @return float Rounded to 2 decimal places
+     */
+    public function getTotalLearningHours(int $userId): float
+    {
+        $completedPlaylists = $this->completedPlaylistsService()->forLearningRecord($userId);
+
+        $completedContentUsers = ContentUser::with('content')
+            ->join('content', 'content.id', '=', 'content_users.content_id')
+            ->where('content_users.user_id', $userId)
+            ->where('content_users.finish', '1')
+            ->whereNull('content.deleted_at')
+            ->whereIn('content.type', ['Video', 'Document'])
+            ->select('content_users.*')
+            ->get();
+
+        $actualContentHours = (float) $completedContentUsers->sum(
+            fn (ContentUser $cu) => $this->calculateContent($cu)
+        );
+
+        $actualPlaylistHours = (float) $this->calculatePlaylistsBatch($userId, $completedPlaylists)->sum();
+
+        return round($actualContentHours + $actualPlaylistHours, 2);
+    }
+
     /**
      * Calculate actual learning hours for a single ContentUser record.
      *
