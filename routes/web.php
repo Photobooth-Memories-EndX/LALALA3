@@ -57,6 +57,7 @@ use App\Http\Controllers\Manage\Record\RecordOnlineController;
 use App\Http\Controllers\Manage\Record\RecordOfflineController;
 use App\Http\Controllers\Manage\Record\RecordAllController;
 use App\Http\Controllers\Manage\Record\RecordExportController;
+use App\Http\Controllers\Manage\Record\OfflineTrainingImportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -464,8 +465,15 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('offline', [RecordOfflineController::class, 'index'])->name('offline');
             Route::get('offline/ajax/summary', [RecordOfflineController::class, 'ajaxSummary'])->name('offline.ajax.summary');
             Route::get('offline/datatable', [RecordOfflineController::class, 'datatable'])->name('offline.datatable');
+            Route::get('offline/import', [OfflineTrainingImportController::class, 'index'])->name('offline.import');
+            Route::post('offline/import/preview', [OfflineTrainingImportController::class, 'preview'])->name('offline.import.preview');
+            Route::post('offline/import/confirm', [OfflineTrainingImportController::class, 'confirm'])->name('offline.import.confirm');
+            Route::post('offline/import/cancel', [OfflineTrainingImportController::class, 'cancel'])->name('offline.import.cancel');
             Route::get('offline/{id}/detail', [RecordOfflineController::class, 'detail'])->name('offline.detail');
             Route::get('all', [RecordAllController::class, 'index'])->name('all');
+            Route::get('all/ajax/summary', [RecordAllController::class, 'ajaxSummary'])->name('all.ajax.summary');
+            Route::get('all/ajax/classification', [RecordAllController::class, 'ajaxClassification'])->name('all.ajax.classification');
+            Route::get('all/datatable', [RecordAllController::class, 'datatable'])->name('all.datatable');
             Route::get('export-all', [RecordExportController::class, 'index'])->name('export-all');
         });
     });

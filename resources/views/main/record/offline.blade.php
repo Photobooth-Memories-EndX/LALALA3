@@ -31,11 +31,10 @@
 
                 <!-- Action Buttons (Placeholders for Phase 2E & 2F) -->
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
-                            data-bs-toggle="tooltip" data-bs-placement="top" title="Phase 2F: Excel Import will be enabled in upcoming phase">
+                    <a href="{{ route('manage.record.offline.import') }}" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
                         <i class="ti ti-file-spreadsheet fs-2"></i>
                         <span>Import Excel</span>
-                    </button>
+                    </a>
                     <button type="button" class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
                             style="background-color: #d97706; border-color: #d97706;"
                             data-bs-toggle="tooltip" data-bs-placement="top" title="Phase 2E: Add Training form will be enabled in upcoming phase">
