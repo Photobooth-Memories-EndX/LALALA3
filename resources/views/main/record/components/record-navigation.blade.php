@@ -5,8 +5,8 @@
             <div class="card-body p-3 d-flex flex-column justify-content-between">
                 <div>
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="avatar rounded-3 record-nav-icon" style="background-color: #e0f2fe; color: #0284c7;">
-                            <i class="ti ti-device-laptop fs-2"></i>
+                        <span class="avatar avatar-sm rounded-3 record-nav-icon" style="background-color: #e0f2fe; color: #0284c7;">
+                            <i class="ti ti-device-laptop"></i>
                         </span>
                         @if(request()->routeIs('manage.record.online*'))
                             <span class="badge bg-primary text-white rounded-pill px-2.5 py-1" style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
@@ -26,8 +26,8 @@
             <div class="card-body p-3 d-flex flex-column justify-content-between">
                 <div>
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="avatar rounded-3 record-nav-icon" style="background-color: #fef3c7; color: #d97706;">
-                            <i class="ti ti-certificate fs-2"></i>
+                        <span class="avatar avatar-sm rounded-3 record-nav-icon" style="background-color: #fef3c7; color: #d97706;">
+                            <i class="ti ti-certificate"></i>
                         </span>
                         @if(request()->routeIs('manage.record.offline*'))
                             <span class="badge bg-primary text-white rounded-pill px-2.5 py-1" style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
@@ -47,8 +47,8 @@
             <div class="card-body p-3 d-flex flex-column justify-content-between">
                 <div>
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="avatar rounded-3 record-nav-icon" style="background-color: #ede9fe; color: #7c3aed;">
-                            <i class="ti ti-stack-2 fs-2"></i>
+                        <span class="avatar avatar-sm rounded-3 record-nav-icon" style="background-color: #ede9fe; color: #7c3aed;">
+                            <i class="ti ti-stack-2"></i>
                         </span>
                         @if(request()->routeIs('manage.record.all*'))
                             <span class="badge bg-primary text-white rounded-pill px-2.5 py-1" style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
@@ -68,8 +68,8 @@
             <div class="card-body p-3 d-flex flex-column justify-content-between">
                 <div>
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="avatar rounded-3 record-nav-icon" style="background-color: #dcfce7; color: #15803d;">
-                            <i class="ti ti-download fs-2"></i>
+                        <span class="avatar avatar-sm rounded-3 record-nav-icon" style="background-color: #dcfce7; color: #15803d;">
+                            <i class="ti ti-download"></i>
                         </span>
                         @if(request()->routeIs('manage.record.export-all*'))
                             <span class="badge bg-primary text-white rounded-pill px-2.5 py-1" style="font-size: 0.725rem; font-weight: 600;">ACTIVE</span>
@@ -105,6 +105,22 @@
                 border: 2px solid #0c5b9e !important;
                 background: #f8fafc !important;
                 box-shadow: 0 6px 18px rgba(12, 91, 158, 0.12) !important;
+            }
+
+            .record-nav-icon {
+                width: 32px !important;
+                height: 32px !important;
+                min-width: 32px !important;
+                border-radius: 8px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                flex-shrink: 0 !important;
+            }
+
+            .record-nav-icon i {
+                font-size: 16px !important;
+                line-height: 1 !important;
             }
 
             [data-bs-theme="dark"] .record-nav-card,

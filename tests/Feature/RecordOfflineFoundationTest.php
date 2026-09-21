@@ -6,6 +6,7 @@ use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Models\User;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class RecordOfflineFoundationTest extends TestCase
@@ -49,7 +50,7 @@ class RecordOfflineFoundationTest extends TestCase
     }
 
     /**
-     * 2. Test summary endpoint requires permission and returns valid contract.
+     * 2. Test summary endpoint requires permission and returns valid contract and zero initial metrics.
      */
     public function test_offline_summary_endpoint_requires_permission_and_returns_valid_contract(): void
     {
@@ -75,10 +76,15 @@ class RecordOfflineFoundationTest extends TestCase
             'data',
             'html',
         ]);
+
+        $this->assertEquals(0, $response->json('total_trainings'));
+        $this->assertEquals(0, $response->json('total_participants'));
+        $this->assertEquals(0.0, (float) $response->json('total_learning_hours'));
+        $this->assertEquals(0.0, (float) $response->json('completion_rate'));
     }
 
     /**
-     * 3. Test datatable endpoint requires permission and returns valid DataTables JSON.
+     * 3. Test datatable endpoint requires permission and returns empty DataTables JSON.
      */
     public function test_offline_datatable_endpoint_requires_permission_and_returns_valid_structure(): void
     {
@@ -97,6 +103,10 @@ class RecordOfflineFoundationTest extends TestCase
             'recordsFiltered',
             'data',
         ]);
+
+        $this->assertEquals(0, $response->json('recordsTotal'));
+        $this->assertEquals(0, $response->json('recordsFiltered'));
+        $this->assertEmpty($response->json('data'));
     }
 
     /**
@@ -110,7 +120,7 @@ class RecordOfflineFoundationTest extends TestCase
         }
 
         $response = $this->actingAs($this->admin)->getJson('/manage/record/offline/999999/detail');
-        $this->assertTrue(in_array($response->getStatusCode(), [200, 404], true));
+        $this->assertEquals(404, $response->getStatusCode());
     }
 
     /**
@@ -239,5 +249,30 @@ class RecordOfflineFoundationTest extends TestCase
         $this->assertTrue(method_exists($userRecord, 'scopeFinished'));
         $this->assertTrue(method_exists($userRecord, 'scopeOngoing'));
         $this->assertTrue(method_exists($userRecord, 'scopeAttended'));
+    }
+
+    /**
+     * 7. Test actual database tables exist and have correct schema structure.
+     */
+    public function test_actual_database_tables_and_columns_exist(): void
+    {
+        $this->assertTrue(Schema::hasTable('offline_trainings'));
+        $this->assertTrue(Schema::hasTable('offline_training_users'));
+
+        $this->assertTrue(Schema::hasColumns('offline_trainings', [
+            'id', 'course_name', 'sub_course_name', 'type', 'category', 'level', 'batch',
+            'main_classification', 'sub_classification', 'counted_corporate_kpi', 'sub_corporate_kpi',
+            'delivery_method', 'sub_delivery_method', 'provider', 'sub_provider', 'provider_name',
+            'venue', 'instructor', 'duration_seconds', 'learning_hours', 'start_date', 'finish_date',
+            'created_by', 'created_at', 'updated_at', 'deleted_at'
+        ]));
+
+        $this->assertTrue(Schema::hasColumns('offline_training_users', [
+            'id', 'offline_training_id', 'user_id', 'employee_id', 'name', 'grade', 'job_position',
+            'team', 'department', 'company', 'learning_hours', 'progress', 'assessment_score',
+            'certificate', 'attendance', 'attendance_reason', 'bond_status', 'bond_end_date',
+            'bond_amount', 'l1_program', 'l2_numerical', 'l2_verbal', 'l3_numerical', 'l3_verbal',
+            'pic', 'created_at', 'updated_at', 'deleted_at'
+        ]));
     }
 }
