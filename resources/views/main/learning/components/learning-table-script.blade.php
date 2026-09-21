@@ -59,9 +59,15 @@
 
         // ── 1b. Employee Live Autocomplete Listener ────────────────────────
         let employeeDebounceTimer = null;
+        let employeeXhr = null;
         $('#manage-employee-input').on('input', function () {
             const query = $(this).val().trim();
             clearTimeout(employeeDebounceTimer);
+
+            if (employeeXhr) {
+                employeeXhr.abort();
+                employeeXhr = null;
+            }
 
             if (query.length === 0) {
                 $('#manage-employee-dropdown').hide();
@@ -70,16 +76,21 @@
             }
 
             employeeDebounceTimer = setTimeout(function () {
-                $.ajax({
-                    url: "{{ route('learning.manage.search-employees') }}",
+                employeeXhr = $.ajax({
+                    url: "{{ $employeeSearchUrl ?? route('learning.manage.search-employees') }}",
                     type: 'GET',
                     data: { q: query, search: query, employee_q: query },
                     dataType: 'json',
                     success: function (data) {
+                        employeeXhr = null;
                         const items = data.results || data || [];
                         renderAutocompleteResults('manage-employee-input', 'manage-employee-dropdown', 'manage-employee-list', 'manage-employee-footer', items, true);
                     },
-                    error: function () {
+                    error: function (xhr, status) {
+                        if (status === 'abort') {
+                            return;
+                        }
+                        employeeXhr = null;
                         $('#manage-employee-dropdown').hide();
                     }
                 });
@@ -88,9 +99,15 @@
 
         // ── 1c. Learning Title Live Autocomplete Listener ───────────────────
         let titleDebounceTimer = null;
+        let titleXhr = null;
         $('#manage-title-input').on('input', function () {
             const query = $(this).val().trim();
             clearTimeout(titleDebounceTimer);
+
+            if (titleXhr) {
+                titleXhr.abort();
+                titleXhr = null;
+            }
 
             if (query.length === 0) {
                 $('#manage-title-dropdown').hide();
@@ -99,16 +116,21 @@
             }
 
             titleDebounceTimer = setTimeout(function () {
-                $.ajax({
-                    url: "{{ route('learning.manage.search-titles') }}",
+                titleXhr = $.ajax({
+                    url: "{{ $titleSearchUrl ?? route('learning.manage.search-titles') }}",
                     type: 'GET',
                     data: { q: query, search: query, title_q: query },
                     dataType: 'json',
                     success: function (data) {
+                        titleXhr = null;
                         const items = data.results || data || [];
                         renderAutocompleteResults('manage-title-input', 'manage-title-dropdown', 'manage-title-list', 'manage-title-footer', items, false);
                     },
-                    error: function () {
+                    error: function (xhr, status) {
+                        if (status === 'abort') {
+                            return;
+                        }
+                        titleXhr = null;
                         $('#manage-title-dropdown').hide();
                     }
                 });
@@ -118,6 +140,9 @@
         // ── 1d. Autocomplete Selection Handlers ─────────────────────────────
         $(document).on('click', '.select-autocomplete-item', function (e) {
             e.preventDefault();
+            if (employeeXhr) { employeeXhr.abort(); employeeXhr = null; }
+            if (titleXhr) { titleXhr.abort(); titleXhr = null; }
+
             const targetInputId = $(this).data('input');
             const val = $(this).data('value');
             const label = $(this).data('label');
@@ -137,6 +162,9 @@
 
         // Handle clicking on "See all results" or pressing Enter
         $(document).on('click', '.trigger-submit-filter', function () {
+            if (employeeXhr) { employeeXhr.abort(); employeeXhr = null; }
+            if (titleXhr) { titleXhr.abort(); titleXhr = null; }
+
             const targetInputId = $(this).data('input');
             if (targetInputId === 'manage-employee-input') {
                 $('#learn-employee').val($('#manage-employee-input').val().trim());
@@ -161,6 +189,9 @@
         $('#manage-employee-input, #manage-title-input').on('keypress', function (e) {
             if (e.which === 13) {
                 e.preventDefault();
+                if (employeeXhr) { employeeXhr.abort(); employeeXhr = null; }
+                if (titleXhr) { titleXhr.abort(); titleXhr = null; }
+
                 $('#manage-employee-dropdown, #manage-title-dropdown').hide();
                 $('#learn-employee').val($('#manage-employee-input').val().trim());
                 $('#learn-title').val($('#manage-title-input').val().trim());
@@ -194,7 +225,7 @@
             order: [[9, 'desc']],
             dom: '<"table-responsive"t>',
             ajax: {
-                url: "{{ route('learning.manage.datatable') }}",
+                url: "{{ $datatableUrl ?? route('learning.manage.datatable') }}",
                 type: 'GET',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
@@ -503,6 +534,9 @@
 
         // ── 5. Full Filter Reset Event ────────────────────────────────────
         $('#btn-reset-filter').on('click', function () {
+            if (employeeXhr) { employeeXhr.abort(); employeeXhr = null; }
+            if (titleXhr) { titleXhr.abort(); titleXhr = null; }
+
             // Reset Employee Search input & hidden value
             $('#manage-employee-input').val('');
             $('#learn-employee').val('');
@@ -586,7 +620,8 @@
 
             params.append('action', 'download');
 
-            const downloadUrl = "{{ route('manage.learning.download') }}?" + params.toString();
+            const downloadBaseUrl = "{{ $downloadUrl ?? route('manage.learning.download') }}";
+            const downloadUrl = downloadBaseUrl + (downloadBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
             window.open(downloadUrl, '_blank');
         });
     });

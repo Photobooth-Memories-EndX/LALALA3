@@ -53,6 +53,10 @@ use App\Http\Controllers\Manage\LearningHours\ContentUserLearningHourController;
 use App\Http\Controllers\Manage\LearningHours\PlaylistContentUserLearningHourController;
 use App\Http\Controllers\Manage\LearningHours\LearningHoursLandingController;
 use App\Http\Controllers\Manage\LearningHours\PlaylistProgressDryRunController;
+use App\Http\Controllers\Manage\Record\RecordOnlineController;
+use App\Http\Controllers\Manage\Record\RecordOfflineController;
+use App\Http\Controllers\Manage\Record\RecordAllController;
+use App\Http\Controllers\Manage\Record\RecordExportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -445,6 +449,25 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('learning/category/{slug}', [LearningManageController::class, 'category'])->name('learning.manage.category');
         Route::get('learning/content/{slug}', [LearningManageController::class, 'content'])->name('learning.manage.content');
         Route::get('learning/download', [LearningManageController::class, 'download'])->name('manage.learning.download');
+    });
+
+    Route::group(['middleware' => 'mpermission:record_management'], function () {
+        Route::prefix('record')->name('manage.record.')->group(function () {
+            Route::get('online', [RecordOnlineController::class, 'index'])->name('online');
+            Route::get('online/ajax/summary', [RecordOnlineController::class, 'ajaxSummary'])->name('online.ajax.summary');
+            Route::get('online/ajax/classification', [RecordOnlineController::class, 'ajaxClassification'])->name('online.ajax.classification');
+            Route::get('online/datatable', [RecordOnlineController::class, 'datatable'])->name('online.datatable');
+            Route::get('online/search-employees', [RecordOnlineController::class, 'searchEmployees'])->name('online.search-employees');
+            Route::get('online/search-titles', [RecordOnlineController::class, 'searchTitles'])->name('online.search-titles');
+            Route::get('online/download', [RecordOnlineController::class, 'download'])->name('online.download');
+
+            Route::get('offline', [RecordOfflineController::class, 'index'])->name('offline');
+            Route::get('offline/ajax/summary', [RecordOfflineController::class, 'ajaxSummary'])->name('offline.ajax.summary');
+            Route::get('offline/datatable', [RecordOfflineController::class, 'datatable'])->name('offline.datatable');
+            Route::get('offline/{id}/detail', [RecordOfflineController::class, 'detail'])->name('offline.detail');
+            Route::get('all', [RecordAllController::class, 'index'])->name('all');
+            Route::get('export-all', [RecordExportController::class, 'index'])->name('export-all');
+        });
     });
 
     Route::group(['middleware' => 'mpermission:learning_hours_management'], function () {

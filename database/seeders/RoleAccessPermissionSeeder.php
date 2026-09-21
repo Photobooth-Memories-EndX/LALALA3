@@ -28,6 +28,7 @@ class RoleAccessPermissionSeeder extends Seeder
         // tambahan
         'monitoring',
         'learning_hours_management',
+        'record_management',
     ];
         /*
         |--------------------------------------------------------------------------
@@ -90,6 +91,7 @@ class RoleAccessPermissionSeeder extends Seeder
 
             $allowed = in_array($module, [
                 'learning_management',
+                'record_management',
             ]);
 
             RoleAccessPermission::updateOrCreate(

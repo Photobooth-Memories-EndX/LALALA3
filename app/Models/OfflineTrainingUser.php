@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class OfflineTrainingUser extends Model
+{
+    use HasFactory;
+    use SoftDeletes;
+
+    protected $table = 'offline_training_users';
+
+    protected $fillable = [
+        'offline_training_id',
+        'user_id',
+        'employee_id',
+        'name',
+        'grade',
+        'job_position',
+        'team',
+        'department',
+        'company',
+        'learning_hours',
+        'progress',
+        'assessment_score',
+        'certificate',
+        'attendance',
+        'attendance_reason',
+        'bond_status',
+        'bond_end_date',
+        'bond_amount',
+        'l1_program',
+        'l2_numerical',
+        'l2_verbal',
+        'l3_numerical',
+        'l3_verbal',
+        'pic',
+    ];
+
+    protected $casts = [
+        'learning_hours'   => 'decimal:4',
+        'progress'         => 'decimal:4',
+        'assessment_score' => 'decimal:2',
+        'attendance'       => 'boolean',
+        'bond_end_date'    => 'date',
+        'bond_amount'      => 'decimal:2',
+        'l2_numerical'     => 'decimal:4',
+        'l3_numerical'     => 'decimal:4',
+    ];
+
+    public function training(): BelongsTo
+    {
+        return $this->belongsTo(OfflineTraining::class, 'offline_training_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function scopeFinished($query)
+    {
+        return $query->where('progress', '>=', 100);
+    }
+
+    public function scopeOngoing($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('progress', '<', 100)
+              ->orWhereNull('progress');
+        });
+    }
+
+    public function scopeAttended($query)
+    {
+        return $query->where('attendance', true);
+    }
+}

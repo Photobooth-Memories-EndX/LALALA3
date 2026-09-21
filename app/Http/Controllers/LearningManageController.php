@@ -18,7 +18,7 @@ class LearningManageController extends Controller
 {
     public const PLAYLIST_CUTOFF = '2026-08-28 23:59:59';
 
-    public function index()
+    public function getKpiSummary(): array
     {
         $cuTotal = ContentUser::count();
         $cuOngoing = ContentUser::where('finish', '0')->count();
@@ -36,6 +36,19 @@ class LearningManageController extends Controller
             ? round(($finish / $totalLearning) * 100, 1)
             : 0;
 
+        return [
+            'ongoing' => $ongoing,
+            'finish' => $finish,
+            'finished' => $finish,
+            'totalLearning' => $totalLearning,
+            'total_learning' => $totalLearning,
+            'completionRate' => $completionRate,
+            'completion_rate' => $completionRate,
+        ];
+    }
+
+    public function getClassificationSummary()
+    {
         $unifiedSubquery = DB::table('content_users')
             ->select([
                 'id',
@@ -51,7 +64,7 @@ class LearningManageController extends Controller
                     ])
             );
 
-        $classification = DB::table('classification')
+        return DB::table('classification')
             ->leftJoin('content', function ($join) {
                 $join->on('content.classification_id', '=', 'classification.id')
                     ->whereNull('content.deleted_at');
@@ -112,17 +125,54 @@ class LearningManageController extends Controller
             ->groupBy('classification.id')
             ->orderBy('classification_name')
             ->get();
+    }
 
+    public function getTotalLearningHours(): float
+    {
+        $res = DB::table('content')
+            ->join('classification', 'classification.id', '=', 'content.classification_id')
+            ->whereNotNull('classification.classification_name')
+            ->whereNotNull('classification.slug')
+            ->where('classification.slug', '!=', '')
+            ->whereNull('content.deleted_at')
+            ->whereNotNull('content.duration')
+            ->where('content.duration', '!=', '')
+            ->selectRaw("
+                SUM(
+                    CASE
+                        WHEN LENGTH(content.duration) - LENGTH(REPLACE(content.duration, ':', '')) = 2
+                        THEN TIME_TO_SEC(content.duration)
+                        ELSE TIME_TO_SEC(CONCAT('00:', content.duration))
+                    END * (
+                        (SELECT COUNT(*) FROM content_users WHERE content_users.content_id = content.id) +
+                        (SELECT COUNT(*) FROM playlist_content_users WHERE playlist_content_users.content_id = content.id)
+                    )
+                ) / 3600 as total_hours
+            ")
+            ->first();
+
+        return round((float) ($res->total_hours ?? 0), 1);
+    }
+
+    public function getSummaryData(): array
+    {
+        $kpi = $this->getKpiSummary();
+        $classification = $this->getClassificationSummary();
         $learningHours = round((float) $classification->sum('learning_hours'), 1);
 
-        return view('main.learning.index', [
-            'ongoing' => $ongoing,
-            'finish' => $finish,
-            'totalLearning' => $totalLearning,
-            'completionRate' => $completionRate,
+        return [
+            'ongoing' => $kpi['ongoing'],
+            'finish' => $kpi['finish'],
+            'totalLearning' => $kpi['totalLearning'],
+            'completionRate' => $kpi['completionRate'],
             'learningHours' => $learningHours,
             'classification' => $classification,
-        ]);
+        ];
+    }
+
+    public function index()
+    {
+        return view('main.learning.index', $this->getSummaryData());
     }
 
     public function all(Request $request)
@@ -257,7 +307,7 @@ class LearningManageController extends Controller
         ];
     }
 
-    private function learningYears(): array
+    public static function learningYears(): array
     {
         return range((int) date('Y'), (int) date('Y') - 4);
     }

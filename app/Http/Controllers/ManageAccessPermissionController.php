@@ -19,6 +19,7 @@ class ManageAccessPermissionController extends Controller
         'admin_management'           => 'Admin Management',
         'user_management'            => 'User Management',
         'learning_management'        => 'Learning Management',
+        'record_management'          => 'Record Management',
         'content_repository'         => 'Content Repository',
         'category_classification'    => 'Category & Classification',
         'assessment_management'      => 'Assessment Management',

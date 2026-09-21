@@ -20,6 +20,16 @@
             'icon' => 'ti ti-school'
             ])
             @endif
+
+            @if(auth()->user()->canAccessManageModule('record_management'))
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Record Management',
+                'description' => 'Manage online and offline learning records.',
+                'url' => route('manage.record.online'),
+                'button' => 'Manage Records',
+                'icon' => 'ti ti-folders'
+            ])
+            @endif
             
             @if(auth()->user()->canAccessManageModule('assessment_management'))
                 @include('main.manage.components.admin-menu-card', [
