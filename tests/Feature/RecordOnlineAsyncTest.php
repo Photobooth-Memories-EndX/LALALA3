@@ -22,7 +22,7 @@ class RecordOnlineAsyncTest extends TestCase
     }
 
     /**
-     * 1. Test Record Online page loads lightweight shell.
+     * 1. Test Record Online page loads lightweight simplified overview shell without filter & table.
      */
     public function test_record_online_page_loads_lightweight_shell(): void
     {
@@ -41,7 +41,15 @@ class RecordOnlineAsyncTest extends TestCase
         $response->assertSee('Online Learning Record');
         $response->assertSee('kpi-summary-container', false);
         $response->assertSee('classification-summary-container', false);
-        $response->assertSee('learning-table', false);
+        $response->assertSee('Classification Summary');
+        $response->assertSee('Aggregate overview per classification category in KP OWL.');
+
+        // Verify Quick Filter and Learning Table are strictly absent from landing page
+        $response->assertDontSee('Quick Filter');
+        $response->assertDontSee('Search employee or NIP');
+        $response->assertDontSee('learning-table', false);
+        $response->assertDontSee('btn-more-filters');
+        $response->assertDontSee('dataTables.bootstrap5.min.css');
 
         // Verify that the massive aggregation query is NOT executed during initial page load
         $hasHeavyUnion = false;
@@ -185,5 +193,18 @@ class RecordOnlineAsyncTest extends TestCase
         $legacySumHours = round((float) $legacy['classification']->sum('learning_hours'), 1);
         $asyncSumHours = round(collect($classData)->sum('learning_hours'), 1);
         $this->assertEquals($legacySumHours, $asyncSumHours);
+    }
+
+    /**
+     * 8. Test legacy explorer (/manage/learning/all) strictly retains Quick Filter and Learning Table.
+     */
+    public function test_legacy_manage_learning_all_retains_quick_filter_and_table(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/manage/learning/all');
+        $response->assertStatus(200);
+        $response->assertViewIs('main.learning.all');
+        $response->assertSee('Quick Filter');
+        $response->assertSee('Search employee or NIP');
+        $response->assertSee('learning-table', false);
     }
 }
