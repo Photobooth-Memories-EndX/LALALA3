@@ -185,7 +185,7 @@
                 </button>
 
                 {{-- 4. Download Excel Button --}}
-                <a href="{{ route('user.learning.record.export') }}"
+                <a href="{{ route('user.learning.record.export', request()->all()) }}"
                    data-export-url="{{ route('user.learning.record.export') }}"
                    class="btn btn-outline-success btn-learning-success record-filter-action-btn"
                    id="recordDownloadExcel"

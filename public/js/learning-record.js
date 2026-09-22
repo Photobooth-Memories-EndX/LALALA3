@@ -226,6 +226,12 @@ function initLearningRecord() {
             });
         });
 
+        var activeYear = (state.modalYear && state.modalYear !== 'all') ? state.modalYear : (state.year && state.year !== 'all' ? state.year : null);
+        if (activeYear) {
+            params.set('record_filter_year', activeYear);
+            params.set('record_filter_modal_year', activeYear);
+        }
+
         if (quickFilter && quickFilter !== 'all') {
             params.set('record_quick', quickFilter);
         }
@@ -270,6 +276,10 @@ function initLearningRecord() {
         if (quickFilter && quickFilter !== 'all') {
             params.set('quickFilter', quickFilter);
             params.set('record_quick', quickFilter);
+        }
+        if (sortKey && (sortDir === 'asc' || sortDir === 'desc')) {
+            params.set('record_sort', sortKey);
+            params.set('record_sort_direction', sortDir);
         }
         var baseUrl = $('#recordDownloadExcel').data('export-url') || '/my-learning/learning-record/export';
         $('#recordDownloadExcel').attr('href', baseUrl + (params.toString() ? '?' + params.toString() : ''));
@@ -418,7 +428,13 @@ function initLearningRecord() {
         if (f.duration !== 'all' && !rangeMatches(durationSeconds, f.duration)) return false;
         if (f.learningHour !== 'all' && !rangeMatches(learningHour, f.learningHour)) return false;
         if (f.program !== 'all' && String(d.learningProgram) !== f.program) return false;
-        if (f.learningStatus.length && f.learningStatus.indexOf(String(d.learningStatus)) === -1) return false;
+        if (f.learningStatus.length) {
+            var rowStatuses = String(d.learningStatus || '').toLowerCase().split(/\s+/);
+            var matchesStatus = f.learningStatus.some(function (st) {
+                return rowStatuses.indexOf(String(st).toLowerCase()) !== -1;
+            });
+            if (!matchesStatus) return false;
+        }
         if (!anyRangeMatches(progress, f.progressRanges)) return false;
         if (f.completion === 'not_started' && progress !== 0) return false;
         if (f.completion === 'in_progress' && !(progress > 0 && progress <= 75)) return false;
@@ -763,6 +779,26 @@ function initLearningRecord() {
         }
     }
 
+    function syncModalToQuickDropdown(param, value) {
+        if (param === 'record_filter_year') {
+            $('#hidden_record_filter_year, #recordFilterYear').val(value);
+            var $yearItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_year"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v === String(value);
+            });
+            if ($yearItem.length) updateQuickDropdown($yearItem);
+        }
+
+        if (param === 'record_filter_month') {
+            $('#hidden_record_filter_month, #recordFilterMonth').val(value);
+            var $monthItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_month"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v === String(value);
+            });
+            if ($monthItem.length) updateQuickDropdown($monthItem);
+        }
+    }
+
     function resetRecordFilters() {
         $('#recordSearch').val('');
         $('#recordFilterBar select[data-record-filter]').val('all');
@@ -843,6 +879,14 @@ function initLearningRecord() {
             } else if ($(this).val() !== 'all' && this.checked) {
                 $('#recordMoreFilters input[name="recordModalType[]"][value="all"]').prop('checked', false);
             }
+        }
+        if ($(this).attr('name') === 'recordModalYear') {
+            syncModalToQuickDropdown('record_filter_year', $(this).val());
+        }
+        if ($(this).attr('name') === 'recordModalMonth[]') {
+            var checkedMonths = checkedValues('recordModalMonth[]');
+            var targetMonth = checkedMonths.length === 1 ? checkedMonths[0] : 'all';
+            syncModalToQuickDropdown('record_filter_month', targetMonth);
         }
         currentPage = 1;
         updateFilterBadge();
