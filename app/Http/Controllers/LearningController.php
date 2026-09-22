@@ -31,6 +31,10 @@ class LearningController extends Controller
         CompletedPlaylistService $completedPlaylistService
     )
     {
+        if (request()->boolean('certificate_export') && request('learning_tab') === 'certificate') {
+            return app(LearningRecordController::class)->certificate();
+        }
+
         $userId = Auth::id();
         $user   = Auth::user();
 

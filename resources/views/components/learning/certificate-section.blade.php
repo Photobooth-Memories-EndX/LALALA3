@@ -35,6 +35,10 @@
         }
         return request()->filled($key);
     })->count();
+
+    $exportParams = request()->except(['certificate_page', 'certificate_export']);
+    $exportParams['certificate_export'] = '1';
+    $exportUrl = route('user.learning.dashboard.partial', array_merge(['tab' => 'certificate'], $exportParams));
 @endphp
 
 <div class="card border-0 shadow-sm rounded-4 mb-3 certificate-card-shell">
@@ -129,7 +133,9 @@
                             <i class="ti ti-refresh"></i>
                         </button>
                         <button type="button" class="btn btn-success btn-learning-success record-filter-action-btn certificate-filter-action-btn"
-                                id="certificateDownloadExcel" title="Download Excel" aria-label="Download Excel">
+                                id="certificateDownloadExcel"
+                                data-export-url="{{ $exportUrl }}"
+                                title="Download Excel" aria-label="Download Excel">
                             <i class="ti ti-download"></i>
                         </button>
                     </div>

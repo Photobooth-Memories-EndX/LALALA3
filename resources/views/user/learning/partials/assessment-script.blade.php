@@ -100,8 +100,19 @@
 
             if (scoreFilter === 'none' && numericScore !== null) return false;
             if (scoreFilter === '0_59' && (numericScore === null || numericScore < 0 || numericScore >= 60)) return false;
-            if (scoreFilter === '60_79' && (numericScore === null || numericScore < 60 || numericScore >= 80)) return false;
+            if (scoreFilter === '60_79' && (numericScore === null || numericScore < 60 || numericScore > 79)) return false;
             if (scoreFilter === '80_100' && (numericScore === null || numericScore < 80 || numericScore > 100)) return false;
+
+            var fromDateFilter = filterValue('from_date');
+            var toDateFilter = filterValue('to_date');
+            var rowYmd = rowAttribute(row, 'from-date-ymd');
+
+            if (fromDateFilter && fromDateFilter !== 'all' && fromDateFilter !== '') {
+                if (!rowYmd || rowYmd < fromDateFilter) return false;
+            }
+            if (toDateFilter && toDateFilter !== 'all' && toDateFilter !== '') {
+                if (!rowYmd || rowYmd > toDateFilter) return false;
+            }
 
             var dateFilter = filterValue('date');
             if (['this_month', 'last_month', 'this_year'].indexOf(dateFilter) !== -1) {
@@ -151,7 +162,11 @@
         var initialDateFilter = filterValue('date');
         var initialOrder = initialDateFilter === 'newest'
             ? [[4, 'desc']]
-            : (initialDateFilter === 'oldest' ? [[4, 'asc']] : []);
+            : (initialDateFilter === 'oldest'
+                ? [[4, 'asc']]
+                : (initialDateFilter === 'title_asc'
+                    ? [[1, 'asc']]
+                    : (initialDateFilter === 'title_desc' ? [[1, 'desc']] : [])));
 
         var assessmentTable = $table.DataTable({
                 ordering: true,
@@ -232,6 +247,10 @@
                 assessmentTable.order([4, 'desc']);
             } else if (dateFilter === 'oldest') {
                 assessmentTable.order([4, 'asc']);
+            } else if (dateFilter === 'title_asc') {
+                assessmentTable.order([1, 'asc']);
+            } else if (dateFilter === 'title_desc') {
+                assessmentTable.order([1, 'desc']);
             }
 
             assessmentTable.page('first').draw(false);
@@ -267,7 +286,7 @@
 
         function buildAssessmentParams(state, search) {
             var params = new URLSearchParams(window.location.search);
-            var genericKeys = ['assessment_search', 'type', 'status', 'year', 'month', 'batch', 'grade', 'score', 'result', 'date', 'availability', 'search', 'q'];
+            var genericKeys = ['assessment_search', 'type', 'status', 'year', 'month', 'batch', 'grade', 'score', 'result', 'date', 'availability', 'from_date', 'to_date', 'fromdate', 'todate', 'search', 'q'];
             Array.from(params.keys()).forEach(function (key) {
                 if (key.indexOf('assessment_filter_') === 0 || genericKeys.indexOf(key) !== -1) {
                     params.delete(key);
@@ -465,7 +484,7 @@
             resetAdvancedFilters();
 
             var params = new URLSearchParams(window.location.search);
-            var genericKeys = ['assessment_search', 'type', 'status', 'year', 'month', 'batch', 'grade', 'score', 'result', 'date', 'availability', 'search', 'q'];
+            var genericKeys = ['assessment_search', 'type', 'status', 'year', 'month', 'batch', 'grade', 'score', 'result', 'date', 'availability', 'from_date', 'to_date', 'fromdate', 'todate', 'search', 'q'];
             Array.from(params.keys()).forEach(function (key) {
                 if (key.indexOf('assessment_filter_') === 0 || genericKeys.indexOf(key) !== -1) {
                     params.delete(key);

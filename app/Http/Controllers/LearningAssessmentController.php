@@ -30,19 +30,18 @@ class LearningAssessmentController extends Controller
     public function partial(Request $request)
     {
         $user   = Auth::user();
-        $userId = Auth::id();
+        $userId = (int) Auth::id();
         $completedPlaylistIds = $this->completedPlaylistService
-            ->forUser((int) $userId)
+            ->forUser($userId)
             ->pluck('id');
 
         $assessmentQuery = $this->getUserAssessmentQuery($user, $userId, $completedPlaylistIds);
         $filterOptions   = $this->getFilterOptions($assessmentQuery);
-        $filteredQuery   = $this->applyFilters($assessmentQuery, $request, (int) $userId);
-        $assessments     = $filteredQuery->get();
+        $assessments     = $this->getFilteredUserAssessments($request, $userId);
 
         return view('user.learning.dashboard-partials.assessment', [
             'assessments' => $assessments,
-            'assessmentStats' => $this->summarizeAssessments($assessments, (int) $userId),
+            'assessmentStats' => $this->summarizeAssessments($assessments, $userId),
             'filterOptions' => $filterOptions,
             'result'      => $this->getUserAssessmentResults($userId),
         ]);
@@ -50,19 +49,77 @@ class LearningAssessmentController extends Controller
 
     public function download(Request $request)
     {
-        $user = Auth::user();
         $userId = (int) Auth::id();
-        $completedPlaylistIds = $this->completedPlaylistService
-            ->forUser($userId)
-            ->pluck('id');
-        $assessmentQuery = $this->getUserAssessmentQuery($user, $userId, $completedPlaylistIds);
-        $assessments = $this->applyFilters($assessmentQuery, $request, $userId)
-            ->get();
+        $assessments = $this->getFilteredUserAssessments($request, $userId);
 
         return Excel::download(
             AssessmentExport::forMyLearning($assessments, $userId),
             'Assessment_List_' . now()->format('Y-m-d') . '.xlsx'
         );
+    }
+
+    public function getFilteredUserAssessments(Request $request, int $userId): \Illuminate\Support\Collection
+    {
+        $user = Auth::user();
+        $completedPlaylistIds = $this->completedPlaylistService
+            ->forUser($userId)
+            ->pluck('id');
+
+        $assessmentQuery = $this->getUserAssessmentQuery($user, $userId, $completedPlaylistIds);
+        $filteredQuery = $this->applyFilters($assessmentQuery, $request, $userId);
+        $assessments = $filteredQuery->get();
+
+        $score = $request->input('assessment_filter_score', $request->input('score', 'all'));
+        $batch = (string) $request->input('assessment_filter_batch', $request->input('batch', 'all'));
+
+        if ($score !== 'all' && $score !== '') {
+            $assessments = $assessments->filter(function ($assessment) use ($userId, $score) {
+                $canonicalResult = self::resolveCanonicalAssessmentResult($assessment, $userId);
+                $canonicalScore = ($canonicalResult && $canonicalResult->score !== null) ? (float) $canonicalResult->score : null;
+
+                return match ($score) {
+                    '0_59'   => $canonicalScore !== null && $canonicalScore >= 0 && $canonicalScore < 60,
+                    '60_79'  => $canonicalScore !== null && $canonicalScore >= 60 && $canonicalScore <= 79,
+                    '80_100' => $canonicalScore !== null && $canonicalScore >= 80 && $canonicalScore <= 100,
+                    'none'   => $canonicalScore === null,
+                    default  => true,
+                };
+            })->values();
+        }
+
+        if ($batch !== 'all' && $batch !== '') {
+            $assessments = $assessments->filter(function ($assessment) use ($userId, $batch) {
+                $canonicalResult = self::resolveCanonicalAssessmentResult($assessment, $userId);
+                $canonicalBatch = $canonicalResult->batch ?? ($assessment->batch ?? null);
+                return (string) $canonicalBatch === (string) $batch;
+            })->values();
+        }
+
+        return $assessments;
+    }
+
+    public static function resolveCanonicalAssessmentResult($assessment, int $userId)
+    {
+        $scoresRelation = $assessment->relationLoaded('scores')
+            ? $assessment->getRelation('scores')
+            : ($assessment->relationLoaded('assessmentResults') ? $assessment->getRelation('assessmentResults') : ($assessment->scores ?? null));
+
+        $userScores = collect($scoresRelation ?? [])
+            ->filter(fn ($score) => (string) ($score->user_id ?? '') === (string) $userId);
+
+        $finalResult = $userScores
+            ->where('final', 1)
+            ->sortByDesc('score')
+            ->first();
+
+        if (!$finalResult) {
+            $finalResult = $userScores
+                ->filter(fn ($s) => $s->score !== null)
+                ->sortByDesc('score')
+                ->first();
+        }
+
+        return $finalResult;
     }
 
     private function getUserAssessmentQuery($user, $userId, $completedPlaylistIds = null)
@@ -149,6 +206,9 @@ class LearningAssessmentController extends Controller
         $batch = (string) $request->input('assessment_filter_batch', $request->input('batch', 'all'));
         $grade = (string) $request->input('assessment_filter_grade', $request->input('grade', 'all'));
 
+        $fromDate = $request->input('assessment_filter_from_date', $request->input('from_date', $request->input('fromdate')));
+        $toDate = $request->input('assessment_filter_to_date', $request->input('to_date', $request->input('todate')));
+
         $finalScore = fn ($q) => $q->where('user_id', $userId)->where('final', 1);
 
         return $query
@@ -190,27 +250,33 @@ class LearningAssessmentController extends Controller
                 fn ($q) => $q->whereYear('fromdate', (int) $year))
             ->when($month !== null,
                 fn ($q) => $q->whereMonth('fromdate', $month))
-            ->when($batch !== 'all' && $batch !== '',
-                fn ($q) => $q->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)
-                    ->where('batch', $batch)))
+            ->when($batch !== 'all' && $batch !== '', function ($q) use ($batch, $finalScore) {
+                $q->where(function ($bq) use ($batch, $finalScore) {
+                    $bq->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('batch', $batch))
+                        ->orWhere(function ($noScores) use ($batch, $finalScore) {
+                            $noScores->whereDoesntHave('scores', $finalScore)
+                                ->where('batch', $batch);
+                        });
+                });
+            })
             ->when($grade !== 'all' && $grade !== '',
                 fn ($q) => $q->where('passing_grade', $grade))
             ->when($score === 'none', fn ($q) => $q->whereDoesntHave('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->whereNotNull('score')))
             ->when($score === '0_59', fn ($q) => $q
-                ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->whereBetween('score', [0, 59.9999]))
+                ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('score', '>=', 0)->where('score', '<', 60))
                 ->whereDoesntHave('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('score', '>=', 60)))
             ->when($score === '60_79', fn ($q) => $q
-                ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->whereBetween('score', [60, 79.9999]))
+                ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('score', '>=', 60)->where('score', '<=', 79))
                 ->whereDoesntHave('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('score', '>=', 80)))
-            ->when($score === '80_100', fn ($q) => $q->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->whereBetween('score', [80, 100])))
+            ->when($score === '80_100', fn ($q) => $q->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('score', '>=', 80)->where('score', '<=', 100)))
             ->when($result === 'passed', fn ($q) => $q->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 1)))
             ->when($result === 'failed', fn ($q) => $q
                 ->whereHas('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 0))
                 ->whereDoesntHave('scores', fn ($scoreQuery) => $finalScore($scoreQuery)->where('pass', 1)))
-            ->when($request->filled('assessment_filter_from_date'),
-                fn ($q) => $q->whereDate('fromdate', '>=', $request->input('assessment_filter_from_date')))
-            ->when($request->filled('assessment_filter_to_date'),
-                fn ($q) => $q->whereDate('fromdate', '<=', $request->input('assessment_filter_to_date')))
+            ->when(!empty($fromDate) && $fromDate !== 'all',
+                fn ($q) => $q->whereDate('fromdate', '>=', $fromDate))
+            ->when(!empty($toDate) && $toDate !== 'all',
+                fn ($q) => $q->whereDate('fromdate', '<=', $toDate))
             ->when($date === 'this_month', fn ($q) => $q->whereYear('fromdate', $now->year)->whereMonth('fromdate', $now->month))
             ->when($date === 'last_month', function ($q) use ($now) {
                 $lastMonth = $now->copy()->subMonthNoOverflow();
@@ -229,6 +295,28 @@ class LearningAssessmentController extends Controller
 
     private function getFilterOptions($query): array
     {
+        $assessmentBatches = (clone $query)->reorder()
+            ->whereNotNull('batch')
+            ->select('batch')
+            ->distinct()
+            ->pluck('batch');
+
+        $resultBatches = AssesmentResult::where('user_id', (int) Auth::id())
+            ->whereNotNull('batch')
+            ->select('batch')
+            ->distinct()
+            ->pluck('batch');
+
+        $batches = $assessmentBatches->concat($resultBatches)
+            ->filter(fn ($b) => $b !== null && $b !== '')
+            ->unique()
+            ->sort()
+            ->values();
+
+        if ($batches->isEmpty()) {
+            $batches = collect([1]);
+        }
+
         return [
             'years' => (clone $query)->reorder()
                 ->whereNotNull('fromdate')
@@ -238,7 +326,7 @@ class LearningAssessmentController extends Controller
                 ->pluck('year')
                 ->unique()
                 ->values(),
-            'batches' => collect([1, 2, 4]),
+            'batches' => $batches,
             'passingGrades' => (clone $query)->reorder()->whereNotNull('passing_grade')
                 ->select('passing_grade')
                 ->distinct()
@@ -263,20 +351,7 @@ class LearningAssessmentController extends Controller
         $failed = 0;
 
         foreach ($assessments as $assessment) {
-            $userScores = collect($assessment->getRelation('scores') ?? $assessment->getRelation('assessmentResults') ?? [])
-                ->filter(fn ($score) => (string) ($score->user_id ?? '') === (string) $userId);
-
-            $finalResult = $userScores
-                ->where('final', 1)
-                ->sortByDesc('score')
-                ->first();
-
-            if (!$finalResult) {
-                $finalResult = $userScores
-                    ->filter(fn ($s) => $s->score !== null)
-                    ->sortByDesc('score')
-                    ->first();
-            }
+            $finalResult = self::resolveCanonicalAssessmentResult($assessment, $userId);
 
             if ($finalResult !== null) {
                 $isPassed = (bool) ($finalResult->pass ?? ($finalResult->score !== null && $assessment->passing_grade !== null && (float) $finalResult->score >= (float) $assessment->passing_grade));
