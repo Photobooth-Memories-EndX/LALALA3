@@ -178,4 +178,77 @@
     :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) #smartwizard table tr td {
         border-color: var(--tblr-border-color, rgba(148, 163, 184, 0.2)) !important;
     }
+
+    /* =========================================================================
+       Dark Mode Styles: Header Dropdown Menus (Profile & Notifications)
+       ========================================================================= */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu {
+        background-color: var(--tblr-bg-surface, #152238) !important;
+        background: var(--tblr-bg-surface, #152238) !important;
+        border: 1px solid var(--tblr-border-color, rgba(148, 163, 184, 0.16)) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45) !important;
+        color: var(--tblr-body-color, #f1f5f9) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu-arrow:before {
+        background: var(--tblr-bg-surface, #152238) !important;
+        border-color: var(--tblr-border-color, rgba(148, 163, 184, 0.16)) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-header {
+        color: var(--tblr-muted, #94a3b8) !important;
+        border-bottom: 1px solid var(--tblr-border-color, rgba(148, 163, 184, 0.12)) !important;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.875rem;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu .dropdown-item {
+        background-color: transparent !important;
+        background: transparent !important;
+        color: var(--owl-text, #f1f5f9) !important;
+        border: 0 !important;
+        text-align: left;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu .dropdown-item :is(i, .ti) {
+        color: var(--tblr-muted, #94a3b8) !important;
+        transition: color 0.15s ease;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu .dropdown-item:hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu .dropdown-item:focus {
+        background-color: var(--tblr-bg-surface-secondary, #1a2942) !important;
+        background: var(--tblr-bg-surface-secondary, #1a2942) !important;
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu .dropdown-item:hover :is(i, .ti),
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu .dropdown-item:focus :is(i, .ti) {
+        color: #38bdf8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu .dropdown-item.text-muted {
+        color: var(--tblr-muted, #94a3b8) !important;
+        background-color: transparent !important;
+        background: transparent !important;
+        cursor: default;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu .dropdown-item.text-muted:hover {
+        background-color: transparent !important;
+        background: transparent !important;
+        color: var(--tblr-muted, #94a3b8) !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) :is(.app-topbar, .owl-assessment-mobile-actions) .dropdown-menu .dropdown-divider {
+        border-color: var(--tblr-border-color, rgba(148, 163, 184, 0.14)) !important;
+        margin: 0.25rem 0;
+    }
 </style>
