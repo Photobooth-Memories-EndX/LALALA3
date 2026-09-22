@@ -141,28 +141,40 @@ function initLearningRecord() {
         var urlType = params.get('record_filter_type') || params.get('type');
         if (urlType) {
             $('#recordFilterType, #hidden_record_filter_type').val(urlType);
-            var $typeItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_type"][data-value="' + urlType + '"]');
+            var $typeItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_type"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v.toLowerCase() === urlType.toLowerCase();
+            });
             if ($typeItem.length) updateQuickDropdown($typeItem);
         }
 
         var urlClassification = params.get('record_filter_classification') || params.get('classification');
         if (urlClassification) {
             $('#recordFilterClassification, #hidden_record_filter_classification').val(urlClassification);
-            var $classItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_classification"][data-value="' + urlClassification + '"]');
+            var $classItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_classification"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v.toLowerCase() === urlClassification.toLowerCase();
+            });
             if ($classItem.length) updateQuickDropdown($classItem);
         }
 
         var urlYear = params.get('record_filter_year') || params.get('year') || params.get('record_filter_modal_year');
         if (urlYear) {
             $('#recordFilterYear, #hidden_record_filter_year').val(urlYear);
-            var $yearItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_year"][data-value="' + urlYear + '"]');
+            var $yearItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_year"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v === String(urlYear);
+            });
             if ($yearItem.length) updateQuickDropdown($yearItem);
         }
 
         var urlMonth = params.get('record_filter_month') || params.get('month');
         if (urlMonth) {
             $('#recordFilterMonth, #hidden_record_filter_month').val(urlMonth);
-            var $monthItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_month"][data-value="' + urlMonth + '"]');
+            var $monthItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_month"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v === String(urlMonth);
+            });
             if ($monthItem.length) updateQuickDropdown($monthItem);
         }
 
@@ -706,8 +718,8 @@ function initLearningRecord() {
     }
 
     function updateQuickDropdown($item) {
-        var value = String($item.data('value') || 'all');
-        var label = quickDropdownLabel(String($item.data('param') || ''), value, $.trim($item.text()));
+        var value = String($item.attr('data-value') !== undefined ? $item.attr('data-value') : ($item.data('value') || 'all'));
+        var label = quickDropdownLabel(String($item.attr('data-param') !== undefined ? $item.attr('data-param') : ($item.data('param') || '')), value, $.trim($item.text()));
         var $dropdown = $item.closest('.dropdown');
         var $button = $dropdown.find('.dropdown-toggle');
 
@@ -782,7 +794,7 @@ function initLearningRecord() {
 
         setQuickPill(value);
         if (value === 'playlist') {
-            $('#recordFilterType, #recordFilterClassification').val('all');
+            $('#recordFilterType, #recordFilterClassification, #hidden_record_filter_type, #hidden_record_filter_classification').val('all');
         } else if (value === 'content') {
             $('#recordFilterPlaylist').val('all');
         }
@@ -800,8 +812,8 @@ function initLearningRecord() {
         e.preventDefault();
 
         var $item = $(this);
-        var param = String($item.data('param') || '');
-        var value = String($item.data('value') || 'all');
+        var param = String($item.attr('data-param') !== undefined ? $item.attr('data-param') : ($item.data('param') || ''));
+        var value = String($item.attr('data-value') !== undefined ? $item.attr('data-value') : ($item.data('value') || 'all'));
 
         $('#hidden_' + param).val(value);
         updateQuickDropdown($item);

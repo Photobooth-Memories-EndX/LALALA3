@@ -313,11 +313,13 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
     {
         $rawMonth = $f['month'] ?? $f['record_filter_month'] ?? 'all';
         $monthNum = \App\Support\LearningFilterHelper::resolveMonth((string) $rawMonth);
+        $rawClassification = (string) ($f['classification'] ?? $f['record_filter_classification'] ?? 'all');
+        $classification = $rawClassification !== 'all' ? trim(html_entity_decode($rawClassification, ENT_QUOTES | ENT_HTML5, 'UTF-8')) : 'all';
 
         return [
             'search'         => trim((string) ($f['search'] ?? $f['record_search'] ?? $f['q'] ?? '')),
             'type'           => (string) ($f['type'] ?? $f['record_filter_type'] ?? 'all'),
-            'classification' => (string) ($f['classification'] ?? $f['record_filter_classification'] ?? 'all'),
+            'classification' => $classification,
             'playlist'       => (string) ($f['playlist'] ?? $f['record_filter_playlist'] ?? 'all'),
             'year'           => (string) ($f['year'] ?? $f['record_filter_year'] ?? 'all'),
             'month'          => $monthNum !== null ? (string) $monthNum : 'all',
@@ -393,7 +395,7 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
                 }
             }
 
-            if ($f['classification'] !== 'all' && ($row['classification'] ?? '') !== $f['classification']) {
+            if ($f['classification'] !== 'all' && strcasecmp((string) ($row['classification'] ?? ''), $f['classification']) !== 0) {
                 return false;
             }
 

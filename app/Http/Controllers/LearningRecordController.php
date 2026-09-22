@@ -108,7 +108,8 @@ class LearningRecordController extends Controller
     {
         $search = mb_strtolower(trim((string) (request('record_search') ?? request('search') ?? request('q') ?? '')));
         $type = (string) (request('record_filter_type') ?? request('type') ?? 'all');
-        $classification = (string) (request('record_filter_classification') ?? request('classification') ?? 'all');
+        $rawClassification = (string) (request('record_filter_classification') ?? request('classification') ?? 'all');
+        $classification = $rawClassification !== 'all' ? trim(html_entity_decode($rawClassification, ENT_QUOTES | ENT_HTML5, 'UTF-8')) : 'all';
         $playlist = (string) (request('record_filter_playlist') ?? request('playlist') ?? 'all');
         $year = (string) (request('record_filter_year') ?? request('year') ?? 'all');
         $rawMonth = (string) (request('record_filter_month') ?? request('month') ?? 'all');
@@ -172,7 +173,7 @@ class LearningRecordController extends Controller
             if ($modalTypes !== [] && ! collect($modalTypes)->contains(fn ($value) => $this->recordTypeMatches($rowType, $rowKind, (string) $value))) {
                 return false;
             }
-            if ($classification !== 'all' && (string) ($row['classification'] ?? '') !== $classification) {
+            if ($classification !== 'all' && strcasecmp((string) ($row['classification'] ?? ''), $classification) !== 0) {
                 return false;
             }
             if ($playlist !== 'all' && ! in_array($playlist, array_map('strval', $row['playlist_ids'] ?? []), true)) {
