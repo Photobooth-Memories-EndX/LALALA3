@@ -152,13 +152,18 @@ class OfflineTrainingImportTest extends TestCase
             $unauthResponse->assertStatus(403);
         }
 
-        // Admin success
+        // Admin redirect to offline page with modal trigger
         $response = $this->actingAs($this->admin)->get('/manage/record/offline/import');
-        $response->assertStatus(200);
-        $response->assertViewIs('main.record.offline-import');
-        $response->assertSee('Non KP OWL — Excel Import');
-        $response->assertSee('upload-dropzone', false);
-        $response->assertSee('preview-card', false);
+        $response->assertStatus(302);
+        $response->assertRedirect(route('manage.record.offline', ['open_import' => 1]));
+
+        // Legacy fallback view support
+        $legacyResponse = $this->actingAs($this->admin)->get('/manage/record/offline/import?legacy=1');
+        $legacyResponse->assertStatus(200);
+        $legacyResponse->assertViewIs('main.record.offline-import');
+        $legacyResponse->assertSee('Non KP OWL — Excel Import');
+        $legacyResponse->assertSee('upload-dropzone', false);
+        $legacyResponse->assertSee('preview-card', false);
     }
 
     /**

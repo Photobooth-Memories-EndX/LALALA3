@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Manage\Record;
 
 use App\Http\Controllers\Controller;
+use App\Services\Record\OfflineTrainingExcelSchema;
 use App\Services\Record\OfflineTrainingImportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OfflineTrainingImportController extends Controller
 {
@@ -20,13 +23,36 @@ class OfflineTrainingImportController extends Controller
     }
 
     /**
-     * Display the Excel Import landing and upload view.
+     * Display the Excel Import landing and upload view (redirects to Non KP OWL with modal trigger).
      */
     public function index(Request $request)
     {
-        return view('main.record.offline-import', [
-            'title'    => 'Import Offline Training',
-            'subtitle' => 'Upload and import Non KP OWL Excel training records',
+        if ($request->has('legacy')) {
+            return view('main.record.offline-import', [
+                'title'    => 'Import Offline Training',
+                'subtitle' => 'Upload and import Non KP OWL Excel training records',
+            ]);
+        }
+
+        return redirect()->route('manage.record.offline', ['open_import' => 1]);
+    }
+
+    /**
+     * Generate and download blank official Non KP OWL Excel import template.
+     */
+    public function downloadTemplate(Request $request): StreamedResponse
+    {
+        $spreadsheet = OfflineTrainingExcelSchema::generateTemplateSpreadsheet();
+        $filename = OfflineTrainingExcelSchema::TEMPLATE_FILENAME;
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control'       => 'max-age=0, no-cache, no-store, must-revalidate',
+            'Pragma'              => 'public',
         ]);
     }
 

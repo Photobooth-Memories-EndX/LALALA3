@@ -29,18 +29,23 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons (Placeholders for Phase 2E & 2F) -->
-                <div class="d-flex align-items-center gap-2">
-                    <a href="{{ route('manage.record.offline.import') }}" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5">
-                        <i class="ti ti-file-spreadsheet fs-2"></i>
-                        <span>Import Excel</span>
-                    </a>
+                <!-- Action Buttons: + Add Training | Import Excel | Download Template -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <button type="button" class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
                             style="background-color: #d97706; border-color: #d97706;"
-                            data-bs-toggle="tooltip" data-bs-placement="top" title="Phase 2E: Add Training form will be enabled in upcoming phase">
+                            data-bs-toggle="tooltip" data-bs-placement="top" title="Phase 2E: Add Training form">
                         <i class="ti ti-plus fs-2"></i>
                         <span>Add Training</span>
                     </button>
+                    <button type="button" class="btn btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                            data-bs-toggle="modal" data-bs-target="#offlineImportModal" id="btn-open-offline-import">
+                        <i class="ti ti-file-spreadsheet fs-2"></i>
+                        <span>Import Excel</span>
+                    </button>
+                    <a href="{{ route('manage.record.offline.import.template') }}" class="btn btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-download-offline-template">
+                        <i class="ti ti-download fs-2"></i>
+                        <span>Download Template</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -166,6 +171,7 @@
 </div>
 
 @include('main.record.components.offline-detail-modal')
+@include('main.record.components.offline-import-modal')
 
 @endsection
 
@@ -248,20 +254,41 @@
         padding-bottom: 12px;
     }
 
+    /* Modal dark mode styling */
     [data-bs-theme="dark"] #offlineTrainingDetailModal .modal-content,
     body.dark-mode #offlineTrainingDetailModal .modal-content,
-    body.theme-dark #offlineTrainingDetailModal .modal-content {
+    body.theme-dark #offlineTrainingDetailModal .modal-content,
+    [data-bs-theme="dark"] #offlineImportModal .modal-content,
+    body.dark-mode #offlineImportModal .modal-content,
+    body.theme-dark #offlineImportModal .modal-content {
         background-color: var(--tblr-bg-surface, #1f2937) !important;
         color: #f8fafc !important;
     }
     [data-bs-theme="dark"] #offlineTrainingDetailModal .bg-light,
     body.dark-mode #offlineTrainingDetailModal .bg-light,
-    body.theme-dark #offlineTrainingDetailModal .bg-light {
+    body.theme-dark #offlineTrainingDetailModal .bg-light,
+    [data-bs-theme="dark"] #offlineImportModal .bg-light,
+    body.dark-mode #offlineImportModal .bg-light,
+    body.theme-dark #offlineImportModal .bg-light {
         background-color: #111827 !important;
     }
     [data-bs-theme="dark"] #offlineTrainingDetailModal .text-dark,
     body.dark-mode #offlineTrainingDetailModal .text-dark,
-    body.theme-dark #offlineTrainingDetailModal .text-dark {
+    body.theme-dark #offlineTrainingDetailModal .text-dark,
+    [data-bs-theme="dark"] #offlineImportModal .text-dark,
+    body.dark-mode #offlineImportModal .text-dark,
+    body.theme-dark #offlineImportModal .text-dark {
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] #offlineImportModal .bg-white,
+    body.dark-mode #offlineImportModal .bg-white,
+    body.theme-dark #offlineImportModal .bg-white {
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+    }
+    [data-bs-theme="dark"] #offlineImportModal .table-light,
+    body.dark-mode #offlineImportModal .table-light,
+    body.theme-dark #offlineImportModal .table-light {
+        background-color: #1e293b !important;
         color: #f8fafc !important;
     }
 </style>
@@ -589,6 +616,385 @@
                 }
             });
         });
+
+        // ==========================================
+        // 4. Excel Import Modal Logic (Phase 2F.1)
+        // ==========================================
+        let importToken = null;
+        let importCompleted = false;
+        let previewRowsData = [];
+        const $importModalEl = $('#offlineImportModal');
+        const $importDialog = $('#offline-import-modal-dialog');
+        const $fileInput = $('#modal-excel-file-input');
+        const $btnValidate = $('#modal-btn-validate');
+        const $selectedFilename = $('#modal-selected-filename');
+        const $uploadError = $('#modal-upload-error');
+        const $dropzone = $('#modal-dropzone-container');
+
+        const $stateUpload = $('#modal-import-state-upload');
+        const $stateLoading = $('#modal-import-state-loading');
+        const $statePreview = $('#modal-import-state-preview');
+        const $stateImporting = $('#modal-import-state-importing');
+        const $stateResult = $('#modal-import-state-result');
+
+        const $footerUploadBtns = $('#modal-footer-upload-buttons');
+        const $footerPreviewBtns = $('#modal-footer-preview-buttons');
+        const $footerResultBtns = $('#modal-footer-result-buttons');
+        const $footerHint = $('#modal-footer-hint');
+
+        // Drag & Drop
+        $dropzone.on('dragover dragenter', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).addClass('border-primary bg-amber-subtle');
+        });
+
+        $dropzone.on('dragleave drop', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('border-primary bg-amber-subtle');
+        });
+
+        $dropzone.on('drop', function (e) {
+            const dt = e.originalEvent.dataTransfer;
+            if (dt && dt.files && dt.files.length > 0) {
+                $fileInput[0].files = dt.files;
+                $fileInput.trigger('change');
+            }
+        });
+
+        // File selection change
+        $fileInput.on('change', function () {
+            const file = this.files && this.files[0];
+            $uploadError.hide().text('');
+            if (file) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext !== 'xlsx' && ext !== 'xls') {
+                    $uploadError.text('Only .xlsx and .xls Excel spreadsheet files are allowed.').show();
+                    $fileInput.val('');
+                    $selectedFilename.text('No file selected');
+                    $btnValidate.prop('disabled', true);
+                    return;
+                }
+                const sizeKb = (file.size / 1024).toFixed(1);
+                $selectedFilename.text(`${file.name} (${sizeKb} KB)`);
+                $btnValidate.prop('disabled', false);
+            } else {
+                $selectedFilename.text('No file selected');
+                $btnValidate.prop('disabled', true);
+            }
+        });
+
+        // Helper: Escape HTML
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Helper: Switch modal views
+        function switchImportState(state) {
+            $stateUpload.hide();
+            $stateLoading.hide();
+            $statePreview.hide();
+            $stateImporting.hide();
+            $stateResult.hide();
+            $footerUploadBtns.hide();
+            $footerPreviewBtns.hide();
+            $footerResultBtns.hide();
+
+            if (state === 'upload') {
+                $importDialog.removeClass('modal-xl').addClass('modal-lg');
+                $stateUpload.show();
+                $footerUploadBtns.show();
+                $footerHint.text('Only .xlsx and .xls formats supported');
+                $('#modal-import-btn-close').prop('disabled', false);
+            } else if (state === 'loading') {
+                $stateLoading.show();
+                $footerHint.text('Analyzing spreadsheet structure and content...');
+                $('#modal-import-btn-close').prop('disabled', true);
+            } else if (state === 'preview') {
+                $importDialog.removeClass('modal-lg').addClass('modal-xl');
+                $statePreview.show();
+                $footerPreviewBtns.show();
+                $footerHint.text('Review validation status before confirming import');
+                $('#modal-import-btn-close').prop('disabled', false);
+            } else if (state === 'importing') {
+                $stateImporting.show();
+                $footerHint.text('Saving records to database...');
+                $('#modal-import-btn-close').prop('disabled', true);
+            } else if (state === 'result') {
+                $importDialog.removeClass('modal-xl').addClass('modal-lg');
+                $stateResult.show();
+                $footerResultBtns.show();
+                $footerHint.text('Import complete');
+                $('#modal-import-btn-close').prop('disabled', false);
+            }
+        }
+
+        // Validate & Preview button click
+        $btnValidate.on('click', function () {
+            const file = $fileInput[0].files && $fileInput[0].files[0];
+            if (!file) {
+                $uploadError.text('Please select an Excel file to upload.').show();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('_token', $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}');
+
+            switchImportState('loading');
+            $('#modal-loading-title').text('Validating Spreadsheet...');
+            $('#modal-loading-subtitle').text('Reading 44 columns, checking 2-row header hierarchy, and verifying records...');
+
+            $.ajax({
+                url: "{{ route('manage.record.offline.import.preview') }}",
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                },
+                success: function (res) {
+                    if (res && res.success && res.data) {
+                        renderImportPreview(res.data);
+                    } else {
+                        switchImportState('upload');
+                        $uploadError.text(res.message || 'Validation failed. Please verify file format and headers.').show();
+                    }
+                },
+                error: function (xhr) {
+                    switchImportState('upload');
+                    let errMsg = 'Failed to parse Excel file.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    $uploadError.text(errMsg).show();
+                }
+            });
+        });
+
+        // Render preview content
+        function renderImportPreview(data) {
+            importToken = data.token;
+            previewRowsData = data.preview_rows || [];
+            const stats = data.stats || {};
+
+            $('#modal-preview-filename').text(data.filename || 'Uploaded File');
+            $('#modal-kpi-total-rows').text((stats.total_rows || 0).toLocaleString());
+            $('#modal-kpi-valid-rows').text((stats.valid || 0).toLocaleString());
+            $('#modal-kpi-warning-rows').text((stats.warning || 0).toLocaleString());
+            $('#modal-kpi-duplicate-rows').text((stats.duplicate || 0).toLocaleString());
+            $('#modal-kpi-invalid-rows').text((stats.invalid || 0).toLocaleString());
+
+            const newT = stats.new_trainings || 0;
+            const reusedT = stats.reused_trainings || 0;
+            $('#modal-kpi-training-events').text((newT + reusedT).toLocaleString());
+
+            if (data.unknown_headers && data.unknown_headers.length > 0) {
+                $('#modal-preview-alert').html(
+                    '<i class="ti ti-alert-circle me-1"></i><strong>Note:</strong> Some columns were unrecognized and ignored: ' +
+                    escapeHtml(data.unknown_headers.join(', '))
+                ).show();
+            } else if ((stats.invalid || 0) > 0) {
+                $('#modal-preview-alert').html(
+                    '<i class="ti ti-alert-triangle me-1"></i><strong>Notice:</strong> ' + stats.invalid + ' row(s) contain validation errors and will not be imported.'
+                ).show();
+            } else {
+                $('#modal-preview-alert').hide();
+            }
+
+            // Populate preview table
+            const $tbody = $('#modal-preview-tbody');
+            $tbody.empty();
+
+            if (previewRowsData.length === 0) {
+                $tbody.append('<tr><td colspan="8" class="text-center py-4 text-muted">No data rows found in spreadsheet.</td></tr>');
+            } else {
+                previewRowsData.forEach(function (row) {
+                    const d = row.data || {};
+                    let badgeClass = 'bg-secondary-lt';
+                    let badgeLabel = row.status || 'unknown';
+
+                    if (row.status === 'valid') {
+                        badgeClass = 'bg-success text-white';
+                        badgeLabel = 'Valid';
+                    } else if (row.status === 'warning') {
+                        badgeClass = 'bg-warning text-dark';
+                        badgeLabel = 'Warning';
+                    } else if (row.status === 'duplicate') {
+                        badgeClass = 'bg-purple text-white';
+                        badgeLabel = 'Duplicate';
+                    } else if (row.status === 'invalid') {
+                        badgeClass = 'bg-danger text-white';
+                        badgeLabel = 'Invalid';
+                    }
+
+                    let userMatch = row.user_matched
+                        ? '<span class="badge bg-success-lt ms-1" style="font-size: 0.65rem;">LMS User</span>'
+                        : '<span class="badge bg-secondary-lt ms-1" style="font-size: 0.65rem;">Not in LMS</span>';
+
+                    let msgText = 'Ready to import';
+                    if (row.messages && row.messages.length > 0) {
+                        msgText = row.messages.join('; ');
+                    }
+
+                    const tr = [
+                        '<tr>',
+                        '<td class="text-muted fw-bold">' + row.excel_row + '</td>',
+                        '<td><span class="badge ' + badgeClass + ' px-2 py-0.5">' + badgeLabel + '</span></td>',
+                        '<td>',
+                            '<div class="fw-semibold text-dark">' + escapeHtml(d.name || '-') + userMatch + '</div>',
+                            '<div class="text-muted extra-small">ID: ' + escapeHtml(d.employee_id || '-') + '</div>',
+                        '</td>',
+                        '<td>',
+                            '<div class="fw-medium text-dark">' + escapeHtml(d.course_name || '-') + '</div>',
+                            '<div class="text-muted extra-small">' + escapeHtml(d.type || '-') + '</div>',
+                        '</td>',
+                        '<td><span class="small">' + escapeHtml(d.batch || '-') + '</span></td>',
+                        '<td><span class="small fw-semibold">' + (d.learning_hours || 0) + ' hrs</span></td>',
+                        '<td><span class="small">' + (d.progress !== null && d.progress !== undefined ? d.progress + '%' : '-') + '</span></td>',
+                        '<td><span class="extra-small ' + (row.status === 'invalid' ? 'text-danger fw-semibold' : 'text-muted') + '">' + escapeHtml(msgText) + '</span></td>',
+                        '</tr>'
+                    ].join('');
+
+                    $tbody.append(tr);
+                });
+            }
+
+            const importableCount = (stats.valid || 0) + (stats.warning || 0);
+            if (importableCount <= 0) {
+                $('#modal-btn-confirm').prop('disabled', true).text('No Valid Records');
+            } else {
+                $('#modal-btn-confirm').prop('disabled', false).html('<i class="ti ti-check me-1"></i> Confirm Import (' + importableCount + ' Records)');
+            }
+
+            switchImportState('preview');
+        }
+
+        // Cancel preview / Re-upload button handler
+        function handleImportCancel() {
+            if (importToken) {
+                $.ajax({
+                    url: "{{ route('manage.record.offline.import.cancel') }}",
+                    type: 'POST',
+                    data: {
+                        token: importToken,
+                        _token: $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                    }
+                });
+            }
+            importToken = null;
+            previewRowsData = [];
+            $fileInput.val('');
+            $selectedFilename.text('No file selected');
+            $btnValidate.prop('disabled', true);
+            $uploadError.hide().text('');
+            switchImportState('upload');
+        }
+
+        $('#modal-btn-cancel-preview, #modal-btn-preview-cancel').on('click', handleImportCancel);
+
+        // Confirm & Execute import
+        $('#modal-btn-confirm').on('click', function () {
+            if (!importToken) return;
+
+            switchImportState('importing');
+
+            $.ajax({
+                url: "{{ route('manage.record.offline.import.confirm') }}",
+                type: 'POST',
+                data: {
+                    token: importToken,
+                    _token: $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                },
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                },
+                success: function (res) {
+                    if (res && res.success && res.result) {
+                        importCompleted = true;
+                        importToken = null;
+                        const result = res.result;
+
+                        $('#modal-result-imported').text((result.imported || 0).toLocaleString());
+                        $('#modal-result-created').text((result.trainings_created || 0).toLocaleString());
+                        $('#modal-result-reused').text((result.trainings_reused || 0).toLocaleString());
+                        $('#modal-result-skipped').text((result.skipped_duplicates || 0).toLocaleString());
+
+                        switchImportState('result');
+                    } else {
+                        switchImportState('preview');
+                        alert(res.message || 'Import execution failed.');
+                    }
+                },
+                error: function (xhr) {
+                    switchImportState('preview');
+                    let errMsg = 'Failed to execute import.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    alert(errMsg);
+                }
+            });
+        });
+
+        // Done button in result state
+        $('#modal-btn-result-close').on('click', function () {
+            $importModalEl.modal('hide');
+        });
+
+        // Modal hidden event (cleanup)
+        $importModalEl.on('hidden.bs.modal', function () {
+            if (importCompleted) {
+                // If records were successfully imported, refresh page without query params
+                window.location.href = "{{ route('manage.record.offline') }}";
+                return;
+            }
+
+            if (importToken) {
+                // Cancel session silently if closed during preview
+                $.ajax({
+                    url: "{{ route('manage.record.offline.import.cancel') }}",
+                    type: 'POST',
+                    data: {
+                        token: importToken,
+                        _token: $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                    }
+                });
+            }
+
+            importToken = null;
+            previewRowsData = [];
+            $fileInput.val('');
+            $selectedFilename.text('No file selected');
+            $btnValidate.prop('disabled', true);
+            $uploadError.hide().text('');
+            switchImportState('upload');
+        });
+
+        // Auto-open modal if URL has ?open_import=1
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('open_import') === '1') {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const modalInstance = bootstrap.Modal.getOrCreateInstance(document.getElementById('offlineImportModal'));
+                modalInstance.show();
+            } else {
+                $importModalEl.modal('show');
+            }
+        }
 
         // Initialize tooltips
         if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {

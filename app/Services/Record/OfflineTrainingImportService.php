@@ -594,7 +594,7 @@ class OfflineTrainingImportService
                 if ($mappedKey) {
                     $columnPositions[$mappedKey] = $colLetter;
                     $columnKeys[] = $mappedKey;
-                } elseif ($r2 !== '' && strtolower($r2) !== 'no') {
+                } elseif ($r2 !== '' && !in_array(strtolower($r2), ['no', 'month', 'bulan'], true)) {
                     $unknownHeaders[] = ($currentGroup ? "{$currentGroup} > " : '') . $r2;
                 }
             }
@@ -616,7 +616,7 @@ class OfflineTrainingImportService
             if ($mappedKey) {
                 $columnPositions[$mappedKey] = $colLetter;
                 $columnKeys[] = $mappedKey;
-            } elseif ($header !== '' && strtolower($header) !== 'no') {
+            } elseif ($header !== '' && !in_array(strtolower($header), ['no', 'month', 'bulan'], true)) {
                 $unknownHeaders[] = $header;
             }
         }
@@ -793,7 +793,7 @@ class OfflineTrainingImportService
      */
     protected function validateRequiredHeaders(array $columnKeys): void
     {
-        $required = ['course_name', 'employee_id', 'name'];
+        $required = OfflineTrainingExcelSchema::requiredDatabaseKeys();
         $missing = [];
 
         foreach ($required as $field) {
