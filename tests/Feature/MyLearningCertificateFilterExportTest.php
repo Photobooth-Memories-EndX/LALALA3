@@ -343,4 +343,123 @@ class MyLearningCertificateFilterExportTest extends TestCase
         $count = substr_count($html, 'id="certificateApplyFilter"');
         $this->assertEquals(1, $count, "id='certificateApplyFilter' must appear exactly once");
     }
+
+    /** 14. Dataset Identity: TABLE CERTIFICATE IDS === EXPORT CERTIFICATE IDS for all filter scenarios */
+    public function test_14_dataset_identity_table_vs_export_for_all_filters(): void
+    {
+        $ctrl = app(\App\Http\Controllers\LearningRecordController::class);
+        $ref = new \ReflectionClass($ctrl);
+        $listMethod = $ref->getMethod('certificateListQuery');
+        $filterMethod = $ref->getMethod('applyCertificateFilters');
+
+        $scenarios = [
+            'All (No Filter)' => [],
+            'Type Content' => ['certificate_filter_type' => 'content'],
+            'Type Playlist' => ['certificate_filter_type' => 'playlist'],
+            'Year 2026' => ['certificate_filter_year' => '2026'],
+            'Year 2025' => ['certificate_filter_year' => '2025'],
+            'Month August (8)' => ['certificate_filter_month' => '8'],
+            'Month September (9)' => ['certificate_filter_month' => '9'],
+            'Year + Month' => ['certificate_filter_year' => '2026', 'certificate_filter_month' => '8'],
+            'Search Number' => ['certificate_search' => $this->cert1->certificate_number],
+            'Search Credential' => ['certificate_search' => $this->cert2->credential_id],
+            'Search Title' => ['certificate_search' => 'Quality Engineering'],
+            'More Filter: Issuer' => ['certificate_issuer' => 'Acme Academy'],
+            'More Filter: Date From' => ['certificate_date_from' => '2026-09-01'],
+            'More Filter: Date To' => ['certificate_date_to' => '2025-12-31'],
+            'Combined Filter' => [
+                'certificate_filter_type' => 'content',
+                'certificate_filter_year' => '2026',
+                'certificate_filter_month' => '8',
+                'certificate_search' => 'Security',
+                'certificate_issuer' => 'Acme',
+            ],
+        ];
+
+        foreach ($scenarios as $name => $params) {
+            request()->query->replace($params);
+            request()->request->replace($params);
+
+            $baseQuery = $listMethod->invoke($ctrl, $this->userA->id);
+            $filteredQuery = $filterMethod->invoke($ctrl, $baseQuery);
+
+            $tableCertificates = $filteredQuery->get();
+            $export = new CertificateExport($filteredQuery->get());
+            $rows = $export->array();
+            array_shift($rows); // Remove header
+            $exportCredIds = array_column($rows, 5); // index 5 is credential_id
+
+            $tableCredIds = $tableCertificates->pluck('credential_id')->all();
+
+            $this->assertEquals(
+                $tableCredIds,
+                $exportCredIds,
+                "Failed asserting table credential IDs match export credential IDs for scenario: {$name}"
+            );
+        }
+    }
+
+    /** 15. Sorting dataset order parity between table and export */
+    public function test_15_sorting_dataset_order_parity(): void
+    {
+        $ctrl = app(\App\Http\Controllers\LearningRecordController::class);
+        $ref = new \ReflectionClass($ctrl);
+        $listMethod = $ref->getMethod('certificateListQuery');
+        $filterMethod = $ref->getMethod('applyCertificateFilters');
+
+        foreach (['issued_asc', 'issued_desc'] as $sort) {
+            request()->query->replace(['certificate_sort' => $sort]);
+            request()->request->replace(['certificate_sort' => $sort]);
+
+            $baseQuery = $listMethod->invoke($ctrl, $this->userA->id);
+            $filteredQuery = $filterMethod->invoke($ctrl, $baseQuery);
+
+            $tableCredIds = $filteredQuery->get()->pluck('credential_id')->all();
+
+            $export = new CertificateExport($filteredQuery->get());
+            $rows = $export->array();
+            array_shift($rows);
+            $exportCredIds = array_column($rows, 5);
+
+            $this->assertEquals(
+                $tableCredIds,
+                $exportCredIds,
+                "Failed asserting sorting order matches between table and export for sort: {$sort}"
+            );
+        }
+    }
+
+    /** 16. Direct Dashboard URL export with active filters */
+    public function test_16_direct_dashboard_url_export(): void
+    {
+        $resp = $this->actingAs($this->userA)
+            ->get(route('user.learning.dashboard', [
+                'learning_tab'            => 'certificate',
+                'certificate_export'      => '1',
+                'certificate_filter_type' => 'content',
+            ]));
+
+        $resp->assertOk();
+        $this->assertStringContainsString('My_Certificates_', (string) $resp->headers->get('content-disposition'));
+        $this->assertEquals(
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            $resp->headers->get('content-type')
+        );
+    }
+
+    /** 17. Download Excel button renders data-export-url with active filter parameters */
+    public function test_17_download_excel_button_has_data_export_url(): void
+    {
+        $resp = $this->actingAs($this->userA)
+            ->get(route('user.learning.dashboard.partial', [
+                'tab'                     => 'certificate',
+                'certificate_filter_year' => '2026',
+            ]));
+
+        $resp->assertOk();
+        $resp->assertSee('id="certificateDownloadExcel"', false);
+        $resp->assertSee('data-export-url=', false);
+        $resp->assertSee('certificate_filter_year=2026', false);
+        $resp->assertSee('certificate_export=1', false);
+    }
 }

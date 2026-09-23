@@ -190,6 +190,17 @@
     [data-bs-theme=dark] .apexcharts-text {
         fill: #f6f8fb !important;
     }
+
+    /* AFK Duration Card & Warning Badges Dark Mode */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .bg-yellow-lt {
+        background-color: rgba(245, 159, 0, 0.12) !important;
+        border: 1px solid rgba(245, 159, 0, 0.28) !important;
+        color: #fbbf24 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .bg-yellow-lt .fw-bold {
+        color: #fef08a !important;
+    }
 </style>
 @endsection
 

@@ -624,12 +624,34 @@ class LearningDatatableService
 
     private function actionColumn($row): string
     {
-        if (empty($row->content_slug)) {
-            return '-';
-        }
+        $sourceType = e($row->source_type ?? 'content');
+        $sourceId = e($row->source_id ?? '');
 
-        return '<a href="' . route('learning.manage.content', $row->content_slug) . '" class="btn btn-sm btn-outline-primary rounded-pill">'
-            . '<i class="ti ti-eye me-1"></i> View'
-            . '</a>';
+        $viewBtn = '<button type="button" class="btn btn-sm btn-icon btn-ghost-secondary text-primary owl-action-btn btn-view-learning-detail" '
+            . 'data-source-type="' . $sourceType . '" '
+            . 'data-source-id="' . $sourceId . '" '
+            . 'data-bs-toggle="tooltip" data-bs-placement="top" title="View Details" aria-label="View Details">'
+            . '<i class="ti ti-eye"></i>'
+            . '</button>';
+
+        $editBtn = '<button type="button" class="btn btn-sm btn-icon btn-ghost-secondary text-warning owl-action-btn btn-edit-learning-record" '
+            . 'data-source-type="' . $sourceType . '" '
+            . 'data-source-id="' . $sourceId . '" '
+            . 'data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Record" aria-label="Edit Record">'
+            . '<i class="ti ti-pencil"></i>'
+            . '</button>';
+
+        $deleteBtn = '<button type="button" class="btn btn-sm btn-icon btn-ghost-secondary text-danger owl-action-btn btn-delete-learning-record btn-reset-learning-record" '
+            . 'data-source-type="' . $sourceType . '" '
+            . 'data-source-id="' . $sourceId . '" '
+            . 'data-bs-toggle="tooltip" data-bs-placement="top" title="Reset Learning Progress" aria-label="Reset Learning Progress">'
+            . '<i class="ti ti-trash"></i>'
+            . '</button>';
+
+        return '<div class="d-flex align-items-center justify-content-center gap-1">'
+            . $viewBtn
+            . $editBtn
+            . $deleteBtn
+            . '</div>';
     }
 }

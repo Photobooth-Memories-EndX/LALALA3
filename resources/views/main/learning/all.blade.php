@@ -6,6 +6,7 @@
         @include('main.learning.components.learning-header', ['variant' => 'table'])
         @include('main.learning.components.learning-filter')
         @include('main.learning.components.learning-table')
+        @include('main.learning.components.learning-detail-modal')
     </div>
 </div>
 @endsection
@@ -153,6 +154,87 @@
         background-color: var(--tblr-bg-surface-secondary, #111827) !important;
         border-color: rgba(255, 255, 255, 0.15) !important;
         color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #learningDetailModal .modal-content,
+    [data-bs-theme="dark"] #learningEditModal .modal-content,
+    [data-bs-theme="dark"] #learningResetModal .modal-content,
+    body.dark-mode #learningDetailModal .modal-content,
+    body.dark-mode #learningEditModal .modal-content,
+    body.dark-mode #learningResetModal .modal-content,
+    body.theme-dark #learningDetailModal .modal-content,
+    body.theme-dark #learningEditModal .modal-content,
+    body.theme-dark #learningResetModal .modal-content {
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #learningDetailModal .text-dark,
+    [data-bs-theme="dark"] #learningEditModal .text-dark,
+    [data-bs-theme="dark"] #learningResetModal .text-dark,
+    body.dark-mode #learningDetailModal .text-dark,
+    body.dark-mode #learningEditModal .text-dark,
+    body.dark-mode #learningResetModal .text-dark,
+    body.theme-dark #learningDetailModal .text-dark,
+    body.theme-dark #learningEditModal .text-dark,
+    body.theme-dark #learningResetModal .text-dark {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #learningDetailModal .owl-modal-card,
+    [data-bs-theme="dark"] #learningEditModal .owl-modal-card,
+    [data-bs-theme="dark"] #learningResetModal .owl-modal-card,
+    body.dark-mode #learningDetailModal .owl-modal-card,
+    body.dark-mode #learningEditModal .owl-modal-card,
+    body.dark-mode #learningResetModal .owl-modal-card,
+    body.theme-dark #learningDetailModal .owl-modal-card,
+    body.theme-dark #learningEditModal .owl-modal-card,
+    body.theme-dark #learningResetModal .owl-modal-card {
+        background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] #learningDetailModal .owl-modal-subcard,
+    [data-bs-theme="dark"] #learningEditModal .owl-modal-subcard,
+    body.dark-mode #learningDetailModal .owl-modal-subcard,
+    body.dark-mode #learningEditModal .owl-modal-subcard,
+    body.theme-dark #learningDetailModal .owl-modal-subcard,
+    body.theme-dark #learningEditModal .owl-modal-subcard {
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] #learningEditModal .form-control,
+    [data-bs-theme="dark"] #learningEditModal .input-group-text,
+    body.dark-mode #learningEditModal .form-control,
+    body.dark-mode #learningEditModal .input-group-text,
+    body.theme-dark #learningEditModal .form-control,
+    body.theme-dark #learningEditModal .input-group-text {
+        background-color: var(--tblr-bg-surface-secondary, #111827) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #learningDetailModal .modal-header,
+    [data-bs-theme="dark"] #learningDetailModal .modal-footer,
+    [data-bs-theme="dark"] #learningEditModal .modal-header,
+    [data-bs-theme="dark"] #learningEditModal .modal-footer,
+    [data-bs-theme="dark"] #learningResetModal .modal-header,
+    [data-bs-theme="dark"] #learningResetModal .modal-footer,
+    body.dark-mode #learningDetailModal .modal-header,
+    body.dark-mode #learningDetailModal .modal-footer,
+    body.dark-mode #learningEditModal .modal-header,
+    body.dark-mode #learningEditModal .modal-footer,
+    body.dark-mode #learningResetModal .modal-header,
+    body.dark-mode #learningResetModal .modal-footer,
+    body.theme-dark #learningDetailModal .modal-header,
+    body.theme-dark #learningDetailModal .modal-footer,
+    body.theme-dark #learningEditModal .modal-header,
+    body.theme-dark #learningEditModal .modal-footer,
+    body.theme-dark #learningResetModal .modal-header,
+    body.theme-dark #learningResetModal .modal-footer {
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
     }
 </style>
 @endsection

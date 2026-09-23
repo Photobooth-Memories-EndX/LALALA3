@@ -231,7 +231,8 @@
                 { data: 'category_badge', name: 'unified.category_source', className: 'text-center' },
                 { data: 'duration', name: 'c.duration', className: 'text-center' },
                 { data: 'learning_date', name: 'unified.created_at', className: 'text-center' },
-                { data: 'progress_bar', name: 'unified.progress', orderable: false, searchable: false, className: 'text-center' }
+                { data: 'progress_bar', name: 'unified.progress', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {
                 processing: '<div class="py-4 text-center"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Loading learning data...</div></div>'
@@ -315,6 +316,14 @@
 
                     paginationHtml += '</ul>';
                     $paginationContainer.html(paginationHtml);
+                }
+
+                // Re-initialize tooltips for newly rendered action buttons
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('#learning-table [data-bs-toggle="tooltip"]'));
+                    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                        bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl);
+                    });
                 }
             }
         });
@@ -588,6 +597,661 @@
 
             const downloadUrl = "{{ route('manage.learning.download') }}?" + params.toString();
             window.open(downloadUrl, '_blank');
+        });
+
+        // ── 7. Action Column Handlers ─────────────────────────────────────
+        let isFetchingRecordDetail = false;
+
+        // A. View Details Handler (AJAX Read-Only Modal)
+        $(document).on('click', '.btn-view-learning-detail', function (e) {
+            e.preventDefault();
+
+            if (isFetchingRecordDetail) {
+                return;
+            }
+
+            const sourceType = $(this).data('source-type');
+            const sourceId = $(this).data('source-id');
+
+            if (!sourceType || !sourceId) {
+                return;
+            }
+
+            const modalEl = document.getElementById('learningDetailModal');
+            if (!modalEl) {
+                return;
+            }
+
+            const modalInstance = (typeof bootstrap !== 'undefined' && bootstrap.Modal)
+                ? (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl))
+                : null;
+
+            // Show loading state, hide error and content
+            $('#learningDetailLoading').show();
+            $('#learningDetailError').hide();
+            $('#learningDetailContent').hide();
+
+            if (modalInstance) {
+                modalInstance.show();
+            } else if ($.fn.modal) {
+                $('#learningDetailModal').modal('show');
+            }
+
+            isFetchingRecordDetail = true;
+
+            const detailUrl = "{{ url('manage/learning/record-detail') }}/" + encodeURIComponent(sourceType) + "/" + encodeURIComponent(sourceId);
+
+            $.ajax({
+                url: detailUrl,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                },
+                success: function (res) {
+                    if (res && res.status === 'success' && res.data) {
+                        const d = res.data;
+                        const emp = d.employee || {};
+                        const lr = d.learning || {};
+                        const pr = d.progress || {};
+                        const ts = d.timestamps || {};
+
+                        // Employee Information
+                        $('#ld-emp-id').text(emp.id_emp || '-');
+                        $('#ld-emp-name').text(emp.name || '-');
+                        $('#ld-emp-dept').text(emp.department || '-');
+                        $('#ld-emp-team').text(emp.team || '-');
+
+                        // Learning Information
+                        $('#ld-content-title').text(lr.title || '-');
+                        $('#ld-content-type').text(lr.type || '-');
+                        $('#ld-content-classification').text(lr.classification || '-');
+                        $('#ld-content-category').text(lr.category || '-');
+                        $('#ld-content-source').text(lr.source || '-');
+
+                        if (d.source_type === 'playlist' && lr.playlist_name && lr.playlist_name !== '-') {
+                            $('#ld-playlist-name').text(lr.playlist_name);
+                            $('#ld-playlist-container').show();
+                        } else {
+                            $('#ld-playlist-container').hide();
+                        }
+
+                        // Progress Information
+                        const pct = Math.max(0, Math.min(100, parseInt(pr.progress, 10) || 0));
+                        $('#ld-progress-text').text(pct + '%');
+                        $('#ld-progress-bar').css('width', pct + '%');
+
+                        const isFinished = pr.finish === 'Finished';
+                        $('#ld-finish-badge')
+                            .text(pr.finish || '-')
+                            .removeClass('bg-success-lt text-success bg-warning-lt text-warning')
+                            .addClass(isFinished ? 'bg-success-lt text-success' : 'bg-warning-lt text-warning');
+
+                        $('#ld-learning-status').text(pr.learning_status || '-');
+                        $('#ld-status').text(pr.status || '-');
+                        $('#ld-learning-hours').text(pr.learning_hours || '-');
+                        $('#ld-duration').text(pr.duration || '-');
+                        $('#ld-current-time').text(pr.current_time || '-');
+                        $('#ld-actual-watch').text(pr.actual_watch_seconds || '-');
+                        $('#ld-afk-duration').text(pr.afk_duration || '-');
+
+                        // Timestamps
+                        $('#ld-created-at').text(ts.created_at || '-');
+                        $('#ld-updated-at').text(ts.updated_at || '-');
+                        $('#ld-completed-at').text(ts.completed_at || '-');
+
+                        // Transition to content view
+                        $('#learningDetailLoading').hide();
+                        $('#learningDetailContent').fadeIn(150);
+                    } else {
+                        $('#learningDetailLoading').hide();
+                        $('#learningDetailErrorMessage').text((res && res.message) ? res.message : 'Unable to load learning record details.');
+                        $('#learningDetailError').show();
+                    }
+                },
+                error: function (xhr) {
+                    $('#learningDetailLoading').hide();
+                    let errMsg = 'Unable to load learning record details.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    $('#learningDetailErrorMessage').text(errMsg);
+                    $('#learningDetailError').show();
+                },
+                complete: function () {
+                    isFetchingRecordDetail = false;
+                }
+            });
+        });
+
+        // ── 8. Success Alert Notification Helper ──────────────────────────
+        function showLearningAlert(message, type) {
+            type = type || 'success';
+            const alertId = 'learning-action-alert';
+            let $alert = $('#' + alertId);
+            if (!$alert.length) {
+                $alert = $(`
+                    <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show mb-3 shadow-sm rounded-3" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="ti ${type === 'success' ? 'ti-circle-check text-success' : 'ti-alert-circle text-danger'} fs-2 me-2"></i>
+                            <div class="alert-message fw-semibold small"></div>
+                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    </div>
+                `);
+                $('.card:has(#learning-table)').before($alert);
+            } else {
+                $alert.removeClass('alert-success alert-danger alert-warning').addClass('alert-' + type);
+                $alert.find('i').removeClass('ti-circle-check text-success ti-alert-circle text-danger')
+                    .addClass(type === 'success' ? 'ti-circle-check text-success' : 'ti-alert-circle text-danger');
+            }
+            $alert.find('.alert-message').text(message);
+            $alert.show();
+            setTimeout(function () {
+                $alert.fadeOut(300);
+            }, 4500);
+        }
+
+        // B. Edit Button Handler (Functional AJAX Edit Modal)
+        let isFetchingEditRecord = false;
+
+        $(document).on('click', '.btn-edit-learning-record', function (e) {
+            e.preventDefault();
+
+            if (isFetchingEditRecord) {
+                return;
+            }
+
+            const sourceType = $(this).data('source-type');
+            const sourceId = $(this).data('source-id');
+
+            if (!sourceType || !sourceId) {
+                return;
+            }
+
+            const modalEl = document.getElementById('learningEditModal');
+            if (!modalEl) {
+                return;
+            }
+
+            const modalInstance = (typeof bootstrap !== 'undefined' && bootstrap.Modal)
+                ? (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl))
+                : null;
+
+            // Reset form states
+            $('#edit-source-type').val(sourceType);
+            $('#edit-source-id').val(sourceId);
+            $('#edit-original-finish').val('0');
+            $('#edit-duration-seconds').val('0');
+
+            $('#learningEditSubmitError').hide().find('#learningEditSubmitErrorMessage').empty();
+            $('#learningEditForm .form-control').removeClass('is-invalid');
+            $('#learningEditForm .invalid-feedback').hide().empty();
+
+            $('#learningEditLoading').show();
+            $('#learningEditFetchError').hide();
+            $('#learningEditContent').hide();
+
+            $('#btn-save-learning-edit').prop('disabled', false);
+            $('#edit-save-spinner').hide();
+            $('#edit-save-text').text('Save Changes');
+
+            if (modalInstance) {
+                modalInstance.show();
+            } else if ($.fn.modal) {
+                $('#learningEditModal').modal('show');
+            }
+
+            isFetchingEditRecord = true;
+
+            const detailUrl = "{{ url('manage/learning/record-detail') }}/" + encodeURIComponent(sourceType) + "/" + encodeURIComponent(sourceId);
+
+            $.ajax({
+                url: detailUrl,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                },
+                success: function (res) {
+                    if (res && res.status === 'success' && res.data) {
+                        const d = res.data;
+                        const emp = d.employee || {};
+                        const lr = d.learning || {};
+                        const pr = d.progress || {};
+
+                        // Store tracking metadata
+                        $('#edit-source-type').val(d.source_type);
+                        $('#edit-source-id').val(d.source_id);
+                        const isFinished = (pr.is_finished || pr.finish === 'Finished' || parseInt(pr.progress, 10) >= 100);
+                        $('#edit-original-finish').val(isFinished ? '1' : '0');
+
+                        const durationSec = parseInt(pr.duration_seconds, 10) || 0;
+                        $('#edit-duration-seconds').val(durationSec);
+
+                        // Read-only context
+                        $('#le-emp-id').text(emp.id_emp || '-');
+                        $('#le-emp-name').text(emp.name || '-');
+                        $('#le-emp-dept').text(emp.department || '-');
+
+                        $('#le-content-title').text(lr.title || '-');
+                        $('#le-content-type').text(lr.type || '-');
+                        $('#le-content-classification').text(lr.classification || '-');
+                        $('#le-content-category').text(lr.category || '-');
+                        $('#le-content-source').text(lr.source || '-');
+                        $('#le-content-duration').text(pr.duration || '-');
+
+                        if (d.source_type === 'playlist' && lr.playlist_name && lr.playlist_name !== '-') {
+                            $('#le-playlist-name').text(lr.playlist_name);
+                            $('#le-playlist-container').show();
+                        } else {
+                            $('#le-playlist-container').hide();
+                        }
+
+                        // Editable tracking values
+                        $('#edit-progress').val(pr.progress !== undefined ? parseInt(pr.progress, 10) : 0);
+                        $('#edit-current-time').val(pr.raw_current_time !== undefined ? parseInt(pr.raw_current_time, 10) : 0);
+                        $('#edit-actual-watch').val(pr.raw_actual_watch_seconds !== undefined ? parseInt(pr.raw_actual_watch_seconds, 10) : 0);
+                        $('#edit-afk-duration').val(pr.raw_afk_duration_seconds !== undefined ? parseInt(pr.raw_afk_duration_seconds, 10) : 0);
+
+                        if (durationSec > 0) {
+                            $('#help-edit-current-time').text(`Position in seconds (maximum duration: ${durationSec}s).`);
+                        } else {
+                            $('#help-edit-current-time').text('Current position in seconds.');
+                        }
+
+                        $('#learningEditLoading').hide();
+                        $('#learningEditContent').fadeIn(150);
+                    } else {
+                        $('#learningEditLoading').hide();
+                        $('#learningEditFetchErrorMessage').text((res && res.message) ? res.message : 'Unable to load learning record data.');
+                        $('#learningEditFetchError').show();
+                    }
+                },
+                error: function (xhr) {
+                    $('#learningEditLoading').hide();
+                    let errMsg = 'Unable to load learning record data.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    $('#learningEditFetchErrorMessage').text(errMsg);
+                    $('#learningEditFetchError').show();
+                },
+                complete: function () {
+                    isFetchingEditRecord = false;
+                }
+            });
+        });
+
+        // Edit Form Submit Handler
+        $('#learningEditForm').on('submit', function (e) {
+            e.preventDefault();
+
+            // Clear previous errors
+            $('#learningEditSubmitError').hide().find('#learningEditSubmitErrorMessage').empty();
+            $('#learningEditForm .form-control').removeClass('is-invalid');
+            $('#learningEditForm .invalid-feedback').hide().empty();
+
+            const sourceType = $('#edit-source-type').val();
+            const sourceId = $('#edit-source-id').val();
+            const originalFinish = $('#edit-original-finish').val();
+            const durationSec = parseInt($('#edit-duration-seconds').val(), 10) || 0;
+
+            const progressVal = $('#edit-progress').val().trim();
+            const currentTimeVal = $('#edit-current-time').val().trim();
+            const actualWatchVal = $('#edit-actual-watch').val().trim();
+            const afkDurationVal = $('#edit-afk-duration').val().trim();
+
+            const progress = parseInt(progressVal, 10);
+            const currentTime = parseInt(currentTimeVal, 10);
+            const actualWatch = parseInt(actualWatchVal, 10);
+            const afkDuration = parseInt(afkDurationVal, 10);
+
+            // Client Validation Checks
+            let hasClientError = false;
+
+            if (isNaN(progress) || progress < 0 || progress > 100) {
+                $('#edit-progress').addClass('is-invalid');
+                $('#err-edit-progress').text('Progress must be an integer between 0 and 100.').show();
+                hasClientError = true;
+            }
+
+            if (isNaN(currentTime) || currentTime < 0) {
+                $('#edit-current-time').addClass('is-invalid');
+                $('#err-edit-current-time').text('Current time must be an integer greater than or equal to 0.').show();
+                hasClientError = true;
+            } else if (durationSec > 0 && currentTime > durationSec) {
+                $('#edit-current-time').addClass('is-invalid');
+                $('#err-edit-current-time').text(`Current time (${currentTime}s) cannot exceed content duration (${durationSec}s).`).show();
+                hasClientError = true;
+            }
+
+            if (isNaN(actualWatch) || actualWatch < 0) {
+                $('#edit-actual-watch').addClass('is-invalid');
+                $('#err-edit-actual-watch').text('Actual watch seconds must be an integer greater than or equal to 0.').show();
+                hasClientError = true;
+            }
+
+            if (isNaN(afkDuration) || afkDuration < 0) {
+                $('#edit-afk-duration').addClass('is-invalid');
+                $('#err-edit-afk-duration').text('AFK duration must be an integer greater than or equal to 0.').show();
+                hasClientError = true;
+            }
+
+            if (hasClientError) {
+                return;
+            }
+
+            // Safety Confirmation (Section 17): If previously finished and now reducing progress < 100
+            if (originalFinish === '1' && progress < 100) {
+                const confirmed = window.confirm(
+                    "This record is currently completed. Reducing progress below 100% will reopen the learning record and may affect Learning Record and Learning Hours. Continue?"
+                );
+                if (!confirmed) {
+                    return;
+                }
+            }
+
+            // Lock save button and show loading state
+            const $saveBtn = $('#btn-save-learning-edit');
+            const $spinner = $('#edit-save-spinner');
+            const $btnText = $('#edit-save-text');
+
+            $saveBtn.prop('disabled', true);
+            $spinner.show();
+            $btnText.text('Saving Changes...');
+
+            const updateUrl = "{{ url('manage/learning/record') }}/" + encodeURIComponent(sourceType) + "/" + encodeURIComponent(sourceId);
+
+            $.ajax({
+                url: updateUrl,
+                type: 'POST',
+                data: {
+                    _method: 'PUT',
+                    _token: '{{ csrf_token() }}',
+                    progress: progress,
+                    current_time: currentTime,
+                    actual_watch_seconds: actualWatch,
+                    afk_duration_seconds: afkDuration
+                },
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                success: function (res) {
+                    $saveBtn.prop('disabled', false);
+                    $spinner.hide();
+                    $btnText.text('Save Changes');
+
+                    if (res && res.status === 'success') {
+                        // 1. Close Edit Modal
+                        const modalEl = document.getElementById('learningEditModal');
+                        if (modalEl) {
+                            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                                const inst = bootstrap.Modal.getInstance(modalEl);
+                                if (inst) inst.hide();
+                            }
+                            if ($.fn.modal) {
+                                $('#learningEditModal').modal('hide');
+                            }
+                        }
+
+                        // 2. Display success feedback banner
+                        showLearningAlert(res.message || 'Learning record updated successfully.', 'success');
+
+                        // 3. Reload DataTable without resetting pagination
+                        learningTable.ajax.reload(null, false);
+                    } else {
+                        const msg = (res && res.message) ? res.message : 'Failed to update learning record.';
+                        $('#learningEditSubmitErrorMessage').text(msg);
+                        $('#learningEditSubmitError').show();
+                    }
+                },
+                error: function (xhr) {
+                    $saveBtn.prop('disabled', false);
+                    $spinner.hide();
+                    $btnText.text('Save Changes');
+
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                        const errors = xhr.responseJSON.errors;
+                        let errorSummary = [];
+
+                        if (errors.progress) {
+                            $('#edit-progress').addClass('is-invalid');
+                            $('#err-edit-progress').text(errors.progress[0]).show();
+                            errorSummary.push(errors.progress[0]);
+                        }
+                        if (errors.current_time) {
+                            $('#edit-current-time').addClass('is-invalid');
+                            $('#err-edit-current-time').text(errors.current_time[0]).show();
+                            errorSummary.push(errors.current_time[0]);
+                        }
+                        if (errors.actual_watch_seconds) {
+                            $('#edit-actual-watch').addClass('is-invalid');
+                            $('#err-edit-actual-watch').text(errors.actual_watch_seconds[0]).show();
+                            errorSummary.push(errors.actual_watch_seconds[0]);
+                        }
+                        if (errors.afk_duration_seconds) {
+                            $('#edit-afk-duration').addClass('is-invalid');
+                            $('#err-edit-afk-duration').text(errors.afk_duration_seconds[0]).show();
+                            errorSummary.push(errors.afk_duration_seconds[0]);
+                        }
+
+                        const mainMsg = xhr.responseJSON.message || 'Please correct the validation errors below.';
+                        $('#learningEditSubmitErrorMessage').html(
+                            `<strong>${mainMsg}</strong>` + (errorSummary.length ? `<br>${errorSummary.join('<br>')}` : '')
+                        );
+                        $('#learningEditSubmitError').show();
+                    } else {
+                        let errMsg = 'Failed to update learning record. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errMsg = xhr.responseJSON.message;
+                        }
+                        $('#learningEditSubmitErrorMessage').text(errMsg);
+                        $('#learningEditSubmitError').show();
+                    }
+                }
+            });
+        });
+
+        // C. Reset Learning Progress Handler (Functional Reset Modal)
+        let isFetchingResetRecord = false;
+
+        $(document).on('click', '.btn-delete-learning-record, .btn-reset-learning-record', function (e) {
+            e.preventDefault();
+
+            if (isFetchingResetRecord) {
+                return;
+            }
+
+            const sourceType = $(this).data('source-type');
+            const sourceId = $(this).data('source-id');
+
+            if (!sourceType || !sourceId) {
+                return;
+            }
+
+            const modalEl = document.getElementById('learningResetModal');
+            if (!modalEl) {
+                return;
+            }
+
+            const modalInstance = (typeof bootstrap !== 'undefined' && bootstrap.Modal)
+                ? (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl))
+                : null;
+
+            // Reset modal state
+            $('#reset-source-type').val(sourceType);
+            $('#reset-source-id').val(sourceId);
+
+            $('#learningResetSubmitError').hide().find('#learningResetSubmitErrorMessage').empty();
+            $('#learningResetFetchError').hide();
+            $('#learningResetContent').hide();
+            $('#learningResetLoading').show();
+
+            $('#lr-completed-warning').hide();
+            $('#lr-playlist-warning').hide();
+
+            const $confirmBtn = $('#btn-confirm-learning-reset');
+            $confirmBtn.prop('disabled', false);
+            $('#reset-confirm-spinner').hide();
+            $('#reset-confirm-text').text('Reset Progress');
+
+            if (modalInstance) {
+                modalInstance.show();
+            } else if ($.fn.modal) {
+                $('#learningResetModal').modal('show');
+            }
+
+            isFetchingResetRecord = true;
+
+            const detailUrl = "{{ url('manage/learning/record-detail') }}/" + encodeURIComponent(sourceType) + "/" + encodeURIComponent(sourceId);
+
+            $.ajax({
+                url: detailUrl,
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
+                },
+                success: function (res) {
+                    if (res && res.status === 'success' && res.data) {
+                        const d = res.data;
+                        const emp = d.employee || {};
+                        const lr = d.learning || {};
+                        const pr = d.progress || {};
+
+                        // Store tracking metadata
+                        $('#reset-source-type').val(d.source_type);
+                        $('#reset-source-id').val(d.source_id);
+
+                        // Populate Target Record details
+                        $('#lr-emp-id').text(emp.id_emp ? `NIP: ${emp.id_emp}` : '-');
+                        $('#lr-emp-name').text(emp.name || '-');
+                        $('#lr-content-title').text(lr.title || '-');
+                        $('#lr-content-source').text(lr.source || (d.source_type === 'playlist' ? 'Playlist' : 'Direct Content'));
+
+                        if (d.source_type === 'playlist' && lr.playlist_name && lr.playlist_name !== '-') {
+                            $('#lr-playlist-name').text(lr.playlist_name);
+                            $('#lr-playlist-container').show();
+                            $('#lr-playlist-warning').show();
+                        } else {
+                            $('#lr-playlist-container').hide();
+                            $('#lr-playlist-warning').hide();
+                        }
+
+                        const progressVal = parseInt(pr.progress, 10) || 0;
+                        $('#lr-current-progress').text(progressVal + '%');
+                        $('#lr-learning-hours').text(pr.learning_hours || '0.0000 h');
+
+                        const isFinished = (pr.is_finished || pr.finish === 'Finished' || progressVal >= 100);
+                        if (isFinished) {
+                            $('#lr-status-badge').removeClass('bg-warning-lt bg-secondary-lt').addClass('bg-success-lt').text('Finished');
+                            $('#lr-completed-warning').show();
+                        } else {
+                            $('#lr-status-badge').removeClass('bg-success-lt bg-secondary-lt').addClass('bg-warning-lt').text(pr.learning_status || 'In Progress');
+                            $('#lr-completed-warning').hide();
+                        }
+
+                        $('#learningResetLoading').hide();
+                        $('#learningResetContent').fadeIn(150);
+                    } else {
+                        $('#learningResetLoading').hide();
+                        $('#learningResetFetchErrorMessage').text((res && res.message) ? res.message : 'Unable to load learning record data.');
+                        $('#learningResetFetchError').show();
+                    }
+                },
+                error: function (xhr) {
+                    $('#learningResetLoading').hide();
+                    let errMsg = 'Unable to load learning record data.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    $('#learningResetFetchErrorMessage').text(errMsg);
+                    $('#learningResetFetchError').show();
+                },
+                complete: function () {
+                    isFetchingResetRecord = false;
+                }
+            });
+        });
+
+        // Reset Confirm Button Click Handler
+        $('#btn-confirm-learning-reset').on('click', function (e) {
+            e.preventDefault();
+
+            const sourceType = $('#reset-source-type').val();
+            const sourceId = $('#reset-source-id').val();
+
+            if (!sourceType || !sourceId) {
+                return;
+            }
+
+            const $btn = $(this);
+            const $spinner = $('#reset-confirm-spinner');
+            const $btnText = $('#reset-confirm-text');
+
+            $btn.prop('disabled', true);
+            $spinner.show();
+            $btnText.text('Resetting...');
+            $('#learningResetSubmitError').hide().find('#learningResetSubmitErrorMessage').empty();
+
+            const resetUrl = "{{ url('manage/learning/record') }}/" + encodeURIComponent(sourceType) + "/" + encodeURIComponent(sourceId) + "/reset";
+
+            $.ajax({
+                url: resetUrl,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                success: function (res) {
+                    $btn.prop('disabled', false);
+                    $spinner.hide();
+                    $btnText.text('Reset Progress');
+
+                    if (res && res.status === 'success') {
+                        // 1. Close Reset Modal
+                        const modalEl = document.getElementById('learningResetModal');
+                        if (modalEl) {
+                            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                                const inst = bootstrap.Modal.getInstance(modalEl);
+                                if (inst) inst.hide();
+                            }
+                            if ($.fn.modal) {
+                                $('#learningResetModal').modal('hide');
+                            }
+                        }
+
+                        // 2. Display success feedback banner
+                        showLearningAlert(res.message || 'Learning progress has been reset successfully.', 'success');
+
+                        // 3. Reload DataTable without resetting pagination
+                        learningTable.ajax.reload(null, false);
+                    } else {
+                        const msg = (res && res.message) ? res.message : 'Failed to reset learning progress.';
+                        $('#learningResetSubmitErrorMessage').text(msg);
+                        $('#learningResetSubmitError').show();
+                    }
+                },
+                error: function (xhr) {
+                    $btn.prop('disabled', false);
+                    $spinner.hide();
+                    $btnText.text('Reset Progress');
+
+                    let errMsg = 'Failed to reset learning progress. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                    $('#learningResetSubmitErrorMessage').text(errMsg);
+                    $('#learningResetSubmitError').show();
+                }
+            });
         });
     });
 </script>

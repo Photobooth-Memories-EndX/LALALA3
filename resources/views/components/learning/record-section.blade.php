@@ -21,10 +21,11 @@
         9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
     ];
 
-    $filterType = request('record_filter_type', 'all');
-    $filterClassification = request('record_filter_classification', 'all');
-    $filterYear = request('record_filter_year', 'all');
-    $filterMonth = request('record_filter_month', 'all');
+    $filterType = request('record_filter_type') ?? request('type') ?? 'all';
+    $rawFilterClassification = request('record_filter_classification') ?? request('classification') ?? 'all';
+    $filterClassification = $rawFilterClassification !== 'all' ? html_entity_decode((string) $rawFilterClassification, ENT_QUOTES | ENT_HTML5, 'UTF-8') : 'all';
+    $filterYear = request('record_filter_year') ?? request('year') ?? 'all';
+    $filterMonth = request('record_filter_month') ?? request('month') ?? 'all';
 
     $typeOptions = [
         'all' => 'All',
