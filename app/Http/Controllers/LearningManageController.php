@@ -9,9 +9,11 @@ use App\Models\ContentUser;
 use App\Models\PlaylistContentUser;
 use App\Models\User;
 use App\Services\Learning\LearningDatatableService;
+use App\Services\LearningHours\ActualLearningHourCalculator;
 use App\Support\DurationFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LearningManageController extends Controller
@@ -243,6 +245,434 @@ class LearningManageController extends Controller
     public function datatable(Request $request, LearningDatatableService $datatableService)
     {
         return $datatableService->make($request);
+    }
+
+    public function recordDetail(string $type, $id)
+    {
+        if (!in_array($type, ['content', 'playlist'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid learning source type.',
+            ], 404);
+        }
+
+        if ($type === 'content') {
+            $record = ContentUser::with(['user', 'content.classification'])
+                ->where('id', $id)
+                ->first();
+
+            if (!$record) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Learning record not found.',
+                ], 404);
+            }
+
+            $user = $record->user;
+            $content = $record->content;
+            $classification = $content?->classification;
+
+            $durationFormatted = DurationFormatter::format($content?->duration, '-');
+            $currentTimeSec = $record->current_time !== null ? (int) $record->current_time : null;
+            $actualWatchSec = $record->actual_watch_seconds !== null ? (int) $record->actual_watch_seconds : null;
+            $afkSec = $record->afk_duration_seconds !== null ? (int) $record->afk_duration_seconds : null;
+
+            $durationSeconds = $record->duration_seconds !== null && (int) $record->duration_seconds > 0
+                ? (int) $record->duration_seconds
+                : DurationFormatter::toSeconds($content?->duration);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'source_type' => 'content',
+                    'source_id' => $record->id,
+                    'employee' => [
+                        'id_emp' => $user?->id_emp ?? '-',
+                        'name' => $user?->name ?? '-',
+                        'department' => $user?->department ?? '-',
+                        'team' => $user?->team ?? '-',
+                    ],
+                    'learning' => [
+                        'title' => $content?->title ?? '-',
+                        'type' => $content?->type ?? '-',
+                        'classification' => $classification?->classification_name ?? '-',
+                        'category' => 'All Content',
+                        'source' => 'All Content',
+                        'playlist_name' => '-',
+                    ],
+                    'progress' => [
+                        'progress' => (int) ($record->progress ?? 0),
+                        'finish' => $record->isFinished() ? 'Finished' : 'In Progress',
+                        'finish_badge' => $record->isFinished() ? 'success' : 'warning',
+                        'learning_status' => $record->learning_status ? ucfirst(str_replace('_', ' ', $record->learning_status)) : '-',
+                        'status' => $record->status ? ucfirst($record->status) : '-',
+                        'current_time' => $currentTimeSec !== null ? DurationFormatter::fromSeconds($currentTimeSec) . " ({$currentTimeSec}s)" : '-',
+                        'duration' => $durationFormatted,
+                        'actual_watch_seconds' => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
+                        'afk_duration' => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
+                        'learning_hours' => $record->learning_hours !== null ? number_format((float) $record->learning_hours, 4) . ' h' : '-',
+                        'raw_current_time' => $currentTimeSec ?? 0,
+                        'raw_actual_watch_seconds' => $actualWatchSec ?? 0,
+                        'raw_afk_duration_seconds' => $afkSec ?? 0,
+                        'duration_seconds' => $durationSeconds ?? 0,
+                        'is_finished' => $record->isFinished(),
+                    ],
+                    'timestamps' => [
+                        'created_at' => $record->created_at ? $record->created_at->format('d M Y, H:i') : '-',
+                        'updated_at' => $record->updated_at ? $record->updated_at->format('d M Y, H:i') : '-',
+                        'completed_at' => $record->completed_at ? $record->completed_at->format('d M Y, H:i') : '-',
+                    ],
+                ],
+            ]);
+        }
+
+        // type === 'playlist'
+        $record = PlaylistContentUser::with(['user', 'content.classification', 'trainingPlan'])
+            ->where('id', $id)
+            ->first();
+
+        if (!$record) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Playlist learning record not found.',
+            ], 404);
+        }
+
+        $user = $record->user;
+        $content = $record->content;
+        $classification = $content?->classification;
+        $trainingPlan = $record->trainingPlan;
+
+        $durationFormatted = DurationFormatter::format($content?->duration, '-');
+        $currentTimeSec = $record->current_time !== null ? (int) $record->current_time : null;
+        $actualWatchSec = $record->actual_watch_seconds !== null ? (int) $record->actual_watch_seconds : null;
+        $afkSec = $record->afk_duration_seconds !== null ? (int) $record->afk_duration_seconds : null;
+        $durationSeconds = $record->duration_seconds !== null && (int) $record->duration_seconds > 0
+            ? (int) $record->duration_seconds
+            : DurationFormatter::toSeconds($content?->duration);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'source_type' => 'playlist',
+                'source_id' => $record->id,
+                'employee' => [
+                    'id_emp' => $user?->id_emp ?? '-',
+                    'name' => $user?->name ?? '-',
+                    'department' => $user?->department ?? '-',
+                    'team' => $user?->team ?? '-',
+                ],
+                'learning' => [
+                    'title' => $content?->title ?? '-',
+                    'type' => $content?->type ?? '-',
+                    'classification' => $classification?->classification_name ?? '-',
+                    'category' => 'Playlist',
+                    'source' => 'Playlist',
+                    'playlist_name' => $trainingPlan?->title ?? '-',
+                ],
+                'progress' => [
+                    'progress' => (int) ($record->progress ?? 0),
+                    'finish' => $record->isFinished() ? 'Finished' : 'In Progress',
+                    'finish_badge' => $record->isFinished() ? 'success' : 'warning',
+                    'learning_status' => $record->learning_status ? ucfirst(str_replace('_', ' ', $record->learning_status)) : '-',
+                    'status' => 'Playlist',
+                    'current_time' => $currentTimeSec !== null ? DurationFormatter::fromSeconds($currentTimeSec) . " ({$currentTimeSec}s)" : '-',
+                    'duration' => $durationFormatted,
+                    'actual_watch_seconds' => $actualWatchSec !== null ? DurationFormatter::fromSeconds($actualWatchSec) . " ({$actualWatchSec}s)" : '-',
+                    'afk_duration' => $afkSec !== null ? DurationFormatter::fromSeconds($afkSec) . " ({$afkSec}s)" : '-',
+                    'learning_hours' => $record->learning_hour !== null ? number_format((float) $record->learning_hour, 4) . ' h' : '-',
+                    'raw_current_time' => $currentTimeSec ?? 0,
+                    'raw_actual_watch_seconds' => $actualWatchSec ?? 0,
+                    'raw_afk_duration_seconds' => $afkSec ?? 0,
+                    'duration_seconds' => $durationSeconds ?? 0,
+                    'is_finished' => $record->isFinished(),
+                ],
+                'timestamps' => [
+                    'created_at' => $record->created_at ? $record->created_at->format('d M Y, H:i') : '-',
+                    'updated_at' => $record->updated_at ? $record->updated_at->format('d M Y, H:i') : '-',
+                    'completed_at' => $record->completed_at ? $record->completed_at->format('d M Y, H:i') : '-',
+                ],
+            ],
+        ]);
+    }
+
+    public function updateRecord(Request $request, string $type, $id)
+    {
+        if (!in_array($type, ['content', 'playlist'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid learning source type.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'progress'             => ['required', 'integer', 'min:0', 'max:100'],
+            'current_time'         => ['required', 'integer', 'min:0'],
+            'actual_watch_seconds' => ['required', 'integer', 'min:0'],
+            'afk_duration_seconds' => ['required', 'integer', 'min:0'],
+        ]);
+
+        return DB::transaction(function () use ($type, $id, $validated) {
+            $calculator = app(ActualLearningHourCalculator::class);
+
+            if ($type === 'content') {
+                $record = ContentUser::with('content')->lockForUpdate()->find($id);
+
+                if (!$record) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Learning record not found.',
+                    ], 404);
+                }
+
+                $content = $record->content;
+                $contentDurationSeconds = null;
+                if ($record->duration_seconds !== null && (int) $record->duration_seconds > 0) {
+                    $contentDurationSeconds = (int) $record->duration_seconds;
+                } elseif ($content && !empty($content->duration)) {
+                    $contentDurationSeconds = $calculator->parseContentDurationToSeconds($content->duration);
+                }
+
+                if ($contentDurationSeconds !== null && $contentDurationSeconds > 0 && $validated['current_time'] > $contentDurationSeconds) {
+                    throw ValidationException::withMessages([
+                        'current_time' => ["Current time ({$validated['current_time']}s) cannot exceed content duration ({$contentDurationSeconds}s)."],
+                    ]);
+                }
+
+                $newProgress = (int) $validated['progress'];
+                $wasFinished = $record->isFinished();
+                $originalCompletedAt = $record->completed_at;
+
+                $record->progress = $newProgress;
+                $record->current_time = (int) $validated['current_time'];
+                $record->actual_watch_seconds = (int) $validated['actual_watch_seconds'];
+                $record->afk_duration_seconds = (int) $validated['afk_duration_seconds'];
+
+                if ($record->total_pages && (int) $record->total_pages > 0) {
+                    $record->last_page = $newProgress >= 100
+                        ? (int) $record->total_pages
+                        : (int) floor(($newProgress * (int) $record->total_pages) / 100);
+                }
+
+                if ($newProgress >= 100) {
+                    $record->finish = '1';
+                    $record->learning_status = 'completed';
+                    $record->completed_at = ($wasFinished && $originalCompletedAt !== null)
+                        ? $originalCompletedAt
+                        : now();
+                } else {
+                    $record->finish = '0';
+                    $record->learning_status = $newProgress === 0 ? 'not_started' : 'in_progress';
+                    $record->completed_at = null;
+                }
+
+                $maxLearningHours = $content?->max_learning_hours;
+                $record->learning_hours = $calculator->calculateFromTracking(
+                    $record->current_time,
+                    $record->finish,
+                    $record->progress,
+                    $contentDurationSeconds ?? $content?->duration ?? $record->duration_seconds,
+                    $record->actual_watch_seconds,
+                    $maxLearningHours
+                );
+
+                $record->save();
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Learning record updated successfully.',
+                    'data' => [
+                        'source_type' => 'content',
+                        'source_id' => $record->id,
+                        'progress' => (int) $record->progress,
+                        'finish' => (int) $record->finish,
+                        'learning_status' => $record->learning_status,
+                        'current_time' => (int) $record->current_time,
+                        'actual_watch_seconds' => (int) $record->actual_watch_seconds,
+                        'afk_duration_seconds' => (int) $record->afk_duration_seconds,
+                        'learning_hours' => (float) $record->learning_hours,
+                        'completed_at' => $record->completed_at ? $record->completed_at->format('Y-m-d H:i:s') : null,
+                    ],
+                ]);
+            }
+
+            // type === 'playlist'
+            $record = PlaylistContentUser::with(['content', 'trainingPlan'])->lockForUpdate()->find($id);
+
+            if (!$record) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Playlist learning record not found.',
+                ], 404);
+            }
+
+            $content = $record->content;
+            $contentDurationSeconds = null;
+            if ($record->duration_seconds !== null && (int) $record->duration_seconds > 0) {
+                $contentDurationSeconds = (int) $record->duration_seconds;
+            } elseif ($content && !empty($content->duration)) {
+                $contentDurationSeconds = $calculator->parseContentDurationToSeconds($content->duration);
+            }
+
+            if ($contentDurationSeconds !== null && $contentDurationSeconds > 0 && $validated['current_time'] > $contentDurationSeconds) {
+                throw ValidationException::withMessages([
+                    'current_time' => ["Current time ({$validated['current_time']}s) cannot exceed content duration ({$contentDurationSeconds}s)."],
+                ]);
+            }
+
+            $newProgress = (int) $validated['progress'];
+            $wasFinished = $record->isFinished();
+            $originalCompletedAt = $record->completed_at;
+
+            $record->progress = $newProgress;
+            $record->current_time = (int) $validated['current_time'];
+            $record->actual_watch_seconds = (int) $validated['actual_watch_seconds'];
+            $record->afk_duration_seconds = (int) $validated['afk_duration_seconds'];
+
+            if ($record->total_pages && (int) $record->total_pages > 0) {
+                $record->last_page = $newProgress >= 100
+                    ? (int) $record->total_pages
+                    : (int) floor(($newProgress * (int) $record->total_pages) / 100);
+            }
+
+            if ($newProgress >= 100) {
+                $record->finish = '1';
+                $record->learning_status = 'completed';
+                $record->completed_at = ($wasFinished && $originalCompletedAt !== null)
+                    ? $originalCompletedAt
+                    : now();
+            } else {
+                $record->finish = '0';
+                $record->learning_status = $newProgress === 0 ? 'not_started' : 'in_progress';
+                $record->completed_at = null;
+            }
+
+            $maxLearningHours = $content?->max_learning_hours;
+            $record->learning_hour = $calculator->calculateFromTracking(
+                $record->current_time,
+                $record->finish,
+                $record->progress,
+                $contentDurationSeconds ?? $content?->duration ?? $record->duration_seconds,
+                $record->actual_watch_seconds,
+                $maxLearningHours
+            );
+
+            $record->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Playlist learning record updated successfully.',
+                'data' => [
+                    'source_type' => 'playlist',
+                    'source_id' => $record->id,
+                    'progress' => (int) $record->progress,
+                    'finish' => (int) $record->finish,
+                    'learning_status' => $record->learning_status,
+                    'current_time' => (int) $record->current_time,
+                    'actual_watch_seconds' => (int) $record->actual_watch_seconds,
+                    'afk_duration_seconds' => (int) $record->afk_duration_seconds,
+                    'learning_hour' => (float) $record->learning_hour,
+                    'completed_at' => $record->completed_at ? $record->completed_at->format('Y-m-d H:i:s') : null,
+                ],
+            ]);
+        });
+    }
+
+    public function resetRecord(Request $request, string $type, $id)
+    {
+        if (!in_array($type, ['content', 'playlist'], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid learning source type.',
+            ], 404);
+        }
+
+        return DB::transaction(function () use ($type, $id) {
+            if ($type === 'content') {
+                $record = ContentUser::with('content')->lockForUpdate()->find($id);
+
+                if (!$record) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Learning record not found.',
+                    ], 404);
+                }
+
+                $record->progress = 0;
+                $record->finish = '0';
+                $record->learning_status = 'not_started';
+                $record->current_time = 0;
+                $record->actual_watch_seconds = 0;
+                $record->afk_duration_seconds = 0;
+                $record->completed_at = null;
+                $record->learning_hours = 0.0;
+
+                if ($record->last_page !== null) {
+                    $record->last_page = 0;
+                }
+
+                $record->save();
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Learning progress has been reset successfully.',
+                    'data' => [
+                        'source_type' => 'content',
+                        'source_id' => $record->id,
+                        'progress' => (int) $record->progress,
+                        'finish' => (int) $record->finish,
+                        'learning_status' => $record->learning_status,
+                        'current_time' => (int) $record->current_time,
+                        'actual_watch_seconds' => (int) $record->actual_watch_seconds,
+                        'afk_duration_seconds' => (int) $record->afk_duration_seconds,
+                        'learning_hours' => (float) $record->learning_hours,
+                        'completed_at' => null,
+                    ],
+                ]);
+            }
+
+            // type === 'playlist'
+            $record = PlaylistContentUser::with(['content', 'trainingPlan'])->lockForUpdate()->find($id);
+
+            if (!$record) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Playlist learning record not found.',
+                ], 404);
+            }
+
+            $record->progress = 0;
+            $record->finish = '0';
+            $record->learning_status = 'not_started';
+            $record->current_time = 0;
+            $record->actual_watch_seconds = 0;
+            $record->afk_duration_seconds = 0;
+            $record->completed_at = null;
+            $record->learning_hour = 0.0;
+
+            if ($record->last_page !== null) {
+                $record->last_page = 0;
+            }
+
+            $record->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Learning progress has been reset successfully.',
+                'data' => [
+                    'source_type' => 'playlist',
+                    'source_id' => $record->id,
+                    'progress' => (int) $record->progress,
+                    'finish' => (int) $record->finish,
+                    'learning_status' => $record->learning_status,
+                    'current_time' => (int) $record->current_time,
+                    'actual_watch_seconds' => (int) $record->actual_watch_seconds,
+                    'afk_duration_seconds' => (int) $record->afk_duration_seconds,
+                    'learning_hour' => (float) $record->learning_hour,
+                    'completed_at' => null,
+                ],
+            ]);
+        });
     }
 
     private function learningViewData(Request $request, string $title, string $downloadslug = ''): array
