@@ -58,22 +58,22 @@
                     Periode : {{ $continuePeriod ?? '-' }}
                 </p>
 
-                <div class="home-modern-progress-wrap">
-                    <div class="d-flex justify-content-between mb-1">
+                <div class="home-modern-progress-wrap w-100">
+                    <div class="d-flex justify-content-between align-items-center mb-1 w-100">
                         <small>Progress</small>
                         <small class="fw-bold">{{ $continueCourse->progress ?? 0 }}%</small>
                     </div>
-                    <div class="home-modern-progress">
+                    <div class="home-modern-progress w-100">
                         <div class="home-modern-progress-bar"
                              style="width: {{ $continueCourse->progress ?? 0 }}%"></div>
                     </div>
 
                     @if ($progressDetail && $progressDetail['type'] === 'pages')
-                        <small class="text-muted d-block mt-1">
+                        <small class="text-muted d-block mt-1 w-100">
                             {{ $progressDetail['read'] }}/{{ $progressDetail['total'] }} pages
                         </small>
                     @elseif ($progressDetail && $progressDetail['type'] === 'duration')
-                        <small class="text-muted d-block mt-1">
+                        <small class="text-muted d-block mt-1 w-100">
                             {{ \App\Support\DurationFormatter::fromSeconds($progressDetail['watched']) }} /
                             {{ \App\Support\DurationFormatter::fromSeconds($progressDetail['total']) }} video
                         </small>

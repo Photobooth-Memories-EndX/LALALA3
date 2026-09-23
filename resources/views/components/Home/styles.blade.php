@@ -691,6 +691,11 @@ body.dark-mode .home-modern-text-primary {
     color: var(--kp-primary);
 }
 
+.home-modern-category-indigo {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
 @media (max-width: 991.98px) {
     .home-modern-playlist-hitem { flex-basis: 180px; }
     .home-modern-playlist-hcard .home-modern-video-thumb img,
@@ -933,12 +938,23 @@ body.dark-mode .home-modern-text-primary {
 @media (max-width: 991px) {
     .home-modern-continue-wrap {
         flex-direction: column;
+        align-items: stretch !important;
+        width: 100%;
     }
     .home-modern-continue-thumb {
         width: 100%;
     }
     .home-modern-continue-thumb img {
         height: 200px;
+    }
+    .home-modern-continue-info {
+        width: 100% !important;
+    }
+    .home-modern-progress-wrap {
+        width: 100% !important;
+    }
+    .home-modern-progress {
+        width: 100% !important;
     }
 }
 
@@ -948,6 +964,37 @@ body.dark-mode .home-modern-text-primary {
     }
     .home-modern-deadline-title {
         max-width: 200px;
+    }
+    .home-modern-continue-thumb img {
+        height: 175px;
+    }
+    .home-modern-nav-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .home-modern-nav-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    .home-modern-nav-tabs .nav-item {
+        flex-shrink: 0;
+    }
+    .home-modern-nav-tabs .nav-link {
+        white-space: nowrap;
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .home-modern-continue-thumb img {
+        height: 155px;
+    }
+    .home-modern-continue-title {
+        font-size: 14.5px;
     }
 }
 
@@ -1218,6 +1265,12 @@ body.dark-mode .home-modern-text-primary {
     border: 1px solid rgba(168, 85, 247, 0.28) !important;
 }
 
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-category-indigo {
+    background: rgba(99, 102, 241, 0.18) !important;
+    color: #a5b4fc !important;
+    border: 1px solid rgba(99, 102, 241, 0.28) !important;
+}
+
 /* Document & Playlist modules specific */
 :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-document-thumb {
     background: #101c2e !important;
@@ -1430,11 +1483,13 @@ body.dark-mode .home-modern-text-primary {
     color: #64748b !important;
 }
 
-:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-news-dots [data-bs-target] {
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-news-dots [data-bs-target],
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-gallery-dots [data-bs-target] {
     background: rgba(148, 163, 184, 0.32) !important;
 }
 
-:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-news-dots .active {
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-news-dots .active,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark) .home-modern-gallery-dots .active {
     background: #38bdf8 !important;
     box-shadow: 0 0 8px rgba(56, 189, 248, 0.4) !important;
 }

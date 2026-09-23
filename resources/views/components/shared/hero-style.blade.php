@@ -574,19 +574,41 @@
                     flex-direction: row !important;
                     align-items: center;
                     justify-content: flex-start;
-                    gap: 14px;
-                    padding: 12px;
+                    gap: 12px;
+                    padding: 10px 12px;
+                    border-radius: 16px;
                 }
 
                 .shared-learning-hero .shared-hero-donut {
-                    width: 90px;
-                    height: 90px;
-                    flex: 0 0 90px;
+                    width: 86px;
+                    height: 86px;
+                    flex: 0 0 86px;
                 }
 
                 .shared-learning-hero .shared-hero-donut-inner {
-                    width: 66px;
-                    height: 66px;
+                    width: 62px;
+                    height: 62px;
+                    padding: 2px;
+                }
+
+                .shared-learning-hero .shared-hero-donut-inner strong {
+                    font-size: 15px;
+                    font-weight: 700;
+                    line-height: 1.1;
+                    letter-spacing: -0.3px;
+                }
+
+                .shared-learning-hero .shared-hero-donut-inner small {
+                    width: auto;
+                    max-width: 50px;
+                    margin-top: 2px;
+                    font-size: 6.5px;
+                    font-weight: 600;
+                    line-height: 1.15;
+                    letter-spacing: 0.2px;
+                    text-transform: uppercase;
+                    text-align: center;
+                    overflow-wrap: break-word;
                 }
 
                 .shared-learning-hero .shared-hero-summary-detail {
@@ -602,6 +624,68 @@
                     justify-content: flex-start;
                     min-height: auto;
                     text-align: left;
+                    font-size: 12px;
+                    margin-bottom: 4px;
+                    font-weight: 600;
+                }
+
+                .shared-learning-hero .shared-hero-summary-list {
+                    gap: 4px;
+                }
+
+                .shared-learning-hero .shared-hero-summary-row {
+                    min-height: 20px;
+                    gap: 8px;
+                }
+
+                .shared-learning-hero .shared-hero-summary-label {
+                    font-size: 11.5px;
+                }
+
+                .shared-learning-hero .shared-hero-summary-value {
+                    font-size: 12px;
+                    font-weight: 700;
+                }
+
+                .shared-learning-hero .shared-hero-stat-dot {
+                    width: 7px;
+                    height: 7px;
+                }
+            }
+
+            @media (max-width: 360px) {
+                .shared-learning-hero .shared-hero-summary {
+                    gap: 10px;
+                    padding: 8px 10px;
+                }
+
+                .shared-learning-hero .shared-hero-donut {
+                    width: 78px;
+                    height: 78px;
+                    flex: 0 0 78px;
+                }
+
+                .shared-learning-hero .shared-hero-donut-inner {
+                    width: 56px;
+                    height: 56px;
+                }
+
+                .shared-learning-hero .shared-hero-donut-inner strong {
+                    font-size: 13.5px;
+                }
+
+                .shared-learning-hero .shared-hero-donut-inner small {
+                    max-width: 44px;
+                    font-size: 5.8px;
+                    letter-spacing: 0.1px;
+                }
+
+                .shared-learning-hero .shared-hero-summary-label {
+                    font-size: 11px;
+                }
+
+                .shared-learning-hero .shared-hero-summary-value {
+                    font-size: 11.5px;
                 }
             }
         </style>
