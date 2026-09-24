@@ -113,7 +113,7 @@ class HomeUserController extends Controller
 
         $ongoingCourse = $heroSummary['ongoingCourse'];
 
-        $totalCourse = $completedCourse + $ongoingCourse;
+        $totalCourse = $heroSummary['totalCourse'];
 
         $progressPercent = $totalCourse > 0
             ? round(($completedCourse / $totalCourse) * 100)
@@ -220,6 +220,7 @@ class HomeUserController extends Controller
                 'content_user',
 
                 // Dashboard Modern
+                'totalCourse',
                 'completedCourse',
                 'ongoingCourse',
                 'progressPercent',
