@@ -16,7 +16,7 @@
                 </div>
                 <div>
                     <strong class="d-block text-dark fw-bold afk-status-title">Status: Away From Keyboard (AFK)</strong>
-                    <span class="small text-muted afk-status-desc">Aktivitas terhenti melebihi ambang batas. Waktu AFK sedang dihitung. Gerakkan mouse atau ketik untuk kembali aktif.</span>
+                    <span class="small text-muted afk-status-desc">exceeded the threshold. AFK time is being tracked. Move the mouse or type to resume activity.</span>
                 </div>
             </div>
             <span class="badge bg-warning text-dark font-monospace px-3 py-2 fs-6 fw-bold" id="afkElapsedCounter">0s</span>

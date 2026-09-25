@@ -42,7 +42,7 @@
                 </a>
             @empty
                 <div class="text-center text-muted py-4">
-                    Belum ada aktivitas terbaru.
+                    There is no learning activity yet.
                 </div>
             @endforelse
         </div>

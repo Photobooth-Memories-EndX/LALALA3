@@ -4,7 +4,7 @@
             <div class="col-md">
                 <h3 class="mb-1">Instruksi Pengerjaan</h3>
                 <div class="text-muted">
-                    Pilih satu jawaban yang menurut Anda paling benar. Jawaban akan tersimpan otomatis saat berpindah soal.
+                    Select the answer you believe is the most correct. Your answer will be saved automatically when you move to the next question.
                 </div>
             </div>
 

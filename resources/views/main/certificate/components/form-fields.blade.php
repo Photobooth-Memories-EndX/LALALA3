@@ -47,13 +47,13 @@
     <div class="form-group">
         <label class="form-label">Assessment</label>
         <select name="assessment_id" class="form-control certificate-assessment-select" data-selected="">
-            <option value="">Pilih assessment</option>
+            <option value="">Select Assessment</option>
         </select>
-        <small class="text-muted">Score diambil otomatis dari assessment result final terbaik milik user.</small>
+        <small class="text-muted">The score is automatically derived from the user's best final assessment result.</small>
     </div>
 
     <div class="alert alert-info certificate-info-alert">
-        User harus menyelesaikan assessment dan mencapai minimum score agar sertifikat bisa digenerate.
+        Users must complete the assessment and achieve the minimum score in order for the certificate to be generated.
     </div>
 
     <div class="form-group">

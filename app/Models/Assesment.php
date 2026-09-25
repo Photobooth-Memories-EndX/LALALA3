@@ -72,6 +72,8 @@ class Assesment extends Model
 
     protected $guarded = ['id'];
 
+    public const DEFAULT_AFK_THRESHOLD_SECONDS = 60;
+
     protected $casts = [
         'has_access_period'     => 'boolean',
         'assasment_content_for' => 'string',
@@ -80,12 +82,12 @@ class Assesment extends Model
 
     protected $attributes = [
         'assasment_content_for' => 'content',
-        'afk_threshold_seconds' => 60,
+        'afk_threshold_seconds' => self::DEFAULT_AFK_THRESHOLD_SECONDS,
     ];
 
     public function getAfkThresholdSecondsAttribute($value): int
     {
-        return !empty($value) && (int) $value > 0 ? (int) $value : 60;
+        return self::DEFAULT_AFK_THRESHOLD_SECONDS;
     }
 
     public function getAfkDurationAttribute(): int

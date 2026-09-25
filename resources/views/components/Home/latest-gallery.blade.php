@@ -60,6 +60,18 @@
                         <i class="ti ti-chevron-right"></i>
                     </button>
 
+                    {{-- Bootstrap syncs the active dot via .carousel-indicators --}}
+                    <div class="carousel-indicators home-modern-news-dots home-modern-gallery-dots">
+                        @foreach($eventphoto->take(3) as $index => $gallery)
+                        <button type="button"
+                                data-bs-target="#homeLatestGalleryCarousel"
+                                data-bs-slide-to="{{ $index }}"
+                                class="{{ $index === 0 ? 'active' : '' }}"
+                                aria-label="Gallery {{ $index + 1 }}"
+                                @if($index === 0) aria-current="true" @endif></button>
+                        @endforeach
+                    </div>
+
                 @endif
 
             </div>
