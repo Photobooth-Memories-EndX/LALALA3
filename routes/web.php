@@ -468,6 +468,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('offline/classification/{classification}', [RecordOfflineController::class, 'classification'])->name('offline.classification');
             Route::get('offline/classification/{classification}/datatable', [RecordOfflineController::class, 'classificationDatatable'])->name('offline.classification.datatable');
             Route::get('offline/datatable', [RecordOfflineController::class, 'datatable'])->name('offline.datatable');
+            Route::get('offline/create', [RecordOfflineController::class, 'create'])->name('offline.create');
             Route::get('offline/search-employees', [RecordOfflineController::class, 'searchEmployees'])->name('offline.search-employees');
             Route::post('offline/store', [RecordOfflineController::class, 'store'])->name('offline.store');
             Route::get('offline/import', [OfflineTrainingImportController::class, 'index'])->name('offline.import');

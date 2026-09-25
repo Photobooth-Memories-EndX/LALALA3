@@ -6,7 +6,6 @@ use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Models\User;
 use App\Services\Record\OfflineTrainingCreateService;
-use App\Services\Record\OfflineTrainingImportService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -62,10 +61,13 @@ class OfflineTrainingCreateTest extends TestCase
     }
 
     /**
-     * 1. Test unauthorized users cannot access store endpoint.
+     * 1. Test unauthorized guest cannot access create page, store, or search endpoints.
      */
-    public function test_guest_cannot_store_or_search_offline_training(): void
+    public function test_guest_cannot_access_create_page_or_store(): void
     {
+        $resCreate = $this->get(route('manage.record.offline.create'));
+        $this->assertTrue(in_array($resCreate->status(), [401, 302]));
+
         $resStore = $this->postJson(route('manage.record.offline.store'), [
             'course_name' => 'Test Unauthorized Training',
             'participants' => [['employee_id' => '99999', 'name' => 'John Doe']]
@@ -77,43 +79,149 @@ class OfflineTrainingCreateTest extends TestCase
     }
 
     /**
-     * 2. Test regular non-admin user cannot store offline training.
+     * 2. Test regular non-admin user cannot access create page or store offline training.
      */
-    public function test_regular_user_cannot_store_offline_training(): void
+    public function test_regular_user_cannot_access_create_page_or_store(): void
     {
         if (!$this->regularUser) {
             $this->markTestSkipped('No regular user found with role 1.');
         }
 
-        $res = $this->actingAs($this->regularUser)
+        $resCreate = $this->actingAs($this->regularUser)->get(route('manage.record.offline.create'));
+        $this->assertTrue(in_array($resCreate->status(), [403, 302]));
+
+        $resStore = $this->actingAs($this->regularUser)
             ->postJson(route('manage.record.offline.store'), [
                 'course_name' => 'Test Regular User Training',
                 'participants' => [['employee_id' => '99999', 'name' => 'Jane Doe']]
             ]);
-
-        $this->assertTrue(in_array($res->status(), [403, 302]));
+        $this->assertTrue(in_array($resStore->status(), [403, 302]));
     }
 
     /**
-     * 3. Test modal elements and trigger button exist on offline landing page.
+     * 3. Test landing page renders link to create page, and NOT a modal or inline form.
      */
-    public function test_add_training_modal_rendered_on_offline_landing_page(): void
+    public function test_landing_page_renders_add_training_link_pointing_to_create_page(): void
     {
         $response = $this->actingAs($this->admin)->get(route('manage.record.offline'));
 
         $response->assertStatus(200);
+
+        // Assert + Add Training is an anchor pointing to offline.create
         $response->assertSee('id="btn-open-offline-add"', false);
-        $response->assertSee('data-bs-target="#offlineAddTrainingModal"', false);
-        $response->assertSee('id="offlineAddTrainingModal"', false);
+        $response->assertSee(route('manage.record.offline.create'), false);
+
+        // Assert NO modal trigger or modal markup on the landing page
+        $response->assertDontSee('data-bs-target="#offlineAddTrainingModal"', false);
+        $response->assertDontSee('id="offlineAddTrainingModal"', false);
+        $response->assertDontSee('id="section-1-training-info"', false);
+        $response->assertDontSee('id="section-2-participants"', false);
+    }
+
+    /**
+     * 4. Test dedicated create page renders shell, back button, and all 4 sections in one page.
+     */
+    public function test_create_page_renders_shell_and_all_four_sections(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.offline.create'));
+
+        $response->assertStatus(200);
+
+        // Header and navigation
+        $response->assertSee('Back to Non KP OWL');
+        $response->assertSee(route('manage.record.offline'), false);
+        $response->assertSee('Add Non KP OWL Training');
+        $response->assertSee('Create an offline employee training record.');
+
+        // Step Navigation
+        $response->assertSee('id="page-step-nav"', false);
+        $response->assertSee('id="step-nav-1"', false);
+        $response->assertSee('id="step-nav-2"', false);
+        $response->assertSee('id="step-nav-3"', false);
+        $response->assertSee('id="step-nav-4"', false);
+
+        // Continuous 4 sections on the same page
         $response->assertSee('id="section-1-training-info"', false);
         $response->assertSee('id="section-2-participants"', false);
         $response->assertSee('id="section-3-results"', false);
         $response->assertSee('id="section-4-review"', false);
-        $response->assertSee('id="modal-step-nav"', false);
+
+        // Action buttons
+        $response->assertSee('id="btn-cancel-add-training"', false);
+        $response->assertSee('id="btn-submit-add-training"', false);
+        $response->assertSee('Save Training');
     }
 
     /**
-     * 4. Test search employees endpoint returns matching records.
+     * 5. Test create page contains all expected Training, Participant, and Result fields.
+     */
+    public function test_create_page_contains_all_fields_and_components(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.offline.create'));
+
+        $response->assertStatus(200);
+
+        // Section 1: Training Info fields
+        $response->assertSee('id="add-course-name"', false);
+        $response->assertSee('id="add-batch"', false);
+        $response->assertSee('id="add-sub-course-name"', false);
+        $response->assertSee('id="add-type"', false);
+        $response->assertSee('id="add-category"', false);
+        $response->assertSee('id="add-level"', false);
+        $response->assertSee('id="add-main-classification"', false);
+        $response->assertSee('id="add-sub-classification"', false);
+        $response->assertSee('name="counted_corporate_kpi"', false);
+        $response->assertSee('id="add-sub-corporate-kpi"', false);
+        $response->assertSee('id="add-delivery-method"', false);
+        $response->assertSee('id="add-sub-delivery-method"', false);
+        $response->assertSee('id="add-provider"', false);
+        $response->assertSee('id="add-sub-provider"', false);
+        $response->assertSee('id="add-provider-name"', false);
+        $response->assertSee('id="add-duration"', false);
+        $response->assertSee('id="add-learning-hours"', false);
+        $response->assertSee('id="add-start-date"', false);
+        $response->assertSee('id="add-finish-date"', false);
+        $response->assertSee('id="add-month"', false);
+        $response->assertSee('id="add-venue"', false);
+        $response->assertSee('id="add-instructor"', false);
+
+        // Section 2: Participants Search & Manual entry
+        $response->assertSee('id="participant-search-input"', false);
+        $response->assertSee('id="btn-search-participant"', false);
+        $response->assertSee('id="btn-toggle-manual-participant"', false);
+        $response->assertSee('id="manual-emp-id"', false);
+        $response->assertSee('id="manual-emp-name"', false);
+        $response->assertSee('id="selected-participants-table"', false);
+
+        // Section 3: Learning Results fields
+        $response->assertSee('id="select-active-participant"', false);
+        $response->assertSee('id="btn-prev-participant"', false);
+        $response->assertSee('id="btn-next-participant"', false);
+        $response->assertSee('id="res-progress"', false);
+        $response->assertSee('id="res-status-badge"', false);
+        $response->assertSee('id="res-assessment-score"', false);
+        $response->assertSee('id="res-certificate"', false);
+        $response->assertSee('name="res_attendance"', false);
+        $response->assertSee('id="res-attendance-reason"', false);
+        $response->assertSee('id="res-bond-status"', false);
+        $response->assertSee('id="res-bond-end-date"', false);
+        $response->assertSee('id="res-bond-amount"', false);
+        $response->assertSee('id="res-l1-program"', false);
+        $response->assertSee('id="res-l2-numerical"', false);
+        $response->assertSee('id="res-l2-verbal"', false);
+        $response->assertSee('id="res-l3-numerical"', false);
+        $response->assertSee('id="res-l3-verbal"', false);
+        $response->assertSee('id="res-pic"', false);
+
+        // Section 4: Review Summary cards
+        $response->assertSee('id="rev-course"', false);
+        $response->assertSee('id="rev-part-count"', false);
+        $response->assertSee('id="rev-metric-total"', false);
+        $response->assertSee('id="rev-metric-finished"', false);
+    }
+
+    /**
+     * 6. Test search employees endpoint returns matching records.
      */
     public function test_search_employees_endpoint_returns_json_results(): void
     {
@@ -138,7 +246,7 @@ class OfflineTrainingCreateTest extends TestCase
     }
 
     /**
-     * 5. Test manual add training creates 1 training and N participants in DB.
+     * 7. Test manual add training creates 1 training and N participants in DB.
      */
     public function test_store_creates_training_and_participants_atomically(): void
     {
@@ -297,7 +405,7 @@ class OfflineTrainingCreateTest extends TestCase
     }
 
     /**
-     * 6. Test LMS user matching: participant matching existing users.id_emp gets user_id populated.
+     * 8. Test LMS user matching: participant matching existing users.id_emp gets user_id populated.
      */
     public function test_participant_matching_lms_user_gets_user_id_linked(): void
     {
@@ -329,7 +437,7 @@ class OfflineTrainingCreateTest extends TestCase
     }
 
     /**
-     * 7. Test duplicate participant within the same training event is rejected with 422.
+     * 9. Test duplicate participant within the same training event is rejected with 422.
      */
     public function test_duplicate_participant_within_same_training_is_rejected(): void
     {
@@ -355,7 +463,7 @@ class OfflineTrainingCreateTest extends TestCase
     }
 
     /**
-     * 8. Test validation errors: empty course name, finish date < start date, no participants.
+     * 10. Test validation errors: empty course name, finish date < start date, no participants.
      */
     public function test_validation_errors_handled_properly(): void
     {
@@ -390,7 +498,7 @@ class OfflineTrainingCreateTest extends TestCase
     }
 
     /**
-     * 9. Test transaction rollback on participant error: training is not orphaned.
+     * 11. Test transaction rollback on participant error: training is not orphaned.
      */
     public function test_database_transaction_rolls_back_on_error(): void
     {
@@ -423,7 +531,7 @@ class OfflineTrainingCreateTest extends TestCase
     }
 
     /**
-     * 10. Parity Test: Manual Add vs. Excel Schema parity.
+     * 12. Parity Test: Manual Add vs. Excel Schema parity.
      * Verifies that data submitted via Manual Add aligns with identical fields from Excel Schema.
      */
     public function test_manual_add_and_schema_field_parity(): void
@@ -510,5 +618,24 @@ class OfflineTrainingCreateTest extends TestCase
         $this->assertEquals(96.0, (float) $participant->l3_numerical);
         $this->assertEquals('Audit Process Optimized', $participant->l3_verbal);
         $this->assertEquals('QA Manager', $participant->pic);
+    }
+
+    /**
+     * 13. Test landing page still preserves Import Excel modal and Download Template.
+     */
+    public function test_landing_page_preserves_import_modal_and_template_download(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('manage.record.offline'));
+
+        $response->assertStatus(200);
+
+        // Import Excel modal button and modal markup
+        $response->assertSee('id="btn-open-offline-import"', false);
+        $response->assertSee('data-bs-target="#offlineImportModal"', false);
+        $response->assertSee('id="offlineImportModal"', false);
+
+        // Download template link
+        $response->assertSee('id="btn-download-offline-template"', false);
+        $response->assertSee(route('manage.record.offline.import.template'), false);
     }
 }

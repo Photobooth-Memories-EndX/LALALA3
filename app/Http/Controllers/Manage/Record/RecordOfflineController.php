@@ -50,6 +50,16 @@ class RecordOfflineController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        return view('main.record.offline-create', [
+            'title'               => 'Add Non KP OWL Training',
+            'subtitle'            => 'Create an offline employee training record.',
+            'trainingTypes'       => self::TRAINING_TYPES,
+            'mainClassifications' => self::MAIN_CLASSIFICATIONS,
+        ]);
+    }
+
     public function ajaxSummary(Request $request): JsonResponse
     {
         $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
