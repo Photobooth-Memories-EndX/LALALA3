@@ -8,8 +8,10 @@ use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 
 class RecordOfflineController extends Controller
@@ -97,6 +99,144 @@ class RecordOfflineController extends Controller
             'data'                 => $data,
             'html'                 => view('main.record.components.offline-kpi-summary', $data)->render(),
         ]);
+    }
+
+    public function ajaxClassification(Request $request)
+    {
+        $classification = $this->getClassificationSummary();
+
+        if ($request->input('format') === 'html') {
+            return view('main.record.components.offline-classification-summary', [
+                'classification' => $classification,
+            ]);
+        }
+
+        if ($request->wantsJson() || $request->ajax() || $request->input('format') === 'json') {
+            return response()->json([
+                'success' => true,
+                'data'    => $classification,
+                'html'    => view('main.record.components.offline-classification-summary', [
+                    'classification' => $classification,
+                ])->render(),
+            ]);
+        }
+
+        return view('main.record.components.offline-classification-summary', [
+            'classification' => $classification,
+        ]);
+    }
+
+    public function getClassificationSummary(): Collection
+    {
+        $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
+
+        if (!$hasTables) {
+            return collect();
+        }
+
+        $records = DB::table('offline_trainings as ot')
+            ->leftJoin('offline_training_users as otu', function ($join) {
+                $join->on('otu.offline_training_id', '=', 'ot.id')
+                    ->whereNull('otu.deleted_at');
+            })
+            ->whereNull('ot.deleted_at')
+            ->select([
+                DB::raw("COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified') as classification_name"),
+                DB::raw("COUNT(DISTINCT ot.id) as programs"),
+                DB::raw("COUNT(otu.id) as total_participants"),
+                DB::raw("COALESCE(SUM(otu.learning_hours), 0) as learning_hours"),
+                DB::raw("SUM(CASE WHEN otu.progress > 0 AND otu.progress < 100 THEN 1 ELSE 0 END) as ongoing"),
+                DB::raw("SUM(CASE WHEN otu.progress >= 100 THEN 1 ELSE 0 END) as finished"),
+            ])
+            ->groupBy(DB::raw("COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')"))
+            ->orderBy('classification_name', 'asc')
+            ->get();
+
+        return $records->map(function ($item, $index) {
+            $name = (string) $item->classification_name;
+            $resolved = self::resolveClassification($name);
+
+            return (object) [
+                'no'                 => $index + 1,
+                'classification_name'=> $name,
+                'slug'               => $resolved['slug'],
+                'programs'           => (int) ($item->programs ?? 0),
+                'total_participants' => (int) ($item->total_participants ?? 0),
+                'learning_hours'     => (float) ($item->learning_hours ?? 0),
+                'ongoing'            => (int) ($item->ongoing ?? 0),
+                'finished'           => (int) ($item->finished ?? 0),
+            ];
+        });
+    }
+
+    public function classification(string $classification, Request $request)
+    {
+        $resolved = self::resolveClassification($classification);
+
+        return view('main.record.offline.classification', [
+            'title'               => "Classification: {$resolved['name']}",
+            'subtitle'            => 'Monitor offline training records and participant progress for this classification.',
+            'classificationName'  => $resolved['name'],
+            'slug'                => $resolved['slug'],
+            'isUnclassified'      => $resolved['is_unclassified'],
+            'years'               => LearningManageController::learningYears(),
+            'entries'             => (int) $request->input('entries', 25),
+            'trainingTypes'       => self::TRAINING_TYPES,
+        ]);
+    }
+
+    public function classificationDatatable(string $classification, Request $request)
+    {
+        $request->merge(['classification' => $classification]);
+
+        return $this->datatable($request);
+    }
+
+    public static function resolveClassification(string $input): array
+    {
+        $trimmed = trim($input);
+        $slugified = Str::slug($trimmed);
+
+        if ($trimmed === '' || $slugified === '' || $slugified === 'unclassified' || strtolower($trimmed) === 'unclassified') {
+            return [
+                'name'            => 'Unclassified',
+                'slug'            => 'unclassified',
+                'is_unclassified' => true,
+            ];
+        }
+
+        $dbClasses = [];
+        if (Schema::hasTable('offline_trainings')) {
+            $dbClasses = DB::table('offline_trainings')
+                ->whereNull('deleted_at')
+                ->whereNotNull('main_classification')
+                ->where('main_classification', '!=', '')
+                ->distinct()
+                ->pluck('main_classification')
+                ->all();
+        }
+
+        $candidates = array_unique(array_merge(
+            $dbClasses,
+            self::MAIN_CLASSIFICATIONS,
+            ['Basic & Common Duties', 'Leadership', 'Competency', 'Management', 'Technical', 'Quality & Safety', 'General', 'Innovation', 'ISO Standard', 'Job Functional']
+        ));
+
+        foreach ($candidates as $candidate) {
+            if (Str::slug($candidate) === $slugified || strtolower(trim($candidate)) === strtolower($trimmed)) {
+                return [
+                    'name'            => $candidate,
+                    'slug'            => Str::slug($candidate),
+                    'is_unclassified' => false,
+                ];
+            }
+        }
+
+        return [
+            'name'            => ucwords(str_replace('-', ' ', $slugified)),
+            'slug'            => $slugified,
+            'is_unclassified' => false,
+        ];
     }
 
     public function datatable(Request $request)
@@ -196,7 +336,15 @@ class RecordOfflineController extends Controller
         // 4. Filter: Main Classification
         $classParam = trim((string) ($request->input('main_classification') ?? ($request->input('classification', 'all'))));
         if ($classParam !== '' && $classParam !== 'all') {
-            $query->where('ot.main_classification', $classParam);
+            $resolved = self::resolveClassification($classParam);
+            if ($resolved['is_unclassified']) {
+                $query->where(function ($q) {
+                    $q->whereNull('ot.main_classification')
+                      ->orWhere('ot.main_classification', '');
+                });
+            } else {
+                $query->where('ot.main_classification', $resolved['name']);
+            }
         }
 
         // 5. Filter: Status (derived from progress)

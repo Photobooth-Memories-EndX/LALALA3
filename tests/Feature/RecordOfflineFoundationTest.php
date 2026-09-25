@@ -45,8 +45,9 @@ class RecordOfflineFoundationTest extends TestCase
         $response->assertSee('Non KP OWL');
         $response->assertSee('Offline Training Record');
         $response->assertSee('offline-kpi-summary-container', false);
-        $response->assertSee('offline-learning-table', false);
-        $response->assertSee('offlineTrainingDetailModal', false);
+        $response->assertSee('offline-classification-summary-container', false);
+        $response->assertDontSee('offline-learning-table', false);
+        $response->assertSee('offlineImportModal', false);
     }
 
     /**

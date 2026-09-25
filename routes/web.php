@@ -464,6 +464,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
             Route::get('offline', [RecordOfflineController::class, 'index'])->name('offline');
             Route::get('offline/ajax/summary', [RecordOfflineController::class, 'ajaxSummary'])->name('offline.ajax.summary');
+            Route::get('offline/ajax/classification', [RecordOfflineController::class, 'ajaxClassification'])->name('offline.ajax.classification');
+            Route::get('offline/classification/{classification}', [RecordOfflineController::class, 'classification'])->name('offline.classification');
+            Route::get('offline/classification/{classification}/datatable', [RecordOfflineController::class, 'classificationDatatable'])->name('offline.classification.datatable');
             Route::get('offline/datatable', [RecordOfflineController::class, 'datatable'])->name('offline.datatable');
             Route::get('offline/import', [OfflineTrainingImportController::class, 'index'])->name('offline.import');
             Route::get('offline/import/template', [OfflineTrainingImportController::class, 'downloadTemplate'])->name('offline.import.template');
