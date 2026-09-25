@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\LearningManageController;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
+use App\Services\Record\OfflineTrainingCreateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Yajra\DataTables\Facades\DataTables;
 
 class RecordOfflineController extends Controller
@@ -560,5 +562,73 @@ class RecordOfflineController extends Controller
             'success' => true,
             'data'    => $record,
         ]);
+    }
+
+    /**
+     * Search employees for adding participants in manual Add Training modal.
+     */
+    public function searchEmployees(Request $request): JsonResponse
+    {
+        $query = trim((string) ($request->get('q') ?? ($request->get('search') ?? '')));
+        if ($query === '') {
+            return response()->json(['results' => []]);
+        }
+
+        $users = DB::table('users')
+            ->whereNull('deleted_at')
+            ->where(function ($q) use ($query) {
+                $q->where('id_emp', 'LIKE', "%{$query}%")
+                  ->orWhere('name', 'LIKE', "%{$query}%");
+            })
+            ->limit(20)
+            ->get(['id', 'id_emp', 'name', 'team', 'department', 'company_name']);
+
+        $results = $users->map(function ($u) {
+            return [
+                'id'          => $u->id,
+                'user_id'     => $u->id,
+                'employee_id' => $u->id_emp,
+                'name'        => $u->name,
+                'grade'       => '',
+                'job_position'=> '',
+                'team'        => $u->team ?? '',
+                'department'  => $u->department ?? '',
+                'company'     => $u->company_name ?? 'PT Krakatau Posco',
+            ];
+        });
+
+        return response()->json(['results' => $results]);
+    }
+
+    /**
+     * Store new offline training and its enrolled participants inside a database transaction.
+     */
+    public function store(Request $request, OfflineTrainingCreateService $createService): JsonResponse
+    {
+        try {
+            $training = $createService->create($request->all(), auth()->id());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Offline training successfully saved.',
+                'data'    => [
+                    'id'                 => $training->id,
+                    'course_name'        => $training->course_name,
+                    'batch'              => $training->batch,
+                    'participants_count' => $training->participants()->count(),
+                ],
+            ], 201);
+        } catch (ValidationException $ve) {
+            return response()->json([
+                'success' => false,
+                'message' => $ve->getMessage(),
+                'errors'  => $ve->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save offline training: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
