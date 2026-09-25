@@ -56,34 +56,8 @@ class LearningRecordController extends Controller
         $userId = (int) Auth::id();
 
         $completedPlaylists = $this->completedPlaylistService->forLearningRecord($userId);
-        $completedContents  = $this->getCompletedContents($userId);
         $cert               = $this->certificateContext($eligibilityService);
-        $playlistContents   = $this->playlistContentsData($completedPlaylists);
-        $firstContentSlugs  = $playlistContents->map(fn ($items) => $items->first()?->slug);
-        $playlistStartDates = \App\Models\PlaylistContentUser::where('user_id', $userId)
-            ->whereIn('trainingplan_id', $completedPlaylists->pluck('id'))
-            ->groupBy('trainingplan_id')
-            ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
-            ->pluck('min_created', 'trainingplan_id');
-        $playlistActualHours = $this->recordLhService()->calculatePlaylistsBatch($userId, $completedPlaylists);
-
-        // Seluruh baris (Content + Playlist) dinormalisasi lalu diurutkan
-        // berdasarkan record/completion terbaru (finish_date desc).
-        // Murni pengurutan Collection — query dan business logic tidak berubah.
-        $allRows = $this->mergeLearningRecord(
-            $this->buildContentRows($completedContents, $cert),
-            $this->buildPlaylistRows(
-                $completedPlaylists,
-                $cert,
-                // Slug content pertama tiap playlist — untuk link badge Playlist
-                // (route playlist.user.view butuh pasangan slug playlist + content).
-                $firstContentSlugs,
-                $completedContents,
-                $playlistContents,
-                $playlistStartDates,
-                $playlistActualHours
-            )
-        )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
+        $allRows = $this->getRawOnlineRows($userId, $eligibilityService, $completedPlaylists, $cert);
         $rows = $this->applyRecordFilters($allRows);
 
         $recordStats = [
@@ -99,6 +73,38 @@ class LearningRecordController extends Controller
             'filterOptions'    => $this->recordFilterOptions($userId, $completedPlaylists, $allRows),
             'recordStats'      => $recordStats,
         ]);
+    }
+
+    /**
+     * Get raw normalized Online rows (Content + Playlist) for a user before applying request filters.
+     * Reusable across LearningRecordController and UserRecordAllService.
+     */
+    public function getRawOnlineRows(int $userId, CertificateEligibilityService $eligibilityService, ?Collection $completedPlaylists = null, ?array $cert = null): Collection
+    {
+        $completedPlaylists = $completedPlaylists ?? $this->completedPlaylistService->forLearningRecord($userId);
+        $completedContents  = $this->getCompletedContents($userId);
+        $cert               = $cert ?? $this->certificateContext($eligibilityService);
+        $playlistContents   = $this->playlistContentsData($completedPlaylists);
+        $firstContentSlugs  = $playlistContents->map(fn ($items) => $items->first()?->slug);
+        $playlistStartDates = \App\Models\PlaylistContentUser::where('user_id', $userId)
+            ->whereIn('trainingplan_id', $completedPlaylists->pluck('id'))
+            ->groupBy('trainingplan_id')
+            ->selectRaw('trainingplan_id, MIN(created_at) as min_created')
+            ->pluck('min_created', 'trainingplan_id');
+        $playlistActualHours = $this->recordLhService()->calculatePlaylistsBatch($userId, $completedPlaylists);
+
+        return $this->mergeLearningRecord(
+            $this->buildContentRows($completedContents, $cert),
+            $this->buildPlaylistRows(
+                $completedPlaylists,
+                $cert,
+                $firstContentSlugs,
+                $completedContents,
+                $playlistContents,
+                $playlistStartDates,
+                $playlistActualHours
+            )
+        )->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''))->values();
     }
 
     /**

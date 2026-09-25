@@ -10,10 +10,19 @@
     var _activeTab = null;
     var _learningTabs = ['ongoing', 'record', 'assessment', 'certificate'];
     var _ongoingMode = null;
+    var _recordMode = null;
+    var _tabFetchSequence = 0;
+    var _activeFetchController = null;
 
     function learningTabFromUrl() {
         var tab = String(new URLSearchParams(window.location.search).get('learning_tab') || 'ongoing');
         return _learningTabs.indexOf(tab) !== -1 ? tab : 'ongoing';
+    }
+
+    function recordModeFromUrl() {
+        var params = new URLSearchParams(window.location.search);
+        var mode = String(params.get('record_mode') || 'online').toLowerCase();
+        return ['online', 'offline', 'all', 'export'].indexOf(mode) !== -1 ? mode : 'online';
     }
 
     function skeletonHtml() {
@@ -26,6 +35,96 @@
                     '<div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>' +
                     '<div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>' +
                     '<div class="col-md-4"><span class="placeholder col-12 rounded-4" style="height:200px"></span></div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function recordSkeletonHtml(mode) {
+        mode = mode || 'online';
+        var isExport = (mode === 'export');
+
+        var switchHtml = '<div class="learning-record-mode-header mb-3">' +
+            '<div class="record-mode-switch" role="group" aria-label="Learning Record mode">' +
+                '<button type="button" class="btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online"><i class="ti ti-device-laptop"></i><span>Online</span></button>' +
+                '<button type="button" class="btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline"><i class="ti ti-certificate"></i><span>Offline</span></button>' +
+                '<button type="button" class="btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all"><i class="ti ti-stack-2"></i><span>All</span></button>' +
+                '<button type="button" class="btn record-mode-btn ' + (mode === 'export' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="export"><i class="ti ti-download"></i><span>Export</span></button>' +
+            '</div>' +
+        '</div>';
+
+        if (isExport) {
+            return '<div class="learning-record-shell">' +
+                switchHtml +
+                '<div class="card border-0 shadow-sm rounded-4 p-4 mb-4 placeholder-glow">' +
+                    '<div class="d-flex align-items-center gap-3">' +
+                        '<span class="placeholder rounded-3" style="width:52px;height:52px;"></span>' +
+                        '<div class="flex-grow-1">' +
+                            '<span class="placeholder col-4 mb-2 d-block rounded-2" style="height:20px;"></span>' +
+                            '<span class="placeholder col-8 d-block rounded-2" style="height:14px;"></span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="row g-3 placeholder-glow">' +
+                    '<div class="col-12 col-md-4"><div class="card border-0 shadow-sm rounded-4 p-4"><span class="placeholder col-3 mb-3 rounded-pill" style="height:20px;"></span><span class="placeholder col-8 mb-2 rounded-2" style="height:20px;"></span><span class="placeholder col-12 mb-4 rounded-2" style="height:36px;"></span><span class="placeholder col-12 rounded-3" style="height:40px;"></span></div></div>' +
+                    '<div class="col-12 col-md-4"><div class="card border-0 shadow-sm rounded-4 p-4"><span class="placeholder col-3 mb-3 rounded-pill" style="height:20px;"></span><span class="placeholder col-8 mb-2 rounded-2" style="height:20px;"></span><span class="placeholder col-12 mb-4 rounded-2" style="height:36px;"></span><span class="placeholder col-12 rounded-3" style="height:40px;"></span></div></div>' +
+                    '<div class="col-12 col-md-4"><div class="card border-0 shadow-sm rounded-4 p-4"><span class="placeholder col-3 mb-3 rounded-pill" style="height:20px;"></span><span class="placeholder col-8 mb-2 rounded-2" style="height:20px;"></span><span class="placeholder col-12 mb-4 rounded-2" style="height:36px;"></span><span class="placeholder col-12 rounded-3" style="height:40px;"></span></div></div>' +
+                '</div>' +
+            '</div>';
+        }
+
+        var tableRows = '';
+        for (var i = 0; i < 5; i++) {
+            tableRows += '<tr>' +
+                '<td class="text-center"><span class="placeholder col-6" style="height:14px;"></span></td>' +
+                '<td><span class="placeholder col-10 mb-1 d-block" style="height:14px;"></span><span class="placeholder col-5 d-block" style="height:10px;"></span></td>' +
+                '<td><span class="placeholder col-7" style="height:14px;"></span></td>' +
+                '<td><span class="placeholder col-7" style="height:14px;"></span></td>' +
+                '<td><span class="placeholder col-8" style="height:14px;"></span></td>' +
+                '<td><span class="placeholder col-6" style="height:14px;"></span></td>' +
+                '<td><span class="placeholder col-6" style="height:14px;"></span></td>' +
+                '<td><span class="placeholder col-8" style="height:14px;"></span></td>' +
+                '<td><span class="placeholder col-8" style="height:14px;"></span></td>' +
+                '<td class="text-center"><span class="placeholder col-5" style="height:14px;"></span></td>' +
+                '<td class="text-center"><span class="placeholder col-5" style="height:14px;"></span></td>' +
+            '</tr>';
+        }
+
+        return '<div class="learning-record-shell">' +
+            switchHtml +
+            '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
+                '<div class="card-body p-4 border-bottom placeholder-glow">' +
+                    '<span class="placeholder col-2 mb-2 d-block rounded-2" style="height:12px;"></span>' +
+                    '<div class="d-flex align-items-center flex-wrap gap-2">' +
+                        '<span class="placeholder rounded-pill" style="width:110px;height:38px;"></span>' +
+                        '<span class="placeholder rounded-pill" style="width:140px;height:38px;"></span>' +
+                        '<span class="placeholder rounded-pill" style="width:90px;height:38px;"></span>' +
+                        '<span class="placeholder flex-grow-1 rounded-3" style="min-width:200px;height:38px;"></span>' +
+                        '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
+                        '<span class="placeholder rounded-3" style="width:38px;height:38px;"></span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="card-body p-0">' +
+                    '<div class="table-responsive learning-record-scroll">' +
+                        '<table class="table table-vcenter card-table mb-0 learning-record-table placeholder-glow">' +
+                            '<thead>' +
+                                '<tr>' +
+                                    '<th class="text-center" style="width:4%">No</th>' +
+                                    '<th style="width:24%">Course / Training Title</th>' +
+                                    '<th style="width:8%">Type</th>' +
+                                    '<th style="width:8%">Category</th>' +
+                                    '<th style="width:10%">Classification</th>' +
+                                    '<th style="width:8%">Duration</th>' +
+                                    '<th style="width:8%">Learning Hour</th>' +
+                                    '<th style="width:7%">Progress</th>' +
+                                    '<th style="width:10%">Date</th>' +
+                                    '<th class="text-center" style="width:8%">Score</th>' +
+                                    '<th class="text-center" style="width:6%">Certificate</th>' +
+                                '</tr>' +
+                            '</thead>' +
+                            '<tbody>' + tableRows + '</tbody>' +
+                        '</table>' +
+                    '</div>' +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -123,7 +222,11 @@
         }
 
         // Show skeleton while loading
-        $('#learning-tab-content').html(skeletonHtml());
+        if (tab === 'record') {
+            $('#learning-tab-content').html(recordSkeletonHtml(_recordMode || recordModeFromUrl()));
+        } else {
+            $('#learning-tab-content').html(skeletonHtml());
+        }
 
         // Forward current URL query params so filters and pagination work
         var params = new URLSearchParams(window.location.search);
@@ -136,19 +239,31 @@
         if (tab === 'ongoing' && _ongoingMode) {
             params.set('ongoing_mode', _ongoingMode);
         }
+        if (tab === 'record') {
+            var rm = _recordMode || recordModeFromUrl();
+            if (rm) params.set('record_mode', rm);
+        }
         var fetchUrl = '{{ route("user.learning.dashboard.partial", ["tab" => "__TAB__"]) }}'.replace('__TAB__', tab);
         if (params.toString()) {
             fetchUrl += '?' + params.toString();
         }
 
+        if (_activeFetchController) {
+            try { _activeFetchController.abort(); } catch (e) {}
+        }
+        _activeFetchController = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        var thisFetchSeq = ++_tabFetchSequence;
+
         fetch(fetchUrl, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            signal: _activeFetchController ? _activeFetchController.signal : undefined
         })
         .then(function (r) {
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return r.text();
         })
         .then(function (html) {
+            if (thisFetchSeq !== _tabFetchSequence) return;
             $('#learning-tab-content').html(html);
             syncLearningOngoingHero();
             syncLearningAssessmentHero();
@@ -159,7 +274,9 @@
             initLearningRecord();
             initOngoingSearchAutocomplete();
         })
-        .catch(function () {
+        .catch(function (err) {
+            if (err && err.name === 'AbortError') return;
+            if (thisFetchSeq !== _tabFetchSequence) return;
             _activeTab = null;
             $('#learning-tab-content').html(
                 '<div class="alert alert-danger m-4">Gagal memuat konten. Silakan refresh halaman.</div>'
@@ -339,11 +456,144 @@
         loadLearningTab('ongoing');
     });
 
+    // ── Mode switch Learning Record: Online | Offline | All | Export ─────────────
+    $(document).on('click', '.record-mode-btn', function (e) {
+        e.preventDefault();
+        var mode = String($(this).data('mode') || 'online').toLowerCase();
+        if (['online', 'offline', 'all', 'export'].indexOf(mode) === -1) {
+            mode = 'online';
+        }
+
+        var params = new URLSearchParams(window.location.search);
+        params.set('learning_tab', 'record');
+
+        // Bersihkan filter lama jika berpindah mode agar tidak konflik
+        if (mode !== _recordMode) {
+            Array.from(params.keys()).forEach(function (key) {
+                if (key.indexOf('record_filter_') === 0 || key === 'record_page' || key === 'page' || key === 'record_search') {
+                    params.delete(key);
+                }
+            });
+        }
+
+        _recordMode = mode;
+        params.set('record_mode', mode);
+
+        var qs = params.toString();
+        history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+        _activeTab = null; // paksa loadLearningTab memuat ulang partial record
+        loadLearningTab('record');
+    });
+
+    // ── Filter dropdowns & search for Record Offline & All ───────────────────────
+    $(document).on('click', '.record-offline-filter-item, .record-all-filter-item', function (e) {
+        e.preventDefault();
+        var param = String($(this).data('param'));
+        var value = String($(this).data('value'));
+        var params = new URLSearchParams(window.location.search);
+
+        if (value === 'all' || value === '') {
+            params.delete(param);
+        } else {
+            params.set(param, value);
+        }
+
+        params.set('learning_tab', 'record');
+        if (_recordMode) params.set('record_mode', _recordMode);
+
+        var qs = params.toString();
+        history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+
+        _activeTab = null;
+        loadLearningTab('record');
+    });
+
+    $(document).on('click', '#recordOfflineApplyBtn', function () {
+        var q = $('#recordOfflineSearch').val() || '';
+        var params = new URLSearchParams(window.location.search);
+        if (q.trim()) {
+            params.set('record_search', q.trim());
+        } else {
+            params.delete('record_search');
+        }
+        params.set('learning_tab', 'record');
+        params.set('record_mode', 'offline');
+        var qs = params.toString();
+        history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+        _activeTab = null;
+        loadLearningTab('record');
+    });
+
+    $(document).on('click', '#recordOfflineResetBtn', function () {
+        var params = new URLSearchParams(window.location.search);
+        Array.from(params.keys()).forEach(function (key) {
+            if (key.indexOf('record_') === 0 && key !== 'record_mode') {
+                params.delete(key);
+            }
+        });
+        params.set('learning_tab', 'record');
+        params.set('record_mode', 'offline');
+        var qs = params.toString();
+        history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+        _activeTab = null;
+        loadLearningTab('record');
+    });
+
+    $(document).on('click', '#recordAllApplyBtn', function () {
+        var q = $('#recordAllSearch').val() || '';
+        var params = new URLSearchParams(window.location.search);
+        if (q.trim()) {
+            params.set('record_search', q.trim());
+        } else {
+            params.delete('record_search');
+        }
+        params.set('learning_tab', 'record');
+        params.set('record_mode', 'all');
+        var qs = params.toString();
+        history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+        _activeTab = null;
+        loadLearningTab('record');
+    });
+
+    $(document).on('click', '#recordAllResetBtn', function () {
+        var params = new URLSearchParams(window.location.search);
+        Array.from(params.keys()).forEach(function (key) {
+            if (key.indexOf('record_') === 0 && key !== 'record_mode') {
+                params.delete(key);
+            }
+        });
+        params.set('learning_tab', 'record');
+        params.set('record_mode', 'all');
+        var qs = params.toString();
+        history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+        _activeTab = null;
+        loadLearningTab('record');
+    });
+
+    $(document).on('keydown', '#recordOfflineSearch', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#recordOfflineApplyBtn').trigger('click');
+        }
+    });
+
+    $(document).on('keydown', '#recordAllSearch', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#recordAllApplyBtn').trigger('click');
+        }
+    });
+
     // Back/forward browser: restore the tab encoded in the GET query.
     window.addEventListener('popstate', function () {
         var params = new URLSearchParams(window.location.search);
         var om = params.get('ongoing_mode');
         _ongoingMode = (om === 'playlist' || om === 'mooc') ? om : null;
+        var rm = params.get('record_mode');
+        _recordMode = ['online', 'offline', 'all', 'export'].indexOf(String(rm).toLowerCase()) !== -1
+            ? String(rm).toLowerCase()
+            : (params.get('learning_tab') === 'record' ? 'online' : null);
         _activeTab = null;
         loadLearningTab(learningTabFromUrl());
     });
@@ -354,6 +604,12 @@
         var initialOngoingMode = initialParams.get('ongoing_mode');
         if (initialOngoingMode === 'playlist' || initialOngoingMode === 'mooc') {
             _ongoingMode = initialOngoingMode;
+        }
+        var initialRecordMode = initialParams.get('record_mode');
+        if (initialRecordMode && ['online', 'offline', 'all', 'export'].indexOf(initialRecordMode.toLowerCase()) !== -1) {
+            _recordMode = initialRecordMode.toLowerCase();
+        } else if (initialParams.get('learning_tab') === 'record') {
+            _recordMode = 'online';
         }
         loadLearningTab(learningTabFromUrl());
 
@@ -366,6 +622,9 @@
             var params = new URLSearchParams();
             if (tab !== 'ongoing') {
                 params.set('learning_tab', tab);
+            }
+            if (tab === 'record' && _recordMode) {
+                params.set('record_mode', _recordMode);
             }
             var query = params.toString();
             history.pushState({}, '', window.location.pathname + (query ? '?' + query : ''));

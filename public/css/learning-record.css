@@ -1344,4 +1344,107 @@ body.dark-mode #recordFilterBar .fast-filter-toolbar #recordMoreFiltersCount {
     border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
+/* 13. Secondary Navigation: Learning Record Modes (Online | Offline | All | Export) */
+.record-mode-switch {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.record-mode-switch .record-mode-btn {
+    width: 110px;
+    min-width: 110px;
+    flex: 0 1 110px;
+    gap: 7px;
+    padding: 0 14px;
+    position: relative;
+    display: inline-flex;
+    height: 40px;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px !important;
+    line-height: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.record-mode-switch .record-mode-btn > i {
+    margin: 0 !important;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.record-mode-switch .record-mode-btn.btn-primary,
+.record-mode-switch .record-mode-btn.active {
+    border-color: var(--learning-btn-primary, #0f5e9c) !important;
+    background: var(--learning-btn-primary, #0f5e9c) !important;
+    color: #fff !important;
+    box-shadow: 0 3px 8px rgba(15, 94, 156, .2);
+}
+
+.record-mode-switch .record-mode-btn.btn-outline-primary {
+    border-color: rgba(15, 94, 156, .48) !important;
+    background: var(--tblr-bg-surface, #fff) !important;
+    color: var(--learning-btn-primary, #0f5e9c) !important;
+    box-shadow: none;
+}
+
+.record-mode-switch .record-mode-btn.btn-outline-primary:hover,
+.record-mode-switch .record-mode-btn.btn-outline-primary:focus-visible {
+    border-color: var(--learning-btn-primary, #0f5e9c) !important;
+    background: rgba(15, 94, 156, .08) !important;
+    color: var(--learning-btn-primary-hover, #0b4f84) !important;
+}
+
+/* Mobile horizontal scrolling for secondary navigation */
+@media (max-width: 575.98px) {
+    .record-mode-switch {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        width: 100%;
+    }
+    .record-mode-switch::-webkit-scrollbar {
+        height: 3px;
+    }
+    .record-mode-switch::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+    }
+    .record-mode-switch .record-mode-btn {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: 95px !important;
+        padding: 0 10px !important;
+    }
+}
+
+/* Dark mode overrides for secondary navigation */
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.btn-outline-primary {
+    background: #182433 !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #94a3b8 !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.btn-outline-primary:hover,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.btn-outline-primary:focus-visible {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--tblr-primary, #206bc4) !important;
+    color: #fff !important;
+}
+
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.btn-primary,
+:is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode) .record-mode-switch .record-mode-btn.active {
+    background: var(--tblr-primary, #206bc4) !important;
+    border-color: var(--tblr-primary, #206bc4) !important;
+    color: #fff !important;
+}
+
+
 
