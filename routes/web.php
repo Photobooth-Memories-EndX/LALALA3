@@ -19,6 +19,7 @@ use App\Http\Controllers\LearningMonitoringController;
 use App\Http\Controllers\LearningOngoingController;
 use App\Http\Controllers\NewsUserController;
 use App\Http\Controllers\AssesmentController;
+use App\Http\Controllers\AssesmentPreviewController;
 use App\Http\Controllers\AssesmentEditScoreController;
 use App\Http\Controllers\NewsImageController;
 use App\Http\Controllers\PagesUserController;
@@ -341,6 +342,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::match(['put', 'patch', 'post'], 'assesment/{assesment}/result/{id}/score', [AssesmentQuestionController::class, 'updateScore'])->name('assesment.result.update-score');
         Route::match(['get', 'post'], 'assesment/{assesment}/clone', [AssesmentQuestionController::class, 'clone'])->name('assesment.clone');
         Route::match(['get', 'post'], 'assesment/{assesment}/duplicate', [AssesmentQuestionController::class, 'clone'])->name('assesment.duplicate');
+        Route::get('assesment/{assesment}/preview', [AssesmentPreviewController::class, 'preview'])->name('assesment.preview');
         Route::get('assesmentresult', [AssesmentResultController::class, 'index'])->name('assesment.result.all');
         Route::get('assesment/result/{slug}', [AssesmentResultController::class, 'result'])->name('assesment.result.result');
         Route::get('assesment/bulk-duplicate/sources', [AssesmentController::class, 'getActiveContentSources'])->name('assesment.bulk-duplicate.sources');
