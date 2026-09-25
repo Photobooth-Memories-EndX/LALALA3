@@ -290,7 +290,6 @@ class AssesmentController extends Controller
             'fromdate'              => $hasAccessPeriod ? 'required' : 'nullable',
             'todate'                => $hasAccessPeriod ? 'required' : 'nullable',
             'time_limit_minutes'    => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
-            'afk_threshold_seconds' => 'nullable|integer|min:5',
             'passing_grade'         => 'required',
             'total_remedials'       => $isGlobal ? 'nullable' : 'required',
         ];
@@ -345,7 +344,7 @@ class AssesmentController extends Controller
         }
 
         $assesment->total_remedials = $isGlobal ? 0 : ($request->input('total_remedials') ?? 0);
-        $assesment->afk_threshold_seconds = $request->filled('afk_threshold_seconds') ? (int) $request->input('afk_threshold_seconds') : 60;
+        $assesment->afk_threshold_seconds = Assesment::DEFAULT_AFK_THRESHOLD_SECONDS;
         $assesment->save();
 
         return redirect()->route('assesment.edit', $assesment->slug)->with('success','Assesment created successfully.');
@@ -409,7 +408,6 @@ class AssesmentController extends Controller
             'fromdate'              => $hasAccessPeriod ? 'required' : 'nullable',
             'todate'                => $hasAccessPeriod ? 'required' : 'nullable',
             'time_limit_minutes'    => $hasTimeLimit ? 'required|integer|min:1' : 'nullable',
-            'afk_threshold_seconds' => 'nullable|integer|min:5',
             'passing_grade'         => 'required',
             'total_remedials'       => $isGlobal ? 'nullable' : 'required',
         ];
@@ -463,7 +461,7 @@ class AssesmentController extends Controller
         }
 
         $assesment->total_remedials = $isGlobal ? 0 : ($request->input('total_remedials') ?? 0);
-        $assesment->afk_threshold_seconds = $request->filled('afk_threshold_seconds') ? (int) $request->input('afk_threshold_seconds') : 60;
+        $assesment->afk_threshold_seconds = Assesment::DEFAULT_AFK_THRESHOLD_SECONDS;
         $assesment->save();
 
         return to_route('assesment.index')->with('success','Assesment updated successfully');

@@ -58,7 +58,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="text-center text-muted py-4">Belum ada aktivitas learning.</td></tr>
+                            <tr><td colspan="4" class="text-center text-muted py-4">There is no learning activity yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
