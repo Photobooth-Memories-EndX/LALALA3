@@ -109,19 +109,19 @@ class RecordAllCombinedTest extends TestCase
         // Verify Shell containers and components
         $response->assertSee('all-kpi-summary-container', false);
         $response->assertSee('all-classification-container', false);
-        $response->assertSee('all-learning-table', false);
+        $response->assertDontSee('all-learning-table', false);
 
-        // Verify Quick Filter inputs
-        $response->assertSee('all-filter-employee', false);
-        $response->assertSee('all-filter-title', false);
-        $response->assertSee('all-filter-source', false);
-        $response->assertSee('all-filter-classification', false);
-        $response->assertSee('all-filter-status', false);
-        $response->assertSee('all-filter-year', false);
+        // Verify Quick Filter inputs are NOT on landing page
+        $response->assertDontSee('all-filter-employee', false);
+        $response->assertDontSee('all-filter-title', false);
+        $response->assertDontSee('all-filter-source', false);
+        $response->assertDontSee('all-filter-classification', false);
+        $response->assertDontSee('all-filter-status', false);
+        $response->assertDontSee('all-filter-year', false);
 
-        // Verify Custom entries select and Offline detail modal
-        $response->assertSee('all-table-entries-select', false);
-        $response->assertSee('offlineTrainingDetailModal', false);
+        // Verify Custom entries select and Offline detail modal are NOT on landing page
+        $response->assertDontSee('all-table-entries-select', false);
+        $response->assertDontSee('offlineTrainingDetailModal', false);
 
         // Verify that initial shell load is lightweight and does not run UNION ALL
         $hasHeavyUnion = false;
@@ -234,6 +234,7 @@ class RecordAllCombinedTest extends TestCase
                 '*' => [
                     'no',
                     'classification_name',
+                    'slug',
                     'kp_owl',
                     'non_kp_owl',
                     'total_learning',
@@ -656,5 +657,149 @@ class RecordAllCombinedTest extends TestCase
         $allResp = $this->actingAs($this->admin)->get('/manage/record/all');
         $allResp->assertStatus(200);
         $allResp->assertSee(route('manage.record.all'));
+    }
+
+    /**
+     * 18. Test Classification detail page requires permission.
+     */
+    public function test_all_record_classification_detail_requires_permission(): void
+    {
+        // Guest redirected
+        $guestResponse = $this->get('/manage/record/all/classification/leadership');
+        $this->assertTrue($guestResponse->isRedirect() || $guestResponse->getStatusCode() === 401);
+
+        // Regular user forbidden
+        if ($this->regularUser) {
+            $unauthResponse = $this->actingAs($this->regularUser)->get('/manage/record/all/classification/leadership');
+            $unauthResponse->assertStatus(403);
+        }
+
+        // Admin success
+        $response = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership');
+        $response->assertStatus(200);
+    }
+
+    /**
+     * 19. Test Classification detail page renders proper header, back button, and quick filter without classification select.
+     */
+    public function test_all_record_classification_detail_renders_proper_header_and_elements_for_valid_slug(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership');
+        $response->assertStatus(200);
+
+        // Verify Header and Back Link
+        $response->assertSee('Classification: Leadership');
+        $response->assertSee('Back to All KP OWL');
+        $response->assertSee(route('manage.record.all'));
+
+        // Verify Combined Classification DataTable
+        $response->assertSee('all-classification-learning-table', false);
+
+        // Verify Quick Filter inputs (must NOT have classification dropdown)
+        $response->assertSee('all-filter-employee', false);
+        $response->assertSee('all-filter-title', false);
+        $response->assertSee('all-filter-source', false);
+        $response->assertSee('all-filter-status', false);
+        $response->assertSee('all-filter-year', false);
+        $response->assertDontSee('all-filter-classification', false);
+
+        // Verify custom entries selector and offline detail modal
+        $response->assertSee('all-table-entries-select', false);
+        $response->assertSee('offlineTrainingDetailModal', false);
+    }
+
+    /**
+     * 20. Test invalid classification slug returns 404.
+     */
+    public function test_all_record_classification_detail_returns_404_for_invalid_slug(): void
+    {
+        $resp = $this->actingAs($this->admin)->get('/manage/record/all/classification/completely-invalid-slug-xyz-999');
+        $resp->assertStatus(404);
+
+        $dtResp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/completely-invalid-slug-xyz-999/datatable');
+        $dtResp->assertStatus(404);
+    }
+
+    /**
+     * 21. Test Unclassified slug renders 200 and loads unclassified view.
+     */
+    public function test_all_record_classification_detail_handles_unclassified_slug(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/manage/record/all/classification/unclassified');
+        $response->assertStatus(200);
+        $response->assertSee('Classification: Unclassified');
+        $response->assertSee('all-classification-learning-table', false);
+    }
+
+    /**
+     * 22. Test classification detail datatable restricts rows to selected classification across online and offline.
+     */
+    public function test_classification_datatable_restricts_records_to_selected_classification(): void
+    {
+        // Create 1 training in Leadership and 1 training in Technical
+        $this->createTestOfflineTraining(
+            ['course_name' => 'Leadership Exclusive Course', 'main_classification' => 'Leadership'],
+            [['learning_hours' => 5.0, 'progress' => 100, 'name' => 'Participant Leadership Alpha']]
+        );
+
+        $this->createTestOfflineTraining(
+            ['course_name' => 'Technical Exclusive Course', 'main_classification' => 'Technical'],
+            [['learning_hours' => 6.0, 'progress' => 100, 'name' => 'Participant Technical Beta']]
+        );
+
+        // Query Leadership datatable
+        $leadResp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?source=offline');
+        $leadResp->assertStatus(200);
+
+        $leadData = $leadResp->json('data');
+        $this->assertNotEmpty($leadData);
+        foreach ($leadData as $row) {
+            $this->assertEquals('Leadership', $row['classification']);
+            $this->assertStringNotContainsString('Participant Technical Beta', $row['employee']);
+        }
+
+        // Query Technical datatable
+        $techResp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/technical/datatable?source=offline');
+        $techResp->assertStatus(200);
+
+        $techData = $techResp->json('data');
+        $this->assertNotEmpty($techData);
+        foreach ($techData as $row) {
+            $this->assertEquals('Technical', $row['classification']);
+            $this->assertStringNotContainsString('Participant Leadership Alpha', $row['employee']);
+        }
+    }
+
+    /**
+     * 23. Test classification datatable correctly filters unclassified records.
+     */
+    public function test_classification_datatable_handles_unclassified_records(): void
+    {
+        $this->createTestOfflineTraining(
+            ['course_name' => 'Unclassified Exclusive Course', 'main_classification' => null],
+            [['learning_hours' => 4.0, 'progress' => 100, 'name' => 'Participant Unclassified Delta']]
+        );
+
+        $resp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/unclassified/datatable?source=offline');
+        $resp->assertStatus(200);
+
+        $data = $resp->json('data');
+        $this->assertNotEmpty($data);
+        foreach ($data as $row) {
+            $this->assertEquals('Unclassified', $row['classification']);
+        }
+    }
+
+    /**
+     * 24. Test classification summary contains clickable links targeting the dedicated classification page.
+     */
+    public function test_classification_summary_contains_clickable_links_to_detail_routes(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/manage/record/all/ajax/classification');
+        $response->assertStatus(200);
+
+        $html = $response->json('html');
+        $this->assertStringContainsString('all-classification-link', $html);
+        $this->assertStringContainsString('/manage/record/all/classification/', $html);
     }
 }

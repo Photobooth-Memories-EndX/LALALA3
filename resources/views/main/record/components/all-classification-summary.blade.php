@@ -17,7 +17,11 @@
                 <tr>
                     <td class="text-muted fw-semibold">{{ $list->no ?? $loop->iteration }}</td>
                     <td>
-                        <span class="fw-semibold text-dark">{{ $list->classification_name }}</span>
+                        <a href="{{ route('manage.record.all.classification', $list->slug ?? (\Illuminate\Support\Str::slug($list->classification_name) ?: 'unclassified')) }}"
+                           class="fw-bold text-primary text-decoration-underline all-classification-link"
+                           data-slug="{{ $list->slug ?? (\Illuminate\Support\Str::slug($list->classification_name) ?: 'unclassified') }}">
+                            {{ $list->classification_name }}
+                        </a>
                     </td>
                     <td class="text-center">
                         <span class="badge bg-blue-lt px-2.5 py-1 fw-semibold">{{ number_format((int) ($list->kp_owl ?? 0)) }}</span>

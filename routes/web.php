@@ -478,6 +478,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('all', [RecordAllController::class, 'index'])->name('all');
             Route::get('all/ajax/summary', [RecordAllController::class, 'ajaxSummary'])->name('all.ajax.summary');
             Route::get('all/ajax/classification', [RecordAllController::class, 'ajaxClassification'])->name('all.ajax.classification');
+            Route::get('all/classification/{classification}', [RecordAllController::class, 'classification'])->name('all.classification');
+            Route::get('all/classification/{classification}/datatable', [RecordAllController::class, 'classificationDatatable'])->name('all.classification.datatable');
             Route::get('all/datatable', [RecordAllController::class, 'datatable'])->name('all.datatable');
             Route::get('export-all', [RecordExportController::class, 'index'])->name('export-all');
         });

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 
 class RecordAllCombinedService
@@ -183,6 +184,7 @@ class RecordAllCombinedService
 
             $row = [
                 'classification_name' => $displayName,
+                'slug'                => Str::slug($displayName) ?: 'unclassified',
                 'kp_owl'              => $kpCount,
                 'non_kp_owl'          => $nonKpCount,
                 'total_learning'      => $totalCount,
