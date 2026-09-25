@@ -16,6 +16,8 @@ class AssessmentPreviewTest extends TestCase
     private ?User $regularUser = null;
     private Assesment $assessmentOk;
     private Assesment $assessmentNot;
+    private AssesmentQuestion $question1;
+    private AssesmentQuestion $question2;
 
     protected function setUp(): void
     {
@@ -44,7 +46,7 @@ class AssessmentPreviewTest extends TestCase
         ]);
 
         // Add dummy questions to assessmentOk
-        AssesmentQuestion::create([
+        $this->question1 = AssesmentQuestion::create([
             'assesment_id' => $this->assessmentOk->id,
             'question'     => 'What is 2 + 2?',
             'option'       => ['3', '4', '5'],
@@ -52,7 +54,7 @@ class AssessmentPreviewTest extends TestCase
             'status'       => true,
         ]);
 
-        AssesmentQuestion::create([
+        $this->question2 = AssesmentQuestion::create([
             'assesment_id' => $this->assessmentOk->id,
             'question'     => 'What is the capital of Indonesia?',
             'option'       => ['Jakarta', 'Bandung', 'Surabaya'],
@@ -290,4 +292,234 @@ class AssessmentPreviewTest extends TestCase
             $response->assertSee('id="timer-clock"', false);
         }
     }
+
+    public function test_unauthenticated_user_cannot_access_preview_result(): void
+    {
+        $response = $this->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [$this->question1->id => '4'],
+        ]);
+
+        $response->assertRedirect();
+    }
+
+    public function test_regular_user_cannot_access_preview_result(): void
+    {
+        $this->assertNotNull($this->regularUser, 'Regular user must exist');
+
+        $response = $this->actingAs($this->regularUser)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [$this->question1->id => '4'],
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_access_preview_result(): void
+    {
+        $this->assertNotNull($this->admin, 'Admin user must exist');
+
+        $response = $this->actingAs($this->admin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [
+                $this->question1->id => '4',
+                $this->question2->id => 'Jakarta',
+            ],
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('THIS IS A PREVIEW RESULT', false);
+        $response->assertSee('This result is temporary and has not been saved', false);
+        $response->assertSee('Preview Answer Review', false);
+        $response->assertSee('Back to Preview', false);
+        $response->assertSee('Back to Assessment Management', false);
+    }
+
+    public function test_super_admin_can_access_preview_result(): void
+    {
+        $this->assertNotNull($this->superAdmin, 'Super Admin user must exist');
+
+        $response = $this->actingAs($this->superAdmin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [
+                $this->question1->id => '4',
+                $this->question2->id => 'Jakarta',
+            ],
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('THIS IS A PREVIEW RESULT', false);
+    }
+
+    public function test_preview_result_scoring_all_correct_gives_100_and_passed(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        $response = $this->actingAs($this->admin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [
+                $this->question1->id => '4',
+                $this->question2->id => 'Jakarta',
+            ],
+        ]);
+
+        $response->assertOk();
+        $resultData = $response->viewData('resultData');
+
+        $this->assertEquals(2, $resultData['total_questions']);
+        $this->assertEquals(2, $resultData['correct_count']);
+        $this->assertEquals(0, $resultData['incorrect_count']);
+        $this->assertEquals(0, $resultData['unanswered_count']);
+        $this->assertEquals(100, $resultData['score']);
+        $this->assertTrue($resultData['is_passed']);
+        $response->assertSee('PASSED', false);
+    }
+
+    public function test_preview_result_scoring_all_wrong_gives_0_and_failed(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        $response = $this->actingAs($this->admin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [
+                $this->question1->id => '3',
+                $this->question2->id => 'Bandung',
+            ],
+        ]);
+
+        $response->assertOk();
+        $resultData = $response->viewData('resultData');
+
+        $this->assertEquals(2, $resultData['total_questions']);
+        $this->assertEquals(0, $resultData['correct_count']);
+        $this->assertEquals(2, $resultData['incorrect_count']);
+        $this->assertEquals(0, $resultData['unanswered_count']);
+        $this->assertEquals(0, $resultData['score']);
+        $this->assertFalse($resultData['is_passed']);
+        $response->assertSee('FAILED', false);
+    }
+
+    public function test_preview_result_scoring_partial_correct_and_passing_grade_boundary(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        // 1 correct out of 2 => score 50. Passing grade is 70 => Failed
+        $response = $this->actingAs($this->admin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [
+                $this->question1->id => '4',
+                $this->question2->id => 'Bandung',
+            ],
+        ]);
+
+        $response->assertOk();
+        $resultData = $response->viewData('resultData');
+
+        $this->assertEquals(1, $resultData['correct_count']);
+        $this->assertEquals(1, $resultData['incorrect_count']);
+        $this->assertEquals(0, $resultData['unanswered_count']);
+        $this->assertEquals(50, $resultData['score']);
+        $this->assertFalse($resultData['is_passed']);
+
+        // Now change passing grade to 50 => Passed (boundary inclusive)
+        $this->assessmentOk->passing_grade = 50;
+        $this->assessmentOk->save();
+
+        $response2 = $this->actingAs($this->admin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [
+                $this->question1->id => '4',
+                $this->question2->id => 'Bandung',
+            ],
+        ]);
+
+        $response2->assertOk();
+        $resultData2 = $response2->viewData('resultData');
+        $this->assertTrue($resultData2['is_passed']);
+    }
+
+    public function test_preview_result_handles_unanswered_questions(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        // Only answer question 1, question 2 omitted
+        $response = $this->actingAs($this->admin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [
+                $this->question1->id => '4',
+            ],
+        ]);
+
+        $response->assertOk();
+        $resultData = $response->viewData('resultData');
+
+        $this->assertEquals(1, $resultData['correct_count']);
+        $this->assertEquals(0, $resultData['incorrect_count']);
+        $this->assertEquals(1, $resultData['unanswered_count']);
+        $this->assertEquals(50, $resultData['score']);
+
+        // Find review entry for question 2
+        $q2Review = collect($resultData['reviews'])->firstWhere('id', $this->question2->id);
+        $this->assertNotNull($q2Review);
+        $this->assertEquals('unanswered', $q2Review['status']);
+        $this->assertFalse($q2Review['is_correct']);
+        $this->assertNull($q2Review['user_answer']);
+    }
+
+    public function test_preview_result_direct_form_inputs_compatibility(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        // Direct inputs where keys are question IDs
+        $response = $this->actingAs($this->admin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            (string) $this->question1->id => '4',
+            (string) $this->question2->id => 'Jakarta',
+        ]);
+
+        $response->assertOk();
+        $resultData = $response->viewData('resultData');
+
+        $this->assertEquals(2, $resultData['correct_count']);
+        $this->assertEquals(100, $resultData['score']);
+    }
+
+    public function test_preview_result_tampered_question_id_does_not_affect_scoring(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        // Submit answer with rogue question ID that does not belong to this assessment
+        $response = $this->actingAs($this->admin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [
+                '99999999'           => 'Tampered Answer',
+                $this->question1->id => '4',
+                $this->question2->id => 'Jakarta',
+            ],
+        ]);
+
+        $response->assertOk();
+        $resultData = $response->viewData('resultData');
+
+        $this->assertEquals(2, $resultData['total_questions'], 'Total questions must remain 2');
+        $this->assertEquals(2, $resultData['correct_count']);
+        $this->assertEquals(0, $resultData['incorrect_count']);
+        $this->assertEquals(0, $resultData['unanswered_count']);
+        $this->assertEquals(100, $resultData['score']);
+        $this->assertCount(2, $resultData['reviews'], 'Reviews must only contain assessment questions');
+    }
+
+    public function test_preview_result_strictly_produces_zero_database_write(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        $initialResultsCount = AssesmentResult::count();
+        $initialHistoryCount = \Illuminate\Support\Facades\DB::table('assesment_score_histories')->count();
+        $initialContentUsers = \Illuminate\Support\Facades\DB::table('content_users')->count();
+        $initialPlaylistContentUsers = \Illuminate\Support\Facades\DB::table('playlist_content_users')->count();
+
+        $response = $this->actingAs($this->admin)->post(route('assesment.preview.result', $this->assessmentOk->slug), [
+            'answers' => [
+                $this->question1->id => '4',
+                $this->question2->id => 'Jakarta',
+            ],
+        ]);
+
+        $response->assertOk();
+
+        $this->assertEquals($initialResultsCount, AssesmentResult::count(), 'Zero write to assesment_results');
+        $this->assertEquals($initialHistoryCount, \Illuminate\Support\Facades\DB::table('assesment_score_histories')->count(), 'Zero write to assesment_score_histories');
+        $this->assertEquals($initialContentUsers, \Illuminate\Support\Facades\DB::table('content_users')->count(), 'Zero write to content_users');
+        $this->assertEquals($initialPlaylistContentUsers, \Illuminate\Support\Facades\DB::table('playlist_content_users')->count(), 'Zero write to playlist_content_users');
+    }
 }
+

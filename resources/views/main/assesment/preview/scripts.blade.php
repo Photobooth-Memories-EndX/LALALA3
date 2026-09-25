@@ -90,6 +90,17 @@
             openPreviewModal('finishPreviewModal');
         });
 
+        // Confirm Finish Preview: Submit temporary selected answers to preview result route
+        $(document).on('click', '#btnConfirmFinishPreview', function (e) {
+            e.preventDefault();
+            var form = document.getElementById('formPreviewAssessment');
+            if (form) {
+                var $btn = $(this);
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Calculating Result...');
+                form.submit();
+            }
+        });
+
         // Modal dismiss handlers
         $(document).on('click', '[data-bs-dismiss="modal"], [data-dismiss="modal"]', function () {
             var modal = $(this).closest('.modal');
