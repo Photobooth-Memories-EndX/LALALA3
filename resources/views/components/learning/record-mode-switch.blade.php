@@ -11,9 +11,9 @@
 @endphp
 
 {{-- Secondary navigation Learning Record — perpindahan mode via AJAX (dashboard-script.blade.php). --}}
-<div class="record-mode-switch" role="group" aria-label="Learning Record mode">
+<div class="learning-mode-switch record-mode-switch" role="group" aria-label="Learning Record mode">
     <button type="button"
-            class="btn record-mode-btn {{ $currentMode === 'online' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'online' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="online"
             title="Online Learning Record"
             aria-label="Online Learning Record"
@@ -22,7 +22,7 @@
         <span>Online</span>
     </button>
     <button type="button"
-            class="btn record-mode-btn {{ $currentMode === 'offline' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'offline' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="offline"
             title="Offline Training Record"
             aria-label="Offline Training Record"
@@ -31,7 +31,7 @@
         <span>Offline</span>
     </button>
     <button type="button"
-            class="btn record-mode-btn {{ $currentMode === 'all' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'all' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="all"
             title="All Learning Record (Online & Offline)"
             aria-label="All Learning Record (Online & Offline)"
@@ -40,7 +40,7 @@
         <span>All</span>
     </button>
     <button type="button"
-            class="btn record-mode-btn {{ $currentMode === 'export' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="btn learning-mode-btn record-mode-btn {{ $currentMode === 'export' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="export"
             title="Export Learning Record"
             aria-label="Export Learning Record"

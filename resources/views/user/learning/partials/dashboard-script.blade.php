@@ -44,18 +44,25 @@
         mode = mode || 'online';
         var isExport = (mode === 'export');
 
-        var switchHtml = '<div class="learning-record-mode-header mb-3">' +
-            '<div class="record-mode-switch" role="group" aria-label="Learning Record mode">' +
-                '<button type="button" class="btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online"><i class="ti ti-device-laptop"></i><span>Online</span></button>' +
-                '<button type="button" class="btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline"><i class="ti ti-certificate"></i><span>Offline</span></button>' +
-                '<button type="button" class="btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all"><i class="ti ti-stack-2"></i><span>All</span></button>' +
-                '<button type="button" class="btn record-mode-btn ' + (mode === 'export' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="export"><i class="ti ti-download"></i><span>Export</span></button>' +
+        var switchInsideHeaderHtml = '<div class="learning-filter-heading fast-filter-header' + (isExport ? ' mb-0' : '') + '">' +
+            '<div class="fast-filter-header-copy">' +
+                '<h3 class="card-title fast-filter-title">Quick Filter</h3>' +
+            '</div>' +
+            '<div class="learning-mode-switch record-mode-switch" role="group" aria-label="Learning Record mode">' +
+                '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'online' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="online"><i class="ti ti-device-laptop"></i><span>Online</span></button>' +
+                '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'offline' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="offline"><i class="ti ti-certificate"></i><span>Offline</span></button>' +
+                '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'all' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="all"><i class="ti ti-stack-2"></i><span>All</span></button>' +
+                '<button type="button" class="btn learning-mode-btn record-mode-btn ' + (mode === 'export' ? 'btn-primary active' : 'btn-outline-primary') + '" data-mode="export"><i class="ti ti-download"></i><span>Export</span></button>' +
             '</div>' +
         '</div>';
 
         if (isExport) {
             return '<div class="learning-record-shell">' +
-                switchHtml +
+                '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
+                    '<div class="card-body p-4">' +
+                        switchInsideHeaderHtml +
+                    '</div>' +
+                '</div>' +
                 '<div class="card border-0 shadow-sm rounded-4 p-4 mb-4 placeholder-glow">' +
                     '<div class="d-flex align-items-center gap-3">' +
                         '<span class="placeholder rounded-3" style="width:52px;height:52px;"></span>' +
@@ -91,11 +98,10 @@
         }
 
         return '<div class="learning-record-shell">' +
-            switchHtml +
             '<div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">' +
                 '<div class="card-body p-4 border-bottom placeholder-glow">' +
-                    '<span class="placeholder col-2 mb-2 d-block rounded-2" style="height:12px;"></span>' +
-                    '<div class="d-flex align-items-center flex-wrap gap-2">' +
+                    switchInsideHeaderHtml +
+                    '<div class="d-flex align-items-center flex-wrap gap-2 mt-3">' +
                         '<span class="placeholder rounded-pill" style="width:110px;height:38px;"></span>' +
                         '<span class="placeholder rounded-pill" style="width:140px;height:38px;"></span>' +
                         '<span class="placeholder rounded-pill" style="width:90px;height:38px;"></span>' +

@@ -22,17 +22,18 @@
 </template>
 
 <div class="learning-record-shell">
-    <div class="learning-record-mode-header mb-3">
-        <x-learning.record-mode-switch mode="all" />
-    </div>
-
     {{-- Filter Card All --}}
     <div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">
         <div class="card-body p-4 border-bottom">
             <div class="record-filter-shell" id="recordAllFilterBar">
-                <div class="record-fast-filter-section mt-1">
-                    <label class="form-label small text-muted mb-2 learning-fast-filter-label">Quick Filter</label>
+                <div class="learning-filter-heading fast-filter-header">
+                    <div class="fast-filter-header-copy">
+                        <h3 class="card-title fast-filter-title">Quick Filter</h3>
+                    </div>
+                    <x-learning.record-mode-switch mode="all" />
+                </div>
 
+                <div class="record-fast-filter-section">
                     <div class="fast-filter-toolbar d-flex align-items-center flex-wrap gap-2">
                         <div class="learning-quick-dropdowns learning-fast-filter d-flex align-items-center flex-wrap gap-2">
                             {{-- Dropdown Source (Online | Offline) --}}

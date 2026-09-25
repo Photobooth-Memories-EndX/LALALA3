@@ -9,8 +9,16 @@
 </template>
 
 <div class="learning-record-shell">
-    <div class="learning-record-mode-header mb-3">
-        <x-learning.record-mode-switch mode="export" />
+    {{-- Quick Filter Card (Mode Switch) --}}
+    <div class="card border-0 shadow-sm rounded-4 mb-4 learning-record-card">
+        <div class="card-body p-4">
+            <div class="learning-filter-heading fast-filter-header mb-0">
+                <div class="fast-filter-header-copy">
+                    <h3 class="card-title fast-filter-title">Quick Filter</h3>
+                </div>
+                <x-learning.record-mode-switch mode="export" />
+            </div>
+        </div>
     </div>
 
     {{-- Export Hub Header --}}
