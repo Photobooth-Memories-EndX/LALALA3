@@ -54,13 +54,36 @@ class AssesmentPreviewController extends Controller
 
         // 4. Visual-only Timer Simulation (no auto-submit, no database write)
         $countDownDate = null;
-        $expiresAtIso = null;
+        $expiresAtIso  = null;
 
-        if ($assesment->hasTimeLimit()) {
-            $timeLimitMinutes = (int) $assesment->time_limit_minutes;
-            $deadline = now()->addMinutes($timeLimitMinutes);
-            $countDownDate = $deadline->format('Y-m-d H:i:s');
-            $expiresAtIso = $deadline->toIso8601String();
+        $hasAccessPeriod = $assesment->hasAccessPeriod() && !empty($assesment->todate);
+        $hasTimeLimit    = $assesment->hasTimeLimit();
+
+        $effectiveDeadline = null;
+
+        if ($hasAccessPeriod && $hasTimeLimit) {
+            // Skenario 1: ACCESS PERIOD + TEST DURATION
+            // Gunakan deadline yang lebih awal: min(todate, now() + time_limit_minutes)
+            $periodDeadline    = \Illuminate\Support\Carbon::parse($assesment->todate);
+            $timeLimitDeadline = now()->addMinutes((int) $assesment->time_limit_minutes);
+
+            if (now()->format('Y-m-d H:i:s') > $periodDeadline->format('Y-m-d H:i:s')) {
+                // Jika access period sudah expired, gunakan durasi time limit agar admin tetap dapat mencoba preview
+                $effectiveDeadline = $timeLimitDeadline;
+            } else {
+                $effectiveDeadline = $periodDeadline->min($timeLimitDeadline);
+            }
+        } elseif ($hasTimeLimit) {
+            // Skenario 2: TEST DURATION SAJA
+            $effectiveDeadline = now()->addMinutes((int) $assesment->time_limit_minutes);
+        } elseif ($hasAccessPeriod) {
+            // Skenario 3: ACCESS PERIOD SAJA (seperti Global Assessment)
+            $effectiveDeadline = \Illuminate\Support\Carbon::parse($assesment->todate);
+        }
+
+        if ($effectiveDeadline !== null) {
+            $countDownDate = $effectiveDeadline->format('Y-m-d H:i:s');
+            $expiresAtIso  = $effectiveDeadline->toIso8601String();
         }
 
         // 5. Presentation Metadata

@@ -107,7 +107,7 @@
             var targetTimeString = "{{ $expiresAtIso ?? $countDownDate }}";
             var countDownDate = new Date(targetTimeString).getTime();
 
-            var x = setInterval(function () {
+            function renderCountdownTick() {
                 var now = new Date().getTime();
                 var distance = countDownDate - now;
 
@@ -140,7 +140,10 @@
                     timerEl.innerHTML = '<div class="small text-uppercase text-muted fw-semibold mb-1">' + daysLabel + '</div>' +
                                         '<div class="h1 mb-0 font-monospace text-danger fw-bold">' + clockString + '</div>';
                 }
-            }, 1000);
+            }
+
+            renderCountdownTick();
+            var x = setInterval(renderCountdownTick, 1000);
         })();
     </script>
 @endif

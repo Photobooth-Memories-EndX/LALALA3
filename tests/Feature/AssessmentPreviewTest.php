@@ -6,6 +6,7 @@ use App\Models\Assesment;
 use App\Models\AssesmentQuestion;
 use App\Models\AssesmentResult;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class AssessmentPreviewTest extends TestCase
@@ -162,5 +163,131 @@ class AssessmentPreviewTest extends TestCase
         $response->assertOk();
         $response->assertSee('Preview Assessment', false);
         $response->assertSee(route('assesment.preview', $this->assessmentOk->slug), false);
+    }
+
+    public function test_preview_timer_with_access_period_only(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        $targetToDate = Carbon::now()->addDays(5)->format('Y-m-d H:i:s');
+        $periodAssessment = Assesment::create([
+            'title'              => 'Period Only Test ' . uniqid(),
+            'status'             => 'OK',
+            'type'               => 'global',
+            'has_access_period'  => true,
+            'fromdate'           => Carbon::now()->subDay()->format('Y-m-d H:i:s'),
+            'todate'             => $targetToDate,
+            'timer'              => 'n',
+            'time_limit_minutes' => null,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('assesment.preview', $periodAssessment->slug));
+
+        $response->assertOk();
+        $this->assertEquals($targetToDate, $response->viewData('countDownDate'));
+        $this->assertNotNull($response->viewData('expiresAtIso'));
+        $response->assertSee('id="timing-card"', false);
+        $response->assertSee('Time Remaining', false);
+
+        $periodAssessment->delete();
+    }
+
+    public function test_preview_timer_with_test_duration_only(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        $durationAssessment = Assesment::create([
+            'title'              => 'Duration Only Test ' . uniqid(),
+            'status'             => 'OK',
+            'type'               => 'content',
+            'has_access_period'  => false,
+            'fromdate'           => null,
+            'todate'             => null,
+            'timer'              => 'y',
+            'time_limit_minutes' => 45,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('assesment.preview', $durationAssessment->slug));
+
+        $response->assertOk();
+        $this->assertNotNull($response->viewData('countDownDate'));
+        $this->assertNotNull($response->viewData('expiresAtIso'));
+        $response->assertSee('id="timing-card"', false);
+        $response->assertSee('Time Remaining', false);
+
+        $durationAssessment->delete();
+    }
+
+    public function test_preview_timer_with_access_period_and_test_duration(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        $farPeriodToDate = Carbon::now()->addDays(3)->format('Y-m-d H:i:s');
+        $combinedAssessment = Assesment::create([
+            'title'              => 'Combined Test ' . uniqid(),
+            'status'             => 'OK',
+            'type'               => 'content',
+            'has_access_period'  => true,
+            'fromdate'           => Carbon::now()->subDay()->format('Y-m-d H:i:s'),
+            'todate'             => $farPeriodToDate,
+            'timer'              => 'y',
+            'time_limit_minutes' => 30, // 30 minutes is earlier than 3 days
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('assesment.preview', $combinedAssessment->slug));
+
+        $response->assertOk();
+        $countDownDate = $response->viewData('countDownDate');
+        $this->assertNotNull($countDownDate);
+        // Effective deadline must be the earlier deadline (approximately 30 mins from now, NOT 3 days)
+        $diffMinutes = Carbon::parse($countDownDate)->diffInMinutes(Carbon::now());
+        $this->assertLessThanOrEqual(31, $diffMinutes);
+        $this->assertGreaterThanOrEqual(29, $diffMinutes);
+
+        $combinedAssessment->delete();
+    }
+
+    public function test_preview_timer_without_deadline(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        $noDeadlineAssessment = Assesment::create([
+            'title'              => 'No Deadline Test ' . uniqid(),
+            'status'             => 'OK',
+            'type'               => 'content',
+            'has_access_period'  => false,
+            'fromdate'           => null,
+            'todate'             => null,
+            'timer'              => 'n',
+            'time_limit_minutes' => null,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('assesment.preview', $noDeadlineAssessment->slug));
+
+        $response->assertOk();
+        $this->assertNull($response->viewData('countDownDate'));
+        $this->assertNull($response->viewData('expiresAtIso'));
+        $response->assertDontSee('id="timing-card"', false);
+        $response->assertSee('No Deadline', false);
+
+        $noDeadlineAssessment->delete();
+    }
+
+    public function test_real_ptkp_global_assessment_preview_shows_time_remaining_timer(): void
+    {
+        $this->assertNotNull($this->admin);
+
+        $realAssessment = Assesment::where('slug', 'ptkp-global-assessment-2025-f-general-18-nov-2025-copy-2')->first();
+        if ($realAssessment) {
+            $response = $this->actingAs($this->admin)->get(route('assesment.preview', $realAssessment->slug));
+
+            $response->assertOk();
+            $this->assertEquals($realAssessment->todate, $response->viewData('countDownDate'));
+            $this->assertNotNull($response->viewData('expiresAtIso'));
+            $response->assertSee('id="timing-card"', false);
+            $response->assertSee('Time Remaining', false);
+            $response->assertSee('id="timer-days"', false);
+            $response->assertSee('id="timer-clock"', false);
+        }
     }
 }
