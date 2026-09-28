@@ -687,7 +687,7 @@
         });
 
         // View More button click in modal: close modal & switch to Available Training tab with status filter
-        const modalBtnViewMore = document.getElementById('modalBtnViewMore');
+        const modalBtnViewMore = document.getElementById('btn-modal-view-more') || document.getElementById('modalBtnViewMore');
         if (modalBtnViewMore) {
             modalBtnViewMore.addEventListener('click', function () {
                 const eventDetailModalEl = document.getElementById('eventDetailModal');

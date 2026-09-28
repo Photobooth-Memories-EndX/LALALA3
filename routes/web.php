@@ -275,6 +275,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
     Route::get('/dashboard', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
+    Route::get('/training-schedule', function () {
+        return view('main.manage-training-schedule.index');
+    })->name('manage.training-schedule.index');
 
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);

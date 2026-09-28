@@ -41,11 +41,8 @@
                 </div>
             </div>
 
-            <div class="modal-footer border-top border-light-subtle px-4 py-3 bg-light-subtle d-flex justify-content-between align-items-center">
-                <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-3 fw-semibold" data-bs-dismiss="modal">
-                    Close
-                </button>
-                <button type="button" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-2" id="modalBtnViewMore" style="background-color: #003b6d; border-color: #003b6d;">
+            <div class="modal-footer border-0 pt-0 d-flex justify-content-end">
+                <button type="button" id="btn-modal-view-more" class="btn px-4 py-2 rounded-3 text-white fw-semibold d-inline-flex align-items-center gap-2" style="background-color: #003b6d; border-color: #003b6d;">
                     <span>View More</span>
                     <i class="ti ti-arrow-right fs-3"></i>
                 </button>

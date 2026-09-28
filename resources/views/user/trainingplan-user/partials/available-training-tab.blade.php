@@ -59,7 +59,7 @@
                     <th class="py-3">CATEGORY</th>
                     <th class="py-3">SCHEDULE DATE</th>
                     <th class="py-3">LOCATION</th>
-                    <th class="py-3 text-center">MAX PARTICIPANT</th>
+                    <th class="py-3 text-center">APPROVED PARTICIPANT</th>
                     <th class="py-3 text-center">REGISTRATION</th>
                     <th class="text-end py-3 pe-4">ACTION</th>
                 </tr>
@@ -96,8 +96,11 @@
                             <span>Training Room Building A, 2nd Fl.</span>
                         </div>
                     </td>
-                    <td class="text-center">
-                        <span class="fw-semibold text-dark small">25 / 30 Seats</span>
+                    <td class="text-center" style="min-width: 130px;">
+                        <div class="fw-semibold text-dark small">25 / 30 Seats</div>
+                        <div class="progress progress-xs mt-1 mx-auto rounded-pill" style="height: 4px; max-width: 90px; background-color: #e2e8f0;">
+                            <div class="progress-bar rounded-pill" role="progressbar" style="width: 83%; background-color: #003b6d;" aria-valuenow="83" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
                     </td>
                     <td class="text-center">
                         <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-semibold">
@@ -142,8 +145,11 @@
                             <span>Computer Lab 2, 3rd Fl.</span>
                         </div>
                     </td>
-                    <td class="text-center">
-                        <span class="fw-semibold text-dark small">18 / 20 Seats</span>
+                    <td class="text-center" style="min-width: 130px;">
+                        <div class="fw-semibold text-dark small">18 / 20 Seats</div>
+                        <div class="progress progress-xs mt-1 mx-auto rounded-pill" style="height: 4px; max-width: 90px; background-color: #e2e8f0;">
+                            <div class="progress-bar rounded-pill" role="progressbar" style="width: 90%; background-color: #0284c7;" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
                     </td>
                     <td class="text-center">
                         <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-semibold">
@@ -188,8 +194,11 @@
                             <span>Auditorium Krakatau Posco</span>
                         </div>
                     </td>
-                    <td class="text-center">
-                        <span class="fw-semibold text-dark small">40 / 50 Seats</span>
+                    <td class="text-center" style="min-width: 130px;">
+                        <div class="fw-semibold text-dark small">40 / 50 Seats</div>
+                        <div class="progress progress-xs mt-1 mx-auto rounded-pill" style="height: 4px; max-width: 90px; background-color: #e2e8f0;">
+                            <div class="progress-bar rounded-pill" role="progressbar" style="width: 80%; background-color: #d97706;" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
                     </td>
                     <td class="text-center">
                         <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-semibold">
@@ -234,8 +243,11 @@
                             <span>Meeting Room Bintang 1</span>
                         </div>
                     </td>
-                    <td class="text-center">
-                        <span class="fw-semibold text-dark small">25 / 25 Seats (Full)</span>
+                    <td class="text-center" style="min-width: 130px;">
+                        <div class="fw-semibold text-dark small">25 / 25 Seats (Full)</div>
+                        <div class="progress progress-xs mt-1 mx-auto rounded-pill" style="height: 4px; max-width: 90px; background-color: #e2e8f0;">
+                            <div class="progress-bar rounded-pill" role="progressbar" style="width: 100%; background-color: #64748b;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
                     </td>
                     <td class="text-center">
                         <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 fw-semibold">
