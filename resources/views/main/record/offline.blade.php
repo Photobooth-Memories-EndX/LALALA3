@@ -41,7 +41,7 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons: + Add Training | Import Excel | Download Template -->
+                <!-- Action Buttons: + Add Training | Import Excel | Download Template | Export Non KP OWL -->
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <a href="{{ route('manage.record.offline.create') }}" class="btn btn-primary rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
                        style="background-color: #d97706; border-color: #d97706;" id="btn-open-offline-add"
@@ -57,6 +57,10 @@
                     <a href="{{ route('manage.record.offline.import.template') }}" class="btn btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-download-offline-template">
                         <i class="ti ti-download fs-2"></i>
                         <span>Download Template</span>
+                    </a>
+                    <a href="{{ route('manage.record.offline.export') }}" class="btn btn-success rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-export-offline-all" title="Export all active Non KP OWL records across all classifications">
+                        <i class="ti ti-file-spreadsheet fs-2"></i>
+                        <span>Export Non KP OWL</span>
                     </a>
                 </div>
             </div>

@@ -102,7 +102,8 @@ class OfflineTrainingImportService
         $reader = IOFactory::createReaderForFile($filePath);
         $reader->setReadDataOnly(false);
         $spreadsheet = $reader->load($filePath);
-        $worksheet = $spreadsheet->getActiveSheet();
+        $worksheet = $spreadsheet->getSheetByName(OfflineTrainingExcelSchema::DATA_SHEET_TITLE)
+            ?: $spreadsheet->getSheet(0);
 
         $headerMapping = $this->resolveHeaderMapping($worksheet);
         $this->validateRequiredHeaders($headerMapping['column_keys']);
@@ -316,7 +317,8 @@ class OfflineTrainingImportService
         $reader = IOFactory::createReaderForFile($filePath);
         $reader->setReadDataOnly(false);
         $spreadsheet = $reader->load($filePath);
-        $worksheet = $spreadsheet->getActiveSheet();
+        $worksheet = $spreadsheet->getSheetByName(OfflineTrainingExcelSchema::DATA_SHEET_TITLE)
+            ?: $spreadsheet->getSheet(0);
 
         $headerMapping = $this->resolveHeaderMapping($worksheet);
         $highestRow = $worksheet->getHighestDataRow();
@@ -985,18 +987,31 @@ class OfflineTrainingImportService
     // FIELD NORMALIZERS
     // =========================================================================
 
+    public function cleanNullableValue($value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        $str = trim((string) $value);
+        if ($str === '' || in_array($str, ['-', '--', '---', 'N/A', 'n/a', 'NA', 'None', 'null', 'NULL'], true)) {
+            return null;
+        }
+        return $str;
+    }
+
     public function normalizeString($value): ?string
     {
-        if ($value === null) return null;
-        $str = trim((string) $value);
-        return $str === '' ? null : $str;
+        return $this->cleanNullableValue($value);
     }
 
     public function normalizeBoolean($value): ?bool
     {
-        if ($value === null) return null;
-        $str = strtolower(trim((string) $value));
-        if ($str === '') return null;
+        $clean = $this->cleanNullableValue($value);
+        if ($clean === null) {
+            return null;
+        }
+
+        $str = strtolower($clean);
 
         if (in_array($str, ['yes', 'y', '1', 'true', 'ya'], true)) {
             return true;
@@ -1010,12 +1025,13 @@ class OfflineTrainingImportService
 
     public function normalizeProgress($value): ?float
     {
-        if ($value === null) return null;
-        $str = trim((string) $value);
-        if ($str === '') return null;
+        $clean = $this->cleanNullableValue($value);
+        if ($clean === null) {
+            return null;
+        }
 
         // Strip % sign if present
-        $str = str_replace(['%', ' '], '', $str);
+        $str = str_replace(['%', ' '], '', $clean);
 
         if (!is_numeric($str)) return null;
 
@@ -1032,9 +1048,12 @@ class OfflineTrainingImportService
 
     public function normalizeDuration($value): ?int
     {
-        if ($value === null) return null;
-        $str = trim((string) $value);
-        if ($str === '') return null;
+        $clean = $this->cleanNullableValue($value);
+        if ($clean === null) {
+            return null;
+        }
+
+        $str = $clean;
 
         // If formatted as HH:MM:SS or HH:MM
         if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $str, $matches)) {
@@ -1061,12 +1080,13 @@ class OfflineTrainingImportService
 
     public function normalizeLearningHours($value): ?float
     {
-        if ($value === null) return null;
-        $str = trim((string) $value);
-        if ($str === '') return null;
+        $clean = $this->cleanNullableValue($value);
+        if ($clean === null) {
+            return null;
+        }
 
         // Remove any commas or text
-        $str = str_replace(['hours', 'hour', 'jam', ' '], '', strtolower($str));
+        $str = str_replace(['hours', 'hour', 'jam', ' '], '', strtolower($clean));
         $str = str_replace(',', '.', $str);
 
         if (!is_numeric($str)) return null;
@@ -1081,20 +1101,22 @@ class OfflineTrainingImportService
             return $value->format('Y-m-d');
         }
 
-        $str = trim((string) $value);
-        if ($str === '') return null;
+        $clean = $this->cleanNullableValue($value);
+        if ($clean === null) {
+            return null;
+        }
 
         // Excel numeric serial date
-        if (is_numeric($str) && (float) $str > 1000) {
+        if (is_numeric($clean) && (float) $clean > 1000) {
             try {
-                return ExcelDate::excelToDateTimeObject((float) $str)->format('Y-m-d');
+                return ExcelDate::excelToDateTimeObject((float) $clean)->format('Y-m-d');
             } catch (\Throwable $e) {
                 // fallback
             }
         }
 
         try {
-            return Carbon::parse($str)->format('Y-m-d');
+            return Carbon::parse($clean)->format('Y-m-d');
         } catch (\Throwable $e) {
             return null;
         }
@@ -1102,12 +1124,13 @@ class OfflineTrainingImportService
 
     public function normalizeMoney($value): ?float
     {
-        if ($value === null) return null;
-        $str = trim((string) $value);
-        if ($str === '') return null;
+        $clean = $this->cleanNullableValue($value);
+        if ($clean === null) {
+            return null;
+        }
 
         // Strip Rp, IDR, $, USD, and whitespace
-        $str = preg_replace('/^(?:rp|idr|usd|\$)\.?\s*/i', '', $str);
+        $str = preg_replace('/^(?:rp|idr|usd|\$)\.?\s*/i', '', $clean);
         $str = trim($str);
 
         if (str_contains($str, '.') && str_contains($str, ',')) {
@@ -1137,10 +1160,12 @@ class OfflineTrainingImportService
 
     public function normalizeAssessmentScore($value): ?float
     {
-        if ($value === null) return null;
-        $str = trim((string) $value);
-        if ($str === '') return null;
-        $str = str_replace(',', '.', $str);
+        $clean = $this->cleanNullableValue($value);
+        if ($clean === null) {
+            return null;
+        }
+
+        $str = str_replace(',', '.', $clean);
 
         if (!is_numeric($str)) return null;
 
@@ -1149,10 +1174,12 @@ class OfflineTrainingImportService
 
     public function normalizeDecimal($value, int $decimals = 4): ?float
     {
-        if ($value === null) return null;
-        $str = trim((string) $value);
-        if ($str === '') return null;
-        $str = str_replace(',', '.', $str);
+        $clean = $this->cleanNullableValue($value);
+        if ($clean === null) {
+            return null;
+        }
+
+        $str = str_replace(',', '.', $clean);
 
         if (!is_numeric($str)) return null;
 

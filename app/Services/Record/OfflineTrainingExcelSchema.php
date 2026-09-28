@@ -7,6 +7,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class OfflineTrainingExcelSchema
 {
@@ -183,31 +184,96 @@ class OfflineTrainingExcelSchema
     }
 
     /**
-     * Generate PhpSpreadsheet instance containing clean blank template + instructions.
+     * Grouped Row 1 headers array (44 elements).
      */
-    public static function generateTemplateSpreadsheet(): Spreadsheet
+    public static function groupedRow1Headers(): array
     {
-        $spreadsheet = new Spreadsheet();
-        $spreadsheet->getProperties()
-            ->setCreator('KP OWL LMS')
-            ->setLastModifiedBy('KP OWL LMS')
-            ->setTitle('Non KP OWL Offline Training Import Template')
-            ->setSubject('Non KP OWL Training Records Template')
-            ->setDescription('Official Excel template for uploading offline training records into KP OWL LMS.');
+        $row1 = [];
+        $groups = self::groups();
+        $groupStartMap = [];
+        foreach ($groups as $group) {
+            $groupStartMap[$group['start_col']] = $group['title'];
+        }
 
-        // ----------------------------------------------------
-        // SHEET 1: Non KP OWL Import (Active Data Sheet)
-        // ----------------------------------------------------
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle(self::DATA_SHEET_TITLE);
+        // Col 1 is 'A' -> 'No'
+        $row1[] = 'No';
 
+        // Cols 2 to 44 (B to AR)
+        for ($col = 2; $col <= 44; $col++) {
+            $colLetter = Coordinate::stringFromColumnIndex($col);
+            $row1[] = $groupStartMap[$colLetter] ?? '';
+        }
+
+        return $row1;
+    }
+
+    /**
+     * Canonical column widths matching template and export specifications.
+     */
+    public static function columnWidths(): array
+    {
+        return [
+            'A'  => 6,   // No
+            'B'  => 14,  // Employee ID
+            'C'  => 25,  // Name
+            'D'  => 10,  // Grade
+            'E'  => 25,  // Job Position
+            'F'  => 20,  // Team
+            'G'  => 25,  // Department
+            'H'  => 20,  // Company
+            'I'  => 35,  // Course Name
+            'J'  => 25,  // Sub Course Name
+            'K'  => 15,  // Type
+            'L'  => 20,  // Category
+            'M'  => 15,  // Level
+            'N'  => 15,  // Batch
+            'O'  => 22,  // Main Classification
+            'P'  => 20,  // Sub Classification
+            'Q'  => 18,  // KPI
+            'R'  => 20,  // Sub KPI
+            'S'  => 15,  // Delivery Method
+            'T'  => 18,  // Sub Delivery Method
+            'U'  => 15,  // Provider
+            'V'  => 18,  // Sub Provider
+            'W'  => 12,  // Duration
+            'X'  => 15,  // Learning Hours
+            'Y'  => 12,  // Progress
+            'Z'  => 14,  // Start Date
+            'AA' => 14,  // Finish Date
+            'AB' => 14,  // Month
+            'AC' => 25,  // Provider Name
+            'AD' => 20,  // Venue
+            'AE' => 22,  // Instructor
+            'AF' => 15,  // Score
+            'AG' => 12,  // Certificate
+            'AH' => 14,  // Attendance
+            'AI' => 20,  // Reason
+            'AJ' => 12,  // Bond Status
+            'AK' => 14,  // Bond End Date
+            'AL' => 16,  // Bond Amount
+            'AM' => 14,  // L1
+            'AN' => 12,  // L2 Numerical
+            'AO' => 15,  // L2 Verbal
+            'AP' => 12,  // L3 Numerical
+            'AQ' => 25,  // L3 Verbal
+            'AR' => 20,  // PIC
+        ];
+    }
+
+    /**
+     * Apply grouped Row 1, Row 2 column headers, colors, borders, row heights, and freeze pane.
+     */
+    public static function applyDataSheetHeaderStyles(Worksheet $sheet): void
+    {
         // Row 1: No header in A1, followed by merged parent groups
         $sheet->setCellValue('A1', 'No');
 
         $groups = self::groups();
         foreach ($groups as $group) {
             $range = $group['start_col'] . '1:' . $group['end_col'] . '1';
-            $sheet->mergeCells($range);
+            if ($group['start_col'] !== $group['end_col']) {
+                $sheet->mergeCells($range);
+            }
             $sheet->setCellValue($group['start_col'] . '1', $group['title']);
 
             // Style group header
@@ -287,11 +353,6 @@ class OfflineTrainingExcelSchema
                     ],
                 ],
             ]);
-
-            // Set column width
-            $headerLen = mb_strlen($col['header']);
-            $colWidth = max(14, min(28, $headerLen + 4));
-            $sheet->getColumnDimension($colLetter)->setWidth($colWidth);
         }
 
         // Row Heights
@@ -300,13 +361,13 @@ class OfflineTrainingExcelSchema
 
         // Freeze top 2 rows
         $sheet->freezePane('A3');
+    }
 
-        // ----------------------------------------------------
-        // SHEET 2: Instructions
-        // ----------------------------------------------------
-        $instructionSheet = $spreadsheet->createSheet(1);
-        $instructionSheet->setTitle(self::INSTRUCTIONS_SHEET_TITLE);
-
+    /**
+     * Populate the Instructions worksheet with guidelines and styling.
+     */
+    public static function populateInstructionsSheet(Worksheet $instructionSheet): void
+    {
         $instructionSheet->setCellValue('A1', 'KP OWL LMS — Non KP OWL Offline Training Import Guidelines');
         $instructionSheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setRGB('0F172A');
         $instructionSheet->getRowDimension(1)->setRowHeight(26);
@@ -350,6 +411,40 @@ class OfflineTrainingExcelSchema
         $instructionSheet->getColumnDimension('A')->setWidth(24);
         $instructionSheet->getColumnDimension('B')->setWidth(40);
         $instructionSheet->getColumnDimension('C')->setWidth(65);
+    }
+
+    /**
+     * Generate PhpSpreadsheet instance containing clean blank template + instructions.
+     */
+    public static function generateTemplateSpreadsheet(): Spreadsheet
+    {
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getProperties()
+            ->setCreator('KP OWL LMS')
+            ->setLastModifiedBy('KP OWL LMS')
+            ->setTitle('Non KP OWL Offline Training Import Template')
+            ->setSubject('Non KP OWL Training Records Template')
+            ->setDescription('Official Excel template for uploading offline training records into KP OWL LMS.');
+
+        // ----------------------------------------------------
+        // SHEET 1: Non KP OWL Import (Active Data Sheet)
+        // ----------------------------------------------------
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(self::DATA_SHEET_TITLE);
+
+        self::applyDataSheetHeaderStyles($sheet);
+
+        foreach (self::columnWidths() as $colLetter => $width) {
+            $sheet->getColumnDimension($colLetter)->setWidth($width);
+        }
+
+        // ----------------------------------------------------
+        // SHEET 2: Instructions
+        // ----------------------------------------------------
+        $instructionSheet = $spreadsheet->createSheet(1);
+        $instructionSheet->setTitle(self::INSTRUCTIONS_SHEET_TITLE);
+
+        self::populateInstructionsSheet($instructionSheet);
 
         // Ensure Sheet 1 is active on open
         $spreadsheet->setActiveSheetIndex(0);

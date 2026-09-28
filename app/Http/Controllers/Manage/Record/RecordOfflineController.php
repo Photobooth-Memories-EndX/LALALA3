@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Manage\Record;
 
 use App\Exports\OfflineClassificationExport;
+use App\Exports\OfflineTrainingExport;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LearningManageController;
 use App\Models\OfflineTraining;
@@ -199,6 +200,16 @@ class RecordOfflineController extends Controller
             'trainingTypes'       => self::TRAINING_TYPES,
             'downloadUrl'         => route('manage.record.offline.classification.download', $resolved['slug']),
         ]);
+    }
+
+    /**
+     * Download global Excel export containing all active offline training records across all classifications.
+     */
+    public function export(Request $request)
+    {
+        $export = new OfflineTrainingExport(null, $request);
+
+        return $export->download($export->getFileName());
     }
 
     public function classificationDownload(string $classification, Request $request)

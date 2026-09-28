@@ -304,6 +304,16 @@ class RecordOfflineQueryService
     }
 
     /**
+     * Build global query across all classifications (unlocked and excluding classification filters).
+     */
+    public static function buildGlobalQuery(array $filters = []): Builder
+    {
+        unset($filters['classification'], $filters['main_classification']);
+
+        return self::buildQuery($filters, null);
+    }
+
+    /**
      * Parse date string formatted as dd/mm/yyyy or yyyy-mm-dd into standard Y-m-d.
      */
     public static function parseDate(?string $value): ?string
