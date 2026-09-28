@@ -44,6 +44,29 @@
             <a href="{{ route('playlist.user.index') }}" class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1 mb-3">
                 <i class="ti ti-arrow-left"></i> Back
             </a>
+{{-- Banner tugas course (My Task) — cuma muncul kalau ada tugas belum dikerjakan --}}
+@php
+    $courseIncompleteTasks = collect();
+    if (class_exists(\App\Models\Task::class)) {
+        $courseIncompleteTasks = \App\Models\Task::where('training_plan_id', $playlist->id)
+            ->published()->get()
+            ->filter(fn ($t) => !optional($t->submissionFor(auth()->user()))->isCompleted());
+    }
+@endphp
+@if ($courseIncompleteTasks->isNotEmpty())
+    <div class="alert alert-warning d-flex align-items-center gap-3 mb-3" role="alert">
+        <i class="ti ti-clipboard-list fs-2"></i>
+        <div class="flex-fill">
+            <strong>Course ini ada {{ $courseIncompleteTasks->count() }} tugas yang belum dikerjakan.</strong>
+            <div class="small">Kumpulkan jawabanmu sebelum deadline lewat tab My Task.</div>
+        </div>
+        <a href="{{ url('/my-learning?learning_tab=my-task') }}" class="btn btn-warning text-nowrap">
+            Lihat Tugas<i class="ti ti-arrow-right ms-1"></i>
+        </a>
+    </div>
+@endif
+
+@include('user.playlist.components.view-hero')
 
             @include('user.playlist.components.view-hero')
 

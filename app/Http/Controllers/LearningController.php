@@ -102,6 +102,7 @@ class LearningController extends Controller
             },
             'record'      => app(LearningRecordController::class)->partial($eligibilityService),
             'assessment'  => app(LearningAssessmentController::class)->partial(request()),
+            'my-task'     => app(\App\Http\Controllers\MyTaskController::class)->tabPartial(request()),
             'claim'       => view('user.learning.dashboard-partials.claim'),
             'certificate' => app(LearningRecordController::class)->certificate(),
             'monitoring'  => app(LearningMonitoringController::class)->partial(),

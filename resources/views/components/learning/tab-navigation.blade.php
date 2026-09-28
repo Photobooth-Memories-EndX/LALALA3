@@ -32,6 +32,15 @@
                 <span>Assessment</span>
             </button>
 
+            <button class="btn {{ $active === 'my-task' ? 'btn-primary' : 'btn-white' }} learning-tab-btn btn-learning-tab"
+                    data-target="#tab-my-task"
+                    type="button"
+                    role="tab"
+                    aria-selected="{{ $active === 'my-task' ? 'true' : 'false' }}">
+                <i class="ti ti-list-check"></i>
+                <span>My Task</span>
+            </button>
+
             {{-- <button class="btn btn-white learning-tab-btn" data-target="#tab-claim" type="button">
                 Klaim Learning Hour
             </button> --}}

@@ -1,6 +1,9 @@
+php
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TaskManageController;
+use App\Http\Controllers\MyTaskController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
@@ -184,6 +187,16 @@ Route::group(['prefix' => 'assesment', 'middleware' => 'auth'], function () {
     });
 });
 Route::get('/assessment-hub', [AssesmentUserController::class, 'index'])->middleware('auth')->name('assessment.index');
+
+/*
+|--------------------------------------------------------------------------
+| My Task (User)
+|--------------------------------------------------------------------------
+*/
+Route::group(['prefix' => 'my-task', 'middleware' => 'auth'], function () {
+    Route::get('/', [MyTaskController::class, 'index'])->name('my-task.index');
+    Route::post('/{task}/submit', [MyTaskController::class, 'submit'])->name('my-task.submit');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -450,6 +463,34 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
         Route::get('learning/download', [LearningManageController::class, 'download'])->name('manage.learning.download');
     });
 
+    // ── Task Management ─────────────────────────────────────────────
+    // Permission sendiri: task_management (terpisah dari learning_management)
+    Route::group(['middleware' => 'mpermission:task_management'], function () {
+        Route::prefix('task')->name('manage.task.')->group(function () {
+            // Langkah 1: pilih training plan (course)
+            Route::get('/', [TaskManageController::class, 'index'])->name('index');
+
+            // Langkah 2: daftar task milik satu training plan
+            Route::get('/plan/{trainingPlan}', [TaskManageController::class, 'planTasks'])->name('plan');
+
+            Route::get('/create', [TaskManageController::class, 'create'])->name('create');
+            Route::post('/', [TaskManageController::class, 'store'])->name('store');
+            Route::get('/ajax/training-plan-contents/{trainingPlan}', [TaskManageController::class, 'trainingPlanContents'])
+                ->name('training-plan-contents');
+            Route::get('/{task}/edit', [TaskManageController::class, 'edit'])->name('edit');
+            Route::put('/{task}', [TaskManageController::class, 'update'])->name('update');
+            Route::delete('/{task}', [TaskManageController::class, 'destroy'])->name('destroy');
+            Route::post('/{task}/publish', [TaskManageController::class, 'publish'])->name('publish');
+
+            // Review submission user
+            Route::get('/{task}/submissions', [TaskManageController::class, 'submissions'])->name('submissions');
+
+            // Koreksi submission user -> tandai selesai
+            Route::post('/{task}/submissions/{submission}/complete', [TaskManageController::class, 'completeSubmission'])
+                ->name('submissions.complete');
+        });
+    });
+
     Route::group(['middleware' => 'mpermission:learning_hours_management'], function () {
         Route::get('learning-hours', [LearningHoursLandingController::class, 'index'])->name('manage.learning-hours.index');
 
@@ -477,7 +518,7 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('/status/{executionId}', [PlaylistProgressDryRunController::class, 'status'])->name('status');
         });
     });
-});
+}); // <- INI YANG TADI KURANG! Penutup group prefix 'manage'
 
 /*
 |--------------------------------------------------------------------------

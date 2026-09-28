@@ -3,7 +3,7 @@
 @section('content')
 
 @php
-    $learningTabs = ['ongoing', 'record', 'assessment', 'certificate'];
+    $learningTabs = ['ongoing', 'record', 'assessment', 'my-task', 'certificate'];
     $initialLearningTab = in_array(request('learning_tab'), $learningTabs, true)
         ? request('learning_tab')
         : 'ongoing';
@@ -51,6 +51,13 @@
                  aria-hidden="{{ $initialLearningTab === 'assessment' ? 'false' : 'true' }}">
                 <x-shared.hero-learning-assessment />
             </div>
+
+            <div data-learning-hero="my-task"
+     class="{{ $initialLearningTab === 'my-task' ? '' : 'd-none' }}"
+     aria-hidden="{{ $initialLearningTab === 'my-task' ? 'false' : 'true' }}">
+    <x-shared.hero-learning-my-task />
+</div>
+
 
             <div data-learning-hero="certificate"
                  class="{{ $initialLearningTab === 'certificate' ? '' : 'd-none' }}"

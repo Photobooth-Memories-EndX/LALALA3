@@ -20,6 +20,16 @@
             'icon' => 'ti ti-school'
             ])
             @endif
+
+        @if(auth()->user()->canAccessManageModule('task_management'))
+        @include('main.manage.components.admin-menu-card', [
+            'title' => 'Task Management',
+            'description' => 'Manage course tasks and assignments, set deadlines, publish tasks, and review user submissions.',
+            'url' => url('manage/task'),
+            'button' => 'Manage Tasks',
+            'icon' => 'ti ti-clipboard-list'
+            ])
+            @endif
             
             @if(auth()->user()->canAccessManageModule('assessment_management'))
                 @include('main.manage.components.admin-menu-card', [

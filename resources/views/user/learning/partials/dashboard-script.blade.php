@@ -8,7 +8,8 @@
 
 <script>
     var _activeTab = null;
-    var _learningTabs = ['ongoing', 'record', 'assessment', 'certificate'];
+    // ★ UBAH: tambah 'my-task' ke daftar tab yang dikenal
+    var _learningTabs = ['ongoing', 'record', 'assessment', 'my-task', 'certificate'];
     var _ongoingMode = null;
 
     function learningTabFromUrl() {
@@ -77,6 +78,19 @@
         template.remove();
     }
 
+    // ★ TAMBAHAN: hero untuk tab My Task
+    function syncLearningMyTaskHero() {
+        var template = document.querySelector(
+            '#learning-tab-content template[data-learning-my-task-hero]'
+        );
+        var heroRegion = document.querySelector('[data-learning-hero="my-task"]');
+
+        if (!template || !heroRegion) return;
+
+        heroRegion.replaceChildren(template.content.cloneNode(true));
+        template.remove();
+    }
+
     function syncLearningCertificateHero() {
         var template = document.querySelector(
             '#learning-tab-content template[data-learning-certificate-hero]'
@@ -121,6 +135,11 @@
         if ($.fn.DataTable && $.fn.DataTable.isDataTable('#certificateTable')) {
             $('#certificateTable').DataTable().destroy();
         }
+        // ★ TAMBAHAN: destroy DataTable My Task saat pindah tab
+        // (sesuaikan '#myTaskTable' dengan id tabel milikmu, hapus jika tidak pakai DataTable)
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable('#myTaskTable')) {
+            $('#myTaskTable').DataTable().destroy();
+        }
 
         // Show skeleton while loading
         $('#learning-tab-content').html(skeletonHtml());
@@ -131,6 +150,8 @@
             if (tab !== 'ongoing' && key.indexOf('ongoing_') === 0) params.delete(key);
             if (tab !== 'record' && key.indexOf('record_') === 0) params.delete(key);
             if (tab !== 'assessment' && key.indexOf('assessment_') === 0) params.delete(key);
+            // ★ TAMBAHAN: cleanup filter khusus my_task saat pindah tab lain
+            if (tab !== 'my-task' && key.indexOf('my_task_') === 0) params.delete(key);
             if (tab !== 'certificate' && key.indexOf('certificate_') === 0) params.delete(key);
         });
         if (tab === 'ongoing' && _ongoingMode) {
@@ -153,10 +174,12 @@
             syncLearningOngoingHero();
             syncLearningAssessmentHero();
             syncLearningRecordHero();
+            syncLearningMyTaskHero();      // ★ TAMBAHAN
             syncLearningCertificateHero();
             initLearningAssessment();
             initLearningCertificate();
             initLearningRecord();
+            if (typeof initMyTask === 'function') initMyTask();  // ★ TAMBAHAN: aman walau fungsi belum ada
             initOngoingSearchAutocomplete();
         })
         .catch(function () {
@@ -278,13 +301,9 @@
     });
 
     // ── Quick dropdown filters Learning On Going (Type / Status / Year / Month) ──
-    // Terapkan pilihan via AJAX (tanpa reload halaman): perbarui query string di URL
-    // lalu muat ulang partial tab ongoing memakai endpoint yang sudah ada.
     function applyOngoingQuickFilter(param, value, isArray) {
         var params = new URLSearchParams(window.location.search);
 
-        // Hapus nilai lama param tsb (bentuk "param", "param[]" maupun "param[0]")
-        // dan reset pagination agar hasil filter mulai dari halaman pertama.
         Array.from(params.keys()).forEach(function (key) {
             if (key === param || key.indexOf(param + '[') === 0 || key === 'ongoing_page') {
                 params.delete(key);
@@ -298,12 +317,10 @@
         var qs = params.toString();
         history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
 
-        _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
+        _activeTab = null;
         loadLearningTab('ongoing');
     }
 
-    // Delegated: item dropdown ikut ter-render ulang setiap partial dimuat via AJAX.
-    // Klik item yang sudah aktif = batalkan pilihan (toggle, tanpa opsi "All" pada Type).
     $(document).on('click', '.ongoing-quick-item', function (e) {
         e.preventDefault();
         applyOngoingQuickFilter(
@@ -314,8 +331,6 @@
     });
 
     // ── Mode switch Learning On Going: Content | Playlist ────────────────────────
-    // Dua flow independen — pindah mode me-reset seluruh filter ongoing, lalu
-    // partial mode terpilih dimuat via AJAX (tanpa reload halaman).
     $(document).on('click', '.ongoing-mode-btn', function () {
         var mode   = String($(this).data('mode'));
         var params = new URLSearchParams(window.location.search);
@@ -335,7 +350,7 @@
         var qs = params.toString();
         history.pushState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
 
-        _activeTab = null; // paksa loadLearningTab memuat ulang partial ongoing
+        _activeTab = null;
         loadLearningTab('ongoing');
     });
 
@@ -359,8 +374,8 @@
 
         // Tab button click handler
         $('.learning-tab-btn').on('click', function () {
-            var target = $(this).data('target');          // e.g. "#tab-ongoing"
-            var tab    = target.replace('#tab-', '');     // → "ongoing"
+            var target = $(this).data('target');          // e.g. "#tab-my-task"
+            var tab    = target.replace('#tab-', '');     // → "my-task"
             if (_activeTab === tab) return;
 
             var params = new URLSearchParams();

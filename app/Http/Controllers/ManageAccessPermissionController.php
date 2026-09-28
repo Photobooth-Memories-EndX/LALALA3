@@ -30,6 +30,7 @@ class ManageAccessPermissionController extends Controller
         'page_management'            => 'Page Management',
         'event_documentation'        => 'Event Documentation',
         'certificate_setting'        => 'Certificate Setting',
+        'task_management'            => 'Task Management',
         'monitoring'                 => 'Monitoring',
     ];
 

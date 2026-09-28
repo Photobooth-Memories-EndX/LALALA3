@@ -42,11 +42,6 @@
 
                         <i class="ti ti-bell fs-2"></i>
 
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <span class="badge bg-red badge-notification">
-                                {{ $mylearningongoing }}
-                            </span>
-                        @endif
                     </a>
 
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -54,17 +49,10 @@
                             Notifications
                         </div>
 
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
-                                <i class="ti ti-book-2 me-2"></i>
-                                You have {{ $mylearningongoing }} ongoing learning
-                            </a>
-                        @else
                             <span class="dropdown-item text-muted">
                                 <i class="ti ti-bell-off me-2"></i>
                                 No notifications
                             </span>
-                        @endif
                     </div>
                 </div>
 
@@ -99,9 +87,6 @@
                         <span class="nav-link-icon"><i class="ti ti-book-2"></i></span>
                         <span class="nav-link-title">My Learning</span>
 
-                        @if ($mylearningongoing >= 1)
-                            <span class="badge bg-red ms-auto">{{ $mylearningongoing }}</span>
-                        @endif
                     </a>
                 </li>
 
@@ -198,7 +183,7 @@
                         <div id="header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000; background-color: #ffffff;">
                             <!-- 1. Scrollable List Container (Only items scroll here) -->
                             <div id="header-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
-                            
+
                             <!-- 2. Sticky/Fixed Footer Container (Always visible at bottom) -->
                             <div id="header-search-footer" class="border-top bg-light p-2 text-center" style="display: none; position: sticky; bottom: 0; z-index: 2005;"></div>
                         </div>
@@ -239,11 +224,6 @@
 
                         <i class="ti ti-bell fs-2"></i>
 
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <span class="badge bg-red badge-notification">
-                                {{ $mylearningongoing }}
-                            </span>
-                        @endif
                     </a>
 
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -251,17 +231,10 @@
                             Notifications
                         </div>
 
-                        @if (($mylearningongoing ?? 0) >= 1)
-                            <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
-                                <i class="ti ti-book-2 me-2"></i>
-                                You have {{ $mylearningongoing }} ongoing learning
-                            </a>
-                        @else
                             <span class="dropdown-item text-muted">
                                 <i class="ti ti-bell-off me-2"></i>
                                 No notifications
                             </span>
-                        @endif
                     </div>
                 </div>
 
@@ -415,7 +388,7 @@
                             <div id="mobile-header-search-results" class="dropdown-menu shadow-sm w-100 position-absolute mt-1 p-0 overflow-hidden" style="display: none; z-index: 2000; background-color: #ffffff;">
                                 <!-- 1. Scrollable List Container (Only items scroll here) -->
                                 <div id="mobile-header-autocomplete-list" class="list-group list-group-flush" style="max-height: 280px; overflow-y: auto; background-color: #ffffff;"></div>
-                                
+
                                 <!-- 2. Sticky/Fixed Footer Container (Always visible at bottom) -->
                                 <div id="mobile-header-search-footer" class="border-top bg-light p-2 text-center" style="display: none; position: sticky; bottom: 0; z-index: 2005;"></div>
                             </div>
@@ -433,11 +406,6 @@
 
                             <i class="ti ti-bell fs-2"></i>
 
-                            @if (($mylearningongoing ?? 0) >= 1)
-                                <span class="badge bg-red badge-notification">
-                                    {{ $mylearningongoing }}
-                                </span>
-                            @endif
                         </a>
 
                         <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -445,17 +413,10 @@
                                 Notifications
                             </div>
 
-                            @if (($mylearningongoing ?? 0) >= 1)
-                                <a href="{{ route('user.learning.dashboard') }}" class="dropdown-item">
-                                    <i class="ti ti-book-2 me-2"></i>
-                                    You have {{ $mylearningongoing }} ongoing learning
-                                </a>
-                            @else
                                 <span class="dropdown-item text-muted">
                                     <i class="ti ti-bell-off me-2"></i>
                                     No notifications
                                 </span>
-                            @endif
                         </div>
                     </div>
                 </div>

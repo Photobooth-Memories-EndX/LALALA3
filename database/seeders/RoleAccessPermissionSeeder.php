@@ -24,6 +24,7 @@ class RoleAccessPermissionSeeder extends Seeder
         'page_management',
         'event_documentation',
         'certificate_setting',
+        'task_management',
 
         // tambahan
         'monitoring',

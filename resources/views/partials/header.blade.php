@@ -1,6 +1,9 @@
-<div class="page">
+@php
+    $mylearningongoing = $mylearningongoing ?? 0;
+    $category = isset($category) && is_iterable($category) ? $category : collect();
+@endphp
 
-    {{-- SIDEBAR --}}
+{{-- SIDEBAR --}}
     <aside class="navbar navbar-vertical navbar-expand-lg">
         <div class="container-fluid">
 
@@ -154,10 +157,7 @@
         </div>
     </aside>
 
-    {{-- PAGE WRAPPER --}}
-    <div class="page-wrapper">
-
-        {{-- TOP NAVBAR --}}
+{{-- TOP NAVBAR --}}
         <header class="navbar navbar-expand-md d-print-none app-topbar">
             <div class="container-xl">
                 {{-- DESKTOP (>= 992px) --}}
@@ -269,15 +269,5 @@
                 </form>
             </div>
         </div>
-
-        {{-- CONTENT --}}
-        <div class="page-body">
-            <div class="container-xl">
-                @yield('content')
-            </div>
-        </div>
-
-    </div>
-</div>
 
 @include('partials.logout-modal')
