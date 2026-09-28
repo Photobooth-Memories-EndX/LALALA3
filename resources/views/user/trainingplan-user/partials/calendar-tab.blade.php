@@ -46,14 +46,13 @@
 
                 {{-- Legend --}}
                 <div class="d-flex flex-wrap align-items-center gap-3 mt-3 pt-2 text-muted small">
-                    <span class="d-inline-flex align-items-center gap-1">
-                        <span class="badge bg-primary rounded-circle p-1" style="width: 8px; height: 8px;"></span> Soft Skill
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0-5 rounded-pill fw-semibold">Open: X</span>
+                        <span>Open Registration</span>
                     </span>
-                    <span class="d-inline-flex align-items-center gap-1">
-                        <span class="badge bg-info rounded-circle p-1" style="width: 8px; height: 8px;"></span> Technical Skill
-                    </span>
-                    <span class="d-inline-flex align-items-center gap-1">
-                        <span class="badge bg-warning rounded-circle p-1" style="width: 8px; height: 8px;"></span> Compliance & Safety
+                    <span class="d-inline-flex align-items-center gap-2">
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0-5 rounded-pill fw-semibold">Close: Y</span>
+                        <span>Registration Closed</span>
                     </span>
                 </div>
             </div>
@@ -86,8 +85,6 @@
                     {{-- Item 1 --}}
                     <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
                          role="button"
-                         data-bs-toggle="modal" 
-                         data-bs-target="#eventDetailModal"
                          data-id="1"
                          data-title="Leadership Development Program"
                          data-category="Soft Skill"
@@ -113,8 +110,6 @@
                     {{-- Item 2 --}}
                     <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
                          role="button"
-                         data-bs-toggle="modal" 
-                         data-bs-target="#eventDetailModal"
                          data-id="2"
                          data-title="Excel Advanced for Data Analysis"
                          data-category="Technical Skill"

@@ -38,12 +38,13 @@
             <select id="filterTrainingStatus" class="form-select rounded-3">
                 <option value="">All Status</option>
                 <option value="open">Open Registration</option>
+                <option value="closed">Closed Registration</option>
                 <option value="registered">Registered</option>
             </select>
         </div>
         <div class="col-lg-2 col-md-2 d-flex justify-content-end">
             <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-medium align-self-center">
-                Total: 3 Trainings
+                Total: 4 Trainings
             </span>
         </div>
     </div>
@@ -198,6 +199,52 @@
                     <td class="text-end pe-4">
                         <button type="button" class="btn btn-owl-register rounded-pill px-4 py-1-5 fw-semibold d-inline-flex align-items-center gap-1">
                             <span>Register</span>
+                        </button>
+                    </td>
+                </tr>
+
+                {{-- Row 4 --}}
+                <tr class="training-table-row" data-id="4" data-category="Soft Skill" data-status="closed">
+                    <td class="text-center text-muted fw-semibold">4</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #f1f5f9; color: #64748b;">
+                                <i class="ti ti-message-dots fs-2"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark fs-3">Effective Business Communication</div>
+                                <div class="text-muted extra-small">
+                                    <i class="ti ti-user fs-2 me-1"></i>Instructor: <span class="fw-medium text-dark">Citra Lestari, M.Psi.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge rounded-pill px-3 py-1-5 fw-semibold" style="background-color: #e0f2fe; color: #0369a1;">
+                            Soft Skill
+                        </span>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-dark">29 Sep 2026</div>
+                        <div class="text-muted extra-small">13:00 - 17:00 WIB</div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-1 text-muted small">
+                            <i class="ti ti-map-pin text-primary fs-2"></i>
+                            <span>Meeting Room Bintang 1</span>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <span class="fw-semibold text-dark small">25 / 25 Seats (Full)</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 fw-semibold">
+                            Closed
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4 py-1-5 fw-semibold d-inline-flex align-items-center gap-1 opacity-75" disabled>
+                            <span>Closed</span>
                         </button>
                     </td>
                 </tr>
