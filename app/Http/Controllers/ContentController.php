@@ -391,9 +391,57 @@ class ContentController extends Controller
     }
     public function uploadfileajax(Request $request)
     {
+        $files = $request->file('file');
+        if (empty($files)) {
+            return response()->json([
+                'message' => 'No file uploaded.',
+                'error'   => 'No file uploaded.',
+            ], 422);
+        }
+
+        $fileList = is_array($files) ? $files : [$files];
+        $allowedVideoExts = ['mp4', 'avi', 'mov', 'mkv', 'webm'];
+        $maxVideoBytes = 500 * 1024 * 1024; // 500 MB
+        $maxPdfBytes   = 10 * 1024 * 1024;  // 10 MB
+
+        foreach ($fileList as $file) {
+            if (!$file->isValid()) {
+                $err = $file->getErrorMessage() ?: 'File upload failed.';
+                return response()->json([
+                    'message' => $err,
+                    'error'   => $err,
+                ], 422);
+            }
+
+            $ext = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: '');
+            $isPdf   = ($ext === 'pdf');
+            $isVideo = in_array($ext, $allowedVideoExts, true);
+
+            if (!$isPdf && !$isVideo) {
+                return response()->json([
+                    'message' => 'Only PDF, MP4, AVI, MOV, MKV, and WEBM files are allowed.',
+                    'error'   => 'Only PDF, MP4, AVI, MOV, MKV, and WEBM files are allowed.',
+                ], 422);
+            }
+
+            if ($isPdf && $file->getSize() > $maxPdfBytes) {
+                return response()->json([
+                    'message' => 'Maximum file size is 10 MB.',
+                    'error'   => 'Maximum file size is 10 MB.',
+                ], 422);
+            }
+
+            if ($isVideo && $file->getSize() > $maxVideoBytes) {
+                return response()->json([
+                    'message' => 'Maximum file size is 500 MB.',
+                    'error'   => 'Maximum file size is 500 MB.',
+                ], 422);
+            }
+        }
+
         $name = [];
         $original_name = [];
-        foreach ($request->file('file') as $key => $value) {
+        foreach ($fileList as $key => $value) {
             $image = str_replace(' ', '_', pathinfo($value->getClientOriginalName(), PATHINFO_FILENAME)) . '_' . Carbon::now()->format('YmdHi') . '.' . $value->getClientOriginalExtension();
             $destinationPath = 'storage/files/tmp/';
             $value->move($destinationPath, $image);
