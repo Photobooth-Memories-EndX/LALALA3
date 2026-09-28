@@ -28,16 +28,27 @@ class TaskManageController extends Controller
      */
     public function index(Request $request)
     {
-        $plans = TrainingPlan::withCount([
+        $baseQuery = TrainingPlan::withCount([
                 'tasks',
                 'tasks as published_tasks_count' => fn ($q) => $q->where('status', 'published'),
                 'tasks as draft_tasks_count'     => fn ($q) => $q->where('status', 'draft'),
             ])
             ->when($request->search, fn ($q, $s) => $q->where('title', 'like', "%{$s}%"))
-            ->orderBy('title')
-            ->get();
+            ->orderBy('title');
+            // TAMBAHKAN 2 baris ini:
+$plans = (clone $baseQuery)->paginate(10)->withQueryString();
+$stats = (clone $baseQuery)->get();
 
-        return view('manage.task.plans', compact('plans'));
+
+        // Jumlah submission pending per course (untuk kolom & stat "Pending Review").
+        $pendingByPlan = TaskSubmission::selectRaw('tasks.training_plan_id as plan_id, COUNT(*) as cnt')
+            ->join('tasks', 'tasks.id', '=', 'task_submissions.task_id')
+            ->where('task_submissions.status', 'pending')
+            ->groupBy('tasks.training_plan_id')
+            ->pluck('cnt', 'plan_id');
+
+        return view('manage.task.plans', compact('plans', 'stats', 'pendingByPlan'));
+
     }
 
     /**
@@ -80,7 +91,6 @@ class TaskManageController extends Controller
     {
         $validated = $request->validate([
             'training_plan_id' => ['required', 'integer', 'exists:trainingplan,id'],
-            'content_id'       => ['nullable', 'integer', 'exists:content,id'],
             'title'            => ['required', 'string', 'max:255'],
             'description'      => ['nullable', 'string'],
             'type'             => ['required', 'in:assignment'], // quiz dicakup asesmen
@@ -118,7 +128,6 @@ class TaskManageController extends Controller
     {
         $validated = $request->validate([
             'training_plan_id' => ['required', 'integer', 'exists:trainingplan,id'],
-            'content_id'       => ['nullable', 'integer', 'exists:content,id'],
             'title'            => ['required', 'string', 'max:255'],
             'description'      => ['nullable', 'string'],
             'type'             => ['required', 'in:assignment'],

@@ -64,9 +64,6 @@
                                 <tr>
                                     <td>
                                         <div class="fw-bold">{{ $task->title }}</div>
-                                        <div class="text-muted small">
-                                            {{ $task->content?->title ?? 'Langsung ke course' }}
-                                        </div>
                                     </td>
                                     <td>{{ $task->deadline?->format('d M Y H:i') ?? '-' }}</td>
                                     <td>
