@@ -108,7 +108,8 @@ class LearningRecordController extends Controller
     {
         $search = mb_strtolower(trim((string) (request('record_search') ?? request('search') ?? request('q') ?? '')));
         $type = (string) (request('record_filter_type') ?? request('type') ?? 'all');
-        $classification = (string) (request('record_filter_classification') ?? request('classification') ?? 'all');
+        $rawClassification = (string) (request('record_filter_classification') ?? request('classification') ?? 'all');
+        $classification = $rawClassification !== 'all' ? trim(html_entity_decode($rawClassification, ENT_QUOTES | ENT_HTML5, 'UTF-8')) : 'all';
         $playlist = (string) (request('record_filter_playlist') ?? request('playlist') ?? 'all');
         $year = (string) (request('record_filter_year') ?? request('year') ?? 'all');
         $rawMonth = (string) (request('record_filter_month') ?? request('month') ?? 'all');
@@ -157,7 +158,20 @@ class LearningRecordController extends Controller
             }
             $finish = ! empty($row['finish_date']) ? Carbon::parse($row['finish_date']) : null;
             $progress = (int) ($row['progress'] ?? 0);
-            $rowStatus = $progress >= 100 ? 'completed' : ($progress <= 0 ? 'not_started' : 'ongoing');
+            $hasScore = ($row['assessment_required'] ?? false) && ! is_null($row['score'] ?? null);
+            $scorePassed = $hasScore && ($row['score'] >= ($row['min_score'] ?? 0));
+            $rowStatuses = [];
+            if ($progress >= 100) {
+                $rowStatuses[] = 'completed';
+            }
+            if ($hasScore) {
+                $rowStatuses[] = $scorePassed ? 'passed' : 'failed';
+            }
+            if ($progress <= 0) {
+                $rowStatuses[] = 'not_started';
+            } elseif ($progress < 100) {
+                $rowStatuses[] = 'ongoing';
+            }
             $subtitle = mb_strtolower((string) ($row['subtitle'] ?? ''));
             $rowProgram = str_contains($subtitle, 'mandatory')
                 ? 'mandatory'
@@ -172,7 +186,7 @@ class LearningRecordController extends Controller
             if ($modalTypes !== [] && ! collect($modalTypes)->contains(fn ($value) => $this->recordTypeMatches($rowType, $rowKind, (string) $value))) {
                 return false;
             }
-            if ($classification !== 'all' && (string) ($row['classification'] ?? '') !== $classification) {
+            if ($classification !== 'all' && strcasecmp((string) ($row['classification'] ?? ''), $classification) !== 0) {
                 return false;
             }
             if ($playlist !== 'all' && ! in_array($playlist, array_map('strval', $row['playlist_ids'] ?? []), true)) {
@@ -196,7 +210,7 @@ class LearningRecordController extends Controller
             if ($program !== 'all' && $rowProgram !== $program) {
                 return false;
             }
-            if ($learningStatuses !== [] && ! in_array($rowStatus, $learningStatuses, true)) {
+            if ($learningStatuses !== [] && empty(array_intersect($learningStatuses, $rowStatuses))) {
                 return false;
             }
             if ($learningHour !== 'all' && ! $this->recordRangeMatches((float) ($row['learning_hour_value'] ?? -1), $learningHour)) {
@@ -220,6 +234,7 @@ class LearningRecordController extends Controller
 
         $sort = (string) request('record_sort', '');
         $direction = (string) request('record_sort_direction', 'asc');
+        $activitySort = (string) (request('record_filter_activity_sort') ?? request('activitySort') ?? 'all');
         $sortKeys = [
             'title'          => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
             'category'       => fn (array $row) => mb_strtolower((string) ($row['category'] ?? '')),
@@ -236,6 +251,14 @@ class LearningRecordController extends Controller
             $filtered = $direction === 'desc'
                 ? $filtered->sortByDesc($sortKeys[$sort])
                 : $filtered->sortBy($sortKeys[$sort]);
+        } elseif ($activitySort === 'oldest') {
+            $filtered = $filtered->sortBy(fn (array $row) => (string) ($row['finish_date'] ?? ''));
+        } elseif ($activitySort === 'newest') {
+            $filtered = $filtered->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''));
+        } elseif ($activitySort === 'ascending') {
+            $filtered = $filtered->sortBy(fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')));
+        } elseif ($activitySort === 'descending') {
+            $filtered = $filtered->sortByDesc(fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')));
         }
 
         return $filtered->values();
@@ -594,6 +617,7 @@ class LearningRecordController extends Controller
                 'cert_action_url' => route('certificate.generate', $cu->id),
                 'cert_is_form'    => false,
                 'playlist_items'  => [],
+                'item_id'         => 'content_' . $content->id,
                 'access_status'   => $accessStatus,
                 'can_open'        => $canOpen,
                 'modal_message'   => $modalMessage,
@@ -753,6 +777,7 @@ class LearningRecordController extends Controller
                 'subtitle'        => (int) ($plan->finished_items ?? 0) . ' / ' . (int) ($plan->total_items ?? count($playlistItems)) . ' content selesai',
                 'playlist_names'  => [],
                 'playlist_ids'    => [$plan->id],
+                'item_id'         => 'playlist_' . $plan->id,
                 'type'            => 'Playlist',
                 'classification'  => '-',
                 'duration'        => $this->formatDurationSeconds($durationSeconds),

@@ -12,7 +12,7 @@
             <div class="col">
                 <h3 class="card-title mb-1">Assessment List</h3>
                 <div class="text-muted small">
-                    Pilih assessment yang tersedia dan lihat status pengerjaan Anda.
+                    Select an available assessment and view your completion status.
                 </div>
             </div>
 

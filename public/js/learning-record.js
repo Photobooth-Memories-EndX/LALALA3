@@ -141,28 +141,40 @@ function initLearningRecord() {
         var urlType = params.get('record_filter_type') || params.get('type');
         if (urlType) {
             $('#recordFilterType, #hidden_record_filter_type').val(urlType);
-            var $typeItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_type"][data-value="' + urlType + '"]');
+            var $typeItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_type"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v.toLowerCase() === urlType.toLowerCase();
+            });
             if ($typeItem.length) updateQuickDropdown($typeItem);
         }
 
         var urlClassification = params.get('record_filter_classification') || params.get('classification');
         if (urlClassification) {
             $('#recordFilterClassification, #hidden_record_filter_classification').val(urlClassification);
-            var $classItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_classification"][data-value="' + urlClassification + '"]');
+            var $classItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_classification"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v.toLowerCase() === urlClassification.toLowerCase();
+            });
             if ($classItem.length) updateQuickDropdown($classItem);
         }
 
         var urlYear = params.get('record_filter_year') || params.get('year') || params.get('record_filter_modal_year');
         if (urlYear) {
             $('#recordFilterYear, #hidden_record_filter_year').val(urlYear);
-            var $yearItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_year"][data-value="' + urlYear + '"]');
+            var $yearItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_year"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v === String(urlYear);
+            });
             if ($yearItem.length) updateQuickDropdown($yearItem);
         }
 
         var urlMonth = params.get('record_filter_month') || params.get('month');
         if (urlMonth) {
             $('#recordFilterMonth, #hidden_record_filter_month').val(urlMonth);
-            var $monthItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_month"][data-value="' + urlMonth + '"]');
+            var $monthItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_month"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v === String(urlMonth);
+            });
             if ($monthItem.length) updateQuickDropdown($monthItem);
         }
 
@@ -214,6 +226,12 @@ function initLearningRecord() {
             });
         });
 
+        var activeYear = (state.modalYear && state.modalYear !== 'all') ? state.modalYear : (state.year && state.year !== 'all' ? state.year : null);
+        if (activeYear) {
+            params.set('record_filter_year', activeYear);
+            params.set('record_filter_modal_year', activeYear);
+        }
+
         if (quickFilter && quickFilter !== 'all') {
             params.set('record_quick', quickFilter);
         }
@@ -258,6 +276,10 @@ function initLearningRecord() {
         if (quickFilter && quickFilter !== 'all') {
             params.set('quickFilter', quickFilter);
             params.set('record_quick', quickFilter);
+        }
+        if (sortKey && (sortDir === 'asc' || sortDir === 'desc')) {
+            params.set('record_sort', sortKey);
+            params.set('record_sort_direction', sortDir);
         }
         var baseUrl = $('#recordDownloadExcel').data('export-url') || '/my-learning/learning-record/export';
         $('#recordDownloadExcel').attr('href', baseUrl + (params.toString() ? '?' + params.toString() : ''));
@@ -406,7 +428,13 @@ function initLearningRecord() {
         if (f.duration !== 'all' && !rangeMatches(durationSeconds, f.duration)) return false;
         if (f.learningHour !== 'all' && !rangeMatches(learningHour, f.learningHour)) return false;
         if (f.program !== 'all' && String(d.learningProgram) !== f.program) return false;
-        if (f.learningStatus.length && f.learningStatus.indexOf(String(d.learningStatus)) === -1) return false;
+        if (f.learningStatus.length) {
+            var rowStatuses = String(d.learningStatus || '').toLowerCase().split(/\s+/);
+            var matchesStatus = f.learningStatus.some(function (st) {
+                return rowStatuses.indexOf(String(st).toLowerCase()) !== -1;
+            });
+            if (!matchesStatus) return false;
+        }
         if (!anyRangeMatches(progress, f.progressRanges)) return false;
         if (f.completion === 'not_started' && progress !== 0) return false;
         if (f.completion === 'in_progress' && !(progress > 0 && progress <= 75)) return false;
@@ -706,8 +734,8 @@ function initLearningRecord() {
     }
 
     function updateQuickDropdown($item) {
-        var value = String($item.data('value') || 'all');
-        var label = quickDropdownLabel(String($item.data('param') || ''), value, $.trim($item.text()));
+        var value = String($item.attr('data-value') !== undefined ? $item.attr('data-value') : ($item.data('value') || 'all'));
+        var label = quickDropdownLabel(String($item.attr('data-param') !== undefined ? $item.attr('data-param') : ($item.data('param') || '')), value, $.trim($item.text()));
         var $dropdown = $item.closest('.dropdown');
         var $button = $dropdown.find('.dropdown-toggle');
 
@@ -751,6 +779,26 @@ function initLearningRecord() {
         }
     }
 
+    function syncModalToQuickDropdown(param, value) {
+        if (param === 'record_filter_year') {
+            $('#hidden_record_filter_year, #recordFilterYear').val(value);
+            var $yearItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_year"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v === String(value);
+            });
+            if ($yearItem.length) updateQuickDropdown($yearItem);
+        }
+
+        if (param === 'record_filter_month') {
+            $('#hidden_record_filter_month, #recordFilterMonth').val(value);
+            var $monthItem = $('.learning-quick-dropdowns .record-quick-item[data-param="record_filter_month"]').filter(function () {
+                var v = String($(this).attr('data-value') !== undefined ? $(this).attr('data-value') : ($(this).data('value') || ''));
+                return v === String(value);
+            });
+            if ($monthItem.length) updateQuickDropdown($monthItem);
+        }
+    }
+
     function resetRecordFilters() {
         $('#recordSearch').val('');
         $('#recordFilterBar select[data-record-filter]').val('all');
@@ -782,7 +830,7 @@ function initLearningRecord() {
 
         setQuickPill(value);
         if (value === 'playlist') {
-            $('#recordFilterType, #recordFilterClassification').val('all');
+            $('#recordFilterType, #recordFilterClassification, #hidden_record_filter_type, #hidden_record_filter_classification').val('all');
         } else if (value === 'content') {
             $('#recordFilterPlaylist').val('all');
         }
@@ -800,8 +848,8 @@ function initLearningRecord() {
         e.preventDefault();
 
         var $item = $(this);
-        var param = String($item.data('param') || '');
-        var value = String($item.data('value') || 'all');
+        var param = String($item.attr('data-param') !== undefined ? $item.attr('data-param') : ($item.data('param') || ''));
+        var value = String($item.attr('data-value') !== undefined ? $item.attr('data-value') : ($item.data('value') || 'all'));
 
         $('#hidden_' + param).val(value);
         updateQuickDropdown($item);
@@ -831,6 +879,14 @@ function initLearningRecord() {
             } else if ($(this).val() !== 'all' && this.checked) {
                 $('#recordMoreFilters input[name="recordModalType[]"][value="all"]').prop('checked', false);
             }
+        }
+        if ($(this).attr('name') === 'recordModalYear') {
+            syncModalToQuickDropdown('record_filter_year', $(this).val());
+        }
+        if ($(this).attr('name') === 'recordModalMonth[]') {
+            var checkedMonths = checkedValues('recordModalMonth[]');
+            var targetMonth = checkedMonths.length === 1 ? checkedMonths[0] : 'all';
+            syncModalToQuickDropdown('record_filter_month', targetMonth);
         }
         currentPage = 1;
         updateFilterBadge();

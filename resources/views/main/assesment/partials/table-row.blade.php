@@ -74,8 +74,8 @@
             </a>
         </div>
 
-        <div class="mt-1 d-flex align-items-center flex-wrap">
-            <span class="text-muted small mr-1">
+        <div class="mt-1 d-flex align-items-center flex-wrap assessment-unique-code-wrapper">
+            <span class="text-muted small mr-1 assessment-unique-code-label">
                 Unique Code:
             </span>
 
@@ -85,7 +85,7 @@
 
             <button
                 type="button"
-                class="btn btn-sm btn-light btn-copy-assessment"
+                class="btn btn-sm btn-light btn-copy-assessment assessment-unique-code-btn"
                 data-copy-text="{{ $list->unique_code }}"
                 data-copy-label="Assessment Code"
                 data-toggle="tooltip"

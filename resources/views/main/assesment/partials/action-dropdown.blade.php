@@ -61,6 +61,16 @@
 
         <div class="dropdown-divider"></div>
 
+        <a href="{{ route('assesment.preview', $list->slug) }}"
+            class="dropdown-item"
+            target="_blank">
+
+            <i class="fas fa-eye text-indigo"></i>
+            <span>Preview Assessment</span>
+        </a>
+
+        <div class="dropdown-divider"></div>
+
         <a href="{{ route('assesment.newlink', $list->slug) }}"
             class="dropdown-item">
 

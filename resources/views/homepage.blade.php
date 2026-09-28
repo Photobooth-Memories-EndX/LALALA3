@@ -10,7 +10,7 @@
 @section('content')
 
     @php
-        $content_video = $content->filter(fn($c) => in_array($c->type, ['YouTube', 'Video']))->take(6);
+        $content_video = $content->filter(fn($c) => $c->type === 'Video')->take(6);
         $content_pdf   = $content->filter(fn($c) => $c->type === 'Document')->take(6);
     @endphp
 
@@ -40,9 +40,9 @@
                         @include('components.Home.top-video')
                     </div>
 
-                    {{-- Training Modules: Video / Document / Playlist tabs --}}
+                    {{-- Training Modules: Video / Document / Playlist / MOOC tabs --}}
                     <div class="home-training-modules-wrapper">
-                        @include('components.Home.training-modules')
+                        @include('components.Home.training-modules', ['userMoocProgress' => $userMoocProgress ?? collect()])
                     </div>
 
                 </div>

@@ -79,6 +79,11 @@
         if (totalEl) totalEl.textContent = getTotalQuestionsCount();
     }
 
+    function showLeaveModal() {
+        updateLeaveModalText();
+        openAssessmentModal('leaveAssessmentModal');
+    }
+
     function checkFinishButtonState() {
         const answeredCount = getAnsweredQuestionsCount();
         const totalCount = getTotalQuestionsCount();
@@ -411,49 +416,58 @@
             $(this).prop('disabled', true).text('Submitting...');
             submitAssessmentForm();
         });
-    });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        updateLeaveModalText();
-        checkFinishButtonState();
+        // =========================================================================
+        // Whitelist Scoped Selector for Leave Assessment Modal
+        // =========================================================================
+        var leaveTriggerSelector = [
+            '.owl-sidebar-brand a[href]',
+            '.owl-sidebar-nav a[href]',
+            '.app-topbar .dropdown-menu a.dropdown-item[href]',
+            '.owl-assessment-mobile-actions .dropdown-menu a.dropdown-item[href]',
+            '.owl-mobile-user-row a[href]',
+            '[data-assessment-leave]',
+            '[data-leave-assessment]'
+        ].join(', ');
 
-        function showLeaveModal() {
-            updateLeaveModalText();
-            openAssessmentModal('leaveAssessmentModal');
-        }
+        $(document).on('click', leaveTriggerSelector, function (e) {
+            var anchor = this.closest ? this.closest('a[href]') : this;
+            if (!anchor) return;
 
-        // Cegat tombol Back bawaan browser (Chrome Back Button)
+            var rawHref = anchor.getAttribute('href');
+            if (!rawHref || rawHref === '#' || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) {
+                return;
+            }
+
+            // Abaikan jika klik di dalam modal, tombol logout, atau navigasi wizard
+            if (anchor.closest('.modal') || anchor.closest('.assessment-wizard') || anchor.closest('.sw-btn-group')) {
+                return;
+            }
+            if (anchor.closest('[data-logout-trigger="true"], .owl-sidebar-logout-btn, form[action*="logout"], a[href*="logout"]')) {
+                return;
+            }
+
+            var currentPath = window.location.pathname;
+            var currentHref = window.location.href.split('#')[0].split('?')[0];
+            var targetHrefClean = anchor.href ? anchor.href.split('#')[0].split('?')[0] : '';
+
+            // Cegat navigasi hanya jika benar-benar mengarah ke luar lembar assessment
+            if (rawHref !== currentPath && targetHrefClean !== currentHref) {
+                e.preventDefault();
+                e.stopPropagation();
+                showLeaveModal();
+            }
+        });
+
+        // =========================================================================
+        // Browser Back Button Protection (Popstate)
+        // =========================================================================
         history.pushState(null, null, location.href);
 
         window.addEventListener('popstate', function (event) {
             history.pushState(null, null, location.href);
             showLeaveModal();
         });
-
-        // Tangkap semua klik tautan internal aplikasi (termasuk Sidebar & Logo)
-        document.addEventListener('click', function(e) {
-            var anchor = e.target.closest('a[href]');
-            if (!anchor) return;
-
-            // Abaikan jika klik di dalam modal, tombol logout, atau navigasi wizard
-            if (anchor.closest('.modal') || anchor.closest('.assessment-wizard') || anchor.closest('.sw-btn-group')) return;
-            if (anchor.closest('[data-logout-trigger="true"], .owl-sidebar-logout-btn, form[action*="logout"], a[href*="logout"]')) return;
-
-            var rawHref = anchor.getAttribute('href');
-            if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
-
-            var currentPath = window.location.pathname;
-            var currentHref = window.location.href.split('#')[0];
-            var targetHref = anchor.href;
-            var targetHrefClean = targetHref ? targetHref.split('#')[0] : '';
-
-            // Jika URL mengarah keluar dari lembar ujian saat ini
-            if (rawHref !== currentPath && targetHrefClean !== currentHref) {
-                e.preventDefault();
-                e.stopPropagation();
-                showLeaveModal();
-            }
-        }, true); // Gunakan parameter true (capturing phase) agar diproses lebih dulu
     });
 </script>
 

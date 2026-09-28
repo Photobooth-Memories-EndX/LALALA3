@@ -234,10 +234,21 @@
             return buildCertificateParams(collectCertificateState());
         }
 
+        function updateCertificateExportUrl() {
+            var params = buildCertificateParams(certificateFilterState);
+            params.delete('certificate_page');
+            params.set('certificate_export', '1');
+            var baseUrl = @json(route('user.learning.dashboard.partial', ['tab' => 'certificate']));
+            var fullUrl = baseUrl + '?' + params.toString();
+            $('#certificateDownloadExcel').attr('data-export-url', fullUrl);
+            return fullUrl;
+        }
+
         function applyCertificateFilters() {
             clearTimeout(window.learningCertificateSearchTimer);
             collectCertificateState();
             updateAdvancedCount();
+            updateCertificateExportUrl();
             reloadCertificate(buildCertificateParams(certificateFilterState));
         }
 
@@ -406,10 +417,12 @@
         $('#certificateSort').off('.learningCertificate').on('change.learningCertificate', updateAdvancedCount);
         $('#certificateApplyFilter, #certificateModalApplyFilter, .certificate-apply-filter').off('.learningCertificate').on('click.learningCertificate', applyCertificateFilters);
 
-        $('#certificateMoreFiltersModal').off('show.bs.modal.learningCertificate').on('show.bs.modal.learningCertificate', function () {
-            restoreCertificateInputs();
-            updateAdvancedCount();
-        });
+        $('#certificateMoreFiltersModal').off('show.bs.modal.learningCertificate hidden.bs.modal.learningCertificate')
+            .on('show.bs.modal.learningCertificate hidden.bs.modal.learningCertificate', function () {
+                restoreCertificateInputs();
+                updateAdvancedCount();
+                updateCertificateExportUrl();
+            });
 
         $('#certificateModalReset, #certificateResetFilter').off('.learningCertificate').on('click.learningCertificate', function () {
             clearTimeout(window.learningCertificateSearchTimer);
@@ -422,15 +435,13 @@
             replaceCertificateState({});
             restoreCertificateInputs();
             updateAdvancedCount();
+            updateCertificateExportUrl();
             reloadCertificate(cleanCertificateParams(certificateParams()));
         });
 
         $('#certificateDownloadExcel').off('.learningCertificate').on('click.learningCertificate', function () {
-            var params = collectCertificateFilters();
-            params.delete('certificate_page');
-            params.set('certificate_export', '1');
-            var url = @json(route('user.learning.dashboard.partial', ['tab' => 'certificate']));
-            window.location.href = url + '?' + params.toString();
+            var exportUrl = updateCertificateExportUrl();
+            window.location.href = exportUrl;
         });
 
         $('.certificate-sort-heading').off('.learningCertificate').on('click.learningCertificate', function () {
@@ -567,5 +578,6 @@
         readCertificateStateFromUrl();
         restoreCertificateInputs();
         updateAdvancedCount();
+        updateCertificateExportUrl();
     }
 </script>

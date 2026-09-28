@@ -111,7 +111,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-6">
+                            {{-- <div class="col-sm-6">
                                 <div class="p-3 rounded-4 bg-yellow-lt">
                                     <div class="text-muted small">AFK Duration</div>
                                     <div class="fw-bold">
@@ -122,7 +122,7 @@
                                         {{ $afkFormatted }}
                                     </div>
                                 </div>
-                            </div>
+                            </div> --}}
 
                             <div class="col-12">
                                 <div class="p-3 rounded-4 {{ $isPassed ? 'bg-green-lt' : 'bg-red-lt' }}">
@@ -189,6 +189,17 @@
 
     [data-bs-theme=dark] .apexcharts-text {
         fill: #f6f8fb !important;
+    }
+
+    /* AFK Duration Card & Warning Badges Dark Mode */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .bg-yellow-lt {
+        background-color: rgba(245, 159, 0, 0.12) !important;
+        border: 1px solid rgba(245, 159, 0, 0.28) !important;
+        color: #fbbf24 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.theme-dark, body.dark-mode, body.dark) .bg-yellow-lt .fw-bold {
+        color: #fef08a !important;
     }
 </style>
 @endsection

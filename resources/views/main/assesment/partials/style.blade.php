@@ -255,6 +255,60 @@
         font-size: 11px;
     }
 
+    /* Dark Mode: Unique Code Badge & Copy Button */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-label {
+        color: #8fa3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-code {
+        background-color: var(--tblr-bg-surface-secondary, #1e293b) !important;
+        background: var(--tblr-bg-surface-secondary, #1e293b) !important;
+        border: 1px solid var(--tblr-border-color, #334155) !important;
+        color: #e2e8f0 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-btn,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-wrapper .btn-copy-assessment {
+        background-color: var(--tblr-bg-surface-secondary, #223247) !important;
+        background: var(--tblr-bg-surface-secondary, #223247) !important;
+        border: 1px solid var(--tblr-border-color, #33465f) !important;
+        color: #94a3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-btn i,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-wrapper .btn-copy-assessment i {
+        color: #94a3b8 !important;
+        transition: color 0.15s ease;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-btn:hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-btn:focus,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-wrapper .btn-copy-assessment:hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-wrapper .btn-copy-assessment:focus {
+        background-color: #2c3e55 !important;
+        background: #2c3e55 !important;
+        border-color: #3b82f6 !important;
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-btn:hover i,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-btn:focus i,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-wrapper .btn-copy-assessment:hover i,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .assessment-unique-code-wrapper .btn-copy-assessment:focus i {
+        color: #38bdf8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .btn-copy-assessment.copy-success {
+        background-color: #2fb344 !important;
+        background: #2fb344 !important;
+        border-color: #2fb344 !important;
+        color: #ffffff !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .btn-copy-assessment.copy-success i {
+        color: #ffffff !important;
+    }
+
     /* ==========================
        PERIOD DATE & TIME
     ========================== */
@@ -431,6 +485,107 @@
 
     .dropdown-delete:hover {
         background: #fef2f2 !important;
+    }
+
+    /* =========================================================================
+       DARK MODE: ASSESSMENT ACTION DROPDOWN (.owl-dropdown-menu)
+       ========================================================================= */
+
+    /* Action Trigger Button */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-btn {
+        background-color: #223247 !important;
+        border-color: #33465f !important;
+        color: #dce6f1 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-btn:hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-btn:focus,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-btn[aria-expanded="true"] {
+        background-color: #2c3e55 !important;
+        border-color: #3b82f6 !important;
+        color: #ffffff !important;
+    }
+
+    /* Action Popup Container */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu {
+        background-color: var(--tblr-bg-surface, #182433) !important;
+        background: var(--tblr-bg-surface, #182433) !important;
+        border: 1px solid var(--tblr-border-color, #25384d) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    /* Action Popup Header */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-header {
+        color: #94a3b8 !important;
+        font-weight: 700;
+        letter-spacing: .04em;
+    }
+
+    /* Action Popup Divider */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-divider {
+        border-top: 1px solid var(--tblr-border-color, #25384d) !important;
+        margin: 4px 0;
+    }
+
+    /* Action Items - Base State (Overrides global white background) */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item {
+        background-color: transparent !important;
+        background: transparent !important;
+        color: #e2e8f0 !important;
+        border: 0 !important;
+        width: 100% !important;
+        text-align: left !important;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item span {
+        color: inherit !important;
+    }
+
+    /* Semantic Icon Colors - Preserve & Enhance */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item .text-primary {
+        color: #60a5fa !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item .text-warning {
+        color: #fbbf24 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item .text-info {
+        color: #38bdf8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item .text-success {
+        color: #4ade80 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item .text-secondary {
+        color: #94a3b8 !important;
+    }
+
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item .text-danger {
+        color: #f87171 !important;
+    }
+
+    /* Action Items - Hover & Focus (Excluding Delete) */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item:not(.dropdown-delete):hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-item:not(.dropdown-delete):focus {
+        background-color: #223247 !important;
+        background: #223247 !important;
+        color: #ffffff !important;
+    }
+
+    /* Delete Assessment Action - Base State */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-delete {
+        color: #f87171 !important;
+    }
+
+    /* Delete Assessment Action - Hover & Focus */
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-delete:hover,
+    :is([data-bs-theme="dark"], [data-theme="dark"], body.dark-mode, body.theme-dark, body.dark) .owl-dropdown-menu .dropdown-delete:focus {
+        background-color: rgba(239, 68, 68, 0.16) !important;
+        background: rgba(239, 68, 68, 0.16) !important;
+        color: #fca5a5 !important;
     }
 
     /* ==========================

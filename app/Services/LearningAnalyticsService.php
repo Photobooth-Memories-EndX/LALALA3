@@ -4,9 +4,13 @@ namespace App\Services;
 
 use App\Models\AssesmentResult;
 use App\Models\Certificate;
+use App\Models\Content;
 use App\Models\ContentUser;
+use App\Services\Learning\CompletedPlaylistService;
 use App\Services\Learning\LearningHourService;
 use App\Services\Learning\LearningRecordLearningHourService;
+use App\Services\Learning\OngoingContentService;
+use App\Services\Learning\OngoingPlaylistService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -35,12 +39,30 @@ class LearningAnalyticsService
     public function __construct(
         private readonly LearningHourService $learningHourService,
         private readonly ?LearningRecordLearningHourService $recordLearningHourService = null,
+        private readonly ?CompletedPlaylistService $completedPlaylistService = null,
+        private readonly ?OngoingContentService $ongoingContentService = null,
+        private readonly ?OngoingPlaylistService $ongoingPlaylistService = null,
     ) {
     }
 
     private function recordLhService(): LearningRecordLearningHourService
     {
         return $this->recordLearningHourService ?? app(LearningRecordLearningHourService::class);
+    }
+
+    private function completedPlaylistService(): CompletedPlaylistService
+    {
+        return $this->completedPlaylistService ?? app(CompletedPlaylistService::class);
+    }
+
+    private function ongoingContentService(): OngoingContentService
+    {
+        return $this->ongoingContentService ?? app(OngoingContentService::class);
+    }
+
+    private function ongoingPlaylistService(): OngoingPlaylistService
+    {
+        return $this->ongoingPlaylistService ?? app(OngoingPlaylistService::class);
     }
 
     /*
@@ -532,19 +554,63 @@ class LearningAnalyticsService
     }
 
     /**
-     * Total ContentUser ongoing yang masih tersedia pada listing Learning On Going.
+     * Total Completed Learning — canonical dari My Learning Record.
+     * Standalone completed content (finish = 1) + completed playlist (forLearningRecord).
+     */
+    public function completedLearningCount(int $userId): int
+    {
+        $completedContents = ContentUser::where('user_id', $userId)
+            ->where('finish', '1')
+            ->whereHas('content', fn ($q) => $q->withTrashed())
+            ->count();
+
+        $completedPlaylists = $this->completedPlaylistService()
+            ->forLearningRecord($userId)
+            ->count();
+
+        return $completedContents + $completedPlaylists;
+    }
+
+    /**
+     * Total Ongoing Content — canonical dari My Learning Ongoing (Mode Content).
+     * Rule: progress >= 5%, finish = 0, standalone content (non-playlist), non-MOOC.
+     */
+    public function ongoingContentCount(int $userId): int
+    {
+        return $this->ongoingContentService()->ongoingContentCount($userId);
+    }
+
+    /**
+     * Total Ongoing Learning — canonical dari My Learning Ongoing.
+     * Ongoing content (progress >= 5%, non-playlist, non-mooc) + ongoing playlist + ongoing mooc.
      */
     public function ongoingLearningCount(int $userId): int
     {
-        return ContentUser::query()
-            ->where('user_id', $userId)
-            ->where('finish', '0')
-            ->withAvailableContent()
-            ->count();
+        $contentCount = $this->ongoingContentCount($userId);
+
+        $playlistFilters = [
+            'search' => '', 'status' => 'all', 'year' => 'all', 'activity_sort' => 'newest_activity',
+            'progress_sort' => 'all', 'quick_status' => 'all', 'months' => [], 'progress_buckets' => []
+        ];
+        $userPlaylists = $this->ongoingPlaylistService()->userPlaylists($userId);
+        $playlistCount = $this->ongoingPlaylistService()->cards($userPlaylists, $playlistFilters)->count();
+
+        $moocCount = $this->ongoingContentService()->moocCards($userId, \App\Services\Learning\OngoingContentService::DEFAULT_FILTERS)->count();
+
+        return $contentCount + $playlistCount + $moocCount;
+    }
+
+    /**
+     * Total seluruh course/content aktif yang tersedia di katalog OWL.
+     */
+    public function activeCatalogCourseCount(): int
+    {
+        return Content::where('active', 'Active')->count();
     }
 
     /**
      * Dataset tunggal untuk Hero Home dan halaman lain yang memakai Hero Home.
+     * On Going pada Home hanya merepresentasikan canonical Ongoing Content (bukan Playlist/MOOC).
      */
     public function heroSummary(int $userId): array
     {
@@ -552,16 +618,16 @@ class LearningAnalyticsService
             ->where('user_id', $userId)
             ->get();
 
-        $completedCourse = $contentUser
-            ->filter(fn (ContentUser $cu) => (int) $cu->finish === 1
-                && in_array($cu->content?->type, ['Video', 'Document'], true))
-            ->count();
+        $completedCourse = $this->completedLearningCount($userId);
+        $ongoingCourse   = $this->ongoingContentCount($userId);
+        $totalCourse     = $this->activeCatalogCourseCount();
 
         return [
-            'content_user' => $contentUser,
+            'content_user'    => $contentUser,
             'completedCourse' => $completedCourse,
-            'ongoingCourse' => $this->ongoingLearningCount($userId),
-            'learningHours' => $this->userLearningHours($userId),
+            'ongoingCourse'   => $ongoingCourse,
+            'totalCourse'     => $totalCourse,
+            'learningHours'   => $this->userLearningHours($userId),
         ];
     }
 

@@ -11,12 +11,12 @@
 
         <div id="afkAlertBanner" class="alert alert-warning border-0 rounded-4 shadow-sm mb-3 d-none align-items-center justify-content-between p-3">
             <div class="d-flex align-items-center gap-3">
-                <div class="p-2 rounded-3 bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <div class="p-2 rounded-3 bg-warning-subtle text-warning afk-icon-box d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                     <i class="ti ti-clock-pause fs-2"></i>
                 </div>
                 <div>
-                    <strong class="d-block text-dark fw-bold">Status: Away From Keyboard (AFK)</strong>
-                    <span class="small text-muted">Aktivitas terhenti melebihi ambang batas. Waktu AFK sedang dihitung. Gerakkan mouse atau ketik untuk kembali aktif.</span>
+                    <strong class="d-block text-dark fw-bold afk-status-title">Status: Away From Keyboard (AFK)</strong>
+                    <span class="small text-muted afk-status-desc">exceeded the threshold. AFK time is being tracked. Move the mouse or type to resume activity.</span>
                 </div>
             </div>
             <span class="badge bg-warning text-dark font-monospace px-3 py-2 fs-6 fw-bold" id="afkElapsedCounter">0s</span>

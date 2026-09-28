@@ -18,12 +18,55 @@ use Illuminate\Support\Facades\DB;
 class OngoingContentService
 {
     /**
+     * Filter default untuk canonical card/count Ongoing Content.
+     */
+    public const DEFAULT_FILTERS = [
+        'search'           => '',
+        'status'           => 'all',
+        'year'             => 'all',
+        'activity_sort'    => 'newest_activity',
+        'progress_sort'    => 'all',
+        'date_from'        => null,
+        'date_to'          => null,
+        'learning_hour'    => 'all',
+        'quick_status'     => 'all',
+        'types'            => [],
+        'learning_status'  => [],
+        'progress_buckets' => [],
+        'durations'        => [],
+        'months'           => [],
+        'current_times'    => [],
+        'last_pages'       => [],
+        'total_pages'      => [],
+    ];
+
+    /**
+     * Hitung canonical total card Content Learning On Going untuk user.
+     * Menggunakan rule yang persis sama dengan tab My Learning -> Ongoing -> Content.
+     */
+    public function ongoingContentCount(int $userId, array $filters = []): int
+    {
+        $mergedFilters = array_merge(self::DEFAULT_FILTERS, $filters);
+
+        return $this->cards($userId, $mergedFilters)->count();
+    }
+
+    /**
+     * Alias method count() untuk OngoingContentService.
+     */
+    public function count(int $userId, array $filters = []): int
+    {
+        return $this->ongoingContentCount($userId, $filters);
+    }
+
+    /**
      * Bentuk card Content Learning On Going sesuai seluruh filter aktif.
      *
      * @return \Illuminate\Support\Collection<int, array>
      */
-    public function cards(int $userId, array $filters): Collection
+    public function cards(int $userId, array $filters = []): Collection
     {
+        $filters = array_merge(self::DEFAULT_FILTERS, $filters);
         $query = ContentUser::with([
                 'content.classification',
                 'assesment' => fn ($q) => $q->with([

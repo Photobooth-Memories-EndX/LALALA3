@@ -224,23 +224,51 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             ? DurationFormatter::fromSeconds($durationSeconds)
             : '00:00:00';
 
+        $progress = (int) ($cu->progress ?? 0);
+        $hasScore = ($setting !== null) && !is_null($result?->score());
+        $minScore = (int) ($setting?->minimum_score ?? 0);
+        $scorePassed = $hasScore && ($result?->score() >= $minScore);
+
+        $rowStatuses = [];
+        if ($progress >= 100) {
+            $rowStatuses[] = 'completed';
+        }
+        if ($hasScore) {
+            $rowStatuses[] = $scorePassed ? 'passed' : 'failed';
+        }
+        if ($progress <= 0) {
+            $rowStatuses[] = 'not_started';
+        } elseif ($progress < 100) {
+            $rowStatuses[] = 'ongoing';
+        }
+
+        $finishDate = (int) $cu->finish === 1
+            ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i:s') ?? '')
+            : '';
+
         return [
+            'row_kind'            => 'content',
             'category'            => 'Content',
             'type'                => \App\Support\ContentTypeHelper::label($content->type) ?: 'Content',
             'title'               => $content->title ?? '-',
+            'subtitle'            => ucfirst($cu->status ?? '-'),
             'classification'      => optional($content->classification)->classification_name ?? '-',
             'duration'            => $durationFormatted,
+            'duration_sort'       => $durationSeconds ?? -1,
             'learning_hour'       => round($actualHours, 2),
-            'progress'            => (int) ($cu->progress ?? 0) . '%',
+            'learning_hour_value' => $actualHours,
+            'progress'            => $progress,
             'start_date'          => optional($cu->created_at)->format('Y-m-d H:i') ?? '',
-            'finish_date'         => (int) $cu->finish === 1 ? (optional($cu->completed_at ?? $cu->updated_at)->format('Y-m-d H:i') ?? '') : '',
+            'finish_date'         => $finishDate,
             'score'               => $result?->score() ?? '',
+            'min_score'           => $minScore,
             'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',
             'date'                => $cu->completed_at ?? $cu->updated_at,
             'duration_seconds'    => $durationSeconds ?? -1,
-            'learning_hour_value' => $actualHours,
             'learning_status'     => (string) ($cu->learning_status ?? ''),
+            'learning_statuses'   => $rowStatuses,
             'playlist_ids'        => $content->trainingPlans->pluck('id')->map(fn ($id) => (string) $id)->all(),
+            'item_id'             => 'content_' . $content->id,
             'children'            => [],
         ];
     }
@@ -270,29 +298,51 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             ?? collect($children)->pluck('start_date')->filter()->min()
             ?? $plan->created_at;
         $startDate = $rawStartDate ? Carbon::parse($rawStartDate)->format('Y-m-d H:i') : '';
+        $finishDate = $plan->last_finished_at ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i:s') : '';
+
+        $hasScore = ($setting !== null) && !is_null($result?->score());
+        $minScore = (int) ($setting?->minimum_score ?? 0);
+        $scorePassed = $hasScore && ($result?->score() >= $minScore);
+
+        $rowStatuses = ['completed'];
+        if ($hasScore) {
+            $rowStatuses[] = $scorePassed ? 'passed' : 'failed';
+        }
 
         return [
+            'row_kind'            => 'playlist',
             'category'            => 'Playlist',
             'type'                => 'Playlist',
             'title'               => $plan->title ?? '-',
+            'subtitle'            => (int) ($plan->finished_items ?? 0) . ' / ' . (int) ($plan->total_items ?? count($children)) . ' content selesai',
             'classification'      => '-',
             'duration'            => DurationFormatter::fromSeconds($seconds),
+            'duration_sort'       => $seconds,
             'learning_hour'       => round($actualHours, 2),
-            'progress'            => '100%',
+            'learning_hour_value' => $actualHours,
+            'progress'            => 100,
             'start_date'          => $startDate,
-            'finish_date'         => $plan->last_finished_at ? Carbon::parse($plan->last_finished_at)->format('Y-m-d H:i') : '',
+            'finish_date'         => $finishDate,
             'score'               => $result?->score() ?? '',
+            'min_score'           => $minScore,
             'certificate'         => ($result?->eligible ?? false) ? 'Ready' : '',
             'date'                => $plan->last_finished_at,
             'duration_seconds'    => $seconds,
-            'learning_hour_value' => $actualHours,
+            'learning_status'     => 'completed',
+            'learning_statuses'   => $rowStatuses,
             'children'            => $children,
             'playlist_id'         => $plan->id,
+            'playlist_ids'        => [(string) $plan->id],
+            'item_id'             => 'playlist_' . $plan->id,
         ];
     }
 
     private function excelRow(array $row, $number): array
     {
+        $progress = is_numeric($row['progress']) ? $row['progress'] . '%' : (string) $row['progress'];
+        $startDate = !empty($row['start_date']) ? Carbon::parse($row['start_date'])->format('Y-m-d H:i') : '';
+        $finishDate = !empty($row['finish_date']) ? Carbon::parse($row['finish_date'])->format('Y-m-d H:i') : '';
+
         return [
             $number,
             $row['title'],
@@ -301,9 +351,9 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             $row['classification'],
             $row['duration'],
             $row['learning_hour'],
-            $row['progress'],
-            $row['start_date'],
-            $row['finish_date'],
+            $progress,
+            $startDate,
+            $finishDate,
             $row['score'],
             $row['certificate'] === 'Ready' ? 'Available' : 'Not Available',
         ];
@@ -312,22 +362,30 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
     private function normalizeFilters(array $f): array
     {
         $rawMonth = $f['month'] ?? $f['record_filter_month'] ?? 'all';
-        $monthNum = \App\Support\LearningFilterHelper::resolveMonth((string) $rawMonth);
+        $monthNum = is_array($rawMonth) ? null : \App\Support\LearningFilterHelper::resolveMonth((string) $rawMonth);
+        $rawClassification = (string) ($f['classification'] ?? $f['record_filter_classification'] ?? 'all');
+        $classification = $rawClassification !== 'all' ? trim(html_entity_decode($rawClassification, ENT_QUOTES | ENT_HTML5, 'UTF-8')) : 'all';
+
+        $modalMonthsInput = (array) ($f['modalMonths'] ?? $f['record_filter_modal_month'] ?? (is_array($rawMonth) ? $rawMonth : []));
+        $modalMonths = array_map('strval', array_values(array_filter(array_map([\App\Support\LearningFilterHelper::class, 'resolveMonth'], $modalMonthsInput))));
+
+        $durationInput = $f['duration'] ?? $f['record_filter_duration'] ?? $f['recordModalDurationCheck'] ?? 'all';
+        $duration = is_array($durationInput) ? ($durationInput[0] ?? 'all') : (string) $durationInput;
 
         return [
             'search'         => trim((string) ($f['search'] ?? $f['record_search'] ?? $f['q'] ?? '')),
             'type'           => (string) ($f['type'] ?? $f['record_filter_type'] ?? 'all'),
-            'classification' => (string) ($f['classification'] ?? $f['record_filter_classification'] ?? 'all'),
+            'classification' => $classification,
             'playlist'       => (string) ($f['playlist'] ?? $f['record_filter_playlist'] ?? 'all'),
             'year'           => (string) ($f['year'] ?? $f['record_filter_year'] ?? 'all'),
             'month'          => $monthNum !== null ? (string) $monthNum : 'all',
             'modalYear'      => (string) ($f['modalYear'] ?? $f['record_filter_modal_year'] ?? 'all'),
-            'modalMonths'    => array_map('strval', array_values(array_filter(array_map([\App\Support\LearningFilterHelper::class, 'resolveMonth'], (array) ($f['modalMonths'] ?? $f['record_filter_modal_month'] ?? []))))),
+            'modalMonths'    => $modalMonths,
             'modalTypes'     => array_values(array_filter((array) ($f['modalTypes'] ?? $f['record_filter_modal_type'] ?? []), fn ($v) => $v !== 'all')),
             'program'        => (string) ($f['program'] ?? $f['record_filter_program'] ?? 'all'),
             'learningStatus' => array_values(array_filter((array) ($f['learningStatus'] ?? $f['record_filter_learning_status'] ?? []))),
             'learningHour'   => (string) ($f['learningHour'] ?? $f['record_filter_learning_hour'] ?? 'all'),
-            'duration'       => (string) ($f['duration'] ?? $f['record_filter_duration'] ?? 'all'),
+            'duration'       => $duration,
             'progressRanges' => array_values(array_filter((array) ($f['progressRanges'] ?? $f['record_filter_progress'] ?? []))),
             'completion'     => (string) ($f['completion'] ?? $f['record_filter_completion'] ?? 'all'),
             'scoreTest'      => (string) ($f['scoreTest'] ?? $f['record_filter_score'] ?? 'all'),
@@ -340,10 +398,12 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
     {
         $f = $this->normalizeFilters($this->filters);
 
-        return $rows->filter(function ($row) use ($f) {
-            $date = !empty($row['date']) ? Carbon::parse($row['date']) : null;
+        $filtered = $rows->filter(function ($row) use ($f) {
+            $finishDate = !empty($row['finish_date']) ? $row['finish_date'] : (!empty($row['date']) ? (string) $row['date'] : null);
+            $date = $finishDate ? Carbon::parse($finishDate) : null;
             $rowType = (string) ($row['type'] ?? '');
-            $isPlaylist = ($rowType === 'Playlist' || ($row['category'] ?? '') === 'Playlist');
+            $rowKind = (string) ($row['row_kind'] ?? '');
+            $isPlaylist = ($rowKind === 'playlist' || $rowType === 'Playlist' || ($row['category'] ?? '') === 'Playlist');
 
             // Quick Filter mode
             if ($f['quickFilter'] === 'content' && $isPlaylist) {
@@ -354,46 +414,16 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             }
 
             // Type filter
-            $type = strtolower(trim($f['type']));
-            if ($type !== 'all' && $type !== '') {
-                if (($type === 'playlist' || $type === 'trainingplan') && !$isPlaylist) {
-                    return false;
-                }
-                if ($type === 'content' && $isPlaylist) {
-                    return false;
-                }
-                if ($type === 'video' && !in_array($rowType, ['Video', 'YouTube'], true)) {
-                    return false;
-                }
-                if ($type === 'document' && strtolower($rowType) !== 'document') {
-                    return false;
-                }
-                if ($type === 'mooc' && !in_array(strtolower($rowType), ['mooc', 'youtube'], true)) {
-                    return false;
-                }
-                if (!in_array($type, ['playlist', 'trainingplan', 'content', 'video', 'document', 'mooc'], true) && strtolower($rowType) !== $type) {
-                    return false;
-                }
+            if (!$this->typeMatches($rowType, $rowKind, $f['type'])) {
+                return false;
             }
 
             // Modal types
-            if (!empty($f['modalTypes'])) {
-                $matchedType = false;
-                foreach ($f['modalTypes'] as $mt) {
-                    $normMt = strtolower(trim($mt));
-                    if (($normMt === 'playlist' || $normMt === 'trainingplan') && $isPlaylist) { $matchedType = true; break; }
-                    if ($normMt === 'content' && !$isPlaylist) { $matchedType = true; break; }
-                    if ($normMt === 'video' && in_array($rowType, ['Video', 'YouTube'], true)) { $matchedType = true; break; }
-                    if ($normMt === 'document' && strtolower($rowType) === 'document') { $matchedType = true; break; }
-                    if ($normMt === 'mooc' && in_array(strtolower($rowType), ['mooc', 'youtube'], true)) { $matchedType = true; break; }
-                    if (strtolower($rowType) === $normMt) { $matchedType = true; break; }
-                }
-                if (!$matchedType) {
-                    return false;
-                }
+            if (!empty($f['modalTypes']) && !collect($f['modalTypes'])->contains(fn ($mt) => $this->typeMatches($rowType, $rowKind, (string) $mt))) {
+                return false;
             }
 
-            if ($f['classification'] !== 'all' && ($row['classification'] ?? '') !== $f['classification']) {
+            if ($f['classification'] !== 'all' && strcasecmp((string) ($row['classification'] ?? ''), $f['classification']) !== 0) {
                 return false;
             }
 
@@ -413,37 +443,41 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             if ($f['month'] !== 'all' && (!$date || (int) $date->month !== (int) $f['month'])) {
                 return false;
             }
-            if (!empty($f['modalMonths']) && (!$date || !in_array((string) (int) $date->month, $f['modalMonths'], true))) {
-                return false;
-            }
-
-            if (!empty($f['learningStatus']) && !in_array($row['learning_status'] ?? '', $f['learningStatus'], true)) {
-                return false;
-            }
-
-            if ($f['learningHour'] !== 'all' && !$this->rangeMatches((float) ($row['learning_hour_value'] ?? 0), $f['learningHour'])) {
-                return false;
-            }
-
-            if ($f['duration'] !== 'all' && !$this->rangeMatches((float) ($row['duration_seconds'] ?? -1), $f['duration'], true)) {
-                return false;
-            }
-
-            if (!empty($f['progressRanges'])) {
-                $rawProg = (float) rtrim((string) ($row['progress'] ?? 0), '%');
-                $matchedProg = false;
-                foreach ($f['progressRanges'] as $pr) {
-                    if ($this->rangeMatches($rawProg, (string) $pr)) {
-                        $matchedProg = true;
-                        break;
-                    }
-                }
-                if (!$matchedProg) {
+            if (!empty($f['modalMonths'])) {
+                $modalMonthNums = array_filter(array_map([\App\Support\LearningFilterHelper::class, 'resolveMonth'], $f['modalMonths']));
+                if (!$date || !in_array((int) $date->month, $modalMonthNums, true)) {
                     return false;
                 }
             }
 
-            if ($f['completion'] !== 'all' && !$this->completionMatches((string) ($row['progress'] ?? ''), $f['completion'])) {
+            // Program filter (mandatory / optional)
+            $subtitle = mb_strtolower((string) ($row['subtitle'] ?? ''));
+            $rowProgram = str_contains($subtitle, 'mandatory')
+                ? 'mandatory'
+                : (str_contains($subtitle, 'optional') ? 'optional' : '');
+            if ($f['program'] !== 'all' && $rowProgram !== $f['program']) {
+                return false;
+            }
+
+            // Learning Status (completed / passed / failed)
+            if (!empty($f['learningStatus']) && empty(array_intersect($f['learningStatus'], $row['learning_statuses'] ?? []))) {
+                return false;
+            }
+
+            if ($f['learningHour'] !== 'all' && !$this->rangeMatches((float) ($row['learning_hour_value'] ?? -1), $f['learningHour'])) {
+                return false;
+            }
+
+            if ($f['duration'] !== 'all' && !$this->rangeMatches((float) ($row['duration_sort'] ?? -1), $f['duration'])) {
+                return false;
+            }
+
+            $progress = (int) ($row['progress'] ?? 0);
+            if (!empty($f['progressRanges']) && !collect($f['progressRanges'])->contains(fn ($range) => $this->rangeMatches((float) $progress, (string) $range))) {
+                return false;
+            }
+
+            if ($f['completion'] !== 'all' && !$this->completionMatches($progress, $f['completion'])) {
                 return false;
             }
 
@@ -467,27 +501,102 @@ class ExportMyLearningRecord implements FromArray, ShouldAutoSize, WithEvents, W
             }
 
             return true;
-        })->sortBy(fn ($row) => $row['type'] === 'Playlist' ? 2 : (strtolower($row['type']) === 'video' || strtolower($row['type']) === 'youtube' ? 1 : 0))->values();
+        });
+
+        $sort = (string) ($this->filters['record_sort'] ?? $this->filters['sort'] ?? '');
+        $direction = (string) ($this->filters['record_sort_direction'] ?? $this->filters['direction'] ?? 'asc');
+        $activitySort = (string) ($this->filters['record_filter_activity_sort'] ?? $this->filters['activitySort'] ?? 'all');
+
+        $sortKeys = [
+            'title'          => fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')),
+            'category'       => fn (array $row) => mb_strtolower((string) ($row['category'] ?? '')),
+            'type'           => fn (array $row) => mb_strtolower((string) ($row['type'] ?? '')),
+            'classification' => fn (array $row) => mb_strtolower((string) ($row['classification'] ?? '')),
+            'duration'       => fn (array $row) => (float) ($row['duration_sort'] ?? -1),
+            'learning-hour'  => fn (array $row) => (float) ($row['learning_hour_value'] ?? -1),
+            'progress'       => fn (array $row) => (int) ($row['progress'] ?? -1),
+            'finish'         => fn (array $row) => (string) ($row['finish_date'] ?? ''),
+            'score'          => fn (array $row) => (float) ($row['score'] ?? -1),
+        ];
+
+        if (isset($sortKeys[$sort]) && in_array($direction, ['asc', 'desc'], true)) {
+            $filtered = $direction === 'desc'
+                ? $filtered->sortByDesc($sortKeys[$sort])
+                : $filtered->sortBy($sortKeys[$sort]);
+        } elseif ($activitySort === 'oldest') {
+            $filtered = $filtered->sortBy(fn (array $row) => (string) ($row['finish_date'] ?? ''));
+        } elseif ($activitySort === 'newest') {
+            $filtered = $filtered->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''));
+        } elseif ($activitySort === 'ascending') {
+            $filtered = $filtered->sortBy(fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')));
+        } elseif ($activitySort === 'descending') {
+            $filtered = $filtered->sortByDesc(fn (array $row) => mb_strtolower((string) ($row['title'] ?? '')));
+        } else {
+            $filtered = $filtered->sortByDesc(fn (array $row) => (string) ($row['finish_date'] ?? ''));
+        }
+
+        return $filtered->values();
     }
 
-    private function rangeMatches(float $value, string $range, bool $seconds = false): bool
+    private function typeMatches(string $rowType, string $rowKind, string $filter): bool
+    {
+        $normalized = strtolower(trim($filter));
+        if ($normalized === 'all' || $normalized === '') {
+            return true;
+        }
+        if ($normalized === 'playlist' || $normalized === 'trainingplan') {
+            return $rowKind === 'playlist';
+        }
+        if ($normalized === 'content') {
+            return $rowKind === 'content';
+        }
+        if ($normalized === 'video') {
+            return in_array($rowType, ['Video', 'YouTube'], true);
+        }
+        if ($normalized === 'document') {
+            return strtolower($rowType) === 'document';
+        }
+        if ($normalized === 'mooc') {
+            return in_array(strtolower($rowType), ['mooc', 'youtube'], true);
+        }
+
+        return strtolower($rowType) === $normalized;
+    }
+
+    private function rangeMatches(float $value, string $range): bool
     {
         if ($range === 'all') return true;
-        if (str_starts_with($range, 'gt')) return $value > (float) substr($range, 2) * ($seconds ? 60 : 1);
-        if (!str_contains($range, '-')) return $value === (float) $range * ($seconds ? 60 : 1);
+        if (str_starts_with($range, 'gt')) return $value > (float) substr($range, 2);
+        if (!str_contains($range, '-')) return $value === (float) $range;
         [$min, $max] = array_map('floatval', explode('-', $range, 2));
-        return $value >= $min * ($seconds ? 60 : 1) && $value <= $max * ($seconds ? 60 : 1);
+        return $value >= $min && $value <= $max;
     }
 
-    private function completionMatches(string $progress, string $mode): bool
+    private function completionMatches(int $progress, string $mode): bool
     {
-        $value = (float) rtrim($progress, '%');
-        return match ($mode) { 'not_started' => $value === 0.0, 'in_progress' => $value > 0 && $value <= 75, 'almost_done' => $value >= 76 && $value < 100, 'completed' => $value === 100, default => true };
+        return match ($mode) {
+            'not_started' => $progress === 0,
+            'in_progress' => $progress > 0 && $progress <= 75,
+            'almost_done' => $progress >= 76 && $progress < 100,
+            'completed'   => $progress === 100,
+            default       => true,
+        };
     }
 
-    private function scoreMatches($score, string $mode): bool
+    private function scoreMatches(mixed $score, string $mode): bool
     {
-        $value = $score === '' || $score === null ? -1 : (float) $score;
-        return match ($mode) { 'none' => $value < 0, 'lt60' => $value >= 0 && $value < 60, '60-79' => $value >= 60 && $value <= 79, '80-100' => $value >= 80 && $value <= 100, default => true };
+        if ($mode === 'all') {
+            return true;
+        }
+        $hasScore = $score !== null && $score !== '';
+        $value = $hasScore ? (float) $score : -1;
+
+        return match ($mode) {
+            'none'   => ! $hasScore,
+            'lt60'   => $hasScore && $value < 60,
+            '60-79'  => $value >= 60 && $value <= 79,
+            '80-100' => $value >= 80 && $value <= 100,
+            default  => true,
+        };
     }
 }
