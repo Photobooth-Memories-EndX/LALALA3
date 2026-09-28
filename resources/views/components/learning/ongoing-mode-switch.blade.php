@@ -4,9 +4,9 @@
 ])
 
 {{-- Dua mode independen — klik ditangani via AJAX (dashboard-script.blade.php). --}}
-<div class="ongoing-mode-switch" role="group" aria-label="Learning On Going mode">
+<div class="learning-mode-switch ongoing-mode-switch" role="group" aria-label="Learning On Going mode">
     <button type="button"
-            class="btn ongoing-mode-btn {{ $mode === 'content' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="btn learning-mode-btn ongoing-mode-btn {{ $mode === 'content' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="content"
             title="Content"
             aria-label="Content"
@@ -15,7 +15,7 @@
         <span>Content</span>
     </button>
     <button type="button"
-            class="btn ongoing-mode-btn {{ $mode === 'playlist' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="btn learning-mode-btn ongoing-mode-btn {{ $mode === 'playlist' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="playlist"
             title="Playlist"
             aria-label="Playlist"
@@ -24,7 +24,7 @@
         <span>Playlist</span>
     </button>
     <button type="button"
-            class="btn ongoing-mode-btn {{ $mode === 'mooc' ? 'btn-primary active' : 'btn-outline-primary' }}"
+            class="btn learning-mode-btn ongoing-mode-btn {{ $mode === 'mooc' ? 'btn-primary active' : 'btn-outline-primary' }}"
             data-mode="mooc"
             title="MOOC"
             aria-label="MOOC"

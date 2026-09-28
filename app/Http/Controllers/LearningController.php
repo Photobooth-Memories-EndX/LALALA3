@@ -100,7 +100,12 @@ class LearningController extends Controller
                     ? app(LearningOngoingController::class)->playlist()
                     : app(LearningOngoingController::class)->content(),
             },
-            'record'      => app(LearningRecordController::class)->partial($eligibilityService),
+            'record'      => match (strtolower(trim((string) request('record_mode', 'online')))) {
+                'offline' => app(\App\Http\Controllers\User\Record\LearningRecordOfflineController::class)->partial(),
+                'all'     => app(\App\Http\Controllers\User\Record\LearningRecordAllController::class)->partial($eligibilityService),
+                'export'  => app(\App\Http\Controllers\User\Record\LearningRecordExportHubController::class)->partial(),
+                default   => app(\App\Http\Controllers\User\Record\LearningRecordOnlineController::class)->partial($eligibilityService),
+            },
             'assessment'  => app(LearningAssessmentController::class)->partial(request()),
             'claim'       => view('user.learning.dashboard-partials.claim'),
             'certificate' => app(LearningRecordController::class)->certificate(),

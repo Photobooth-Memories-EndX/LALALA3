@@ -26,10 +26,15 @@
 @endphp
 
 <div class="record-filter-shell" id="recordFilterBar">
-    {{-- ── Fast Filter Toolbar (client-side — tanpa AJAX, tanpa reload halaman) ── --}}
-    <div class="record-fast-filter-section mt-3">
-        <label class="form-label small text-muted mb-2 learning-fast-filter-label">Quick Filter</label>
+    <div class="learning-filter-heading fast-filter-header">
+        <div class="fast-filter-header-copy">
+            <h3 class="card-title fast-filter-title">Quick Filter</h3>
+        </div>
+        <x-learning.record-mode-switch mode="online" />
+    </div>
 
+    {{-- ── Fast Filter Toolbar (client-side — tanpa AJAX, tanpa reload halaman) ── --}}
+    <div class="record-fast-filter-section">
         <div class="fast-filter-toolbar">
             <div class="learning-quick-dropdowns learning-fast-filter">
                 {{-- Dropdown Type --}}
