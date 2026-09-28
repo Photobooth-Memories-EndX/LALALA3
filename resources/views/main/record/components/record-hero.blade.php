@@ -10,7 +10,7 @@
         </h1>
 
         <p class="manage-record-hero__description mb-0">
-            Monitor and manage online and offline employee learning records across OWL LMS.
+           Manage KP OWL and Non KP OWL learning records, including online and offline training data, participant progress, classifications, and record exports.
         </p>
     </div>
 </section>

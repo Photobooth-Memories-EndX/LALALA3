@@ -34,23 +34,38 @@
                     Quick Filter
                 </div>
                 <form id="offline-filter-form" onsubmit="return false;">
+                    <!-- Hidden inputs from More Filters Modal to preserve in datatable & export queries -->
+                    <input type="hidden" id="filter-from-date" name="from_date" value="{{ request('from_date') ?? request('date_from') }}">
+                    <input type="hidden" id="filter-to-date" name="to_date" value="{{ request('to_date') ?? request('date_to') }}">
+                    <input type="hidden" id="filter-progress-range" name="progress_range" value="{{ request('progress_range', 'all') }}">
+                    <input type="hidden" id="filter-duration" name="duration" value="{{ request('duration', 'all') }}">
+                    <input type="hidden" id="filter-attendance" name="attendance" value="{{ request('attendance', 'all') }}">
+                    <input type="hidden" id="filter-score-min" name="score_min" value="{{ request('score_min') }}">
+                    <input type="hidden" id="filter-score-max" name="score_max" value="{{ request('score_max') }}">
+                    <input type="hidden" id="filter-hours-min" name="hours_min" value="{{ request('hours_min') ?? request('learning_hours_min') }}">
+                    <input type="hidden" id="filter-hours-max" name="hours_max" value="{{ request('hours_max') ?? request('learning_hours_max') }}">
+
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <!-- Employee Search -->
-                        <div class="position-relative flex-grow-1" style="min-width: 180px; max-width: 240px;">
-                            <input type="text" id="offline-employee-input" class="form-control rounded-3" placeholder="Search NIP or name..." autocomplete="off">
+                        <div class="position-relative flex-grow-1" style="min-width: 200px; max-width: 260px;">
+                            <input type="text" id="offline-employee-input" class="form-control rounded-3" 
+                                   placeholder="Search employee or NIP..." autocomplete="off" 
+                                   value="{{ request('employee_id') ?? request('employee') }}">
                         </div>
 
-                        <!-- Course Name Search -->
-                        <div class="position-relative flex-grow-1" style="min-width: 200px; max-width: 260px;">
-                            <input type="text" id="offline-course-input" class="form-control rounded-3" placeholder="Search course name..." autocomplete="off">
+                        <!-- Learning Title / Course Name Search -->
+                        <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 280px;">
+                            <input type="text" id="offline-course-input" class="form-control rounded-3" 
+                                   placeholder="Search learning title..." autocomplete="off" 
+                                   value="{{ request('course_name') ?? (request('learning_title') ?? request('title')) }}">
                         </div>
 
                         <!-- Type Dropdown -->
-                        <div style="min-width: 130px; flex-shrink: 0;">
+                        <div style="min-width: 125px; flex-shrink: 0;">
                             <select class="form-select rounded-3" id="offline-type-select">
-                                <option value="all">All Types</option>
+                                <option value="all" {{ request('type', 'all') === 'all' ? 'selected' : '' }}>Type: All</option>
                                 @foreach ($trainingTypes as $type)
-                                    <option value="{{ $type }}">{{ $type }}</option>
+                                    <option value="{{ $type }}" {{ request('type') === $type ? 'selected' : '' }}>{{ $type }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -58,30 +73,45 @@
                         <!-- Status Dropdown -->
                         <div style="min-width: 120px; flex-shrink: 0;">
                             <select class="form-select rounded-3" id="offline-status-select">
-                                <option value="all">All Status</option>
-                                <option value="finished">Finished</option>
-                                <option value="ongoing">Ongoing</option>
+                                <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>All Status</option>
+                                <option value="finished" {{ in_array(request('status'), ['finished', 'finish', '1']) ? 'selected' : '' }}>Finished</option>
+                                <option value="ongoing" {{ in_array(request('status'), ['ongoing', '0']) ? 'selected' : '' }}>Ongoing</option>
+                                <option value="not_started" {{ in_array(request('status'), ['not_started', 'not-started']) ? 'selected' : '' }}>Not Started</option>
                             </select>
                         </div>
 
                         <!-- Year Dropdown -->
                         <div style="min-width: 110px; flex-shrink: 0;">
                             <select class="form-select rounded-3" id="offline-year-select">
-                                <option value="all">All Year</option>
+                                <option value="all" {{ request('year', 'all') === 'all' ? 'selected' : '' }}>All Year</option>
                                 @foreach ($years as $year)
-                                    <option value="{{ $year }}">{{ $year }}</option>
+                                    <option value="{{ $year }}" {{ (string) request('year') === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <!-- Action Buttons: Apply & Reset -->
+                        <!-- 1. Icon Button: Apply Filter -->
                         <button type="button" id="btn-apply-offline-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" 
-                                style="background-color: #003b6d; border-color: #003b6d;" title="Apply Filter">
+                                style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
                             <i class="ti ti-search fs-2"></i>
                         </button>
 
-                        <button type="button" id="btn-reset-offline-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0" title="Reset Filters">
+                        <!-- 2. Icon Button: More Filters -->
+                        <button type="button" id="btn-more-offline-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0" 
+                                data-bs-toggle="modal" data-bs-target="#moreOfflineFiltersModal" title="More Filters">
+                            <i class="ti ti-adjustments-horizontal fs-2"></i>
+                            <span id="activeFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
+                        </button>
+
+                        <!-- 3. Icon Button: Reset -->
+                        <button type="button" id="btn-reset-offline-filter" class="btn btn-outline-secondary btn-icon px-3 flex-shrink-0" 
+                                data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
                             <i class="ti ti-refresh fs-2"></i>
+                        </button>
+
+                        <!-- 4. Button: Download Excel -->
+                        <button type="button" id="btn-download-export" class="btn btn-success rounded-3 px-3 btn-download flex-shrink-0" title="Download Excel">
+                            <i class="ti ti-download me-1"></i> Download
                         </button>
                     </div>
                 </form>
@@ -116,16 +146,171 @@
                 <div class="card-footer d-flex flex-wrap align-items-center justify-content-between p-3 border-top">
                     <div class="d-flex align-items-center gap-2">
                         <select class="form-select form-select-sm w-auto rounded-3" id="offline-table-entries-select">
-                            <option value="10">10 Entries</option>
-                            <option value="25" selected>25 Entries</option>
-                            <option value="50">50 Entries</option>
-                            <option value="100">100 Entries</option>
+                            <option value="10" {{ $entries == 10 ? 'selected' : '' }}>10 Entries</option>
+                            <option value="25" {{ $entries == 25 || empty($entries) ? 'selected' : '' }}>25 Entries</option>
+                            <option value="50" {{ $entries == 50 ? 'selected' : '' }}>50 Entries</option>
+                            <option value="100" {{ $entries == 100 ? 'selected' : '' }}>100 Entries</option>
                         </select>
                         <div id="offline-table-info-container"></div>
                     </div>
                     <div id="offline-table-pagination-container"></div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- MORE FILTERS MODAL -->
+<div class="modal fade" id="moreOfflineFiltersModal" tabindex="-1" aria-labelledby="moreOfflineFiltersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <form id="more-offline-filters-modal-form" onsubmit="return false;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="moreOfflineFiltersModalLabel">
+                        <i class="ti ti-adjustments-horizontal text-primary"></i> More Filters
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <!-- Date Range (from_date & to_date) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar me-1"></i> Date Range (Training Date)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small text-muted mb-1">From Date</label>
+                                <input type="text" id="modal-from-date" name="from_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('from_date') ?? request('date_from') }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-muted mb-1">To Date</label>
+                                <input type="text" id="modal-to-date" name="to_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('to_date') ?? request('date_to') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Range (progress_range) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-chart-bar me-1"></i> Progress Range</label>
+                        @php $currProgress = request('progress_range', 'all'); @endphp
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="prAll" value="all" {{ ($currProgress === 'all' || blank($currProgress)) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="prAll">All</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr0" value="0" {{ $currProgress === '0' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr0">0%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr25" value="1-25" {{ $currProgress === '1-25' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr25">1 - 25%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr50" value="26-50" {{ $currProgress === '26-50' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr50">26 - 50%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr75" value="51-75" {{ $currProgress === '51-75' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr75">51 - 75%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr99" value="76-99" {{ $currProgress === '76-99' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr99">76 - 99%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr100" value="100" {{ $currProgress === '100' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr100">100%</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Duration (duration) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-clock me-1"></i> Duration</label>
+                        @php $currDur = request('duration', 'all'); @endphp
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="durAll" value="all" {{ ($currDur === 'all' || blank($currDur)) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="durAll">All Durations</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="dur10" value="lt10" {{ in_array($currDur, ['lt10', 'under_10', '< 10 Minutes']) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="dur10">&lt; 10 Minutes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="dur30" value="10-30" {{ in_array($currDur, ['10-30', '10_30', '10 - 30 Minutes']) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="dur30">10 - 30 Minutes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="dur60" value="30-60" {{ in_array($currDur, ['30-60', '30_60', '30 - 60 Minutes']) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="dur60">30 - 60 Minutes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_duration" id="durAbove60" value="gt60" {{ in_array($currDur, ['gt60', 'above_60', '> 1 Hour']) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="durAbove60">&gt; 1 Hour</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attendance -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small d-block"><i class="ti ti-user-check me-1"></i> Attendance</label>
+                        @php $currAtt = request('attendance', 'all'); @endphp
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_attendance" id="attAll" value="all" {{ ($currAtt === 'all' || blank($currAtt)) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="attAll">All</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_attendance" id="attPresent" value="present" {{ in_array($currAtt, ['present', '1']) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="attPresent">Present</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_attendance" id="attAbsent" value="absent" {{ in_array($currAtt, ['absent', '0']) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="attAbsent">Absent</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assessment Score & Learning Hours Range in 2 Columns -->
+                    <div class="row g-3">
+                        <!-- Assessment Score Range -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-award me-1"></i> Assessment Score</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" step="0.1" id="modal-score-min" name="score_min" class="form-control rounded-3" placeholder="Min Score" value="{{ request('score_min') }}">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.1" id="modal-score-max" name="score_max" class="form-control rounded-3" placeholder="Max Score" value="{{ request('score_max') }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Learning Hours Range -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small"><i class="ti ti-hourglass-empty me-1"></i> Learning Hours</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="number" step="0.1" id="modal-hours-min" name="hours_min" class="form-control rounded-3" placeholder="Min Hours" value="{{ request('hours_min') ?? request('learning_hours_min') }}">
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.1" id="modal-hours-max" name="hours_max" class="form-control rounded-3" placeholder="Max Hours" value="{{ request('hours_max') ?? request('learning_hours_max') }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                    <button type="button" id="btn-modal-reset" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1" data-bs-dismiss="modal">
+                        <i class="ti ti-rotate me-1"></i>
+                        <span>Reset</span>
+                    </button>
+                    <button type="button" id="btn-modal-apply" class="btn btn-primary px-3 d-inline-flex align-items-center gap-1" style="background-color: #0c5b9e; border-color: #0c5b9e;" data-bs-dismiss="modal">
+                        <i class="ti ti-check me-1"></i>
+                        <span>Apply Filter</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -200,22 +385,48 @@
         padding-bottom: 12px;
     }
 
+    #moreOfflineFiltersModal {
+        z-index: 1060 !important;
+    }
+
     /* Modal dark mode styling */
     [data-bs-theme="dark"] #offlineTrainingDetailModal .modal-content,
+    [data-bs-theme="dark"] #moreOfflineFiltersModal .modal-content,
     body.dark-mode #offlineTrainingDetailModal .modal-content,
-    body.theme-dark #offlineTrainingDetailModal .modal-content {
+    body.dark-mode #moreOfflineFiltersModal .modal-content,
+    body.theme-dark #offlineTrainingDetailModal .modal-content,
+    body.theme-dark #moreOfflineFiltersModal .modal-content {
         background-color: var(--tblr-bg-surface, #1f2937) !important;
         color: #f8fafc !important;
     }
+
     [data-bs-theme="dark"] #offlineTrainingDetailModal .bg-light,
+    [data-bs-theme="dark"] #moreOfflineFiltersModal .bg-light,
     body.dark-mode #offlineTrainingDetailModal .bg-light,
-    body.theme-dark #offlineTrainingDetailModal .bg-light {
+    body.dark-mode #moreOfflineFiltersModal .bg-light,
+    body.theme-dark #offlineTrainingDetailModal .bg-light,
+    body.theme-dark #moreOfflineFiltersModal .bg-light {
         background-color: #111827 !important;
     }
+
     [data-bs-theme="dark"] #offlineTrainingDetailModal .text-dark,
+    [data-bs-theme="dark"] #moreOfflineFiltersModal .text-dark,
     body.dark-mode #offlineTrainingDetailModal .text-dark,
-    body.theme-dark #offlineTrainingDetailModal .text-dark {
+    body.dark-mode #moreOfflineFiltersModal .text-dark,
+    body.theme-dark #offlineTrainingDetailModal .text-dark,
+    body.theme-dark #moreOfflineFiltersModal .text-dark {
         color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #moreOfflineFiltersModal .form-control,
+    [data-bs-theme="dark"] #moreOfflineFiltersModal .form-select,
+    body.dark-mode #moreOfflineFiltersModal .form-control,
+    body.dark-mode #moreOfflineFiltersModal .form-select,
+    body.theme-dark #moreOfflineFiltersModal .form-control,
+    body.theme-dark #moreOfflineFiltersModal .form-select {
+        background-color: #111827 !important;
+        color: #f8fafc !important;
+        border-color: #374151 !important;
     }
 </style>
 @endsection
@@ -227,10 +438,53 @@
 <script>
     $(function () {
         const datatableUrl = @json(route('manage.record.offline.classification.datatable', $slug));
+        const downloadBaseUrl = @json($downloadUrl);
         const classificationSlug = @json($slug);
         const defaultEntries = 25;
 
         let offlineTable = null;
+
+        // Function to update active filter counter badge
+        function updateActiveFilterBadge() {
+            let activeCount = 0;
+            if ($('#filter-from-date').val()) activeCount++;
+            if ($('#filter-to-date').val()) activeCount++;
+            if ($('#filter-progress-range').val() && $('#filter-progress-range').val() !== 'all') activeCount++;
+            if ($('#filter-duration').val() && $('#filter-duration').val() !== 'all') activeCount++;
+            if ($('#filter-attendance').val() && $('#filter-attendance').val() !== 'all') activeCount++;
+            if ($('#filter-score-min').val()) activeCount++;
+            if ($('#filter-score-max').val()) activeCount++;
+            if ($('#filter-hours-min').val()) activeCount++;
+            if ($('#filter-hours-max').val()) activeCount++;
+
+            const badge = $('#activeFilterBadge');
+            if (activeCount > 0) {
+                badge.text(activeCount).removeClass('d-none');
+            } else {
+                badge.addClass('d-none');
+            }
+        }
+
+        // Helper function to safely hide More Filters modal
+        function hideMoreFiltersModal() {
+            const modalEl = document.getElementById('moreOfflineFiltersModal');
+            if (modalEl) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                }
+                if ($.fn.modal) {
+                    $('#moreOfflineFiltersModal').modal('hide');
+                }
+            }
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css({ overflow: '', paddingRight: '' });
+        }
+
+        // Initialize badge on page load
+        updateActiveFilterBadge();
 
         // Initialize DataTable
         if ($.fn.DataTable.isDataTable('#offline-classification-table')) {
@@ -256,6 +510,18 @@
                     d.type = $('#offline-type-select').val();
                     d.status = $('#offline-status-select').val();
                     d.year = $('#offline-year-select').val();
+
+                    // More Filters
+                    d.from_date = $('#filter-from-date').val();
+                    d.to_date = $('#filter-to-date').val();
+                    d.progress_range = $('#filter-progress-range').val();
+                    d.duration = $('#filter-duration').val();
+                    d.attendance = $('#filter-attendance').val();
+                    d.score_min = $('#filter-score-min').val();
+                    d.score_max = $('#filter-score-max').val();
+                    d.hours_min = $('#filter-hours-min').val();
+                    d.hours_max = $('#filter-hours-max').val();
+
                     d.entries = $('#offline-table-entries-select').val() || defaultEntries;
                     d.length = parseInt($('#offline-table-entries-select').val(), 10) || defaultEntries;
                 }
@@ -336,7 +602,7 @@
         // Entries dropdown change
         $('#offline-table-entries-select').on('change', function () {
             const newLength = parseInt($(this).val(), 10);
-            offlineTable.page.len(newLength).draw();
+            offlineTable.page.len(newLength).page(0).draw(false);
         });
 
         // Pagination click event
@@ -348,29 +614,160 @@
             }
         });
 
-        // Filter Apply & Reset
+        // Quick Filter Apply & Input Listeners
         $('#btn-apply-offline-filter').on('click', function () {
-            offlineTable.ajax.reload();
+            offlineTable.ajax.reload(null, true);
         });
 
         $('#offline-employee-input, #offline-course-input').on('keydown', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                offlineTable.ajax.reload();
+                offlineTable.ajax.reload(null, true);
             }
         });
 
         $('#offline-type-select, #offline-status-select, #offline-year-select').on('change', function () {
-            offlineTable.ajax.reload();
+            offlineTable.ajax.reload(null, true);
         });
 
+        // More Filters Modal: Apply
+        $('#btn-modal-apply').on('click', function () {
+            const fromDate = $('#modal-from-date').val() || '';
+            const toDate = $('#modal-to-date').val() || '';
+            const progressRange = $('input[name="modal_progress_range"]:checked').val() || 'all';
+            const duration = $('input[name="modal_duration"]:checked').val() || 'all';
+            const attendance = $('input[name="modal_attendance"]:checked').val() || 'all';
+            const scoreMin = $('#modal-score-min').val() || '';
+            const scoreMax = $('#modal-score-max').val() || '';
+            const hoursMin = $('#modal-hours-min').val() || '';
+            const hoursMax = $('#modal-hours-max').val() || '';
+
+            $('#filter-from-date').val(fromDate);
+            $('#filter-to-date').val(toDate);
+            $('#filter-progress-range').val(progressRange);
+            $('#filter-duration').val(duration);
+            $('#filter-attendance').val(attendance);
+            $('#filter-score-min').val(scoreMin);
+            $('#filter-score-max').val(scoreMax);
+            $('#filter-hours-min').val(hoursMin);
+            $('#filter-hours-max').val(hoursMax);
+
+            updateActiveFilterBadge();
+            hideMoreFiltersModal();
+            offlineTable.ajax.reload(null, true);
+        });
+
+        // More Filters Modal: Reset
+        $('#btn-modal-reset').on('click', function () {
+            $('#modal-from-date').val('');
+            $('#modal-to-date').val('');
+            $('input[name="modal_progress_range"][value="all"]').prop('checked', true);
+            $('input[name="modal_duration"][value="all"]').prop('checked', true);
+            $('input[name="modal_attendance"][value="all"]').prop('checked', true);
+            $('#modal-score-min').val('');
+            $('#modal-score-max').val('');
+            $('#modal-hours-min').val('');
+            $('#modal-hours-max').val('');
+
+            $('#filter-from-date').val('');
+            $('#filter-to-date').val('');
+            $('#filter-progress-range').val('all');
+            $('#filter-duration').val('all');
+            $('#filter-attendance').val('all');
+            $('#filter-score-min').val('');
+            $('#filter-score-max').val('');
+            $('#filter-hours-min').val('');
+            $('#filter-hours-max').val('');
+
+            updateActiveFilterBadge();
+            hideMoreFiltersModal();
+            offlineTable.ajax.reload(null, true);
+        });
+
+        // Quick Filter Reset (Clears Quick Filters + More Filters)
         $('#btn-reset-offline-filter').on('click', function () {
+            // Reset Quick Filters
             $('#offline-employee-input').val('');
             $('#offline-course-input').val('');
             $('#offline-type-select').val('all');
             $('#offline-status-select').val('all');
             $('#offline-year-select').val('all');
-            offlineTable.ajax.reload();
+
+            // Reset More Filters Modal Inputs
+            $('#modal-from-date').val('');
+            $('#modal-to-date').val('');
+            $('input[name="modal_progress_range"][value="all"]').prop('checked', true);
+            $('input[name="modal_duration"][value="all"]').prop('checked', true);
+            $('input[name="modal_attendance"][value="all"]').prop('checked', true);
+            $('#modal-score-min').val('');
+            $('#modal-score-max').val('');
+            $('#modal-hours-min').val('');
+            $('#modal-hours-max').val('');
+
+            // Reset Hidden Inputs
+            $('#filter-from-date').val('');
+            $('#filter-to-date').val('');
+            $('#filter-progress-range').val('all');
+            $('#filter-duration').val('all');
+            $('#filter-attendance').val('all');
+            $('#filter-score-min').val('');
+            $('#filter-score-max').val('');
+            $('#filter-hours-min').val('');
+            $('#filter-hours-max').val('');
+
+            updateActiveFilterBadge();
+            offlineTable.ajax.reload(null, true);
+        });
+
+        // Export Download Handler
+        $('#btn-download-export').on('click', function (e) {
+            e.preventDefault();
+            const params = new URLSearchParams();
+
+            const empVal = $('#offline-employee-input').val().trim();
+            if (empVal) params.append('employee_id', empVal);
+
+            const courseVal = $('#offline-course-input').val().trim();
+            if (courseVal) params.append('course_name', courseVal);
+
+            const typeVal = $('#offline-type-select').val();
+            if (typeVal && typeVal !== 'all') params.append('type', typeVal);
+
+            const statusVal = $('#offline-status-select').val();
+            if (statusVal && statusVal !== 'all') params.append('status', statusVal);
+
+            const yearVal = $('#offline-year-select').val();
+            if (yearVal && yearVal !== 'all') params.append('year', yearVal);
+
+            const fromDate = $('#filter-from-date').val();
+            if (fromDate) params.append('from_date', fromDate);
+
+            const toDate = $('#filter-to-date').val();
+            if (toDate) params.append('to_date', toDate);
+
+            const progressRange = $('#filter-progress-range').val();
+            if (progressRange && progressRange !== 'all') params.append('progress_range', progressRange);
+
+            const duration = $('#filter-duration').val();
+            if (duration && duration !== 'all') params.append('duration', duration);
+
+            const attendance = $('#filter-attendance').val();
+            if (attendance && attendance !== 'all') params.append('attendance', attendance);
+
+            const scoreMin = $('#filter-score-min').val();
+            if (scoreMin) params.append('score_min', scoreMin);
+
+            const scoreMax = $('#filter-score-max').val();
+            if (scoreMax) params.append('score_max', scoreMax);
+
+            const hoursMin = $('#filter-hours-min').val();
+            if (hoursMin) params.append('hours_min', hoursMin);
+
+            const hoursMax = $('#filter-hours-max').val();
+            if (hoursMax) params.append('hours_max', hoursMax);
+
+            const downloadUrl = downloadBaseUrl + (downloadBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
+            window.open(downloadUrl, '_blank');
         });
 
         // Detail Modal Logic

@@ -24,7 +24,7 @@
             @if(auth()->user()->canAccessManageModule('record_management'))
             @include('main.manage.components.admin-menu-card', [
                 'title' => 'Record Management',
-                'description' => 'Manage online and offline learning records.',
+                'description' => 'Manage KP OWL and Non KP OWL learning records, including online and offline training data, participant progress, classifications, and record exports.',
                 'url' => route('manage.record.online'),
                 'button' => 'Manage Records',
                 'icon' => 'ti ti-folders'

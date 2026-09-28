@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Manage\Record;
 
+use App\Exports\OfflineClassificationExport;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LearningManageController;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Services\Record\OfflineTrainingCreateService;
+use App\Services\Record\RecordOfflineQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -194,7 +196,15 @@ class RecordOfflineController extends Controller
             'years'               => LearningManageController::learningYears(),
             'entries'             => (int) $request->input('entries', 25),
             'trainingTypes'       => self::TRAINING_TYPES,
+            'downloadUrl'         => route('manage.record.offline.classification.download', $resolved['slug']),
         ]);
+    }
+
+    public function classificationDownload(string $classification, Request $request)
+    {
+        $export = new OfflineClassificationExport($classification, $request);
+
+        return $export->download($export->getFileName());
     }
 
     public function classificationDatatable(string $classification, Request $request)
@@ -264,125 +274,7 @@ class RecordOfflineController extends Controller
             ]);
         }
 
-        $query = DB::table('offline_training_users as otu')
-            ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
-            ->leftJoin('users as u', 'u.id', '=', 'otu.user_id')
-            ->whereNull('otu.deleted_at')
-            ->whereNull('ot.deleted_at')
-            ->select([
-                'otu.id',
-                'otu.offline_training_id',
-                'otu.user_id',
-                'otu.employee_id',
-                'otu.name as participant_name',
-                'otu.grade',
-                'otu.job_position',
-                'otu.team',
-                'otu.department',
-                'otu.company',
-                'otu.learning_hours',
-                'otu.progress',
-                'otu.assessment_score',
-                'otu.certificate',
-                'otu.attendance',
-                'otu.attendance_reason',
-                'otu.bond_status',
-                'otu.bond_end_date',
-                'otu.bond_amount',
-                'otu.l1_program',
-                'otu.l2_numerical',
-                'otu.l2_verbal',
-                'otu.l3_numerical',
-                'otu.l3_verbal',
-                'otu.pic',
-                'otu.created_at',
-                'ot.course_name',
-                'ot.sub_course_name',
-                'ot.type',
-                'ot.category',
-                'ot.level',
-                'ot.batch',
-                'ot.main_classification',
-                'ot.sub_classification',
-                'ot.counted_corporate_kpi',
-                'ot.sub_corporate_kpi',
-                'ot.delivery_method',
-                'ot.sub_delivery_method',
-                'ot.provider',
-                'ot.sub_provider',
-                'ot.provider_name',
-                'ot.venue',
-                'ot.instructor',
-                'ot.duration_seconds',
-                'ot.learning_hours as course_learning_hours',
-                'ot.start_date',
-                'ot.finish_date',
-                'u.name as user_name',
-            ]);
-
-        // 1. Filter: Employee Search (ID or Name)
-        $employeeParam = trim((string) ($request->input('employee_id') ?? ($request->input('search_employee') ?? '')));
-        if ($employeeParam !== '') {
-            $query->where(function ($q) use ($employeeParam) {
-                $q->where('otu.employee_id', 'like', "%{$employeeParam}%")
-                  ->orWhere('otu.name', 'like', "%{$employeeParam}%")
-                  ->orWhere('u.name', 'like', "%{$employeeParam}%");
-            });
-        }
-
-        // 2. Filter: Course Name
-        $courseParam = trim((string) ($request->input('course_name') ?? ($request->input('training_title') ?? ($request->input('title') ?? ''))));
-        if ($courseParam !== '') {
-            $query->where(function ($q) use ($courseParam) {
-                $q->where('ot.course_name', 'like', "%{$courseParam}%")
-                  ->orWhere('ot.sub_course_name', 'like', "%{$courseParam}%");
-            });
-        }
-
-        // 3. Filter: Type
-        $typeParam = trim((string) ($request->input('type') ?? $request->input('training_type', 'all')));
-        if ($typeParam !== '' && $typeParam !== 'all') {
-            $query->where('ot.type', $typeParam);
-        }
-
-        // 4. Filter: Main Classification
-        $classParam = trim((string) ($request->input('main_classification') ?? ($request->input('classification', 'all'))));
-        if ($classParam !== '' && $classParam !== 'all') {
-            $resolved = self::resolveClassification($classParam);
-            if ($resolved['is_unclassified']) {
-                $query->where(function ($q) {
-                    $q->whereNull('ot.main_classification')
-                      ->orWhere('ot.main_classification', '');
-                });
-            } else {
-                $query->where('ot.main_classification', $resolved['name']);
-            }
-        }
-
-        // 5. Filter: Status (derived from progress)
-        $statusParam = trim((string) $request->input('status', 'all'));
-        if ($statusParam !== '' && $statusParam !== 'all') {
-            if ($statusParam === 'finished' || $statusParam === '1') {
-                $query->where('otu.progress', '>=', 100);
-            } elseif ($statusParam === 'ongoing' || $statusParam === '0') {
-                $query->where(function ($q) {
-                    $q->where('otu.progress', '<', 100)
-                      ->orWhereNull('otu.progress');
-                });
-            }
-        }
-
-        // 6. Filter: Year (from finish_date or start_date)
-        $yearParam = trim((string) $request->input('year', 'all'));
-        if ($yearParam !== '' && $yearParam !== 'all') {
-            $yearInt = (int) $yearParam;
-            $query->where(function ($q) use ($yearInt) {
-                $q->whereYear('ot.finish_date', $yearInt)
-                  ->orWhere(function ($q2) use ($yearInt) {
-                      $q2->whereNull('ot.finish_date')->whereYear('ot.start_date', $yearInt);
-                  });
-            });
-        }
+        $query = RecordOfflineQueryService::buildQuery($request->all(), $request->input('classification'));
 
         return DataTables::of($query)
             ->addIndexColumn()
