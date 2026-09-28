@@ -40,9 +40,9 @@ class OfflineClassificationFilterAndExportTest extends TestCase
     /**
      * Helper to seed controlled test data under a specific classification.
      */
-    protected function seedFilterTestData(string $classification = 'Leadership'): array
+    protected function seedFilterTestData(string $classification = 'Testing Classification'): array
     {
-        // Training 1: Leadership, In-House, 2026, Duration: 7200s (2 hrs = >60min)
+        // Training 1: Testing Classification, In-House, 2026, Duration: 7200s (2 hrs = >60min)
         $t1Id = DB::table('offline_trainings')->insertGetId([
             'course_name'            => 'Executive Leadership Mastery',
             'sub_course_name'        => 'Strategic Decision Making',
@@ -88,7 +88,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
             'updated_at'          => now(),
         ]);
 
-        // Training 2: Leadership, Public, 2025, Duration: 900s (15 min = 10-30)
+        // Training 2: Testing Classification, Public, 2025, Duration: 900s (15 min = 10-30)
         $t2Id = DB::table('offline_trainings')->insertGetId([
             'course_name'            => 'Agile Team Coaching',
             'sub_course_name'        => 'Sprint Leadership',
@@ -259,10 +259,10 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_strictly_locks_route_classification_ignoring_override(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
-        // Request Leadership datatable but pass classification=technical in query params
-        $response = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?classification=technical');
+        // Request Testing Classification datatable but pass classification=technical in query params
+        $response = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?classification=technical');
         $response->assertStatus(200);
 
         $data = $response->json('data');
@@ -276,10 +276,10 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_filters_by_employee_search(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Search by NIP
-        $responseNip = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?employee_id=TESTEMP901');
+        $responseNip = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?employee_id=TESTEMP901');
         $responseNip->assertStatus(200);
         $dataNip = $responseNip->json('data');
         $this->assertCount(1, $dataNip);
@@ -287,7 +287,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertStringContainsString('Alpha Commander', $dataNip[0]['employee']);
 
         // Search by participant name
-        $responseName = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?employee_id=Bravo');
+        $responseName = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?employee_id=Bravo');
         $responseName->assertStatus(200);
         $dataName = $responseName->json('data');
         $this->assertCount(1, $dataName);
@@ -297,9 +297,9 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_filters_by_course_name(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
-        $response = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?course_name=Agile+Team');
+        $response = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?course_name=Agile+Team');
         $response->assertStatus(200);
         $data = $response->json('data');
         $this->assertCount(1, $data);
@@ -310,10 +310,10 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_filters_by_type(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Filter Public
-        $response = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?type=Public');
+        $response = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?type=Public');
         $response->assertStatus(200);
         $data = $response->json('data');
         $this->assertCount(1, $data);
@@ -321,7 +321,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertStringContainsString('Charlie Manager', $data[0]['employee']);
 
         // Filter In-House
-        $responseInHouse = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?type=In-House');
+        $responseInHouse = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?type=In-House');
         $responseInHouse->assertStatus(200);
         $dataInHouse = $responseInHouse->json('data');
         $this->assertCount(2, $dataInHouse);
@@ -329,10 +329,10 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_filters_by_status(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Finished: progress >= 100
-        $resFinished = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?status=finished');
+        $resFinished = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?status=finished');
         $resFinished->assertStatus(200);
         $dataFinished = $resFinished->json('data');
         $this->assertCount(1, $dataFinished);
@@ -340,7 +340,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertStringContainsString('Alpha Commander', $dataFinished[0]['employee']);
 
         // Ongoing: 0 < progress < 100
-        $resOngoing = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?status=ongoing');
+        $resOngoing = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?status=ongoing');
         $resOngoing->assertStatus(200);
         $dataOngoing = $resOngoing->json('data');
         $this->assertCount(1, $dataOngoing);
@@ -348,7 +348,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertStringContainsString('Bravo Director', $dataOngoing[0]['employee']);
 
         // Not Started: progress <= 0
-        $resNotStarted = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?status=not_started');
+        $resNotStarted = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?status=not_started');
         $resNotStarted->assertStatus(200);
         $dataNotStarted = $resNotStarted->json('data');
         $this->assertCount(1, $dataNotStarted);
@@ -358,16 +358,16 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_filters_by_year(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Year 2026
-        $res2026 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?year=2026');
+        $res2026 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?year=2026');
         $res2026->assertStatus(200);
         $data2026 = $res2026->json('data');
         $this->assertCount(2, $data2026);
 
         // Year 2025
-        $res2025 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?year=2025');
+        $res2025 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?year=2025');
         $res2025->assertStatus(200);
         $data2025 = $res2025->json('data');
         $this->assertCount(1, $data2025);
@@ -377,16 +377,16 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_more_filter_by_date_range(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Date range covering March 2026
-        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?from_date=2026-03-01&to_date=2026-03-31');
+        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?from_date=2026-03-01&to_date=2026-03-31');
         $res->assertStatus(200);
         $data = $res->json('data');
         $this->assertCount(2, $data);
 
         // Date range in dd/mm/yyyy format
-        $resFormat = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?from_date=01/08/2025&to_date=31/08/2025');
+        $resFormat = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?from_date=01/08/2025&to_date=31/08/2025');
         $resFormat->assertStatus(200);
         $dataFormat = $resFormat->json('data');
         $this->assertCount(1, $dataFormat);
@@ -396,10 +396,10 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_more_filter_by_progress_range(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Progress 26-50% (Bravo Director is 45%)
-        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?progress_range=26-50');
+        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?progress_range=26-50');
         $res->assertStatus(200);
         $data = $res->json('data');
         $this->assertCount(1, $data);
@@ -407,7 +407,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertStringContainsString('Bravo Director', $data[0]['employee']);
 
         // Progress 100%
-        $res100 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?progress_range=100');
+        $res100 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?progress_range=100');
         $res100->assertStatus(200);
         $data100 = $res100->json('data');
         $this->assertCount(1, $data100);
@@ -417,16 +417,16 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_more_filter_by_duration(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // > 1 hour (7200s) -> Alpha and Bravo
-        $resGt60 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?duration=gt60');
+        $resGt60 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?duration=gt60');
         $resGt60->assertStatus(200);
         $dataGt60 = $resGt60->json('data');
         $this->assertCount(2, $dataGt60);
 
         // 10-30 minutes (900s) -> Charlie
-        $res1030 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?duration=10-30');
+        $res1030 = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?duration=10-30');
         $res1030->assertStatus(200);
         $data1030 = $res1030->json('data');
         $this->assertCount(1, $data1030);
@@ -436,16 +436,16 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_more_filter_by_attendance(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Attendance: Present (true)
-        $resPresent = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?attendance=present');
+        $resPresent = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?attendance=present');
         $resPresent->assertStatus(200);
         $dataPresent = $resPresent->json('data');
         $this->assertCount(2, $dataPresent);
 
         // Attendance: Absent (false)
-        $resAbsent = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?attendance=absent');
+        $resAbsent = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?attendance=absent');
         $resAbsent->assertStatus(200);
         $dataAbsent = $resAbsent->json('data');
         $this->assertCount(1, $dataAbsent);
@@ -455,10 +455,10 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_more_filter_by_assessment_score(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Score >= 90.0
-        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?score_min=90');
+        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?score_min=90');
         $res->assertStatus(200);
         $data = $res->json('data');
         $this->assertCount(1, $data);
@@ -466,7 +466,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertStringContainsString('Alpha Commander', $data[0]['employee']);
 
         // Score between 70 and 80
-        $resRange = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?score_min=70&score_max=80');
+        $resRange = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?score_min=70&score_max=80');
         $resRange->assertStatus(200);
         $dataRange = $resRange->json('data');
         $this->assertCount(1, $dataRange);
@@ -476,10 +476,10 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_more_filter_by_learning_hours(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Hours >= 7.0
-        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?hours_min=7');
+        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?hours_min=7');
         $res->assertStatus(200);
         $data = $res->json('data');
         $this->assertCount(1, $data);
@@ -489,10 +489,10 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_datatable_combined_quick_and_more_filters(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // In-House + Present + Ongoing (45%)
-        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?type=In-House&attendance=present&status=ongoing');
+        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?type=In-House&attendance=present&status=ongoing');
         $res->assertStatus(200);
         $data = $res->json('data');
         $this->assertCount(1, $data);
@@ -502,34 +502,34 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_export_endpoint_requires_permission(): void
     {
-        $guestRes = $this->get('/manage/record/offline/classification/leadership/download');
+        $guestRes = $this->get('/manage/record/offline/classification/testing-classification/download');
         $this->assertTrue(in_array($guestRes->status(), [302, 401, 403]));
     }
 
     public function test_export_endpoint_downloads_excel_file_with_valid_headers_and_filename(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
-        $response = $this->actingAs($this->admin)->get('/manage/record/offline/classification/leadership/download');
+        $response = $this->actingAs($this->admin)->get('/manage/record/offline/classification/testing-classification/download');
         $response->assertStatus(200);
 
         // Check content-type or disposition
         $disposition = $response->headers->get('content-disposition');
         $this->assertNotNull($disposition);
         $this->assertStringContainsString('attachment', $disposition);
-        $this->assertStringContainsString('non-kp-owl-leadership-', $disposition);
+        $this->assertStringContainsString('non-kp-owl-testing-classification-', $disposition);
         $this->assertStringContainsString('.xlsx', $disposition);
     }
 
     public function test_export_respects_route_classification_and_active_filters(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         // Export with filter status=finished (should only include Alpha Commander)
         $request = new Request([
             'status' => 'finished',
         ]);
-        $export = new OfflineClassificationExport('leadership', $request);
+        $export = new OfflineClassificationExport('testing-classification', $request);
 
         $query = $export->query();
         $results = $query->get();
@@ -537,15 +537,15 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertCount(1, $results);
         $this->assertEquals('TESTEMP901', $results[0]->employee_id);
         $this->assertEquals('Alpha Commander', $results[0]->participant_name);
-        $this->assertEquals('Leadership', $results[0]->main_classification);
+        $this->assertEquals('Testing Classification', $results[0]->main_classification);
     }
 
     public function test_export_columns_match_offline_training_excel_schema_44_columns(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         $request = new Request();
-        $export = new OfflineClassificationExport('leadership', $request);
+        $export = new OfflineClassificationExport('testing-classification', $request);
 
         // 1. Verify Headings
         $headings = $export->headings();
@@ -566,7 +566,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertNotEmpty($mapped[1]); // 2. ID (employee_id)
         $this->assertNotEmpty($mapped[2]); // 3. Name
         $this->assertContains($mapped[10], ['In-House', 'Public']); // 11. Type
-        $this->assertEquals('Leadership', $mapped[14]); // 15. Main Classification
+        $this->assertEquals('Testing Classification', $mapped[14]); // 15. Main Classification
         $this->assertStringContainsString(':', $mapped[22]); // 23. Duration (HH:MM:SS)
         $this->assertIsNumeric($mapped[23]); // 24. Learning Hours
         $this->assertIsNumeric($mapped[24]); // 25. Progress %
@@ -574,7 +574,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
 
     public function test_shared_query_service_guarantees_datatable_and_export_parity(): void
     {
-        $this->seedFilterTestData('Leadership');
+        $this->seedFilterTestData('Testing Classification');
 
         $filters = [
             'type'       => 'In-House',
@@ -582,29 +582,29 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         ];
 
         // Service query count
-        $serviceQuery = RecordOfflineQueryService::buildClassificationQuery('leadership', $filters);
+        $serviceQuery = RecordOfflineQueryService::buildClassificationQuery('testing-classification', $filters);
         $count = $serviceQuery->count();
         $this->assertEquals(2, $count);
 
         // Datatable response count
-        $dtRes = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable?type=In-House&attendance=present');
+        $dtRes = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable?type=In-House&attendance=present');
         $dtRes->assertStatus(200);
         $this->assertEquals($count, $dtRes->json('recordsFiltered'));
 
         // Export query count
         $exportReq = new Request($filters);
-        $export = new OfflineClassificationExport('leadership', $exportReq);
+        $export = new OfflineClassificationExport('testing-classification', $exportReq);
         $this->assertEquals($count, $export->query()->count());
     }
 
     public function test_soft_deleted_records_are_excluded_from_datatable_and_export(): void
     {
-        $data = $this->seedFilterTestData('Leadership');
+        $data = $this->seedFilterTestData('Testing Classification');
 
         // Soft delete training 1
         DB::table('offline_trainings')->where('id', $data['t1Id'])->update(['deleted_at' => now()]);
 
-        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/leadership/datatable');
+        $res = $this->actingAs($this->admin)->getJson('/manage/record/offline/classification/testing-classification/datatable');
         $res->assertStatus(200);
         $dtData = $res->json('data');
 
@@ -614,7 +614,7 @@ class OfflineClassificationFilterAndExportTest extends TestCase
         $this->assertStringContainsString('Charlie Manager', $dtData[0]['employee']);
 
         // Export should also only contain Charlie Manager
-        $export = new OfflineClassificationExport('leadership', new Request());
+        $export = new OfflineClassificationExport('testing-classification', new Request());
         $this->assertEquals(1, $export->query()->count());
     }
 

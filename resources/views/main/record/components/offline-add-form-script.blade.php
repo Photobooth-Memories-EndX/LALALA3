@@ -581,52 +581,19 @@
             $('#rev-metric-bond').text(bonded);
         }
 
-        // Section navigation with natural document smooth-scroll
-        function scrollToSection(sectionId, stepNum) {
+        // Smooth scroll to form section
+        function scrollToSection(sectionId) {
             const target = $(sectionId);
             if (target.length) {
                 $('html, body').animate({
                     scrollTop: target.offset().top - 90
                 }, 250);
             }
-            $('.page-step-item').removeClass('active');
-            $(`#step-nav-${stepNum}`).addClass('active');
         }
 
-        $('#btn-review-edit-1').on('click', function () { scrollToSection('#section-1-training-info', 1); });
-        $('#btn-review-edit-2').on('click', function () { scrollToSection('#section-2-participants', 2); });
-        $('#btn-review-edit-3').on('click', function () { scrollToSection('#section-3-results', 3); });
-
-        // Left Step Nav Clicks
-        $('.page-step-item').on('click', function (e) {
-            e.preventDefault();
-            const targetId = $(this).attr('href');
-            const stepNum = $(this).data('step');
-            scrollToSection(targetId, stepNum);
-        });
-
-        // Window scroll spy to highlight active section in left nav
-        $(window).on('scroll', function () {
-            const scrollPos = $(window).scrollTop() + 120;
-            const sections = [
-                { id: '#section-1-training-info', step: 1 },
-                { id: '#section-2-participants', step: 2 },
-                { id: '#section-3-results', step: 3 },
-                { id: '#section-4-review', step: 4 }
-            ];
-
-            for (let i = sections.length - 1; i >= 0; i--) {
-                const $sec = $(sections[i].id);
-                if ($sec.length) {
-                    const top = $sec.offset().top;
-                    if (scrollPos >= top) {
-                        $('.page-step-item').removeClass('active');
-                        $(`#step-nav-${sections[i].step}`).addClass('active');
-                        break;
-                    }
-                }
-            }
-        });
+        $('#btn-review-edit-1').on('click', function () { scrollToSection('#section-1-training-info'); });
+        $('#btn-review-edit-2').on('click', function () { scrollToSection('#section-2-participants'); });
+        $('#btn-review-edit-3').on('click', function () { scrollToSection('#section-3-results'); });
 
         // --- SUBMIT TRAINING FORM ---
         $btnSubmitAdd.on('click', function () {

@@ -133,12 +133,13 @@ class OfflineTrainingCreateTest extends TestCase
         $response->assertSee('Add Non KP OWL Training');
         $response->assertSee('Create an offline employee training record.');
 
-        // Step Navigation
-        $response->assertSee('id="page-step-nav"', false);
-        $response->assertSee('id="step-nav-1"', false);
-        $response->assertSee('id="step-nav-2"', false);
-        $response->assertSee('id="step-nav-3"', false);
-        $response->assertSee('id="step-nav-4"', false);
+        // Form Navigation sidebar is removed (single-scroll full-width layout)
+        $response->assertDontSee('Form Navigation');
+        $response->assertDontSee('id="page-step-nav"', false);
+        $response->assertDontSee('id="step-nav-1"', false);
+        $response->assertDontSee('id="step-nav-2"', false);
+        $response->assertDontSee('id="step-nav-3"', false);
+        $response->assertDontSee('id="step-nav-4"', false);
 
         // Continuous 4 sections on the same page
         $response->assertSee('id="section-1-training-info"', false);
