@@ -8,6 +8,7 @@ use App\Http\Controllers\LearningManageController;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Services\Record\OfflineTrainingCreateService;
+use App\Services\Record\OfflineTrainingUpdateService;
 use App\Services\Record\RecordOfflineQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -370,9 +371,34 @@ class RecordOfflineController extends Controller
                 return '<span class="text-muted small">-</span>';
             })
             ->addColumn('action', function ($row) {
-                return '<button type="button" class="btn btn-sm btn-outline-primary btn-view-offline-detail px-2.5 py-1" data-id="' . $row->id . '">
-                    <i class="ti ti-eye me-1"></i> Detail
-                </button>';
+                $name = $row->participant_name ?: ($row->user_name ?: 'Participant');
+                $course = $row->course_name ?: 'Training';
+                $editUrl = route('manage.record.offline.edit', $row->id);
+
+                return '<div class="d-inline-flex align-items-center justify-content-center gap-1">
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-view-offline-detail rounded-2" 
+                            data-id="' . $row->id . '" 
+                            title="View Detail" 
+                            aria-label="View Detail" 
+                            data-bs-toggle="tooltip">
+                        <i class="ti ti-eye"></i>
+                    </button>
+                    <a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-outline-warning rounded-2 btn-edit-offline-record" 
+                       title="Edit Record" 
+                       aria-label="Edit Record" 
+                       data-bs-toggle="tooltip">
+                        <i class="ti ti-edit"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete-offline-record rounded-2" 
+                            data-id="' . $row->id . '" 
+                            data-employee="' . htmlspecialchars($name, ENT_QUOTES) . '" 
+                            data-course="' . htmlspecialchars($course, ENT_QUOTES) . '" 
+                            title="Delete Record" 
+                            aria-label="Delete Record" 
+                            data-bs-toggle="tooltip">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                </div>';
             })
             ->rawColumns(['status_badge', 'employee', 'course_name', 'type_badge', 'learning_hours', 'progress_badge', 'attendance_badge', 'assessment_score', 'certificate_badge', 'action'])
             ->make(true);
@@ -532,5 +558,133 @@ class RecordOfflineController extends Controller
                 'message' => 'Failed to save offline training: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Show dedicated edit page for an offline training record.
+     */
+    public function edit($id)
+    {
+        $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
+        if (!$hasTables) {
+            abort(404, 'Offline training tables not migrated.');
+        }
+
+        $record = OfflineTrainingUser::with('training')->find($id);
+
+        if (!$record || !$record->training) {
+            abort(404, 'Offline training record not found.');
+        }
+
+        $training = $record->training;
+        $resolved = self::resolveClassification($training->main_classification ?? 'unclassified');
+
+        return view('main.record.offline-edit', [
+            'title'               => 'Edit Non KP OWL Record',
+            'subtitle'            => 'Update offline employee training record and results.',
+            'record'              => $record,
+            'training'            => $training,
+            'classification'      => $resolved,
+            'trainingTypes'       => self::TRAINING_TYPES,
+            'mainClassifications' => self::MAIN_CLASSIFICATIONS,
+        ]);
+    }
+
+    /**
+     * Update an offline training record and its participant data.
+     */
+    public function update($id, Request $request, OfflineTrainingUpdateService $updateService)
+    {
+        $record = OfflineTrainingUser::with('training')->find($id);
+
+        if (!$record || !$record->training) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Offline training record not found.',
+                ], 404);
+            }
+            abort(404, 'Offline training record not found.');
+        }
+
+        try {
+            $updatedRecord = $updateService->update($record, $request->all());
+            $resolved = self::resolveClassification($updatedRecord->training->main_classification ?? 'unclassified');
+            $redirectUrl = route('manage.record.offline.classification', $resolved['slug']);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success'      => true,
+                    'message'      => 'Offline training record updated successfully.',
+                    'redirect_url' => $redirectUrl,
+                    'data'         => [
+                        'id'                  => $updatedRecord->id,
+                        'course_name'         => $updatedRecord->training->course_name,
+                        'participant_name'    => $updatedRecord->name,
+                        'classification_slug' => $resolved['slug'],
+                    ],
+                ]);
+            }
+
+            return redirect($redirectUrl)->with('success', 'Training record successfully updated.');
+        } catch (ValidationException $ve) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $ve->getMessage(),
+                    'errors'  => $ve->errors(),
+                ], 422);
+            }
+
+            return redirect()->back()->withErrors($ve->errors())->withInput();
+        } catch (\Throwable $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update record: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to update record: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Soft-delete an offline training participant record.
+     * If this was the last participant, also soft-deletes the parent training.
+     */
+    public function destroy($id): JsonResponse
+    {
+        $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
+        if (!$hasTables) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Offline training tables not migrated.',
+            ], 404);
+        }
+
+        $record = OfflineTrainingUser::with('training')->find($id);
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Training record not found.',
+            ], 404);
+        }
+
+        $training = $record->training;
+
+        DB::transaction(function () use ($record, $training) {
+            $record->delete();
+
+            if ($training && $training->participants()->count() === 0) {
+                $training->delete();
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Record successfully deleted.',
+        ]);
     }
 }

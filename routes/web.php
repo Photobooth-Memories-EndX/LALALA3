@@ -479,6 +479,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::post('offline/import/confirm', [OfflineTrainingImportController::class, 'confirm'])->name('offline.import.confirm');
             Route::post('offline/import/cancel', [OfflineTrainingImportController::class, 'cancel'])->name('offline.import.cancel');
             Route::get('offline/{id}/detail', [RecordOfflineController::class, 'detail'])->name('offline.detail');
+            Route::get('offline/{id}/edit', [RecordOfflineController::class, 'edit'])->name('offline.edit');
+            Route::put('offline/{id}', [RecordOfflineController::class, 'update'])->name('offline.update');
+            Route::delete('offline/{id}', [RecordOfflineController::class, 'destroy'])->name('offline.destroy');
             Route::get('all', [RecordAllController::class, 'index'])->name('all');
             Route::get('all/ajax/summary', [RecordAllController::class, 'ajaxSummary'])->name('all.ajax.summary');
             Route::get('all/ajax/classification', [RecordAllController::class, 'ajaxClassification'])->name('all.ajax.classification');

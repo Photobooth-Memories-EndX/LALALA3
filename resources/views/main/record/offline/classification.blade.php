@@ -317,6 +317,32 @@
 
 @include('main.record.components.offline-detail-modal')
 
+<!-- DELETE CONFIRMATION MODAL -->
+<div class="modal fade" id="deleteOfflineRecordModal" tabindex="-1" aria-labelledby="deleteOfflineRecordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="text-danger mb-3">
+                    <span class="avatar avatar-lg bg-danger-lt rounded-circle">
+                        <i class="ti ti-trash fs-1"></i>
+                    </span>
+                </div>
+                <h4 class="modal-title fw-bold text-dark mb-2" id="deleteOfflineRecordModalLabel">Delete Training Record?</h4>
+                <p class="text-muted small mb-3">
+                    Are you sure you want to delete the record for <strong id="delete-modal-employee-name" class="text-dark"></strong> in <em id="delete-modal-course-name"></em>? This action will remove the participant from this training.
+                </p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger px-3 rounded-2 d-inline-flex align-items-center gap-1" id="btn-confirm-delete-offline-record">
+                        <i class="ti ti-trash"></i>
+                        <span>Delete</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('style')
@@ -392,29 +418,38 @@
     /* Modal dark mode styling */
     [data-bs-theme="dark"] #offlineTrainingDetailModal .modal-content,
     [data-bs-theme="dark"] #moreOfflineFiltersModal .modal-content,
+    [data-bs-theme="dark"] #deleteOfflineRecordModal .modal-content,
     body.dark-mode #offlineTrainingDetailModal .modal-content,
     body.dark-mode #moreOfflineFiltersModal .modal-content,
+    body.dark-mode #deleteOfflineRecordModal .modal-content,
     body.theme-dark #offlineTrainingDetailModal .modal-content,
-    body.theme-dark #moreOfflineFiltersModal .modal-content {
+    body.theme-dark #moreOfflineFiltersModal .modal-content,
+    body.theme-dark #deleteOfflineRecordModal .modal-content {
         background-color: var(--tblr-bg-surface, #1f2937) !important;
         color: #f8fafc !important;
     }
 
     [data-bs-theme="dark"] #offlineTrainingDetailModal .bg-light,
     [data-bs-theme="dark"] #moreOfflineFiltersModal .bg-light,
+    [data-bs-theme="dark"] #deleteOfflineRecordModal .bg-light,
     body.dark-mode #offlineTrainingDetailModal .bg-light,
     body.dark-mode #moreOfflineFiltersModal .bg-light,
+    body.dark-mode #deleteOfflineRecordModal .bg-light,
     body.theme-dark #offlineTrainingDetailModal .bg-light,
-    body.theme-dark #moreOfflineFiltersModal .bg-light {
+    body.theme-dark #moreOfflineFiltersModal .bg-light,
+    body.theme-dark #deleteOfflineRecordModal .bg-light {
         background-color: #111827 !important;
     }
 
     [data-bs-theme="dark"] #offlineTrainingDetailModal .text-dark,
     [data-bs-theme="dark"] #moreOfflineFiltersModal .text-dark,
+    [data-bs-theme="dark"] #deleteOfflineRecordModal .text-dark,
     body.dark-mode #offlineTrainingDetailModal .text-dark,
     body.dark-mode #moreOfflineFiltersModal .text-dark,
+    body.dark-mode #deleteOfflineRecordModal .text-dark,
     body.theme-dark #offlineTrainingDetailModal .text-dark,
-    body.theme-dark #moreOfflineFiltersModal .text-dark {
+    body.theme-dark #moreOfflineFiltersModal .text-dark,
+    body.theme-dark #deleteOfflineRecordModal .text-dark {
         color: #f8fafc !important;
     }
 
@@ -427,6 +462,17 @@
         background-color: #111827 !important;
         color: #f8fafc !important;
         border-color: #374151 !important;
+    }
+
+    /* Action buttons */
+    .btn-icon {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
     }
 </style>
 @endsection
@@ -595,6 +641,14 @@
                     `;
                     paginationHtml += '</ul>';
                     $paginationContainer.html(paginationHtml);
+                }
+
+                // Reinitialize Bootstrap tooltips for action buttons
+                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('#offline-classification-table [data-bs-toggle="tooltip"]'));
+                    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                        bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl);
+                    });
                 }
             }
         });
@@ -888,6 +942,62 @@
                 },
                 error: function () {
                     $('#offline-detail-loading').html('<div class="text-danger small py-3">Failed to load training details.</div>');
+                }
+            });
+        });
+
+        // Delete Record Modal Logic
+        const deleteModalEl = document.getElementById('deleteOfflineRecordModal');
+        let deleteModal = null;
+        if (deleteModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            deleteModal = new bootstrap.Modal(deleteModalEl);
+        }
+
+        $(document).on('click', '.btn-delete-offline-record', function () {
+            const id = $(this).data('id');
+            const employee = $(this).data('employee') || 'Participant';
+            const course = $(this).data('course') || 'Training';
+
+            $('#delete-modal-employee-name').text(employee);
+            $('#delete-modal-course-name').text(course);
+            $('#btn-confirm-delete-offline-record').data('id', id);
+
+            if (deleteModal) {
+                deleteModal.show();
+            } else {
+                $('#deleteOfflineRecordModal').modal('show');
+            }
+        });
+
+        $('#btn-confirm-delete-offline-record').on('click', function () {
+            const id = $(this).data('id');
+            if (!id) return;
+
+            const $btn = $(this);
+            const originalHtml = $btn.html();
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Deleting...');
+
+            $.ajax({
+                url: `/manage/record/offline/${id}`,
+                type: 'DELETE',
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
+                },
+                success: function (res) {
+                    $btn.prop('disabled', false).html(originalHtml);
+                    if (deleteModal) {
+                        deleteModal.hide();
+                    } else {
+                        $('#deleteOfflineRecordModal').modal('hide');
+                    }
+                    offlineTable.ajax.reload(null, false);
+                },
+                error: function (xhr) {
+                    $btn.prop('disabled', false).html(originalHtml);
+                    const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Failed to delete record.';
+                    alert(msg);
                 }
             });
         });
