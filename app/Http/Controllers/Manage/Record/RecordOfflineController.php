@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Manage\Record;
 
 use App\Exports\OfflineClassificationExport;
+use App\Exports\OfflineTrainingCsvExport;
 use App\Exports\OfflineTrainingExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LearningManageController;
 use App\Models\OfflineTraining;
@@ -210,6 +212,39 @@ class RecordOfflineController extends Controller
         $export = new OfflineTrainingExport(null, $request);
 
         return $export->download($export->getFileName());
+    }
+
+    /**
+     * Download global PDF export containing all active offline training records across all classifications.
+     */
+    public function exportPdf(Request $request)
+    {
+        $records = RecordOfflineQueryService::buildGlobalQuery($request->all())
+            ->orderBy('ot.start_date', 'desc')
+            ->orderBy('ot.id', 'desc')
+            ->orderBy('otu.id', 'asc')
+            ->get();
+
+        $pdf = Pdf::loadView('main.record.offline.export-pdf', [
+            'records'       => $records,
+            'generatedAt'   => now()->format('d M Y H:i:s'),
+            'generatedDate' => now()->format('d M Y H:i:s'),
+            'totalRecords'  => $records->count(),
+        ]);
+
+        $fileName = sprintf('non-kp-owl-all-records-%s.pdf', now()->format('Y-m-d'));
+
+        return $pdf->setPaper('a4', 'landscape')->download($fileName);
+    }
+
+    /**
+     * Download global CSV export containing all active offline training records across all classifications.
+     */
+    public function exportCsv(Request $request)
+    {
+        $export = new OfflineTrainingCsvExport(null, $request);
+
+        return $export->download($export->getFileName(), \Maatwebsite\Excel\Excel::CSV);
     }
 
     public function classificationDownload(string $classification, Request $request)

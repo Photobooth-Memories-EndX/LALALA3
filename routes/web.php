@@ -485,6 +485,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::post('offline/import/confirm', [OfflineTrainingImportController::class, 'confirm'])->name('offline.import.confirm');
             Route::post('offline/import/cancel', [OfflineTrainingImportController::class, 'cancel'])->name('offline.import.cancel');
             Route::get('offline/export', [RecordOfflineController::class, 'export'])->name('offline.export');
+            Route::get('offline/export/pdf', [RecordOfflineController::class, 'exportPdf'])->name('offline.export.pdf');
+            Route::get('offline/export/csv', [RecordOfflineController::class, 'exportCsv'])->name('offline.export.csv');
             Route::get('offline/{id}/detail', [RecordOfflineController::class, 'detail'])->name('offline.detail');
             Route::get('offline/{id}/edit', [RecordOfflineController::class, 'edit'])->name('offline.edit');
             Route::put('offline/{id}', [RecordOfflineController::class, 'update'])->name('offline.update');

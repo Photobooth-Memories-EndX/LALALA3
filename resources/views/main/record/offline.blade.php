@@ -54,14 +54,40 @@
                         <i class="ti ti-file-spreadsheet fs-2"></i>
                         <span>Import Excel</span>
                     </button>
-                    <a href="{{ route('manage.record.offline.import.template') }}" class="btn btn-outline-secondary rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-download-offline-template">
-                        <i class="ti ti-download fs-2"></i>
-                        <span>Download Template</span>
-                    </a>
-                    <a href="{{ route('manage.record.offline.export') }}" class="btn btn-success rounded-3 px-3 d-inline-flex align-items-center gap-1.5" id="btn-export-offline-all" title="Export all active Non KP OWL records across all classifications">
-                        <i class="ti ti-file-spreadsheet fs-2"></i>
-                        <span>Export Non KP OWL</span>
-                    </a>
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle rounded-3 px-3 d-inline-flex align-items-center gap-1.5"
+                                data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false" id="btn-download-dropdown">
+                            <i class="ti ti-download fs-2"></i>
+                            <span>Download</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border rounded-3 mt-1 py-1" aria-labelledby="btn-download-dropdown" style="min-width: 250px;">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.import.template') }}" id="btn-download-offline-template">
+                                    <i class="ti ti-file-description text-secondary fs-3"></i>
+                                    <span>Download Template</span>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.export') }}" id="btn-export-offline-xlsx">
+                                    <i class="ti ti-file-spreadsheet text-success fs-3"></i>
+                                    <span>Download Offline Record (.xlsx)</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.export.pdf') }}" id="btn-export-offline-pdf">
+                                    <i class="ti ti-file-type-pdf text-danger fs-3"></i>
+                                    <span>Download PDF (.pdf)</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('manage.record.offline.export.csv') }}" id="btn-export-offline-csv">
+                                    <i class="ti ti-file-type-csv text-primary fs-3"></i>
+                                    <span>Download CSV (.csv)</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
