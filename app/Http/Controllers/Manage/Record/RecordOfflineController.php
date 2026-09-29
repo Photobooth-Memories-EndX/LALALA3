@@ -303,6 +303,10 @@ class RecordOfflineController extends Controller
             ->addColumn('employee_id', function ($row) {
                 return htmlspecialchars($row->employee_id ?: '-');
             })
+            ->addColumn('participant_name', function ($row) {
+                $name = $row->participant_name ?: ($row->user_name ?: '-');
+                return '<div class="fw-semibold text-dark text-nowrap">' . htmlspecialchars($name) . '</div>';
+            })
             ->addColumn('employee', function ($row) {
                 $name = $row->participant_name ?: ($row->user_name ?: '-');
                 $subInfo = [];
@@ -318,36 +322,102 @@ class RecordOfflineController extends Controller
 
                 return '<div class="fw-semibold">' . htmlspecialchars($name) . '</div>' . $subHtml;
             })
+            ->addColumn('grade', function ($row) {
+                return htmlspecialchars($row->grade ?: '-');
+            })
+            ->addColumn('job_position', function ($row) {
+                return !empty($row->job_position)
+                    ? '<div class="text-truncate" style="max-width: 200px;" title="' . htmlspecialchars($row->job_position) . '">' . htmlspecialchars($row->job_position) . '</div>'
+                    : '-';
+            })
+            ->addColumn('team', function ($row) {
+                return htmlspecialchars($row->team ?: '-');
+            })
+            ->addColumn('department', function ($row) {
+                return !empty($row->department)
+                    ? '<div class="text-truncate" style="max-width: 200px;" title="' . htmlspecialchars($row->department) . '">' . htmlspecialchars($row->department) . '</div>'
+                    : '-';
+            })
+            ->addColumn('company', function ($row) {
+                return htmlspecialchars($row->company ?: '-');
+            })
             ->addColumn('course_name', function ($row) {
-                $sub = $row->sub_course_name
-                    ? '<div class="text-muted extra-small" style="font-size: 0.75rem;">' . htmlspecialchars($row->sub_course_name) . '</div>'
-                    : '';
-
-                return '<div class="fw-semibold text-truncate" style="max-width: 240px;" title="' . htmlspecialchars($row->course_name) . '">'
-                    . htmlspecialchars($row->course_name) . '</div>' . $sub;
+                return '<div class="fw-semibold text-dark text-truncate" style="max-width: 260px;" title="' . htmlspecialchars($row->course_name ?: '') . '">'
+                    . htmlspecialchars($row->course_name ?: '-') . '</div>';
+            })
+            ->addColumn('sub_course_name', function ($row) {
+                return !empty($row->sub_course_name)
+                    ? '<div class="text-truncate" style="max-width: 220px;" title="' . htmlspecialchars($row->sub_course_name) . '">' . htmlspecialchars($row->sub_course_name) . '</div>'
+                    : '-';
             })
             ->addColumn('type_badge', function ($row) {
                 return '<span class="badge bg-light text-secondary border px-2 py-1">' . htmlspecialchars($row->type ?: 'In-House') . '</span>';
             })
-            ->addColumn('main_classification', function ($row) {
-                return htmlspecialchars($row->main_classification ?: '-');
+            ->addColumn('category', function ($row) {
+                return htmlspecialchars($row->category ?: '-');
+            })
+            ->addColumn('level', function ($row) {
+                return htmlspecialchars($row->level ?: '-');
             })
             ->addColumn('batch', function ($row) {
                 return htmlspecialchars($row->batch ?: '-');
             })
-            ->addColumn('learning_hours', function ($row) {
-                $hours = (float) ($row->learning_hours ?? 0);
-                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+            ->addColumn('main_classification', function ($row) {
+                return htmlspecialchars($row->main_classification ?: '-');
             })
-            ->addColumn('progress_badge', function ($row) {
-                $progress = (float) ($row->progress ?? 0);
-                $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
-                return '<div class="d-flex align-items-center gap-2">
-                    <div class="progress progress-xs flex-grow-1" style="width: 55px; height: 6px;">
-                        <div class="progress-bar ' . $color . '" style="width: ' . min(100, $progress) . '%"></div>
-                    </div>
-                    <span class="small fw-semibold text-muted">' . round($progress) . '%</span>
-                </div>';
+            ->addColumn('sub_classification', function ($row) {
+                return htmlspecialchars($row->sub_classification ?: '-');
+            })
+            ->addColumn('counted_corporate_kpi', function ($row) {
+                if ($row->counted_corporate_kpi === null || $row->counted_corporate_kpi === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+                return $row->counted_corporate_kpi
+                    ? '<span class="badge bg-blue-lt text-primary px-2 py-1">Yes</span>'
+                    : '<span class="badge bg-light text-muted border px-2 py-1">No</span>';
+            })
+            ->addColumn('sub_corporate_kpi', function ($row) {
+                return htmlspecialchars($row->sub_corporate_kpi ?: '-');
+            })
+            ->addColumn('delivery_method', function ($row) {
+                return htmlspecialchars($row->delivery_method ?: '-');
+            })
+            ->addColumn('sub_delivery_method', function ($row) {
+                return htmlspecialchars($row->sub_delivery_method ?: '-');
+            })
+            ->addColumn('provider', function ($row) {
+                return htmlspecialchars($row->provider ?: '-');
+            })
+            ->addColumn('sub_provider', function ($row) {
+                return htmlspecialchars($row->sub_provider ?: '-');
+            })
+            ->addColumn('provider_name', function ($row) {
+                return htmlspecialchars($row->provider_name ?: '-');
+            })
+            ->addColumn('venue', function ($row) {
+                return htmlspecialchars($row->venue ?: '-');
+            })
+            ->addColumn('instructor', function ($row) {
+                return htmlspecialchars($row->instructor ?: '-') ;
+            })
+            ->addColumn('duration', function ($row) {
+                if (!empty($row->duration_seconds)) {
+                    $secs = (int) $row->duration_seconds;
+                    $hours = floor($secs / 3600);
+                    $mins = floor(($secs % 3600) / 60);
+                    $seconds = $secs % 60;
+                    return sprintf('%02d:%02d:%02d', $hours, $mins, $seconds);
+                }
+                return '-';
+            })
+            ->addColumn('course_learning_hours', function ($row) {
+                if ($row->course_learning_hours !== null && $row->course_learning_hours !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->course_learning_hours, 1) . 'h</span>';
+                }
+                return '-';
+            })
+            ->addColumn('start_date', function ($row) {
+                return $row->start_date ? date('d M Y', strtotime($row->start_date)) : '-';
             })
             ->addColumn('finish_date', function ($row) {
                 if ($row->finish_date) {
@@ -358,17 +428,33 @@ class RecordOfflineController extends Controller
 
                 return '-';
             })
-            ->addColumn('attendance_badge', function ($row) {
-                if ($row->attendance === null) {
-                    return '<span class="text-muted small">-</span>';
+            ->addColumn('month', function ($row) {
+                $dateForMonth = $row->start_date ?: $row->finish_date;
+                if (!empty($dateForMonth)) {
+                    try {
+                        return date('F', strtotime($dateForMonth));
+                    } catch (\Throwable $e) {
+                        return '-';
+                    }
                 }
-
-                return $row->attendance
-                    ? '<span class="badge bg-success-lt text-success px-2 py-1">Present</span>'
-                    : '<span class="badge bg-danger-lt text-danger px-2 py-1" title="' . htmlspecialchars($row->attendance_reason ?: 'Absent') . '">Absent</span>';
+                return '-';
+            })
+            ->addColumn('learning_hours', function ($row) {
+                $hours = (float) ($row->learning_hours ?? 0);
+                return '<span class="fw-semibold">' . number_format($hours, 1) . 'h</span>';
+            })
+            ->addColumn('progress_badge', function ($row) {
+                $progress = (float) ($row->progress ?? 0);
+                $color = $progress >= 100 ? 'bg-success' : ($progress > 0 ? 'bg-warning' : 'bg-secondary');
+                return '<div class="d-flex align-items-center gap-2" style="min-width: 85px;">
+                    <div class="progress progress-xs flex-grow-1" style="width: 50px; height: 6px;">
+                        <div class="progress-bar ' . $color . '" style="width: ' . min(100, $progress) . '%"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted">' . round($progress) . '%</span>
+                </div>';
             })
             ->addColumn('assessment_score', function ($row) {
-                if ($row->assessment_score === null) {
+                if ($row->assessment_score === null || $row->assessment_score === '') {
                     return '<span class="text-muted small">-</span>';
                 }
 
@@ -380,6 +466,66 @@ class RecordOfflineController extends Controller
                 }
 
                 return '<span class="text-muted small">-</span>';
+            })
+            ->addColumn('attendance_badge', function ($row) {
+                if ($row->attendance === null || $row->attendance === '') {
+                    return '<span class="text-muted small">-</span>';
+                }
+
+                return $row->attendance
+                    ? '<span class="badge bg-success-lt text-success px-2 py-1">Present</span>'
+                    : '<span class="badge bg-danger-lt text-danger px-2 py-1" title="' . htmlspecialchars($row->attendance_reason ?: 'Absent') . '">Absent</span>';
+            })
+            ->addColumn('attendance_reason', function ($row) {
+                if (!empty($row->attendance_reason)) {
+                    return '<div class="text-truncate" style="max-width: 220px;" title="' . htmlspecialchars($row->attendance_reason) . '">' . htmlspecialchars($row->attendance_reason) . '</div>';
+                }
+                return '-';
+            })
+            ->addColumn('bond_status', function ($row) {
+                if (empty($row->bond_status) || strtolower(trim($row->bond_status)) === 'no') {
+                    return '<span class="badge bg-light text-muted border px-2 py-1">No</span>';
+                }
+                return '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-1">' . htmlspecialchars($row->bond_status) . '</span>';
+            })
+            ->addColumn('bond_end_date', function ($row) {
+                return $row->bond_end_date ? date('d M Y', strtotime($row->bond_end_date)) : '-';
+            })
+            ->addColumn('bond_amount', function ($row) {
+                if ($row->bond_amount !== null && $row->bond_amount !== '') {
+                    return '<span class="fw-semibold font-monospace">Rp ' . number_format((float) $row->bond_amount, 0, ',', '.') . '</span>';
+                }
+                return '-';
+            })
+            ->addColumn('l1_program', function ($row) {
+                return htmlspecialchars($row->l1_program ?: '-');
+            })
+            ->addColumn('l2_numerical', function ($row) {
+                if ($row->l2_numerical !== null && $row->l2_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l2_numerical, 1) . '</span>';
+                }
+                return '-';
+            })
+            ->addColumn('l2_verbal', function ($row) {
+                if (!empty($row->l2_verbal)) {
+                    return '<div class="text-truncate" style="max-width: 180px;" title="' . htmlspecialchars($row->l2_verbal) . '">' . htmlspecialchars($row->l2_verbal) . '</div>';
+                }
+                return '-';
+            })
+            ->addColumn('l3_numerical', function ($row) {
+                if ($row->l3_numerical !== null && $row->l3_numerical !== '') {
+                    return '<span class="fw-semibold">' . number_format((float) $row->l3_numerical, 1) . '</span>';
+                }
+                return '-';
+            })
+            ->addColumn('l3_verbal', function ($row) {
+                if (!empty($row->l3_verbal)) {
+                    return '<div class="text-truncate" style="max-width: 220px;" title="' . htmlspecialchars($row->l3_verbal) . '">' . htmlspecialchars($row->l3_verbal) . '</div>';
+                }
+                return '-';
+            })
+            ->addColumn('pic', function ($row) {
+                return htmlspecialchars($row->pic ?: '-');
             })
             ->addColumn('action', function ($row) {
                 $name = $row->participant_name ?: ($row->user_name ?: 'Participant');
@@ -395,9 +541,9 @@ class RecordOfflineController extends Controller
                         <i class="ti ti-eye"></i>
                     </button>
                     <a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-outline-warning rounded-2 btn-edit-offline-record" 
-                       title="Edit Record" 
-                       aria-label="Edit Record" 
-                       data-bs-toggle="tooltip">
+                        title="Edit Record" 
+                        aria-label="Edit Record" 
+                        data-bs-toggle="tooltip">
                         <i class="ti ti-edit"></i>
                     </a>
                     <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete-offline-record rounded-2" 
@@ -411,7 +557,31 @@ class RecordOfflineController extends Controller
                     </button>
                 </div>';
             })
-            ->rawColumns(['status_badge', 'employee', 'course_name', 'type_badge', 'learning_hours', 'progress_badge', 'attendance_badge', 'assessment_score', 'certificate_badge', 'action'])
+            ->rawColumns([
+                'status_badge',
+                'participant_name',
+                'employee',
+                'job_position',
+                'department',
+                'course_name',
+                'sub_course_name',
+                'type_badge',
+                'counted_corporate_kpi',
+                'course_learning_hours',
+                'learning_hours',
+                'progress_badge',
+                'attendance_badge',
+                'attendance_reason',
+                'assessment_score',
+                'certificate_badge',
+                'bond_status',
+                'bond_amount',
+                'l2_numerical',
+                'l2_verbal',
+                'l3_numerical',
+                'l3_verbal',
+                'action',
+            ])
             ->make(true);
     }
 

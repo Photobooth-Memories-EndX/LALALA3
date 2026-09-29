@@ -121,23 +121,57 @@
         <!-- SERVER-SIDE DATATABLE CARD -->
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table id="offline-classification-table" class="table table-vcenter table-striped card-table w-100">
+                <div class="table-responsive offline-table-responsive">
+                    <table id="offline-classification-table" class="table table-vcenter table-striped card-table">
                         <thead>
                             <tr>
-                                <th class="text-center" style="width: 40px;">NO</th>
-                                <th class="text-center">STATUS</th>
-                                <th class="text-center">NIP</th>
-                                <th>PARTICIPANT</th>
-                                <th>COURSE NAME</th>
-                                <th class="text-center">TYPE</th>
-                                <th class="text-center">BATCH</th>
-                                <th class="text-center">HOURS</th>
-                                <th class="text-center" style="min-width: 90px;">PROGRESS</th>
-                                <th class="text-center">FINISH DATE</th>
-                                <th class="text-center">ATTENDANCE</th>
-                                <th class="text-center">SCORE</th>
-                                <th class="text-center" style="width: 70px;">ACTION</th>
+                                <th class="text-center" style="min-width: 45px; width: 45px;">NO</th>
+                                <th class="text-center" style="min-width: 105px;">STATUS</th>
+                                <th class="text-center" style="min-width: 90px;">NIP</th>
+                                <th style="min-width: 180px;">PARTICIPANT</th>
+                                <th class="text-center" style="min-width: 75px;">GRADE</th>
+                                <th style="min-width: 160px;">JOB POSITION</th>
+                                <th style="min-width: 140px;">TEAM</th>
+                                <th style="min-width: 160px;">DEPARTMENT</th>
+                                <th style="min-width: 160px;">COMPANY</th>
+                                <th style="min-width: 220px;">COURSE NAME</th>
+                                <th style="min-width: 180px;">SUB COURSE NAME</th>
+                                <th class="text-center" style="min-width: 100px;">TYPE</th>
+                                <th style="min-width: 130px;">CATEGORY</th>
+                                <th class="text-center" style="min-width: 90px;">LEVEL</th>
+                                <th class="text-center" style="min-width: 85px;">BATCH</th>
+                                <th style="min-width: 150px;">MAIN CLASSIFICATION</th>
+                                <th style="min-width: 150px;">SUB CLASSIFICATION</th>
+                                <th class="text-center" style="min-width: 110px;">COUNTED CORPORATE KPI</th>
+                                <th style="min-width: 160px;">SUB CORPORATE KPI</th>
+                                <th class="text-center" style="min-width: 120px;">DELIVERY METHOD</th>
+                                <th style="min-width: 140px;">SUB DELIVERY METHOD</th>
+                                <th class="text-center" style="min-width: 100px;">PROVIDER</th>
+                                <th style="min-width: 120px;">SUB PROVIDER</th>
+                                <th style="min-width: 160px;">PROVIDER NAME</th>
+                                <th style="min-width: 140px;">VENUE</th>
+                                <th style="min-width: 140px;">INSTRUCTOR</th>
+                                <th class="text-center" style="min-width: 95px;">DURATION</th>
+                                <th class="text-center" style="min-width: 110px;">TRAINING HOURS</th>
+                                <th class="text-center" style="min-width: 105px;">START DATE</th>
+                                <th class="text-center" style="min-width: 105px;">FINISH DATE</th>
+                                <th class="text-center" style="min-width: 95px;">MONTH</th>
+                                <th class="text-center" style="min-width: 115px;">PARTICIPANT HOURS</th>
+                                <th class="text-center" style="min-width: 110px;">PROGRESS</th>
+                                <th class="text-center" style="min-width: 80px;">SCORE</th>
+                                <th class="text-center" style="min-width: 110px;">CERTIFICATE</th>
+                                <th class="text-center" style="min-width: 105px;">ATTENDANCE</th>
+                                <th style="min-width: 180px;">ATTENDANCE REASON</th>
+                                <th class="text-center" style="min-width: 95px;">BOND STATUS</th>
+                                <th class="text-center" style="min-width: 110px;">BOND END DATE</th>
+                                <th class="text-end" style="min-width: 125px;">BOND AMOUNT</th>
+                                <th class="text-center" style="min-width: 120px;">L1 PROGRAM</th>
+                                <th class="text-center" style="min-width: 105px;">L2 NUMERICAL</th>
+                                <th style="min-width: 140px;">L2 VERBAL</th>
+                                <th class="text-center" style="min-width: 105px;">L3 NUMERICAL</th>
+                                <th style="min-width: 160px;">L3 VERBAL</th>
+                                <th style="min-width: 130px;">PIC</th>
+                                <th class="text-center" style="min-width: 105px; width: 105px;">ACTION</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -392,8 +426,46 @@
         color: #f8fafc !important;
     }
 
+    /* Table Responsive Horizontal Scroll */
+    .offline-table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0;
+    }
+
+    .offline-table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+    .offline-table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    .offline-table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    .offline-table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    [data-bs-theme="dark"] .offline-table-responsive::-webkit-scrollbar-track,
+    body.dark-mode .offline-table-responsive::-webkit-scrollbar-track,
+    body.theme-dark .offline-table-responsive::-webkit-scrollbar-track {
+        background: #1e293b;
+    }
+    [data-bs-theme="dark"] .offline-table-responsive::-webkit-scrollbar-thumb,
+    body.dark-mode .offline-table-responsive::-webkit-scrollbar-thumb,
+    body.theme-dark .offline-table-responsive::-webkit-scrollbar-thumb {
+        background: #475569;
+    }
+
     #offline-classification-table {
         font-size: 13px;
+        width: max-content !important;
+        min-width: 100% !important;
+        margin-bottom: 0;
     }
 
     #offline-classification-table thead th {
@@ -402,13 +474,31 @@
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: .04em;
-        white-space: nowrap;
+        white-space: nowrap !important;
+        vertical-align: middle;
+        padding: 11px 14px;
+        border-bottom: 1px solid #e2e8f0;
     }
 
     #offline-classification-table tbody td {
         vertical-align: middle;
-        padding-top: 12px;
-        padding-bottom: 12px;
+        padding: 10px 14px;
+        white-space: nowrap !important;
+    }
+
+    [data-bs-theme="dark"] #offline-classification-table thead th,
+    body.dark-mode #offline-classification-table thead th,
+    body.theme-dark #offline-classification-table thead th {
+        background: #1e293b !important;
+        color: #94a3b8 !important;
+        border-bottom-color: #334155 !important;
+    }
+
+    [data-bs-theme="dark"] #offline-classification-table tbody td,
+    body.dark-mode #offline-classification-table tbody td,
+    body.theme-dark #offline-classification-table tbody td {
+        border-bottom-color: #334155 !important;
+        color: #e2e8f0 !important;
     }
 
     #moreOfflineFiltersModal {
@@ -540,12 +630,12 @@
         offlineTable = $('#offline-classification-table').DataTable({
             processing: true,
             serverSide: true,
-            responsive: true,
+            responsive: false,
             autoWidth: false,
             pageLength: defaultEntries,
             lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-            order: [[9, 'desc']],
-            dom: '<"table-responsive"t>',
+            order: [[29, 'desc']],
+            dom: 't',
             ajax: {
                 url: datatableUrl,
                 type: 'GET',
@@ -576,15 +666,49 @@
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'status_badge', name: 'otu.progress', className: 'text-center' },
                 { data: 'employee_id', name: 'otu.employee_id', className: 'text-center' },
-                { data: 'employee', name: 'otu.name' },
-                { data: 'course_name', name: 'ot.course_name' },
+                { data: 'participant_name', name: 'otu.name', className: 'text-start' },
+                { data: 'grade', name: 'otu.grade', className: 'text-center' },
+                { data: 'job_position', name: 'otu.job_position', className: 'text-start' },
+                { data: 'team', name: 'otu.team', className: 'text-start' },
+                { data: 'department', name: 'otu.department', className: 'text-start' },
+                { data: 'company', name: 'otu.company', className: 'text-start' },
+                { data: 'course_name', name: 'ot.course_name', className: 'text-start' },
+                { data: 'sub_course_name', name: 'ot.sub_course_name', className: 'text-start' },
                 { data: 'type_badge', name: 'ot.type', className: 'text-center' },
+                { data: 'category', name: 'ot.category', className: 'text-start' },
+                { data: 'level', name: 'ot.level', className: 'text-center' },
                 { data: 'batch', name: 'ot.batch', className: 'text-center' },
+                { data: 'main_classification', name: 'ot.main_classification', className: 'text-start' },
+                { data: 'sub_classification', name: 'ot.sub_classification', className: 'text-start' },
+                { data: 'counted_corporate_kpi', name: 'ot.counted_corporate_kpi', className: 'text-center' },
+                { data: 'sub_corporate_kpi', name: 'ot.sub_corporate_kpi', className: 'text-start' },
+                { data: 'delivery_method', name: 'ot.delivery_method', className: 'text-center' },
+                { data: 'sub_delivery_method', name: 'ot.sub_delivery_method', className: 'text-start' },
+                { data: 'provider', name: 'ot.provider', className: 'text-center' },
+                { data: 'sub_provider', name: 'ot.sub_provider', className: 'text-start' },
+                { data: 'provider_name', name: 'ot.provider_name', className: 'text-start' },
+                { data: 'venue', name: 'ot.venue', className: 'text-start' },
+                { data: 'instructor', name: 'ot.instructor', className: 'text-start' },
+                { data: 'duration', name: 'ot.duration_seconds', className: 'text-center font-monospace' },
+                { data: 'course_learning_hours', name: 'ot.learning_hours', className: 'text-center' },
+                { data: 'start_date', name: 'ot.start_date', className: 'text-center' },
+                { data: 'finish_date', name: 'ot.finish_date', className: 'text-center' },
+                { data: 'month', name: 'month', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'learning_hours', name: 'otu.learning_hours', className: 'text-center' },
                 { data: 'progress_badge', name: 'otu.progress', className: 'text-center' },
-                { data: 'finish_date', name: 'ot.finish_date', className: 'text-center' },
-                { data: 'attendance_badge', name: 'otu.attendance', className: 'text-center' },
                 { data: 'assessment_score', name: 'otu.assessment_score', className: 'text-center' },
+                { data: 'certificate_badge', name: 'otu.certificate', className: 'text-center' },
+                { data: 'attendance_badge', name: 'otu.attendance', className: 'text-center' },
+                { data: 'attendance_reason', name: 'otu.attendance_reason', className: 'text-start' },
+                { data: 'bond_status', name: 'otu.bond_status', className: 'text-center' },
+                { data: 'bond_end_date', name: 'otu.bond_end_date', className: 'text-center' },
+                { data: 'bond_amount', name: 'otu.bond_amount', className: 'text-end' },
+                { data: 'l1_program', name: 'otu.l1_program', className: 'text-center' },
+                { data: 'l2_numerical', name: 'otu.l2_numerical', className: 'text-center' },
+                { data: 'l2_verbal', name: 'otu.l2_verbal', className: 'text-start' },
+                { data: 'l3_numerical', name: 'otu.l3_numerical', className: 'text-center' },
+                { data: 'l3_verbal', name: 'otu.l3_verbal', className: 'text-start' },
+                { data: 'pic', name: 'otu.pic', className: 'text-start' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
             ],
             language: {
