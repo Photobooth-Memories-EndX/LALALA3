@@ -86,8 +86,10 @@ class OfflineTrainingImportController extends Controller
                 'token'        => $preview['token'] ?? null,
                 'stats'        => $preview['stats'] ?? null,
                 'rows'         => $preview['preview_rows'] ?? [],
-                'header_check' => $preview['header_check'] ?? null,
-                'can_confirm'  => $preview['can_confirm'] ?? false,
+                'header_check'     => $preview['header_check'] ?? null,
+                'can_confirm'      => $preview['can_confirm'] ?? false,
+                'preview_state'    => $preview['preview_state'] ?? null,
+                'importable_count' => $preview['importable_count'] ?? 0,
             ]);
         } catch (ValidationException $e) {
             return response()->json([

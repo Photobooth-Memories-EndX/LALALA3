@@ -514,6 +514,8 @@
 
         // Render preview table and stats
         function renderPreviewState(data) {
+            switchImportState('preview');
+
             const payload = (data && data.data) ? data.data : data;
             const stats = payload.stats || {};
             const rows = payload.preview_rows || payload.rows || [];
@@ -651,16 +653,187 @@
                 });
             }
 
-            const importableCount = (stats.valid || 0) + (stats.warning || 0);
-            if (!canConfirm || (headerCheck && !headerCheck.can_proceed)) {
-                $('#modal-btn-confirm').prop('disabled', true).html('<i class="ti ti-ban me-1"></i> Header Correction Required');
-            } else if (importableCount <= 0) {
-                $('#modal-btn-confirm').prop('disabled', true).text('No Valid Records');
-            } else {
-                $('#modal-btn-confirm').prop('disabled', false).html('<i class="ti ti-check me-1"></i> Confirm Import (' + importableCount + ' Records)');
+            // Determine explicit preview state
+            const isHeaderValid = !!(headerCheck && headerCheck.can_proceed);
+            const validCount = Number(stats.valid || 0);
+            const warningCount = Number(stats.warning || 0);
+            const importableCount = validCount;
+            const duplicateCount = Number(stats.duplicate || 0);
+            const invalidCount = Number(stats.invalid || 0);
+            const totalRows = Number(stats.total_rows || 0);
+
+            let previewState = payload.preview_state || (data && data.preview_state);
+            if (!previewState) {
+                if (!isHeaderValid) {
+                    previewState = 'HEADER_ERROR';
+                } else if (invalidCount > 0) {
+                    previewState = 'DATA_ERROR';
+                } else if (totalRows === 0) {
+                    previewState = 'EMPTY_FILE';
+                } else if (importableCount === 0 && duplicateCount > 0) {
+                    previewState = 'NO_NEW_RECORDS';
+                } else if (duplicateCount > 0 && importableCount > 0) {
+                    previewState = 'READY_WITH_DUPLICATES';
+                } else {
+                    previewState = 'READY';
+                }
             }
 
-            switchImportState('preview');
+            const $previewAlert = $('#modal-preview-alert');
+            const $btnConfirm = $('#modal-btn-confirm');
+            const $footerHint = $('#modal-footer-hint');
+
+            // Reset dynamic styles and classes on confirm button
+            $btnConfirm.removeClass('btn-primary btn-secondary btn-danger disabled')
+                       .removeAttr('style');
+
+            if (previewState === 'HEADER_ERROR') {
+                $previewAlert.show().html(`
+                    <div class="alert alert-danger border d-flex align-items-start gap-2.5 py-2.5 px-3 mb-3 rounded-3 small">
+                        <i class="ti ti-alert-octagon fs-2 text-danger flex-shrink-0 mt-0.5"></i>
+                        <div class="w-100">
+                            <strong class="d-block text-danger fw-bold mb-0.5">Header Correction Required</strong>
+                            <div class="text-secondary">The spreadsheet header structure does not match the required Non KP OWL import format. Correct the highlighted columns above and upload the file again.</div>
+                        </div>
+                    </div>
+                `);
+                $btnConfirm.prop('disabled', true)
+                           .addClass('btn-danger disabled')
+                           .html('<i class="ti ti-ban me-1"></i> Header Correction Required');
+                $footerHint.html('<span class="text-danger"><i class="ti ti-alert-circle me-1"></i>Correct spreadsheet header and re-upload</span>');
+
+            } else if (previewState === 'DATA_ERROR') {
+                const infoBreakdown = (duplicateCount > 0)
+                    ? `<strong>${importableCount.toLocaleString()}</strong> records are ready for import and <strong>${duplicateCount.toLocaleString()}</strong> duplicate records will be skipped once the validation errors are corrected.`
+                    : `<strong>${importableCount.toLocaleString()}</strong> records are ready for import once the validation errors are corrected.`;
+
+                $previewAlert.show().html(`
+                    <div class="alert alert-danger border d-flex align-items-start gap-2.5 py-2.5 px-3 mb-3 rounded-3 small">
+                        <i class="ti ti-alert-triangle fs-2 text-danger flex-shrink-0 mt-0.5"></i>
+                        <div class="w-100">
+                            <strong class="d-block text-danger fw-bold mb-0.5">Data Correction Required</strong>
+                            <div><strong>${totalRows.toLocaleString()}</strong> records were successfully read.</div>
+                            <div class="my-1.5 text-danger fw-medium"><strong>${invalidCount.toLocaleString()} record(s) contain invalid data and must be corrected before import.</strong></div>
+                            <div class="text-secondary small mb-2">${infoBreakdown}</div>
+                            <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
+                                <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} records read</span>
+                                <span class="badge bg-danger-lt fw-bold"><i class="ti ti-alert-triangle me-1"></i>${invalidCount.toLocaleString()} invalid</span>
+                                <span class="badge bg-success-lt"><i class="ti ti-check me-1"></i>${importableCount.toLocaleString()} ready</span>
+                                ${duplicateCount > 0 ? `<span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateCount.toLocaleString()} duplicates to skip</span>` : ''}
+                            </div>
+                            <div class="extra-small text-muted pt-1 border-top border-danger-subtle">
+                                <i class="ti ti-info-circle text-danger me-1"></i>Correct the highlighted rows in your Excel file and upload again.
+                            </div>
+                        </div>
+                    </div>
+                `);
+                $btnConfirm.prop('disabled', true)
+                           .addClass('btn-danger disabled')
+                           .html('<i class="ti ti-alert-triangle me-1"></i> Fix Invalid Records');
+                $footerHint.html('<span class="text-danger"><i class="ti ti-alert-circle me-1"></i>Import blocked &bull; ' + invalidCount.toLocaleString() + ' invalid record(s) must be corrected</span>');
+
+            } else if (previewState === 'EMPTY_FILE') {
+                $previewAlert.show().html(`
+                    <div class="alert alert-warning border d-flex align-items-center gap-2 py-2.5 px-3 mb-3 rounded-3 small">
+                        <i class="ti ti-alert-circle fs-2 text-warning flex-shrink-0"></i>
+                        <div class="w-100">
+                            <strong class="d-block text-warning fw-bold mb-0.5">No Data Rows Found</strong>
+                            <div class="text-secondary">No data rows were found in the uploaded spreadsheet. Please check the file and try again.</div>
+                        </div>
+                    </div>
+                `);
+                $btnConfirm.prop('disabled', true)
+                           .addClass('btn-secondary disabled')
+                           .html('<i class="ti ti-ban me-1"></i> No Data Rows Found');
+                $footerHint.text('Spreadsheet contains no data rows to import');
+
+            } else if (previewState === 'NO_NEW_RECORDS') {
+                // SCREENSHOT CASE: All rows are duplicates, valid = 0, invalid = 0, header is 100% valid!
+                $previewAlert.show().html(`
+                    <div class="alert alert-secondary border d-flex align-items-start gap-2.5 py-2.5 px-3 mb-3 rounded-3 small bg-light-subtle text-secondary-emphasis">
+                        <i class="ti ti-info-circle fs-2 text-secondary flex-shrink-0 mt-0.5"></i>
+                        <div class="w-100">
+                            <div class="fw-bold text-dark mb-0.5">No New Records to Import</div>
+                            <div class="text-secondary">All <strong>${totalRows.toLocaleString()}</strong> records were successfully read, but they already exist in Non KP OWL.</div>
+                            <div class="my-1.5 text-dark fw-medium"><strong>0 records will be imported and ${duplicateCount.toLocaleString()} duplicate records will be skipped.</strong></div>
+                            <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
+                                <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} records read</span>
+                                <span class="badge bg-secondary-lt text-muted"><i class="ti ti-ban me-1"></i>0 records to import</span>
+                                <span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateCount.toLocaleString()} duplicates to skip</span>
+                            </div>
+                            <div class="extra-small text-muted pt-1 border-top border-secondary-subtle">
+                                <i class="ti ti-shield-check text-success me-1"></i>Existing records will remain unchanged.
+                            </div>
+                        </div>
+                    </div>
+                `);
+                $btnConfirm.prop('disabled', true)
+                           .addClass('btn-secondary disabled')
+                           .css({ 'opacity': '0.7', 'cursor': 'not-allowed' })
+                           .html('<i class="ti ti-copy-off me-1"></i> No New Records to Import');
+                $footerHint.html('<span class="text-muted">' + totalRows.toLocaleString() + ' records read &bull; 0 to import &bull; ' + duplicateCount.toLocaleString() + ' duplicates will be skipped</span>');
+
+            } else if (previewState === 'READY_WITH_DUPLICATES') {
+                const warningMsg = (warningCount > 0)
+                    ? `<div class="extra-small text-muted mt-1"><i class="ti ti-alert-circle text-warning me-1"></i><strong>${warningCount.toLocaleString()}</strong> of the importable records contain non-blocking warnings.</div>`
+                    : '';
+
+                $previewAlert.show().html(`
+                    <div class="alert alert-info border d-flex align-items-start gap-2.5 py-2.5 px-3 mb-3 rounded-3 small">
+                        <i class="ti ti-info-circle fs-2 text-info flex-shrink-0 mt-0.5"></i>
+                        <div class="w-100">
+                            <div class="fw-bold text-dark mb-0.5">Ready to Import</div>
+                            <div><strong>${totalRows.toLocaleString()}</strong> records were successfully read.</div>
+                            <div class="my-1.5 text-dark fw-medium"><strong>${importableCount.toLocaleString()} records will be imported and ${duplicateCount.toLocaleString()} duplicate records will be skipped.</strong></div>
+                            ${warningMsg}
+                            <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
+                                <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} records read</span>
+                                <span class="badge bg-success-lt fw-bold"><i class="ti ti-check me-1"></i>${importableCount.toLocaleString()} records to import</span>
+                                <span class="badge bg-purple-lt"><i class="ti ti-copy-off me-1"></i>${duplicateCount.toLocaleString()} duplicates to skip</span>
+                            </div>
+                            <div class="extra-small text-muted pt-1 border-top border-info-subtle">
+                                <i class="ti ti-shield-check text-success me-1"></i>Existing duplicate records will remain unchanged.
+                            </div>
+                        </div>
+                    </div>
+                `);
+                $btnConfirm.prop('disabled', false)
+                           .addClass('btn-primary')
+                           .css({ 'background-color': '#d97706', 'border-color': '#d97706' })
+                           .html('<i class="ti ti-check me-1"></i> Import ' + importableCount.toLocaleString() + ' Records');
+                $footerHint.html('<span class="text-dark fw-medium">' + totalRows.toLocaleString() + ' records read &bull; ' + importableCount.toLocaleString() + ' to import &bull; ' + duplicateCount.toLocaleString() + ' duplicates will be skipped</span>');
+
+            } else {
+                // previewState === 'READY'
+                const warningMsg = (warningCount > 0)
+                    ? `<div class="extra-small text-muted mt-1"><i class="ti ti-alert-circle text-warning me-1"></i><strong>${warningCount.toLocaleString()}</strong> of the importable records contain non-blocking warnings.</div>`
+                    : '';
+
+                $previewAlert.show().html(`
+                    <div class="alert alert-success border d-flex align-items-start gap-2.5 py-2.5 px-3 mb-3 rounded-3 small">
+                        <i class="ti ti-circle-check fs-2 text-success flex-shrink-0 mt-0.5"></i>
+                        <div class="w-100">
+                            <div class="fw-bold text-dark mb-0.5">Ready to Import</div>
+                            <div><strong>${totalRows.toLocaleString()}</strong> records were successfully read.</div>
+                            <div class="my-1.5 text-dark fw-medium"><strong>${importableCount.toLocaleString()} records will be imported.</strong></div>
+                            ${warningMsg}
+                            <div class="d-flex flex-wrap align-items-center gap-1.5 my-2">
+                                <span class="badge bg-secondary-lt"><i class="ti ti-file-spreadsheet me-1"></i>${totalRows.toLocaleString()} records read</span>
+                                <span class="badge bg-success-lt fw-bold"><i class="ti ti-check me-1"></i>${importableCount.toLocaleString()} records to import</span>
+                                <span class="badge bg-secondary-lt text-muted"><i class="ti ti-copy-off me-1"></i>0 duplicates</span>
+                            </div>
+                            <div class="extra-small text-muted pt-1 border-top border-success-subtle">
+                                <i class="ti ti-shield-check text-success me-1"></i>All records are valid and ready to be imported into Non KP OWL.
+                            </div>
+                        </div>
+                    </div>
+                `);
+                $btnConfirm.prop('disabled', false)
+                           .addClass('btn-primary')
+                           .css({ 'background-color': '#d97706', 'border-color': '#d97706' })
+                           .html('<i class="ti ti-check me-1"></i> Import ' + importableCount.toLocaleString() + ' Records');
+                $footerHint.html('<span class="text-dark fw-medium">' + totalRows.toLocaleString() + ' records read &bull; ' + importableCount.toLocaleString() + ' to import</span>');
+            }
         }
 
         // Cancel preview / Re-upload button handler

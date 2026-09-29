@@ -329,18 +329,40 @@ class OfflineTrainingImportService
         $metadata['unknown_headers'] = $headerMapping['unknown_headers'];
         Cache::put(self::CACHE_PREFIX . $token, $metadata, self::CACHE_TTL_SECONDS);
 
-        $canConfirm = $headerCheck['can_proceed'] && ($stats['invalid'] === 0) && (($stats['valid'] + $stats['warning']) > 0);
+        $isHeaderValid = (bool) ($headerCheck['can_proceed'] ?? false);
+        $importableCount = (int) ($stats['valid'] ?? 0);
+        $duplicateCount = (int) ($stats['duplicate'] ?? 0);
+        $invalidCount = (int) ($stats['invalid'] ?? 0);
+        $totalRows = (int) ($stats['total_rows'] ?? 0);
+
+        if (!$isHeaderValid) {
+            $previewState = 'HEADER_ERROR';
+        } elseif ($invalidCount > 0) {
+            $previewState = 'DATA_ERROR';
+        } elseif ($totalRows === 0) {
+            $previewState = 'EMPTY_FILE';
+        } elseif ($importableCount === 0 && $duplicateCount > 0) {
+            $previewState = 'NO_NEW_RECORDS';
+        } elseif ($duplicateCount > 0 && $importableCount > 0) {
+            $previewState = 'READY_WITH_DUPLICATES';
+        } else {
+            $previewState = 'READY';
+        }
+
+        $canConfirm = ($previewState === 'READY' || $previewState === 'READY_WITH_DUPLICATES');
 
         return [
-            'token'           => $token,
-            'filename'        => $metadata['original_filename'],
-            'format'          => $headerMapping['format'],
-            'header_check'    => $headerCheck,
-            'can_confirm'     => $canConfirm,
-            'stats'           => $stats,
-            'unknown_headers' => $headerMapping['unknown_headers'],
-            'preview_rows'    => array_slice($parsedRows, 0, 100),
-            'total_preview'   => count($parsedRows),
+            'token'            => $token,
+            'filename'         => $metadata['original_filename'],
+            'format'           => $headerMapping['format'],
+            'header_check'     => $headerCheck,
+            'can_confirm'      => $canConfirm,
+            'preview_state'    => $previewState,
+            'importable_count' => $importableCount,
+            'stats'            => $stats,
+            'unknown_headers'  => $headerMapping['unknown_headers'],
+            'preview_rows'     => array_slice($parsedRows, 0, 100),
+            'total_preview'    => count($parsedRows),
         ];
     }
 

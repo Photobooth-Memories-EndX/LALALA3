@@ -121,45 +121,45 @@
                     <!-- 6 Compact Stat Cards -->
                     <div class="row g-2 mb-3">
                         <div class="col-4 col-md-2">
-                            <div class="card border-0 shadow-none bg-light p-2 rounded-3 text-center h-100">
+                            <div class="card border-0 shadow-none bg-light p-2 rounded-3 text-center h-100" title="Total data rows successfully read from the uploaded spreadsheet">
                                 <div class="text-muted extra-small fw-medium mb-0" style="font-size: 0.75rem;">Total</div>
                                 <div class="fs-4 fw-bold text-dark mb-0" id="modal-kpi-total-rows">0</div>
                             </div>
                         </div>
                         <div class="col-4 col-md-2">
-                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #ecfdf5;">
+                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #ecfdf5;" title="New records that are valid and ready to be imported">
                                 <div class="extra-small fw-medium mb-0" style="color: #065f46; font-size: 0.75rem;">Valid</div>
                                 <div class="fs-4 fw-bold mb-0" style="color: #047857;" id="modal-kpi-valid-rows">0</div>
                             </div>
                         </div>
                         <div class="col-4 col-md-2">
-                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #fffbeb;">
+                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #fffbeb;" title="Importable records with non-fatal warnings (e.g. name variations)">
                                 <div class="extra-small fw-medium mb-0" style="color: #92400e; font-size: 0.75rem;">Warnings</div>
                                 <div class="fs-4 fw-bold mb-0" style="color: #d97706;" id="modal-kpi-warning-rows">0</div>
                             </div>
                         </div>
                         <div class="col-4 col-md-2">
-                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #f5f3ff;">
+                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #f5f3ff;" title="Records already found in Non KP OWL. These records will be skipped">
                                 <div class="extra-small fw-medium mb-0" style="color: #5b21b6; font-size: 0.75rem;">Duplicates</div>
                                 <div class="fs-4 fw-bold mb-0" style="color: #7c3aed;" id="modal-kpi-duplicate-rows">0</div>
                             </div>
                         </div>
                         <div class="col-4 col-md-2">
-                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #fef2f2;">
+                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #fef2f2;" title="Rows with fatal validation errors; must be corrected in file">
                                 <div class="extra-small fw-medium mb-0" style="color: #991b1b; font-size: 0.75rem;">Invalid</div>
                                 <div class="fs-4 fw-bold mb-0" style="color: #dc2626;" id="modal-kpi-invalid-rows">0</div>
                             </div>
                         </div>
                         <div class="col-4 col-md-2">
-                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #f0fdfa;">
+                            <div class="card border-0 shadow-none p-2 rounded-3 text-center h-100" style="background-color: #f0fdfa;" title="Unique training events detected in the uploaded spreadsheet">
                                 <div class="extra-small fw-medium mb-0" style="color: #115e59; font-size: 0.75rem;">Events</div>
                                 <div class="fs-4 fw-bold mb-0" style="color: #0f766e;" id="modal-kpi-training-events">0</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Warning/Error Alert -->
-                    <div class="alert alert-warning border-0 rounded-3 small py-2 px-3 mb-3" id="modal-preview-alert" style="display: none;"></div>
+                    <!-- Import Readiness & Duplicate Summary Banner -->
+                    <div id="modal-preview-alert" style="display: none;"></div>
 
                     <!-- Compact Preview Table Container -->
                     <div class="border rounded-3 overflow-hidden" style="max-height: 280px; overflow-y: auto;">
@@ -249,7 +249,7 @@
                     <!-- Preview state buttons -->
                     <div id="modal-footer-preview-buttons" style="display: none;">
                         <button type="button" class="btn btn-outline-secondary rounded-pill px-3" id="modal-btn-preview-cancel">Cancel</button>
-                        <button type="button" class="btn btn-primary rounded-pill px-4" id="modal-btn-confirm" style="background-color: #d97706; border-color: #d97706;">
+                        <button type="button" class="btn btn-primary rounded-pill px-4" id="modal-btn-confirm">
                             <i class="ti ti-check me-1"></i> Confirm Import
                         </button>
                     </div>
