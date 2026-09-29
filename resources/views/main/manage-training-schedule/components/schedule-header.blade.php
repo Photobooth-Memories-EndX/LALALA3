@@ -28,12 +28,11 @@
 
             <!-- Right Group: Primary Action Button -->
             <div class="flex-shrink-0">
-                <button type="button" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 rounded-3" 
-                        style="background-color: #003b6d; border-color: #003b6d;"
-                        data-bs-toggle="modal" data-bs-target="#addTrainingModal">
+                <a href="{{ url('/manage/training-schedule/create') }}" class="btn btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 rounded-3" 
+                   style="background-color: #003b6d; border-color: #003b6d;">
                     <i class="ti ti-plus fs-2"></i>
                     <span>Add Training Schedule</span>
-                </button>
+                </a>
             </div>
         </div>
     </div>

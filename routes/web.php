@@ -278,6 +278,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::get('/training-schedule', function () {
         return view('main.manage-training-schedule.index');
     })->name('manage.training-schedule.index');
+    Route::get('/training-schedule/create', function () {
+        return view('main.manage-training-schedule.create');
+    })->name('manage.training-schedule.create');
 
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);

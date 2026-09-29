@@ -145,11 +145,79 @@
                             <div class="invalid-feedback">Please enter end time.</div>
                         </div>
 
-                        <!-- Description / Material Outline -->
+                        <!-- Description / Material Overview -->
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-dark">Description / Material Outline</label>
-                            <textarea class="form-control rounded-3" id="inputTrainingDescription" rows="3" 
-                                      placeholder="Provide an overview of learning goals, target audience, prerequisites, and syllabus outline..."></textarea>
+                            <label class="form-label fw-semibold text-dark">Description / Material Overview</label>
+                            <textarea class="form-control rounded-3" id="inputTrainingDescription" rows="2" 
+                                      placeholder="Provide an overview of learning goals, target audience, and prerequisites..."></textarea>
+                        </div>
+
+                        <!-- Training Syllabus Section (Dynamic Builder) -->
+                        <div class="col-12 mt-4 pt-3 border-top border-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                                <div>
+                                    <label class="form-label fw-bold text-dark mb-0 fs-3 d-flex align-items-center gap-2">
+                                        <i class="ti ti-list-check text-primary"></i>
+                                        <span>Training Syllabus Outline</span>
+                                    </label>
+                                    <div class="text-muted extra-small">Add structured learning points or modules for this training.</div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1" id="btnAddSyllabusRow">
+                                    <i class="ti ti-plus fs-2"></i>
+                                    <span>Add Syllabus Item</span>
+                                </button>
+                            </div>
+
+                            <!-- Syllabus Rows Container -->
+                            <div class="d-flex flex-column gap-2" id="syllabusRowsContainer">
+                                <!-- Row 1 Default -->
+                                <div class="card border border-light-subtle rounded-3 p-3 bg-white syllabus-input-row shadow-none">
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-md-2 col-3">
+                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Point #</label>
+                                            <input type="text" class="form-control form-control-sm rounded-3 text-center fw-bold bg-light syllabus-point-num" value="Point 1" readonly>
+                                        </div>
+                                        <div class="col-md-4 col-9">
+                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Syllabus Title / Topic</label>
+                                            <input type="text" class="form-control form-control-sm rounded-3 syllabus-title-input" placeholder="e.g. Executive Leadership Core & Vision">
+                                        </div>
+                                        <div class="col-md-5 col-10">
+                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Short Outline / Highlights</label>
+                                            <input type="text" class="form-control form-control-sm rounded-3 syllabus-outline-input" placeholder="e.g. Visionary alignment, ethical governance...">
+                                        </div>
+                                        <div class="col-md-1 col-2 text-end">
+                                            <label class="form-label extra-small text-muted mb-1 d-none d-md-block">&nbsp;</label>
+                                            <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-remove-syllabus-row" title="Remove point" disabled>
+                                                <i class="ti ti-trash fs-2"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Row 2 Default -->
+                                <div class="card border border-light-subtle rounded-3 p-3 bg-white syllabus-input-row shadow-none">
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-md-2 col-3">
+                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Point #</label>
+                                            <input type="text" class="form-control form-control-sm rounded-3 text-center fw-bold bg-light syllabus-point-num" value="Point 2" readonly>
+                                        </div>
+                                        <div class="col-md-4 col-9">
+                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Syllabus Title / Topic</label>
+                                            <input type="text" class="form-control form-control-sm rounded-3 syllabus-title-input" placeholder="e.g. Strategic Team Communication">
+                                        </div>
+                                        <div class="col-md-5 col-10">
+                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Short Outline / Highlights</label>
+                                            <input type="text" class="form-control form-control-sm rounded-3 syllabus-outline-input" placeholder="e.g. Cross-functional team alignment, negotiations...">
+                                        </div>
+                                        <div class="col-md-1 col-2 text-end">
+                                            <label class="form-label extra-small text-muted mb-1 d-none d-md-block">&nbsp;</label>
+                                            <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-remove-syllabus-row" title="Remove point">
+                                                <i class="ti ti-trash fs-2"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

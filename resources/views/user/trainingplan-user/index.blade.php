@@ -254,8 +254,9 @@
     </div>
 </div>
 
-{{-- Pop-up Modal --}}
+{{-- Pop-up Modals --}}
 @include('user.trainingplan-user.modals.schedule-detail-modal')
+@include('main.manage-training-schedule.modals.syllabus-modal')
 
 @endsection
 

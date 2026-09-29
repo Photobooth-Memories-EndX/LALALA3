@@ -274,12 +274,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 </td>
                 <td class="text-end pe-4">
                     <div class="d-inline-flex align-items-center gap-1">
+                        <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-3 btn-view-syllabus" 
+                                title="View Syllabus" data-bs-toggle="modal" data-bs-target="#syllabusModal" 
+                                data-id="1" data-title="${title}" data-category="${category}">
+                            <i class="ti ti-list-check fs-2"></i>
+                        </button>
                         <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-edit-schedule" 
                                 title="Edit Schedule" data-title="${title}">
                             <i class="ti ti-edit fs-2"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
-                                title="View Participants" data-title="${title}">
+                                title="View Participants" data-id="1" data-title="${title}">
                             <i class="ti ti-users fs-2"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
@@ -338,19 +343,39 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // View Participants
+        // View Participants -> Switch to Inline Participant Tracking Tab
         const partBtn = e.target.closest('.btn-participants-schedule');
         if (partBtn) {
+            const id = partBtn.getAttribute('data-id') || '1';
             const title = partBtn.getAttribute('data-title') || 'this training';
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Participants List',
-                    text: `Viewing registered employees for "${title}". Participant management is scheduled for Stage 2.`,
-                    confirmButtonColor: '#003b6d'
-                });
-            } else {
-                alert(`Viewing registered employees for "${title}".`);
+
+            // 1. Switch top pill to Participant Tracking & Approvals
+            const trackingTabBtn = document.getElementById('tab-participant-tracking-btn');
+            if (trackingTabBtn) {
+                const tabTrigger = new bootstrap.Tab(trackingTabBtn);
+                tabTrigger.show();
+            }
+
+            // 2. Select corresponding training in dropdown & render
+            const selectInlineTraining = document.getElementById('selectInlineTraining');
+            if (selectInlineTraining) {
+                selectInlineTraining.value = id;
+                if (typeof window.renderInlineTrackingByTraining === 'function') {
+                    window.renderInlineTrackingByTraining(id);
+                }
+            }
+
+            // 3. Ensure sub-tab is set to 'By Training Title'
+            const trainingSubTabBtn = document.getElementById('tab-inline-training-btn');
+            if (trainingSubTabBtn) {
+                const subTabTrigger = new bootstrap.Tab(trainingSubTabBtn);
+                subTabTrigger.show();
+            }
+
+            // 4. Smooth scroll to tracking section
+            const trackingPane = document.getElementById('tab-participant-tracking-pane');
+            if (trackingPane) {
+                trackingPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
             return;
         }
@@ -399,6 +424,69 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    // --- Dynamic Syllabus Builder in Add Training Modal ---
+    const btnAddSyllabus = document.getElementById('btnAddSyllabusRow');
+    const syllabusContainer = document.getElementById('syllabusRowsContainer');
+
+    function renumberSyllabusPoints() {
+        if (!syllabusContainer) return;
+        const rows = syllabusContainer.querySelectorAll('.syllabus-input-row');
+        rows.forEach((row, idx) => {
+            const pointInput = row.querySelector('.syllabus-point-num');
+            if (pointInput) {
+                pointInput.value = `Point ${idx + 1}`;
+            }
+            const removeBtn = row.querySelector('.btn-remove-syllabus-row');
+            if (removeBtn) {
+                removeBtn.disabled = (rows.length === 1 && idx === 0);
+            }
+        });
+    }
+
+    if (btnAddSyllabus && syllabusContainer) {
+        btnAddSyllabus.addEventListener('click', function () {
+            const currentCount = syllabusContainer.querySelectorAll('.syllabus-input-row').length;
+            const newIndex = currentCount + 1;
+            const newRow = document.createElement('div');
+            newRow.className = 'card border border-light-subtle rounded-3 p-3 bg-white syllabus-input-row shadow-none';
+            newRow.innerHTML = `
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-2 col-3">
+                        <label class="form-label extra-small text-muted mb-1 fw-bold">Point #</label>
+                        <input type="text" class="form-control form-control-sm rounded-3 text-center fw-bold bg-light syllabus-point-num" value="Point ${newIndex}" readonly>
+                    </div>
+                    <div class="col-md-4 col-9">
+                        <label class="form-label extra-small text-muted mb-1 fw-bold">Syllabus Title / Topic</label>
+                        <input type="text" class="form-control form-control-sm rounded-3 syllabus-title-input" placeholder="e.g. Practical Implementation & Capstone">
+                    </div>
+                    <div class="col-md-5 col-10">
+                        <label class="form-label extra-small text-muted mb-1 fw-bold">Short Outline / Highlights</label>
+                        <input type="text" class="form-control form-control-sm rounded-3 syllabus-outline-input" placeholder="e.g. Industry simulation, department project...">
+                    </div>
+                    <div class="col-md-1 col-2 text-end">
+                        <label class="form-label extra-small text-muted mb-1 d-none d-md-block">&nbsp;</label>
+                        <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-remove-syllabus-row" title="Remove point">
+                            <i class="ti ti-trash fs-2"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            syllabusContainer.appendChild(newRow);
+            renumberSyllabusPoints();
+        });
+
+        syllabusContainer.addEventListener('click', function (e) {
+            const removeBtn = e.target.closest('.btn-remove-syllabus-row');
+            if (removeBtn && !removeBtn.disabled) {
+                const row = removeBtn.closest('.syllabus-input-row');
+                if (row) {
+                    row.remove();
+                    renumberSyllabusPoints();
+                }
+            }
+        });
+    }
 
     // Run initial filter calculation
     filterScheduleTable();

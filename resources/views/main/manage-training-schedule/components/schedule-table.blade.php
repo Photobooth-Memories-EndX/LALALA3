@@ -64,12 +64,18 @@
                     </td>
                     <td class="text-end pe-4">
                         <div class="d-inline-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-3 btn-view-syllabus" 
+                                    title="View Syllabus" data-bs-toggle="modal" data-bs-target="#syllabusModal" 
+                                    data-id="1" data-title="Leadership Development Program" data-category="Soft Skill" data-instructor="Dr. Hendra Wijaya, M.M.">
+                                <i class="ti ti-list-check fs-2"></i>
+                            </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-edit-schedule" 
                                     title="Edit Schedule" data-id="1" data-title="Leadership Development Program">
                                 <i class="ti ti-edit fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
-                                    title="View Participants" data-id="1" data-title="Leadership Development Program">
+                                    title="View Participants" 
+                                    data-id="1" data-title="Leadership Development Program">
                                 <i class="ti ti-users fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
@@ -129,12 +135,18 @@
                     </td>
                     <td class="text-end pe-4">
                         <div class="d-inline-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-3 btn-view-syllabus" 
+                                    title="View Syllabus" data-bs-toggle="modal" data-bs-target="#syllabusModal" 
+                                    data-id="2" data-title="Excel Advanced for Data Analysis" data-category="Technical Skill" data-instructor="Bambang Sujarwo, S.Kom.">
+                                <i class="ti ti-list-check fs-2"></i>
+                            </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-edit-schedule" 
                                     title="Edit Schedule" data-id="2" data-title="Excel Advanced for Data Analysis">
                                 <i class="ti ti-edit fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
-                                    title="View Participants" data-id="2" data-title="Excel Advanced for Data Analysis">
+                                    title="View Participants" 
+                                    data-id="2" data-title="Excel Advanced for Data Analysis">
                                 <i class="ti ti-users fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
@@ -194,12 +206,18 @@
                     </td>
                     <td class="text-end pe-4">
                         <div class="d-inline-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-3 btn-view-syllabus" 
+                                    title="View Syllabus" data-bs-toggle="modal" data-bs-target="#syllabusModal" 
+                                    data-id="3" data-title="K3 & Safety Awareness in Factory" data-category="Compliance & Safety" data-instructor="Ir. Agus Priyono, CSP">
+                                <i class="ti ti-list-check fs-2"></i>
+                            </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-edit-schedule" 
                                     title="Edit Schedule" data-id="3" data-title="K3 & Safety Awareness in Factory">
                                 <i class="ti ti-edit fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
-                                    title="View Participants" data-id="3" data-title="K3 & Safety Awareness in Factory">
+                                    title="View Participants" 
+                                    data-id="3" data-title="K3 & Safety Awareness in Factory">
                                 <i class="ti ti-users fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
@@ -259,12 +277,18 @@
                     </td>
                     <td class="text-end pe-4">
                         <div class="d-inline-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-3 btn-view-syllabus" 
+                                    title="View Syllabus" data-bs-toggle="modal" data-bs-target="#syllabusModal" 
+                                    data-id="4" data-title="Effective Business Communication" data-category="Soft Skill" data-instructor="Citra Lestari, M.Psi.">
+                                <i class="ti ti-list-check fs-2"></i>
+                            </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-edit-schedule" 
                                     title="Edit Schedule" data-id="4" data-title="Effective Business Communication">
                                 <i class="ti ti-edit fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
-                                    title="View Participants" data-id="4" data-title="Effective Business Communication">
+                                    title="View Participants" 
+                                    data-id="4" data-title="Effective Business Communication">
                                 <i class="ti ti-users fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
@@ -324,12 +348,18 @@
                     </td>
                     <td class="text-end pe-4">
                         <div class="d-inline-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-3 btn-view-syllabus" 
+                                    title="View Syllabus" data-bs-toggle="modal" data-bs-target="#syllabusModal" 
+                                    data-id="5" data-title="Basic Fire Fighting & Safety Protocol" data-category="Compliance & Safety" data-instructor="HSE Team Krakatau Posco">
+                                <i class="ti ti-list-check fs-2"></i>
+                            </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-edit-schedule" 
                                     title="Edit Schedule" data-id="5" data-title="Basic Fire Fighting & Safety Protocol">
                                 <i class="ti ti-edit fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
-                                    title="View Participants" data-id="5" data-title="Basic Fire Fighting & Safety Protocol">
+                                    title="View Participants" 
+                                    data-id="5" data-title="Basic Fire Fighting & Safety Protocol">
                                 <i class="ti ti-users fs-2"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
