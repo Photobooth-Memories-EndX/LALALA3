@@ -262,9 +262,26 @@ class RecordAllCombinedService
         $years = array_values(array_unique(array_filter($years)));
         rsort($years);
 
+        // Departments & Companies
+        $userDeps = DB::table('users')->whereNotNull('department')->where('department', '!=', '')->distinct()->pluck('department')->toArray();
+        $offlineDeps = Schema::hasTable('offline_training_users')
+            ? DB::table('offline_training_users')->whereNotNull('department')->where('department', '!=', '')->distinct()->pluck('department')->toArray()
+            : [];
+        $departments = array_values(array_unique(array_filter(array_merge($userDeps, $offlineDeps))));
+        sort($departments);
+
+        $userComps = DB::table('users')->whereNotNull('company_name')->where('company_name', '!=', '')->distinct()->pluck('company_name')->toArray();
+        $offlineComps = Schema::hasTable('offline_training_users')
+            ? DB::table('offline_training_users')->whereNotNull('company')->where('company', '!=', '')->distinct()->pluck('company')->toArray()
+            : [];
+        $companies = array_values(array_unique(array_filter(array_merge($userComps, $offlineComps))));
+        sort($companies);
+
         return [
             'classifications' => $classifications,
             'years'           => $years,
+            'departments'     => $departments,
+            'companies'       => $companies,
         ];
     }
 
@@ -300,6 +317,36 @@ class RecordAllCombinedService
 
         $year = trim((string) ($filters['year'] ?? 'all'));
         if ($year !== '' && $year !== 'all') {
+            return true;
+        }
+
+        $fromDate = trim((string) ($filters['from_date'] ?? ($filters['date_from'] ?? '')));
+        if ($fromDate !== '') {
+            return true;
+        }
+
+        $toDate = trim((string) ($filters['to_date'] ?? ($filters['date_to'] ?? '')));
+        if ($toDate !== '') {
+            return true;
+        }
+
+        $progressRange = trim((string) ($filters['progress_range'] ?? 'all'));
+        if ($progressRange !== '' && $progressRange !== 'all') {
+            return true;
+        }
+
+        $hoursRange = trim((string) ($filters['learning_hours_range'] ?? ($filters['learning_hours'] ?? ($filters['hours_range'] ?? 'all'))));
+        if ($hoursRange !== '' && $hoursRange !== 'all') {
+            return true;
+        }
+
+        $department = trim((string) ($filters['department'] ?? 'all'));
+        if ($department !== '' && $department !== 'all') {
+            return true;
+        }
+
+        $company = trim((string) ($filters['company'] ?? 'all'));
+        if ($company !== '' && $company !== 'all') {
             return true;
         }
 
@@ -695,6 +742,71 @@ class RecordAllCombinedService
                 }
             });
         }
+
+        // 7. Finish Date Range Filter
+        $fromDate = trim((string) ($filters['from_date'] ?? ($filters['date_from'] ?? '')));
+        if ($fromDate !== '') {
+            $q->where("{$recordAlias}.completed_at", '>=', "{$fromDate} 00:00:00");
+        }
+        $toDate = trim((string) ($filters['to_date'] ?? ($filters['date_to'] ?? '')));
+        if ($toDate !== '') {
+            $q->where("{$recordAlias}.completed_at", '<=', "{$toDate} 23:59:59");
+        }
+
+        // 8. Progress Range Filter
+        $progressRange = trim((string) ($filters['progress_range'] ?? 'all'));
+        if ($progressRange !== '' && $progressRange !== 'all') {
+            if ($progressRange === '0') {
+                $q->where(function ($sub) use ($recordAlias) {
+                    $sub->where("{$recordAlias}.progress", '<=', 0)
+                        ->orWhereNull("{$recordAlias}.progress");
+                });
+            } elseif ($progressRange === '1-25') {
+                $q->where("{$recordAlias}.progress", '>=', 1)->where("{$recordAlias}.progress", '<=', 25);
+            } elseif ($progressRange === '26-50') {
+                $q->where("{$recordAlias}.progress", '>=', 26)->where("{$recordAlias}.progress", '<=', 50);
+            } elseif ($progressRange === '51-75') {
+                $q->where("{$recordAlias}.progress", '>=', 51)->where("{$recordAlias}.progress", '<=', 75);
+            } elseif ($progressRange === '76-99') {
+                $q->where("{$recordAlias}.progress", '>=', 76)->where("{$recordAlias}.progress", '<=', 99);
+            } elseif ($progressRange === '100') {
+                $q->where(function ($sub) use ($recordAlias) {
+                    $sub->where("{$recordAlias}.progress", '>=', 100)
+                        ->orWhere("{$recordAlias}.finish", '1');
+                });
+            }
+        }
+
+        // 9. Participant Learning Hours Filter
+        $hoursRange = trim((string) ($filters['learning_hours_range'] ?? ($filters['learning_hours'] ?? ($filters['hours_range'] ?? 'all'))));
+        if ($hoursRange !== '' && $hoursRange !== 'all') {
+            $hCol = $recordAlias === 'pcu' ? 'pcu.learning_hour' : 'cu.learning_hours';
+            if ($hoursRange === 'lt05') {
+                $q->where($hCol, '<', 0.5);
+            } elseif ($hoursRange === '05-1') {
+                $q->where($hCol, '>=', 0.5)->where($hCol, '<', 1.0);
+            } elseif ($hoursRange === '1-2') {
+                $q->where($hCol, '>=', 1.0)->where($hCol, '<', 2.0);
+            } elseif ($hoursRange === '2-4') {
+                $q->where($hCol, '>=', 2.0)->where($hCol, '<', 4.0);
+            } elseif ($hoursRange === 'gte4') {
+                $q->where($hCol, '>=', 4.0);
+            }
+        }
+
+        // 10. Department Filter
+        $department = trim((string) ($filters['department'] ?? 'all'));
+        if ($department !== '' && $department !== 'all') {
+            $deptUserIds = DB::table('users')->where('department', $department)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($deptUserIds) ? $deptUserIds : [-1]);
+        }
+
+        // 11. Company Filter
+        $company = trim((string) ($filters['company'] ?? 'all'));
+        if ($company !== '' && $company !== 'all') {
+            $compUserIds = DB::table('users')->where('company_name', $company)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($compUserIds) ? $compUserIds : [-1]);
+        }
     }
 
     /**
@@ -791,6 +903,77 @@ class RecordAllCombinedService
                     ->orWhere('otu.name', 'like', "%{$search}%")
                     ->orWhere('ot.course_name', 'like', "%{$search}%")
                     ->orWhere('ot.main_classification', 'like', "%{$search}%");
+            });
+        }
+
+        // 5. Finish Date Range Filter
+        $fromDate = trim((string) ($filters['from_date'] ?? ($filters['date_from'] ?? '')));
+        if ($fromDate !== '') {
+            $q->whereDate('ot.finish_date', '>=', $fromDate);
+        }
+        $toDate = trim((string) ($filters['to_date'] ?? ($filters['date_to'] ?? '')));
+        if ($toDate !== '') {
+            $q->whereDate('ot.finish_date', '<=', $toDate);
+        }
+
+        // 6. Progress Range Filter
+        $progressRange = trim((string) ($filters['progress_range'] ?? 'all'));
+        if ($progressRange !== '' && $progressRange !== 'all') {
+            if ($progressRange === '0') {
+                $q->where(function ($sub) {
+                    $sub->where('otu.progress', '<=', 0)
+                        ->orWhereNull('otu.progress');
+                });
+            } elseif ($progressRange === '1-25') {
+                $q->where('otu.progress', '>=', 1)->where('otu.progress', '<=', 25);
+            } elseif ($progressRange === '26-50') {
+                $q->where('otu.progress', '>=', 26)->where('otu.progress', '<=', 50);
+            } elseif ($progressRange === '51-75') {
+                $q->where('otu.progress', '>=', 51)->where('otu.progress', '<=', 75);
+            } elseif ($progressRange === '76-99') {
+                $q->where('otu.progress', '>=', 76)->where('otu.progress', '<=', 99);
+            } elseif ($progressRange === '100') {
+                $q->where('otu.progress', '>=', 100);
+            }
+        }
+
+        // 7. Participant Learning Hours Filter
+        $hoursRange = trim((string) ($filters['learning_hours_range'] ?? ($filters['learning_hours'] ?? ($filters['hours_range'] ?? 'all'))));
+        if ($hoursRange !== '' && $hoursRange !== 'all') {
+            if ($hoursRange === 'lt05') {
+                $q->where('otu.learning_hours', '<', 0.5);
+            } elseif ($hoursRange === '05-1') {
+                $q->where('otu.learning_hours', '>=', 0.5)->where('otu.learning_hours', '<', 1.0);
+            } elseif ($hoursRange === '1-2') {
+                $q->where('otu.learning_hours', '>=', 1.0)->where('otu.learning_hours', '<', 2.0);
+            } elseif ($hoursRange === '2-4') {
+                $q->where('otu.learning_hours', '>=', 2.0)->where('otu.learning_hours', '<', 4.0);
+            } elseif ($hoursRange === 'gte4') {
+                $q->where('otu.learning_hours', '>=', 4.0);
+            }
+        }
+
+        // 8. Department Filter
+        $department = trim((string) ($filters['department'] ?? 'all'));
+        if ($department !== '' && $department !== 'all') {
+            $deptUserIds = DB::table('users')->where('department', $department)->pluck('id')->toArray();
+            $q->where(function ($sub) use ($department, $deptUserIds) {
+                $sub->where('otu.department', $department);
+                if (!empty($deptUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $deptUserIds);
+                }
+            });
+        }
+
+        // 9. Company Filter
+        $company = trim((string) ($filters['company'] ?? 'all'));
+        if ($company !== '' && $company !== 'all') {
+            $compUserIds = DB::table('users')->where('company_name', $company)->pluck('id')->toArray();
+            $q->where(function ($sub) use ($company, $compUserIds) {
+                $sub->where('otu.company', $company);
+                if (!empty($compUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $compUserIds);
+                }
             });
         }
 

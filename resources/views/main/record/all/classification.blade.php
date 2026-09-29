@@ -34,37 +34,39 @@
                     Quick Filter
                 </div>
                 <form id="all-filter-form" onsubmit="return false;">
-                    <div class="row g-2 align-items-center">
-                        <!-- 1. Employee Search -->
-                        <div class="col-12 col-sm-6 col-md-3">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <!-- 1. Employee / NIP Search Input -->
+                        <div class="position-relative flex-grow-1" style="min-width: 220px; max-width: 280px;">
                             <input type="text"
                                    id="all-filter-employee"
-                                   class="form-control form-control-sm"
+                                   name="employee_id"
+                                   class="form-control rounded-3"
                                    placeholder="Search Employee / NIP..."
                                    autocomplete="off">
                         </div>
 
-                        <!-- 2. Learning Title Search -->
-                        <div class="col-12 col-sm-6 col-md-3">
+                        <!-- 2. Learning Title Search Input -->
+                        <div class="position-relative flex-grow-1" style="min-width: 240px; max-width: 320px;">
                             <input type="text"
                                    id="all-filter-title"
-                                   class="form-control form-control-sm"
+                                   name="learning_title"
+                                   class="form-control rounded-3"
                                    placeholder="Search Learning Title..."
                                    autocomplete="off">
                         </div>
 
-                        <!-- 3. Source Filter -->
-                        <div class="col-12 col-sm-6 col-md-2">
-                            <select id="all-filter-source" class="form-select form-select-sm">
+                        <!-- 3. Source Filter Dropdown -->
+                        <div style="min-width: 140px; flex-shrink: 0;">
+                            <select id="all-filter-source" name="source" class="form-select rounded-3">
                                 <option value="all">All Sources</option>
                                 <option value="online">KP OWL (Online)</option>
                                 <option value="offline">Non KP OWL (Offline)</option>
                             </select>
                         </div>
 
-                        <!-- 4. Status Filter -->
-                        <div class="col-12 col-sm-6 col-md-2">
-                            <select id="all-filter-status" class="form-select form-select-sm">
+                        <!-- 4. Status Filter Dropdown -->
+                        <div style="min-width: 125px; flex-shrink: 0;">
+                            <select id="all-filter-status" name="status" class="form-select rounded-3">
                                 <option value="all">All Status</option>
                                 <option value="finished">Finished</option>
                                 <option value="ongoing">Ongoing</option>
@@ -72,25 +74,36 @@
                             </select>
                         </div>
 
-                        <!-- 5. Year Filter -->
-                        <div class="col-12 col-sm-6 col-md-1">
-                            <select id="all-filter-year" class="form-select form-select-sm">
-                                <option value="all">All Years</option>
+                        <!-- 5. Year Filter Dropdown -->
+                        <div style="min-width: 105px; flex-shrink: 0;">
+                            <select id="all-filter-year" name="year" class="form-select rounded-3">
+                                <option value="all">All Year</option>
                                 @foreach ($years as $year)
                                     <option value="{{ $year }}">{{ $year }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="col-12 col-md-1 text-end d-flex gap-1 justify-content-end">
-                            <button type="submit" id="btn-all-filter" class="btn btn-sm btn-primary px-2.5" title="Apply Filter">
-                                <i class="ti ti-search"></i>
-                            </button>
-                            <button type="button" id="btn-all-reset" class="btn btn-sm btn-outline-secondary px-2.5" title="Reset Filters">
-                                <i class="ti ti-rotate-clockwise"></i>
-                            </button>
-                        </div>
+                        <!-- 6. Search Button (Blue primary square button) -->
+                        <button type="button" id="btn-all-filter" class="btn btn-primary btn-icon px-3 flex-shrink-0" style="background-color: #003b6d; border-color: #003b6d;" data-bs-toggle="tooltip" data-bs-title="Apply Filter" title="Apply Filter">
+                            <i class="ti ti-search fs-2"></i>
+                        </button>
+
+                        <!-- 7. More Filters Button (Outlined blue with active badge) -->
+                        <button type="button" id="btn-all-more-filters" class="btn btn-outline-primary btn-icon px-3 position-relative btn-more-filters flex-shrink-0" data-bs-toggle="modal" data-bs-target="#moreAllFiltersModal" title="More Filters">
+                            <i class="ti ti-adjustments-horizontal fs-2"></i>
+                            <span id="activeFilterBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
+                        </button>
+
+                        <!-- 8. Reset Button (Outlined neutral) -->
+                        <button type="button" id="btn-all-reset" class="btn btn-outline-secondary btn-icon px-3 btn-quick-reset flex-shrink-0" data-bs-toggle="tooltip" data-bs-title="Reset Filters" title="Reset Filters">
+                            <i class="ti ti-refresh fs-2"></i>
+                        </button>
+
+                        <!-- 9. Download Button (Green button with download icon) -->
+                        <button type="button" id="btn-all-download" class="btn btn-success rounded-3 px-3 btn-download flex-shrink-0" title="Download Excel">
+                            <i class="ti ti-download me-1"></i> <span class="btn-download-text">Download</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -191,6 +204,139 @@
                 </div>
                 <div id="all-table-pagination"></div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- MORE FILTERS MODAL FOR ALL KP OWL -->
+<div class="modal fade" id="moreAllFiltersModal" tabindex="-1" aria-labelledby="moreAllFiltersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <form id="more-all-filters-modal-form" onsubmit="return false;">
+                @csrf
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="moreAllFiltersModalLabel">
+                        <i class="ti ti-adjustments-horizontal text-primary"></i> More Filters
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <!-- GROUP A: Finish Date Range -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small"><i class="ti ti-calendar me-1"></i> Date Range (Finish Date)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small text-muted mb-1">From Date</label>
+                                <input type="text" id="modal-from-date" name="from_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('from_date') ?? request('date_from') }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small text-muted mb-1">To Date</label>
+                                <input type="text" id="modal-to-date" name="to_date" onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'" class="form-control rounded-3" placeholder="dd/mm/yyyy" value="{{ request('to_date') ?? request('date_to') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GROUP B: Progress Range -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small d-block">Progress Range</label>
+                        @php $currProgress = request('progress_range', 'all'); @endphp
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="prAll" value="all" {{ ($currProgress === 'all' || blank($currProgress)) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="prAll">All</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr0" value="0" {{ $currProgress === '0' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr0">0%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr25" value="1-25" {{ $currProgress === '1-25' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr25">1 - 25%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr50" value="26-50" {{ $currProgress === '26-50' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr50">26 - 50%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr75" value="51-75" {{ $currProgress === '51-75' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr75">51 - 75%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr99" value="76-99" {{ $currProgress === '76-99' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr99">76 - 99%</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_progress_range" id="pr100" value="100" {{ $currProgress === '100' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="pr100">100%</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GROUP C: Participant Learning Hours -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small d-block">Participant Learning Hours</label>
+                        @php $currHours = request('learning_hours_range', 'all'); @endphp
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_learning_hours" id="hrAll" value="all" {{ ($currHours === 'all' || blank($currHours)) ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="hrAll">All Hours</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_learning_hours" id="hrLt05" value="lt05" {{ $currHours === 'lt05' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="hrLt05">&lt; 0.5 Hour</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_learning_hours" id="hr051" value="05-1" {{ $currHours === '05-1' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="hr051">0.5 – &lt; 1 Hour</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_learning_hours" id="hr12" value="1-2" {{ $currHours === '1-2' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="hr12">1 – &lt; 2 Hours</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_learning_hours" id="hr24" value="2-4" {{ $currHours === '2-4' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="hr24">2 – &lt; 4 Hours</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_learning_hours" id="hrGte4" value="gte4" {{ $currHours === 'gte4' ? 'checked' : '' }}>
+                                <label class="form-check-label text-dark" for="hrGte4">&ge; 4 Hours</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GROUP D & E: Department & Company -->
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="form-label fw-bold text-dark small mb-1">Department</label>
+                            <select id="modal-department" name="department" class="form-select rounded-3">
+                                <option value="all">All Departments</option>
+                                @foreach ($departments ?? [] as $dept)
+                                    <option value="{{ $dept }}" {{ request('department') === $dept ? 'selected' : '' }}>{{ $dept }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="form-label fw-bold text-dark small mb-1">Company</label>
+                            <select id="modal-company" name="company" class="form-select rounded-3">
+                                <option value="all">All Companies</option>
+                                @foreach ($companies ?? [] as $comp)
+                                    <option value="{{ $comp }}" {{ request('company') === $comp ? 'selected' : '' }}>{{ $comp }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light d-flex justify-content-end align-items-center gap-2">
+                    <button type="button" id="btn-modal-reset" class="btn btn-outline-secondary px-3 d-inline-flex align-items-center gap-1">
+                        <i class="ti ti-rotate me-1"></i>
+                        <span>Reset</span>
+                    </button>
+                    <button type="button" id="btn-modal-apply" class="btn btn-primary px-3 d-inline-flex align-items-center gap-1" style="background-color: #0c5b9e; border-color: #0c5b9e;" data-bs-dismiss="modal">
+                        <i class="ti ti-check me-1"></i>
+                        <span>Apply Filter</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -510,6 +656,60 @@
     .extra-small {
         font-size: 0.75rem;
     }
+
+    /* More Filters Modal Dark Mode & Styling */
+    [data-bs-theme="dark"] #moreAllFiltersModal .modal-content,
+    body.dark-mode #moreAllFiltersModal .modal-content,
+    body.theme-dark #moreAllFiltersModal .modal-content {
+        background-color: #1e293b !important;
+        color: #cbd5e1 !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-bs-theme="dark"] #moreAllFiltersModal .modal-header,
+    [data-bs-theme="dark"] #moreAllFiltersModal .modal-footer,
+    body.dark-mode #moreAllFiltersModal .modal-header,
+    body.dark-mode #moreAllFiltersModal .modal-footer,
+    body.theme-dark #moreAllFiltersModal .modal-header,
+    body.theme-dark #moreAllFiltersModal .modal-footer {
+        background-color: #0f172a !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    [data-bs-theme="dark"] #moreAllFiltersModal .text-dark,
+    body.dark-mode #moreAllFiltersModal .text-dark,
+    body.theme-dark #moreAllFiltersModal .text-dark {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #moreAllFiltersModal .form-control,
+    [data-bs-theme="dark"] #moreAllFiltersModal .form-select,
+    body.dark-mode #moreAllFiltersModal .form-control,
+    body.dark-mode #moreAllFiltersModal .form-select,
+    body.theme-dark #moreAllFiltersModal .form-control,
+    body.theme-dark #moreAllFiltersModal .form-select {
+        background-color: #0f172a !important;
+        color: #f1f5f9 !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    [data-bs-theme="dark"] #moreAllFiltersModal .form-check-label,
+    body.dark-mode #moreAllFiltersModal .form-check-label,
+    body.theme-dark #moreAllFiltersModal .form-check-label {
+        color: #cbd5e1 !important;
+    }
+
+    /* Quick Filter Dark Mode */
+    [data-bs-theme="dark"] #all-filter-form .form-control,
+    [data-bs-theme="dark"] #all-filter-form .form-select,
+    body.dark-mode #all-filter-form .form-control,
+    body.dark-mode #all-filter-form .form-select,
+    body.theme-dark #all-filter-form .form-control,
+    body.theme-dark #all-filter-form .form-select {
+        background-color: #1e293b !important;
+        color: #f1f5f9 !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
 </style>
 @endsection
 
@@ -520,6 +720,7 @@
 <script>
 $(function () {
     const datatableUrl = @json(route('manage.record.all.classification.datatable', $slug));
+    const downloadBaseUrl = @json(route('manage.record.all.classification.download', $slug));
     const defaultEntries = 25;
 
     let allTable = null;
@@ -554,6 +755,13 @@ $(function () {
                 d.source = $('#all-filter-source').val();
                 d.status = $('#all-filter-status').val();
                 d.year = $('#all-filter-year').val();
+                // More Filters Modal parameters
+                d.from_date = $('#modal-from-date').val() || '';
+                d.to_date = $('#modal-to-date').val() || '';
+                d.progress_range = $('input[name="modal_progress_range"]:checked').val() || 'all';
+                d.learning_hours_range = $('input[name="modal_learning_hours"]:checked').val() || 'all';
+                d.department = $('#modal-department').val() || 'all';
+                d.company = $('#modal-company').val() || 'all';
                 d.entries = $('#all-table-entries-select').val() || defaultEntries;
             }
         },
@@ -810,7 +1018,59 @@ $(function () {
         }
     });
 
-    // Filter submit
+    // Function to calculate and update active modal filter counter badge
+    function updateActiveFilterBadge() {
+        let activeCount = 0;
+        if ($('#modal-from-date').val()) activeCount++;
+        if ($('#modal-to-date').val()) activeCount++;
+        const prog = $('input[name="modal_progress_range"]:checked').val();
+        if (prog && prog !== 'all') activeCount++;
+        const hrs = $('input[name="modal_learning_hours"]:checked').val();
+        if (hrs && hrs !== 'all') activeCount++;
+        const dept = $('#modal-department').val();
+        if (dept && dept !== 'all') activeCount++;
+        const comp = $('#modal-company').val();
+        if (comp && comp !== 'all') activeCount++;
+
+        const $badge = $('#activeFilterBadge');
+        if (activeCount > 0) {
+            $badge.text(activeCount).removeClass('d-none');
+            $('#btn-all-more-filters').addClass('btn-primary text-white').removeClass('btn-outline-primary');
+        } else {
+            $badge.addClass('d-none');
+            $('#btn-all-more-filters').removeClass('btn-primary text-white').addClass('btn-outline-primary');
+        }
+    }
+
+    // Helper to safely dismiss modal and cleanup backdrop
+    function hideMoreFiltersModal() {
+        const modalEl = document.getElementById('moreAllFiltersModal');
+        if (modalEl) {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+            if ($.fn.modal) {
+                $('#moreAllFiltersModal').modal('hide');
+            }
+        }
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css({ overflow: '', paddingRight: '' });
+    }
+
+    // Initialize badge on load
+    updateActiveFilterBadge();
+
+    // Quick Filter Trigger (Search button click)
+    $('#btn-all-filter').on('click', function () {
+        if (allTable) {
+            allTable.page(0).ajax.reload();
+        }
+    });
+
+    // Filter submit (Enter key inside search inputs)
     $('#all-filter-form').on('submit', function (e) {
         e.preventDefault();
         if (allTable) {
@@ -818,23 +1078,115 @@ $(function () {
         }
     });
 
-    // Filter reset
+    // Quick dropdowns instant reload
+    $('#all-filter-source, #all-filter-status, #all-filter-year').on('change', function () {
+        if (allTable) {
+            allTable.page(0).ajax.reload();
+        }
+    });
+
+    // Modal Apply Filter
+    $('#btn-modal-apply').on('click', function () {
+        updateActiveFilterBadge();
+        hideMoreFiltersModal();
+        if (allTable) {
+            allTable.page(0).ajax.reload();
+        }
+    });
+
+    // Modal Reset (resets modal-only fields)
+    $('#btn-modal-reset').on('click', function () {
+        $('#modal-from-date').val('');
+        $('#modal-to-date').val('');
+        $('input[name="modal_progress_range"][value="all"]').prop('checked', true);
+        $('input[name="modal_learning_hours"][value="all"]').prop('checked', true);
+        $('#modal-department').val('all');
+        $('#modal-company').val('all');
+
+        updateActiveFilterBadge();
+        hideMoreFiltersModal();
+        if (allTable) {
+            allTable.page(0).ajax.reload();
+        }
+    });
+
+    // Global Reset (resets both Quick Filter and Modal inputs)
     $('#btn-all-reset').on('click', function () {
         $('#all-filter-employee').val('');
         $('#all-filter-title').val('');
         $('#all-filter-source').val('all');
         $('#all-filter-status').val('all');
         $('#all-filter-year').val('all');
+
+        $('#modal-from-date').val('');
+        $('#modal-to-date').val('');
+        $('input[name="modal_progress_range"][value="all"]').prop('checked', true);
+        $('input[name="modal_learning_hours"][value="all"]').prop('checked', true);
+        $('#modal-department').val('all');
+        $('#modal-company').val('all');
+
+        updateActiveFilterBadge();
         if (allTable) {
             allTable.page(0).ajax.reload();
         }
     });
 
-    // Filter changes instant reload
-    $('#all-filter-source, #all-filter-status, #all-filter-year').on('change', function () {
-        if (allTable) {
-            allTable.page(0).ajax.reload();
-        }
+    // Filtered Excel Export Download Handler
+    $('#btn-all-download').on('click', function (e) {
+        e.preventDefault();
+        const $btn = $(this);
+        const $icon = $btn.find('i');
+        const $text = $btn.find('.btn-download-text');
+        const originalText = $text.text();
+        const originalIconClass = $icon.attr('class');
+
+        // Loading state
+        $btn.prop('disabled', true);
+        $icon.attr('class', 'spinner-border spinner-border-sm me-1');
+        $text.text('Exporting...');
+
+        const params = new URLSearchParams();
+        const empVal = $('#all-filter-employee').val().trim();
+        if (empVal) params.append('employee_id', empVal);
+
+        const titleVal = $('#all-filter-title').val().trim();
+        if (titleVal) params.append('learning_title', titleVal);
+
+        const sourceVal = $('#all-filter-source').val();
+        if (sourceVal && sourceVal !== 'all') params.append('source', sourceVal);
+
+        const statusVal = $('#all-filter-status').val();
+        if (statusVal && statusVal !== 'all') params.append('status', statusVal);
+
+        const yearVal = $('#all-filter-year').val();
+        if (yearVal && yearVal !== 'all') params.append('year', yearVal);
+
+        const fromDate = $('#modal-from-date').val();
+        if (fromDate) params.append('from_date', fromDate);
+
+        const toDate = $('#modal-to-date').val();
+        if (toDate) params.append('to_date', toDate);
+
+        const progressRange = $('input[name="modal_progress_range"]:checked').val();
+        if (progressRange && progressRange !== 'all') params.append('progress_range', progressRange);
+
+        const hoursRange = $('input[name="modal_learning_hours"]:checked').val();
+        if (hoursRange && hoursRange !== 'all') params.append('learning_hours_range', hoursRange);
+
+        const deptVal = $('#modal-department').val();
+        if (deptVal && deptVal !== 'all') params.append('department', deptVal);
+
+        const compVal = $('#modal-company').val();
+        if (compVal && compVal !== 'all') params.append('company', compVal);
+
+        const fullUrl = downloadBaseUrl + (downloadBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
+        window.location.href = fullUrl;
+
+        setTimeout(function () {
+            $btn.prop('disabled', false);
+            $icon.attr('class', originalIconClass);
+            $text.text(originalText);
+        }, 2500);
     });
 
     // 2. Detail Modal for Offline records

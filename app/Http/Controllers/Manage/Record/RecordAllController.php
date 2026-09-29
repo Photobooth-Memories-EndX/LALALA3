@@ -98,6 +98,10 @@ class RecordAllController extends Controller
      */
     public function classification(string $classification, Request $request)
     {
+        if ($request->input('action') === 'download') {
+            return $this->classificationDownload($classification, $request);
+        }
+
         $resolved = self::resolveClassification($classification, true);
         $filterOptions = $this->combinedService->getFilterOptions();
 
@@ -108,8 +112,25 @@ class RecordAllController extends Controller
             'slug'               => $resolved['slug'],
             'isUnclassified'     => $resolved['is_unclassified'],
             'years'              => $filterOptions['years'],
+            'departments'        => $filterOptions['departments'] ?? [],
+            'companies'          => $filterOptions['companies'] ?? [],
             'entries'            => (int) $request->input('entries', 25),
         ]);
+    }
+
+    /**
+     * Download Excel export locked to the given classification.
+     */
+    public function classificationDownload(string $classification, Request $request)
+    {
+        $resolved = self::resolveClassification($classification, true);
+        $request->merge([
+            'classification' => $resolved['is_unclassified'] ? 'Unclassified' : $resolved['name'],
+        ]);
+
+        $export = new \App\Exports\AllClassificationExport($resolved['name'], $request);
+
+        return $export->download($export->getFileName());
     }
 
     /**

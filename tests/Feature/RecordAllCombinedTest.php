@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Models\User;
+use App\Services\Record\RecordAllCombinedService;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -1101,5 +1102,222 @@ class RecordAllCombinedTest extends TestCase
             $this->assertNull($onRow['l3_numerical'], 'Online l3_numerical must be NULL');
             $this->assertNull($onRow['pic'], 'Online pic must be NULL');
         }
+    }
+
+    /**
+     * 29. Test Classification page renders More Filters modal, inputs, and download button.
+     */
+    public function test_classification_page_renders_more_filters_modal_and_download_button(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership');
+        $response->assertStatus(200);
+        $response->assertViewIs('main.record.all.classification');
+
+        // Check More Filters button & badge
+        $response->assertSee('id="btn-all-more-filters"', false);
+        $response->assertSee('id="activeFilterBadge"', false);
+
+        // Check Download button
+        $response->assertSee('id="btn-all-download"', false);
+
+        // Check Modal container & inputs
+        $response->assertSee('id="moreAllFiltersModal"', false);
+        $response->assertSee('id="modal-from-date"', false);
+        $response->assertSee('id="modal-to-date"', false);
+        $response->assertSee('name="modal_progress_range"', false);
+        $response->assertSee('name="modal_learning_hours"', false);
+        $response->assertSee('id="modal-department"', false);
+        $response->assertSee('id="modal-company"', false);
+        $response->assertSee('id="btn-modal-apply"', false);
+        $response->assertSee('id="btn-modal-reset"', false);
+    }
+
+    /**
+     * 30. Test Classification Datatable supports advanced modal filters.
+     */
+    public function test_classification_datatable_supports_advanced_modal_filters(): void
+    {
+        // Create 3 distinct records
+        $uniqueA = 'Participant A ' . uniqid();
+        $uniqueB = 'Participant B ' . uniqid();
+        $uniqueC = 'Participant C ' . uniqid();
+
+        $training1 = $this->createTestOfflineTraining([
+            'course_name'         => 'Test Advanced Filters Course 1',
+            'main_classification' => 'Leadership',
+            'finish_date'         => '2026-05-15',
+        ], [
+            [
+                'name'           => $uniqueA,
+                'department'     => 'FILTER_TEST_DEPT_A',
+                'company'        => 'FILTER_TEST_COMP_A',
+                'progress'       => 100,
+                'learning_hours' => 1.5,
+            ]
+        ]);
+
+        $training2 = $this->createTestOfflineTraining([
+            'course_name'         => 'Test Advanced Filters Course 2',
+            'main_classification' => 'Leadership',
+            'finish_date'         => '2026-06-20',
+        ], [
+            [
+                'name'           => $uniqueB,
+                'department'     => 'FILTER_TEST_DEPT_B',
+                'company'        => 'FILTER_TEST_COMP_B',
+                'progress'       => 50,
+                'learning_hours' => 3.0,
+            ]
+        ]);
+
+        $training3 = $this->createTestOfflineTraining([
+            'course_name'         => 'Test Advanced Filters Course 3',
+            'main_classification' => 'Leadership',
+            'finish_date'         => '2026-07-25',
+        ], [
+            [
+                'name'           => $uniqueC,
+                'department'     => 'FILTER_TEST_DEPT_A',
+                'company'        => 'FILTER_TEST_COMP_B',
+                'progress'       => 0,
+                'learning_hours' => 0.0,
+            ]
+        ]);
+
+        // Filter 1: Date Range matching only training 2
+        $respDate = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?from_date=2026-06-01&to_date=2026-06-30&source=offline');
+        $respDate->assertStatus(200);
+        $namesDate = collect($respDate->json('data'))->pluck('employee_name')->all();
+        $this->assertContains($uniqueB, $namesDate);
+        $this->assertNotContains($uniqueA, $namesDate);
+        $this->assertNotContains($uniqueC, $namesDate);
+
+        // Filter 2: Progress Range 100 matching only training 1
+        $respProg = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?progress_range=100&source=offline');
+        $respProg->assertStatus(200);
+        $namesProg = collect($respProg->json('data'))->pluck('employee_name')->all();
+        $this->assertContains($uniqueA, $namesProg);
+        $this->assertNotContains($uniqueB, $namesProg);
+        $this->assertNotContains($uniqueC, $namesProg);
+
+        // Filter 3: Progress Range 26-50 matching training 2
+        $respProg50 = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?progress_range=26-50&source=offline');
+        $respProg50->assertStatus(200);
+        $namesProg50 = collect($respProg50->json('data'))->pluck('employee_name')->all();
+        $this->assertContains($uniqueB, $namesProg50);
+        $this->assertNotContains($uniqueA, $namesProg50);
+
+        // Filter 4: Learning Hours Range 1-2 matching training 1 (1.5 hrs)
+        $respHours = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?learning_hours_range=1-2&source=offline');
+        $respHours->assertStatus(200);
+        $namesHours = collect($respHours->json('data'))->pluck('employee_name')->all();
+        $this->assertContains($uniqueA, $namesHours);
+        $this->assertNotContains($uniqueB, $namesHours);
+
+        // Filter 5: Department FILTER_TEST_DEPT_A matching training 1 and 3
+        $respDept = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?department=' . urlencode('FILTER_TEST_DEPT_A') . '&source=offline');
+        $respDept->assertStatus(200);
+        $namesDept = collect($respDept->json('data'))->pluck('employee_name')->all();
+        $this->assertContains($uniqueA, $namesDept);
+        $this->assertContains($uniqueC, $namesDept);
+        $this->assertNotContains($uniqueB, $namesDept);
+
+        // Filter 6: Company FILTER_TEST_COMP_B matching training 2 and 3
+        $respComp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?company=' . urlencode('FILTER_TEST_COMP_B') . '&source=offline');
+        $respComp->assertStatus(200);
+        $namesComp = collect($respComp->json('data'))->pluck('employee_name')->all();
+        $this->assertContains($uniqueB, $namesComp);
+        $this->assertContains($uniqueC, $namesComp);
+        $this->assertNotContains($uniqueA, $namesComp);
+    }
+
+    /**
+     * 31. Test Classification download endpoint requires auth and exports Excel with filters.
+     */
+    public function test_classification_download_endpoint_requires_auth_and_exports_excel(): void
+    {
+        // Guest redirected or 401
+        $guestResp = $this->get('/manage/record/all/classification/leadership/download');
+        $this->assertTrue($guestResp->isRedirect() || $guestResp->getStatusCode() === 401);
+
+        // Regular user 403
+        if ($this->regularUser) {
+            $unauthResp = $this->actingAs($this->regularUser)->get('/manage/record/all/classification/leadership/download');
+            $unauthResp->assertStatus(403);
+        }
+
+        // Admin download via dedicated route
+        $adminResp = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership/download?source=offline');
+        $adminResp->assertStatus(200);
+        $this->assertStringContainsString('spreadsheetml.sheet', (string) $adminResp->headers->get('content-type'));
+        $this->assertStringContainsString('leadership', (string) $adminResp->headers->get('content-disposition'));
+
+        // Admin download via ?action=download query parameter
+        $actionResp = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership?action=download&source=offline');
+        $actionResp->assertStatus(200);
+        $this->assertStringContainsString('spreadsheetml.sheet', (string) $actionResp->headers->get('content-type'));
+    }
+
+    /**
+     * 32. Test strict Filter Parity between DataTable count and Export Query count.
+     */
+    public function test_filter_parity_between_datatable_and_export_query(): void
+    {
+        $uniqueDept = 'PARITY_DEPT_' . uniqid();
+        $uniqueCourse = 'Parity Course ' . uniqid();
+
+        $this->createTestOfflineTraining([
+            'course_name'         => $uniqueCourse,
+            'main_classification' => 'Leadership',
+            'finish_date'         => '2026-08-15',
+        ], [
+            [
+                'name'           => 'Parity User 1',
+                'department'     => $uniqueDept,
+                'company'        => 'PARITY_CORP',
+                'progress'       => 100,
+                'learning_hours' => 2.5,
+            ],
+            [
+                'name'           => 'Parity User 2',
+                'department'     => $uniqueDept,
+                'company'        => 'PARITY_CORP',
+                'progress'       => 100,
+                'learning_hours' => 2.5,
+            ],
+            [
+                'name'           => 'Parity User 3',
+                'department'     => $uniqueDept,
+                'company'        => 'PARITY_CORP',
+                'progress'       => 30, // will be filtered out by progress=100
+                'learning_hours' => 1.0,
+            ]
+        ]);
+
+        $filters = [
+            'classification' => 'Leadership',
+            'department'     => $uniqueDept,
+            'progress_range' => '100',
+            'source'         => 'offline',
+        ];
+
+        // 1. Query count via RecordAllCombinedService (same query used by Excel Export)
+        $service = app(RecordAllCombinedService::class);
+        $exportCount = $service->buildCombinedQuery($filters)->count();
+
+        // 2. Query count via DataTable endpoint
+        $dtParams = http_build_query([
+            'department'     => $uniqueDept,
+            'progress_range' => '100',
+            'source'         => 'offline',
+        ]);
+        $dtResp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?' . $dtParams);
+        $dtResp->assertStatus(200);
+        $datatableCount = $dtResp->json('recordsFiltered');
+
+        // Both must be exactly 2
+        $this->assertEquals(2, $exportCount, 'Export query must find exactly 2 matching records.');
+        $this->assertEquals(2, $datatableCount, 'DataTable query must find exactly 2 matching records.');
+        $this->assertEquals($exportCount, $datatableCount, 'Export and DataTable must have 100% filter count parity.');
     }
 }
