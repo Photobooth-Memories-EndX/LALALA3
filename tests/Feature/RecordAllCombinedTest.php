@@ -802,4 +802,304 @@ class RecordAllCombinedTest extends TestCase
         $this->assertStringContainsString('all-classification-link', $html);
         $this->assertStringContainsString('/manage/record/all/classification/', $html);
     }
+
+    /**
+     * 25. Test classification table has exactly 47 superset columns combining Online and Offline fields.
+     */
+    public function test_classification_table_has_exact_47_superset_columns(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership');
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        // Extract <thead> content from #all-classification-learning-table
+        preg_match('/<table[^>]*id="all-classification-learning-table"[^>]*>.*?<thead[^>]*>(.*?)<\/thead>/s', $content, $theadMatch);
+        $this->assertNotEmpty($theadMatch, 'Table header must exist');
+
+        $thead = $theadMatch[1];
+
+        // Count <th> elements in main table header
+        preg_match_all('/<th\b[^>]*>(.*?)<\/th>/si', $thead, $thMatches);
+        $headers = array_map(fn ($h) => trim(strip_tags($h)), $thMatches[1]);
+
+        $this->assertCount(47, $headers, 'Main table must have exactly 47 superset columns');
+
+        $expectedHeaders = [
+            'No',
+            'Source',
+            'Status',
+            'ID',
+            'Employee',
+            'Grade',
+            'Job Position',
+            'Team',
+            'Department',
+            'Company',
+            'Learning Title',
+            'Sub Title',
+            'Type',
+            'Category',
+            'Level',
+            'Batch',
+            'Main Classification',
+            'Sub Classification',
+            'Corporate KPI',
+            'Sub Corporate KPI',
+            'Delivery Method',
+            'Sub Delivery Method',
+            'Provider',
+            'Sub Provider',
+            'Provider Name',
+            'Venue',
+            'Instructor',
+            'Duration',
+            'Training Hours',
+            'Start Date',
+            'Finish Date',
+            'Participant Hours',
+            'Progress',
+            'Assessment Score',
+            'Certificate',
+            'Attendance',
+            'Attendance Reason',
+            'Bond Status',
+            'Bond End Date',
+            'Bond Amount',
+            'L1 Program',
+            'L2 Numerical',
+            'L2 Verbal',
+            'L3 Numerical',
+            'L3 Verbal',
+            'PIC',
+            'Action',
+        ];
+
+        $this->assertEquals($expectedHeaders, $headers, 'Main table headers must match the 47 superset columns exactly');
+        $this->assertContains('Type', $headers, 'TYPE column must now be present in superset table');
+        $this->assertContains('Category', $headers, 'CATEGORY column must now be present in superset table');
+    }
+
+    /**
+     * 26. Test learning hours uses canonical participant credited hours, never catalog duration.
+     */
+    public function test_learning_hours_uses_canonical_credited_hours_never_duration(): void
+    {
+        // 1. Offline participant: 6 credited hours despite training having 8 hours (28800s) duration
+        $uniqueName = 'LH Credited User ' . uniqid();
+        $this->createTestOfflineTraining(
+            ['duration_seconds' => 28800, 'learning_hours' => 8.0],
+            [['name' => $uniqueName, 'learning_hours' => 6.0, 'progress' => 75]]
+        );
+
+        $offResp = $this->actingAs($this->admin)->getJson('/manage/record/all/datatable?source=offline&employee=' . urlencode($uniqueName));
+        $offResp->assertStatus(200);
+        $this->assertEquals(1, $offResp->json('recordsFiltered'));
+
+        $row = $offResp->json('data.0');
+        $this->assertEquals(6.0, (float) $row['learning_hours'], 'Offline learning_hours must come from participant learning_hours');
+        $this->assertEquals('6.00', $row['learning_hours_formatted']);
+
+        // 2. Online Content participant: must strictly use content_users.learning_hours
+        $sampleCu = DB::table('content_users as cu')
+            ->join('content as c', 'c.id', '=', 'cu.content_id')
+            ->join('users as u', 'u.id', '=', 'cu.user_id')
+            ->whereNotNull('c.duration')
+            ->where('cu.learning_hours', '>', 0)
+            ->whereRaw('ABS(cu.learning_hours - (TIME_TO_SEC(c.duration) / 3600)) > 0.01')
+            ->select('cu.id', 'u.id_emp', 'cu.learning_hours', 'c.duration')
+            ->first();
+
+        if ($sampleCu) {
+            $onResp = $this->actingAs($this->admin)->getJson('/manage/record/all/datatable?source=online&employee_id=' . urlencode($sampleCu->id_emp));
+            $onResp->assertStatus(200);
+
+            $matchedOnline = collect($onResp->json('data'))->firstWhere('row_id', 'online:content:' . $sampleCu->id);
+            if ($matchedOnline) {
+                $expectedHours = round((float) $sampleCu->learning_hours, 2);
+                $this->assertEquals($expectedHours, (float) $matchedOnline['learning_hours'], 'Online learning_hours must strictly match content_users.learning_hours');
+            }
+        }
+    }
+
+    /**
+     * 27. Test finish date is NULL for ongoing and not started records, and completed_at/finish_date for finished records.
+     */
+    public function test_finish_date_null_for_ongoing_and_not_started_and_populated_when_finished(): void
+    {
+        $uniqueCourse = 'Finish Date Course ' . uniqid();
+        $this->createTestOfflineTraining(
+            ['course_name' => $uniqueCourse, 'finish_date' => '2026-08-15'],
+            [
+                ['name' => 'FD Finished Participant', 'progress' => 100],
+                ['name' => 'FD Ongoing Participant',  'progress' => 50],
+                ['name' => 'FD Not Started Participant', 'progress' => 0],
+            ]
+        );
+
+        $resp = $this->actingAs($this->admin)->getJson('/manage/record/all/datatable?source=offline&learning_title=' . urlencode($uniqueCourse));
+        $resp->assertStatus(200);
+
+        $data = collect($resp->json('data'));
+
+        $finRow = $data->firstWhere('employee_name', 'FD Finished Participant');
+        $this->assertNotNull($finRow);
+        $this->assertEquals('Finished', $finRow['status']);
+        $this->assertEquals('2026-08-15', $finRow['finish_date']);
+        $this->assertEquals('15 Aug 2026', $finRow['finish_date_formatted']);
+
+        $ongRow = $data->firstWhere('employee_name', 'FD Ongoing Participant');
+        $this->assertNotNull($ongRow);
+        $this->assertEquals('Ongoing', $ongRow['status']);
+        $this->assertNull($ongRow['finish_date'], 'Ongoing record must have NULL finish_date');
+        $this->assertEquals('-', $ongRow['finish_date_formatted'], 'Ongoing record must display "-" for finish_date');
+
+        $notRow = $data->firstWhere('employee_name', 'FD Not Started Participant');
+        $this->assertNotNull($notRow);
+        $this->assertEquals('Not Started', $notRow['status']);
+        $this->assertNull($notRow['finish_date'], 'Not Started record must have NULL finish_date');
+        $this->assertEquals('-', $notRow['finish_date_formatted'], 'Not Started record must display "-" for finish_date');
+    }
+
+    /**
+     * 28. Test superset columns return NULL for Online records and populate actual values for Offline records.
+     */
+    public function test_superset_columns_online_null_contract_and_offline_fields(): void
+    {
+        // 1. Create Offline Training with rich superset values
+        $uniqueCourse = 'Superset Full Test Course ' . uniqid();
+        $uniqueParticipant = 'Superset Offline User ' . uniqid();
+
+        $this->createTestOfflineTraining([
+            'course_name'           => $uniqueCourse,
+            'sub_course_name'       => 'Module Superset',
+            'type'                  => 'In-House',
+            'category'              => 'TEST_COMBINED_CAT',
+            'level'                 => 'Intermediate',
+            'batch'                 => 'Batch 5',
+            'main_classification'   => 'General Competency',
+            'sub_classification'    => 'Electrical Safety',
+            'counted_corporate_kpi' => 1,
+            'sub_corporate_kpi'     => 'Safety Excellence',
+            'delivery_method'       => 'Classroom',
+            'sub_delivery_method'   => 'Workshop',
+            'provider'              => 'External',
+            'sub_provider'          => 'Vendor',
+            'provider_name'         => 'PT Provider Indonesia',
+            'venue'                 => 'Auditorium 1',
+            'instructor'            => 'Ir. Superset',
+            'duration_seconds'      => 14400,
+            'learning_hours'        => 4.0,
+            'start_date'            => '2026-08-10',
+            'finish_date'           => '2026-08-10',
+        ], [
+            [
+                'name'              => $uniqueParticipant,
+                'grade'             => '4A',
+                'job_position'      => 'Senior Technician',
+                'team'              => 'Alpha Team',
+                'department'        => 'Maintenance',
+                'company'           => 'TEST_COMBINED_CORP',
+                'learning_hours'    => 4.0,
+                'progress'          => 100,
+                'assessment_score'  => 87.5,
+                'certificate'       => 'Yes',
+                'attendance'        => 1,
+                'attendance_reason' => 'Present full session',
+                'bond_status'       => 'Yes',
+                'bond_end_date'     => '2027-08-10',
+                'bond_amount'       => 5000000,
+                'l1_program'        => 'Very Good',
+                'l2_numerical'      => 87.5,
+                'l2_verbal'         => 'Passed',
+                'l3_numerical'      => 90.0,
+                'l3_verbal'         => 'Applied well',
+                'pic'               => 'Training PIC',
+            ]
+        ]);
+
+        $offResp = $this->actingAs($this->admin)->getJson('/manage/record/all/datatable?source=offline&learning_title=' . urlencode($uniqueCourse));
+        $offResp->assertStatus(200);
+
+        $offRow = collect($offResp->json('data'))->firstWhere('employee_name', $uniqueParticipant);
+        $this->assertNotNull($offRow);
+
+        // Verify Offline fields populated
+        $this->assertEquals('Non KP OWL', strip_tags($offRow['source_badge']));
+        $this->assertEquals('Finished', $offRow['status']);
+        $this->assertEquals('4A', $offRow['grade']);
+        $this->assertEquals('Senior Technician', $offRow['job_position']);
+        $this->assertEquals('Alpha Team', $offRow['team']);
+        $this->assertEquals('Maintenance', $offRow['department']);
+        $this->assertEquals('TEST_COMBINED_CORP', $offRow['company']);
+        $this->assertEquals($uniqueCourse, $offRow['learning_title']);
+        $this->assertEquals('Module Superset', $offRow['sub_course_name']);
+        $this->assertEquals('In-House', $offRow['type']);
+        $this->assertEquals('TEST_COMBINED_CAT', $offRow['category']);
+        $this->assertEquals('Intermediate', $offRow['level']);
+        $this->assertEquals('Batch 5', $offRow['batch']);
+        $this->assertEquals('Electrical Safety', $offRow['sub_classification']);
+        $this->assertEquals('Yes', strip_tags($offRow['kpi_badge']));
+        $this->assertEquals('Safety Excellence', $offRow['sub_corporate_kpi']);
+        $this->assertEquals('Classroom', $offRow['delivery_method']);
+        $this->assertEquals('Workshop', $offRow['sub_delivery_method']);
+        $this->assertEquals('External', $offRow['provider']);
+        $this->assertEquals('Vendor', $offRow['sub_provider']);
+        $this->assertEquals('PT Provider Indonesia', $offRow['provider_name']);
+        $this->assertEquals('Auditorium 1', $offRow['venue']);
+        $this->assertEquals('Ir. Superset', $offRow['instructor']);
+        $this->assertEquals('04:00:00', $offRow['duration_formatted']);
+        $this->assertEquals('4.00', $offRow['training_hours_formatted']);
+        $this->assertEquals('10 Aug 2026', $offRow['start_date_formatted']);
+        $this->assertEquals('10 Aug 2026', $offRow['finish_date_formatted']);
+        $this->assertEquals('4.00', $offRow['learning_hours_formatted']);
+        $this->assertEquals('87.5', $offRow['assessment_score_formatted']);
+        $this->assertStringContainsString('Available', $offRow['certificate_badge']);
+        $this->assertEquals('Present', strip_tags($offRow['attendance_badge']));
+        $this->assertEquals('Present full session', $offRow['attendance_reason']);
+        $this->assertEquals('Yes', $offRow['bond_status']);
+        $this->assertEquals('10 Aug 2027', $offRow['bond_end_date_formatted']);
+        $this->assertEquals('IDR 5.000.000', $offRow['bond_amount_formatted']);
+        $this->assertEquals('Very Good', $offRow['l1_program']);
+        $this->assertEquals('87.5', $offRow['l2_numerical_formatted']);
+        $this->assertEquals('Passed', $offRow['l2_verbal']);
+        $this->assertEquals('90.0', $offRow['l3_numerical_formatted']);
+        $this->assertEquals('Applied well', $offRow['l3_verbal']);
+        $this->assertEquals('Training PIC', $offRow['pic']);
+
+        // 2. Verify Online Contract: NULL values must not invent fake defaults
+        $onResp = $this->actingAs($this->admin)->getJson('/manage/record/all/datatable?source=online&length=1');
+        $onResp->assertStatus(200);
+
+        if (!empty($onResp->json('data'))) {
+            $onRow = $onResp->json('data.0');
+            $this->assertEquals('KP OWL', strip_tags($onRow['source_badge']));
+
+            // Critical corrections verification: NO FAKE VALUES
+            $this->assertNull($onRow['delivery_method'], 'Online delivery_method must be NULL (no fake E-Learning value)');
+            $this->assertNull($onRow['provider'], 'Online provider must be NULL (no fake Internal value)');
+            $this->assertNull($onRow['provider_name'], 'Online provider_name must be NULL (no fake PT Krakatau Posco value)');
+            $this->assertNull($onRow['start_date'], 'Online start_date must be NULL (no mapping from created_at)');
+            $this->assertEquals('-', $onRow['start_date_formatted'], 'Online start_date_formatted must render as -');
+
+            // Source-specific Offline fields must be NULL for Online
+            $this->assertNull($onRow['grade'], 'Online grade must be NULL');
+            $this->assertNull($onRow['job_position'], 'Online job_position must be NULL');
+            $this->assertNull($onRow['sub_course_name'], 'Online sub_course_name must be NULL');
+            $this->assertNull($onRow['level'], 'Online level must be NULL');
+            $this->assertNull($onRow['batch'], 'Online batch must be NULL');
+            $this->assertNull($onRow['sub_classification'], 'Online sub_classification must be NULL');
+            $this->assertNull($onRow['counted_corporate_kpi'], 'Online counted_corporate_kpi must be NULL');
+            $this->assertEquals('<span class="text-muted">-</span>', $onRow['kpi_badge']);
+            $this->assertNull($onRow['assessment_score'], 'Online assessment_score must be NULL');
+            $this->assertNull($onRow['certificate'], 'Online certificate must be NULL');
+            $this->assertNull($onRow['attendance'], 'Online attendance must be NULL');
+            $this->assertEquals('<span class="text-muted">-</span>', $onRow['attendance_badge']);
+            $this->assertNull($onRow['bond_status'], 'Online bond_status must be NULL');
+            $this->assertNull($onRow['l1_program'], 'Online l1_program must be NULL');
+            $this->assertNull($onRow['l2_numerical'], 'Online l2_numerical must be NULL');
+            $this->assertNull($onRow['l3_numerical'], 'Online l3_numerical must be NULL');
+            $this->assertNull($onRow['pic'], 'Online pic must be NULL');
+        }
+    }
 }

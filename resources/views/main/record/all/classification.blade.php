@@ -124,17 +124,51 @@
                             <tr>
                                 <th style="width: 45px;">No</th>
                                 <th style="width: 95px;">Source</th>
-                                <th style="width: 90px;">Status</th>
+                                <th style="width: 95px;">Status</th>
                                 <th style="width: 85px;">ID</th>
-                                <th>Employee</th>
-                                <th>Learning Title</th>
-                                <th>Type</th>
-                                <th>Classification</th>
-                                <th>Category</th>
-                                <th class="text-center" style="width: 85px;">Hours</th>
-                                <th style="width: 130px;">Progress</th>
-                                <th style="width: 105px;">Finish Date</th>
-                                <th class="text-end" style="width: 80px;">Action</th>
+                                <th style="min-width: 170px;">Employee</th>
+                                <th style="min-width: 80px;">Grade</th>
+                                <th style="min-width: 150px;">Job Position</th>
+                                <th style="min-width: 130px;">Team</th>
+                                <th style="min-width: 150px;">Department</th>
+                                <th style="min-width: 150px;">Company</th>
+                                <th style="min-width: 220px;">Learning Title</th>
+                                <th style="min-width: 150px;">Sub Title</th>
+                                <th style="min-width: 110px;">Type</th>
+                                <th style="min-width: 120px;">Category</th>
+                                <th style="min-width: 90px;">Level</th>
+                                <th style="min-width: 90px;">Batch</th>
+                                <th style="min-width: 150px;">Main Classification</th>
+                                <th style="min-width: 150px;">Sub Classification</th>
+                                <th style="min-width: 110px;">Corporate KPI</th>
+                                <th style="min-width: 150px;">Sub Corporate KPI</th>
+                                <th style="min-width: 130px;">Delivery Method</th>
+                                <th style="min-width: 140px;">Sub Delivery Method</th>
+                                <th style="min-width: 110px;">Provider</th>
+                                <th style="min-width: 120px;">Sub Provider</th>
+                                <th style="min-width: 160px;">Provider Name</th>
+                                <th style="min-width: 130px;">Venue</th>
+                                <th style="min-width: 140px;">Instructor</th>
+                                <th style="min-width: 100px;">Duration</th>
+                                <th class="text-center" style="min-width: 110px;">Training Hours</th>
+                                <th style="min-width: 110px;">Start Date</th>
+                                <th style="min-width: 110px;">Finish Date</th>
+                                <th class="text-center" style="min-width: 120px;">Participant Hours</th>
+                                <th style="min-width: 130px;">Progress</th>
+                                <th class="text-center" style="min-width: 120px;">Assessment Score</th>
+                                <th style="min-width: 110px;">Certificate</th>
+                                <th style="min-width: 110px;">Attendance</th>
+                                <th style="min-width: 150px;">Attendance Reason</th>
+                                <th style="min-width: 110px;">Bond Status</th>
+                                <th style="min-width: 115px;">Bond End Date</th>
+                                <th style="min-width: 130px;">Bond Amount</th>
+                                <th style="min-width: 110px;">L1 Program</th>
+                                <th class="text-center" style="min-width: 110px;">L2 Numerical</th>
+                                <th style="min-width: 110px;">L2 Verbal</th>
+                                <th class="text-center" style="min-width: 110px;">L3 Numerical</th>
+                                <th style="min-width: 110px;">L3 Verbal</th>
+                                <th style="min-width: 110px;">PIC</th>
+                                <th class="text-end" style="width: 90px;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -206,24 +240,119 @@
         color: #f8fafc !important;
     }
 
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #all-classification-learning-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+    }
+
     #all-classification-learning-table thead th {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         letter-spacing: 0.03em;
-        font-weight: 600;
+        font-weight: 700;
         color: #64748b;
         background-color: #f8fafc;
         border-bottom: 1px solid #e2e8f0;
         padding: 10px 12px;
         white-space: nowrap;
+        text-transform: uppercase;
     }
 
     #all-classification-learning-table tbody td {
-        padding: 10px 12px;
-        font-size: 0.85rem;
+        padding: 9px 12px;
+        font-size: 0.825rem;
         vertical-align: middle;
         border-bottom: 1px solid #f1f5f9;
+        white-space: nowrap;
+        background-color: #ffffff;
     }
 
+    #all-classification-learning-table tbody tr:hover td {
+        background-color: #f8fafc;
+    }
+
+    /* Sticky Frozen Columns - Left (Cols 1-5) */
+    #all-classification-learning-table th:nth-child(1),
+    #all-classification-learning-table td:nth-child(1) {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        min-width: 45px;
+        max-width: 45px;
+        width: 45px;
+    }
+
+    #all-classification-learning-table th:nth-child(2),
+    #all-classification-learning-table td:nth-child(2) {
+        position: sticky;
+        left: 45px;
+        z-index: 2;
+        min-width: 95px;
+        max-width: 95px;
+        width: 95px;
+    }
+
+    #all-classification-learning-table th:nth-child(3),
+    #all-classification-learning-table td:nth-child(3) {
+        position: sticky;
+        left: 140px;
+        z-index: 2;
+        min-width: 95px;
+        max-width: 95px;
+        width: 95px;
+    }
+
+    #all-classification-learning-table th:nth-child(4),
+    #all-classification-learning-table td:nth-child(4) {
+        position: sticky;
+        left: 235px;
+        z-index: 2;
+        min-width: 85px;
+        max-width: 85px;
+        width: 85px;
+    }
+
+    #all-classification-learning-table th:nth-child(5),
+    #all-classification-learning-table td:nth-child(5) {
+        position: sticky;
+        left: 320px;
+        z-index: 2;
+        min-width: 170px;
+        max-width: 170px;
+        width: 170px;
+        box-shadow: 3px 0 5px -1px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Sticky Frozen Column - Right (Col 47: Action) */
+    #all-classification-learning-table th:nth-child(47),
+    #all-classification-learning-table td:nth-child(47) {
+        position: sticky;
+        right: 0;
+        z-index: 2;
+        min-width: 90px;
+        max-width: 90px;
+        width: 90px;
+        text-align: right;
+        box-shadow: -3px 0 5px -1px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Header z-index higher than body td */
+    #all-classification-learning-table thead th:nth-child(1),
+    #all-classification-learning-table thead th:nth-child(2),
+    #all-classification-learning-table thead th:nth-child(3),
+    #all-classification-learning-table thead th:nth-child(4),
+    #all-classification-learning-table thead th:nth-child(5),
+    #all-classification-learning-table thead th:nth-child(47) {
+        z-index: 4;
+        background-color: #f8fafc;
+    }
+
+    /* Dark Mode Overrides */
     [data-bs-theme="dark"] #all-classification-learning-table thead th,
     body.dark-mode #all-classification-learning-table thead th,
     body.theme-dark #all-classification-learning-table thead th {
@@ -235,8 +364,25 @@
     [data-bs-theme="dark"] #all-classification-learning-table tbody td,
     body.dark-mode #all-classification-learning-table tbody td,
     body.theme-dark #all-classification-learning-table tbody td {
+        background-color: #0f172a !important;
         border-color: rgba(255, 255, 255, 0.05) !important;
         color: #cbd5e1 !important;
+    }
+
+    [data-bs-theme="dark"] #all-classification-learning-table tbody tr:hover td,
+    body.dark-mode #all-classification-learning-table tbody tr:hover td,
+    body.theme-dark #all-classification-learning-table tbody tr:hover td {
+        background-color: #1e293b !important;
+    }
+
+    [data-bs-theme="dark"] #all-classification-learning-table th:nth-child(5),
+    [data-bs-theme="dark"] #all-classification-learning-table td:nth-child(5) {
+        box-shadow: 3px 0 5px -1px rgba(0, 0, 0, 0.35);
+    }
+
+    [data-bs-theme="dark"] #all-classification-learning-table th:nth-child(47),
+    [data-bs-theme="dark"] #all-classification-learning-table td:nth-child(47) {
+        box-shadow: -3px 0 5px -1px rgba(0, 0, 0, 0.35);
     }
 
     .extra-small {
@@ -261,14 +407,21 @@ $(function () {
         $('#all-classification-learning-table').DataTable().destroy();
     }
 
+    const renderSafeText = function (data) {
+        if (data === null || data === undefined || data === '' || data === '-') {
+            return '<span class="text-muted">-</span>';
+        }
+        return $('<div>').text(data).html();
+    };
+
     allTable = $('#all-classification-learning-table').DataTable({
         processing: true,
         serverSide: true,
-        responsive: true,
+        responsive: false,
         autoWidth: false,
         pageLength: defaultEntries,
         lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-        order: [[11, 'desc']], // Finish date column
+        order: [[30, 'desc']], // Finish date column (Index 30)
         dom: '<"table-responsive"t>',
         ajax: {
             url: datatableUrl,
@@ -283,18 +436,64 @@ $(function () {
             }
         },
         columns: [
-            { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-muted fw-semibold' },
+            { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-muted fw-semibold text-center' },
             { data: 'source_badge', name: 'source', orderable: true },
             { data: 'status_badge', name: 'status', orderable: true },
-            { data: 'employee_id', name: 'employee_id', orderable: true, className: 'text-muted fw-semibold' },
-            { data: 'employee', name: 'employee_name', orderable: true },
-            { data: 'learning_title', name: 'learning_title', orderable: true, className: 'fw-semibold text-dark' },
-            { data: 'type', name: 'type', orderable: true },
-            { data: 'classification', name: 'classification', orderable: true },
-            { data: 'category', name: 'category', orderable: true },
-            { data: 'learning_hours_formatted', name: 'learning_hours', orderable: true, className: 'text-center fw-bold text-dark' },
+            { data: 'employee_id', name: 'employee_id', orderable: true, defaultContent: '-', className: 'text-muted fw-semibold' },
+            { data: 'employee_name', name: 'employee_name', orderable: true, defaultContent: '-', className: 'fw-semibold text-dark' },
+            { data: 'grade', name: 'grade', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'job_position', name: 'job_position', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'team', name: 'team', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'department', name: 'department', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'company', name: 'company', orderable: true, defaultContent: '-', render: renderSafeText },
+            {
+                data: 'learning_title',
+                name: 'learning_title',
+                orderable: true,
+                defaultContent: '-',
+                render: function (data, type) {
+                    if (type !== 'display') {
+                        return data;
+                    }
+                    const text = data ? $('<div>').text(data).html() : '<span class="text-muted">-</span>';
+                    return '<div class="fw-semibold text-dark text-truncate" style="max-width: 280px;" title="' + (data ? $('<div>').text(data).html() : '') + '">' + text + '</div>';
+                }
+            },
+            { data: 'sub_course_name', name: 'sub_course_name', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'type', name: 'type', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'category', name: 'category', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'level', name: 'level', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'batch', name: 'batch', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'classification', name: 'classification', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'sub_classification', name: 'sub_classification', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'kpi_badge', name: 'counted_corporate_kpi', orderable: true, defaultContent: '-' },
+            { data: 'sub_corporate_kpi', name: 'sub_corporate_kpi', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'delivery_method', name: 'delivery_method', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'sub_delivery_method', name: 'sub_delivery_method', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'provider', name: 'provider', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'sub_provider', name: 'sub_provider', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'provider_name', name: 'provider_name', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'venue', name: 'venue', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'instructor', name: 'instructor', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'duration_formatted', name: 'duration_seconds', orderable: true, defaultContent: '-' },
+            { data: 'training_hours_formatted', name: 'training_hours', orderable: true, defaultContent: '-', className: 'text-center' },
+            { data: 'start_date_formatted', name: 'start_date', orderable: true, defaultContent: '-', className: 'text-nowrap' },
+            { data: 'finish_date_formatted', name: 'finish_date', orderable: true, defaultContent: '-', className: 'text-nowrap' },
+            { data: 'learning_hours_formatted', name: 'learning_hours', orderable: true, defaultContent: '-', className: 'text-center fw-bold text-dark' },
             { data: 'progress_bar', name: 'progress', orderable: true },
-            { data: 'finish_date_formatted', name: 'finish_date', orderable: true, className: 'text-nowrap' },
+            { data: 'assessment_score_formatted', name: 'assessment_score', orderable: true, defaultContent: '-', className: 'text-center' },
+            { data: 'certificate_badge', name: 'certificate', orderable: true, defaultContent: '-' },
+            { data: 'attendance_badge', name: 'attendance', orderable: true, defaultContent: '-' },
+            { data: 'attendance_reason', name: 'attendance_reason', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'bond_status', name: 'bond_status', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'bond_end_date_formatted', name: 'bond_end_date', orderable: true, defaultContent: '-', className: 'text-nowrap' },
+            { data: 'bond_amount_formatted', name: 'bond_amount', orderable: true, defaultContent: '-' },
+            { data: 'l1_program', name: 'l1_program', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'l2_numerical_formatted', name: 'l2_numerical', orderable: true, defaultContent: '-', className: 'text-center' },
+            { data: 'l2_verbal', name: 'l2_verbal', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'l3_numerical_formatted', name: 'l3_numerical', orderable: true, defaultContent: '-', className: 'text-center' },
+            { data: 'l3_verbal', name: 'l3_verbal', orderable: true, defaultContent: '-', render: renderSafeText },
+            { data: 'pic', name: 'pic', orderable: true, defaultContent: '-', render: renderSafeText },
             { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-end text-nowrap' },
         ],
         language: {
