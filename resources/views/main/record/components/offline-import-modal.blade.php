@@ -60,7 +60,7 @@
                             <div>
                                 <strong class="d-block mb-1">Spreadsheet Guidelines:</strong>
                                 <ul class="mb-0 ps-3">
-                                    <li>Use the official Non KP OWL template (2 header rows: Grouped categories & 44 child columns).</li>
+                                    <li>Use the official Non KP OWL template (1 header row with 44 canonical columns). Legacy 2-row templates are also supported automatically.</li>
                                     <li>Do not rename or delete required headers (Course Name, ID, Name).</li>
                                     <li>One row represents one participant record.</li>
                                     <li>Multiple participants from the same training will automatically be grouped into one event.</li>
@@ -89,6 +89,33 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="modal-btn-cancel-preview">
                             <i class="ti ti-arrow-left me-1"></i> Re-upload File
                         </button>
+                    </div>
+
+                    <!-- TEMPLATE HEADER CHECK CARD -->
+                    <div class="card border rounded-3 mb-3 shadow-none" id="modal-header-check-card" style="display: none; background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar avatar-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: #e0f2fe; color: #0284c7; width: 32px; height: 32px;">
+                                        <i class="ti ti-layout-grid fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-dark" id="modal-header-check-title">Template Header Validation</h6>
+                                        <div class="text-muted extra-small" id="modal-header-check-subtitle">44 Expected Columns &bull; 44 Detected Columns</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap" id="modal-header-check-badges">
+                                    <span class="badge bg-success-lt px-2 py-1" id="badge-header-valid">✓ 44 Valid</span>
+                                    <span class="badge bg-warning-lt px-2 py-1" id="badge-header-matched" style="display: none;">⚠ 0 Auto-Matched</span>
+                                    <span class="badge bg-danger-lt px-2 py-1" id="badge-header-invalid" style="display: none;">✕ 0 Needs Correction</span>
+                                </div>
+                            </div>
+
+                            <!-- Diagnostic details container -->
+                            <div id="modal-header-check-details" style="display: none;" class="mt-2 pt-2 border-top">
+                                <div id="modal-header-check-issues" class="small"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 6 Compact Stat Cards -->

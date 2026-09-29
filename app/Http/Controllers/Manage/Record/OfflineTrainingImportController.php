@@ -81,8 +81,13 @@ class OfflineTrainingImportController extends Controller
             $preview = $this->importService->parseAndPreview($meta['token'], $userId);
 
             return response()->json([
-                'success' => true,
-                'data'    => $preview,
+                'success'      => true,
+                'data'         => $preview,
+                'token'        => $preview['token'] ?? null,
+                'stats'        => $preview['stats'] ?? null,
+                'rows'         => $preview['preview_rows'] ?? [],
+                'header_check' => $preview['header_check'] ?? null,
+                'can_confirm'  => $preview['can_confirm'] ?? false,
             ]);
         } catch (ValidationException $e) {
             return response()->json([

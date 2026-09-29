@@ -492,8 +492,9 @@
                 },
                 success: function (res) {
                     if (res && res.success) {
-                        importToken = res.token;
-                        previewRowsData = res.rows || [];
+                        const payload = (res.data) ? res.data : res;
+                        importToken = res.token || payload.token;
+                        previewRowsData = res.rows || payload.preview_rows || [];
                         renderPreviewState(res);
                     } else {
                         switchImportState('upload');
@@ -513,14 +514,92 @@
 
         // Render preview table and stats
         function renderPreviewState(data) {
-            const stats = data.stats || {};
-            const rows = data.rows || [];
+            const payload = (data && data.data) ? data.data : data;
+            const stats = payload.stats || {};
+            const rows = payload.preview_rows || payload.rows || [];
+            const headerCheck = payload.header_check || null;
+            const canConfirm = payload.can_confirm !== false;
 
-            $('#modal-stat-total').text((stats.total_rows || 0).toLocaleString());
-            $('#modal-stat-valid').text((stats.valid || 0).toLocaleString());
-            $('#modal-stat-warning').text((stats.warning || 0).toLocaleString());
-            $('#modal-stat-invalid').text((stats.invalid || 0).toLocaleString());
-            $('#modal-stat-events').text((stats.unique_events || 0).toLocaleString());
+            if (payload.filename) {
+                $('#modal-preview-filename').text(payload.filename);
+            }
+
+            $('#modal-stat-total, #modal-kpi-total-rows').text((stats.total_rows || 0).toLocaleString());
+            $('#modal-stat-valid, #modal-kpi-valid-rows').text((stats.valid || 0).toLocaleString());
+            $('#modal-stat-warning, #modal-kpi-warning-rows').text((stats.warning || 0).toLocaleString());
+            $('#modal-stat-invalid, #modal-kpi-invalid-rows').text((stats.invalid || 0).toLocaleString());
+            $('#modal-stat-duplicate, #modal-kpi-duplicate-rows').text((stats.duplicate || 0).toLocaleString());
+            $('#modal-stat-events, #modal-kpi-training-events').text((stats.unique_events || 0).toLocaleString());
+
+            // Header Validation Check Card
+            if (headerCheck) {
+                $('#modal-header-check-card').show();
+                const hStats = headerCheck.stats || {};
+                const formatLabel = headerCheck.format === 'legacy_two_row' ? 'Legacy 2-Row Format' : 'Single Header Row Format';
+                $('#modal-header-check-subtitle').html(`44 Expected Columns &bull; ${headerCheck.detected_columns} Detected Columns &bull; <span class="badge bg-secondary-lt">${formatLabel}</span>`);
+
+                $('#badge-header-valid').text(`✓ ${hStats.valid || 0} Valid`).show();
+
+                if ((hStats.auto_matched || 0) > 0) {
+                    $('#badge-header-matched').text(`⚠ ${hStats.auto_matched} Auto-Matched`).show();
+                } else {
+                    $('#badge-header-matched').hide();
+                }
+
+                const totalIssues = (hStats.invalid || 0) + (hStats.missing || 0) + (hStats.duplicate || 0) + (hStats.ambiguous || 0);
+                if (totalIssues > 0) {
+                    $('#badge-header-invalid').text(`✕ ${totalIssues} Needs Correction`).show();
+                } else {
+                    $('#badge-header-invalid').hide();
+                }
+
+                const $details = $('#modal-header-check-details');
+                const $issuesContainer = $('#modal-header-check-issues');
+                $issuesContainer.empty();
+
+                let hasDetails = false;
+
+                // Show invalid / missing / duplicate / ambiguous issues
+                if (headerCheck.issues && headerCheck.issues.length > 0) {
+                    hasDetails = true;
+                    headerCheck.issues.forEach(function (issue) {
+                        const colLabel = issue.letter ? `Col ${issue.letter} (#${issue.col})` : `Col #${issue.col || '?'}`;
+                        $issuesContainer.append(`
+                            <div class="alert alert-danger py-1.5 px-2 mb-1 rounded-2 d-flex align-items-start gap-2">
+                                <i class="ti ti-alert-triangle fs-3 flex-shrink-0 text-danger mt-0.5"></i>
+                                <div>
+                                    <span class="badge bg-danger text-white me-1">${escapeHtml(issue.status)}</span>
+                                    <strong>${escapeHtml(colLabel)}:</strong> ${escapeHtml(issue.message)}
+                                    ${issue.expected ? `<div class="extra-small text-muted mt-0.5">Required header: <code>${escapeHtml(issue.expected)}</code></div>` : ''}
+                                </div>
+                            </div>
+                        `);
+                    });
+                }
+
+                // Show auto-matched headers info
+                if (headerCheck.auto_matched_list && headerCheck.auto_matched_list.length > 0) {
+                    hasDetails = true;
+                    const matchedItems = headerCheck.auto_matched_list.map(function (m) {
+                        return `<span class="badge bg-warning-subtle text-dark border me-1 mb-1">Col ${m.letter}: "<em>${escapeHtml(m.found)}</em>" &rarr; <strong>${escapeHtml(m.mapped_to)}</strong></span>`;
+                    }).join(' ');
+
+                    $issuesContainer.append(`
+                        <div class="alert alert-warning py-1.5 px-2 mb-1 rounded-2">
+                            <div class="fw-semibold text-warning-emphasis mb-1"><i class="ti ti-sparkles me-1"></i> Auto-Matched Columns (${headerCheck.auto_matched_list.length}):</div>
+                            <div>${matchedItems}</div>
+                        </div>
+                    `);
+                }
+
+                if (hasDetails) {
+                    $details.show();
+                } else {
+                    $details.hide();
+                }
+            } else {
+                $('#modal-header-check-card').hide();
+            }
 
             const $tbody = $('#modal-preview-tbody');
             $tbody.empty();
@@ -540,6 +619,9 @@
                     } else if (row.status === 'invalid') {
                         badgeClass = 'bg-danger-lt text-danger';
                         badgeLabel = 'Invalid';
+                    } else if (row.status === 'duplicate') {
+                        badgeClass = 'bg-purple-lt text-purple';
+                        badgeLabel = 'Duplicate';
                     }
 
                     const d = row.data || {};
@@ -570,7 +652,9 @@
             }
 
             const importableCount = (stats.valid || 0) + (stats.warning || 0);
-            if (importableCount <= 0) {
+            if (!canConfirm || (headerCheck && !headerCheck.can_proceed)) {
+                $('#modal-btn-confirm').prop('disabled', true).html('<i class="ti ti-ban me-1"></i> Header Correction Required');
+            } else if (importableCount <= 0) {
                 $('#modal-btn-confirm').prop('disabled', true).text('No Valid Records');
             } else {
                 $('#modal-btn-confirm').prop('disabled', false).html('<i class="ti ti-check me-1"></i> Confirm Import (' + importableCount + ' Records)');

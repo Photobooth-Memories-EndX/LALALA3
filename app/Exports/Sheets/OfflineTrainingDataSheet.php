@@ -51,7 +51,6 @@ class OfflineTrainingDataSheet implements FromQuery, WithHeadings, WithMapping, 
     public function headings(): array
     {
         return [
-            OfflineTrainingExcelSchema::groupedRow1Headers(),
             OfflineTrainingExcelSchema::headers(),
         ];
     }

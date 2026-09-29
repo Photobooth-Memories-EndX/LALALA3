@@ -54,6 +54,108 @@ class OfflineTrainingImportTest extends TestCase
     }
 
     /**
+     * Helper to build a canonical 44-element data row matching OfflineTrainingExcelSchema.
+     */
+    protected function buildCanonicalTestRow(array $overrides = []): array
+    {
+        $defaults = [
+            'no'                    => 1,
+            'employee_id'           => '100234',
+            'name'                  => 'Budi Santoso',
+            'grade'                 => '4A',
+            'job_position'          => 'Electrical Maintenance Engineer',
+            'team'                  => 'Rolling Mill 1',
+            'department'            => 'Maintenance Department',
+            'company'               => 'TEST_CORP',
+            'course_name'           => 'High Voltage Safety & Operation',
+            'sub_course_name'       => 'Switchgear Module',
+            'type'                  => 'In-House',
+            'category'              => 'TEST_CAT',
+            'level'                 => 'Intermediate',
+            'batch'                 => 'Batch 1',
+            'main_classification'   => 'Technical',
+            'sub_classification'    => 'Plant Maintenance',
+            'counted_corporate_kpi' => 'Yes',
+            'sub_corporate_kpi'     => 'Safety Incident Reduction',
+            'delivery_method'       => 'Classroom',
+            'sub_delivery_method'   => 'Hands-on Lab',
+            'provider'              => 'External',
+            'sub_provider'          => 'Vendor',
+            'duration_seconds'      => '08:00:00',
+            'learning_hours'        => 8.0,
+            'progress'              => 100,
+            'start_date'            => '2026-08-10',
+            'finish_date'           => '2026-08-10',
+            'month'                 => 'August',
+            'provider_name'         => 'PT Schneider Indonesia',
+            'venue'                 => 'Auditorium Hall B',
+            'instructor'            => 'Ir. Gunawan, M.T.',
+            'assessment_score'      => 85.5,
+            'certificate'           => 'Yes',
+            'attendance'            => 'Yes',
+            'attendance_reason'     => 'Present in all sessions',
+            'bond_status'           => 'No',
+            'bond_end_date'         => '',
+            'bond_amount'           => '',
+            'l1_program'            => 'Very Good',
+            'l2_numerical'          => 88.0,
+            'l2_verbal'             => 'Passed',
+            'l3_numerical'          => 90.0,
+            'l3_verbal'             => 'Implemented successfully',
+            'pic'                   => 'HRDC Team',
+        ];
+
+        $m = array_merge($defaults, $overrides);
+
+        return [
+            $m['no'],
+            $m['employee_id'],
+            $m['name'],
+            $m['grade'],
+            $m['job_position'],
+            $m['team'],
+            $m['department'],
+            $m['company'],
+            $m['course_name'],
+            $m['sub_course_name'],
+            $m['type'],
+            $m['category'],
+            $m['level'],
+            $m['batch'],
+            $m['main_classification'],
+            $m['sub_classification'],
+            $m['counted_corporate_kpi'],
+            $m['sub_corporate_kpi'],
+            $m['delivery_method'],
+            $m['sub_delivery_method'],
+            $m['provider'],
+            $m['sub_provider'],
+            $m['duration_seconds'],
+            $m['learning_hours'],
+            $m['progress'],
+            $m['start_date'],
+            $m['finish_date'],
+            $m['month'],
+            $m['provider_name'],
+            $m['venue'],
+            $m['instructor'],
+            $m['assessment_score'],
+            $m['certificate'],
+            $m['attendance'],
+            $m['attendance_reason'],
+            $m['bond_status'],
+            $m['bond_end_date'],
+            $m['bond_amount'],
+            $m['l1_program'],
+            $m['l2_numerical'],
+            $m['l2_verbal'],
+            $m['l3_numerical'],
+            $m['l3_verbal'],
+            $m['pic'],
+        ];
+    }
+
+    /**
      * Helper to create a test spreadsheet file.
      */
     protected function createSpreadsheetFile(array $dataRows, bool $isGrouped = true): UploadedFile
@@ -62,14 +164,14 @@ class OfflineTrainingImportTest extends TestCase
         $sheet = $spreadsheet->getActiveSheet();
 
         if ($isGrouped) {
-            // Row 1: Merged Parent Headers
+            // Row 1: Merged Parent Headers (Legacy 2-row format)
             $sheet->setCellValue('A1', 'No');
             $sheet->setCellValue('B1', 'JOB INFORMATION');
             $sheet->mergeCells('B1:H1');
             $sheet->setCellValue('I1', 'TRAINING INFORMATION');
-            $sheet->mergeCells('I1:AC1');
-            $sheet->setCellValue('AD1', 'ATTENDANCE');
-            $sheet->mergeCells('AD1:AI1');
+            $sheet->mergeCells('I1:AG1');
+            $sheet->setCellValue('AH1', 'ATTENDANCE');
+            $sheet->mergeCells('AH1:AI1');
             $sheet->setCellValue('AJ1', 'OBLIGATION');
             $sheet->mergeCells('AJ1:AL1');
             $sheet->setCellValue('AM1', 'L1');
@@ -78,20 +180,8 @@ class OfflineTrainingImportTest extends TestCase
             $sheet->setCellValue('AP1', 'L3 (PROJECT)');
             $sheet->mergeCells('AP1:AR1');
 
-            // Row 2: Child Headers
-            $headers = [
-                'No', // A
-                'NIP', 'Nama', 'Grade', 'Job Position', 'Team', 'Department', 'Company', // B-H
-                'Course Name', 'Sub Course Name', 'Type', 'Category', 'Level', 'Batch', // I-N
-                'Main Classification', 'Sub Classification', 'Counted to Corporate KPI', 'Sub Corporate KPI', // O-R
-                'Delivery Method', 'Sub Delivery Method', 'Provider', 'Sub Provider', 'Provider Name', 'Venue', 'Instructor', 'Duration', 'Learning Hours', 'Start Date', 'Finish Date', // S-AB
-                'Progress', 'Assessment Score', 'Certificate', 'Attendance', 'Attendance Reason', 'Month', // AC-AH
-                'Bond Status', 'Bond End Date', 'Bond Amount', // AI-AK
-                'Program', // AL (L1)
-                'Numerical', 'Verbal', // AM-AN (L2)
-                'Numerical', 'Verbal', 'PIC' // AO-AQ (L3)
-            ];
-
+            // Row 2: Canonical child headers
+            $headers = \App\Services\Record\OfflineTrainingExcelSchema::headers();
             foreach ($headers as $idx => $header) {
                 $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx + 1);
                 $sheet->setCellValue($colLetter . '2', $header);
@@ -99,18 +189,8 @@ class OfflineTrainingImportTest extends TestCase
 
             $startRow = 3;
         } else {
-            // Single row headers
-            $headers = [
-                'nip', 'nama', 'grade', 'job_position', 'team', 'department', 'company',
-                'course_name', 'sub_course_name', 'type', 'category', 'level', 'batch',
-                'main_classification', 'sub_classification', 'counted_to_corporate_kpi', 'sub_corporate_kpi',
-                'delivery_method', 'sub_delivery_method', 'provider', 'sub_provider', 'provider_name',
-                'venue', 'instructor', 'duration', 'learning_hours', 'start_date', 'finish_date',
-                'progress', 'assessment_score', 'certificate', 'attendance', 'attendance_reason',
-                'bond_status', 'bond_end_date', 'bond_amount', 'program',
-                'l2_numerical', 'l2_verbal', 'l3_numerical', 'l3_verbal', 'pic'
-            ];
-
+            // Single row headers on Row 1 (Target format)
+            $headers = \App\Services\Record\OfflineTrainingExcelSchema::headers();
             foreach ($headers as $idx => $header) {
                 $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($idx + 1);
                 $sheet->setCellValue($colLetter . '1', $header);
@@ -192,20 +272,53 @@ class OfflineTrainingImportTest extends TestCase
      */
     public function test_two_row_grouped_header_parsing_and_preview(): void
     {
-        $adminEmp = $this->admin->id_emp ?? 'EMP901';
-        $row = [
-            1, // No
-            $adminEmp, 'Budi Santoso', 'G3', 'Engineer', 'Plant Team', 'Maintenance', 'TEST_CORP', // B-H
-            'Safety Leadership Training', 'Sub Safety', 'In-House', 'TEST_CAT', 'Basic', 'Batch 1', // I-N
-            'Technical', 'Safety', 'Yes', 'Sub KPI', // O-R
-            'Classroom', 'Face to Face', 'Vendor A', 'Sub Vendor', 'Provider Corp', 'Hall A', 'John Doe', // S-Y
-            '08:00:00', 8.0, '2026-03-10', '2026-03-11', // Z-AB
-            100, 88.5, 'Yes', 'Present', '', 'March', // AC-AH
-            'Yes', '2027-03-10', '5000000', // AI-AK (Bond)
-            'L1 Excellent', // AL
-            85.0, 'Good', // AM-AN (L2)
-            90.0, 'Very Good', 'Jane PIC' // AO-AQ (L3)
-        ];
+        $this->admin->update(['id_emp' => 'EMP901', 'name' => 'Budi Santoso']);
+        $adminEmp = 'EMP901';
+        $row = $this->buildCanonicalTestRow([
+            'employee_id'           => $adminEmp,
+            'name'                  => 'Budi Santoso',
+            'grade'                 => 'G3',
+            'job_position'          => 'Engineer',
+            'team'                  => 'Plant Team',
+            'department'            => 'Maintenance',
+            'company'               => 'TEST_CORP',
+            'course_name'           => 'Safety Leadership Training',
+            'sub_course_name'       => 'Sub Safety',
+            'type'                  => 'In-House',
+            'category'              => 'TEST_CAT',
+            'level'                 => 'Basic',
+            'batch'                 => 'Batch 1',
+            'main_classification'   => 'Technical',
+            'sub_classification'    => 'Safety',
+            'counted_corporate_kpi' => 'Yes',
+            'sub_corporate_kpi'     => 'Sub KPI',
+            'delivery_method'       => 'Classroom',
+            'sub_delivery_method'   => 'Face to Face',
+            'provider'              => 'External',
+            'sub_provider'          => 'Vendor',
+            'duration_seconds'      => '08:00:00',
+            'learning_hours'        => 8.0,
+            'progress'              => 100,
+            'start_date'            => '2026-03-10',
+            'finish_date'           => '2026-03-11',
+            'month'                 => 'March',
+            'provider_name'         => 'Provider Corp',
+            'venue'                 => 'Hall A',
+            'instructor'            => 'John Doe',
+            'assessment_score'      => 88.5,
+            'certificate'           => 'Yes',
+            'attendance'            => 'Yes',
+            'attendance_reason'     => 'Present',
+            'bond_status'           => 'Yes',
+            'bond_end_date'         => '2027-03-10',
+            'bond_amount'           => '5000000',
+            'l1_program'            => 'L1 Excellent',
+            'l2_numerical'          => 85.0,
+            'l2_verbal'             => 'Good',
+            'l3_numerical'          => 90.0,
+            'l3_verbal'             => 'Very Good',
+            'pic'                   => 'Jane PIC',
+        ]);
 
         $file = $this->createSpreadsheetFile([$row], true);
 
@@ -248,16 +361,11 @@ class OfflineTrainingImportTest extends TestCase
      */
     public function test_single_row_header_fallback_parsing(): void
     {
-        $row = [
-            'EMP902', 'Siti Rahma', 'G2', 'Technician', 'Team B', 'Production', 'TEST_CORP',
-            'Welding Certification', 'Sub Welding', 'Certification', 'TEST_CAT', 'Intermediate', 'Batch 2',
-            'Technical', 'Welding', 'Yes', 'Sub KPI',
-            'Classroom', 'Face to Face', 'Vendor B', 'Sub Vendor', 'Provider Corp',
-            'Workshop 1', 'Master Welder', '04:00:00', 4.0, '2026-04-01', '2026-04-01',
-            100, 95.0, 'Yes', 'Present', '',
-            'No', '', '0', 'Standard L1',
-            80.0, 'Passed', 85.0, 'Completed', 'PIC Officer'
-        ];
+        $row = $this->buildCanonicalTestRow([
+            'employee_id' => 'EMP902',
+            'name'        => 'Siti Rahma',
+            'course_name' => 'Welding Certification',
+        ]);
 
         $file = $this->createSpreadsheetFile([$row], false);
 
@@ -282,24 +390,22 @@ class OfflineTrainingImportTest extends TestCase
             $this->admin->update(['id_emp' => 'EMP_ADMIN']);
         }
 
-        $row1 = [
-            1, $this->admin->id_emp, 'Admin Preserved Name', 'G5', 'Manager', 'Team Admin', 'IT Dept', 'TEST_CORP',
-            'Leadership Workshop', '', 'In-House', 'TEST_CAT', 'Advanced', 'Batch 10',
-            'Management', 'Leadership', 'Yes', '',
-            'Classroom', '', 'Internal', '', '', 'Room 101', '', '02:00:00', 2.0, '2026-05-01', '2026-05-01',
-            100, 100, 'Yes', 'Present', '', 'May',
-            'No', '', '', '', '', '', '', '', ''
-        ];
+        $row1 = $this->buildCanonicalTestRow([
+            'no'          => 1,
+            'employee_id' => $this->admin->id_emp,
+            'name'        => 'Admin Preserved Name',
+            'course_name' => 'Leadership Workshop',
+            'batch'       => 'Batch 10',
+        ]);
 
         // Non-existent LMS user
-        $row2 = [
-            2, 'UNKNOWN_NIP_9999', 'Unknown Participant', 'G1', 'Operator', 'Team X', 'Dept Y', 'TEST_CORP',
-            'Leadership Workshop', '', 'In-House', 'TEST_CAT', 'Advanced', 'Batch 10',
-            'Management', 'Leadership', 'Yes', '',
-            'Classroom', '', 'Internal', '', '', 'Room 101', '', '02:00:00', 2.0, '2026-05-01', '2026-05-01',
-            100, 100, 'Yes', 'Present', '', 'May',
-            'No', '', '', '', '', '', '', '', ''
-        ];
+        $row2 = $this->buildCanonicalTestRow([
+            'no'          => 2,
+            'employee_id' => 'UNKNOWN_NIP_9999',
+            'name'        => 'Unknown Participant',
+            'course_name' => 'Leadership Workshop',
+            'batch'       => 'Batch 10',
+        ]);
 
         $file = $this->createSpreadsheetFile([$row1, $row2], true);
 
@@ -331,30 +437,99 @@ class OfflineTrainingImportTest extends TestCase
         $batch = 'Batch G1';
 
         $rows = [
-            [
-                1, 'EMP_G1', 'User One', 'G2', 'Role 1', 'T1', 'D1', 'TEST_CORP',
-                $trainingCourse, '', 'Public', 'TEST_CAT', 'Basic', $batch,
-                'General', 'General', 'No', '',
-                'Classroom', '', 'Vendor G', '', '', 'Hotel A', '', '04:00:00', 4.0, '2026-06-01', '2026-06-01',
-                100, 80, 'Yes', 'Present', '', 'June',
-                'No', '', '', '', '', '', '', '', ''
-            ],
-            [
-                2, 'EMP_G2', 'User Two', 'G2', 'Role 2', 'T1', 'D1', 'TEST_CORP',
-                $trainingCourse, '', 'Public', 'TEST_CAT', 'Basic', $batch,
-                'General', 'General', 'No', '',
-                'Classroom', '', 'Vendor G', '', '', 'Hotel A', '', '04:00:00', 4.0, '2026-06-01', '2026-06-01',
-                100, 85, 'Yes', 'Present', '', 'June',
-                'No', '', '', '', '', '', '', '', ''
-            ],
-            [
-                3, 'EMP_G3', 'User Three', 'G3', 'Role 3', 'T2', 'D1', 'TEST_CORP',
-                $trainingCourse, '', 'Public', 'TEST_CAT', 'Basic', $batch,
-                'General', 'General', 'No', '',
-                'Classroom', '', 'Vendor G', '', '', 'Hotel A', '', '04:00:00', 4.0, '2026-06-01', '2026-06-01',
-                100, 90, 'Yes', 'Present', '', 'June',
-                'No', '', '', '', '', '', '', '', ''
-            ],
+            $this->buildCanonicalTestRow([
+                'no'                  => 1,
+                'employee_id'         => 'EMP_G1',
+                'name'                => 'User One',
+                'grade'               => 'G2',
+                'job_position'        => 'Role 1',
+                'team'                => 'T1',
+                'department'          => 'D1',
+                'company'             => 'TEST_CORP',
+                'course_name'         => $trainingCourse,
+                'type'                => 'Public',
+                'category'            => 'TEST_CAT',
+                'level'               => 'Basic',
+                'batch'               => $batch,
+                'main_classification' => 'General',
+                'sub_classification'  => 'General',
+                'kpi'                 => 'No',
+                'delivery_method'     => 'Classroom',
+                'provider'            => 'Vendor G',
+                'venue'               => 'Hotel A',
+                'duration'            => '04:00:00',
+                'learning_hours'      => 4.0,
+                'start_date'          => '2026-06-01',
+                'finish_date'         => '2026-06-01',
+                'progress'            => 100,
+                'assessment_score'    => 80,
+                'attendance'          => 'Yes',
+                'reason'              => 'Present',
+                'month'               => 'June',
+                'bond_status'         => 'No',
+            ]),
+            $this->buildCanonicalTestRow([
+                'no'                  => 2,
+                'employee_id'         => 'EMP_G2',
+                'name'                => 'User Two',
+                'grade'               => 'G2',
+                'job_position'        => 'Role 2',
+                'team'                => 'T1',
+                'department'          => 'D1',
+                'company'             => 'TEST_CORP',
+                'course_name'         => $trainingCourse,
+                'type'                => 'Public',
+                'category'            => 'TEST_CAT',
+                'level'               => 'Basic',
+                'batch'               => $batch,
+                'main_classification' => 'General',
+                'sub_classification'  => 'General',
+                'kpi'                 => 'No',
+                'delivery_method'     => 'Classroom',
+                'provider'            => 'Vendor G',
+                'venue'               => 'Hotel A',
+                'duration'            => '04:00:00',
+                'learning_hours'      => 4.0,
+                'start_date'          => '2026-06-01',
+                'finish_date'         => '2026-06-01',
+                'progress'            => 100,
+                'assessment_score'    => 85,
+                'attendance'          => 'Yes',
+                'reason'              => 'Present',
+                'month'               => 'June',
+                'bond_status'         => 'No',
+            ]),
+            $this->buildCanonicalTestRow([
+                'no'                  => 3,
+                'employee_id'         => 'EMP_G3',
+                'name'                => 'User Three',
+                'grade'               => 'G3',
+                'job_position'        => 'Role 3',
+                'team'                => 'T2',
+                'department'          => 'D1',
+                'company'             => 'TEST_CORP',
+                'course_name'         => $trainingCourse,
+                'type'                => 'Public',
+                'category'            => 'TEST_CAT',
+                'level'               => 'Basic',
+                'batch'               => $batch,
+                'main_classification' => 'General',
+                'sub_classification'  => 'General',
+                'kpi'                 => 'No',
+                'delivery_method'     => 'Classroom',
+                'provider'            => 'Vendor G',
+                'venue'               => 'Hotel A',
+                'duration'            => '04:00:00',
+                'learning_hours'      => 4.0,
+                'start_date'          => '2026-06-01',
+                'finish_date'         => '2026-06-01',
+                'progress'            => 100,
+                'assessment_score'    => 90,
+                'attendance'          => 'Yes',
+                'reason'              => 'Present',
+                'month'               => 'June',
+                'bond_status'         => 'No',
+            ]),
         ];
 
         $file = $this->createSpreadsheetFile($rows, true);
@@ -397,23 +572,20 @@ class OfflineTrainingImportTest extends TestCase
         $batch = 'Batch D1';
 
         $rows = [
-            [
-                1, 'EMP_DUP1', 'Duplicate User', 'G2', 'Role 1', 'T1', 'D1', 'TEST_CORP',
-                $trainingCourse, '', 'Public', 'TEST_CAT', 'Basic', $batch,
-                'General', 'General', 'No', '',
-                'Classroom', '', 'Vendor D', '', '', 'Hotel D', '', '04:00:00', 4.0, '2026-07-01', '2026-07-01',
-                100, 80, 'Yes', 'Present', '', 'July',
-                'No', '', '', '', '', '', '', '', ''
-            ],
-            // Exact same employee for same event
-            [
-                2, 'EMP_DUP1', 'Duplicate User', 'G2', 'Role 1', 'T1', 'D1', 'TEST_CORP',
-                $trainingCourse, '', 'Public', 'TEST_CAT', 'Basic', $batch,
-                'General', 'General', 'No', '',
-                'Classroom', '', 'Vendor D', '', '', 'Hotel D', '', '04:00:00', 4.0, '2026-07-01', '2026-07-01',
-                100, 80, 'Yes', 'Present', '', 'July',
-                'No', '', '', '', '', '', '', '', ''
-            ],
+            $this->buildCanonicalTestRow([
+                'no'          => 1,
+                'employee_id' => 'EMP_DUP1',
+                'name'        => 'Duplicate User',
+                'course_name' => $trainingCourse,
+                'batch'       => $batch,
+            ]),
+            $this->buildCanonicalTestRow([
+                'no'          => 2,
+                'employee_id' => 'EMP_DUP1',
+                'name'        => 'Duplicate User',
+                'course_name' => $trainingCourse,
+                'batch'       => $batch,
+            ]),
         ];
 
         $file = $this->createSpreadsheetFile($rows, true);
@@ -469,22 +641,38 @@ class OfflineTrainingImportTest extends TestCase
 
         // 2. Upload spreadsheet with EMP_EX1 (existing duplicate) and EMP_EX2 (new participant)
         $rows = [
-            [
-                1, 'EMP_EX1', 'Already Enrolled User', 'G3', 'Role', 'Team', 'Dept', 'TEST_CORP',
-                'Existing Database Training', '', 'In-House', 'TEST_CAT', '', 'Batch EX',
-                '', '', '', '',
-                '', '', '', '', '', 'Main Auditorium', '', '04:00:00', 4.0, '2026-08-01', '2026-08-02',
-                100, 90, '', '', '', '',
-                '', '', '', '', '', '', '', '', ''
-            ],
-            [
-                2, 'EMP_EX2', 'Brand New Participant', 'G3', 'Role', 'Team', 'Dept', 'TEST_CORP',
-                'Existing Database Training', '', 'In-House', 'TEST_CAT', '', 'Batch EX',
-                '', '', '', '',
-                '', '', '', '', '', 'Main Auditorium', '', '04:00:00', 4.0, '2026-08-01', '2026-08-02',
-                100, 92, '', '', '', '',
-                '', '', '', '', '', '', '', '', ''
-            ],
+            $this->buildCanonicalTestRow([
+                'no'               => 1,
+                'employee_id'      => 'EMP_EX1',
+                'name'             => 'Already Enrolled User',
+                'course_name'      => 'Existing Database Training',
+                'type'             => 'In-House',
+                'category'         => 'TEST_CAT',
+                'batch'            => 'Batch EX',
+                'venue'            => 'Main Auditorium',
+                'duration'         => '04:00:00',
+                'learning_hours'   => 4.0,
+                'start_date'       => '2026-08-01',
+                'finish_date'      => '2026-08-02',
+                'progress'         => 100,
+                'assessment_score' => 90,
+            ]),
+            $this->buildCanonicalTestRow([
+                'no'               => 2,
+                'employee_id'      => 'EMP_EX2',
+                'name'             => 'Brand New Participant',
+                'course_name'      => 'Existing Database Training',
+                'type'             => 'In-House',
+                'category'         => 'TEST_CAT',
+                'batch'            => 'Batch EX',
+                'venue'            => 'Main Auditorium',
+                'duration'         => '04:00:00',
+                'learning_hours'   => 4.0,
+                'start_date'       => '2026-08-01',
+                'finish_date'      => '2026-08-02',
+                'progress'         => 100,
+                'assessment_score' => 92,
+            ]),
         ];
 
         $file = $this->createSpreadsheetFile($rows, true);
@@ -524,12 +712,12 @@ class OfflineTrainingImportTest extends TestCase
      */
     public function test_cancel_cleans_up_temporary_file_and_cache(): void
     {
-        $row = [
-            1, 'EMP_CANCEL', 'Cancel User', 'G1', 'Role', 'T', 'D', 'TEST_CORP',
-            'Cancel Training', '', 'In-House', 'TEST_CAT', '', '',
-            '', '', '', '', '', '', '', '', '', '', '', '01:00:00', 1.0, '2026-09-01', '2026-09-01',
-            100, 80, '', '', '', '', '', '', '', '', '', '', '', '', ''
-        ];
+        $row = $this->buildCanonicalTestRow([
+            'no'          => 1,
+            'employee_id' => 'EMP_CANCEL',
+            'name'        => 'Cancel User',
+            'course_name' => 'Cancel Training',
+        ]);
 
         $file = $this->createSpreadsheetFile([$row], true);
 
@@ -558,12 +746,12 @@ class OfflineTrainingImportTest extends TestCase
      */
     public function test_confirm_cleans_up_temporary_file_upon_completion(): void
     {
-        $row = [
-            1, 'EMP_CLEANUP', 'Cleanup User', 'G1', 'Role', 'T', 'D', 'TEST_CORP',
-            'Cleanup Training', '', 'In-House', 'TEST_CAT', '', '',
-            '', '', '', '', '', '', '', '', '', '', '', '01:00:00', 1.0, '2026-09-02', '2026-09-02',
-            100, 80, '', '', '', '', '', '', '', '', '', '', '', '', ''
-        ];
+        $row = $this->buildCanonicalTestRow([
+            'no'          => 1,
+            'employee_id' => 'EMP_CLEANUP',
+            'name'        => 'Cleanup User',
+            'course_name' => 'Cleanup Training',
+        ]);
 
         $file = $this->createSpreadsheetFile([$row], true);
 
@@ -695,16 +883,14 @@ class OfflineTrainingImportTest extends TestCase
     public function test_invalid_date_range_detected_as_error(): void
     {
         $adminEmp = $this->admin->id_emp ?? 'EMP901';
-        $row = [
-            1, $adminEmp, 'Budi Santoso', 'G3', 'Engineer', 'Plant Team', 'Maintenance', 'TEST_CORP',
-            'Safety Training', '', 'In-House', 'TEST_CAT', 'Basic', 'Batch 1',
-            'Technical', '', 'Yes', '',
-            'Classroom', '', 'Vendor A', '', '', 'Hall A', '',
-            '08:00:00', 8.0,
-            '2026-05-15', '2026-05-10', // Invalid: finish before start!
-            100, 88.5, 'Yes', 'Present', '', 'May',
-            'No', '', '', '', '', '', '', '', ''
-        ];
+        $row = $this->buildCanonicalTestRow([
+            'no'          => 1,
+            'employee_id' => $adminEmp,
+            'name'        => 'Budi Santoso',
+            'course_name' => 'Safety Training',
+            'start_date'  => '2026-05-15',
+            'finish_date' => '2026-05-10', // Invalid: finish before start!
+        ]);
 
         $file = $this->createSpreadsheetFile([$row], true);
 

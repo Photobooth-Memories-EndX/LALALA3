@@ -171,29 +171,18 @@ class OfflineTrainingImportModalTest extends TestCase
         $this->assertEquals('Instructions', $spreadsheet->getSheet(1)->getTitle());
         $this->assertEquals(0, $spreadsheet->getActiveSheetIndex());
 
-        // Verify freeze pane at A3 (first 2 header rows frozen)
+        // Verify freeze pane at A2 (first header row frozen, data starts on Row 2)
         $sheet = $spreadsheet->getSheet(0);
-        $this->assertEquals('A3', $sheet->getFreezePane());
+        $this->assertEquals('A2', $sheet->getFreezePane());
     }
 
     /**
-     * 6. Test template has exactly 7 parent groups and 44 child columns.
+     * 6. Test template has single header row on Row 1 containing exactly 44 canonical columns.
      */
     public function test_template_seven_parent_groups_and_forty_four_columns(): void
     {
         $groups = OfflineTrainingExcelSchema::groups();
         $this->assertCount(7, $groups);
-
-        $expectedGroupTitles = [
-            'JOB INFORMATION',
-            'TRAINING INFORMATION',
-            'ATTENDANCE',
-            'OBLIGATION',
-            'L1',
-            'L2 (POST TEST)',
-            'L3 (PROJECT)',
-        ];
-        $this->assertEquals($expectedGroupTitles, array_column($groups, 'title'));
 
         $totalCols = OfflineTrainingExcelSchema::totalColumns();
         $this->assertEquals(44, $totalCols);
@@ -201,29 +190,21 @@ class OfflineTrainingImportModalTest extends TestCase
         $spreadsheet = OfflineTrainingExcelSchema::generateTemplateSpreadsheet();
         $sheet = $spreadsheet->getSheet(0);
 
-        // Row 1 Merged Groups Check
+        // Row 1 Canonical Headers Check (Single header row on Row 1)
         $this->assertEquals('No', $sheet->getCell('A1')->getValue());
-        $this->assertEquals('JOB INFORMATION', $sheet->getCell('B1')->getValue());
-        $this->assertEquals('TRAINING INFORMATION', $sheet->getCell('I1')->getValue());
-        $this->assertEquals('ATTENDANCE', $sheet->getCell('AH1')->getValue());
-        $this->assertEquals('OBLIGATION', $sheet->getCell('AJ1')->getValue());
-        $this->assertEquals('L1', $sheet->getCell('AM1')->getValue());
-        $this->assertEquals('L2 (POST TEST)', $sheet->getCell('AN1')->getValue());
-        $this->assertEquals('L3 (PROJECT)', $sheet->getCell('AP1')->getValue());
-
-        // Row 2 Child Headers Check (Sample key columns)
-        $this->assertEquals('No', $sheet->getCell('A2')->getValue());
-        $this->assertEquals('ID', $sheet->getCell('B2')->getValue());
-        $this->assertEquals('Name', $sheet->getCell('C2')->getValue());
-        $this->assertEquals('Course Name', $sheet->getCell('I2')->getValue());
-        $this->assertEquals('Attendance Yes/No', $sheet->getCell('AH2')->getValue());
-        $this->assertEquals('Bond Status', $sheet->getCell('AJ2')->getValue());
-        $this->assertEquals('Program', $sheet->getCell('AM2')->getValue());
-        $this->assertEquals('Numerical', $sheet->getCell('AN2')->getValue()); // L2 Numerical
-        $this->assertEquals('Verbal', $sheet->getCell('AO2')->getValue());    // L2 Verbal
-        $this->assertEquals('Numerical', $sheet->getCell('AP2')->getValue()); // L3 Numerical
-        $this->assertEquals('Verbal', $sheet->getCell('AQ2')->getValue());    // L3 Verbal
-        $this->assertEquals('PIC', $sheet->getCell('AR2')->getValue());       // L3 PIC
+        $this->assertEquals('ID', $sheet->getCell('B1')->getValue());
+        $this->assertEquals('Name', $sheet->getCell('C1')->getValue());
+        $this->assertEquals('Grade', $sheet->getCell('D1')->getValue());
+        $this->assertEquals('Job Position', $sheet->getCell('E1')->getValue());
+        $this->assertEquals('Course Name', $sheet->getCell('I1')->getValue());
+        $this->assertEquals('Attendance Yes/No', $sheet->getCell('AH1')->getValue());
+        $this->assertEquals('Bond Status', $sheet->getCell('AJ1')->getValue());
+        $this->assertEquals('Program', $sheet->getCell('AM1')->getValue());
+        $this->assertEquals('Numerical', $sheet->getCell('AN1')->getValue()); // L2 Numerical
+        $this->assertEquals('Verbal', $sheet->getCell('AO1')->getValue());    // L2 Verbal
+        $this->assertEquals('Numerical', $sheet->getCell('AP1')->getValue()); // L3 Numerical
+        $this->assertEquals('Verbal', $sheet->getCell('AQ1')->getValue());    // L3 Verbal
+        $this->assertEquals('PIC', $sheet->getCell('AR1')->getValue());       // L3 PIC
     }
 
     /**

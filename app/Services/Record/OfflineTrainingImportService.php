@@ -92,7 +92,8 @@ class OfflineTrainingImportService
     }
 
     /**
-     * Parse workbook, validate rows, detect duplicates, and generate preview payload.
+     * Parse workbook, perform Phase A Header Analysis & Phase B Row Validation,
+     * detect duplicates, match participants, and generate preview payload.
      */
     public function parseAndPreview(string $token, int $userId): array
     {
@@ -105,15 +106,17 @@ class OfflineTrainingImportService
         $worksheet = $spreadsheet->getSheetByName(OfflineTrainingExcelSchema::DATA_SHEET_TITLE)
             ?: $spreadsheet->getSheet(0);
 
+        // Phase A: Header Analysis & Format Detection
         $headerMapping = $this->resolveHeaderMapping($worksheet);
-        $this->validateRequiredHeaders($headerMapping['column_keys']);
+        $headerCheck = $headerMapping['header_check'];
 
         $highestRow = $worksheet->getHighestDataRow();
         $startDataRow = $headerMapping['data_start_row'];
 
-        // Collect all NIPs to batch-lookup LMS users
+        // Collect all NIPs and participant names to batch-lookup LMS users
         $rawRows = [];
         $uniqueNips = [];
+        $uniqueNames = [];
         $uniqueCourses = [];
 
         for ($r = $startDataRow; $r <= $highestRow; $r++) {
@@ -132,28 +135,51 @@ class OfflineTrainingImportService
                 $uniqueNips[$nip] = true;
             }
 
+            $pName = trim((string) ($rowValues['name'] ?? ''));
+            if ($pName !== '') {
+                $uniqueNames[$pName] = true;
+            }
+
             $course = trim((string) ($rowValues['course_name'] ?? ''));
             if ($course !== '') {
                 $uniqueCourses[$course] = true;
             }
         }
 
-        // Batch lookup LMS users
-        $userMap = [];
+        // Batch lookup LMS users by NIP and by Name
+        $userMapByNip = [];
+        $usersMapByName = [];
+
         if (!empty($uniqueNips)) {
             $users = User::whereIn('id_emp', array_keys($uniqueNips))
                 ->select(['id', 'name', 'id_emp'])
                 ->get();
             foreach ($users as $u) {
-                $userMap[strtolower(trim($u->id_emp))] = $u;
+                $userMapByNip[strtolower(trim($u->id_emp))] = $u;
+                $unpadded = ltrim(trim($u->id_emp), '0');
+                if ($unpadded !== '' && $unpadded !== trim($u->id_emp)) {
+                    $userMapByNip[strtolower($unpadded)] = $u;
+                }
+            }
+        }
+
+        if (!empty($uniqueNames)) {
+            $nameUsers = User::where(function ($q) use ($uniqueNames) {
+                foreach (array_keys($uniqueNames) as $nm) {
+                    $q->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($nm))]);
+                }
+            })->select(['id', 'name', 'id_emp'])->get();
+
+            foreach ($nameUsers as $u) {
+                $normDbName = mb_strtolower(trim(preg_replace('/\s+/', ' ', $u->name)));
+                $usersMapByName[$normDbName][] = $u;
             }
         }
 
         // Batch load potential existing OfflineTrainings
         $existingTrainings = [];
         if (!empty($uniqueCourses)) {
-            $dbTrainings = OfflineTraining::whereIn('course_name', array_keys($uniqueCourses))
-                ->get();
+            $dbTrainings = OfflineTraining::whereIn('course_name', array_keys($uniqueCourses))->get();
             foreach ($dbTrainings as $t) {
                 $fp = $this->buildTrainingFingerprint([
                     'course_name' => $t->course_name,
@@ -194,6 +220,7 @@ class OfflineTrainingImportService
             'duplicate'        => 0,
             'new_trainings'    => 0,
             'reused_trainings' => 0,
+            'unique_events'    => 0,
         ];
 
         $seenInFileParticipants = [];
@@ -204,17 +231,16 @@ class OfflineTrainingImportService
             $vals = $item['values'];
 
             $normalized = $this->normalizeRowData($vals);
-            $validation = $this->validateRowData($normalized);
+            // Phase B: Row data validation with exact cell types & coordinates
+            $validation = $this->validateRowData($normalized, $vals, $rNum);
 
-            // User lookup
+            // Participant / User lookup hierarchy
             $employeeId = $normalized['employee_id'];
-            $matchedUser = null;
-            if ($employeeId && isset($userMap[strtolower($employeeId)])) {
-                $matchedUser = $userMap[strtolower($employeeId)];
-                $normalized['user_id'] = $matchedUser->id;
-            } else {
-                $normalized['user_id'] = null;
-            }
+            $participantName = $normalized['name'];
+            $userMatch = $this->matchParticipantUser($employeeId, $participantName, $userMapByNip, $usersMapByName);
+
+            $matchedUser = $userMatch['user'];
+            $normalized['user_id'] = $userMatch['user_id'];
 
             // Training fingerprint
             $fp = $this->buildTrainingFingerprint($normalized);
@@ -229,6 +255,7 @@ class OfflineTrainingImportService
                 } else {
                     $stats['new_trainings']++;
                 }
+                $stats['unique_events']++;
             }
 
             // Duplicate detection
@@ -262,15 +289,18 @@ class OfflineTrainingImportService
             if (!empty($validation['errors'])) {
                 $rowStatus = 'invalid';
                 $messages = array_merge($messages, $validation['errors']);
+                if (!empty($userMatch['warning'])) {
+                    $messages[] = $userMatch['warning'];
+                }
                 $stats['invalid']++;
             } elseif ($isDuplicate) {
                 $rowStatus = 'duplicate';
                 $messages[] = $duplicateReason;
                 $stats['duplicate']++;
-            } elseif (!empty($validation['warnings']) || !$matchedUser) {
+            } elseif (!empty($validation['warnings']) || !empty($userMatch['warning'])) {
                 $rowStatus = 'warning';
-                if (!$matchedUser && $employeeId) {
-                    $messages[] = 'LMS user account not found. Will import with user_id NULL.';
+                if (!empty($userMatch['warning'])) {
+                    $messages[] = $userMatch['warning'];
                 }
                 $messages = array_merge($messages, $validation['warnings']);
                 $stats['warning']++;
@@ -285,6 +315,7 @@ class OfflineTrainingImportService
                 'messages'           => $messages,
                 'is_duplicate'       => $isDuplicate,
                 'user_matched'       => (bool) $matchedUser,
+                'user_match_type'    => $userMatch['match_type'] ?? null,
                 'training_exists'    => $isExistingTraining,
                 'training_fp'        => $fp,
                 'data'               => $normalized,
@@ -293,21 +324,29 @@ class OfflineTrainingImportService
 
         // Cache summary and metadata for confirm execution
         $metadata['stats'] = $stats;
+        $metadata['header_check'] = $headerCheck;
+        $metadata['format'] = $headerMapping['format'];
         $metadata['unknown_headers'] = $headerMapping['unknown_headers'];
         Cache::put(self::CACHE_PREFIX . $token, $metadata, self::CACHE_TTL_SECONDS);
+
+        $canConfirm = $headerCheck['can_proceed'] && ($stats['invalid'] === 0) && (($stats['valid'] + $stats['warning']) > 0);
 
         return [
             'token'           => $token,
             'filename'        => $metadata['original_filename'],
+            'format'          => $headerMapping['format'],
+            'header_check'    => $headerCheck,
+            'can_confirm'     => $canConfirm,
             'stats'           => $stats,
             'unknown_headers' => $headerMapping['unknown_headers'],
-            'preview_rows'    => array_slice($parsedRows, 0, 100), // First 100 for fast UI rendering
+            'preview_rows'    => array_slice($parsedRows, 0, 100),
             'total_preview'   => count($parsedRows),
         ];
     }
 
     /**
      * Execute full import inside database transactions.
+     * Strictly blocked if template header analysis failed.
      */
     public function executeImport(string $token, int $userId): array
     {
@@ -321,11 +360,17 @@ class OfflineTrainingImportService
             ?: $spreadsheet->getSheet(0);
 
         $headerMapping = $this->resolveHeaderMapping($worksheet);
+        if (!$headerMapping['can_proceed']) {
+            $issueMessages = array_column($headerMapping['header_check']['issues'], 'message');
+            throw new \InvalidArgumentException('Import cannot proceed due to header validation errors: ' . implode('; ', $issueMessages));
+        }
+
         $highestRow = $worksheet->getHighestDataRow();
         $startDataRow = $headerMapping['data_start_row'];
 
         $rawRows = [];
         $uniqueNips = [];
+        $uniqueNames = [];
         $uniqueCourses = [];
 
         for ($r = $startDataRow; $r <= $highestRow; $r++) {
@@ -341,6 +386,10 @@ class OfflineTrainingImportService
             if ($nip !== '') {
                 $uniqueNips[$nip] = true;
             }
+            $pName = trim((string) ($rowValues['name'] ?? ''));
+            if ($pName !== '') {
+                $uniqueNames[$pName] = true;
+            }
             $course = trim((string) ($rowValues['course_name'] ?? ''));
             if ($course !== '') {
                 $uniqueCourses[$course] = true;
@@ -348,13 +397,32 @@ class OfflineTrainingImportService
         }
 
         // Batch users
-        $userMap = [];
+        $userMapByNip = [];
+        $usersMapByName = [];
+
         if (!empty($uniqueNips)) {
             $users = User::whereIn('id_emp', array_keys($uniqueNips))
                 ->select(['id', 'name', 'id_emp'])
                 ->get();
             foreach ($users as $u) {
-                $userMap[strtolower(trim($u->id_emp))] = $u;
+                $userMapByNip[strtolower(trim($u->id_emp))] = $u;
+                $unpadded = ltrim(trim($u->id_emp), '0');
+                if ($unpadded !== '' && $unpadded !== trim($u->id_emp)) {
+                    $userMapByNip[strtolower($unpadded)] = $u;
+                }
+            }
+        }
+
+        if (!empty($uniqueNames)) {
+            $nameUsers = User::where(function ($q) use ($uniqueNames) {
+                foreach (array_keys($uniqueNames) as $nm) {
+                    $q->orWhereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($nm))]);
+                }
+            })->select(['id', 'name', 'id_emp'])->get();
+
+            foreach ($nameUsers as $u) {
+                $normDbName = mb_strtolower(trim(preg_replace('/\s+/', ' ', $u->name)));
+                $usersMapByName[$normDbName][] = $u;
             }
         }
 
@@ -402,9 +470,10 @@ class OfflineTrainingImportService
         $seenInFileParticipants = [];
 
         foreach ($rawRows as $item) {
+            $rNum = $item['excel_row'];
             $vals = $item['values'];
             $normalized = $this->normalizeRowData($vals);
-            $validation = $this->validateRowData($normalized);
+            $validation = $this->validateRowData($normalized, $vals, $rNum);
 
             if (!empty($validation['errors'])) {
                 $invalidRows++;
@@ -412,11 +481,9 @@ class OfflineTrainingImportService
             }
 
             $employeeId = $normalized['employee_id'];
-            if ($employeeId && isset($userMap[strtolower($employeeId)])) {
-                $normalized['user_id'] = $userMap[strtolower($employeeId)]->id;
-            } else {
-                $normalized['user_id'] = null;
-            }
+            $participantName = $normalized['name'];
+            $userMatch = $this->matchParticipantUser($employeeId, $participantName, $userMapByNip, $usersMapByName);
+            $normalized['user_id'] = $userMatch['user_id'];
 
             $fp = $this->buildTrainingFingerprint($normalized);
             $isExistingTraining = isset($existingTrainings[$fp]);
@@ -553,241 +620,116 @@ class OfflineTrainingImportService
 
     /**
      * Resolves column positions for grouped two-row or single-row headers.
+     * Delegates to OfflineTrainingExcelSchema for automatic detection and per-column matching.
      */
     public function resolveHeaderMapping(Worksheet $worksheet): array
     {
-        $highestColumn = $worksheet->getHighestDataColumn();
-        $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
-
-        // Check Row 1 and Row 2
-        $row1Cells = [];
-        $row2Cells = [];
-
-        for ($col = 1; $col <= $highestColumnIndex; $col++) {
-            $colLetter = Coordinate::stringFromColumnIndex($col);
-            $row1Cells[$colLetter] = trim((string) $worksheet->getCell($colLetter . '1')->getValue());
-            $row2Cells[$colLetter] = trim((string) $worksheet->getCell($colLetter . '2')->getValue());
-        }
-
-        // Determine if Row 1 is a grouped header (HRDC parent category groups)
-        $isGrouped = false;
-        $row1Text = strtolower(implode(' ', $row1Cells));
-        if (str_contains($row1Text, 'job information') || str_contains($row1Text, 'training information')) {
-            $isGrouped = true;
-        }
-
-        $columnPositions = [];
-        $columnKeys = [];
-        $unknownHeaders = [];
-
-        if ($isGrouped) {
-            $currentGroup = '';
-            // Propagate merged parent groups across columns
-            for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                $colLetter = Coordinate::stringFromColumnIndex($col);
-                $r1 = $row1Cells[$colLetter];
-                $r2 = $row2Cells[$colLetter];
-
-                if ($r1 !== '') {
-                    $currentGroup = $r1;
-                }
-
-                $mappedKey = $this->matchGroupedHeader($currentGroup, $r2);
-                if ($mappedKey) {
-                    $columnPositions[$mappedKey] = $colLetter;
-                    $columnKeys[] = $mappedKey;
-                } elseif ($r2 !== '' && !in_array(strtolower($r2), ['no', 'month', 'bulan'], true)) {
-                    $unknownHeaders[] = ($currentGroup ? "{$currentGroup} > " : '') . $r2;
-                }
-            }
-
-            return [
-                'data_start_row'   => 3,
-                'column_positions' => $columnPositions,
-                'column_keys'      => $columnKeys,
-                'unknown_headers'  => $unknownHeaders,
-            ];
-        }
-
-        // Fallback: Single-row header on Row 1
-        for ($col = 1; $col <= $highestColumnIndex; $col++) {
-            $colLetter = Coordinate::stringFromColumnIndex($col);
-            $header = $row1Cells[$colLetter];
-            $mappedKey = $this->matchSingleHeader($header);
-
-            if ($mappedKey) {
-                $columnPositions[$mappedKey] = $colLetter;
-                $columnKeys[] = $mappedKey;
-            } elseif ($header !== '' && !in_array(strtolower($header), ['no', 'month', 'bulan'], true)) {
-                $unknownHeaders[] = $header;
-            }
-        }
+        $formatInfo = OfflineTrainingExcelSchema::detectTemplateFormat($worksheet);
+        $headerCheck = OfflineTrainingExcelSchema::analyzeHeaders(
+            $formatInfo['found_headers'],
+            $formatInfo['format']
+        );
 
         return [
-            'data_start_row'   => 2,
-            'column_positions' => $columnPositions,
-            'column_keys'      => $columnKeys,
-            'unknown_headers'  => $unknownHeaders,
+            'format'           => $formatInfo['format'],
+            'header_row'       => $formatInfo['header_row'],
+            'data_start_row'   => $formatInfo['data_start_row'],
+            'group_row'        => $formatInfo['group_row'],
+            'column_positions' => $headerCheck['column_positions'],
+            'column_keys'      => $headerCheck['column_keys'],
+            'header_check'     => $headerCheck,
+            'can_proceed'      => $headerCheck['can_proceed'],
+            'unknown_headers'  => array_column($headerCheck['issues'], 'message'),
         ];
     }
 
     /**
-     * Match grouped header (Parent Group + Child Column).
+     * Match participant against LMS users according to strict safety hierarchy:
+     * 1. NIP / id_emp exact match
+     * 2. Normalized NIP match (trimmed, leading zeros stripped)
+     * 3. Normalized exact name match (only if unique candidate)
+     * 4. Safe typo tolerance for name when NIP is confirmed
+     * 5. Flag ambiguous matches when multiple candidates share the same name without NIP
      */
-    protected function matchGroupedHeader(string $group, string $child): ?string
+    public function matchParticipantUser(?string $employeeId, ?string $participantName, array $userMapByNip, array $usersMapByName): array
     {
-        $g = str_replace(['_', '-'], ' ', strtolower(trim($group)));
-        $c = str_replace(['_', '-'], ' ', strtolower(trim($child)));
+        $employeeId = trim((string) $employeeId);
+        $participantName = trim((string) $participantName);
 
-        if ($c === '' || $c === 'no') {
-            return null;
+        $matchedUser = null;
+        $matchType = null;
+        $warningMessage = null;
+
+        // 1. Employee ID / NIP Match (Highest Priority)
+        if ($employeeId !== '') {
+            $nipKey = strtolower($employeeId);
+            $unpaddedNipKey = strtolower(ltrim($employeeId, '0'));
+
+            if (isset($userMapByNip[$nipKey])) {
+                $matchedUser = $userMapByNip[$nipKey];
+                $matchType = 'nip_exact';
+            } elseif ($unpaddedNipKey !== '' && isset($userMapByNip[$unpaddedNipKey])) {
+                $matchedUser = $userMapByNip[$unpaddedNipKey];
+                $matchType = 'nip_normalized';
+            }
+
+            if ($matchedUser) {
+                // Verify Name correspondence
+                if ($participantName !== '') {
+                    $normRowName = mb_strtolower(trim(preg_replace('/\s+/', ' ', $participantName)));
+                    $normDbName = mb_strtolower(trim(preg_replace('/\s+/', ' ', $matchedUser->name)));
+
+                    if ($normRowName !== $normDbName) {
+                        $lev = levenshtein($normRowName, $normDbName);
+                        if ($lev <= 2) {
+                            $matchType = 'nip_with_name_normalized';
+                        } else {
+                            $warningMessage = "NIP matches user '{$matchedUser->name}', but Excel participant name is '{$participantName}'.";
+                        }
+                    }
+                }
+
+                return [
+                    'user'       => $matchedUser,
+                    'user_id'    => $matchedUser->id,
+                    'match_type' => $matchType,
+                    'warning'    => $warningMessage,
+                ];
+            }
         }
 
-        // 1. Job Information
-        if (str_contains($g, 'job')) {
-            if ($c === 'id' || str_contains($c, 'employee id') || str_contains($c, 'nip')) return 'employee_id';
-            if ($c === 'name' || str_contains($c, 'nama')) return 'name';
-            if ($c === 'grade') return 'grade';
-            if ($c === 'job position' || str_contains($c, 'position') || str_contains($c, 'jabatan')) return 'job_position';
-            if ($c === 'team' || str_contains($c, 'unit')) return 'team';
-            if ($c === 'department' || str_contains($c, 'dept')) return 'department';
-            if ($c === 'company' || str_contains($c, 'perusahaan')) return 'company';
+        // 2. Participant Name Match (Only when NIP is empty or not found in LMS)
+        if ($participantName !== '') {
+            $normRowName = mb_strtolower(trim(preg_replace('/\s+/', ' ', $participantName)));
+            $candidates = $usersMapByName[$normRowName] ?? [];
+
+            if (count($candidates) === 1) {
+                $matchedUser = $candidates[0];
+                return [
+                    'user'       => $matchedUser,
+                    'user_id'    => $matchedUser->id,
+                    'match_type' => 'name_unique_match',
+                    'warning'    => $employeeId === '' ? null : "NIP '{$employeeId}' not found in LMS. Linked by unique participant name.",
+                ];
+            }
+
+            if (count($candidates) > 1) {
+                // Ambiguous candidate match: Multiple users found with the exact same name! DO NOT GUESS!
+                return [
+                    'user'       => null,
+                    'user_id'    => null,
+                    'match_type' => 'ambiguous_name',
+                    'warning'    => "AMBIGUOUS PARTICIPANT MATCH: Multiple LMS users found with name '{$participantName}'. Please provide Employee ID (NIP) to identify participant.",
+                ];
+            }
         }
 
-        // 2. Training Information
-        if (str_contains($g, 'training')) {
-            if (str_contains($c, 'sub course') || $c === 'sub course name') return 'sub_course_name';
-            if ($c === 'course name' || str_contains($c, 'course name') || str_contains($c, 'nama training') || $c === 'course') return 'course_name';
-            if ($c === 'type' || str_contains($c, 'tipe')) return 'type';
-            if ($c === 'category' || str_contains($c, 'kategori')) return 'category';
-            if ($c === 'level') return 'level';
-            if ($c === 'batch') return 'batch';
-            if ($c === 'main classification' || $c === 'classification') return 'main_classification';
-            if ($c === 'sub classification') return 'sub_classification';
-            if (str_contains($c, 'corporate kpi') && !str_contains($c, 'sub')) return 'counted_corporate_kpi';
-            if (str_contains($c, 'sub') && str_contains($c, 'corporate kpi')) return 'sub_corporate_kpi';
-            if ($c === 'delivery method' || (str_contains($c, 'delivery') && !str_contains($c, 'sub'))) return 'delivery_method';
-            if (str_contains($c, 'sub') && str_contains($c, 'delivery')) return 'sub_delivery_method';
-            if ($c === 'provider' && !str_contains($c, 'name') && !str_contains($c, 'sub')) return 'provider';
-            if (str_contains($c, 'sub') && str_contains($c, 'provider')) return 'sub_provider';
-            if (str_contains($c, 'provider name')) return 'provider_name';
-            if ($c === 'duration' || str_contains($c, 'durasi')) return 'duration_seconds';
-            if (str_contains($c, 'learning') && str_contains($c, 'hour')) return 'learning_hours';
-            if ($c === 'progress') return 'progress';
-            if ($c === 'start date' || str_contains($c, 'start')) return 'start_date';
-            if ($c === 'finish date' || str_contains($c, 'finish') || str_contains($c, 'end date')) return 'finish_date';
-            if ($c === 'month' || str_contains($c, 'bulan')) return null; // Month is derived, never stored
-            if ($c === 'venue' || str_contains($c, 'lokasi')) return 'venue';
-            if ($c === 'instructor' || str_contains($c, 'trainer') || str_contains($c, 'instruktur')) return 'instructor';
-            if (str_contains($c, 'assessment') || $c === 'score' || str_contains($c, 'nilai')) return 'assessment_score';
-            if ($c === 'certificate' || str_contains($c, 'sertifikat')) return 'certificate';
-        }
-
-        // 3. Attendance & Progress
-        if (str_contains($g, 'attendance')) {
-            if ($c === 'progress') return 'progress';
-            if (str_contains($c, 'assessment') || $c === 'score' || str_contains($c, 'nilai')) return 'assessment_score';
-            if ($c === 'certificate' || str_contains($c, 'sertifikat')) return 'certificate';
-            if ($c === 'month' || str_contains($c, 'bulan')) return null;
-            if (str_contains($c, 'yes') || str_contains($c, 'attendance') || $c === 'status') return 'attendance';
-            if (str_contains($c, 'reason') || str_contains($c, 'alasan')) return 'attendance_reason';
-        }
-
-        // 4. Obligation / Bond
-        if (str_contains($g, 'obligation') || str_contains($g, 'bond')) {
-            if (str_contains($c, 'status')) return 'bond_status';
-            if (str_contains($c, 'date') || str_contains($c, 'end')) return 'bond_end_date';
-            if (str_contains($c, 'amount') || str_contains($c, 'biaya') || str_contains($c, 'nilai')) return 'bond_amount';
-        }
-
-        // 5. L1
-        if (str_contains($g, 'l1') || $g === 'l1') {
-            if (str_contains($c, 'program')) return 'l1_program';
-        }
-
-        // 6. L2 (Post Test)
-        if (str_contains($g, 'l2') || str_contains($g, 'post test')) {
-            if (str_contains($c, 'numerical') || str_contains($c, 'numeric')) return 'l2_numerical';
-            if (str_contains($c, 'verbal')) return 'l2_verbal';
-        }
-
-        // 7. L3 (Project)
-        if (str_contains($g, 'l3') || str_contains($g, 'project')) {
-            if (str_contains($c, 'numerical') || str_contains($c, 'numeric')) return 'l3_numerical';
-            if (str_contains($c, 'verbal')) return 'l3_verbal';
-            if ($c === 'pic' || str_contains($c, 'pic')) return 'pic';
-        }
-
-        // Fallback to single header matching
-        return $this->matchSingleHeader($child);
-    }
-
-    /**
-     * Match single-row header (flattened names).
-     */
-    protected function matchSingleHeader(string $header): ?string
-    {
-        $h = str_replace(['_', '-'], ' ', strtolower(trim($header)));
-
-        if ($h === '' || $h === 'no' || $h === 'month') {
-            return null;
-        }
-
-        // Explicit L2 vs L3 disambiguation in single header
-        if (str_contains($h, 'l2') && str_contains($h, 'numeric')) return 'l2_numerical';
-        if (str_contains($h, 'l2') && str_contains($h, 'verbal')) return 'l2_verbal';
-        if (str_contains($h, 'l3') && str_contains($h, 'numeric')) return 'l3_numerical';
-        if (str_contains($h, 'l3') && str_contains($h, 'verbal')) return 'l3_verbal';
-        if ($h === 'pic' || (str_contains($h, 'l3') && str_contains($h, 'pic'))) return 'pic';
-
-        // L1
-        if (str_contains($h, 'l1') || $h === 'program') return 'l1_program';
-
-        // Bond
-        if (str_contains($h, 'bond') && str_contains($h, 'status')) return 'bond_status';
-        if (str_contains($h, 'bond') && (str_contains($h, 'date') || str_contains($h, 'end'))) return 'bond_end_date';
-        if (str_contains($h, 'bond') && (str_contains($h, 'amount') || str_contains($h, 'biaya'))) return 'bond_amount';
-
-        // Attendance
-        if (str_contains($h, 'attendance') && (str_contains($h, 'yes') || str_contains($h, 'status') || $h === 'attendance')) return 'attendance';
-        if (str_contains($h, 'attendance') && str_contains($h, 'reason') || $h === 'reason') return 'attendance_reason';
-
-        // Job Information
-        if ($h === 'id' || $h === 'employee id' || $h === 'nip') return 'employee_id';
-        if ($h === 'name' || $h === 'employee name' || $h === 'nama') return 'name';
-        if ($h === 'grade') return 'grade';
-        if ($h === 'job position' || $h === 'position' || $h === 'jabatan') return 'job_position';
-        if ($h === 'team' || $h === 'unit') return 'team';
-        if ($h === 'department' || $h === 'dept') return 'department';
-        if ($h === 'company') return 'company';
-
-        // Training Information
-        if (str_contains($h, 'sub course') || $h === 'sub course name') return 'sub_course_name';
-        if ($h === 'course name' || $h === 'course' || $h === 'nama course' || $h === 'training name') return 'course_name';
-        if ($h === 'type' || $h === 'training type') return 'type';
-        if ($h === 'category') return 'category';
-        if ($h === 'level') return 'level';
-        if ($h === 'batch') return 'batch';
-        if ($h === 'main classification' || $h === 'classification') return 'main_classification';
-        if ($h === 'sub classification') return 'sub_classification';
-        if (str_contains($h, 'corporate kpi') && !str_contains($h, 'sub')) return 'counted_corporate_kpi';
-        if (str_contains($h, 'sub') && str_contains($h, 'corporate kpi')) return 'sub_corporate_kpi';
-        if ($h === 'delivery method' || (str_contains($h, 'delivery') && !str_contains($h, 'sub'))) return 'delivery_method';
-        if (str_contains($h, 'sub') && str_contains($h, 'delivery')) return 'sub_delivery_method';
-        if ($h === 'provider' && !str_contains($h, 'name') && !str_contains($h, 'sub')) return 'provider';
-        if (str_contains($h, 'sub') && str_contains($h, 'provider')) return 'sub_provider';
-        if (str_contains($h, 'provider name')) return 'provider_name';
-        if ($h === 'duration' || str_contains($h, 'durasi')) return 'duration_seconds';
-        if (str_contains($h, 'learning') && str_contains($h, 'hour')) return 'learning_hours';
-        if ($h === 'progress') return 'progress';
-        if ($h === 'start date' || $h === 'start') return 'start_date';
-        if ($h === 'finish date' || $h === 'finish' || $h === 'end date') return 'finish_date';
-        if ($h === 'venue' || $h === 'lokasi') return 'venue';
-        if ($h === 'instructor' || $h === 'trainer') return 'instructor';
-        if (str_contains($h, 'assessment') || $h === 'score') return 'assessment_score';
-        if ($h === 'certificate') return 'certificate';
-
-        return null;
+        return [
+            'user'       => null,
+            'user_id'    => null,
+            'match_type' => 'not_found',
+            'warning'    => $employeeId ? "LMS user account not found for Employee ID '{$employeeId}'. Will import with user_id NULL." : null,
+        ];
     }
 
     /**
@@ -922,44 +864,135 @@ class OfflineTrainingImportService
     }
 
     /**
-     * Validate row data against business integrity rules.
+     * Validate row data against business integrity and strict type rules (Phase B).
      */
-    public function validateRowData(array $row): array
+    public function validateRowData(array $row, array $raw = [], int $excelRow = 0): array
     {
         $errors = [];
         $warnings = [];
+        $rowPrefix = $excelRow > 0 ? "Excel Row: {$excelRow} | " : "";
 
         // Required checks
         if (!$row['course_name']) {
-            $errors[] = 'Course Name is required.';
+            $errors[] = "{$rowPrefix}Column: Course Name | Expected: Course Name is required | Status: INVALID VALUE";
         }
         if (!$row['employee_id']) {
-            $errors[] = 'Employee ID (NIP) is required.';
+            $errors[] = "{$rowPrefix}Column: ID | Expected: Employee ID (NIP) is required | Status: INVALID VALUE";
         }
         if (!$row['name']) {
-            $errors[] = 'Participant Name is required.';
+            $errors[] = "{$rowPrefix}Column: Name | Expected: Participant Name is required | Status: INVALID VALUE";
         }
 
-        // Progress bounds
-        if ($row['progress'] !== null) {
-            if ($row['progress'] < 0 || $row['progress'] > 100) {
-                $errors[] = 'Progress must be between 0% and 100%. Found: ' . $row['progress'] . '%.';
+        // Assessment Score type & bounds validation
+        $rawScore = $raw['assessment_score'] ?? null;
+        if ($rawScore !== null && trim((string) $rawScore) !== '' && !in_array(trim((string) $rawScore), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            $cleanScore = str_replace(',', '.', trim((string) $rawScore));
+            if (!is_numeric($cleanScore)) {
+                $errors[] = "{$rowPrefix}Column: Assessment Score | Value: '{$rawScore}' | Expected: Numeric value | Status: INVALID VALUE";
+            } elseif ((float) $cleanScore < 0 || (float) $cleanScore > 100) {
+                $errors[] = "{$rowPrefix}Column: Assessment Score | Value: '{$rawScore}' | Expected: Numeric value between 0 and 100 | Status: INVALID VALUE";
             }
         }
 
-        // Date sanity
+        // Progress bounds and numeric validation
+        $rawProg = $raw['progress'] ?? null;
+        if ($rawProg !== null && trim((string) $rawProg) !== '' && !in_array(trim((string) $rawProg), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['progress'] === null) {
+                $errors[] = "{$rowPrefix}Column: Progress | Value: '{$rawProg}' | Expected: Numeric percentage (0-100) | Status: INVALID VALUE";
+            } elseif ($row['progress'] < 0 || $row['progress'] > 100) {
+                $errors[] = "{$rowPrefix}Column: Progress | Value: '{$rawProg}' | Expected: Progress must be between 0% and 100% | Status: INVALID VALUE";
+            }
+        }
+
+        // Learning Hours numeric validation
+        $rawHours = $raw['learning_hours'] ?? null;
+        if ($rawHours !== null && trim((string) $rawHours) !== '' && !in_array(trim((string) $rawHours), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['learning_hours'] === null) {
+                $errors[] = "{$rowPrefix}Column: Learning (Hours) | Value: '{$rawHours}' | Expected: Numeric hours value (e.g. 8.0) | Status: INVALID VALUE";
+            }
+        }
+
+        // Duration validation
+        $rawDur = $raw['duration_seconds'] ?? null;
+        if ($rawDur !== null && trim((string) $rawDur) !== '' && !in_array(trim((string) $rawDur), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['duration_seconds'] === null) {
+                $errors[] = "{$rowPrefix}Column: Duration | Value: '{$rawDur}' | Expected: Valid duration (HH:MM:SS or hours) | Status: INVALID VALUE";
+            }
+        }
+
+        // Dates validation
+        $rawStart = $raw['start_date'] ?? null;
+        if ($rawStart !== null && trim((string) $rawStart) !== '' && !in_array(trim((string) $rawStart), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['start_date'] === null) {
+                $errors[] = "{$rowPrefix}Column: Start Date | Value: '{$rawStart}' | Expected: Valid date format (YYYY-MM-DD) | Status: INVALID VALUE";
+            }
+        }
+
+        $rawFinish = $raw['finish_date'] ?? null;
+        if ($rawFinish !== null && trim((string) $rawFinish) !== '' && !in_array(trim((string) $rawFinish), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['finish_date'] === null) {
+                $errors[] = "{$rowPrefix}Column: Finish Date | Value: '{$rawFinish}' | Expected: Valid date format (YYYY-MM-DD) | Status: INVALID VALUE";
+            }
+        }
+
         if ($row['start_date'] && $row['finish_date']) {
             if ($row['finish_date'] < $row['start_date']) {
-                $errors[] = "Finish date ({$row['finish_date']}) cannot be earlier than start date ({$row['start_date']}).";
+                $errors[] = "{$rowPrefix}Column: Finish Date | Value: '{$row['finish_date']}' | Expected: Finish date cannot be earlier than start date ({$row['start_date']}) | Status: INVALID VALUE";
+            }
+        }
+
+        // Bond validation
+        $rawBondAmt = $raw['bond_amount'] ?? null;
+        if ($rawBondAmt !== null && trim((string) $rawBondAmt) !== '' && !in_array(trim((string) $rawBondAmt), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['bond_amount'] === null) {
+                $errors[] = "{$rowPrefix}Column: Bond Amount | Value: '{$rawBondAmt}' | Expected: Numeric currency amount | Status: INVALID VALUE";
+            }
+        }
+
+        $rawBondEnd = $raw['bond_end_date'] ?? null;
+        if ($rawBondEnd !== null && trim((string) $rawBondEnd) !== '' && !in_array(trim((string) $rawBondEnd), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['bond_end_date'] === null) {
+                $errors[] = "{$rowPrefix}Column: Bond End Date | Value: '{$rawBondEnd}' | Expected: Valid date format (YYYY-MM-DD) | Status: INVALID VALUE";
+            }
+        }
+
+        // L2 Numerical
+        $rawL2Num = $raw['l2_numerical'] ?? null;
+        if ($rawL2Num !== null && trim((string) $rawL2Num) !== '' && !in_array(trim((string) $rawL2Num), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['l2_numerical'] === null) {
+                $errors[] = "{$rowPrefix}Column: Numerical (L2) | Value: '{$rawL2Num}' | Expected: Numeric score (0-100) | Status: INVALID VALUE";
+            }
+        }
+
+        // L3 Numerical
+        $rawL3Num = $raw['l3_numerical'] ?? null;
+        if ($rawL3Num !== null && trim((string) $rawL3Num) !== '' && !in_array(trim((string) $rawL3Num), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['l3_numerical'] === null) {
+                $errors[] = "{$rowPrefix}Column: Numerical (L3) | Value: '{$rawL3Num}' | Expected: Numeric score (0-100) | Status: INVALID VALUE";
+            }
+        }
+
+        // Boolean Fields
+        $rawAtt = $raw['attendance'] ?? null;
+        if ($rawAtt !== null && trim((string) $rawAtt) !== '' && !in_array(trim((string) $rawAtt), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['attendance'] === null) {
+                $errors[] = "{$rowPrefix}Column: Attendance Yes/No | Value: '{$rawAtt}' | Expected: Yes or No boolean | Status: INVALID VALUE";
+            }
+        }
+
+        $rawKpi = $raw['counted_corporate_kpi'] ?? null;
+        if ($rawKpi !== null && trim((string) $rawKpi) !== '' && !in_array(trim((string) $rawKpi), ['-', 'N/A', 'n/a', 'NA'], true)) {
+            if ($row['counted_corporate_kpi'] === null) {
+                $errors[] = "{$rowPrefix}Column: Counted as '26 Corporate KPI | Value: '{$rawKpi}' | Expected: Yes or No boolean | Status: INVALID VALUE";
             }
         }
 
         // Non-fatal warnings
         if ($row['start_date'] === null && $row['finish_date'] === null) {
-            $warnings[] = 'Training dates are blank.';
+            $warnings[] = "Training dates are blank.";
         }
         if ($row['learning_hours'] === null) {
-            $warnings[] = 'Learning hours are blank.';
+            $warnings[] = "Learning hours are blank.";
         }
 
         return [
@@ -1030,15 +1063,11 @@ class OfflineTrainingImportService
             return null;
         }
 
-        // Strip % sign if present
         $str = str_replace(['%', ' '], '', $clean);
 
         if (!is_numeric($str)) return null;
 
         $num = (float) $str;
-        // If float fraction <= 1.0 (e.g. 0.75 from raw excel percentage cell), but check if source meant 75%
-        // In Excel, 100% is formatted as 1 or 1.0; 50% is 0.5.
-        // If the number is between 0 and 1, and contains decimal, convert to percentage
         if ($num > 0 && $num <= 1.0 && str_contains($str, '.')) {
             $num = $num * 100.0;
         }
@@ -1055,7 +1084,6 @@ class OfflineTrainingImportService
 
         $str = $clean;
 
-        // If formatted as HH:MM:SS or HH:MM
         if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $str, $matches)) {
             $h = (int) $matches[1];
             $m = (int) $matches[2];
@@ -1063,12 +1091,8 @@ class OfflineTrainingImportService
             return ($h * 3600) + ($m * 60) + $s;
         }
 
-        // If integer or numeric seconds
         if (is_numeric($str)) {
             $num = (float) $str;
-            // If already seconds (> 100) or hours (< 100)
-            // If it's pure hours, e.g. 8 hours -> 8 * 3600 = 28800
-            // In OWL LMS, if a number is <= 24, it's typically hours
             if ($num > 0 && $num <= 24) {
                 return (int) round($num * 3600);
             }
@@ -1085,7 +1109,6 @@ class OfflineTrainingImportService
             return null;
         }
 
-        // Remove any commas or text
         $str = str_replace(['hours', 'hour', 'jam', ' '], '', strtolower($clean));
         $str = str_replace(',', '.', $str);
 
@@ -1106,7 +1129,6 @@ class OfflineTrainingImportService
             return null;
         }
 
-        // Excel numeric serial date
         if (is_numeric($clean) && (float) $clean > 1000) {
             try {
                 return ExcelDate::excelToDateTimeObject((float) $clean)->format('Y-m-d');
@@ -1129,27 +1151,22 @@ class OfflineTrainingImportService
             return null;
         }
 
-        // Strip Rp, IDR, $, USD, and whitespace
         $str = preg_replace('/^(?:rp|idr|usd|\$)\.?\s*/i', '', $clean);
         $str = trim($str);
 
         if (str_contains($str, '.') && str_contains($str, ',')) {
             if (strrpos($str, '.') > strrpos($str, ',')) {
-                // US format: 1,500.50 -> comma is thousand, dot is decimal
                 $str = str_replace(',', '', $str);
             } else {
-                // Indonesian format: 1.500,50 -> dot is thousand, comma is decimal
                 $str = str_replace('.', '', $str);
                 $str = str_replace(',', '.', $str);
             }
         } elseif (str_contains($str, '.') && !str_contains($str, ',')) {
-            // E.g. "1.000.000" or "500.000" -> remove dots if thousands
             $parts = explode('.', $str);
             if (count($parts) > 1 && strlen(end($parts)) === 3) {
                 $str = str_replace('.', '', $str);
             }
         } elseif (str_contains($str, ',') && !str_contains($str, '.')) {
-            // E.g. "1,000,000" -> remove comma
             $str = str_replace(',', '', $str);
         }
 
