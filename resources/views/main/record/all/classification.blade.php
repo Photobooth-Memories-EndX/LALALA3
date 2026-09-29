@@ -11,8 +11,6 @@
             </a>
         </div>
 
-        @include('main.record.components.record-navigation')
-
         <!-- SECTION HEADER: Classification Detail -->
         <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 rounded-3 bg-white record-section-header">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -387,7 +385,7 @@ $(function () {
     $('#all-filter-form').on('submit', function (e) {
         e.preventDefault();
         if (allTable) {
-            allTable.ajax.reload();
+            allTable.page(0).ajax.reload();
         }
     });
 
@@ -399,14 +397,14 @@ $(function () {
         $('#all-filter-status').val('all');
         $('#all-filter-year').val('all');
         if (allTable) {
-            allTable.ajax.reload();
+            allTable.page(0).ajax.reload();
         }
     });
 
     // Filter changes instant reload
     $('#all-filter-source, #all-filter-status, #all-filter-year').on('change', function () {
         if (allTable) {
-            allTable.ajax.reload();
+            allTable.page(0).ajax.reload();
         }
     });
 
