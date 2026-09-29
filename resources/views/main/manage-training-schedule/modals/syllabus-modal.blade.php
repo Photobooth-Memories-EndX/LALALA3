@@ -48,71 +48,103 @@
                         <span>Syllabus Modules & Topics</span>
                     </h5>
 
-                    <div class="d-flex flex-column gap-3" id="syllabusModalTopicsContainer">
+                    <div class="d-flex flex-column gap-2" id="syllabusModalTopicsContainer">
                         <!-- Module 1 -->
-                        <div class="card border border-light-subtle shadow-none rounded-3 p-3 syllabus-topic-card">
+                        <div class="py-2-5 border-bottom border-light-subtle syllabus-topic-item">
                             <div class="d-flex align-items-start gap-3">
-                                <div class="badge rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.85rem;">
+                                <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 mt-0-5" 
+                                      style="width: 24px; height: 24px; font-size: 0.75rem; background-color: #003b6d;">
                                     1
-                                </div>
+                                </span>
                                 <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark mb-1 syllabus-topic-title">
+                                    <div class="fw-bold text-dark fs-3 mb-1 syllabus-topic-title">
                                         Executive Leadership Core & Visionary Direction
                                     </div>
-                                    <p class="text-muted small mb-0 syllabus-topic-outline">
-                                        Understanding modern visionary leadership, leading organizational transformation, aligning departmental goals with company strategies, and cultivating ethical governance standards.
-                                    </p>
+                                    <div class="syllabus-topic-outline ps-1 pt-1">
+                                        <div class="d-flex align-items-start gap-2 mb-1">
+                                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                                            <span class="text-muted small">Understanding modern visionary leadership and leading organizational transformation</span>
+                                        </div>
+                                        <div class="d-flex align-items-start gap-2">
+                                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                                            <span class="text-muted small">Aligning departmental goals with company strategies and ethical governance standards</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Module 2 -->
-                        <div class="card border border-light-subtle shadow-none rounded-3 p-3 syllabus-topic-card">
+                        <div class="py-2-5 border-bottom border-light-subtle syllabus-topic-item">
                             <div class="d-flex align-items-start gap-3">
-                                <div class="badge rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.85rem;">
+                                <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 mt-0-5" 
+                                      style="width: 24px; height: 24px; font-size: 0.75rem; background-color: #003b6d;">
                                     2
-                                </div>
+                                </span>
                                 <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark mb-1 syllabus-topic-title">
+                                    <div class="fw-bold text-dark fs-3 mb-1 syllabus-topic-title">
                                         Strategic Team Communication & Cross-Functional Influence
                                     </div>
-                                    <p class="text-muted small mb-0 syllabus-topic-outline">
-                                        Effective executive communication, cross-functional team alignment, managing high-stakes negotiations, empathy in workplace leadership, and collaborative conflict resolution.
-                                    </p>
+                                    <div class="syllabus-topic-outline ps-1 pt-1">
+                                        <div class="d-flex align-items-start gap-2 mb-1">
+                                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                                            <span class="text-muted small">Effective executive communication and cross-functional team alignment</span>
+                                        </div>
+                                        <div class="d-flex align-items-start gap-2">
+                                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                                            <span class="text-muted small">Managing high-stakes negotiations and collaborative conflict resolution</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Module 3 -->
-                        <div class="card border border-light-subtle shadow-none rounded-3 p-3 syllabus-topic-card">
+                        <div class="py-2-5 border-bottom border-light-subtle syllabus-topic-item">
                             <div class="d-flex align-items-start gap-3">
-                                <div class="badge rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.85rem;">
+                                <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 mt-0-5" 
+                                      style="width: 24px; height: 24px; font-size: 0.75rem; background-color: #003b6d;">
                                     3
-                                </div>
+                                </span>
                                 <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark mb-1 syllabus-topic-title">
+                                    <div class="fw-bold text-dark fs-3 mb-1 syllabus-topic-title">
                                         Decision Making Frameworks & Risk Mitigation
                                     </div>
-                                    <p class="text-muted small mb-0 syllabus-topic-outline">
-                                        Data-informed strategic decision making, risk assessment models in manufacturing plant operations, problem root cause analysis, and agility under volatile operating conditions.
-                                    </p>
+                                    <div class="syllabus-topic-outline ps-1 pt-1">
+                                        <div class="d-flex align-items-start gap-2 mb-1">
+                                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                                            <span class="text-muted small">Data-informed strategic decision making and plant operational risk assessment</span>
+                                        </div>
+                                        <div class="d-flex align-items-start gap-2">
+                                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                                            <span class="text-muted small">Problem root cause analysis and agility under volatile operating conditions</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Module 4 -->
-                        <div class="card border border-light-subtle shadow-none rounded-3 p-3 syllabus-topic-card">
+                        <div class="py-2-5 syllabus-topic-item">
                             <div class="d-flex align-items-start gap-3">
-                                <div class="badge rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.85rem;">
+                                <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 mt-0-5" 
+                                      style="width: 24px; height: 24px; font-size: 0.75rem; background-color: #003b6d;">
                                     4
-                                </div>
+                                </span>
                                 <div class="flex-grow-1">
-                                    <div class="fw-bold text-dark mb-1 syllabus-topic-title">
+                                    <div class="fw-bold text-dark fs-3 mb-1 syllabus-topic-title">
                                         Action Plan & Real-world Project Implementation
                                     </div>
-                                    <p class="text-muted small mb-0 syllabus-topic-outline">
-                                        Developing a 90-day actionable department roadmap, setting milestone KPIs, fostering peer mentorship frameworks, and presenting capstone management initiatives.
-                                    </p>
+                                    <div class="syllabus-topic-outline ps-1 pt-1">
+                                        <div class="d-flex align-items-start gap-2 mb-1">
+                                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                                            <span class="text-muted small">Developing a 90-day actionable department roadmap and milestone KPIs</span>
+                                        </div>
+                                        <div class="d-flex align-items-start gap-2">
+                                            <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                                            <span class="text-muted small">Fostering peer mentorship and presenting capstone management initiatives</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -215,20 +247,47 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (topicsContainer && data.topics) {
             let html = '';
-            data.topics.forEach(t => {
-                html += `
-                    <div class="card border border-light-subtle shadow-none rounded-3 p-3 syllabus-topic-card">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="badge rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 0.85rem;">
-                                ${t.no}
+            data.topics.forEach((t, index) => {
+                const isLast = (index === data.topics.length - 1);
+                const borderClass = isLast ? '' : 'border-bottom border-light-subtle';
+
+                // Split outline into bullet points
+                let points = [];
+                if (typeof t.outline === 'string') {
+                    points = t.outline.split(/,\s*(?=[A-Z])|;\s*/).map(p => p.trim()).filter(Boolean);
+                    if (points.length <= 1) {
+                        points = t.outline.split(', ').map(p => p.trim()).filter(Boolean);
+                    }
+                }
+
+                let pointsHtml = '';
+                if (points.length > 0) {
+                    points.forEach(pt => {
+                        pointsHtml += `
+                            <div class="d-flex align-items-start gap-2 mb-1">
+                                <span class="fw-bold" style="color: #003b6d; line-height: 1.4;">•</span>
+                                <span class="text-muted small">${pt}</span>
                             </div>
+                        `;
+                    });
+                } else {
+                    pointsHtml = `<div class="text-muted small">${t.outline}</div>`;
+                }
+
+                html += `
+                    <div class="py-2-5 ${borderClass} syllabus-topic-item">
+                        <div class="d-flex align-items-start gap-3">
+                            <span class="badge rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 mt-0-5" 
+                                  style="width: 24px; height: 24px; font-size: 0.75rem; background-color: #003b6d;">
+                                ${t.no}
+                            </span>
                             <div class="flex-grow-1">
-                                <div class="fw-bold text-dark mb-1 syllabus-topic-title">
+                                <div class="fw-bold text-dark fs-3 mb-1 syllabus-topic-title">
                                     ${t.title}
                                 </div>
-                                <p class="text-muted small mb-0 syllabus-topic-outline">
-                                    ${t.outline}
-                                </p>
+                                <div class="syllabus-topic-outline ps-1 pt-1">
+                                    ${pointsHtml}
+                                </div>
                             </div>
                         </div>
                     </div>

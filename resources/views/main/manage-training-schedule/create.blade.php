@@ -151,27 +151,34 @@
                             </button>
                         </div>
                         <div class="card-body p-4">
-                            <div class="d-flex flex-column gap-3" id="syllabusPointsContainer">
+                            <!-- Minimalist Header for Syllabus Builder -->
+                            <div class="d-none d-md-flex row g-2 px-2 pb-2 text-muted fw-bold extra-small text-uppercase border-bottom border-light-subtle">
+                                <div class="col-md-2">Item</div>
+                                <div class="col-md-4">Topic / Module Title</div>
+                                <div class="col-md-5">Highlights / Objectives</div>
+                                <div class="col-md-1 text-end">Action</div>
+                            </div>
+                            <div class="d-flex flex-column" id="syllabusPointsContainer">
                                 
                                 {{-- Initial Point 1 --}}
-                                <div class="card border border-light-subtle rounded-3 p-3 bg-light-subtle syllabus-point-card shadow-none">
+                                <div class="syllabus-point-row py-3 border-bottom border-light-subtle">
                                     <div class="row g-2 align-items-center">
                                         <div class="col-md-2 col-3">
-                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Point #</label>
-                                            <input type="text" class="form-control form-control-sm rounded-3 text-center fw-bold bg-white syllabus-point-num" value="Point 1" readonly>
+                                            <span class="badge rounded-pill fw-bold py-2 px-3 text-center d-block syllabus-point-badge" 
+                                                  style="background-color: #eef2ff; color: #003b6d; font-size: 0.82rem;">
+                                                Point 1
+                                            </span>
+                                            <input type="hidden" class="syllabus-point-num" value="Point 1">
                                         </div>
                                         <div class="col-md-4 col-9">
-                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Topic / Module Title</label>
-                                            <input type="text" class="form-control form-control-sm rounded-3 bg-white syllabus-title-input" 
-                                                   value="Introduction & Core Principles" placeholder="e.g. Module 1: Introduction">
+                                            <input type="text" class="form-control rounded-3 syllabus-title-input" 
+                                                   value="Introduction & Core Principles" placeholder="Topic / Module Title...">
                                         </div>
                                         <div class="col-md-5 col-10">
-                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Highlights / Description</label>
-                                            <input type="text" class="form-control form-control-sm rounded-3 bg-white syllabus-desc-input" 
-                                                   value="Foundational principles, corporate alignment, and objective review." placeholder="Key learning outcomes...">
+                                            <input type="text" class="form-control rounded-3 syllabus-desc-input" 
+                                                   value="Foundational principles, corporate alignment, and objective review." placeholder="Description Points / Key objectives...">
                                         </div>
                                         <div class="col-md-1 col-2 text-end">
-                                            <label class="form-label extra-small text-muted mb-1 d-none d-md-block">&nbsp;</label>
                                             <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-remove-point" title="Remove point" disabled>
                                                 <i class="ti ti-trash fs-2"></i>
                                             </button>
@@ -180,24 +187,24 @@
                                 </div>
 
                                 {{-- Initial Point 2 --}}
-                                <div class="card border border-light-subtle rounded-3 p-3 bg-light-subtle syllabus-point-card shadow-none">
+                                <div class="syllabus-point-row py-3 border-bottom border-light-subtle">
                                     <div class="row g-2 align-items-center">
                                         <div class="col-md-2 col-3">
-                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Point #</label>
-                                            <input type="text" class="form-control form-control-sm rounded-3 text-center fw-bold bg-white syllabus-point-num" value="Point 2" readonly>
+                                            <span class="badge rounded-pill fw-bold py-2 px-3 text-center d-block syllabus-point-badge" 
+                                                  style="background-color: #eef2ff; color: #003b6d; font-size: 0.82rem;">
+                                                Point 2
+                                            </span>
+                                            <input type="hidden" class="syllabus-point-num" value="Point 2">
                                         </div>
                                         <div class="col-md-4 col-9">
-                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Topic / Module Title</label>
-                                            <input type="text" class="form-control form-control-sm rounded-3 bg-white syllabus-title-input" 
-                                                   value="Practical Application & Case Studies" placeholder="e.g. Module 2: Case Studies">
+                                            <input type="text" class="form-control rounded-3 syllabus-title-input" 
+                                                   value="Practical Application & Case Studies" placeholder="Topic / Module Title...">
                                         </div>
                                         <div class="col-md-5 col-10">
-                                            <label class="form-label extra-small text-muted mb-1 fw-bold">Highlights / Description</label>
-                                            <input type="text" class="form-control form-control-sm rounded-3 bg-white syllabus-desc-input" 
-                                                   value="Interactive workshops, real case analysis, and group presentations." placeholder="Key learning outcomes...">
+                                            <input type="text" class="form-control rounded-3 syllabus-desc-input" 
+                                                   value="Interactive workshops, real case analysis, and group presentations." placeholder="Description Points / Key objectives...">
                                         </div>
                                         <div class="col-md-1 col-2 text-end">
-                                            <label class="form-label extra-small text-muted mb-1 d-none d-md-block">&nbsp;</label>
                                             <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-remove-point" title="Remove point">
                                                 <i class="ti ti-trash fs-2"></i>
                                             </button>
@@ -317,15 +324,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // Renumber syllabus points and manage delete button states
     function renumberPoints() {
         if (!pointsContainer) return;
-        const cards = pointsContainer.querySelectorAll('.syllabus-point-card');
-        cards.forEach((card, idx) => {
-            const numInput = card.querySelector('.syllabus-point-num');
+        const rows = pointsContainer.querySelectorAll('.syllabus-point-row');
+        rows.forEach((row, idx) => {
+            const badge = row.querySelector('.syllabus-point-badge');
+            if (badge) {
+                badge.textContent = `Point ${idx + 1}`;
+            }
+            const numInput = row.querySelector('.syllabus-point-num');
             if (numInput) {
                 numInput.value = `Point ${idx + 1}`;
             }
-            const delBtn = card.querySelector('.btn-remove-point');
+            const delBtn = row.querySelector('.btn-remove-point');
             if (delBtn) {
-                delBtn.disabled = (cards.length === 1 && idx === 0);
+                delBtn.disabled = (rows.length === 1 && idx === 0);
             }
         });
     }
@@ -333,33 +344,33 @@ document.addEventListener('DOMContentLoaded', function () {
     // Add new syllabus point
     if (btnAddPoint && pointsContainer) {
         btnAddPoint.addEventListener('click', function () {
-            const currentCount = pointsContainer.querySelectorAll('.syllabus-point-card').length;
+            const currentCount = pointsContainer.querySelectorAll('.syllabus-point-row').length;
             const newIndex = currentCount + 1;
-            const newCard = document.createElement('div');
-            newCard.className = 'card border border-light-subtle rounded-3 p-3 bg-light-subtle syllabus-point-card shadow-none';
-            newCard.innerHTML = `
+            const newRow = document.createElement('div');
+            newRow.className = 'syllabus-point-row py-3 border-bottom border-light-subtle';
+            newRow.innerHTML = `
                 <div class="row g-2 align-items-center">
                     <div class="col-md-2 col-3">
-                        <label class="form-label extra-small text-muted mb-1 fw-bold">Point #</label>
-                        <input type="text" class="form-control form-control-sm rounded-3 text-center fw-bold bg-white syllabus-point-num" value="Point ${newIndex}" readonly>
+                        <span class="badge rounded-pill fw-bold py-2 px-3 text-center d-block syllabus-point-badge" 
+                              style="background-color: #eef2ff; color: #003b6d; font-size: 0.82rem;">
+                            Point ${newIndex}
+                        </span>
+                        <input type="hidden" class="syllabus-point-num" value="Point ${newIndex}">
                     </div>
                     <div class="col-md-4 col-9">
-                        <label class="form-label extra-small text-muted mb-1 fw-bold">Topic / Module Title</label>
-                        <input type="text" class="form-control form-control-sm rounded-3 bg-white syllabus-title-input" placeholder="e.g. Advanced Practical Scenarios">
+                        <input type="text" class="form-control rounded-3 syllabus-title-input" placeholder="Topic / Module Title...">
                     </div>
                     <div class="col-md-5 col-10">
-                        <label class="form-label extra-small text-muted mb-1 fw-bold">Highlights / Description</label>
-                        <input type="text" class="form-control form-control-sm rounded-3 bg-white syllabus-desc-input" placeholder="Key learning outcomes...">
+                        <input type="text" class="form-control rounded-3 syllabus-desc-input" placeholder="Description Points / Key objectives...">
                     </div>
                     <div class="col-md-1 col-2 text-end">
-                        <label class="form-label extra-small text-muted mb-1 d-none d-md-block">&nbsp;</label>
                         <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-remove-point" title="Remove point">
                             <i class="ti ti-trash fs-2"></i>
                         </button>
                     </div>
                 </div>
             `;
-            pointsContainer.appendChild(newCard);
+            pointsContainer.appendChild(newRow);
             renumberPoints();
         });
 
@@ -367,9 +378,9 @@ document.addEventListener('DOMContentLoaded', function () {
         pointsContainer.addEventListener('click', function (e) {
             const delBtn = e.target.closest('.btn-remove-point');
             if (delBtn && !delBtn.disabled) {
-                const card = delBtn.closest('.syllabus-point-card');
-                if (card) {
-                    card.remove();
+                const row = delBtn.closest('.syllabus-point-row');
+                if (row) {
+                    row.remove();
                     renumberPoints();
                 }
             }

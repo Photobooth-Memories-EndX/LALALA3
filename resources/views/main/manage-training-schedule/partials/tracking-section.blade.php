@@ -30,8 +30,8 @@
             </ul>
 
             <button type="button" class="btn btn-outline-secondary rounded-3 px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1" id="btnExportInlineRoster">
-                <i class="ti ti-file-export fs-2"></i>
-                <span>Export Roster</span>
+                <i class="ti ti-download me-1 fs-2"></i>
+                <span>Download Roster</span>
             </button>
         </div>
     </div>
@@ -97,13 +97,13 @@
                     <table class="table table-vcenter table-hover align-middle mb-0" id="tableInlineByTraining">
                         <thead>
                             <tr class="text-muted extra-small text-uppercase fw-bold" style="background-color: #f8fafc;">
-                                <th class="w-1 text-center py-2-5">NO</th>
-                                <th class="py-2-5">EMPLOYEE</th>
-                                <th class="py-2-5">NIP</th>
-                                <th class="py-2-5">DEPARTMENT</th>
-                                <th class="py-2-5">REGISTRATION DATE</th>
-                                <th class="py-2-5 text-center">STATUS</th>
-                                <th class="text-end py-2-5 pe-3">ACTIONS</th>
+                                <th class="w-1 text-center align-middle py-2-5">NO</th>
+                                <th class="text-center align-middle py-2-5">EMPLOYEE</th>
+                                <th class="text-center align-middle py-2-5">NIP</th>
+                                <th class="text-center align-middle py-2-5">DEPARTMENT</th>
+                                <th class="text-center align-middle py-2-5">REGISTRATION DATE</th>
+                                <th class="text-center align-middle py-2-5">STATUS</th>
+                                <th class="text-center align-middle py-2-5">ACTIONS</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y" id="tbodyInlineByTraining">
@@ -159,13 +159,13 @@
                     <table class="table table-vcenter table-hover align-middle mb-0" id="tableInlineByEmployee">
                         <thead>
                             <tr class="text-muted extra-small text-uppercase fw-bold" style="background-color: #f8fafc;">
-                                <th class="w-1 text-center py-2-5">NO</th>
-                                <th class="py-2-5">TRAINING TITLE</th>
-                                <th class="py-2-5">CATEGORY</th>
-                                <th class="py-2-5">SCHEDULE DATE</th>
-                                <th class="py-2-5">SUBMITTED ON</th>
-                                <th class="py-2-5 text-center">STATUS</th>
-                                <th class="text-end py-2-5 pe-3">ACTION</th>
+                                <th class="w-1 text-center align-middle py-2-5">NO</th>
+                                <th class="text-center align-middle py-2-5">TRAINING TITLE</th>
+                                <th class="text-center align-middle py-2-5">CATEGORY</th>
+                                <th class="text-center align-middle py-2-5">SCHEDULE DATE</th>
+                                <th class="text-center align-middle py-2-5">SUBMITTED ON</th>
+                                <th class="text-center align-middle py-2-5">STATUS</th>
+                                <th class="text-center align-middle py-2-5">ACTION</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y" id="tbodyInlineByEmployee">
@@ -315,21 +315,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 html += `
                     <tr class="inline-participant-row">
-                        <td class="text-center text-muted fw-semibold">${p.no}</td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="avatar avatar-sm rounded-circle bg-${p.color}-subtle text-${p.color} fw-bold">${p.initials}</div>
+                        <td class="text-center align-middle text-muted fw-semibold">${p.no}</td>
+                        <td class="text-center align-middle">
+                            <div class="d-inline-flex align-items-center text-start gap-2">
+                                <div class="avatar avatar-sm rounded-circle bg-${p.color}-subtle text-${p.color} fw-bold flex-shrink-0">${p.initials}</div>
                                 <div>
                                     <div class="fw-bold text-dark small">${p.name}</div>
                                     <div class="extra-small text-muted">${p.email}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="small fw-semibold text-secondary">${p.nip}</td>
-                        <td class="small text-dark">${p.dept}</td>
-                        <td class="small text-muted">${p.date}</td>
-                        <td class="text-center inline-status-cell">${statusBadge}</td>
-                        <td class="text-end pe-3 inline-action-cell">${actionContent}</td>
+                        <td class="text-center align-middle small fw-semibold text-secondary">${p.nip}</td>
+                        <td class="text-center align-middle small text-dark">${p.dept}</td>
+                        <td class="text-center align-middle small text-muted">${p.date}</td>
+                        <td class="text-center align-middle inline-status-cell">${statusBadge}</td>
+                        <td class="text-center align-middle inline-action-cell">${actionContent}</td>
                     </tr>
                 `;
             });
@@ -383,18 +383,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 html += `
                     <tr class="inline-employee-row">
-                        <td class="text-center text-muted fw-semibold">${t.no}</td>
-                        <td>
+                        <td class="text-center align-middle text-muted fw-semibold">${t.no}</td>
+                        <td class="text-center align-middle">
                             <div class="fw-bold text-dark small">${t.title}</div>
                             <div class="extra-small text-muted">Code: ${t.code}</div>
                         </td>
-                        <td>
+                        <td class="text-center align-middle">
                             <span class="badge rounded-pill px-2-5 py-0-5 fw-semibold" style="background-color: ${t.catBg}; color: ${t.catCol};">${t.cat}</span>
                         </td>
-                        <td class="small text-dark">${t.date}</td>
-                        <td class="small text-muted">${t.sub}</td>
-                        <td class="text-center emp-status-cell">${badge}</td>
-                        <td class="text-end pe-3 emp-action-cell">${actionHtml}</td>
+                        <td class="text-center align-middle small text-dark">${t.date}</td>
+                        <td class="text-center align-middle small text-muted">${t.sub}</td>
+                        <td class="text-center align-middle emp-status-cell">${badge}</td>
+                        <td class="text-center align-middle emp-action-cell">${actionHtml}</td>
                     </tr>
                 `;
             });
@@ -574,20 +574,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Export Roster Button
+    // Download Roster Button
     const btnExport = document.getElementById('btnExportInlineRoster');
     if (btnExport) {
         btnExport.addEventListener('click', function () {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Roster Exported',
-                    text: 'Participant list exported to Excel (CSV format).',
+                    title: 'Roster Downloaded',
+                    text: 'Participant list downloaded as CSV / Excel format.',
                     timer: 2000,
                     showConfirmButton: false
                 });
             } else {
-                alert('Participant roster exported!');
+                alert('Participant roster downloaded!');
             }
         });
     }
