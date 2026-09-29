@@ -57,28 +57,24 @@
                     <th class="w-1 text-center py-3">NO</th>
                     <th class="py-3">TRAINING NAME</th>
                     <th class="py-3">CATEGORY</th>
-                    <th class="py-3">SCHEDULE DATE</th>
+                    <th class="py-3">DATE</th>
+                    <th class="py-3">TIME</th>
                     <th class="py-3">LOCATION</th>
                     <th class="py-3 text-center">APPROVED PARTICIPANT</th>
-                    <th class="py-3 text-center">REGISTRATION</th>
+                    <th class="py-3 text-center">STATUS</th>
                     <th class="text-end py-3 pe-4">ACTION</th>
                 </tr>
             </thead>
             <tbody class="divide-y">
                 {{-- Row 1 --}}
-                <tr class="training-table-row" data-id="1" data-category="Soft Skill" data-status="open">
+                <tr class="training-table-row" data-id="1" data-category="Soft Skill" data-status="open" data-instructor="Dr. Hendra Wijaya, M.M.">
                     <td class="text-center text-muted fw-semibold">1</td>
                     <td>
                         <div class="d-flex align-items-center gap-3">
                             <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #eef2ff; color: #003b6d;">
                                 <i class="ti ti-school fs-2"></i>
                             </div>
-                            <div>
-                                <div class="fw-bold text-dark fs-3">Leadership Development Program</div>
-                                <div class="text-muted extra-small">
-                                    <i class="ti ti-user fs-2 me-1"></i>Instructor: <span class="fw-medium text-dark">Dr. Hendra Wijaya, M.M.</span>
-                                </div>
-                            </div>
+                            <div class="fw-bold text-dark fs-3">Leadership Development Program</div>
                         </div>
                     </td>
                     <td>
@@ -88,7 +84,9 @@
                     </td>
                     <td>
                         <div class="fw-semibold text-dark">18 Sep 2026</div>
-                        <div class="text-muted extra-small">08:00 - 16:00 WIB</div>
+                    </td>
+                    <td>
+                        <div class="text-muted small">08:00 - 16:00 WIB</div>
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-1 text-muted small">
@@ -115,19 +113,14 @@
                 </tr>
 
                 {{-- Row 2 --}}
-                <tr class="training-table-row" data-id="2" data-category="Technical Skill" data-status="open">
+                <tr class="training-table-row" data-id="2" data-category="Technical Skill" data-status="open" data-instructor="Bambang Sujarwo, S.Kom.">
                     <td class="text-center text-muted fw-semibold">2</td>
                     <td>
                         <div class="d-flex align-items-center gap-3">
                             <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #e0f2fe; color: #0284c7;">
                                 <i class="ti ti-file-spreadsheet fs-2"></i>
                             </div>
-                            <div>
-                                <div class="fw-bold text-dark fs-3">Excel Advanced for Data Analysis</div>
-                                <div class="text-muted extra-small">
-                                    <i class="ti ti-user fs-2 me-1"></i>Instructor: <span class="fw-medium text-dark">Bambang Sujarwo, S.Kom.</span>
-                                </div>
-                            </div>
+                            <div class="fw-bold text-dark fs-3">Excel Advanced for Data Analysis</div>
                         </div>
                     </td>
                     <td>
@@ -137,7 +130,9 @@
                     </td>
                     <td>
                         <div class="fw-semibold text-dark">18 Sep 2026</div>
-                        <div class="text-muted extra-small">09:00 - 15:00 WIB</div>
+                    </td>
+                    <td>
+                        <div class="text-muted small">09:00 - 15:00 WIB</div>
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-1 text-muted small">
@@ -164,19 +159,14 @@
                 </tr>
 
                 {{-- Row 3 --}}
-                <tr class="training-table-row" data-id="3" data-category="Compliance & Safety" data-status="open">
+                <tr class="training-table-row" data-id="3" data-category="Compliance & Safety" data-status="open" data-instructor="Ir. Agus Priyono, CSP">
                     <td class="text-center text-muted fw-semibold">3</td>
                     <td>
                         <div class="d-flex align-items-center gap-3">
                             <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #fef3c7; color: #d97706;">
                                 <i class="ti ti-shield-check fs-2"></i>
                             </div>
-                            <div>
-                                <div class="fw-bold text-dark fs-3">K3 & Safety Awareness in Factory</div>
-                                <div class="text-muted extra-small">
-                                    <i class="ti ti-user fs-2 me-1"></i>Instructor: <span class="fw-medium text-dark">Ir. Agus Priyono, CSP</span>
-                                </div>
-                            </div>
+                            <div class="fw-bold text-dark fs-3">K3 & Safety Awareness in Factory</div>
                         </div>
                     </td>
                     <td>
@@ -186,7 +176,9 @@
                     </td>
                     <td>
                         <div class="fw-semibold text-dark">25 Sep 2026</div>
-                        <div class="text-muted extra-small">08:00 - 11:30 WIB</div>
+                    </td>
+                    <td>
+                        <div class="text-muted small">08:00 - 11:30 WIB</div>
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-1 text-muted small">
@@ -213,19 +205,14 @@
                 </tr>
 
                 {{-- Row 4 --}}
-                <tr class="training-table-row" data-id="4" data-category="Soft Skill" data-status="closed">
+                <tr class="training-table-row" data-id="4" data-category="Soft Skill" data-status="closed" data-instructor="Citra Lestari, M.Psi.">
                     <td class="text-center text-muted fw-semibold">4</td>
                     <td>
                         <div class="d-flex align-items-center gap-3">
                             <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #f1f5f9; color: #64748b;">
                                 <i class="ti ti-message-dots fs-2"></i>
                             </div>
-                            <div>
-                                <div class="fw-bold text-dark fs-3">Effective Business Communication</div>
-                                <div class="text-muted extra-small">
-                                    <i class="ti ti-user fs-2 me-1"></i>Instructor: <span class="fw-medium text-dark">Citra Lestari, M.Psi.</span>
-                                </div>
-                            </div>
+                            <div class="fw-bold text-dark fs-3">Effective Business Communication</div>
                         </div>
                     </td>
                     <td>
@@ -235,7 +222,9 @@
                     </td>
                     <td>
                         <div class="fw-semibold text-dark">29 Sep 2026</div>
-                        <div class="text-muted extra-small">13:00 - 17:00 WIB</div>
+                    </td>
+                    <td>
+                        <div class="text-muted small">13:00 - 17:00 WIB</div>
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-1 text-muted small">

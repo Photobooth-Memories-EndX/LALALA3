@@ -742,7 +742,8 @@
                 const rowCat = row.getAttribute('data-category') || '';
                 const rowStatus = row.getAttribute('data-status') || '';
 
-                const matchesSearch = !query || text.includes(query);
+                const rowInstructor = (row.getAttribute('data-instructor') || '').toLowerCase();
+                const matchesSearch = !query || text.includes(query) || rowInstructor.includes(query);
                 const matchesCategory = !category || rowCat === category;
                 const matchesStatus = !status || rowStatus === status;
 
