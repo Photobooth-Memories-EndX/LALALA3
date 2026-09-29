@@ -214,11 +214,15 @@ class OfflineTrainingCreateTest extends TestCase
         $response->assertSee('id="res-l3-verbal"', false);
         $response->assertSee('id="res-pic"', false);
 
-        // Section 4: Review Summary cards
-        $response->assertSee('id="rev-course"', false);
+        // Section 4: Full Record Preview Table (replaces old summary cards)
+        $response->assertSee('id="offline-review-record-table"', false);
+        $response->assertSee('id="offline-review-tbody"', false);
         $response->assertSee('id="rev-part-count"', false);
-        $response->assertSee('id="rev-metric-total"', false);
-        $response->assertSee('id="rev-metric-finished"', false);
+        $response->assertSee('id="rev-footer-summary"', false);
+        $response->assertSee('id="btn-review-edit-1"', false);
+        $response->assertSee('id="btn-review-edit-2"', false);
+        $response->assertSee('id="btn-review-edit-3"', false);
+        $response->assertSee('Full Record Preview');
     }
 
     /**
@@ -639,4 +643,48 @@ class OfflineTrainingCreateTest extends TestCase
         $response->assertSee('id="btn-download-offline-template"', false);
         $response->assertSee(route('manage.record.offline.import.template'), false);
     }
+
+    /**
+     * 14. Test Step 4 Review & Save renders full 44-column canonical record preview table with zero database writes.
+     */
+    public function test_step_4_review_renders_full_44_column_canonical_record_preview_table_with_zero_database_writes(): void
+    {
+        $trainingsCountBefore = \Illuminate\Support\Facades\DB::table('offline_trainings')->count();
+        $participantsCountBefore = \Illuminate\Support\Facades\DB::table('offline_training_users')->count();
+
+        $response = $this->actingAs($this->admin)->get(route('manage.record.offline.create'));
+
+        $response->assertStatus(200);
+
+        // Assert Step 4 table structure
+        $response->assertSee('id="offline-review-record-table"', false);
+        $response->assertSee('id="offline-review-tbody"', false);
+        $response->assertSee('Full Record Preview');
+        $response->assertSee('44 Columns');
+        $response->assertSee('id="rev-part-count-badge"', false);
+        $response->assertSee('id="rev-empty-state"', false);
+
+        // Assert all 44 canonical data-col-index attributes are rendered in header
+        for ($col = 1; $col <= 44; $col++) {
+            $response->assertSee('data-col-index="' . $col . '"', false);
+        }
+
+        // Assert Sticky column classes exist for Col 1 (No), Col 2 (ID), Col 3 (Participant Name)
+        $response->assertSee('sticky-col-1', false);
+        $response->assertSee('sticky-col-2', false);
+        $response->assertSee('sticky-col-3', false);
+
+        // Assert navigation edit buttons
+        $response->assertSee('id="btn-review-edit-1"', false);
+        $response->assertSee('id="btn-review-edit-2"', false);
+        $response->assertSee('id="btn-review-edit-3"', false);
+
+        // Assert ZERO database writes occurred during preview
+        $trainingsCountAfter = \Illuminate\Support\Facades\DB::table('offline_trainings')->count();
+        $participantsCountAfter = \Illuminate\Support\Facades\DB::table('offline_training_users')->count();
+
+        $this->assertEquals($trainingsCountBefore, $trainingsCountAfter, 'Zero offline_trainings records must be written during preview.');
+        $this->assertEquals($participantsCountBefore, $participantsCountAfter, 'Zero offline_training_users records must be written during preview.');
+    }
 }
+

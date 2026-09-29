@@ -12,6 +12,7 @@ use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
 use App\Services\Record\OfflineTrainingCreateService;
 use App\Services\Record\OfflineTrainingUpdateService;
+use App\Services\Record\OfflineTrainingExcelSchema;
 use App\Services\Record\RecordOfflineQueryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -63,6 +64,8 @@ class RecordOfflineController extends Controller
             'subtitle'            => 'Create an offline employee training record.',
             'trainingTypes'       => self::TRAINING_TYPES,
             'mainClassifications' => self::MAIN_CLASSIFICATIONS,
+            'schemaColumns'       => OfflineTrainingExcelSchema::columns(),
+            'schemaGroups'        => OfflineTrainingExcelSchema::groups(),
         ]);
     }
 

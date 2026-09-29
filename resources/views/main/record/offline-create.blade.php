@@ -93,6 +93,203 @@
     body.theme-dark .bg-light-subtle {
         background-color: #111827 !important;
     }
+
+    /* ============================================================= */
+    /* STEP 4 REVIEW & SAVE — FULL RECORD PREVIEW TABLE STYLING      */
+    /* ============================================================= */
+    .offline-review-scroll-wrapper {
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        max-height: 560px;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        position: relative;
+    }
+
+    .offline-review-scroll-wrapper::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    .offline-review-scroll-wrapper::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    .offline-review-scroll-wrapper::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    .offline-review-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    #offline-review-record-table {
+        font-size: 13px;
+        width: max-content !important;
+        min-width: 100% !important;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    #offline-review-record-table thead th {
+        background: #f8fafc;
+        color: #334155;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        white-space: nowrap !important;
+        vertical-align: bottom;
+        padding: 8px 12px;
+        border-bottom: 2px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+    }
+
+    #offline-review-record-table thead th .col-group-label {
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: .05em;
+        color: #94a3b8;
+        line-height: 1.2;
+        margin-bottom: 2px;
+    }
+
+    #offline-review-record-table thead th .col-title {
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    #offline-review-record-table tbody td {
+        vertical-align: middle;
+        padding: 9px 12px;
+        white-space: nowrap !important;
+        border-bottom: 1px solid #f1f5f9;
+        background-color: inherit;
+    }
+
+    /* Sticky Columns: No (1), ID (2), Participant (3) */
+    #offline-review-record-table .sticky-col {
+        position: sticky !important;
+    }
+
+    #offline-review-record-table th.sticky-col-1,
+    #offline-review-record-table td.sticky-col-1 {
+        left: 0;
+        width: 50px;
+        min-width: 50px;
+        max-width: 50px;
+    }
+
+    #offline-review-record-table th.sticky-col-2,
+    #offline-review-record-table td.sticky-col-2 {
+        left: 50px;
+        width: 110px;
+        min-width: 110px;
+    }
+
+    #offline-review-record-table th.sticky-col-3,
+    #offline-review-record-table td.sticky-col-3 {
+        left: 160px;
+        width: 190px;
+        min-width: 190px;
+        border-right: 2px solid #e2e8f0 !important;
+    }
+
+    #offline-review-record-table thead th.sticky-col {
+        z-index: 10;
+        background: #f8fafc;
+    }
+
+    #offline-review-record-table tbody td.sticky-col {
+        z-index: 3;
+    }
+
+    #offline-review-record-table tbody tr:nth-of-type(odd) td.sticky-col {
+        background: #ffffff;
+    }
+
+    #offline-review-record-table tbody tr:nth-of-type(even) td.sticky-col {
+        background: #fbfcfd;
+    }
+
+    #offline-review-record-table tbody tr:hover td.sticky-col {
+        background: #f1f5f9;
+    }
+
+    /* DARK MODE OVERRIDES FOR REVIEW TABLE */
+    [data-bs-theme="dark"] .offline-review-scroll-wrapper,
+    body.dark-mode .offline-review-scroll-wrapper,
+    body.theme-dark .offline-review-scroll-wrapper {
+        border-color: #334155 !important;
+        background-color: var(--tblr-bg-surface, #1f2937) !important;
+    }
+
+    [data-bs-theme="dark"] .offline-review-scroll-wrapper::-webkit-scrollbar-track,
+    body.dark-mode .offline-review-scroll-wrapper::-webkit-scrollbar-track,
+    body.theme-dark .offline-review-scroll-wrapper::-webkit-scrollbar-track {
+        background: #111827;
+    }
+    [data-bs-theme="dark"] .offline-review-scroll-wrapper::-webkit-scrollbar-thumb,
+    body.dark-mode .offline-review-scroll-wrapper::-webkit-scrollbar-thumb,
+    body.theme-dark .offline-review-scroll-wrapper::-webkit-scrollbar-thumb {
+        background: #475569;
+    }
+
+    [data-bs-theme="dark"] #offline-review-record-table thead th,
+    body.dark-mode #offline-review-record-table thead th,
+    body.theme-dark #offline-review-record-table thead th {
+        background: #1e293b !important;
+        color: #94a3b8 !important;
+        border-bottom-color: #334155 !important;
+    }
+
+    [data-bs-theme="dark"] #offline-review-record-table thead th .col-title,
+    body.dark-mode #offline-review-record-table thead th .col-title,
+    body.theme-dark #offline-review-record-table thead th .col-title {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] #offline-review-record-table thead th.sticky-col,
+    body.dark-mode #offline-review-record-table thead th.sticky-col,
+    body.theme-dark #offline-review-record-table thead th.sticky-col {
+        background: #1e293b !important;
+    }
+
+    [data-bs-theme="dark"] #offline-review-record-table tbody td,
+    body.dark-mode #offline-review-record-table tbody td,
+    body.theme-dark #offline-review-record-table tbody td {
+        border-bottom-color: #334155 !important;
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] #offline-review-record-table th.sticky-col-3,
+    [data-bs-theme="dark"] #offline-review-record-table td.sticky-col-3,
+    body.dark-mode #offline-review-record-table th.sticky-col-3,
+    body.dark-mode #offline-review-record-table td.sticky-col-3,
+    body.theme-dark #offline-review-record-table th.sticky-col-3,
+    body.theme-dark #offline-review-record-table td.sticky-col-3 {
+        border-right-color: #334155 !important;
+    }
+
+    [data-bs-theme="dark"] #offline-review-record-table tbody tr:nth-of-type(odd) td.sticky-col,
+    body.dark-mode #offline-review-record-table tbody tr:nth-of-type(odd) td.sticky-col,
+    body.theme-dark #offline-review-record-table tbody tr:nth-of-type(odd) td.sticky-col {
+        background: #1f2937 !important;
+    }
+
+    [data-bs-theme="dark"] #offline-review-record-table tbody tr:nth-of-type(even) td.sticky-col,
+    body.dark-mode #offline-review-record-table tbody tr:nth-of-type(even) td.sticky-col,
+    body.theme-dark #offline-review-record-table tbody tr:nth-of-type(even) td.sticky-col {
+        background: #1a2234 !important;
+    }
+
+    [data-bs-theme="dark"] #offline-review-record-table tbody tr:hover td.sticky-col,
+    body.dark-mode #offline-review-record-table tbody tr:hover td.sticky-col,
+    body.theme-dark #offline-review-record-table tbody tr:hover td.sticky-col {
+        background: #2d3748 !important;
+    }
 </style>
 @endsection
 

@@ -480,88 +480,118 @@
     <!-- ============================================================= -->
     <div class="card border-0 shadow-sm rounded-3 mb-4 form-section" id="section-4-review">
         <div class="card-body p-3 p-md-4">
-            <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">4</span>
-                <h4 class="fw-bold mb-0 text-dark">Review &amp; Save</h4>
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">4</span>
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">Review &amp; Save</h4>
+                        <div class="text-muted small">Review all information before saving to the database.</div>
+                    </div>
+                </div>
+
+                <!-- Compact Section Navigation / Edit Buttons -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center gap-1.5" id="btn-review-edit-1" title="Go to Training Information">
+                        <i class="ti ti-edit"></i>
+                        <span>Edit Training</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center gap-1.5" id="btn-review-edit-2" title="Go to Participants">
+                        <i class="ti ti-users"></i>
+                        <span>Edit Participants</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-2 d-inline-flex align-items-center gap-1.5" id="btn-review-edit-3" title="Go to Learning Results">
+                        <i class="ti ti-clipboard-check"></i>
+                        <span>Edit Results</span>
+                    </button>
+                </div>
             </div>
-            <p class="text-muted small mb-3">Review all information before saving to the database.</p>
 
-            <div class="row g-3">
-                <!-- CARD 1: TRAINING INFORMATION SUMMARY -->
-                <div class="col-12 col-lg-6">
-                    <div class="card h-100 border shadow-none rounded-3">
-                        <div class="card-header bg-light-subtle py-2 px-3 d-flex align-items-center justify-content-between">
-                            <span class="fw-bold small text-dark">Training Information</span>
-                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" id="btn-review-edit-1">Edit</button>
-                        </div>
-                        <div class="card-body p-3 extra-small">
-                            <table class="table table-sm table-borderless mb-0">
-                                <tr><th class="text-muted p-1" style="width: 130px;">Course:</th><td class="fw-semibold text-dark p-1" id="rev-course">-</td></tr>
-                                <tr><th class="text-muted p-1">Batch:</th><td class="text-dark p-1" id="rev-batch">-</td></tr>
-                                <tr><th class="text-muted p-1">Classification:</th><td class="text-dark p-1" id="rev-classification">-</td></tr>
-                                <tr><th class="text-muted p-1">Delivery:</th><td class="text-dark p-1" id="rev-delivery">-</td></tr>
-                                <tr><th class="text-muted p-1">Provider:</th><td class="text-dark p-1" id="rev-provider">-</td></tr>
-                                <tr><th class="text-muted p-1">Schedule:</th><td class="text-dark p-1" id="rev-schedule">-</td></tr>
-                                <tr><th class="text-muted p-1">Learning Hours:</th><td class="text-dark p-1" id="rev-hours">-</td></tr>
-                                <tr><th class="text-muted p-1">Venue / Room:</th><td class="text-dark p-1" id="rev-venue">-</td></tr>
-                                <tr><th class="text-muted p-1">Instructor:</th><td class="text-dark p-1" id="rev-instructor">-</td></tr>
-                            </table>
-                        </div>
-                    </div>
+            <!-- PREVIEW META HEADER -->
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-1.5">
+                        <i class="ti ti-table text-primary"></i>
+                        <span>Full Record Preview</span>
+                    </h5>
+                    <span class="badge bg-light text-secondary border px-2 py-1" id="rev-table-columns-count">44 Columns</span>
                 </div>
-
-                <!-- CARD 2: PARTICIPANTS SUMMARY -->
-                <div class="col-12 col-lg-6">
-                    <div class="card h-100 border shadow-none rounded-3">
-                        <div class="card-header bg-light-subtle py-2 px-3 d-flex align-items-center justify-content-between">
-                            <span class="fw-bold small text-dark">Participants (<span id="rev-part-count">0</span>)</span>
-                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" id="btn-review-edit-2">Edit</button>
-                        </div>
-                        <div class="card-body p-3 extra-small" style="max-height: 250px; overflow-y: auto;">
-                            <ol class="ps-3 mb-0" id="rev-part-list">
-                                <li class="text-muted">No participants added</li>
-                            </ol>
-                        </div>
-                    </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-blue-lt fw-semibold px-2.5 py-1.5" id="rev-part-count-badge">
+                        <span id="rev-part-count">0</span> Participant Records
+                    </span>
                 </div>
+            </div>
 
-                <!-- CARD 3: RESULT SUMMARY METRICS -->
-                <div class="col-12">
-                    <div class="card border shadow-none rounded-3">
-                        <div class="card-header bg-light-subtle py-2 px-3 d-flex align-items-center justify-content-between">
-                            <span class="fw-bold small text-dark">Result Summary</span>
-                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" id="btn-review-edit-3">Edit</button>
-                        </div>
-                        <div class="card-body p-3 extra-small">
-                            <div class="row g-2 text-center">
-                                <div class="col-6 col-sm-3 col-md-2 p-2 border-end">
-                                    <div class="text-muted mb-1">Participants</div>
-                                    <div class="fw-bold fs-3 text-dark" id="rev-metric-total">0</div>
-                                </div>
-                                <div class="col-6 col-sm-3 col-md-2 p-2 border-end">
-                                    <div class="text-muted mb-1">Attendance</div>
-                                    <div class="fw-bold text-success" id="rev-metric-att-yes">0 Yes</div>
-                                    <div class="text-danger extra-small" id="rev-metric-att-no">0 No</div>
-                                </div>
-                                <div class="col-6 col-sm-3 col-md-2 p-2 border-end">
-                                    <div class="text-muted mb-1">Finished</div>
-                                    <div class="fw-bold text-success fs-3" id="rev-metric-finished">0</div>
-                                </div>
-                                <div class="col-6 col-sm-3 col-md-2 p-2 border-end">
-                                    <div class="text-muted mb-1">Ongoing</div>
-                                    <div class="fw-bold text-warning fs-3" id="rev-metric-ongoing">0</div>
-                                </div>
-                                <div class="col-6 col-sm-3 col-md-2 p-2 border-end">
-                                    <div class="text-muted mb-1">Avg Assessment</div>
-                                    <div class="fw-bold text-primary fs-3" id="rev-metric-avg-score">-</div>
-                                </div>
-                                <div class="col-6 col-sm-3 col-md-2 p-2">
-                                    <div class="text-muted mb-1">Bond Obligations</div>
-                                    <div class="fw-bold text-dark fs-3" id="rev-metric-bond">0</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- EMPTY PARTICIPANT ALERT -->
+            <div id="rev-empty-state" class="alert alert-warning border-0 rounded-3 py-4 text-center my-3" style="display: none;">
+                <div class="avatar avatar-md rounded-circle mx-auto mb-2" style="background-color: #fef3c7; color: #d97706; width: 48px; height: 48px;">
+                    <i class="ti ti-users-minus fs-2"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-1">No participants have been added</h5>
+                <p class="text-muted small mb-3">Please enroll at least one participant in Section 2 to preview the full record rows.</p>
+                <button type="button" class="btn btn-sm btn-primary rounded-2 px-3" id="btn-review-empty-edit-part">
+                    <i class="ti ti-user-plus me-1"></i> Edit Participants
+                </button>
+            </div>
+
+            <!-- HORIZONTAL SCROLL RECORD TABLE WRAPPER -->
+            <div id="rev-table-container" class="table-responsive offline-review-scroll-wrapper rounded-3 bg-white mb-2 position-relative">
+                <table class="table table-hover table-striped align-middle mb-0" id="offline-review-record-table">
+                    <thead>
+                        <tr>
+                            @php
+                                $schemaCols = $schemaColumns ?? \App\Services\Record\OfflineTrainingExcelSchema::columns();
+                            @endphp
+                            @foreach($schemaCols as $col)
+                                @php
+                                    $colIdx = $col['col_index'];
+                                    $header = $col['header'];
+                                    $group = $col['group'] ?? '';
+                                    $align = in_array($col['type'], ['number', 'date', 'duration', 'boolean']) ? 'text-center' : 'text-start';
+                                    if ($colIdx === 1) $align = 'text-center';
+                                    if ($col['key'] === 'bond_amount') $align = 'text-end';
+
+                                    $stickyClass = '';
+                                    if ($colIdx === 1) $stickyClass = 'sticky-col sticky-col-1';
+                                    elseif ($colIdx === 2) $stickyClass = 'sticky-col sticky-col-2';
+                                    elseif ($colIdx === 3) $stickyClass = 'sticky-col sticky-col-3';
+
+                                    $displayHeader = $header;
+                                    if ($colIdx === 1) $displayHeader = 'NO';
+                                    elseif ($colIdx === 2) $displayHeader = 'ID (NIP)';
+                                    elseif ($colIdx === 3) $displayHeader = 'PARTICIPANT NAME';
+                                    elseif ($colIdx === 39) $displayHeader = 'L1 PROGRAM';
+                                    elseif ($colIdx === 40) $displayHeader = 'L2 NUMERICAL';
+                                    elseif ($colIdx === 41) $displayHeader = 'L2 VERBAL';
+                                    elseif ($colIdx === 42) $displayHeader = 'L3 NUMERICAL';
+                                    elseif ($colIdx === 43) $displayHeader = 'L3 VERBAL';
+                                @endphp
+                                <th class="{{ $align }} {{ $stickyClass }}" data-col-index="{{ $colIdx }}" title="{{ $col['note'] ?? $header }}">
+                                    @if(!empty($group))
+                                        <div class="col-group-label">{{ $group }}</div>
+                                    @else
+                                        <div class="col-group-label">&nbsp;</div>
+                                    @endif
+                                    <div class="col-title">{{ $displayHeader }}</div>
+                                </th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody id="offline-review-tbody">
+                        <!-- Populated dynamically via JS: 1 row per participant with training data repeated -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TABLE FOOTER STATUS / SCROLL HINT -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 text-muted small pt-1">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-info-circle text-primary"></i>
+                    <span id="rev-footer-summary">0 participant records ready to save</span>
+                </div>
+                <div class="d-flex align-items-center gap-1 extra-small text-secondary">
+                    <i class="ti ti-arrows-left-right"></i>
+                    <span>Scroll horizontally to review all 44 canonical columns</span>
                 </div>
             </div>
         </div>

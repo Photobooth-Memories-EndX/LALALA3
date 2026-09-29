@@ -494,106 +494,214 @@
             }, 2000);
         });
 
-        // --- Section 4: Dynamic Review Update ---
-        function updateSection4Review() {
-            // Training Info Card
-            $('#rev-course').text($('#add-course-name').val() || '-');
-            $('#rev-batch').text($('#add-batch').val() || '-');
-
-            const mainClass = $('#add-main-classification').val();
-            const subClass = $('#add-sub-classification').val();
-            $('#rev-classification').text(mainClass ? (subClass ? `${mainClass} (${subClass})` : mainClass) : '-');
-
-            const delivery = $('#add-delivery-method').val();
-            const subDelivery = $('#add-sub-delivery-method').val();
-            $('#rev-delivery').text(delivery ? (subDelivery ? `${delivery} (${subDelivery})` : delivery) : '-');
-
-            const provider = $('#add-provider').val();
-            const providerName = $('#add-provider-name').val();
-            $('#rev-provider').text(provider ? (providerName ? `${provider} - ${providerName}` : provider) : '-');
-
-            const start = $('#add-start-date').val();
-            const finish = $('#add-finish-date').val();
-            const month = $('#add-month').val();
-            $('#rev-schedule').text((start || finish) ? `${start || '-'} ~ ${finish || '-'} ${month ? '(' + month + ')' : ''}` : '-');
-
-            const hours = $('#add-learning-hours').val();
-            const dur = $('#add-duration').val();
-            $('#rev-hours').text(hours ? `${hours} hrs ${dur ? '(' + dur + ')' : ''}` : '-');
-
-            $('#rev-venue').text($('#add-venue').val() || '-');
-            $('#rev-instructor').text($('#add-instructor').val() || '-');
-
-            // Participants List Card
-            const total = addParticipants.length;
-            $('#rev-part-count').text(total);
-            if (total === 0) {
-                $('#rev-part-list').html('<li class="text-muted">No participants added</li>');
-            } else {
-                let listHtml = '';
-                addParticipants.forEach(function (p) {
-                    listHtml += `<li><strong>${escapeHtml(p.name)}</strong> (${escapeHtml(p.employee_id)}) &bull; <span class="text-muted">${escapeHtml(p.job_position || p.department || 'Enrolled')}</span></li>`;
-                });
-                $('#rev-part-list').html(listHtml);
+        // Helper: Format Date for Review Display (e.g., "10 Aug 2026")
+        function formatReviewDate(dateStr) {
+            if (!dateStr || dateStr === '-') return '-';
+            const parts = String(dateStr).trim().split('-');
+            if (parts.length === 3) {
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                const d = new Date(year, month, day);
+                if (!isNaN(d.getTime())) {
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const dayPadded = String(d.getDate()).padStart(2, '0');
+                    return `${dayPadded} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                }
             }
-
-            // Metrics Card
-            $('#rev-metric-total').text(total);
-
-            let attYes = 0;
-            let attNo = 0;
-            let finished = 0;
-            let ongoing = 0;
-            let totalScores = 0;
-            let scoreCount = 0;
-            let bonded = 0;
-
-            addParticipants.forEach(function (p) {
-                if (p.attendance == 1 || p.attendance === true || p.attendance === '1') {
-                    attYes++;
-                } else {
-                    attNo++;
-                }
-
-                const prog = parseFloat(p.progress);
-                if (!isNaN(prog)) {
-                    if (prog >= 100) finished++;
-                    else if (prog > 0) ongoing++;
-                } else {
-                    finished++;
-                }
-
-                if (p.assessment_score !== null && p.assessment_score !== '' && !isNaN(p.assessment_score)) {
-                    totalScores += parseFloat(p.assessment_score);
-                    scoreCount++;
-                }
-
-                if (p.bond_status === 'Yes') {
-                    bonded++;
-                }
-            });
-
-            $('#rev-metric-att-yes').text(`${attYes} Yes`);
-            $('#rev-metric-att-no').text(`${attNo} No`);
-            $('#rev-metric-finished').text(finished);
-            $('#rev-metric-ongoing').text(ongoing);
-            $('#rev-metric-avg-score').text(scoreCount > 0 ? (totalScores / scoreCount).toFixed(1) : '-');
-            $('#rev-metric-bond').text(bonded);
+            return String(dateStr);
         }
 
-        // Smooth scroll to form section
-        function scrollToSection(sectionId) {
+        // --- Section 4: Dynamic Review Update — Full Canonical 44-Column Record Preview ---
+        function updateSection4Review() {
+            const total = addParticipants.length;
+            $('#rev-part-count').text(total);
+
+            // Correct singular / plural labels
+            const countBadgeText = total === 1 ? '1 Participant Record' : `${total} Participant Records`;
+            $('#rev-part-count-badge').html(`<span id="rev-part-count">${total}</span> ${total === 1 ? 'Participant Record' : 'Participant Records'}`);
+
+            const footerSummaryText = total === 1 ? '1 participant record ready to save' : `${total} participant records ready to save`;
+            $('#rev-footer-summary').text(footerSummaryText);
+
+            if (total === 0) {
+                $('#rev-empty-state').show();
+                $('#rev-table-container').hide();
+                $('#offline-review-tbody').empty();
+                return;
+            }
+
+            $('#rev-empty-state').hide();
+            $('#rev-table-container').show();
+
+            // Extract training-level fields once (repeated across all participant rows)
+            const courseName = $('#add-course-name').val().trim() || '-';
+            const subCourseName = $('#add-sub-course-name').val().trim() || '-';
+            const type = $('#add-type').val() || '-';
+            const category = $('#add-category').val().trim() || '-';
+            const level = $('#add-level').val() || '-';
+            const batch = $('#add-batch').val().trim() || '-';
+            const mainClass = $('#add-main-classification').val() || '-';
+            const subClass = $('#add-sub-classification').val().trim() || '-';
+            const isKpi = $('input[name="counted_corporate_kpi"]:checked').val() === '1';
+            const subKpi = $('#add-sub-corporate-kpi').val().trim() || '-';
+            const delivery = $('#add-delivery-method').val() || '-';
+            const subDelivery = $('#add-sub-delivery-method').val().trim() || '-';
+            const provider = $('#add-provider').val() || '-';
+            const subProvider = $('#add-sub-provider').val() || '-';
+            const duration = $('#add-duration').val().trim() || '-';
+            const defaultHours = parseFloat($('#add-learning-hours').val()) || 0;
+            const startDate = $('#add-start-date').val() || '-';
+            const finishDate = $('#add-finish-date').val() || (startDate !== '-' ? startDate : '-');
+            const month = $('#add-month').val() || deriveMonthString($('#add-start-date').val()) || '-';
+            const providerName = $('#add-provider-name').val().trim() || '-';
+            const venue = $('#add-venue').val().trim() || '-';
+            const instructor = $('#add-instructor').val().trim() || '-';
+
+            let rowsHtml = '';
+            addParticipants.forEach(function (p, idx) {
+                const rowNo = idx + 1;
+
+                // Participant hours (or fallback to training learning hours)
+                const pHoursNum = (p.learning_hours !== null && p.learning_hours !== '' && !isNaN(p.learning_hours))
+                    ? parseFloat(p.learning_hours)
+                    : defaultHours;
+                const hoursFormatted = pHoursNum > 0 ? (pHoursNum.toFixed(1) + 'h') : '-';
+
+                // Progress with bar and badge
+                const rawProg = parseFloat(p.progress !== undefined ? p.progress : 100);
+                const prog = isNaN(rawProg) ? 100 : Math.min(100, Math.max(0, rawProg));
+                const progColor = prog >= 100 ? 'bg-success' : (prog > 0 ? 'bg-warning' : 'bg-secondary');
+                const progressHtml = `<div class="d-flex align-items-center gap-1.5" style="min-width: 80px;">
+                    <div class="progress progress-xs flex-grow-1" style="width: 44px; height: 6px;">
+                        <div class="progress-bar ${progColor}" style="width: ${prog}%"></div>
+                    </div>
+                    <span class="small fw-semibold text-muted">${Math.round(prog)}%</span>
+                </div>`;
+
+                // Attendance
+                const isPresent = (p.attendance == 1 || p.attendance === true || p.attendance === '1');
+                const attendanceHtml = isPresent
+                    ? '<span class="badge bg-success-lt text-success px-2 py-0.5">Present</span>'
+                    : '<span class="badge bg-danger-lt text-danger px-2 py-0.5">Absent</span>';
+
+                // Certificate
+                const certHtml = p.certificate === 'Yes'
+                    ? '<span class="badge bg-blue-lt text-primary px-2 py-0.5"><i class="ti ti-file-certificate me-1"></i>Yes</span>'
+                    : '<span class="badge bg-light text-muted border px-2 py-0.5">No</span>';
+
+                // Counted KPI
+                const kpiHtml = isKpi
+                    ? '<span class="badge bg-blue-lt text-primary px-2 py-0.5">Yes</span>'
+                    : '<span class="badge bg-light text-muted border px-2 py-0.5">No</span>';
+
+                // Type badge
+                const typeHtml = type !== '-'
+                    ? `<span class="badge bg-light text-secondary border px-2 py-0.5">${escapeHtml(type)}</span>`
+                    : '<span class="text-muted">-</span>';
+
+                // Assessment Score
+                const scoreHtml = (p.assessment_score !== null && p.assessment_score !== '' && !isNaN(p.assessment_score))
+                    ? `<span class="fw-semibold">${parseFloat(p.assessment_score).toFixed(1)}</span>`
+                    : '<span class="text-muted">-</span>';
+
+                // Bond
+                const isBonded = (p.bond_status === 'Yes');
+                const bondStatusHtml = isBonded
+                    ? '<span class="badge bg-warning-lt text-warning fw-bold px-2 py-0.5">Yes</span>'
+                    : '<span class="badge bg-light text-muted border px-2 py-0.5">No</span>';
+                const bondEndDateStr = (isBonded && p.bond_end_date) ? formatReviewDate(p.bond_end_date) : '-';
+                const bondAmountStr = (isBonded && p.bond_amount !== null && p.bond_amount !== '' && !isNaN(p.bond_amount))
+                    ? `<span class="font-monospace fw-semibold">Rp ${Number(p.bond_amount).toLocaleString('id-ID')}</span>`
+                    : '<span class="text-muted">-</span>';
+
+                // Kirkpatrick Evaluation
+                const l1Html = p.l1_program ? escapeHtml(p.l1_program) : '<span class="text-muted">-</span>';
+                const l2NumHtml = (p.l2_numerical !== null && p.l2_numerical !== '' && !isNaN(p.l2_numerical))
+                    ? `<span class="fw-semibold">${parseFloat(p.l2_numerical).toFixed(1)}</span>`
+                    : '<span class="text-muted">-</span>';
+                const l2VerbHtml = p.l2_verbal ? escapeHtml(p.l2_verbal) : '<span class="text-muted">-</span>';
+                const l3NumHtml = (p.l3_numerical !== null && p.l3_numerical !== '' && !isNaN(p.l3_numerical))
+                    ? `<span class="fw-semibold">${parseFloat(p.l3_numerical).toFixed(1)}</span>`
+                    : '<span class="text-muted">-</span>';
+                const l3VerbHtml = p.l3_verbal ? escapeHtml(p.l3_verbal) : '<span class="text-muted">-</span>';
+                const picHtml = p.pic ? escapeHtml(p.pic) : '<span class="text-muted">-</span>';
+
+                rowsHtml += `
+                    <tr>
+                        <td class="text-center text-muted sticky-col sticky-col-1">${rowNo}</td>
+                        <td class="text-center font-monospace sticky-col sticky-col-2">
+                            <span class="badge bg-light text-secondary border font-monospace">${escapeHtml(p.employee_id || '-')}</span>
+                        </td>
+                        <td class="sticky-col sticky-col-3 text-start">
+                            <div class="fw-semibold text-dark text-nowrap">${escapeHtml(p.name || '-')}</div>
+                            ${p.user_id ? '<span class="badge bg-green-lt extra-small py-0">LMS</span>' : ''}
+                        </td>
+                        <td class="text-center">${escapeHtml(p.grade || '-')}</td>
+                        <td class="text-start">${escapeHtml(p.job_position || '-')}</td>
+                        <td class="text-start">${escapeHtml(p.team || '-')}</td>
+                        <td class="text-start">${escapeHtml(p.department || '-')}</td>
+                        <td class="text-start">${escapeHtml(p.company || '-')}</td>
+                        <td class="text-start fw-semibold text-dark">${escapeHtml(courseName)}</td>
+                        <td class="text-start">${escapeHtml(subCourseName)}</td>
+                        <td class="text-center">${typeHtml}</td>
+                        <td class="text-start">${escapeHtml(category)}</td>
+                        <td class="text-center">${escapeHtml(level)}</td>
+                        <td class="text-center">${escapeHtml(batch)}</td>
+                        <td class="text-start">${escapeHtml(mainClass)}</td>
+                        <td class="text-start">${escapeHtml(subClass)}</td>
+                        <td class="text-center">${kpiHtml}</td>
+                        <td class="text-start">${escapeHtml(subKpi)}</td>
+                        <td class="text-center">${escapeHtml(delivery)}</td>
+                        <td class="text-start">${escapeHtml(subDelivery)}</td>
+                        <td class="text-center">${escapeHtml(provider)}</td>
+                        <td class="text-start">${escapeHtml(subProvider)}</td>
+                        <td class="text-center font-monospace">${escapeHtml(duration)}</td>
+                        <td class="text-center">${hoursFormatted !== '-' ? '<span class="fw-semibold">' + hoursFormatted + '</span>' : '<span class="text-muted">-</span>'}</td>
+                        <td class="text-center">${progressHtml}</td>
+                        <td class="text-center">${formatReviewDate(startDate)}</td>
+                        <td class="text-center">${formatReviewDate(finishDate)}</td>
+                        <td class="text-center">${escapeHtml(month)}</td>
+                        <td class="text-start">${escapeHtml(providerName)}</td>
+                        <td class="text-start">${escapeHtml(venue)}</td>
+                        <td class="text-start">${escapeHtml(instructor)}</td>
+                        <td class="text-center">${scoreHtml}</td>
+                        <td class="text-center">${certHtml}</td>
+                        <td class="text-center">${attendanceHtml}</td>
+                        <td class="text-start">${escapeHtml(p.attendance_reason || '-')}</td>
+                        <td class="text-center">${bondStatusHtml}</td>
+                        <td class="text-center">${bondEndDateStr}</td>
+                        <td class="text-end">${bondAmountStr}</td>
+                        <td class="text-center">${l1Html}</td>
+                        <td class="text-center">${l2NumHtml}</td>
+                        <td class="text-start">${l2VerbHtml}</td>
+                        <td class="text-center">${l3NumHtml}</td>
+                        <td class="text-start">${l3VerbHtml}</td>
+                        <td class="text-start">${picHtml}</td>
+                    </tr>
+                `;
+            });
+
+            $('#offline-review-tbody').html(rowsHtml);
+        }
+
+        // Smooth scroll to form section and focus element
+        function scrollToSection(sectionId, focusSelector) {
             const target = $(sectionId);
             if (target.length) {
                 $('html, body').animate({
                     scrollTop: target.offset().top - 90
-                }, 250);
+                }, 250, function () {
+                    if (focusSelector) {
+                        $(focusSelector).focus();
+                    }
+                });
             }
         }
 
-        $('#btn-review-edit-1').on('click', function () { scrollToSection('#section-1-training-info'); });
-        $('#btn-review-edit-2').on('click', function () { scrollToSection('#section-2-participants'); });
-        $('#btn-review-edit-3').on('click', function () { scrollToSection('#section-3-results'); });
+        $('#btn-review-edit-1').on('click', function () { scrollToSection('#section-1-training-info', '#add-course-name'); });
+        $('#btn-review-edit-2, #btn-review-empty-edit-part').on('click', function () { scrollToSection('#section-2-participants', '#participant-search-input'); });
+        $('#btn-review-edit-3').on('click', function () { scrollToSection('#section-3-results', '#res-progress'); });
 
         // --- SUBMIT TRAINING FORM ---
         $btnSubmitAdd.on('click', function () {
