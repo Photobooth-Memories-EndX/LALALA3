@@ -828,9 +828,9 @@ class RecordAllCombinedTest extends TestCase
         $expectedHeaders = [
             'No',
             'Source',
-            'Status',
             'ID',
             'Employee',
+            'Status',
             'Grade',
             'Job Position',
             'Team',
