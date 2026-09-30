@@ -23,18 +23,18 @@
                     <select id="scheduleStatusSelect" class="form-select rounded-3">
                         <option value="">All Status</option>
                         <option value="open">Open Registration</option>
+                        <option value="running">Running</option>
                         <option value="closed">Closed Registration</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
 
                 <!-- 3. Year Select (Width: ~100px) -->
                 <div style="min-width: 100px; flex-shrink: 0;">
                     <select id="scheduleYearSelect" class="form-select rounded-3">
-                        <option value="">All Year</option>
-                        <option value="2026" selected>2026</option>
+                        <option value="" selected>All Year</option>
+                        <option value="2026">2026</option>
                         <option value="2025">2025</option>
+                        <option value="2027">2027</option>
                     </select>
                 </div>
 

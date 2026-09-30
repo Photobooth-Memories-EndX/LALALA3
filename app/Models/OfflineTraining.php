@@ -16,10 +16,27 @@ class OfflineTraining extends Model
     protected $table = 'offline_trainings';
 
     protected $fillable = [
+        'title',
+        'category',
+        'training_code',
+        'instructor',
+        'location',
+        'target_employee',
+        'prerequisites',
+        'quota',
+        'status',
+        'start_date',
+        'end_date',
+        'start_time',
+        'end_time',
+        'description',
+        'learning_objectives',
+        'syllabus',
+
+        // Legacy / compatibility attributes
         'course_name',
         'sub_course_name',
         'type',
-        'category',
         'level',
         'batch',
         'main_classification',
@@ -33,22 +50,68 @@ class OfflineTraining extends Model
         'sub_provider',
         'provider_name',
         'venue',
-        'instructor',
         'duration_seconds',
         'learning_hours',
-        'start_date',
         'finish_date',
         'created_by',
     ];
 
     protected $casts = [
+        'syllabus'              => 'array',
+        'start_date'            => 'date',
+        'end_date'              => 'date',
+        'finish_date'           => 'date',
+        'quota'                 => 'integer',
         'counted_corporate_kpi' => 'boolean',
         'corporate_kpi_year'    => 'integer',
         'duration_seconds'      => 'integer',
         'learning_hours'        => 'decimal:4',
-        'start_date'            => 'date',
-        'finish_date'           => 'date',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function ($model) {
+            if (empty($model->course_name) && !empty($model->title)) {
+                $model->course_name = $model->title;
+            }
+            if (empty($model->title) && !empty($model->course_name)) {
+                $model->title = $model->course_name;
+            }
+            if (empty($model->venue) && !empty($model->location)) {
+                $model->venue = $model->location;
+            }
+            if (empty($model->location) && !empty($model->venue)) {
+                $model->location = $model->venue;
+            }
+            if (empty($model->finish_date)) {
+                $model->finish_date = $model->end_date ?? $model->start_date;
+            }
+            if (empty($model->end_date) && !empty($model->finish_date)) {
+                $model->end_date = $model->finish_date;
+            }
+            if (empty($model->batch) && !empty($model->training_code)) {
+                $model->batch = $model->training_code;
+            }
+            if (empty($model->training_code) && !empty($model->batch)) {
+                $model->training_code = $model->batch;
+            }
+        });
+    }
+
+    public function getCourseNameAttribute($value): ?string
+    {
+        return $value ?? $this->attributes['title'] ?? null;
+    }
+
+    public function getVenueAttribute($value): ?string
+    {
+        return $value ?? $this->attributes['location'] ?? null;
+    }
+
+    public function getFinishDateAttribute($value)
+    {
+        return $value ?? ($this->attributes['end_date'] ?? $this->attributes['start_date'] ?? null);
+    }
 
     public function creator(): BelongsTo
     {
@@ -70,10 +133,9 @@ class OfflineTraining extends Model
         if (filled($year) && $year !== 'all') {
             $yearInt = (int) $year;
             return $query->where(function ($q) use ($yearInt) {
-                $q->whereYear('finish_date', $yearInt)
-                  ->orWhere(function ($q2) use ($yearInt) {
-                      $q2->whereNull('finish_date')->whereYear('start_date', $yearInt);
-                  });
+                $q->whereYear('start_date', $yearInt)
+                  ->orWhereYear('end_date', $yearInt)
+                  ->orWhereYear('finish_date', $yearInt);
             });
         }
 

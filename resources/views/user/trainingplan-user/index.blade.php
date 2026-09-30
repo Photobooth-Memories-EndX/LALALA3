@@ -256,135 +256,49 @@
 
 {{-- Pop-up Modals --}}
 @include('user.trainingplan-user.modals.schedule-detail-modal')
-@include('main.manage-training-schedule.modals.syllabus-modal')
+@include('user.trainingplan-user.modals.syllabus-modal')
 
 @endsection
 
 @push('scripts')
+@php
+    $dbTrainings = $trainings ?? \App\Models\OfflineTraining::withCount('participants')->orderBy('start_date', 'asc')->get();
+    $computedCalendarEvents = $calendarEvents ?? $dbTrainings->map(function ($t) {
+        $startDate = \Carbon\Carbon::parse($t->start_date);
+        $enrolled = $t->participants_count ?? 0;
+        $quota = $t->quota ?: 1;
+        $isClosed = $t->status === 'Closed' || $enrolled >= $quota;
+
+        return [
+            'id'          => (string) $t->id,
+            'year'        => (int) $startDate->format('Y'),
+            'month'       => (int) $startDate->format('n') - 1, // 0-indexed for JS Date
+            'day'         => (int) $startDate->format('j'),
+            'title'       => $t->title,
+            'shortTitle'  => \Illuminate\Support\Str::limit($t->title, 16),
+            'category'    => $t->category,
+            'badgeClass'  => match($t->category) {
+                'Technical Skill'     => 'bg-info-lt text-info',
+                'Compliance & Safety' => 'bg-warning-lt text-warning',
+                'Leadership'          => 'bg-purple-subtle text-purple',
+                default               => 'bg-primary-lt text-primary',
+            },
+            'status'      => $isClosed ? 'closed' : 'open',
+            'time'        => substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
+            'dateTime'    => $startDate->format('d F Y') . ', ' . substr($t->start_time, 0, 5) . ' - ' . substr($t->end_time, 0, 5) . ' WIB',
+            'location'    => $t->location,
+            'instructor'  => $t->instructor,
+            'description' => $t->description ?? '',
+            'quota'       => "{$enrolled} / {$t->quota} Seats" . ($enrolled >= $t->quota ? ' (Full)' : ''),
+        ];
+    })->values()->toArray();
+
+    $anchorDateObj = $dbTrainings->first() ? \Carbon\Carbon::parse($dbTrainings->first()->start_date) : \Carbon\Carbon::now();
+@endphp
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // --- Sample Calendar Events Store ---
-        const calendarEvents = [
-            {
-                id: '1',
-                year: 2026,
-                month: 8, // September (0-indexed: 8 = September)
-                day: 18,
-                title: 'Leadership Development Program',
-                shortTitle: 'Leadership',
-                category: 'Soft Skill',
-                badgeClass: 'bg-primary-lt text-primary',
-                status: 'open',
-                time: '08:00 - 16:00 WIB',
-                dateTime: '18 September 2026, 08:00 - 16:00 WIB',
-                location: 'Training Room Building A, 2nd Fl.',
-                instructor: 'Dr. Hendra Wijaya, M.M.',
-                description: 'This leadership development course is designed to enhance managerial capabilities, team communication, strategic decision-making, and effective delegation skills for current supervisors and emerging managers.',
-                quota: '25 / 30 Seats'
-            },
-            {
-                id: '2',
-                year: 2026,
-                month: 8, // September
-                day: 18,
-                title: 'Excel Advanced for Data Analysis',
-                shortTitle: 'Excel Adv',
-                category: 'Technical Skill',
-                badgeClass: 'bg-info-lt text-info',
-                status: 'open',
-                time: '09:00 - 15:00 WIB',
-                dateTime: '18 September 2026, 09:00 - 15:00 WIB',
-                location: 'Computer Lab 2, 3rd Fl.',
-                instructor: 'Bambang Sujarwo, S.Kom.',
-                description: 'Advanced formulas, XLOOKUP/INDEX-MATCH, dynamic array functions, PivotTables, Power Query integration, and automated dashboard visualization using Microsoft Excel.',
-                quota: '18 / 20 Seats'
-            },
-            {
-                id: '3',
-                year: 2026,
-                month: 8, // September
-                day: 18,
-                title: 'Cybersecurity & Data Privacy Awareness',
-                shortTitle: 'Cybersecurity',
-                category: 'Technical Skill',
-                badgeClass: 'bg-secondary-lt text-secondary',
-                status: 'closed',
-                time: '13:00 - 16:30 WIB',
-                dateTime: '18 September 2026, 13:00 - 16:30 WIB',
-                location: 'Auditorium Krakatau Posco',
-                instructor: 'Ferry Hermawan, S.Kom., CISSP',
-                description: 'Crucial corporate data security awareness, phishing mitigation, access control, and information safety compliance.',
-                quota: '30 / 30 Seats (Full)'
-            },
-            {
-                id: '4',
-                year: 2026,
-                month: 8, // September
-                day: 25,
-                title: 'K3 & Safety Awareness in Factory',
-                shortTitle: 'K3 Safety',
-                category: 'Compliance & Safety',
-                badgeClass: 'bg-warning-lt text-warning',
-                status: 'open',
-                time: '08:00 - 11:30 WIB',
-                dateTime: '25 September 2026, 08:00 - 11:30 WIB',
-                location: 'Auditorium Krakatau Posco',
-                instructor: 'Ir. Agus Priyono, CSP',
-                description: 'Factory occupational health and safety standards refresher, emergency procedures, and zero incident culture.',
-                quota: '40 / 50 Seats'
-            },
-            {
-                id: '5',
-                year: 2026,
-                month: 8, // September
-                day: 29,
-                title: 'Effective Business Communication',
-                shortTitle: 'Business Comm',
-                category: 'Soft Skill',
-                badgeClass: 'bg-teal-lt text-teal',
-                status: 'closed',
-                time: '13:00 - 17:00 WIB',
-                dateTime: '29 September 2026, 13:00 - 17:00 WIB',
-                location: 'Meeting Room Bintang 1',
-                instructor: 'Citra Lestari, M.Psi.',
-                description: 'Master persuasive executive presentation, professional negotiation, and high-impact corporate writing skills.',
-                quota: '25 / 25 Seats (Full)'
-            },
-            {
-                id: '6',
-                year: 2026,
-                month: 7, // August
-                day: 14,
-                title: 'Basic Fire Fighting & Safety Protocol',
-                shortTitle: 'Fire Safety',
-                category: 'Compliance & Safety',
-                badgeClass: 'bg-warning-lt text-warning',
-                status: 'closed',
-                time: '08:00 - 12:00 WIB',
-                dateTime: '14 August 2026, 08:00 - 12:00 WIB',
-                location: 'HSE Training Ground',
-                instructor: 'HSE Team Krakatau Posco',
-                description: 'Basic industrial fire emergency response, standard fire extinguisher usage, and factory evacuation procedures.',
-                quota: '40 / 40 Seats (Full)'
-            },
-            {
-                id: '7',
-                year: 2026,
-                month: 9, // October
-                day: 8,
-                title: 'PLC Siemens S7-1500 Advanced',
-                shortTitle: 'PLC Siemens',
-                category: 'Technical Skill',
-                badgeClass: 'bg-info-lt text-info',
-                status: 'open',
-                time: '09:00 - 16:00 WIB',
-                dateTime: '08 October 2026, 09:00 - 16:00 WIB',
-                location: 'Automation Workshop',
-                instructor: 'Ahmad Fauzi, S.T.',
-                description: 'Advanced industrial automation ladder and structured text programming for Siemens S7-1500, PROFINET network diagnostic, and SCADA integration.',
-                quota: '15 / 20 Seats'
-            }
-        ];
+        // --- Live Calendar Events Store ---
+        const calendarEvents = @json($computedCalendarEvents);
 
         const monthNames = [
             'January', 'February', 'March', 'April', 'May', 'June',
@@ -398,8 +312,8 @@
             return `${dayOfWeekNames[dateObj.getDay()]}, ${d} ${monthNames[m]} ${y}`;
         }
 
-        // Anchor Date: 18 September 2026
-        const activeDate = new Date(2026, 8, 18);
+        // Anchor Date dynamically calculated from trainings
+        const activeDate = new Date({{ $anchorDateObj->format('Y') }}, {{ (int)$anchorDateObj->format('n') - 1 }}, {{ (int)$anchorDateObj->format('j') }});
         let currentCalYear = activeDate.getFullYear();
         let currentCalMonth = activeDate.getMonth();
         let currentModalStatus = 'open';

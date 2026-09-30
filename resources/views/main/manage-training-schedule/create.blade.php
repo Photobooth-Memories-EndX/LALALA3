@@ -15,6 +15,17 @@
             <p class="text-muted small mb-0">Set up corporate training details, syllabus structure, target audience, and participant capacity.</p>
         </div>
 
+        @if (isset($errors) && $errors->any())
+            <div class="alert alert-danger rounded-4 shadow-sm mb-4">
+                <div class="fw-bold mb-1"><i class="ti ti-alert-circle me-1"></i> Please check the following errors:</div>
+                <ul class="mb-0 ps-3">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form id="createTrainingForm" action="{{ route('manage.training-schedule.store') }}" method="POST" class="d-flex flex-column gap-4 col-12" novalidate>
             @csrf
 
@@ -28,20 +39,20 @@
                     <!-- Training Title Placed Here at the Top -->
                     <div class="col-12 mb-2">
                         <label class="form-label fw-semibold text-dark">Training Title <span class="text-danger">*</span></label>
-                        <input type="text" name="title" id="inputTrainingTitle" class="form-control rounded-3" placeholder="e.g. Leadership Development Program for Supervisors" required>
+                        <input type="text" name="title" id="inputTrainingTitle" class="form-control rounded-3" placeholder="e.g. Leadership Development Program for Supervisors" value="{{ old('title') }}" required>
                         <div class="invalid-feedback">Please provide a valid training title.</div>
                     </div>
                     
                     <!-- Course Overview / Description -->
                     <div class="col-12 mb-2">
                         <label class="form-label fw-semibold text-dark">Course Overview (Description)</label>
-                        <textarea name="description" class="form-control rounded-3" rows="3" placeholder="Provide a summary of the training goals and overall learning journey..."></textarea>
+                        <textarea name="description" class="form-control rounded-3" rows="3" placeholder="Provide a summary of the training goals and overall learning journey...">{{ old('description') }}</textarea>
                     </div>
 
                     <!-- Learning Objectives -->
                     <div class="col-12">
                         <label class="form-label fw-semibold text-dark">Learning Objectives (Tujuan Pelatihan - Itemized Points)</label>
-                        <textarea name="objectives" class="form-control rounded-3" rows="3" placeholder="• Enhance leadership capabilities&#10;• Improve team decision making..."></textarea>
+                        <textarea name="objectives" class="form-control rounded-3" rows="3" placeholder="• Enhance leadership capabilities&#10;• Improve team decision making...">{{ old('objectives') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -89,48 +100,48 @@
                         <label class="form-label fw-semibold text-dark">Training Category <span class="text-danger">*</span></label>
                         <select name="category" class="form-select rounded-3" required>
                             <option value="">Select Category...</option>
-                            <option value="Soft Skill">Soft Skill</option>
-                            <option value="Technical Skill">Technical Skill</option>
-                            <option value="Compliance & Safety">Compliance & Safety</option>
-                            <option value="Leadership">Leadership</option>
+                            <option value="Soft Skill" {{ old('category') == 'Soft Skill' ? 'selected' : '' }}>Soft Skill</option>
+                            <option value="Technical Skill" {{ old('category') == 'Technical Skill' ? 'selected' : '' }}>Technical Skill</option>
+                            <option value="Compliance & Safety" {{ old('category') == 'Compliance & Safety' ? 'selected' : '' }}>Compliance & Safety</option>
+                            <option value="Leadership" {{ old('category') == 'Leadership' ? 'selected' : '' }}>Leadership</option>
                         </select>
                         <div class="invalid-feedback">Please select a category.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Training Code / Batch <span class="text-danger">*</span></label>
-                        <input type="text" name="code" class="form-control rounded-3" placeholder="e.g. PTKP-LDP-01 (Batch 1 / 2026)" required>
+                        <input type="text" name="code" class="form-control rounded-3" placeholder="e.g. PTKP-LDP-01 (Batch 1 / 2026)" value="{{ old('code') }}" required>
                         <div class="invalid-feedback">Please enter the training code or batch.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Instructor / Trainer <span class="text-danger">*</span></label>
-                        <input type="text" name="instructor" class="form-control rounded-3" placeholder="e.g. Dr. Hendra Wijaya, M.M." required>
+                        <input type="text" name="instructor" class="form-control rounded-3" placeholder="e.g. Dr. Hendra Wijaya, M.M." value="{{ old('instructor') }}" required>
                         <div class="invalid-feedback">Please enter the instructor or trainer name.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Location / Venue <span class="text-danger">*</span></label>
-                        <input type="text" name="location" class="form-control rounded-3" placeholder="e.g. Learning Center Room 302 / Zoom Online" required>
+                        <input type="text" name="location" class="form-control rounded-3" placeholder="e.g. Learning Center Room 302 / Zoom Online" value="{{ old('location') }}" required>
                         <div class="invalid-feedback">Please enter the training location or venue.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Target Employee <span class="text-danger">*</span></label>
-                        <input type="text" name="target_employee" class="form-control rounded-3" placeholder="e.g. Staff to Supervisor, Maintenance Division" required>
+                        <input type="text" name="target_employee" class="form-control rounded-3" placeholder="e.g. Staff to Supervisor, Maintenance Division" value="{{ old('target_employee') }}" required>
                         <div class="invalid-feedback">Please specify the target employee or audience.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Prerequisites / Persyaratan</label>
-                        <input type="text" name="prerequisites" class="form-control rounded-3" placeholder="e.g. Minimum 1 year tenure, Basic Excel knowledge">
+                        <input type="text" name="prerequisites" class="form-control rounded-3" placeholder="e.g. Minimum 1 year tenure, Basic Excel knowledge" value="{{ old('prerequisites') }}">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Participant Quota (Seats) <span class="text-danger">*</span></label>
-                        <input type="number" name="quota" class="form-control rounded-3" placeholder="30" min="1" max="1000" value="30" required>
+                        <input type="number" name="quota" class="form-control rounded-3" placeholder="30" min="1" max="1000" value="{{ old('quota', 30) }}" required>
                         <div class="invalid-feedback">Please provide a valid participant quota.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Registration Status <span class="text-danger">*</span></label>
                         <select name="status" class="form-select rounded-3" required>
-                            <option value="Open Registration" selected>Open Registration [Active]</option>
-                            <option value="Running">Running [In Progress]</option>
-                            <option value="Closed">Closed / Full</option>
+                            <option value="Open Registration" {{ old('status', 'Open Registration') == 'Open Registration' ? 'selected' : '' }}>Open Registration [Active]</option>
+                            <option value="Running" {{ old('status') == 'Running' ? 'selected' : '' }}>Running [In Progress]</option>
+                            <option value="Closed" {{ old('status') == 'Closed' ? 'selected' : '' }}>Closed / Full</option>
                         </select>
                         <div class="invalid-feedback">Please select a registration status.</div>
                     </div>
@@ -146,22 +157,22 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Start Date <span class="text-danger">*</span></label>
-                        <input type="date" name="start_date" class="form-control rounded-3" required>
+                        <input type="date" name="start_date" class="form-control rounded-3" value="{{ old('start_date') }}" required>
                         <div class="invalid-feedback">Please select the start date.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">End Date</label>
-                        <input type="date" name="end_date" class="form-control rounded-3">
+                        <input type="date" name="end_date" class="form-control rounded-3" value="{{ old('end_date') }}">
                         <div class="form-text text-muted small">Leave blank if this is a single-day session.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">Start Time <span class="text-danger">*</span></label>
-                        <input type="time" name="start_time" class="form-control rounded-3" value="08:00" required>
+                        <input type="time" name="start_time" class="form-control rounded-3" value="{{ old('start_time', '08:00') }}" required>
                         <div class="invalid-feedback">Please specify the start time.</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-dark">End Time <span class="text-danger">*</span></label>
-                        <input type="time" name="end_time" class="form-control rounded-3" value="16:00" required>
+                        <input type="time" name="end_time" class="form-control rounded-3" value="{{ old('end_time', '16:00') }}" required>
                         <div class="invalid-feedback">Please specify the end time.</div>
                     </div>
                 </div>
@@ -255,32 +266,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Handle form submission
+    // Handle form submission: validate then let it submit to backend
     if (form) {
         form.addEventListener('submit', function (e) {
             if (!form.checkValidity()) {
                 e.preventDefault();
                 e.stopPropagation();
                 form.classList.add('was-validated');
-                return;
-            }
-
-            e.preventDefault();
-            const title = document.getElementById('inputTrainingTitle')?.value || 'Training Schedule';
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Training Schedule Saved!',
-                    text: `"${title}" has been successfully created and published.`,
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    window.location.href = "{{ url('/manage/training-schedule') }}";
-                });
-            } else {
-                alert(`Training "${title}" has been successfully created!`);
-                window.location.href = "{{ url('/manage/training-schedule') }}";
             }
         });
     }

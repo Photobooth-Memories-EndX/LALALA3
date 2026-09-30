@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (searchInput) searchInput.value = '';
             if (categorySelect) categorySelect.value = '';
             if (statusSelect) statusSelect.value = '';
-            if (yearSelect) yearSelect.value = '2026';
+            if (yearSelect) yearSelect.value = '';
             if (modalFilterCategory) modalFilterCategory.value = '';
             if (modalFilterStatus) modalFilterStatus.value = '';
             if (modalFilterInstructor) modalFilterInstructor.value = '';

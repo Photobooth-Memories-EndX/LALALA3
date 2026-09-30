@@ -1,3 +1,7 @@
+@php
+    $trainings = $trainings ?? \App\Models\OfflineTraining::withCount('participants')->orderBy('start_date', 'asc')->get();
+    $firstDate = $trainings->first() ? \Carbon\Carbon::parse($trainings->first()->start_date) : \Carbon\Carbon::now();
+@endphp
 {{-- Tab Calendar & Agenda (Dynamic Interactive JS Calendar) --}}
 <div class="row g-4">
     {{-- Left Column: Monthly Calendar Grid (col-lg-8) --}}
@@ -7,7 +11,7 @@
                 {{-- Calendar Header Bar --}}
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
                     <div class="d-flex align-items-center gap-2">
-                        <h3 class="fw-bold mb-0 text-dark" id="calendarMonthYear">September 2026</h3>
+                        <h3 class="fw-bold mb-0 text-dark" id="calendarMonthYear">{{ $firstDate->format('F Y') }}</h3>
                         <div class="btn-group btn-group-sm ms-2" role="group">
                             <button type="button" class="btn btn-outline-secondary px-2 py-1" id="calPrevBtn" title="Previous Month">
                                 <i class="ti ti-chevron-left"></i>
@@ -77,60 +81,46 @@
                 </div>
                 
                 <div class="text-primary fw-semibold small mb-3" id="todayAgendaDateLabel">
-                    <i class="ti ti-clock me-1"></i> Friday, 18 September 2026
+                    <i class="ti ti-clock me-1"></i> {{ $firstDate->format('l, d F Y') }}
                 </div>
 
                 {{-- Timeline / Agenda List --}}
                 <div class="timeline-schedule flex-grow-1" id="agendaTimelineList">
-                    {{-- Item 1 --}}
-                    <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
-                         role="button"
-                         data-id="1"
-                         data-title="Leadership Development Program"
-                         data-category="Soft Skill"
-                         data-date="18 September 2026, 08:00 - 16:00 WIB"
-                         data-location="Training Room Building A, 2nd Fl."
-                         data-instructor="Dr. Hendra Wijaya, M.M."
-                         data-description="This leadership development course is designed to enhance managerial capabilities, team communication, strategic decision-making, and effective delegation skills for current supervisors and emerging managers.">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <span class="badge bg-primary text-white rounded-pill px-2 py-0-5 small fw-semibold">08:00 - 16:00 WIB</span>
-                            <span class="badge bg-primary-lt text-primary small">Soft Skill</span>
+                    @forelse ($trainings as $item)
+                        @php
+                            $startDate = \Carbon\Carbon::parse($item->start_date);
+                            $startTime = substr($item->start_time, 0, 5);
+                            $endTime = substr($item->end_time, 0, 5);
+                        @endphp
+                        <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
+                             role="button"
+                             data-id="{{ $item->id }}"
+                             data-title="{{ $item->title }}"
+                             data-category="{{ $item->category }}"
+                             data-date="{{ $startDate->format('d F Y') }}, {{ $startTime }} - {{ $endTime }} WIB"
+                             data-location="{{ $item->location }}"
+                             data-instructor="{{ $item->instructor }}"
+                             data-description="{{ $item->description ?? '' }}">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge bg-primary text-white rounded-pill px-2 py-0-5 small fw-semibold">{{ $startTime }} - {{ $endTime }} WIB</span>
+                                <span class="badge bg-primary-lt text-primary small">{{ $item->category }}</span>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-1">{{ $item->title }}</h5>
+                            <div class="text-muted small d-flex align-items-center gap-1 mb-1">
+                                <i class="ti ti-map-pin text-primary"></i>
+                                <span>{{ $item->location }}</span>
+                            </div>
+                            <div class="text-muted small d-flex align-items-center gap-1">
+                                <i class="ti ti-user-check text-primary"></i>
+                                <span>{{ $item->instructor }}</span>
+                            </div>
                         </div>
-                        <h5 class="fw-bold text-dark mb-1">Leadership Development Program</h5>
-                        <div class="text-muted small d-flex align-items-center gap-1 mb-1">
-                            <i class="ti ti-map-pin text-primary"></i>
-                            <span>Training Room Building A, 2nd Fl.</span>
+                    @empty
+                        <div class="text-center py-4 text-muted small">
+                            <i class="ti ti-calendar-off fs-2 d-block mb-1 text-secondary"></i>
+                            No scheduled training agenda.
                         </div>
-                        <div class="text-muted small d-flex align-items-center gap-1">
-                            <i class="ti ti-user-check text-primary"></i>
-                            <span>Dr. Hendra Wijaya, M.M.</span>
-                        </div>
-                    </div>
-
-                    {{-- Item 2 --}}
-                    <div class="timeline-schedule-item mb-3 p-3 rounded-3 border border-light-subtle bg-light-subtle position-relative"
-                         role="button"
-                         data-id="2"
-                         data-title="Excel Advanced for Data Analysis"
-                         data-category="Technical Skill"
-                         data-date="18 September 2026, 09:00 - 15:00 WIB"
-                         data-location="Computer Lab 2, 3rd Fl."
-                         data-instructor="Bambang Sujarwo, S.Kom."
-                         data-description="Advanced formulas, XLOOKUP/INDEX-MATCH, dynamic array functions, PivotTables, Power Query integration, and automated dashboard visualization using Microsoft Excel.">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <span class="badge bg-info text-white rounded-pill px-2 py-0-5 small fw-semibold">09:00 - 15:00 WIB</span>
-                            <span class="badge bg-info-lt text-info small">Technical</span>
-                        </div>
-                        <h5 class="fw-bold text-dark mb-1">Excel Advanced for Data Analysis</h5>
-                        <div class="text-muted small d-flex align-items-center gap-1 mb-1">
-                            <i class="ti ti-map-pin text-info"></i>
-                            <span>Computer Lab 2, 3rd Fl.</span>
-                        </div>
-                        <div class="text-muted small d-flex align-items-center gap-1">
-                            <i class="ti ti-user-check text-info"></i>
-                            <span>Bambang Sujarwo, S.Kom.</span>
-                        </div>
-                    </div>
+                    @endforelse
                 </div>
 
                 <div class="mt-auto pt-2 border-top border-light-subtle">

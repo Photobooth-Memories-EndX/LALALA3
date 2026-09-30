@@ -38,6 +38,7 @@ use App\Http\Controllers\AssesmentQuestionBankController;
 use App\Http\Controllers\LearningHourSyncController;
 use App\Http\Controllers\ClassificationController;
 use App\Http\Controllers\LearningManageController;
+use App\Http\Controllers\OfflineTrainingController;
 use App\Http\Controllers\AssesmentResultController;
 use App\Http\Controllers\AssesmentQuestionController;
 use App\Http\Controllers\QuestionBankController;
@@ -86,7 +87,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('home.user.hero-background.remove');
 
 
-    Route::view('/trainingplan', 'user.trainingplan-user.index')->name('trainingplan.user.index');
+    Route::get('/trainingplan', [OfflineTrainingController::class, 'userIndex'])->name('trainingplan.user.index');
 
     Route::post('/assessment-access-by-unique-code', [HomeUserController::class, 'accessAssessmentByUniqueCode'])
         ->name('home.user.access.assessment.by.unique.code');
@@ -277,15 +278,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
     Route::get('/dashboard', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
-    Route::get('/training-schedule', function () {
-        return view('main.manage-training-schedule.index');
-    })->name('manage.training-schedule.index');
-    Route::get('/training-schedule/create', function () {
-        return view('main.manage-training-schedule.create');
-    })->name('manage.training-schedule.create');
-    Route::post('/training-schedule', function () {
-        return redirect()->route('manage.training-schedule.index')->with('success', 'Training schedule saved successfully.');
-    })->name('manage.training-schedule.store');
+    Route::get('/training-schedule', [OfflineTrainingController::class, 'index'])->name('manage.training-schedule.index');
+    Route::get('/training-schedule/create', [OfflineTrainingController::class, 'create'])->name('manage.training-schedule.create');
+    Route::post('/training-schedule', [OfflineTrainingController::class, 'store'])->name('manage.training-schedule.store');
 
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);

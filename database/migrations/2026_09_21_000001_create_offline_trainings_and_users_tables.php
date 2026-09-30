@@ -13,10 +13,27 @@ return new class extends Migration
     {
         Schema::create('offline_trainings', function (Blueprint $table) {
             $table->id();
-            $table->string('course_name')->index();
+            $table->string('title')->index();
+            $table->string('category', 100)->index();
+            $table->string('training_code', 100)->nullable()->index();
+            $table->string('instructor');
+            $table->string('location');
+            $table->string('target_employee')->nullable();
+            $table->string('prerequisites')->nullable();
+            $table->integer('quota')->default(30);
+            $table->string('status', 50)->default('Open Registration')->index(); // 'Open Registration', 'Running', 'Closed'
+            $table->date('start_date')->index();
+            $table->date('end_date')->nullable()->index();
+            $table->time('start_time')->default('08:00:00');
+            $table->time('end_time')->default('16:00:00');
+            $table->text('description')->nullable();
+            $table->text('learning_objectives')->nullable();
+            $table->json('syllabus')->nullable();
+
+            // Legacy & compatibility fields for Non KP OWL / Record Offline modules
+            $table->string('course_name')->nullable()->index();
             $table->string('sub_course_name')->nullable();
             $table->string('type', 100)->nullable()->index();
-            $table->string('category', 100)->nullable()->index();
             $table->string('level', 100)->nullable();
             $table->string('batch', 100)->nullable()->index();
             $table->string('main_classification')->nullable()->index();
@@ -30,10 +47,8 @@ return new class extends Migration
             $table->string('sub_provider')->nullable();
             $table->string('provider_name')->nullable();
             $table->string('venue')->nullable();
-            $table->string('instructor')->nullable();
             $table->unsignedBigInteger('duration_seconds')->nullable();
             $table->decimal('learning_hours', 10, 4)->nullable();
-            $table->date('start_date')->nullable()->index();
             $table->date('finish_date')->nullable()->index();
             $table->unsignedBigInteger('created_by')->nullable()->index();
             $table->timestamps();
@@ -44,7 +59,7 @@ return new class extends Migration
                 ->on('users')
                 ->nullOnDelete();
 
-            $table->index(['start_date', 'finish_date']);
+            $table->index(['start_date', 'end_date']);
         });
 
         Schema::create('offline_training_users', function (Blueprint $table) {

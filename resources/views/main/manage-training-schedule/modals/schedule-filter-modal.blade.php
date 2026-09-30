@@ -38,9 +38,8 @@
                             <select id="modalFilterStatus" class="form-select rounded-3">
                                 <option value="">All Status</option>
                                 <option value="open">Open Registration</option>
+                                <option value="running">Running</option>
                                 <option value="closed">Closed Registration</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
                             </select>
                         </div>
 

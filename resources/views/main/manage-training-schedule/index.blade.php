@@ -6,6 +6,16 @@
         {{-- Header Section with Back Navigation & Hero Card --}}
         @include('main.manage-training-schedule.components.schedule-header')
 
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible rounded-4 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-check fs-2 text-success"></i>
+                    <div class="fw-semibold">{{ session('success') }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         {{-- Top Navigation Toggle Pills --}}
         <div class="mb-4">
             <ul class="nav nav-pills gap-2 bg-white p-1-5 rounded-4 shadow-sm border border-light-subtle d-inline-flex" id="scheduleMainTabs" role="tablist">
