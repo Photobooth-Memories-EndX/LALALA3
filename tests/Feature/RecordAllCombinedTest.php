@@ -1320,4 +1320,84 @@ class RecordAllCombinedTest extends TestCase
         $this->assertEquals(2, $datatableCount, 'DataTable query must find exactly 2 matching records.');
         $this->assertEquals($exportCount, $datatableCount, 'Export and DataTable must have 100% filter count parity.');
     }
+
+    /**
+     * 33. Test comprehensive Export filtering, streaming generation, and query parity across all filter combinations.
+     */
+    public function test_export_correctness_and_parity_across_all_filter_combinations(): void
+    {
+        $uniqueDept = 'EXPORT_TEST_DEPT_' . uniqid();
+        $uniqueComp = 'EXPORT_TEST_COMP_' . uniqid();
+        $uniqueEmp = 'EMP_EXP_' . uniqid();
+        $uniqueName = 'Export Tester ' . uniqid();
+        $uniqueTitle = 'Export Specific Training ' . uniqid();
+
+        // Create test record
+        $this->createTestOfflineTraining([
+            'course_name'         => $uniqueTitle,
+            'main_classification' => 'Leadership',
+            'start_date'          => '2026-06-01',
+            'finish_date'         => '2026-06-15',
+        ], [
+            [
+                'employee_id'    => $uniqueEmp,
+                'name'           => $uniqueName,
+                'department'     => $uniqueDept,
+                'company'        => $uniqueComp,
+                'progress'       => 100,
+                'learning_hours' => 3.5,
+            ]
+        ]);
+
+        $filterScenarios = [
+            'No filter'            => [],
+            'Employee filter'      => ['employee_id' => $uniqueEmp],
+            'Title filter'         => ['learning_title' => $uniqueTitle],
+            'Online source'        => ['source' => 'online'],
+            'Offline source'       => ['source' => 'offline'],
+            'Finished'             => ['status' => 'finished'],
+            'Ongoing'              => ['status' => 'ongoing'],
+            'Not Started'          => ['status' => 'not_started'],
+            'Year'                 => ['year' => '2026'],
+            'Date range'           => ['from_date' => '2026-06-01', 'to_date' => '2026-06-30'],
+            'Progress range'       => ['progress_range' => '100'],
+            'Learning Hours range' => ['learning_hours_range' => '2-4'],
+            'Combined filters'     => [
+                'employee_id'          => $uniqueEmp,
+                'learning_title'       => $uniqueTitle,
+                'source'               => 'offline',
+                'status'               => 'finished',
+                'year'                 => '2026',
+                'progress_range'       => '100',
+                'learning_hours_range' => '2-4',
+            ],
+        ];
+
+        $service = app(RecordAllCombinedService::class);
+
+        foreach ($filterScenarios as $label => $filters) {
+            $filters['classification'] = 'Leadership';
+
+            // Parity check: Export query count vs DataTable recordsFiltered
+            $exportCount = $service->buildCombinedQuery($filters)->count();
+
+            $dtFilters = $filters;
+            unset($dtFilters['classification']);
+            $dtResp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?' . http_build_query($dtFilters));
+            $dtResp->assertStatus(200);
+            $dtCount = $dtResp->json('recordsFiltered');
+
+            $this->assertEquals($exportCount, $dtCount, "Filter scenario '{$label}' failed parity test between Export and DataTable.");
+        }
+
+        // Test streaming file generation
+        $export = new \App\Exports\AllClassificationExport('Leadership', [
+            'employee_id' => $uniqueEmp,
+            'source'      => 'offline',
+        ]);
+        $filePath = $export->generateXlsxFile();
+        $this->assertFileExists($filePath);
+        $this->assertGreaterThan(1000, filesize($filePath), 'Generated XLSX file must be valid and non-empty.');
+        @unlink($filePath);
+    }
 }
