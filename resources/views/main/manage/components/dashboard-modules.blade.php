@@ -142,6 +142,15 @@
                 ])
             @endif
 
+            {{-- Training Schedule Management --}}
+            @include('main.manage.components.admin-menu-card', [
+                'title' => 'Training Schedule Management',
+                'description' => 'Create new PTKP training schedules, manage quotas, instructors, locations, and registration statuses.',
+                'url' => url('/manage/training-schedule'),
+                'button' => 'Manage Schedule',
+                'icon' => 'ti ti-calendar-event'
+            ])
+
     </div>
 </div>
 

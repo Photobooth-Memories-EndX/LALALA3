@@ -277,6 +277,15 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
 
     Route::get('/', [ManageDashboardController::class, 'index'])->name('manage.index');
     Route::get('/dashboard', [ManageDashboardController::class, 'index'])->name('manage.dashboard');
+    Route::get('/training-schedule', function () {
+        return view('main.manage-training-schedule.index');
+    })->name('manage.training-schedule.index');
+    Route::get('/training-schedule/create', function () {
+        return view('main.manage-training-schedule.create');
+    })->name('manage.training-schedule.create');
+    Route::post('/training-schedule', function () {
+        return redirect()->route('manage.training-schedule.index')->with('success', 'Training schedule saved successfully.');
+    })->name('manage.training-schedule.store');
 
     Route::group(['middleware' => 'mpermission:admin_management'], function () {
         Route::resource('admin', AdminController::class)->only(['index', 'store', 'update']);

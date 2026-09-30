@@ -6,56 +6,41 @@
             <p class="text-muted small mb-0">List of your enrolled training sessions, approval statuses, and completion history.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary-lt text-primary px-3 py-2 rounded-pill fw-semibold">
+            <span class="badge bg-primary-lt text-primary px-3 py-2 rounded-pill fw-semibold" id="myHistoryTotalBadge">
                 Total: 4 Trainings
             </span>
         </div>
     </div>
 
     <div class="table-responsive">
-        <table class="table table-hover table-vcenter align-middle mb-0">
+        <table class="table table-hover table-vcenter align-middle mb-0" id="myHistoryTable">
             <thead>
-                <tr class="bg-light-subtle text-muted text-uppercase fs-6">
-                    <th class="text-center py-3" style="width: 50px;">NO</th>
-                    <th class="py-3">TRAINING NAME</th>
+                <tr class="text-muted extra-small text-uppercase fw-bold text-center align-middle" style="letter-spacing: 0.05em; background-color: #f8fafc;">
+                    <th class="w-1 py-3">NO</th>
+                    <th class="py-3" style="min-width: 200px;">TRAINING NAME</th>
                     <th class="py-3">CATEGORY</th>
-                    <th class="py-3">SCHEDULE DATE</th>
+                    <th class="py-3" style="min-width: 110px;">DATE</th>
+                    <th class="py-3" style="min-width: 120px;">TIME</th>
                     <th class="py-3">LOCATION</th>
-                    <th class="text-center py-3">STATUS</th>
-                    <th class="text-center py-3" style="width: 120px;">ACTION</th>
+                    <th class="py-3">STATUS</th>
+                    <th class="py-3" style="min-width: 160px;">ACTION</th>
                 </tr>
             </thead>
             <tbody>
                 {{-- Row 1: Approved --}}
-                <tr>
-                    <td class="text-center text-muted fw-semibold">1</td>
+                <tr id="history-row-1" class="text-center align-middle">
+                    <td class="text-muted fw-semibold">1</td>
+                    <td class="fw-bold text-dark" style="min-width: 200px;">Leadership Development Program</td>
                     <td>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="avatar avatar-sm rounded-3 bg-primary-lt text-primary flex-shrink-0">
-                                <i class="ti ti-school fs-2"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-dark">Leadership Development Program</div>
-                                <div class="text-muted small">Instructor: Dr. Hendra Wijaya, M.M.</div>
-                            </div>
-                        </div>
+                        <span class="badge rounded-pill px-3 py-1-5 fw-semibold" style="background-color: #e0f2fe; color: #0369a1;">Soft Skill</span>
                     </td>
+                    <td class="fw-semibold text-dark" style="min-width: 110px;">18 Sep 2026</td>
+                    <td class="text-muted small" style="min-width: 120px;">08:00 - 16:00 WIB</td>
+                    <td class="text-muted small">Training Room Building A, 2nd Fl.</td>
                     <td>
-                        <span class="badge bg-primary-lt text-primary rounded-pill px-2 py-1">Soft Skill</span>
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-semibold">Approved</span>
                     </td>
                     <td>
-                        <div class="fw-semibold text-dark">18 Sep 2026</div>
-                        <div class="text-muted small">08:00 - 16:00 WIB</div>
-                    </td>
-                    <td class="text-muted">
-                        <i class="ti ti-map-pin text-primary me-1"></i> Training Room Building A, 2nd Fl.
-                    </td>
-                    <td class="text-center">
-                        <span class="badge bg-success-lt text-success rounded-pill px-3 py-1-5 fw-semibold">
-                            <i class="ti ti-check me-1"></i> Approved
-                        </span>
-                    </td>
-                    <td class="text-center">
                         <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3"
                                 data-bs-toggle="modal" 
                                 data-bs-target="#eventDetailModal"
@@ -72,80 +57,54 @@
                 </tr>
 
                 {{-- Row 2: Pending --}}
-                <tr>
-                    <td class="text-center text-muted fw-semibold">2</td>
+                <tr id="history-row-2" class="text-center align-middle">
+                    <td class="text-muted fw-semibold">2</td>
+                    <td class="fw-bold text-dark" style="min-width: 200px;">Excel Advanced for Data Analysis</td>
                     <td>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="avatar avatar-sm rounded-3 bg-info-lt text-info flex-shrink-0">
-                                <i class="ti ti-file-analytics fs-2"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-dark">Excel Advanced for Data Analysis</div>
-                                <div class="text-muted small">Instructor: Bambang Sujarwo, S.Kom.</div>
-                            </div>
+                        <span class="badge rounded-pill px-3 py-1-5 fw-semibold" style="background-color: #e0f2fe; color: #0369a1;">Technical Skill</span>
+                    </td>
+                    <td class="fw-semibold text-dark" style="min-width: 110px;">18 Sep 2026</td>
+                    <td class="text-muted small" style="min-width: 120px;">09:00 - 15:00 WIB</td>
+                    <td class="text-muted small">Computer Lab 2, 3rd Fl.</td>
+                    <td>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1 fw-semibold">Pending</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#eventDetailModal"
+                                    data-id="2"
+                                    data-title="Excel Advanced for Data Analysis"
+                                    data-category="Technical Skill"
+                                    data-date="18 September 2026, 09:00 - 15:00 WIB"
+                                    data-location="Computer Lab 2, 3rd Fl."
+                                    data-instructor="Bambang Sujarwo, S.Kom."
+                                    data-description="Advanced formulas, XLOOKUP/INDEX-MATCH, dynamic array functions, PivotTables, Power Query integration, and automated dashboard visualization using Microsoft Excel.">
+                                Detail
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center gap-1" onclick="confirmCancelRegistration(2)" title="Cancel Registration">
+                                <i class="ti ti-trash"></i>
+                                <span>Cancel</span>
+                            </button>
                         </div>
-                    </td>
-                    <td>
-                        <span class="badge bg-info-lt text-info rounded-pill px-2 py-1">Technical Skill</span>
-                    </td>
-                    <td>
-                        <div class="fw-semibold text-dark">18 Sep 2026</div>
-                        <div class="text-muted small">09:00 - 15:00 WIB</div>
-                    </td>
-                    <td class="text-muted">
-                        <i class="ti ti-map-pin text-info me-1"></i> Computer Lab 2, 3rd Fl.
-                    </td>
-                    <td class="text-center">
-                        <span class="badge bg-warning-lt text-warning rounded-pill px-3 py-1-5 fw-semibold">
-                            <i class="ti ti-clock me-1"></i> Pending
-                        </span>
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-                                data-bs-toggle="modal" 
-                                data-bs-target="#eventDetailModal"
-                                data-id="2"
-                                data-title="Excel Advanced for Data Analysis"
-                                data-category="Technical Skill"
-                                data-date="18 September 2026, 09:00 - 15:00 WIB"
-                                data-location="Computer Lab 2, 3rd Fl."
-                                data-instructor="Bambang Sujarwo, S.Kom."
-                                data-description="Advanced formulas, XLOOKUP/INDEX-MATCH, dynamic array functions, PivotTables, Power Query integration, and automated dashboard visualization using Microsoft Excel.">
-                            Detail
-                        </button>
                     </td>
                 </tr>
 
                 {{-- Row 3: Completed --}}
-                <tr>
-                    <td class="text-center text-muted fw-semibold">3</td>
+                <tr id="history-row-3" class="text-center align-middle">
+                    <td class="text-muted fw-semibold">3</td>
+                    <td class="fw-bold text-dark" style="min-width: 200px;">Basic Fire Fighting & Safety Protocol</td>
                     <td>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="avatar avatar-sm rounded-3 bg-primary-lt text-primary flex-shrink-0">
-                                <i class="ti ti-shield-check fs-2"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-dark">Basic Fire Fighting & Safety Protocol</div>
-                                <div class="text-muted small">Instructor: HSE Team Krakatau Posco</div>
-                            </div>
-                        </div>
+                        <span class="badge rounded-pill px-3 py-1-5 fw-semibold" style="background-color: #fef3c7; color: #b45309;">Compliance & Safety</span>
                     </td>
+                    <td class="fw-semibold text-dark" style="min-width: 110px;">20 Jul 2026</td>
+                    <td class="text-muted small" style="min-width: 120px;">08:00 - 12:00 WIB</td>
+                    <td class="text-muted small">HSE Training Ground</td>
                     <td>
-                        <span class="badge bg-warning-lt text-warning rounded-pill px-2 py-1">Compliance & Safety</span>
+                        <span class="badge rounded-pill px-3 py-1 fw-semibold" style="background-color: rgba(2, 132, 199, 0.12) !important; color: #0284c7 !important;">Completed</span>
                     </td>
                     <td>
-                        <div class="fw-semibold text-dark">20 Jul 2026</div>
-                        <div class="text-muted small">08:00 - 12:00 WIB</div>
-                    </td>
-                    <td class="text-muted">
-                        <i class="ti ti-map-pin text-warning me-1"></i> HSE Training Ground
-                    </td>
-                    <td class="text-center">
-                        <span class="badge rounded-pill px-3 py-1-5 fw-semibold" style="background-color: rgba(2, 132, 199, 0.12) !important; color: #0284c7 !important;">
-                            <i class="ti ti-circle-check me-1"></i> Completed
-                        </span>
-                    </td>
-                    <td class="text-center">
                         <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3"
                                 data-bs-toggle="modal" 
                                 data-bs-target="#eventDetailModal"
@@ -162,35 +121,19 @@
                 </tr>
 
                 {{-- Row 4: Rejected --}}
-                <tr>
-                    <td class="text-center text-muted fw-semibold">4</td>
+                <tr id="history-row-4" class="text-center align-middle">
+                    <td class="text-muted fw-semibold">4</td>
+                    <td class="fw-bold text-dark" style="min-width: 200px;">PLC Siemens S7-1500 Advanced</td>
                     <td>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="avatar avatar-sm rounded-3 bg-danger-lt text-danger flex-shrink-0">
-                                <i class="ti ti-cpu fs-2"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-dark">PLC Siemens S7-1500 Advanced</div>
-                                <div class="text-muted small">Instructor: Ahmad Fauzi, S.T.</div>
-                            </div>
-                        </div>
+                        <span class="badge rounded-pill px-3 py-1-5 fw-semibold" style="background-color: #e0f2fe; color: #0369a1;">Technical Skill</span>
                     </td>
+                    <td class="fw-semibold text-dark" style="min-width: 110px;">12 Jun 2026</td>
+                    <td class="text-muted small" style="min-width: 120px;">09:00 - 16:00 WIB</td>
+                    <td class="text-muted small">Automation Workshop</td>
                     <td>
-                        <span class="badge bg-info-lt text-info rounded-pill px-2 py-1">Technical Skill</span>
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 fw-semibold">Rejected</span>
                     </td>
                     <td>
-                        <div class="fw-semibold text-dark">12 Jun 2026</div>
-                        <div class="text-muted small">09:00 - 16:00 WIB</div>
-                    </td>
-                    <td class="text-muted">
-                        <i class="ti ti-map-pin text-danger me-1"></i> Automation Workshop
-                    </td>
-                    <td class="text-center">
-                        <span class="badge bg-danger-lt text-danger rounded-pill px-3 py-1-5 fw-semibold">
-                            <i class="ti ti-x me-1"></i> Rejected
-                        </span>
-                    </td>
-                    <td class="text-center">
                         <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3"
                                 data-bs-toggle="modal" 
                                 data-bs-target="#eventDetailModal"
@@ -209,3 +152,27 @@
         </table>
     </div>
 </div>
+
+<script>
+function confirmCancelRegistration(id) {
+    if (confirm('Are you sure you want to cancel your training registration?')) {
+        // Form submission or API fetch call to delete registration record
+        console.log('Cancelling registration for ID:', id);
+
+        const row = document.getElementById('history-row-' + id);
+        if (row) {
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '0';
+            setTimeout(function () {
+                row.remove();
+                const remainingRows = document.querySelectorAll('#myHistoryTable tbody tr').length;
+                const totalBadge = document.getElementById('myHistoryTotalBadge');
+                if (totalBadge) {
+                    totalBadge.textContent = 'Total: ' + remainingRows + ' Trainings';
+                }
+            }, 300);
+        }
+    }
+}
+window.confirmCancelRegistration = confirmCancelRegistration;
+</script>

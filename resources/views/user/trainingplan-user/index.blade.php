@@ -73,21 +73,37 @@
             box-shadow: 0 2px 5px rgba(0, 59, 109, 0.35);
         }
 
-        .cal-event-pill {
+        /* Calendar Status Count Badges */
+        .cal-status-badge {
             font-size: 0.72rem;
-            padding: 3px 6px;
-            border-radius: 6px;
+            line-height: 1.25;
             cursor: pointer;
-            transition: all 0.15s ease;
-            text-align: left;
-            margin-bottom: 2px;
-            border: 1px solid transparent;
+            transition: all 0.15s ease-in-out;
+            user-select: none;
+            display: block;
+            margin-bottom: 3px;
         }
 
-        .cal-event-pill:hover {
-            transform: scale(1.02);
-            filter: brightness(0.95);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        .cal-status-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+            filter: brightness(0.96);
+        }
+
+        .cal-status-badge:active {
+            transform: translateY(0);
+        }
+
+        .cal-status-badge-open {
+            background-color: #ecfdf5;
+            color: #047857;
+            border-color: #a7f3d0;
+        }
+
+        .cal-status-badge-closed {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border-color: #fecaca;
         }
 
         /* Timeline Items */
@@ -238,8 +254,9 @@
     </div>
 </div>
 
-{{-- Pop-up Modal --}}
+{{-- Pop-up Modals --}}
 @include('user.trainingplan-user.modals.schedule-detail-modal')
+@include('main.manage-training-schedule.modals.syllabus-modal')
 
 @endsection
 
@@ -257,12 +274,13 @@
                 shortTitle: 'Leadership',
                 category: 'Soft Skill',
                 badgeClass: 'bg-primary-lt text-primary',
+                status: 'open',
                 time: '08:00 - 16:00 WIB',
                 dateTime: '18 September 2026, 08:00 - 16:00 WIB',
                 location: 'Training Room Building A, 2nd Fl.',
                 instructor: 'Dr. Hendra Wijaya, M.M.',
                 description: 'This leadership development course is designed to enhance managerial capabilities, team communication, strategic decision-making, and effective delegation skills for current supervisors and emerging managers.',
-                quota: '32 / 40 Participants'
+                quota: '25 / 30 Seats'
             },
             {
                 id: '2',
@@ -273,15 +291,33 @@
                 shortTitle: 'Excel Adv',
                 category: 'Technical Skill',
                 badgeClass: 'bg-info-lt text-info',
+                status: 'open',
                 time: '09:00 - 15:00 WIB',
                 dateTime: '18 September 2026, 09:00 - 15:00 WIB',
                 location: 'Computer Lab 2, 3rd Fl.',
                 instructor: 'Bambang Sujarwo, S.Kom.',
                 description: 'Advanced formulas, XLOOKUP/INDEX-MATCH, dynamic array functions, PivotTables, Power Query integration, and automated dashboard visualization using Microsoft Excel.',
-                quota: '28 / 30 Participants'
+                quota: '18 / 20 Seats'
             },
             {
                 id: '3',
+                year: 2026,
+                month: 8, // September
+                day: 18,
+                title: 'Cybersecurity & Data Privacy Awareness',
+                shortTitle: 'Cybersecurity',
+                category: 'Technical Skill',
+                badgeClass: 'bg-secondary-lt text-secondary',
+                status: 'closed',
+                time: '13:00 - 16:30 WIB',
+                dateTime: '18 September 2026, 13:00 - 16:30 WIB',
+                location: 'Auditorium Krakatau Posco',
+                instructor: 'Ferry Hermawan, S.Kom., CISSP',
+                description: 'Crucial corporate data security awareness, phishing mitigation, access control, and information safety compliance.',
+                quota: '30 / 30 Seats (Full)'
+            },
+            {
+                id: '4',
                 year: 2026,
                 month: 8, // September
                 day: 25,
@@ -289,15 +325,16 @@
                 shortTitle: 'K3 Safety',
                 category: 'Compliance & Safety',
                 badgeClass: 'bg-warning-lt text-warning',
+                status: 'open',
                 time: '08:00 - 11:30 WIB',
                 dateTime: '25 September 2026, 08:00 - 11:30 WIB',
                 location: 'Auditorium Krakatau Posco',
                 instructor: 'Ir. Agus Priyono, CSP',
                 description: 'Factory occupational health and safety standards refresher, emergency procedures, and zero incident culture.',
-                quota: '25 / 40 Participants'
+                quota: '40 / 50 Seats'
             },
             {
-                id: '4',
+                id: '5',
                 year: 2026,
                 month: 8, // September
                 day: 29,
@@ -305,15 +342,16 @@
                 shortTitle: 'Business Comm',
                 category: 'Soft Skill',
                 badgeClass: 'bg-teal-lt text-teal',
+                status: 'closed',
                 time: '13:00 - 17:00 WIB',
                 dateTime: '29 September 2026, 13:00 - 17:00 WIB',
                 location: 'Meeting Room Bintang 1',
                 instructor: 'Citra Lestari, M.Psi.',
                 description: 'Master persuasive executive presentation, professional negotiation, and high-impact corporate writing skills.',
-                quota: '18 / 25 Participants'
+                quota: '25 / 25 Seats (Full)'
             },
             {
-                id: '5',
+                id: '6',
                 year: 2026,
                 month: 7, // August
                 day: 14,
@@ -321,15 +359,16 @@
                 shortTitle: 'Fire Safety',
                 category: 'Compliance & Safety',
                 badgeClass: 'bg-warning-lt text-warning',
+                status: 'closed',
                 time: '08:00 - 12:00 WIB',
                 dateTime: '14 August 2026, 08:00 - 12:00 WIB',
                 location: 'HSE Training Ground',
                 instructor: 'HSE Team Krakatau Posco',
                 description: 'Basic industrial fire emergency response, standard fire extinguisher usage, and factory evacuation procedures.',
-                quota: '40 / 40 Participants'
+                quota: '40 / 40 Seats (Full)'
             },
             {
-                id: '6',
+                id: '7',
                 year: 2026,
                 month: 9, // October
                 day: 8,
@@ -337,12 +376,13 @@
                 shortTitle: 'PLC Siemens',
                 category: 'Technical Skill',
                 badgeClass: 'bg-info-lt text-info',
+                status: 'open',
                 time: '09:00 - 16:00 WIB',
                 dateTime: '08 October 2026, 09:00 - 16:00 WIB',
                 location: 'Automation Workshop',
                 instructor: 'Ahmad Fauzi, S.T.',
                 description: 'Advanced industrial automation ladder and structured text programming for Siemens S7-1500, PROFINET network diagnostic, and SCADA integration.',
-                quota: '15 / 20 Participants'
+                quota: '15 / 20 Seats'
             }
         ];
 
@@ -351,10 +391,18 @@
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
 
+        const dayOfWeekNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+        function formatCalendarDate(y, m, d) {
+            const dateObj = new Date(y, m, d);
+            return `${dayOfWeekNames[dateObj.getDay()]}, ${d} ${monthNames[m]} ${y}`;
+        }
+
         // Anchor Date: 18 September 2026
         const activeDate = new Date(2026, 8, 18);
         let currentCalYear = activeDate.getFullYear();
         let currentCalMonth = activeDate.getMonth();
+        let currentModalStatus = 'open';
 
         // --- Calendar Rendering Logic ---
         function renderCalendar(year, month) {
@@ -376,7 +424,6 @@
             let html = '';
             let dayCounter = 1;
             let nextMonthDayCounter = 1;
-            const totalCells = 42; // 6 rows * 7 cols
 
             for (let row = 0; row < 6; row++) {
                 let rowHtml = '<tr>';
@@ -395,28 +442,38 @@
                         const thisDay = dayCounter;
                         const isToday = (year === activeDate.getFullYear() && month === activeDate.getMonth() && thisDay === activeDate.getDate());
                         
-                        // Find events on this day
+                        // Find events on this day & calculate open/closed counts
                         const dayEvents = calendarEvents.filter(e => e.year === year && e.month === month && e.day === thisDay);
+                        const openEvents = dayEvents.filter(e => e.status === 'open');
+                        const closedEvents = dayEvents.filter(e => e.status === 'closed');
 
-                        let eventsHtml = '';
-                        dayEvents.forEach(ev => {
-                            eventsHtml += `
-                                <div class="cal-event-pill ${ev.badgeClass} fw-semibold text-truncate"
+                        let badgesHtml = '';
+                        if (openEvents.length > 0) {
+                            badgesHtml += `
+                                <div class="cal-status-badge cal-status-badge-open bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0-5 mb-1 fw-bold text-center"
                                      role="button"
-                                     data-bs-toggle="modal" 
-                                     data-bs-target="#eventDetailModal"
-                                     data-id="${ev.id}"
-                                     data-title="${ev.title}"
-                                     data-category="${ev.category}"
-                                     data-date="${ev.dateTime}"
-                                     data-location="${ev.location}"
-                                     data-instructor="${ev.instructor}"
-                                     data-description="${ev.description}"
-                                     data-quota="${ev.quota}">
-                                    <i class="ti ti-point me-0 d-none d-sm-inline"></i> ${ev.shortTitle}
+                                     data-year="${year}"
+                                     data-month="${month}"
+                                     data-day="${thisDay}"
+                                     data-status="open"
+                                     title="${openEvents.length} Open Training(s)">
+                                    <span>Open: ${openEvents.length}</span>
                                 </div>
                             `;
-                        });
+                        }
+                        if (closedEvents.length > 0) {
+                            badgesHtml += `
+                                <div class="cal-status-badge cal-status-badge-closed bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-0-5 mb-1 fw-bold text-center"
+                                     role="button"
+                                     data-year="${year}"
+                                     data-month="${month}"
+                                     data-day="${thisDay}"
+                                     data-status="closed"
+                                     title="${closedEvents.length} Closed Training(s)">
+                                    <span>Close: ${closedEvents.length}</span>
+                                </div>
+                            `;
+                        }
 
                         const dayNumDisplay = isToday 
                             ? `<span class="cal-today-badge">${thisDay}</span>`
@@ -424,7 +481,7 @@
 
                         rowHtml += `<td class="p-1 cal-day-cell">
                             <div class="cal-day-num text-end pe-1">${dayNumDisplay}</div>
-                            ${eventsHtml}
+                            ${badgesHtml}
                         </td>`;
                         dayCounter++;
                     } else {
@@ -486,69 +543,159 @@
             });
         }
 
-        // --- Modal Event Detail Populate Logic ---
-        const eventDetailModalEl = document.getElementById('eventDetailModal');
-        let currentSelectedTrainingId = null;
+        // --- Open Training List Modal Function ---
+        function openTrainingListModal(year, month, day, status, highlightId = null) {
+            currentModalStatus = status;
+            const formattedDate = formatCalendarDate(year, month, day);
 
-        if (eventDetailModalEl) {
-            eventDetailModalEl.addEventListener('show.bs.modal', function (event) {
-                const triggerEl = event.relatedTarget;
-                if (!triggerEl) return;
+            let matchingEvents = calendarEvents.filter(e =>
+                e.year === year &&
+                e.month === month &&
+                e.day === day &&
+                e.status === status
+            );
 
-                const id = triggerEl.getAttribute('data-id') || '1';
-                const title = triggerEl.getAttribute('data-title') || 'Leadership Development Program';
-                const category = triggerEl.getAttribute('data-category') || 'Soft Skill';
-                const date = triggerEl.getAttribute('data-date') || '18 September 2026, 08:00 - 16:00 WIB';
-                const location = triggerEl.getAttribute('data-location') || 'Training Room Building A, 2nd Fl.';
-                const instructor = triggerEl.getAttribute('data-instructor') || 'Dr. Hendra Wijaya, M.M.';
-                const description = triggerEl.getAttribute('data-description') || 'Training description is currently unavailable.';
-                const quota = triggerEl.getAttribute('data-quota') || '25 / 40 Participants';
+            // Fallback for agenda clicks if status differed
+            if (matchingEvents.length === 0 && highlightId) {
+                const specificItem = calendarEvents.find(e => e.id === highlightId);
+                if (specificItem) {
+                    currentModalStatus = specificItem.status;
+                    status = specificItem.status;
+                    matchingEvents = [specificItem];
+                }
+            }
 
-                currentSelectedTrainingId = id;
+            const isOpen = (status === 'open');
 
-                // Update modal elements
-                const modalTitle = document.getElementById('modalEventTitle');
-                const modalCategory = document.getElementById('modalEventCategory');
-                const modalDateTime = document.getElementById('modalEventDateTime');
-                const modalLocation = document.getElementById('modalEventLocation');
-                const modalInstructor = document.getElementById('modalEventInstructor');
-                const modalDescription = document.getElementById('modalEventDescription');
-                const modalQuota = document.getElementById('modalEventQuota');
+            const modalStatusTitle = document.getElementById('modalStatusTitle');
+            const modalStatusCountBadge = document.getElementById('modalStatusCountBadge');
+            const modalStatusIconWrap = document.getElementById('modalStatusIconWrap');
+            const modalStatusIcon = document.getElementById('modalStatusIcon');
+            const modalSelectedDateText = document.getElementById('modalSelectedDateText');
+            const modalTrainingItemsList = document.getElementById('modalTrainingItemsList');
+            const modalEmptyState = document.getElementById('modalEmptyState');
 
-                if (modalTitle) modalTitle.textContent = title;
-                if (modalCategory) modalCategory.textContent = category;
-                if (modalDateTime) modalDateTime.textContent = date;
-                if (modalLocation) modalLocation.textContent = location;
-                if (modalInstructor) modalInstructor.textContent = instructor;
-                if (modalDescription) modalDescription.textContent = description;
-                if (modalQuota) modalQuota.textContent = quota;
+            // Header Elements
+            if (modalStatusTitle) {
+                modalStatusTitle.textContent = isOpen ? 'Open Trainings' : 'Closed Trainings';
+            }
+            if (modalSelectedDateText) {
+                modalSelectedDateText.textContent = formattedDate;
+            }
+            if (modalStatusCountBadge) {
+                modalStatusCountBadge.className = isOpen
+                    ? 'badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6'
+                    : 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6';
+                modalStatusCountBadge.textContent = isOpen
+                    ? `${matchingEvents.length} Open`
+                    : `${matchingEvents.length} Closed`;
+            }
+            if (modalStatusIconWrap) {
+                modalStatusIconWrap.style.backgroundColor = isOpen ? '#ecfdf5' : '#fef2f2';
+                modalStatusIconWrap.style.color = isOpen ? '#059669' : '#dc2626';
+            }
+            if (modalStatusIcon) {
+                modalStatusIcon.className = isOpen ? 'ti ti-circle-check fs-2' : 'ti ti-lock fs-2';
+            }
+
+            // Populate Items List (Compact Rows for High Scalability)
+            if (modalTrainingItemsList) {
+                if (matchingEvents.length === 0) {
+                    modalTrainingItemsList.innerHTML = '';
+                    if (modalEmptyState) modalEmptyState.classList.remove('d-none');
+                } else {
+                    if (modalEmptyState) modalEmptyState.classList.add('d-none');
+
+                    let listHtml = '';
+                    matchingEvents.forEach(item => {
+                        const isCurrentItem = highlightId && item.id === highlightId;
+                        const itemIsOpen = item.status === 'open';
+
+                        listHtml += `
+                            <div class="p-3 rounded-3 border ${isCurrentItem ? 'border-primary shadow-sm' : 'border-light-subtle'} bg-white hover-shadow-sm d-flex align-items-center justify-content-between gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="badge bg-primary-subtle text-primary rounded-2 px-2-5 py-2 fw-semibold text-nowrap" style="font-size: 0.8rem;">
+                                        ${item.time}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark fs-3 mb-1">${item.title}</div>
+                                        <div class="d-flex align-items-center gap-2 text-muted small">
+                                            <span>${item.location}</span>
+                                            <span>&bull;</span>
+                                            <span class="badge rounded-pill bg-light text-secondary border px-2 py-0-5">${item.category}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <span class="badge ${itemIsOpen ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3 py-1-5 fw-semibold">
+                                        ${itemIsOpen ? 'Open Registration' : 'Registration Closed'}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    modalTrainingItemsList.innerHTML = listHtml;
+                }
+            }
+
+            const eventDetailModalEl = document.getElementById('eventDetailModal');
+            if (eventDetailModalEl) {
+                const modalInstance = bootstrap.Modal.getOrCreateInstance(eventDetailModalEl);
+                modalInstance.show();
+            }
+        }
+
+        // Delegate click on calendar status badges
+        const calGridBody = document.getElementById('calGridBody');
+        if (calGridBody) {
+            calGridBody.addEventListener('click', function (e) {
+                const badge = e.target.closest('.cal-status-badge');
+                if (!badge) return;
+
+                const y = parseInt(badge.getAttribute('data-year'), 10);
+                const m = parseInt(badge.getAttribute('data-month'), 10);
+                const d = parseInt(badge.getAttribute('data-day'), 10);
+                const status = badge.getAttribute('data-status');
+
+                openTrainingListModal(y, m, d, status);
             });
         }
 
-        // View Detail button click in modal: close modal & switch to Available Training tab
-        const modalBtnViewDetail = document.getElementById('modalBtnViewDetail');
-        if (modalBtnViewDetail) {
-            modalBtnViewDetail.addEventListener('click', function () {
-                const modalInstance = bootstrap.Modal.getInstance(eventDetailModalEl) || new bootstrap.Modal(eventDetailModalEl);
-                modalInstance.hide();
+        // Today's Agenda timeline items click -> open modal
+        document.querySelectorAll('.timeline-schedule-item').forEach(item => {
+            item.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                const ev = calendarEvents.find(e => e.id === id);
+                if (ev) {
+                    openTrainingListModal(ev.year, ev.month, ev.day, ev.status, ev.id);
+                } else {
+                    openTrainingListModal(2026, 8, 18, 'open', id);
+                }
+            });
+        });
+
+        // View More button click in modal: close modal & switch to Available Training tab with status filter
+        const modalBtnViewMore = document.getElementById('btn-modal-view-more') || document.getElementById('modalBtnViewMore');
+        if (modalBtnViewMore) {
+            modalBtnViewMore.addEventListener('click', function () {
+                const eventDetailModalEl = document.getElementById('eventDetailModal');
+                if (eventDetailModalEl) {
+                    const modalInstance = bootstrap.Modal.getInstance(eventDetailModalEl) || new bootstrap.Modal(eventDetailModalEl);
+                    modalInstance.hide();
+                }
 
                 const availableTabBtn = document.getElementById('tab-available-btn');
                 if (availableTabBtn) {
                     const tabTrigger = new bootstrap.Tab(availableTabBtn);
                     tabTrigger.show();
 
-                    if (currentSelectedTrainingId) {
-                        setTimeout(() => {
-                            const targetCard = document.querySelector(`.training-card-item[data-id="${currentSelectedTrainingId}"]`);
-                            if (targetCard) {
-                                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                targetCard.classList.add('border-primary', 'shadow');
-                                setTimeout(() => {
-                                    targetCard.classList.remove('border-primary', 'shadow');
-                                }, 2000);
-                            }
-                        }, 300);
+                    // Apply the status filter corresponding to the modal
+                    if (statusSelect && currentModalStatus) {
+                        statusSelect.value = currentModalStatus;
+                        filterAvailableTraining();
                     }
+
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             });
         }
@@ -570,40 +717,42 @@
         const categorySelect = document.getElementById('filterTrainingCategory');
         const statusSelect = document.getElementById('filterTrainingStatus');
         const btnResetFilter = document.getElementById('btnResetFilter');
-        const cards = document.querySelectorAll('.training-card-item');
 
-        function filterCards() {
+        function filterAvailableTraining() {
             const query = (searchInput?.value || '').toLowerCase().trim();
             const category = categorySelect?.value || '';
             const status = statusSelect?.value || '';
 
-            cards.forEach(card => {
-                const cardTitle = (card.getAttribute('data-title') || '').toLowerCase();
-                const cardCat = card.getAttribute('data-category') || '';
-                const cardStatus = card.getAttribute('data-status') || '';
+            const rows = document.querySelectorAll('#availableTrainingTable tbody tr.training-table-row, .training-card-item');
 
-                const matchesSearch = !query || cardTitle.includes(query) || card.textContent.toLowerCase().includes(query);
-                const matchesCategory = !category || cardCat === category;
-                const matchesStatus = !status || cardStatus === status;
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const rowCat = row.getAttribute('data-category') || '';
+                const rowStatus = row.getAttribute('data-status') || '';
+
+                const rowInstructor = (row.getAttribute('data-instructor') || '').toLowerCase();
+                const matchesSearch = !query || text.includes(query) || rowInstructor.includes(query);
+                const matchesCategory = !category || rowCat === category;
+                const matchesStatus = !status || rowStatus === status;
 
                 if (matchesSearch && matchesCategory && matchesStatus) {
-                    card.style.display = '';
+                    row.style.display = '';
                 } else {
-                    card.style.display = 'none';
+                    row.style.display = 'none';
                 }
             });
         }
 
-        if (searchInput) searchInput.addEventListener('input', filterCards);
-        if (categorySelect) categorySelect.addEventListener('change', filterCards);
-        if (statusSelect) statusSelect.addEventListener('change', filterCards);
+        if (searchInput) searchInput.addEventListener('input', filterAvailableTraining);
+        if (categorySelect) categorySelect.addEventListener('change', filterAvailableTraining);
+        if (statusSelect) statusSelect.addEventListener('change', filterAvailableTraining);
 
         if (btnResetFilter) {
             btnResetFilter.addEventListener('click', function () {
                 if (searchInput) searchInput.value = '';
                 if (categorySelect) categorySelect.value = '';
                 if (statusSelect) statusSelect.value = '';
-                filterCards();
+                filterAvailableTraining();
             });
         }
     });
