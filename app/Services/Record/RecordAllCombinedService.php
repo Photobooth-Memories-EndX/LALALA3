@@ -262,9 +262,26 @@ class RecordAllCombinedService
         $years = array_values(array_unique(array_filter($years)));
         rsort($years);
 
+        // Departments & Companies
+        $userDeps = DB::table('users')->whereNotNull('department')->where('department', '!=', '')->distinct()->pluck('department')->toArray();
+        $offlineDeps = Schema::hasTable('offline_training_users')
+            ? DB::table('offline_training_users')->whereNotNull('department')->where('department', '!=', '')->distinct()->pluck('department')->toArray()
+            : [];
+        $departments = array_values(array_unique(array_filter(array_merge($userDeps, $offlineDeps))));
+        sort($departments);
+
+        $userComps = DB::table('users')->whereNotNull('company_name')->where('company_name', '!=', '')->distinct()->pluck('company_name')->toArray();
+        $offlineComps = Schema::hasTable('offline_training_users')
+            ? DB::table('offline_training_users')->whereNotNull('company')->where('company', '!=', '')->distinct()->pluck('company')->toArray()
+            : [];
+        $companies = array_values(array_unique(array_filter(array_merge($userComps, $offlineComps))));
+        sort($companies);
+
         return [
             'classifications' => $classifications,
             'years'           => $years,
+            'departments'     => $departments,
+            'companies'       => $companies,
         ];
     }
 
@@ -300,6 +317,36 @@ class RecordAllCombinedService
 
         $year = trim((string) ($filters['year'] ?? 'all'));
         if ($year !== '' && $year !== 'all') {
+            return true;
+        }
+
+        $fromDate = trim((string) ($filters['from_date'] ?? ($filters['date_from'] ?? '')));
+        if ($fromDate !== '') {
+            return true;
+        }
+
+        $toDate = trim((string) ($filters['to_date'] ?? ($filters['date_to'] ?? '')));
+        if ($toDate !== '') {
+            return true;
+        }
+
+        $progressRange = trim((string) ($filters['progress_range'] ?? 'all'));
+        if ($progressRange !== '' && $progressRange !== 'all') {
+            return true;
+        }
+
+        $hoursRange = trim((string) ($filters['learning_hours_range'] ?? ($filters['learning_hours'] ?? ($filters['hours_range'] ?? 'all'))));
+        if ($hoursRange !== '' && $hoursRange !== 'all') {
+            return true;
+        }
+
+        $department = trim((string) ($filters['department'] ?? 'all'));
+        if ($department !== '' && $department !== 'all') {
+            return true;
+        }
+
+        $company = trim((string) ($filters['company'] ?? 'all'));
+        if ($company !== '' && $company !== 'all') {
             return true;
         }
 
@@ -341,23 +388,50 @@ class RecordAllCombinedService
                     DB::raw("'' as row_id"),
                     DB::raw("'' as employee_id"),
                     DB::raw("'' as employee_name"),
-                    DB::raw("'' as grade"),
-                    DB::raw("'' as job_position"),
+                    DB::raw("CAST(NULL AS CHAR) as grade"),
+                    DB::raw("CAST(NULL AS CHAR) as job_position"),
                     DB::raw("'' as team"),
                     DB::raw("'' as department"),
                     DB::raw("'' as company"),
                     DB::raw("'' as learning_title"),
+                    DB::raw("CAST(NULL AS CHAR) as sub_course_name"),
                     DB::raw("'' as learning_slug"),
                     DB::raw("'' as type"),
-                    DB::raw("'' as classification"),
                     DB::raw("'' as category"),
+                    DB::raw("CAST(NULL AS CHAR) as level"),
+                    DB::raw("CAST(NULL AS CHAR) as batch"),
+                    DB::raw("'' as classification"),
+                    DB::raw("CAST(NULL AS CHAR) as sub_classification"),
+                    DB::raw("CAST(NULL AS UNSIGNED) as counted_corporate_kpi"),
+                    DB::raw("CAST(NULL AS CHAR) as sub_corporate_kpi"),
+                    DB::raw("CAST(NULL AS CHAR) as delivery_method"),
+                    DB::raw("CAST(NULL AS CHAR) as sub_delivery_method"),
+                    DB::raw("CAST(NULL AS CHAR) as provider"),
+                    DB::raw("CAST(NULL AS CHAR) as sub_provider"),
+                    DB::raw("CAST(NULL AS CHAR) as provider_name"),
+                    DB::raw("CAST(NULL AS CHAR) as venue"),
+                    DB::raw("CAST(NULL AS CHAR) as instructor"),
                     DB::raw("0 as duration_seconds"),
+                    DB::raw("CAST(NULL AS DECIMAL(10,2)) as training_hours"),
+                    DB::raw("CAST(NULL AS CHAR) as start_date"),
+                    DB::raw("CAST(NULL AS CHAR) as finish_date"),
                     DB::raw("0.0 as learning_hours"),
                     DB::raw("0 as progress"),
                     DB::raw("'' as status"),
-                    DB::raw("'' as start_date"),
-                    DB::raw("'' as finish_date"),
-                    DB::raw("NOW() as raw_finish_date"),
+                    DB::raw("CAST(NULL AS DECIMAL(10,2)) as assessment_score"),
+                    DB::raw("CAST(NULL AS CHAR) as certificate"),
+                    DB::raw("CAST(NULL AS UNSIGNED) as attendance"),
+                    DB::raw("CAST(NULL AS CHAR) as attendance_reason"),
+                    DB::raw("CAST(NULL AS CHAR) as bond_status"),
+                    DB::raw("CAST(NULL AS CHAR) as bond_end_date"),
+                    DB::raw("CAST(NULL AS DECIMAL(15,2)) as bond_amount"),
+                    DB::raw("CAST(NULL AS CHAR) as l1_program"),
+                    DB::raw("CAST(NULL AS DECIMAL(10,2)) as l2_numerical"),
+                    DB::raw("CAST(NULL AS CHAR) as l2_verbal"),
+                    DB::raw("CAST(NULL AS DECIMAL(10,2)) as l3_numerical"),
+                    DB::raw("CAST(NULL AS CHAR) as l3_verbal"),
+                    DB::raw("CAST(NULL AS CHAR) as pic"),
+                    DB::raw("CAST(NULL AS DATETIME) as raw_finish_date"),
                     DB::raw("NOW() as record_date"),
                 ]);
         }
@@ -387,8 +461,8 @@ class RecordAllCombinedService
                 END as row_id"),
                 DB::raw("COALESCE(otu.employee_id, u.id_emp, '') as employee_id"),
                 DB::raw("COALESCE(otu.name, u.name, '') as employee_name"),
-                DB::raw("COALESCE(otu.grade, '') as grade"),
-                DB::raw("COALESCE(otu.job_position, '') as job_position"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.grade ELSE NULL END as grade"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.job_position ELSE NULL END as job_position"),
                 DB::raw("COALESCE(otu.team, u.team, '') as team"),
                 DB::raw("COALESCE(otu.department, u.department, '') as department"),
                 DB::raw("COALESCE(otu.company, u.company_name, '') as company"),
@@ -397,6 +471,7 @@ class RecordAllCombinedService
                     WHEN unified.source_type = 'playlist' THEN COALESCE(tp.title, c.title, 'Playlist')
                     ELSE COALESCE(c.title, 'Untitled Content')
                 END as learning_title"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.sub_course_name ELSE NULL END as sub_course_name"),
                 DB::raw("COALESCE(c.slug, '') as learning_slug"),
                 DB::raw("CASE
                     WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(ot.type), ''), 'Offline Training')
@@ -404,14 +479,29 @@ class RecordAllCombinedService
                     ELSE COALESCE(c.type, 'Document')
                 END as type"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')
-                    ELSE COALESCE(NULLIF(TRIM(cl.classification_name), ''), 'Unclassified')
-                END as classification"),
-                DB::raw("CASE
                     WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(ot.category), ''), 'General')
                     WHEN unified.source_type = 'playlist' THEN 'Playlist'
                     ELSE 'All Content'
                 END as category"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.level ELSE NULL END as level"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.batch ELSE NULL END as batch"),
+                DB::raw("CASE
+                    WHEN unified.source = 'offline' THEN COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified')
+                    ELSE COALESCE(NULLIF(TRIM(cl.classification_name), ''), 'Unclassified')
+                END as classification"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.sub_classification ELSE NULL END as sub_classification"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.counted_corporate_kpi ELSE NULL END as counted_corporate_kpi"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.sub_corporate_kpi ELSE NULL END as sub_corporate_kpi"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.delivery_method ELSE NULL END as delivery_method"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.sub_delivery_method ELSE NULL END as sub_delivery_method"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.provider ELSE NULL END as provider"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.sub_provider ELSE NULL END as sub_provider"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.provider_name ELSE NULL END as provider_name"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN ot.venue ELSE NULL END as venue"),
+                DB::raw("CASE
+                    WHEN unified.source = 'offline' THEN ot.instructor
+                    ELSE c.author
+                END as instructor"),
                 DB::raw("CASE
                     WHEN unified.source = 'offline' THEN COALESCE(ot.duration_seconds, 0)
                     WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
@@ -419,19 +509,35 @@ class RecordAllCombinedService
                     ELSE TIME_TO_SEC(CONCAT('00:', c.duration))
                 END as duration_seconds"),
                 DB::raw("CASE
-                    WHEN unified.source = 'offline' THEN COALESCE(ROUND(otu.learning_hours, 2), 0)
-                    WHEN c.duration IS NULL OR TRIM(c.duration) = '' THEN 0
-                    WHEN LENGTH(c.duration) - LENGTH(REPLACE(c.duration, ':', '')) = 2 THEN ROUND(TIME_TO_SEC(c.duration) / 3600, 2)
-                    ELSE ROUND(TIME_TO_SEC(CONCAT('00:', c.duration)) / 3600, 2)
-                END as learning_hours"),
+                    WHEN unified.source = 'offline' THEN ot.learning_hours
+                    WHEN unified.source_type = 'playlist' THEN tp.learning_hours
+                    ELSE c.learning_hours
+                END as training_hours"),
+                DB::raw("CASE
+                    WHEN unified.source = 'offline' THEN DATE_FORMAT(ot.start_date, '%Y-%m-%d')
+                    ELSE NULL
+                END as start_date"),
+                DB::raw("DATE_FORMAT(unified.finish_date, '%Y-%m-%d') as finish_date"),
+                DB::raw("COALESCE(ROUND(unified.learning_hours, 2), 0) as learning_hours"),
                 DB::raw("COALESCE(unified.progress, 0) as progress"),
                 DB::raw("CASE
                     WHEN unified.finish = '1' OR unified.progress >= 100 THEN 'Finished'
                     WHEN unified.progress > 0 THEN 'Ongoing'
                     ELSE 'Not Started'
                 END as status"),
-                DB::raw("DATE_FORMAT(unified.created_at, '%Y-%m-%d') as start_date"),
-                DB::raw("DATE_FORMAT(unified.finish_date, '%Y-%m-%d') as finish_date"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.assessment_score ELSE NULL END as assessment_score"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.certificate ELSE NULL END as certificate"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.attendance ELSE NULL END as attendance"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.attendance_reason ELSE NULL END as attendance_reason"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.bond_status ELSE NULL END as bond_status"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN DATE_FORMAT(otu.bond_end_date, '%Y-%m-%d') ELSE NULL END as bond_end_date"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.bond_amount ELSE NULL END as bond_amount"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.l1_program ELSE NULL END as l1_program"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.l2_numerical ELSE NULL END as l2_numerical"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.l2_verbal ELSE NULL END as l2_verbal"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.l3_numerical ELSE NULL END as l3_numerical"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.l3_verbal ELSE NULL END as l3_verbal"),
+                DB::raw("CASE WHEN unified.source = 'offline' THEN otu.pic ELSE NULL END as pic"),
                 'unified.finish_date as raw_finish_date',
                 'unified.created_at as record_date',
             ]);
@@ -453,8 +559,9 @@ class RecordAllCombinedService
                 DB::raw('CAST(NULL AS UNSIGNED) as offline_training_user_id'),
                 'cu.progress',
                 'cu.finish',
+                DB::raw("COALESCE(cu.learning_hours, 0) as learning_hours"),
                 'cu.created_at',
-                DB::raw("COALESCE(cu.completed_at, cu.updated_at, cu.created_at) as finish_date"),
+                DB::raw("CASE WHEN cu.finish = '1' OR cu.progress >= 100 THEN cu.completed_at ELSE NULL END as finish_date"),
             ]);
 
         $this->applyOnlineSubqueryFilters($q, $filters, 'cu');
@@ -478,8 +585,9 @@ class RecordAllCombinedService
                 DB::raw('CAST(NULL AS UNSIGNED) as offline_training_user_id'),
                 'pcu.progress',
                 'pcu.finish',
+                DB::raw("COALESCE(pcu.learning_hour, 0) as learning_hours"),
                 'pcu.created_at',
-                DB::raw("COALESCE(pcu.completed_at, pcu.updated_at, pcu.created_at) as finish_date"),
+                DB::raw("CASE WHEN pcu.finish = '1' OR pcu.progress >= 100 THEN pcu.completed_at ELSE NULL END as finish_date"),
             ]);
 
         $this->applyOnlineSubqueryFilters($q, $filters, 'pcu');
@@ -496,9 +604,14 @@ class RecordAllCombinedService
         $status = strtolower(trim((string) ($filters['status'] ?? 'all')));
         if ($status !== '' && $status !== 'all') {
             if ($status === 'finished' || $status === 'finish') {
-                $q->where("{$recordAlias}.finish", '1');
+                $q->where(function ($sub) use ($recordAlias) {
+                    $sub->where("{$recordAlias}.finish", '1')
+                        ->orWhere("{$recordAlias}.progress", '>=', 100);
+                });
             } elseif ($status === 'ongoing') {
-                $q->where("{$recordAlias}.finish", '0')->where("{$recordAlias}.progress", '>', 0);
+                $q->where("{$recordAlias}.finish", '0')
+                    ->where("{$recordAlias}.progress", '>', 0)
+                    ->where("{$recordAlias}.progress", '<', 100);
             } elseif ($status === 'not_started') {
                 $q->where("{$recordAlias}.finish", '0')
                     ->where(function ($sub) use ($recordAlias) {
@@ -576,6 +689,7 @@ class RecordAllCombinedService
         if ($year !== '' && $year !== 'all' && is_numeric($year)) {
             $q->where(function ($sub) use ($recordAlias, $year) {
                 $sub->whereYear("{$recordAlias}.created_at", (int) $year)
+                    ->orWhereYear("{$recordAlias}.completed_at", (int) $year)
                     ->orWhereYear("{$recordAlias}.updated_at", (int) $year);
             });
         }
@@ -628,6 +742,71 @@ class RecordAllCombinedService
                 }
             });
         }
+
+        // 7. Finish Date Range Filter
+        $fromDate = trim((string) ($filters['from_date'] ?? ($filters['date_from'] ?? '')));
+        if ($fromDate !== '') {
+            $q->where("{$recordAlias}.completed_at", '>=', "{$fromDate} 00:00:00");
+        }
+        $toDate = trim((string) ($filters['to_date'] ?? ($filters['date_to'] ?? '')));
+        if ($toDate !== '') {
+            $q->where("{$recordAlias}.completed_at", '<=', "{$toDate} 23:59:59");
+        }
+
+        // 8. Progress Range Filter
+        $progressRange = trim((string) ($filters['progress_range'] ?? 'all'));
+        if ($progressRange !== '' && $progressRange !== 'all') {
+            if ($progressRange === '0') {
+                $q->where(function ($sub) use ($recordAlias) {
+                    $sub->where("{$recordAlias}.progress", '<=', 0)
+                        ->orWhereNull("{$recordAlias}.progress");
+                });
+            } elseif ($progressRange === '1-25') {
+                $q->where("{$recordAlias}.progress", '>=', 1)->where("{$recordAlias}.progress", '<=', 25);
+            } elseif ($progressRange === '26-50') {
+                $q->where("{$recordAlias}.progress", '>=', 26)->where("{$recordAlias}.progress", '<=', 50);
+            } elseif ($progressRange === '51-75') {
+                $q->where("{$recordAlias}.progress", '>=', 51)->where("{$recordAlias}.progress", '<=', 75);
+            } elseif ($progressRange === '76-99') {
+                $q->where("{$recordAlias}.progress", '>=', 76)->where("{$recordAlias}.progress", '<=', 99);
+            } elseif ($progressRange === '100') {
+                $q->where(function ($sub) use ($recordAlias) {
+                    $sub->where("{$recordAlias}.progress", '>=', 100)
+                        ->orWhere("{$recordAlias}.finish", '1');
+                });
+            }
+        }
+
+        // 9. Participant Learning Hours Filter
+        $hoursRange = trim((string) ($filters['learning_hours_range'] ?? ($filters['learning_hours'] ?? ($filters['hours_range'] ?? 'all'))));
+        if ($hoursRange !== '' && $hoursRange !== 'all') {
+            $hCol = $recordAlias === 'pcu' ? 'pcu.learning_hour' : 'cu.learning_hours';
+            if ($hoursRange === 'lt05') {
+                $q->where($hCol, '<', 0.5);
+            } elseif ($hoursRange === '05-1') {
+                $q->where($hCol, '>=', 0.5)->where($hCol, '<', 1.0);
+            } elseif ($hoursRange === '1-2') {
+                $q->where($hCol, '>=', 1.0)->where($hCol, '<', 2.0);
+            } elseif ($hoursRange === '2-4') {
+                $q->where($hCol, '>=', 2.0)->where($hCol, '<', 4.0);
+            } elseif ($hoursRange === 'gte4') {
+                $q->where($hCol, '>=', 4.0);
+            }
+        }
+
+        // 10. Department Filter
+        $department = trim((string) ($filters['department'] ?? 'all'));
+        if ($department !== '' && $department !== 'all') {
+            $deptUserIds = DB::table('users')->where('department', $department)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($deptUserIds) ? $deptUserIds : [-1]);
+        }
+
+        // 11. Company Filter
+        $company = trim((string) ($filters['company'] ?? 'all'));
+        if ($company !== '' && $company !== 'all') {
+            $compUserIds = DB::table('users')->where('company_name', $company)->pluck('id')->toArray();
+            $q->whereIn("{$recordAlias}.user_id", !empty($compUserIds) ? $compUserIds : [-1]);
+        }
     }
 
     /**
@@ -649,8 +828,9 @@ class RecordAllCombinedService
                 'otu.id as offline_training_user_id',
                 'otu.progress',
                 DB::raw("CASE WHEN otu.progress >= 100 THEN '1' ELSE '0' END as finish"),
+                DB::raw("COALESCE(otu.learning_hours, 0) as learning_hours"),
                 'otu.created_at',
-                DB::raw("COALESCE(ot.finish_date, ot.start_date, otu.created_at) as finish_date"),
+                DB::raw("CASE WHEN otu.progress >= 100 THEN ot.finish_date ELSE NULL END as finish_date"),
             ]);
 
         // Status filter
@@ -726,6 +906,77 @@ class RecordAllCombinedService
             });
         }
 
+        // 5. Finish Date Range Filter
+        $fromDate = trim((string) ($filters['from_date'] ?? ($filters['date_from'] ?? '')));
+        if ($fromDate !== '') {
+            $q->whereDate('ot.finish_date', '>=', $fromDate);
+        }
+        $toDate = trim((string) ($filters['to_date'] ?? ($filters['date_to'] ?? '')));
+        if ($toDate !== '') {
+            $q->whereDate('ot.finish_date', '<=', $toDate);
+        }
+
+        // 6. Progress Range Filter
+        $progressRange = trim((string) ($filters['progress_range'] ?? 'all'));
+        if ($progressRange !== '' && $progressRange !== 'all') {
+            if ($progressRange === '0') {
+                $q->where(function ($sub) {
+                    $sub->where('otu.progress', '<=', 0)
+                        ->orWhereNull('otu.progress');
+                });
+            } elseif ($progressRange === '1-25') {
+                $q->where('otu.progress', '>=', 1)->where('otu.progress', '<=', 25);
+            } elseif ($progressRange === '26-50') {
+                $q->where('otu.progress', '>=', 26)->where('otu.progress', '<=', 50);
+            } elseif ($progressRange === '51-75') {
+                $q->where('otu.progress', '>=', 51)->where('otu.progress', '<=', 75);
+            } elseif ($progressRange === '76-99') {
+                $q->where('otu.progress', '>=', 76)->where('otu.progress', '<=', 99);
+            } elseif ($progressRange === '100') {
+                $q->where('otu.progress', '>=', 100);
+            }
+        }
+
+        // 7. Participant Learning Hours Filter
+        $hoursRange = trim((string) ($filters['learning_hours_range'] ?? ($filters['learning_hours'] ?? ($filters['hours_range'] ?? 'all'))));
+        if ($hoursRange !== '' && $hoursRange !== 'all') {
+            if ($hoursRange === 'lt05') {
+                $q->where('otu.learning_hours', '<', 0.5);
+            } elseif ($hoursRange === '05-1') {
+                $q->where('otu.learning_hours', '>=', 0.5)->where('otu.learning_hours', '<', 1.0);
+            } elseif ($hoursRange === '1-2') {
+                $q->where('otu.learning_hours', '>=', 1.0)->where('otu.learning_hours', '<', 2.0);
+            } elseif ($hoursRange === '2-4') {
+                $q->where('otu.learning_hours', '>=', 2.0)->where('otu.learning_hours', '<', 4.0);
+            } elseif ($hoursRange === 'gte4') {
+                $q->where('otu.learning_hours', '>=', 4.0);
+            }
+        }
+
+        // 8. Department Filter
+        $department = trim((string) ($filters['department'] ?? 'all'));
+        if ($department !== '' && $department !== 'all') {
+            $deptUserIds = DB::table('users')->where('department', $department)->pluck('id')->toArray();
+            $q->where(function ($sub) use ($department, $deptUserIds) {
+                $sub->where('otu.department', $department);
+                if (!empty($deptUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $deptUserIds);
+                }
+            });
+        }
+
+        // 9. Company Filter
+        $company = trim((string) ($filters['company'] ?? 'all'));
+        if ($company !== '' && $company !== 'all') {
+            $compUserIds = DB::table('users')->where('company_name', $company)->pluck('id')->toArray();
+            $q->where(function ($sub) use ($company, $compUserIds) {
+                $sub->where('otu.company', $company);
+                if (!empty($compUserIds)) {
+                    $sub->orWhereIn('otu.user_id', $compUserIds);
+                }
+            });
+        }
+
         return $q;
     }
 
@@ -798,10 +1049,48 @@ class RecordAllCombinedService
                 }
                 return '<span class="badge bg-secondary-lt text-secondary fw-bold" style="font-size: 0.725rem;">Not Started</span>';
             })
+            ->addColumn('employee_id', function ($row) {
+                return $row->employee_id ?: '-';
+            })
+            ->addColumn('employee_name', function ($row) {
+                return $row->employee_name ?: '-';
+            })
             ->addColumn('employee', function ($row) {
-                $name = e($row->employee_name ?: '-');
-                $sub = e($row->department ?: ($row->team ?: ''));
-                return '<div class="fw-bold text-dark">' . $name . '</div>' . ($sub ? '<div class="text-muted extra-small" style="font-size:0.75rem;">' . $sub . '</div>' : '');
+                return $row->employee_name ?: '-';
+            })
+            ->addColumn('kpi_badge', function ($row) {
+                if ($row->counted_corporate_kpi === null || $row->counted_corporate_kpi === '') {
+                    return '<span class="text-muted">-</span>';
+                }
+                $val = (string) $row->counted_corporate_kpi;
+                if ($val === '1' || strtolower($val) === 'yes' || strtolower($val) === 'true') {
+                    return '<span class="badge bg-success-lt text-success fw-bold" style="font-size: 0.725rem;">Yes</span>';
+                }
+                return '<span class="badge bg-secondary-lt text-secondary fw-bold" style="font-size: 0.725rem;">No</span>';
+            })
+            ->addColumn('duration_formatted', function ($row) {
+                $sec = (int) ($row->duration_seconds ?? 0);
+                if ($sec <= 0) {
+                    return '-';
+                }
+                $h = floor($sec / 3600);
+                $m = floor(($sec % 3600) / 60);
+                $s = $sec % 60;
+                return sprintf('%02d:%02d:%02d', $h, $m, $s);
+            })
+            ->addColumn('training_hours_formatted', function ($row) {
+                if ($row->training_hours === null || $row->training_hours === '') {
+                    return '-';
+                }
+                return number_format((float) $row->training_hours, 2);
+            })
+            ->addColumn('start_date_formatted', function ($row) {
+                $d = $row->start_date ?? null;
+                return ($d && $d !== '-') ? date('d M Y', strtotime($d)) : '-';
+            })
+            ->addColumn('finish_date_formatted', function ($row) {
+                $d = $row->finish_date ?? null;
+                return ($d && $d !== '-') ? date('d M Y', strtotime($d)) : '-';
             })
             ->addColumn('learning_hours_formatted', function ($row) {
                 return number_format((float) ($row->learning_hours ?? 0), 2);
@@ -815,9 +1104,41 @@ class RecordAllCombinedService
                     . '<span class="extra-small text-muted" style="font-size: 0.75rem;">' . $progress . '%</span>'
                     . '</div>';
             })
-            ->addColumn('finish_date_formatted', function ($row) {
-                $d = $row->finish_date ?? null;
-                return $d ? date('d M Y', strtotime($d)) : '-';
+            ->addColumn('assessment_score_formatted', function ($row) {
+                return ($row->assessment_score !== null && $row->assessment_score !== '') ? number_format((float) $row->assessment_score, 1) : '-';
+            })
+            ->addColumn('certificate_badge', function ($row) {
+                if (empty($row->certificate) || $row->certificate === '-') {
+                    return '<span class="text-muted">-</span>';
+                }
+                $cert = e($row->certificate);
+                return '<span class="badge bg-blue-lt text-primary fw-bold" style="font-size: 0.725rem;" title="' . $cert . '"><i class="ti ti-file-certificate me-1"></i> Available</span>';
+            })
+            ->addColumn('attendance_badge', function ($row) {
+                if ($row->attendance === null || $row->attendance === '') {
+                    return '<span class="text-muted">-</span>';
+                }
+                $val = (string) $row->attendance;
+                if ($val === '1' || strtolower($val) === 'yes' || strtolower($val) === 'true' || strtolower($val) === 'present') {
+                    return '<span class="badge bg-success-lt text-success fw-bold" style="font-size: 0.725rem;">Present</span>';
+                }
+                return '<span class="badge bg-danger-lt text-danger fw-bold" style="font-size: 0.725rem;">Absent</span>';
+            })
+            ->addColumn('bond_end_date_formatted', function ($row) {
+                $d = $row->bond_end_date ?? null;
+                return ($d && $d !== '-') ? date('d M Y', strtotime($d)) : '-';
+            })
+            ->addColumn('bond_amount_formatted', function ($row) {
+                if ($row->bond_amount !== null && (float) $row->bond_amount > 0) {
+                    return 'IDR ' . number_format((float) $row->bond_amount, 0, ',', '.');
+                }
+                return '-';
+            })
+            ->addColumn('l2_numerical_formatted', function ($row) {
+                return ($row->l2_numerical !== null && $row->l2_numerical !== '') ? number_format((float) $row->l2_numerical, 1) : '-';
+            })
+            ->addColumn('l3_numerical_formatted', function ($row) {
+                return ($row->l3_numerical !== null && $row->l3_numerical !== '') ? number_format((float) $row->l3_numerical, 1) : '-';
             })
             ->addColumn('action', function ($row) {
                 if ($row->source === 'offline') {
@@ -835,8 +1156,10 @@ class RecordAllCombinedService
             ->rawColumns([
                 'source_badge',
                 'status_badge',
-                'employee',
+                'kpi_badge',
                 'progress_bar',
+                'certificate_badge',
+                'attendance_badge',
                 'action',
             ])
             ->make(true);
