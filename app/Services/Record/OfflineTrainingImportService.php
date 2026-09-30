@@ -568,6 +568,7 @@ class OfflineTrainingImportService
                         'sub_classification'    => $tData['sub_classification'],
                         'counted_corporate_kpi' => $tData['counted_corporate_kpi'],
                         'sub_corporate_kpi'     => $tData['sub_corporate_kpi'],
+                        'corporate_kpi_year'    => $tData['corporate_kpi_year'] ?? (!empty($tData['start_date']) ? (int) substr((string) $tData['start_date'], 0, 4) : null),
                         'delivery_method'       => $tData['delivery_method'],
                         'sub_delivery_method'   => $tData['sub_delivery_method'],
                         'provider'              => $tData['provider'],
@@ -583,6 +584,9 @@ class OfflineTrainingImportService
                     ]);
                     $existingTrainings[$fp] = $training;
                     $createdTrainings++;
+
+                    // Auto-register legitimate options from import data
+                    app(OfflineOptionService::class)->ensureOptionsFromTraining($tData, 'import', $userId);
                 }
 
                 // Prepare participant records
@@ -842,6 +846,9 @@ class OfflineTrainingImportService
             'sub_classification'    => $this->normalizeString($raw['sub_classification'] ?? null),
             'counted_corporate_kpi' => $this->normalizeBoolean($raw['counted_corporate_kpi'] ?? null),
             'sub_corporate_kpi'     => $this->normalizeString($raw['sub_corporate_kpi'] ?? null),
+            'corporate_kpi_year'    => !empty($raw['corporate_kpi_year'])
+                ? (int) $raw['corporate_kpi_year']
+                : (!empty($raw['start_date']) ? (int) substr((string) $raw['start_date'], 0, 4) : null),
             'delivery_method'       => $this->normalizeString($raw['delivery_method'] ?? null),
             'sub_delivery_method'   => $this->normalizeString($raw['sub_delivery_method'] ?? null),
             'provider'              => $this->normalizeString($raw['provider'] ?? null),

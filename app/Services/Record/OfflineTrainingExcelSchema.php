@@ -286,8 +286,28 @@ class OfflineTrainingExcelSchema
                 'example'  => 'Yes',
                 'note'     => 'Yes / No',
                 'aliases'  => [
+                    "counted as '24 corporate kpi (yes/no)",
+                    "counted as '25 corporate kpi (yes/no)",
                     "counted as '26 corporate kpi (yes/no)",
+                    "counted as '27 corporate kpi (yes/no)",
+                    "counted as '28 corporate kpi (yes/no)",
+                    "counted as '29 corporate kpi (yes/no)",
+                    "counted as '30 corporate kpi (yes/no)",
+                    "counted as 2024 corporate kpi (yes/no)",
+                    "counted as 2025 corporate kpi (yes/no)",
+                    "counted as 2026 corporate kpi (yes/no)",
+                    "counted as 2027 corporate kpi (yes/no)",
+                    "counted as '24 corporate kpi",
+                    "counted as '25 corporate kpi",
                     "counted as '26 corporate kpi",
+                    "counted as '27 corporate kpi",
+                    "counted as '28 corporate kpi",
+                    "counted as '29 corporate kpi",
+                    "counted as '30 corporate kpi",
+                    "counted as 2024 corporate kpi",
+                    "counted as 2025 corporate kpi",
+                    "counted as 2026 corporate kpi",
+                    "counted as 2027 corporate kpi",
                     "counted corporate kpi",
                     "corporate kpi",
                     "counted to corporate kpi",
@@ -310,7 +330,23 @@ class OfflineTrainingExcelSchema
                 'type'     => 'string',
                 'example'  => 'Safety Incident Reduction',
                 'note'     => 'KPI strategic program',
-                'aliases'  => ["sub '26 corporate kpi", "sub corporate kpi", "sub kpi", "sub kpi corporate", "sub 26 corporate kpi"],
+                'aliases'  => [
+                    "sub '24 corporate kpi",
+                    "sub '25 corporate kpi",
+                    "sub '26 corporate kpi",
+                    "sub '27 corporate kpi",
+                    "sub '28 corporate kpi",
+                    "sub '29 corporate kpi",
+                    "sub '30 corporate kpi",
+                    "sub 2024 corporate kpi",
+                    "sub 2025 corporate kpi",
+                    "sub 2026 corporate kpi",
+                    "sub 2027 corporate kpi",
+                    "sub corporate kpi",
+                    "sub kpi",
+                    "sub kpi corporate",
+                    "sub 26 corporate kpi",
+                ],
             ],
             19 => [
                 'col_index' => 19,
@@ -1175,6 +1211,50 @@ class OfflineTrainingExcelSchema
                 $columnResults[$pos] = $issue;
                 $issues[] = $issue;
                 continue;
+            }
+
+            // 4b. YEAR-AGNOSTIC CORPORATE KPI HEADER MATCHING (Cols 17 & 18)
+            if ($canonical['key'] === 'counted_corporate_kpi') {
+                if (preg_match('/counted\s+(as\s+)?(\'?\d{2,4}\s+)?corporate\s+kpi/i', $normFound) ||
+                    preg_match('/^corporate\s+kpi/i', $normFound) ||
+                    preg_match('/^kpi\s+corporate/i', $normFound)) {
+                    $autoMatchedCount++;
+                    $res = [
+                        'col'         => $pos,
+                        'letter'      => $colLetter,
+                        'expected'    => $canonical['header'],
+                        'found'       => $rawFound,
+                        'status'      => 'AUTO_MATCHED',
+                        'mapped_to'   => $canonical['header'],
+                        'key'         => $canonical['key'],
+                        'message'     => "Matched Corporate KPI header (year-agnostic) to '{$canonical['header']}'.",
+                    ];
+                    $columnResults[$pos] = $res;
+                    $autoMatchedList[] = $res;
+                    $mappedKeys[$canonical['key']][] = $pos;
+                    continue;
+                }
+            }
+
+            if ($canonical['key'] === 'sub_corporate_kpi') {
+                if (preg_match('/^sub\s+(\'?\d{2,4}\s+)?corporate\s+kpi/i', $normFound) ||
+                    preg_match('/^sub\s+kpi/i', $normFound)) {
+                    $autoMatchedCount++;
+                    $res = [
+                        'col'         => $pos,
+                        'letter'      => $colLetter,
+                        'expected'    => $canonical['header'],
+                        'found'       => $rawFound,
+                        'status'      => 'AUTO_MATCHED',
+                        'mapped_to'   => $canonical['header'],
+                        'key'         => $canonical['key'],
+                        'message'     => "Matched Sub Corporate KPI header (year-agnostic) to '{$canonical['header']}'.",
+                    ];
+                    $columnResults[$pos] = $res;
+                    $autoMatchedList[] = $res;
+                    $mappedKeys[$canonical['key']][] = $pos;
+                    continue;
+                }
             }
 
             // 5. PREDEFINED ALIAS MATCH FOR THIS COLUMN

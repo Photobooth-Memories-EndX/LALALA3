@@ -8,8 +8,10 @@ use App\Exports\OfflineTrainingExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LearningManageController;
+use App\Models\Classification;
 use App\Models\OfflineTraining;
 use App\Models\OfflineTrainingUser;
+use App\Services\Record\OfflineOptionService;
 use App\Services\Record\OfflineTrainingCreateService;
 use App\Services\Record\OfflineTrainingUpdateService;
 use App\Services\Record\OfflineTrainingExcelSchema;
@@ -57,13 +59,20 @@ class RecordOfflineController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(OfflineOptionService $optionService)
     {
+        $currentYear = (int) date('Y');
+        $options = $optionService->getGroupedOptions($currentYear, true);
+        $classifications = Classification::orderBy('classification_name', 'asc')->get();
+
         return view('main.record.offline-create', [
             'title'               => 'Add Non KP OWL Training',
             'subtitle'            => 'Create an offline employee training record.',
+            'classifications'     => $classifications,
+            'options'             => $options,
+            'currentYear'         => $currentYear,
             'trainingTypes'       => self::TRAINING_TYPES,
-            'mainClassifications' => self::MAIN_CLASSIFICATIONS,
+            'mainClassifications' => $classifications->pluck('classification_name')->all(),
             'schemaColumns'       => OfflineTrainingExcelSchema::columns(),
             'schemaGroups'        => OfflineTrainingExcelSchema::groups(),
         ]);
@@ -782,7 +791,7 @@ class RecordOfflineController extends Controller
     /**
      * Show dedicated edit page for an offline training record.
      */
-    public function edit($id)
+    public function edit($id, OfflineOptionService $optionService)
     {
         $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
         if (!$hasTables) {
@@ -797,6 +806,9 @@ class RecordOfflineController extends Controller
 
         $training = $record->training;
         $resolved = self::resolveClassification($training->main_classification ?? 'unclassified');
+        $kpiYear = $training->corporate_kpi_year ?: ($training->start_date ? (int) $training->start_date->format('Y') : (int) date('Y'));
+        $options = $optionService->getGroupedOptions($kpiYear, true);
+        $classifications = Classification::orderBy('classification_name', 'asc')->get();
 
         return view('main.record.offline-edit', [
             'title'               => 'Edit Non KP OWL Record',
@@ -804,8 +816,11 @@ class RecordOfflineController extends Controller
             'record'              => $record,
             'training'            => $training,
             'classification'      => $resolved,
+            'classifications'     => $classifications,
+            'options'             => $options,
+            'kpiYear'             => $kpiYear,
             'trainingTypes'       => self::TRAINING_TYPES,
-            'mainClassifications' => self::MAIN_CLASSIFICATIONS,
+            'mainClassifications' => $classifications->pluck('classification_name')->all(),
         ]);
     }
 

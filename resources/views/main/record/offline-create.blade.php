@@ -65,6 +65,29 @@
         border-left: 4px solid #d97706 !important;
     }
 
+    /* SELECT2 IN INPUT GROUP & [+] BUTTON FIX */
+    .input-group > .select2-container--bootstrap-5,
+    .input-group > .select2-container {
+        flex: 1 1 auto;
+        width: 1% !important;
+    }
+    .input-group > .select2-container--bootstrap-5 .select2-selection,
+    .input-group > .select2-container .select2-selection {
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+    }
+    .btn-add-option-modal {
+        border-color: #d1d5db;
+        color: #4b5563;
+        background-color: #f9fafb;
+        transition: all 0.15s ease-in-out;
+    }
+    .btn-add-option-modal:hover {
+        background-color: #0c5b9e;
+        border-color: #0c5b9e;
+        color: #ffffff;
+    }
+
     /* DARK MODE OVERRIDES */
     [data-bs-theme="dark"] .record-section-header,
     body.dark-mode .record-section-header,

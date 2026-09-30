@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('batch', 100)->nullable()->index();
             $table->string('main_classification')->nullable()->index();
             $table->string('sub_classification')->nullable();
+            $table->unsignedSmallInteger('corporate_kpi_year')->nullable()->index();
             $table->boolean('counted_corporate_kpi')->nullable();
             $table->string('sub_corporate_kpi')->nullable();
             $table->string('delivery_method', 100)->nullable();

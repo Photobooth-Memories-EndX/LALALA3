@@ -58,6 +58,7 @@ use App\Http\Controllers\Manage\Record\RecordOnlineController;
 use App\Http\Controllers\Manage\Record\RecordOfflineController;
 use App\Http\Controllers\Manage\Record\RecordAllController;
 use App\Http\Controllers\Manage\Record\RecordExportController;
+use App\Http\Controllers\Manage\Record\OfflineTrainingOptionController;
 use App\Http\Controllers\Manage\Record\OfflineTrainingImportController;
 
 /*
@@ -475,6 +476,8 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('offline/classification/{classification}/datatable', [RecordOfflineController::class, 'classificationDatatable'])->name('offline.classification.datatable');
             Route::get('offline/classification/{classification}/download', [RecordOfflineController::class, 'classificationDownload'])->name('offline.classification.download');
             Route::get('offline/datatable', [RecordOfflineController::class, 'datatable'])->name('offline.datatable');
+            Route::get('offline/options', [OfflineTrainingOptionController::class, 'index'])->name('offline.options.index');
+            Route::post('offline/options', [OfflineTrainingOptionController::class, 'store'])->name('offline.options.store');
             Route::get('offline/create', [RecordOfflineController::class, 'create'])->name('offline.create');
             Route::get('offline/search-employees', [RecordOfflineController::class, 'searchEmployees'])->name('offline.search-employees');
             Route::post('offline/store', [RecordOfflineController::class, 'store'])->name('offline.store');

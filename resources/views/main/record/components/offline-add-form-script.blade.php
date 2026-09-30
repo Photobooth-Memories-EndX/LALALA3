@@ -43,6 +43,57 @@
                 .replace(/'/g, '&#039;');
         }
 
+        // --- Select2 Initialization for Master Option Dropdowns ---
+        if ($.fn.select2) {
+            $('.select2-master-option').each(function () {
+                const placeholder = $(this).data('placeholder') || 'Select option';
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                    placeholder: placeholder,
+                    allowClear: true,
+                    width: 'resolve'
+                });
+            });
+        }
+
+        // --- Helper: Get Current KPI Year from Start Date or fallback ---
+        function getCurrentKpiYear() {
+            const startVal = $('#add-start-date').val();
+            if (startVal && startVal.length >= 4) {
+                const y = parseInt(startVal.substring(0, 4), 10);
+                if (!isNaN(y) && y >= 1970 && y <= 2100) {
+                    return y;
+                }
+            }
+            return {{ $currentYear ?? date('Y') }};
+        }
+
+        // --- Helper: Update Dynamic Yearly Corporate KPI Labels & Options ---
+        function updateKpiYearDisplay() {
+            const kpiYear = getCurrentKpiYear();
+            const shortYear = "'" + String(kpiYear).slice(-2);
+            $('#label-counted-corporate-kpi').text(`Counted as ${shortYear} Corporate KPI`);
+            $('#label-sub-corporate-kpi').text(`Sub ${shortYear} Corporate KPI`);
+
+            // Update button data-year attribute
+            $('.btn-add-option-modal[data-type="sub_corporate_kpi"]').data('year', kpiYear);
+
+            // Fetch and refresh sub_corporate_kpi datalist for this year
+            $.ajax({
+                url: "{{ route('manage.record.offline.options.index') }}",
+                type: 'GET',
+                data: { type: 'sub_corporate_kpi', year: kpiYear },
+                success: function (res) {
+                    const results = (res && res.results) ? res.results : [];
+                    const $dl = $('#sub-corporate-kpi-datalist');
+                    $dl.empty();
+                    results.forEach(function (item) {
+                        $dl.append(`<option value="${escapeHtml(item.value)}"></option>`);
+                    });
+                }
+            });
+        }
+
         // --- Schedule & Duration Watchers ---
         $('#add-start-date').on('change', function () {
             const startVal = $(this).val();
@@ -53,6 +104,7 @@
             if (startVal && (!$finishDate.val() || $finishDate.val() < startVal)) {
                 $finishDate.val(startVal);
             }
+            updateKpiYearDisplay();
             updateSection4Review();
         });
 
@@ -747,6 +799,7 @@
                 sub_classification: $('#add-sub-classification').val().trim(),
                 counted_corporate_kpi: $('input[name="counted_corporate_kpi"]:checked').val(),
                 sub_corporate_kpi: $('#add-sub-corporate-kpi').val().trim(),
+                corporate_kpi_year: getCurrentKpiYear(),
                 delivery_method: $('#add-delivery-method').val(),
                 sub_delivery_method: $('#add-sub-delivery-method').val().trim(),
                 provider: $('#add-provider').val(),
@@ -802,6 +855,156 @@
                     $('html, body').animate({ scrollTop: $addAlert.offset().top - 100 }, 200);
                 }
             });
+        });
+
+        // --- MASTER OPTION [+] MODAL LOGIC ---
+        $(document).on('click', '.btn-add-option-modal', function (e) {
+            e.preventDefault();
+            const type = $(this).data('type');
+            const title = $(this).data('title') || type;
+            const targetSelect = $(this).data('target');
+            const targetDatalist = $(this).data('datalist');
+
+            $('#modal-option-type').val(type);
+            $('#modal-option-target-select').val(targetSelect || '');
+            $('#modal-option-target-datalist').val(targetDatalist || '');
+            $('#modal-option-value').val('');
+            $('#modal-option-alert').hide().empty();
+            $('#modal-option-info').hide().empty();
+            $('#modal-add-option-title').text(`Add New ${title}`);
+            $('#modal-option-value-label').text(`${title} Value`);
+
+            if (type === 'sub_corporate_kpi') {
+                const kpiYear = getCurrentKpiYear();
+                $('#modal-option-year').val(kpiYear);
+                $('#modal-option-year-display').val(kpiYear);
+                $('#modal-option-year-container').show();
+            } else {
+                $('#modal-option-year').val('');
+                $('#modal-option-year-container').hide();
+            }
+
+            const modalEl = document.getElementById('modal-add-master-option');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+                setTimeout(function () {
+                    $('#modal-option-value').focus();
+                }, 350);
+            }
+        });
+
+        function submitMasterOption() {
+            const type = $('#modal-option-type').val();
+            const value = $('#modal-option-value').val().trim();
+            const year = $('#modal-option-year').val();
+            const targetSelect = $('#modal-option-target-select').val();
+            const targetDatalist = $('#modal-option-target-datalist').val();
+
+            $('#modal-option-alert').hide().empty();
+            $('#modal-option-info').hide().empty();
+
+            if (!value) {
+                $('#modal-option-alert').text('Option value is required.').show();
+                $('#modal-option-value').focus();
+                return;
+            }
+
+            $('#btn-save-master-option').prop('disabled', true);
+            $('#spinner-save-option').show();
+            $('#icon-save-option').hide();
+
+            $.ajax({
+                url: "{{ route('manage.record.offline.options.store') }}",
+                type: 'POST',
+                data: JSON.stringify({
+                    option_type: type,
+                    value: value,
+                    year: year ? parseInt(year, 10) : null
+                }),
+                contentType: 'application/json',
+                dataType: 'json',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                success: function (res) {
+                    $('#btn-save-master-option').prop('disabled', false);
+                    $('#spinner-save-option').hide();
+                    $('#icon-save-option').show();
+
+                    const optVal = (res.data && res.data.value) ? res.data.value : value;
+
+                    // If target is a <select>
+                    if (targetSelect && $(targetSelect).is('select')) {
+                        const $sel = $(targetSelect);
+                        let optExists = false;
+                        $sel.find('option').each(function () {
+                            if ($(this).val().toLowerCase() === optVal.toLowerCase()) {
+                                optExists = true;
+                                $(this).val(optVal).text(optVal);
+                            }
+                        });
+                        if (!optExists) {
+                            $sel.append(new Option(optVal, optVal, true, true));
+                        } else {
+                            $sel.val(optVal);
+                        }
+                        $sel.trigger('change');
+                    } else if (targetSelect && $(targetSelect).is('input')) {
+                        // If target is an <input>
+                        const $inp = $(targetSelect);
+                        $inp.val(optVal).trigger('input').trigger('change');
+                    }
+
+                    // If target has an associated <datalist>
+                    if (targetDatalist && $(targetDatalist).length) {
+                        const $dl = $(targetDatalist);
+                        let existsInDl = false;
+                        $dl.find('option').each(function () {
+                            if ($(this).val().toLowerCase() === optVal.toLowerCase()) {
+                                existsInDl = true;
+                            }
+                        });
+                        if (!existsInDl) {
+                            $dl.append(`<option value="${escapeHtml(optVal)}"></option>`);
+                        }
+                    }
+
+                    // Hide modal
+                    const modalEl = document.getElementById('modal-add-master-option');
+                    if (modalEl) {
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) {
+                            modal.hide();
+                        }
+                    }
+
+                    updateSection4Review();
+                },
+                error: function (xhr) {
+                    $('#btn-save-master-option').prop('disabled', false);
+                    $('#spinner-save-option').hide();
+                    $('#icon-save-option').show();
+
+                    let errMsg = 'Failed to create option.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        const errs = Object.values(xhr.responseJSON.errors).flat();
+                        errMsg = errs.join(' ');
+                    }
+                    $('#modal-option-alert').text(errMsg).show();
+                }
+            });
+        }
+
+        $('#btn-save-master-option').on('click', submitMasterOption);
+        $('#modal-option-value').on('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitMasterOption();
+            }
         });
     });
 </script>

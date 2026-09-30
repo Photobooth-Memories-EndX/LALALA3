@@ -16,10 +16,23 @@
                 <span class="fw-bold text-primary small text-uppercase">General Information</span>
             </div>
 
+            @php
+                $shortYear = "'" . substr((string) ($currentYear ?? date('Y')), -2);
+            @endphp
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-8">
                     <label for="add-course-name" class="form-label small fw-semibold">Course Name <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control rounded-2" id="add-course-name" name="course_name" placeholder="e.g. High Voltage Safety &amp; Operation" required>
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-2" id="add-course-name" name="course_name" placeholder="e.g. High Voltage Safety &amp; Operation" required list="course-name-datalist" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="course_name" data-target="#add-course-name" data-datalist="#course-name-datalist" data-title="Course Name" title="Add new Course Name" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
+                    <datalist id="course-name-datalist">
+                        @foreach ($options['course_name'] ?? [] as $opt)
+                            <option value="{{ $opt->value }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
                 <div class="col-12 col-md-4">
                     <label for="add-batch" class="form-label small fw-semibold">Batch</label>
@@ -27,42 +40,59 @@
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="add-sub-course-name" class="form-label small fw-semibold">Sub Course Name</label>
-                    <input type="text" class="form-control rounded-2" id="add-sub-course-name" name="sub_course_name" placeholder="e.g. Switchgear Troubleshooting Module">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-2" id="add-sub-course-name" name="sub_course_name" placeholder="e.g. Switchgear Troubleshooting Module" list="sub-course-name-datalist" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_course_name" data-target="#add-sub-course-name" data-datalist="#sub-course-name-datalist" data-title="Sub Course Name" title="Add new Sub Course Name" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
+                    <datalist id="sub-course-name-datalist">
+                        @foreach ($options['sub_course_name'] ?? [] as $opt)
+                            <option value="{{ $opt->value }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="add-type" class="form-label small fw-semibold">Type</label>
-                    <select class="form-select rounded-2" id="add-type" name="type">
-                        <option value="">Select Type</option>
-                        <option value="In-House" selected>In-House</option>
-                        <option value="Public">Public</option>
-                        <option value="Certification">Certification</option>
-                        <option value="Workshop">Workshop</option>
-                        <option value="Seminar">Seminar</option>
-                        <option value="Classroom">Classroom</option>
-                        <option value="External">External</option>
-                        <option value="Overseas">Overseas</option>
-                    </select>
+                    <div class="input-group">
+                        <select class="form-select rounded-start-2 select2-master-option" id="add-type" name="type" data-type="type" data-placeholder="Select Type">
+                            <option value="">Select Type</option>
+                            @foreach ($options['type'] ?? [] as $opt)
+                                <option value="{{ $opt->value }}" {{ $opt->value === 'In-House' ? 'selected' : '' }}>{{ $opt->value }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="type" data-target="#add-type" data-title="Type" title="Add new Type" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="add-category" class="form-label small fw-semibold">Category</label>
-                    <input type="text" class="form-control rounded-2" id="add-category" name="category" placeholder="e.g. Technical Competency" list="category-datalist">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-2" id="add-category" name="category" placeholder="e.g. Technical Competency" list="category-datalist" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="category" data-target="#add-category" data-datalist="#category-datalist" data-title="Category" title="Add new Category" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
                     <datalist id="category-datalist">
-                        <option value="Technical Competency">
-                        <option value="Leadership Program">
-                        <option value="Quality &amp; Safety">
-                        <option value="Management Skill">
-                        <option value="General Training">
+                        @foreach ($options['category'] ?? [] as $opt)
+                            <option value="{{ $opt->value }}"></option>
+                        @endforeach
                     </datalist>
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="add-level" class="form-label small fw-semibold">Level</label>
-                    <select class="form-select rounded-2" id="add-level" name="level">
-                        <option value="">Select Level</option>
-                        <option value="Basic">Basic</option>
-                        <option value="Intermediate">Intermediate</option>
-                        <option value="Advanced">Advanced</option>
-                        <option value="All">All</option>
-                    </select>
+                    <div class="input-group">
+                        <select class="form-select rounded-start-2 select2-master-option" id="add-level" name="level" data-type="level" data-placeholder="Select Level">
+                            <option value="">Select Level</option>
+                            @foreach ($options['level'] ?? [] as $opt)
+                                <option value="{{ $opt->value }}">{{ $opt->value }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="level" data-target="#add-level" data-title="Level" title="Add new Level" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -74,31 +104,29 @@
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-6">
                     <label for="add-main-classification" class="form-label small fw-semibold">Main Classification</label>
-                    <select class="form-select rounded-2" id="add-main-classification" name="main_classification">
+                    <select class="form-select rounded-2 select2-master-option" id="add-main-classification" name="main_classification" data-placeholder="Select Classification">
                         <option value="">Select Classification</option>
-                        <option value="Competency">Competency</option>
-                        <option value="Leadership">Leadership</option>
-                        <option value="Management">Management</option>
-                        <option value="Technical">Technical</option>
-                        <option value="Quality & Safety">Quality &amp; Safety</option>
-                        <option value="General">General</option>
-                        <option value="Basic & Common Duties">Basic &amp; Common Duties</option>
-                        <option value="ISO Standard">ISO Standard</option>
-                        <option value="Innovation">Innovation</option>
-                        <option value="Job Functional">Job Functional</option>
-                        <option value="Language">Language</option>
-                        <option value="Maintenance">Maintenance</option>
-                        <option value="Other">Other</option>
-                        <option value="SHE">SHE</option>
-                        <option value="Technology">Technology</option>
+                        @foreach ($classifications ?? [] as $cls)
+                            <option value="{{ $cls->classification_name }}">{{ $cls->classification_name }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="add-sub-classification" class="form-label small fw-semibold">Sub Classification</label>
-                    <input type="text" class="form-control rounded-2" id="add-sub-classification" name="sub_classification" placeholder="e.g. Plant Maintenance">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-2" id="add-sub-classification" name="sub_classification" placeholder="e.g. Plant Maintenance" list="sub-classification-datalist" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_classification" data-target="#add-sub-classification" data-datalist="#sub-classification-datalist" data-title="Sub Classification" title="Add new Sub Classification" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
+                    <datalist id="sub-classification-datalist">
+                        @foreach ($options['sub_classification'] ?? [] as $opt)
+                            <option value="{{ $opt->value }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label small fw-semibold d-block">Counted as '26 Corporate KPI</label>
+                    <label class="form-label small fw-semibold d-block" id="label-counted-corporate-kpi">Counted as {{ $shortYear }} Corporate KPI</label>
                     <div class="d-flex align-items-center gap-3 pt-1">
                         <div class="form-check form-check-inline mb-0">
                             <input class="form-check-input" type="radio" name="counted_corporate_kpi" id="add-counted-kpi-yes" value="1" checked>
@@ -111,8 +139,18 @@
                     </div>
                 </div>
                 <div class="col-12 col-md-6">
-                    <label for="add-sub-corporate-kpi" class="form-label small fw-semibold">Sub '26 Corporate KPI</label>
-                    <input type="text" class="form-control rounded-2" id="add-sub-corporate-kpi" name="sub_corporate_kpi" placeholder="e.g. Safety Incident Reduction">
+                    <label for="add-sub-corporate-kpi" class="form-label small fw-semibold" id="label-sub-corporate-kpi">Sub {{ $shortYear }} Corporate KPI</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-2" id="add-sub-corporate-kpi" name="sub_corporate_kpi" placeholder="e.g. Safety Incident Reduction" list="sub-corporate-kpi-datalist" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_corporate_kpi" data-target="#add-sub-corporate-kpi" data-datalist="#sub-corporate-kpi-datalist" data-title="Sub Corporate KPI" data-year="{{ $currentYear ?? date('Y') }}" title="Add new Sub Corporate KPI" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
+                    <datalist id="sub-corporate-kpi-datalist">
+                        @foreach ($options['sub_corporate_kpi'] ?? [] as $opt)
+                            <option value="{{ $opt->value }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
             </div>
 
@@ -124,43 +162,73 @@
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-6">
                     <label for="add-delivery-method" class="form-label small fw-semibold">Delivery Method</label>
-                    <select class="form-select rounded-2" id="add-delivery-method" name="delivery_method">
-                        <option value="">Select Delivery Method</option>
-                        <option value="Classroom" selected>Classroom</option>
-                        <option value="Practical">Practical</option>
-                        <option value="Hybrid">Hybrid</option>
-                        <option value="Workshop">Workshop</option>
-                        <option value="Hands-on">Hands-on</option>
-                        <option value="Seminar">Seminar</option>
-                        <option value="E-Learning">E-Learning</option>
-                    </select>
+                    <div class="input-group">
+                        <select class="form-select rounded-start-2 select2-master-option" id="add-delivery-method" name="delivery_method" data-type="delivery_method" data-placeholder="Select Delivery Method">
+                            <option value="">Select Delivery Method</option>
+                            @foreach ($options['delivery_method'] ?? [] as $opt)
+                                <option value="{{ $opt->value }}" {{ $opt->value === 'Classroom' ? 'selected' : '' }}>{{ $opt->value }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="delivery_method" data-target="#add-delivery-method" data-title="Delivery Method" title="Add new Delivery Method" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="add-sub-delivery-method" class="form-label small fw-semibold">Sub Delivery Method</label>
-                    <input type="text" class="form-control rounded-2" id="add-sub-delivery-method" name="sub_delivery_method" placeholder="e.g. Hands-on Lab">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-2" id="add-sub-delivery-method" name="sub_delivery_method" placeholder="e.g. Hands-on Lab" list="sub-delivery-method-datalist" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_delivery_method" data-target="#add-sub-delivery-method" data-datalist="#sub-delivery-method-datalist" data-title="Sub Delivery Method" title="Add new Sub Delivery Method" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
+                    <datalist id="sub-delivery-method-datalist">
+                        @foreach ($options['sub_delivery_method'] ?? [] as $opt)
+                            <option value="{{ $opt->value }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="add-provider" class="form-label small fw-semibold">Provider</label>
-                    <select class="form-select rounded-2" id="add-provider" name="provider">
-                        <option value="">Select Provider</option>
-                        <option value="Internal">Internal</option>
-                        <option value="External" selected>External</option>
-                    </select>
+                    <div class="input-group">
+                        <select class="form-select rounded-start-2 select2-master-option" id="add-provider" name="provider" data-type="provider" data-placeholder="Select Provider">
+                            <option value="">Select Provider</option>
+                            @foreach ($options['provider'] ?? [] as $opt)
+                                <option value="{{ $opt->value }}" {{ $opt->value === 'External' ? 'selected' : '' }}>{{ $opt->value }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="provider" data-target="#add-provider" data-title="Provider" title="Add new Provider" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-12 col-md-6">
                     <label for="add-sub-provider" class="form-label small fw-semibold">Sub Provider</label>
-                    <select class="form-select rounded-2" id="add-sub-provider" name="sub_provider">
-                        <option value="">Select Sub Provider</option>
-                        <option value="Vendor" selected>Vendor</option>
-                        <option value="University">University</option>
-                        <option value="Certified Center">Certified Center</option>
-                        <option value="Internal Trainer">Internal Trainer</option>
-                        <option value="Other">Other</option>
-                    </select>
+                    <div class="input-group">
+                        <select class="form-select rounded-start-2 select2-master-option" id="add-sub-provider" name="sub_provider" data-type="sub_provider" data-placeholder="Select Sub Provider">
+                            <option value="">Select Sub Provider</option>
+                            @foreach ($options['sub_provider'] ?? [] as $opt)
+                                <option value="{{ $opt->value }}" {{ $opt->value === 'Vendor' ? 'selected' : '' }}>{{ $opt->value }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="sub_provider" data-target="#add-sub-provider" data-title="Sub Provider" title="Add new Sub Provider" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-12">
                     <label for="add-provider-name" class="form-label small fw-semibold">Provider Name</label>
-                    <input type="text" class="form-control rounded-2" id="add-provider-name" name="provider_name" placeholder="e.g. PT Schneider Indonesia">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-2" id="add-provider-name" name="provider_name" placeholder="e.g. PT Schneider Indonesia" list="provider-name-datalist" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="provider_name" data-target="#add-provider-name" data-datalist="#provider-name-datalist" data-title="Provider Name" title="Add new Provider Name" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
+                    <datalist id="provider-name-datalist">
+                        @foreach ($options['provider_name'] ?? [] as $opt)
+                            <option value="{{ $opt->value }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
             </div>
 
@@ -192,11 +260,31 @@
                 </div>
                 <div class="col-12 col-sm-6 col-md-4">
                     <label for="add-venue" class="form-label small fw-semibold">Venue</label>
-                    <input type="text" class="form-control rounded-2" id="add-venue" name="venue" placeholder="e.g. Auditorium Hall B">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-2" id="add-venue" name="venue" placeholder="e.g. Auditorium Hall B" list="venue-datalist" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="venue" data-target="#add-venue" data-datalist="#venue-datalist" data-title="Venue" title="Add new Venue" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
+                    <datalist id="venue-datalist">
+                        @foreach ($options['venue'] ?? [] as $opt)
+                            <option value="{{ $opt->value }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
                 <div class="col-12 col-md-4">
                     <label for="add-instructor" class="form-label small fw-semibold">Instructor</label>
-                    <input type="text" class="form-control rounded-2" id="add-instructor" name="instructor" placeholder="e.g. Ir. Gunawan, M.T.">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-start-2" id="add-instructor" name="instructor" placeholder="e.g. Ir. Gunawan, M.T." list="instructor-datalist" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary btn-add-option-modal" data-type="instructor" data-target="#add-instructor" data-datalist="#instructor-datalist" data-title="Instructor" title="Add new Instructor" tabindex="-1">
+                            <i class="ti ti-plus"></i>
+                        </button>
+                    </div>
+                    <datalist id="instructor-datalist">
+                        @foreach ($options['instructor'] ?? [] as $opt)
+                            <option value="{{ $opt->value }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
             </div>
         </div>
@@ -609,5 +697,6 @@
                 </button>
             </div>
         </div>
-    </div>
 </form>
+
+@include('main.record.components.offline-modal-add-option')

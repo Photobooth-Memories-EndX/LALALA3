@@ -39,13 +39,16 @@ class OfflineTrainingCreateService
         );
         $this->validateParticipantsData($normalizedParticipants);
 
-        return DB::transaction(function () use ($normalizedTraining, $normalizedParticipants) {
+        return DB::transaction(function () use ($normalizedTraining, $normalizedParticipants, $createdByUserId) {
             $training = OfflineTraining::create($normalizedTraining);
 
             foreach ($normalizedParticipants as $participantData) {
                 $participantData['offline_training_id'] = $training->id;
                 OfflineTrainingUser::create($participantData);
             }
+
+            // Auto-register legitimate options to master options vocabulary
+            app(OfflineOptionService::class)->ensureOptionsFromTraining($normalizedTraining, 'manual', $createdByUserId);
 
             return $training->load('participants');
         });
@@ -75,6 +78,9 @@ class OfflineTrainingCreateService
             'sub_classification'    => $this->normalizeString($raw['sub_classification'] ?? null),
             'counted_corporate_kpi' => $this->normalizeBoolean($raw['counted_corporate_kpi'] ?? null),
             'sub_corporate_kpi'     => $this->normalizeString($raw['sub_corporate_kpi'] ?? null),
+            'corporate_kpi_year'    => !empty($raw['corporate_kpi_year'])
+                ? (int) $raw['corporate_kpi_year']
+                : (!empty($raw['start_date']) ? (int) substr((string) $raw['start_date'], 0, 4) : null),
             'delivery_method'       => $this->normalizeString($raw['delivery_method'] ?? null),
             'sub_delivery_method'   => $this->normalizeString($raw['sub_delivery_method'] ?? null),
             'provider'              => $this->normalizeString($raw['provider'] ?? null),

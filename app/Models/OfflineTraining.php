@@ -26,6 +26,7 @@ class OfflineTraining extends Model
         'sub_classification',
         'counted_corporate_kpi',
         'sub_corporate_kpi',
+        'corporate_kpi_year',
         'delivery_method',
         'sub_delivery_method',
         'provider',
@@ -42,6 +43,7 @@ class OfflineTraining extends Model
 
     protected $casts = [
         'counted_corporate_kpi' => 'boolean',
+        'corporate_kpi_year'    => 'integer',
         'duration_seconds'      => 'integer',
         'learning_hours'        => 'decimal:4',
         'start_date'            => 'date',
