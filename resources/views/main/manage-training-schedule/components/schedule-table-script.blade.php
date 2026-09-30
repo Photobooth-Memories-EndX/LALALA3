@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Generate row HTML
             const newRow = document.createElement('tr');
-            newRow.className = 'schedule-table-row';
+            newRow.className = 'schedule-table-row text-center align-middle';
             newRow.setAttribute('data-category', category);
             newRow.setAttribute('data-status', status);
             newRow.setAttribute('data-year', displayYear);
@@ -229,54 +229,45 @@ document.addEventListener('DOMContentLoaded', function () {
             newRow.setAttribute('data-location', location);
             newRow.setAttribute('data-date', startDate);
             newRow.innerHTML = `
-                <td class="text-center text-muted fw-semibold schedule-row-index">1</td>
-                <td>
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" 
-                             style="width: 40px; height: 40px; background-color: ${catBg}; color: ${catColor};">
-                            <i class="ti ${catIcon} fs-2"></i>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-dark fs-3 training-title-text">${title}</div>
-                            <div class="text-muted extra-small">
-                                <span>Code: PTKP-NEW</span> &bull; <span>Batch 1 / ${displayYear}</span>
-                            </div>
-                        </div>
+                <td class="text-muted fw-semibold schedule-row-index">1</td>
+                <td class="fw-bold text-dark text-start" style="min-width: 200px;">
+                    <div class="fs-3 training-title-text">${title}</div>
+                    <div class="text-muted extra-small font-monospace">
+                        Code: PTKP-NEW &bull; Batch 1 / ${displayYear}
                     </div>
                 </td>
                 <td>
-                    <span class="badge rounded-pill px-3 py-1 fw-semibold" style="background-color: ${catBg}; color: ${catColor};">
+                    <span class="badge rounded-pill px-3 py-1-5 fw-semibold" style="background-color: ${catBg}; color: ${catColor};">
                         ${category}
                     </span>
                 </td>
                 <td>
-                    <div class="fw-semibold text-dark">${displayDate}</div>
-                    <div class="text-muted extra-small">${startTime} - ${endTime} WIB</div>
+                    <div class="fw-semibold text-dark" style="min-width: 110px;">${displayDate}</div>
                 </td>
                 <td>
-                    <div class="d-flex align-items-center gap-1 text-muted small">
-                        <i class="ti ti-map-pin text-primary fs-2"></i>
-                        <span>${location}</span>
-                    </div>
+                    <div class="text-muted small" style="min-width: 120px;">${startTime} - ${endTime} WIB</div>
                 </td>
-                <td>
-                    <div class="fw-semibold text-dark small">${instructor}</div>
+                <td class="text-muted small">
+                    ${location}
+                </td>
+                <td class="text-muted small">
+                    <div class="fw-semibold text-dark">${instructor}</div>
                     <div class="text-muted extra-small">Training Instructor</div>
                 </td>
-                <td class="text-center">
-                    <span class="fw-semibold text-dark small">0 / ${quota} Seats</span>
-                    <div class="progress progress-xs mt-1" style="height: 4px;">
-                        <div class="progress-bar bg-primary" style="width: 0%;"></div>
+                <td>
+                    <div class="fw-semibold text-dark small">0 / ${quota} Seats</div>
+                    <div class="progress progress-xs mt-1 mx-auto rounded-pill" style="height: 4px; max-width: 90px; background-color: #e2e8f0;">
+                        <div class="progress-bar rounded-pill" role="progressbar" style="width: 0%; background-color: #003b6d;"></div>
                     </div>
                 </td>
-                <td class="text-center">
+                <td>
                     ${statusBadgeHtml}
                 </td>
-                <td class="text-end pe-4">
-                    <div class="d-inline-flex align-items-center gap-1">
+                <td>
+                    <div class="d-flex align-items-center justify-content-center gap-1">
                         <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-3 btn-view-syllabus" 
                                 title="View Syllabus" data-bs-toggle="modal" data-bs-target="#syllabusModal" 
-                                data-id="1" data-title="${title}" data-category="${category}">
+                                data-id="1" data-title="${title}" data-category="${category}" data-instructor="${instructor}">
                             <i class="ti ti-list-check fs-2"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-edit-schedule" 

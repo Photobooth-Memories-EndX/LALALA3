@@ -584,11 +584,11 @@
             }
             if (modalStatusCountBadge) {
                 modalStatusCountBadge.className = isOpen
-                    ? 'badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-bold px-2 py-0-5 fs-6'
-                    : 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill fw-bold px-2 py-0-5 fs-6';
+                    ? 'badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6'
+                    : 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill fw-semibold px-2-5 py-1 fs-6';
                 modalStatusCountBadge.textContent = isOpen
-                    ? `Open: ${matchingEvents.length}`
-                    : `Close: ${matchingEvents.length}`;
+                    ? `${matchingEvents.length} Open`
+                    : `${matchingEvents.length} Closed`;
             }
             if (modalStatusIconWrap) {
                 modalStatusIconWrap.style.backgroundColor = isOpen ? '#ecfdf5' : '#fef2f2';
@@ -598,7 +598,7 @@
                 modalStatusIcon.className = isOpen ? 'ti ti-circle-check fs-2' : 'ti ti-lock fs-2';
             }
 
-            // Populate Items List
+            // Populate Items List (Compact Rows for High Scalability)
             if (modalTrainingItemsList) {
                 if (matchingEvents.length === 0) {
                     modalTrainingItemsList.innerHTML = '';
@@ -612,38 +612,25 @@
                         const itemIsOpen = item.status === 'open';
 
                         listHtml += `
-                            <div class="card border ${isCurrentItem ? 'border-primary shadow-sm' : 'border-light-subtle'} rounded-3 p-3 bg-white mb-2">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge rounded-pill px-3 py-1 fw-semibold small" style="background-color: #e0f2fe; color: #0284c7;">
-                                        ${item.category}
-                                    </span>
-                                    <span class="badge ${itemIsOpen ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'} rounded-pill px-3 py-1 fw-semibold small">
+                            <div class="p-3 rounded-3 border ${isCurrentItem ? 'border-primary shadow-sm' : 'border-light-subtle'} bg-white hover-shadow-sm d-flex align-items-center justify-content-between gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="badge bg-primary-subtle text-primary rounded-2 px-2-5 py-2 fw-semibold text-nowrap" style="font-size: 0.8rem;">
+                                        ${item.time}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark fs-3 mb-1">${item.title}</div>
+                                        <div class="d-flex align-items-center gap-2 text-muted small">
+                                            <span>${item.location}</span>
+                                            <span>&bull;</span>
+                                            <span class="badge rounded-pill bg-light text-secondary border px-2 py-0-5">${item.category}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <span class="badge ${itemIsOpen ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill px-3 py-1-5 fw-semibold">
                                         ${itemIsOpen ? 'Open Registration' : 'Registration Closed'}
                                     </span>
                                 </div>
-
-                                <h5 class="fw-bold text-dark mb-2">${item.title}</h5>
-
-                                <div class="row g-2 text-muted small mb-2">
-                                    <div class="col-12 col-sm-6 d-flex align-items-center gap-1">
-                                        <i class="ti ti-clock text-primary"></i>
-                                        <span>${item.time}</span>
-                                    </div>
-                                    <div class="col-12 col-sm-6 d-flex align-items-center gap-1">
-                                        <i class="ti ti-map-pin text-primary"></i>
-                                        <span class="text-truncate">${item.location}</span>
-                                    </div>
-                                    <div class="col-12 col-sm-6 d-flex align-items-center gap-1">
-                                        <i class="ti ti-users text-primary"></i>
-                                        <span><strong>Quota:</strong> ${item.quota}</span>
-                                    </div>
-                                    <div class="col-12 col-sm-6 d-flex align-items-center gap-1">
-                                        <i class="ti ti-user-check text-primary"></i>
-                                        <span class="text-truncate">${item.instructor}</span>
-                                    </div>
-                                </div>
-
-                                ${item.description ? `<p class="text-muted extra-small mb-0 border-top pt-2 line-clamp-2">${item.description}</p>` : ''}
                             </div>
                         `;
                     });

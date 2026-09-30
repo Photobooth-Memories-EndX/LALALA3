@@ -31,7 +31,7 @@
 
             <button type="button" class="btn btn-outline-secondary rounded-3 px-3 py-1-5 fw-semibold d-inline-flex align-items-center gap-1" id="btnExportInlineRoster">
                 <i class="ti ti-download me-1 fs-2"></i>
-                <span>Download Roster</span>
+                <span>Download</span>
             </button>
         </div>
     </div>
