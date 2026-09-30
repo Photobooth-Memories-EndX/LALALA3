@@ -1117,8 +1117,12 @@ class RecordAllCombinedTest extends TestCase
         $response->assertSee('id="btn-all-more-filters"', false);
         $response->assertSee('id="activeFilterBadge"', false);
 
-        // Check Download button
+        // Check Download dropdown button & format options
         $response->assertSee('id="btn-all-download"', false);
+        $response->assertSee('data-format="xlsx"', false);
+        $response->assertSee('data-format="csv"', false);
+        $response->assertSee('data-format="pdf"', false);
+        $response->assertSee('id="pdfLimitWarningModal"', false);
 
         // Check Modal container & inputs
         $response->assertSee('id="moreAllFiltersModal"', false);
@@ -1399,5 +1403,214 @@ class RecordAllCombinedTest extends TestCase
         $this->assertFileExists($filePath);
         $this->assertGreaterThan(1000, filesize($filePath), 'Generated XLSX file must be valid and non-empty.');
         @unlink($filePath);
+    }
+
+    /**
+     * Test classification download defaults to XLSX and returns streaming Excel file.
+     */
+    public function test_classification_download_xlsx_route(): void
+    {
+        $uniqueEmp = 'EXCEL_TEST_' . uniqid();
+        $this->createTestOfflineTraining([
+            'main_classification' => 'Leadership',
+        ], [
+            [
+                'employee_id'    => $uniqueEmp,
+                'name'           => 'Excel Export User',
+                'progress'       => 100,
+                'learning_hours' => 4.0,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership/download?employee_id=' . $uniqueEmp);
+
+        $response->assertStatus(200);
+        $this->assertTrue(
+            str_contains($response->headers->get('content-type', ''), 'spreadsheetml') ||
+            str_contains($response->headers->get('content-type', ''), 'octet-stream')
+        );
+        $this->assertStringContainsString('.xlsx', $response->headers->get('content-disposition', ''));
+    }
+
+    /**
+     * Test classification download CSV stream with UTF-8 BOM, 46 column headers, and filtered rows.
+     */
+    public function test_classification_download_csv_route_and_stream(): void
+    {
+        $uniqueEmp = 'CSV_TEST_' . uniqid();
+        $uniqueTitle = 'CSV Training Course ' . uniqid();
+        $this->createTestOfflineTraining([
+            'course_name'         => $uniqueTitle,
+            'main_classification' => 'Leadership',
+        ], [
+            [
+                'employee_id'    => $uniqueEmp,
+                'name'           => 'CSV Export User',
+                'department'     => 'IT Innovation',
+                'company'        => 'TEST_COMBINED_CORP',
+                'progress'       => 100,
+                'learning_hours' => 5.5,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership/download?format=csv&employee_id=' . $uniqueEmp);
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('text/csv', $response->headers->get('content-type', ''));
+        $this->assertStringContainsString('.csv', $response->headers->get('content-disposition', ''));
+
+        // Capture streamed content
+        $streamedContent = $response->streamedContent();
+
+        // 1. Verify UTF-8 BOM is prepended
+        $bom = "\xEF\xBB\xBF";
+        $this->assertTrue(str_starts_with($streamedContent, $bom), 'CSV output must start with UTF-8 BOM.');
+
+        // 2. Parse CSV lines
+        $cleanContent = substr($streamedContent, 3);
+        $lines = explode("\n", trim($cleanContent));
+        $this->assertGreaterThanOrEqual(2, count($lines), 'CSV must contain at least headers and one data row.');
+
+        // 3. Verify exactly 46 column headings
+        $headerFields = str_getcsv($lines[0]);
+        $this->assertCount(46, $headerFields, 'CSV header must contain exactly 46 columns.');
+        $this->assertEquals('No', $headerFields[0]);
+        $this->assertEquals('Source', $headerFields[1]);
+        $this->assertEquals('Employee ID', $headerFields[2]);
+        $this->assertEquals('Employee Name', $headerFields[3]);
+        $this->assertEquals('Main Classification', $headerFields[16]);
+        $this->assertEquals('PIC', $headerFields[45]);
+
+        // 4. Verify data row content
+        $dataFields = str_getcsv($lines[1]);
+        $this->assertEquals('1', $dataFields[0]);
+        $this->assertEquals('Non KP OWL', $dataFields[1]);
+        $this->assertEquals($uniqueEmp, $dataFields[2]);
+        $this->assertEquals('CSV Export User', $dataFields[3]);
+        $this->assertEquals('IT Innovation', $dataFields[8]);
+        $this->assertEquals('TEST_COMBINED_CORP', $dataFields[9]);
+        $this->assertEquals('5.50', $dataFields[31]); // learning_hours
+    }
+
+    /**
+     * Test classification download PDF when records <= 200 returns valid PDF binary.
+     */
+    public function test_classification_download_pdf_under_limit(): void
+    {
+        $uniqueEmp = 'PDF_TEST_' . uniqid();
+        $this->createTestOfflineTraining([
+            'main_classification' => 'Leadership',
+        ], [
+            [
+                'employee_id'    => $uniqueEmp,
+                'name'           => 'PDF Export User',
+                'progress'       => 100,
+                'learning_hours' => 3.0,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership/download?format=pdf&employee_id=' . $uniqueEmp);
+
+        $response->assertStatus(200);
+        $this->assertStringContainsString('application/pdf', $response->headers->get('content-type', ''));
+        $this->assertStringContainsString('.pdf', $response->headers->get('content-disposition', ''));
+
+        $content = $response->getContent();
+        $this->assertStringStartsWith('%PDF-', $content, 'PDF output must begin with %PDF- signature.');
+    }
+
+    /**
+     * Test classification download PDF guard when records exceed 200 limit.
+     */
+    public function test_classification_download_pdf_over_limit_guard(): void
+    {
+        // Unfiltered query on Leadership has > 200 records in the test DB
+        // 1. AJAX request expects JSON with 422 status
+        $ajaxResp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/download?format=pdf');
+
+        $ajaxResp->assertStatus(422);
+        $ajaxResp->assertJson([
+            'success' => false,
+            'limit'   => 200,
+        ]);
+        $this->assertGreaterThan(200, $ajaxResp->json('total'));
+
+        // 2. Direct browser navigation returns 422 with the friendly warning Blade view
+        $htmlResp = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership/download?format=pdf');
+        $htmlResp->assertStatus(422);
+        $htmlResp->assertSee('PDF Export Limit Exceeded');
+        $htmlResp->assertSee('Download as Excel (.xlsx)');
+        $htmlResp->assertSee('Download as CSV (.csv)');
+    }
+
+    /**
+     * Test classification download format route parameter supports /download/csv and /download/xlsx.
+     */
+    public function test_classification_download_format_route_param(): void
+    {
+        $uniqueEmp = 'ROUTE_PARAM_' . uniqid();
+        $this->createTestOfflineTraining([
+            'main_classification' => 'Leadership',
+        ], [
+            [
+                'employee_id' => $uniqueEmp,
+                'name'        => 'Route Param User',
+            ]
+        ]);
+
+        $respCsv = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership/download/csv?employee_id=' . $uniqueEmp);
+        $respCsv->assertStatus(200);
+        $this->assertStringContainsString('text/csv', $respCsv->headers->get('content-type', ''));
+
+        $respXlsx = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership/download/xlsx?employee_id=' . $uniqueEmp);
+        $respXlsx->assertStatus(200);
+        $this->assertStringContainsString('.xlsx', $respXlsx->headers->get('content-disposition', ''));
+    }
+
+    /**
+     * Test filter parity across Excel, CSV, and PDF downloads.
+     */
+    public function test_classification_download_multi_format_filter_parity(): void
+    {
+        $uniqueEmp = 'PARITY_EMP_' . uniqid();
+        $uniqueDept = 'PARITY_DEPT_' . uniqid();
+        $this->createTestOfflineTraining([
+            'main_classification' => 'Leadership',
+            'start_date'          => '2026-07-10',
+            'finish_date'         => '2026-07-10',
+        ], [
+            [
+                'employee_id'    => $uniqueEmp,
+                'name'           => 'Parity Test User',
+                'department'     => $uniqueDept,
+                'company'        => 'TEST_COMBINED_CORP',
+                'progress'       => 100,
+                'learning_hours' => 2.0,
+            ]
+        ]);
+
+        $filterParams = [
+            'employee_id' => $uniqueEmp,
+            'department'  => $uniqueDept,
+            'source'      => 'offline',
+            'status'      => 'finished',
+        ];
+
+        // 1. CSV download test
+        $csvResp = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership/download/csv?' . http_build_query($filterParams));
+        $csvResp->assertStatus(200);
+        $csvContent = substr($csvResp->streamedContent(), 3); // strip BOM
+        $csvLines = array_filter(explode("\n", trim($csvContent)));
+        $this->assertCount(2, $csvLines, 'CSV must have 1 header line and exactly 1 data row matching filters.');
+
+        // 2. PDF download test (under limit)
+        $pdfResp = $this->actingAs($this->admin)->get('/manage/record/all/classification/leadership/download/pdf?' . http_build_query($filterParams));
+        $pdfResp->assertStatus(200);
+        $this->assertStringContainsString('application/pdf', $pdfResp->headers->get('content-type', ''));
+
+        // 3. DataTable parity
+        $dtResp = $this->actingAs($this->admin)->getJson('/manage/record/all/classification/leadership/datatable?' . http_build_query($filterParams));
+        $dtResp->assertStatus(200);
+        $this->assertEquals(1, $dtResp->json('recordsFiltered'));
     }
 }

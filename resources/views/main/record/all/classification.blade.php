@@ -100,10 +100,53 @@
                             <i class="ti ti-refresh fs-2"></i>
                         </button>
 
-                        <!-- 9. Download Button (Green button with download icon) -->
-                        <button type="button" id="btn-all-download" class="btn btn-success rounded-3 px-3 btn-download flex-shrink-0" title="Download Excel">
-                            <i class="ti ti-download me-1"></i> <span class="btn-download-text">Download</span>
-                        </button>
+                        <!-- 9. Download Dropdown (Green button with dropdown items) -->
+                        <div class="dropdown flex-shrink-0">
+                            <button type="button"
+                                    id="btn-all-download"
+                                    class="btn btn-success rounded-3 px-3 dropdown-toggle d-inline-flex align-items-center gap-1"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    title="Export Learning Records">
+                                <i class="ti ti-download me-1"></i>
+                                <span class="btn-download-text">Download</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 py-2" style="min-width: 220px;">
+                                <li>
+                                    <h6 class="dropdown-header text-uppercase text-muted fw-bold small mb-1" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                                        Export Options
+                                    </h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 export-format-btn" href="#" data-format="xlsx">
+                                        <i class="ti ti-file-spreadsheet text-success fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">Excel (.xlsx)</div>
+                                            <div class="text-muted small" style="font-size: 0.75rem;">Full dataset spreadsheet</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 export-format-btn" href="#" data-format="csv">
+                                        <i class="ti ti-file-text text-primary fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">CSV (.csv)</div>
+                                            <div class="text-muted small" style="font-size: 0.75rem;">Fast streaming tabular data</div>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 export-format-btn" href="#" data-format="pdf">
+                                        <i class="ti ti-file-type-pdf text-danger fs-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">PDF Landscape (.pdf)</div>
+                                            <div class="text-muted small" style="font-size: 0.75rem;">Printable report (max 200 rows)</div>
+                                        </div>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -337,6 +380,53 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- PDF LIMIT WARNING MODAL -->
+<div class="modal fade" id="pdfLimitWarningModal" tabindex="-1" aria-labelledby="pdfLimitWarningModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="pdfLimitWarningModalLabel">
+                    <span class="rounded-circle d-inline-flex align-items-center justify-content-center"
+                          style="width: 32px; height: 32px; background-color: #fef3c7; color: #d97706;">
+                        <i class="ti ti-file-alert fs-2"></i>
+                    </span>
+                    <span>PDF Export Limit Exceeded</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2 pb-3">
+                <p class="text-muted small mb-3">
+                    PDF Landscape export is designed for printable reports (A2 Landscape, 46 columns) and is restricted to a maximum of <strong>200 records</strong> to ensure readability and prevent memory limits.
+                </p>
+                <div class="p-3 rounded-3 mb-3 bg-light border">
+                    <div class="d-flex align-items-center justify-content-between mb-1 small">
+                        <span class="text-muted">Current Filtered Records:</span>
+                        <span class="badge bg-danger fs-6" id="pdfLimitCurrentCount">0 records</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <span class="text-muted">Maximum PDF Limit:</span>
+                        <span class="badge bg-secondary fs-6">200 records</span>
+                    </div>
+                </div>
+                <p class="text-muted small mb-0">
+                    To export the complete dataset, please download via <strong>Excel (.xlsx)</strong> or <strong>CSV (.csv)</strong>, or use the filters (Employee, Year, Status, Date Range) to narrow the result under 200 records.
+                </p>
+            </div>
+            <div class="modal-footer bg-light border-0 d-flex justify-content-end align-items-center gap-2">
+                <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="btn-pdf-fallback-csv" class="btn btn-outline-primary px-3 d-inline-flex align-items-center gap-1">
+                    <i class="ti ti-file-text me-1"></i>
+                    <span>Download CSV</span>
+                </button>
+                <button type="button" id="btn-pdf-fallback-excel" class="btn btn-success px-3 d-inline-flex align-items-center gap-1">
+                    <i class="ti ti-file-spreadsheet me-1"></i>
+                    <span>Download Excel</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -709,6 +799,59 @@
         background-color: #1e293b !important;
         color: #f1f5f9 !important;
         border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    /* Export Dropdown Dark Mode */
+    [data-bs-theme="dark"] .dropdown-menu,
+    body.dark-mode .dropdown-menu,
+    body.theme-dark .dropdown-menu {
+        background-color: #1e293b !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    [data-bs-theme="dark"] .dropdown-item,
+    body.dark-mode .dropdown-item,
+    body.theme-dark .dropdown-item {
+        color: #cbd5e1 !important;
+    }
+    [data-bs-theme="dark"] .dropdown-item:hover,
+    body.dark-mode .dropdown-item:hover,
+    body.theme-dark .dropdown-item:hover {
+        background-color: #0f172a !important;
+        color: #ffffff !important;
+    }
+    [data-bs-theme="dark"] .dropdown-divider,
+    body.dark-mode .dropdown-divider,
+    body.theme-dark .dropdown-divider {
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* PDF Limit Modal Dark Mode */
+    [data-bs-theme="dark"] #pdfLimitWarningModal .modal-content,
+    body.dark-mode #pdfLimitWarningModal .modal-content,
+    body.theme-dark #pdfLimitWarningModal .modal-content {
+        background-color: #1e293b !important;
+        color: #cbd5e1 !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    [data-bs-theme="dark"] #pdfLimitWarningModal .modal-header,
+    [data-bs-theme="dark"] #pdfLimitWarningModal .modal-footer,
+    body.dark-mode #pdfLimitWarningModal .modal-header,
+    body.dark-mode #pdfLimitWarningModal .modal-footer,
+    body.theme-dark #pdfLimitWarningModal .modal-header,
+    body.theme-dark #pdfLimitWarningModal .modal-footer {
+        background-color: #0f172a !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    [data-bs-theme="dark"] #pdfLimitWarningModal .text-dark,
+    body.dark-mode #pdfLimitWarningModal .text-dark,
+    body.theme-dark #pdfLimitWarningModal .text-dark {
+        color: #f8fafc !important;
+    }
+    [data-bs-theme="dark"] #pdfLimitWarningModal .bg-light,
+    body.dark-mode #pdfLimitWarningModal .bg-light,
+    body.theme-dark #pdfLimitWarningModal .bg-light {
+        background-color: #0f172a !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
     }
 </style>
 @endsection
@@ -1131,21 +1274,11 @@ $(function () {
         }
     });
 
-    // Filtered Excel Export Download Handler
-    $('#btn-all-download').on('click', function (e) {
-        e.preventDefault();
-        const $btn = $(this);
-        const $icon = $btn.find('i');
-        const $text = $btn.find('.btn-download-text');
-        const originalText = $text.text();
-        const originalIconClass = $icon.attr('class');
-
-        // Loading state
-        $btn.prop('disabled', true);
-        $icon.attr('class', 'spinner-border spinner-border-sm me-1');
-        $text.text('Exporting...');
-
+    // Helper function to build active filter query parameters
+    function buildActiveExportParams(format) {
         const params = new URLSearchParams();
+        if (format) params.append('format', format);
+
         const empVal = $('#all-filter-employee').val().trim();
         if (empVal) params.append('employee_id', empVal);
 
@@ -1179,6 +1312,22 @@ $(function () {
         const compVal = $('#modal-company').val();
         if (compVal && compVal !== 'all') params.append('company', compVal);
 
+        return params;
+    }
+
+    function triggerExportDownload(format) {
+        const $btn = $('#btn-all-download');
+        const $icon = $btn.find('i');
+        const $text = $btn.find('.btn-download-text');
+        const originalText = $text.text();
+        const originalIconClass = $icon.attr('class');
+
+        // Loading state
+        $btn.prop('disabled', true);
+        $icon.attr('class', 'spinner-border spinner-border-sm me-1');
+        $text.text('Exporting...');
+
+        const params = buildActiveExportParams(format);
         const fullUrl = downloadBaseUrl + (downloadBaseUrl.indexOf('?') !== -1 ? '&' : '?') + params.toString();
         window.location.href = fullUrl;
 
@@ -1187,6 +1336,51 @@ $(function () {
             $icon.attr('class', originalIconClass);
             $text.text(originalText);
         }, 2500);
+    }
+
+    // Export format selection handler
+    $(document).on('click', '.export-format-btn', function (e) {
+        e.preventDefault();
+        const format = $(this).data('format') || 'xlsx';
+
+        if (format === 'pdf') {
+            let currentCount = 0;
+            if (allTable && typeof allTable.page.info === 'function') {
+                const info = allTable.page.info();
+                currentCount = (info && typeof info.recordsDisplay !== 'undefined') ? info.recordsDisplay : 0;
+            }
+
+            if (currentCount > 200) {
+                $('#pdfLimitCurrentCount').text(currentCount.toLocaleString() + ' records');
+                const modalEl = document.getElementById('pdfLimitWarningModal');
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    modal.show();
+                }
+                return;
+            }
+        }
+
+        triggerExportDownload(format);
+    });
+
+    // Fallback buttons inside PDF Limit Warning Modal
+    $('#btn-pdf-fallback-excel').on('click', function () {
+        const modalEl = document.getElementById('pdfLimitWarningModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+        triggerExportDownload('xlsx');
+    });
+
+    $('#btn-pdf-fallback-csv').on('click', function () {
+        const modalEl = document.getElementById('pdfLimitWarningModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+        triggerExportDownload('csv');
     });
 
     // 2. Detail Modal for Offline records
