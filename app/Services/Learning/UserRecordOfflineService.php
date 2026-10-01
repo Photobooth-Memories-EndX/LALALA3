@@ -28,7 +28,13 @@ class UserRecordOfflineService
                     $q->orWhere('employee_id', $userEmpId);
                 }
             })
-            ->whereNull('deleted_at');
+            ->whereNull('deleted_at')
+            ->where(function (Builder $q) {
+                // My Learning Record only shows completed trainings or finalized attendance records.
+                // Ongoing schedule training records (attendance is null and progress < 100) are excluded.
+                $q->whereNotNull('attendance')
+                  ->orWhere('progress', '>=', 100);
+            });
     }
 
     /**

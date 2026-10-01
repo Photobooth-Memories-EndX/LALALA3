@@ -120,37 +120,71 @@ class OfflineTrainingRegistrationService
         });
     }
 
+    public function __construct(
+        private readonly OfflineTrainingUserSyncService $syncService
+    ) {
+    }
+
     /**
      * Approve a pending registration (Manage action).
+     *
+     * State transition:
+     * - Pending -> Approved
+     * - Idempotently creates/ensures exactly ONE record in offline_training_users in ONGOING state (progress = 0, attendance = null)
      */
     public function approve(OfflineTrainingRegister $registration, int $approvedById): OfflineTrainingRegister
     {
         return DB::transaction(function () use ($registration, $approvedById) {
-            $locked = OfflineTrainingRegister::where('id', $registration->id)->lockForUpdate()->firstOrFail();
+            /** @var OfflineTrainingRegister $locked */
+            $locked = OfflineTrainingRegister::with(['training', 'user'])
+                ->where('id', $registration->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            if ($locked->status === 'Approved') {
-                return $locked;
+            if ($locked->status === 'Completed') {
+                throw new RuntimeException('Cannot approve a registration that has already been completed.');
             }
 
-            $locked->update([
-                'status'           => 'Approved',
-                'approved_at'      => now(),
-                'approved_by'      => $approvedById,
-                'rejected_at'      => null,
-                'rejection_reason' => null,
-            ]);
+            if ($locked->status !== 'Approved') {
+                $locked->update([
+                    'status'           => 'Approved',
+                    'approved_at'      => now(),
+                    'approved_by'      => $approvedById,
+                    'rejected_at'      => null,
+                    'rejection_reason' => null,
+                ]);
+            }
 
-            return $locked;
+            // Synchronize Approved registration to offline_training_users as ONGOING (idempotent, 1 row)
+            $this->syncService->syncApprovedToOngoing($locked);
+
+            return $locked->fresh(['training', 'user']);
         });
     }
 
     /**
      * Reject a registration (Manage action).
+     *
+     * State transition:
+     * - Pending -> Rejected
+     * - Rejection does NOT write to offline_training_users
+     * - Once Approved or Completed, cannot be rejected
      */
     public function reject(OfflineTrainingRegister $registration, ?string $reason = null): OfflineTrainingRegister
     {
         return DB::transaction(function () use ($registration, $reason) {
-            $locked = OfflineTrainingRegister::where('id', $registration->id)->lockForUpdate()->firstOrFail();
+            /** @var OfflineTrainingRegister $locked */
+            $locked = OfflineTrainingRegister::where('id', $registration->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->status === 'Approved') {
+                throw new RuntimeException('Cannot reject a registration that has already been approved.');
+            }
+
+            if ($locked->status === 'Completed') {
+                throw new RuntimeException('Cannot reject a registration that has already been completed.');
+            }
 
             $locked->update([
                 'status'           => 'Rejected',

@@ -11,12 +11,22 @@ use RuntimeException;
 
 class OfflineTrainingCompletionService
 {
+    public function __construct(
+        private readonly OfflineTrainingUserSyncService $syncService
+    ) {
+    }
+
     /**
      * Mark a registration as Completed and idempotently synchronize
      * the participant record into offline_training_users.
      *
      * IMPORTANT: This method DOES NOT alter the Schedule training header.
      * Query isolation (forSchedule vs forRecord) remains completely intact.
+     *
+     * State transition:
+     * - Approved -> Completed
+     * - Updates the SAME offline_training_users row from Ongoing (progress = 0)
+     *   to Completed (progress = 100, attendance = true, accredited learning_hours).
      *
      * @throws InvalidArgumentException|RuntimeException
      */
@@ -54,43 +64,16 @@ class OfflineTrainingCompletionService
                 throw new RuntimeException('Participant user record not found.');
             }
 
-            // 1. Calculate learning hours using training header duration
-            $learningHours = $training->learning_hours ?? 0;
-            if ((float) $learningHours <= 0 && filled($training->start_time) && filled($training->end_time)) {
-                $start = strtotime($training->start_time);
-                $end = strtotime($training->end_time);
-                if ($end > $start) {
-                    $learningHours = round(($end - $start) / 3600, 2);
-                }
-            }
+            // 1. Idempotently update the SAME offline_training_users row to Completed
+            $this->syncService->syncCompleted($registration);
 
-            // 2. Idempotent upsert into offline_training_users
-            OfflineTrainingUser::updateOrCreate(
-                [
-                    'offline_training_id' => $training->id,
-                    'user_id'             => $user->id,
-                ],
-                [
-                    'employee_id'         => $user->id_emp ?? '',
-                    'name'                => $user->name,
-                    'grade'               => $user->grade ?? null,
-                    'job_position'        => $user->job_position ?? null,
-                    'team'                => $user->team ?? null,
-                    'department'          => $user->department ?? null,
-                    'company'             => $user->company_name ?? 'PT Krakatau Posco',
-                    'attendance'          => true,
-                    'progress'            => 100,
-                    'learning_hours'      => $learningHours,
-                ]
-            );
-
-            // 3. Update registration record
+            // 2. Update registration record
             $registration->update([
                 'status'       => 'Completed',
                 'completed_at' => $registration->completed_at ?? now(),
             ]);
 
-            return $registration;
+            return $registration->fresh(['training', 'user']);
         });
     }
 }
