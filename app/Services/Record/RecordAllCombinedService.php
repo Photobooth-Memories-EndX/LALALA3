@@ -40,32 +40,25 @@ class RecordAllCombinedService
         $hasOfflineTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
 
         if ($hasOfflineTables) {
-            $offlineTotal = (int) DB::table('offline_training_users as otu')
+            $baseOfflineUserQuery = DB::table('offline_training_users as otu')
                 ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
                 ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
-                ->count();
+                ->whereNull('ot.deleted_at');
+            OfflineTraining::applyRecordScope($baseOfflineUserQuery, 'ot');
 
-            $offlineOngoing = (int) DB::table('offline_training_users as otu')
-                ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
-                ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
+            $offlineTotal = (int) (clone $baseOfflineUserQuery)->count();
+
+            $offlineOngoing = (int) (clone $baseOfflineUserQuery)
                 ->where('otu.progress', '>', 0)
                 ->where('otu.progress', '<', 100)
                 ->count();
 
-            $offlineFinished = (int) DB::table('offline_training_users as otu')
-                ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
-                ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
+            $offlineFinished = (int) (clone $baseOfflineUserQuery)
                 ->where('otu.progress', '>=', 100)
                 ->count();
 
             // Strictly credited participant learning hours from offline_training_users!
-            $offlineHours = (float) DB::table('offline_training_users as otu')
-                ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
-                ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
+            $offlineHours = (float) (clone $baseOfflineUserQuery)
                 ->sum('otu.learning_hours');
         } else {
             $offlineTotal = 0;
@@ -132,10 +125,13 @@ class RecordAllCombinedService
         $hasOfflineTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
 
         if ($hasOfflineTables) {
-            $offlineData = DB::table('offline_training_users as otu')
+            $offlineQuery = DB::table('offline_training_users as otu')
                 ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
                 ->whereNull('otu.deleted_at')
-                ->whereNull('ot.deleted_at')
+                ->whereNull('ot.deleted_at');
+            OfflineTraining::applyRecordScope($offlineQuery, 'ot');
+
+            $offlineData = $offlineQuery
                 ->select([
                     DB::raw("COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified') as class_name"),
                     DB::raw("COUNT(otu.id) as total_count"),
@@ -234,10 +230,12 @@ class RecordAllCombinedService
 
         // Offline classifications
         if (Schema::hasTable('offline_trainings')) {
-            $offlineClasses = DB::table('offline_trainings')
+            $offlineClassesQuery = DB::table('offline_trainings')
                 ->whereNotNull('main_classification')
                 ->where('main_classification', '!=', '')
-                ->whereNull('deleted_at')
+                ->whereNull('deleted_at');
+            OfflineTraining::applyRecordScope($offlineClassesQuery);
+            $offlineClasses = $offlineClassesQuery
                 ->distinct()
                 ->pluck('main_classification')
                 ->toArray();
@@ -254,8 +252,13 @@ class RecordAllCombinedService
 
         // Offline years
         if (Schema::hasTable('offline_trainings')) {
-            $offYears1 = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('start_date')->selectRaw('DISTINCT YEAR(start_date) as yr')->pluck('yr')->toArray();
-            $offYears2 = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('finish_date')->selectRaw('DISTINCT YEAR(finish_date) as yr')->pluck('yr')->toArray();
+            $offYears1Query = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('start_date');
+            OfflineTraining::applyRecordScope($offYears1Query);
+            $offYears1 = $offYears1Query->selectRaw('DISTINCT YEAR(start_date) as yr')->pluck('yr')->toArray();
+
+            $offYears2Query = DB::table('offline_trainings')->whereNull('deleted_at')->whereNotNull('finish_date');
+            OfflineTraining::applyRecordScope($offYears2Query);
+            $offYears2 = $offYears2Query->selectRaw('DISTINCT YEAR(finish_date) as yr')->pluck('yr')->toArray();
             $years = array_merge($years, $offYears1, $offYears2);
         }
 
@@ -817,8 +820,11 @@ class RecordAllCombinedService
         $q = DB::table('offline_training_users as otu')
             ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
             ->whereNull('otu.deleted_at')
-            ->whereNull('ot.deleted_at')
-            ->select([
+            ->whereNull('ot.deleted_at');
+
+        OfflineTraining::applyRecordScope($q, 'ot');
+
+        $q->select([
                 'otu.id as source_id',
                 DB::raw("'offline' as source"),
                 DB::raw("'offline_training' as source_type"),

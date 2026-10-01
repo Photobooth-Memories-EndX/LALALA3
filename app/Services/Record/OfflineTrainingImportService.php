@@ -179,7 +179,7 @@ class OfflineTrainingImportService
         // Batch load potential existing OfflineTrainings
         $existingTrainings = [];
         if (!empty($uniqueCourses)) {
-            $dbTrainings = OfflineTraining::whereIn('course_name', array_keys($uniqueCourses))->get();
+            $dbTrainings = OfflineTraining::forRecord()->whereIn('course_name', array_keys($uniqueCourses))->get();
             foreach ($dbTrainings as $t) {
                 $fp = $this->buildTrainingFingerprint([
                     'course_name' => $t->course_name,
@@ -451,7 +451,7 @@ class OfflineTrainingImportService
         // Batch trainings
         $existingTrainings = [];
         if (!empty($uniqueCourses)) {
-            $dbTrainings = OfflineTraining::whereIn('course_name', array_keys($uniqueCourses))->get();
+            $dbTrainings = OfflineTraining::forRecord()->whereIn('course_name', array_keys($uniqueCourses))->get();
             foreach ($dbTrainings as $t) {
                 $fp = $this->buildTrainingFingerprint([
                     'course_name' => $t->course_name,

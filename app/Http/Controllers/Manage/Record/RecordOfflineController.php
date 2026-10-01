@@ -83,18 +83,23 @@ class RecordOfflineController extends Controller
         $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
 
         if ($hasTables) {
-            $totalTrainings = (int) DB::table('offline_trainings')->whereNull('deleted_at')->count();
-            $totalParticipants = (int) DB::table('offline_training_users')->whereNull('deleted_at')->count();
-            $totalHours = (float) DB::table('offline_training_users')->whereNull('deleted_at')->sum('learning_hours');
-            $finished = (int) DB::table('offline_training_users')
-                ->whereNull('deleted_at')
-                ->where('progress', '>=', 100)
+            $totalTrainings = (int) OfflineTraining::forRecord()->count();
+
+            $baseUserQuery = DB::table('offline_training_users as otu')
+                ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
+                ->whereNull('otu.deleted_at')
+                ->whereNull('ot.deleted_at');
+            OfflineTraining::applyRecordScope($baseUserQuery, 'ot');
+
+            $totalParticipants = (int) (clone $baseUserQuery)->count();
+            $totalHours = (float) (clone $baseUserQuery)->sum('otu.learning_hours');
+            $finished = (int) (clone $baseUserQuery)
+                ->where('otu.progress', '>=', 100)
                 ->count();
-            $ongoing = (int) DB::table('offline_training_users')
-                ->whereNull('deleted_at')
+            $ongoing = (int) (clone $baseUserQuery)
                 ->where(function ($q) {
-                    $q->where('progress', '<', 100)
-                      ->orWhereNull('progress');
+                    $q->where('otu.progress', '<', 100)
+                      ->orWhereNull('otu.progress');
                 })
                 ->count();
             $completionRate = $totalParticipants > 0 ? round(($finished / $totalParticipants) * 100, 1) : 0.0;
@@ -164,12 +169,16 @@ class RecordOfflineController extends Controller
             return collect();
         }
 
-        $records = DB::table('offline_trainings as ot')
+        $query = DB::table('offline_trainings as ot')
             ->leftJoin('offline_training_users as otu', function ($join) {
                 $join->on('otu.offline_training_id', '=', 'ot.id')
                     ->whereNull('otu.deleted_at');
             })
-            ->whereNull('ot.deleted_at')
+            ->whereNull('ot.deleted_at');
+
+        OfflineTraining::applyRecordScope($query, 'ot');
+
+        $records = $query
             ->select([
                 DB::raw("COALESCE(NULLIF(TRIM(ot.main_classification), ''), 'Unclassified') as classification_name"),
                 DB::raw("COUNT(DISTINCT ot.id) as programs"),
@@ -288,10 +297,12 @@ class RecordOfflineController extends Controller
 
         $dbClasses = [];
         if (Schema::hasTable('offline_trainings')) {
-            $dbClasses = DB::table('offline_trainings')
+            $dbClassesQuery = DB::table('offline_trainings')
                 ->whereNull('deleted_at')
                 ->whereNotNull('main_classification')
-                ->where('main_classification', '!=', '')
+                ->where('main_classification', '!=', '');
+            OfflineTraining::applyRecordScope($dbClassesQuery);
+            $dbClasses = $dbClassesQuery
                 ->distinct()
                 ->pluck('main_classification')
                 ->all();

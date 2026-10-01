@@ -268,7 +268,7 @@
 
 @push('scripts')
 @php
-    $dbTrainings = $trainings ?? \App\Models\OfflineTraining::withCount('participants')->orderBy('start_date', 'asc')->get();
+    $dbTrainings = $trainings ?? \App\Models\OfflineTraining::forSchedule()->withCount('participants')->orderBy('start_date', 'asc')->get();
     $computedCalendarEvents = $calendarEvents ?? $dbTrainings->map(function ($t) {
         $startDate = \Carbon\Carbon::parse($t->start_date);
         $endDate = \Carbon\Carbon::parse($t->end_date ?? $t->start_date);

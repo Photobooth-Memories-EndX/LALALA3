@@ -3,6 +3,7 @@
 namespace App\Services\Record;
 
 use App\Http\Controllers\Manage\Record\RecordOfflineController;
+use App\Models\OfflineTraining;
 use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -30,8 +31,11 @@ class RecordOfflineQueryService
             ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
             ->leftJoin('users as u', 'u.id', '=', 'otu.user_id')
             ->whereNull('otu.deleted_at')
-            ->whereNull('ot.deleted_at')
-            ->select([
+            ->whereNull('ot.deleted_at');
+
+        OfflineTraining::applyRecordScope($query, 'ot');
+
+        $query->select([
                 'otu.id',
                 'otu.offline_training_id',
                 'otu.user_id',

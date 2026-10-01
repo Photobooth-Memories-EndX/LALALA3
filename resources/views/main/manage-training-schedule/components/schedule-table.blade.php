@@ -1,5 +1,5 @@
 @php
-    $trainings = $trainings ?? \App\Models\OfflineTraining::withCount('participants')->orderBy('start_date', 'asc')->get();
+    $trainings = $trainings ?? \App\Models\OfflineTraining::forSchedule()->withCount('participants')->orderBy('start_date', 'asc')->get();
 @endphp
 <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
     <div class="table-responsive">

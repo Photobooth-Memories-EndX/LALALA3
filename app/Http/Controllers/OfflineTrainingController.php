@@ -15,7 +15,8 @@ class OfflineTrainingController extends Controller
      */
     public function index()
     {
-        $trainings = OfflineTraining::withCount('participants')
+        $trainings = OfflineTraining::forSchedule()
+            ->withCount('participants')
             ->orderBy('start_date', 'asc')
             ->get();
 
@@ -108,11 +109,13 @@ class OfflineTrainingController extends Controller
      */
     public function userIndex()
     {
-        $trainings = OfflineTraining::withCount('participants')
+        $trainings = OfflineTraining::forSchedule()
+            ->withCount('participants')
             ->orderBy('start_date', 'asc')
             ->get();
 
-        $availableTrainings = OfflineTraining::withCount('participants')
+        $availableTrainings = OfflineTraining::forSchedule()
+            ->withCount('participants')
             ->where('status', '!=', 'Closed')
             ->orderBy('start_date', 'asc')
             ->get();

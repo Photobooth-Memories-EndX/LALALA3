@@ -13,27 +13,15 @@ return new class extends Migration
     {
         Schema::create('offline_trainings', function (Blueprint $table) {
             $table->id();
-            $table->string('title')->index();
-            $table->string('category', 100)->index();
-            $table->string('training_code', 100)->nullable()->index();
-            $table->string('instructor');
-            $table->string('location');
-            $table->string('target_employee')->nullable();
-            $table->string('prerequisites')->nullable();
-            $table->integer('quota')->default(30);
-            $table->string('status', 50)->default('Open Registration')->index(); // 'Open Registration', 'Running', 'Closed'
-            $table->date('start_date')->index();
-            $table->date('end_date')->nullable()->index();
-            $table->time('start_time')->default('08:00:00');
-            $table->time('end_time')->default('16:00:00');
-            $table->text('description')->nullable();
-            $table->text('learning_objectives')->nullable();
-            $table->json('syllabus')->nullable();
 
-            // Legacy & compatibility fields for Non KP OWL / Record Offline modules
+            // Identity & Dual Compatibility Titles (Manage Record & Training Schedule)
             $table->string('course_name')->nullable()->index();
+            $table->string('title')->nullable()->index();
             $table->string('sub_course_name')->nullable();
+
+            // Classification, Batch & Corporate KPI (Manage Record / Non KP OWL)
             $table->string('type', 100)->nullable()->index();
+            $table->string('category', 100)->nullable()->index();
             $table->string('level', 100)->nullable();
             $table->string('batch', 100)->nullable()->index();
             $table->string('main_classification')->nullable()->index();
@@ -41,15 +29,39 @@ return new class extends Migration
             $table->unsignedSmallInteger('corporate_kpi_year')->nullable()->index();
             $table->boolean('counted_corporate_kpi')->nullable();
             $table->string('sub_corporate_kpi')->nullable();
+
+            // Delivery & Provider Details (Manage Record)
             $table->string('delivery_method', 100)->nullable();
             $table->string('sub_delivery_method', 100)->nullable();
             $table->string('provider')->nullable();
             $table->string('sub_provider')->nullable();
             $table->string('provider_name')->nullable();
+
+            // Operational & Audience Details (Training Schedule)
+            $table->string('training_code', 100)->nullable()->index();
+            $table->string('instructor')->nullable();
             $table->string('venue')->nullable();
+            $table->string('location')->nullable();
+            $table->string('target_employee')->nullable();
+            $table->string('prerequisites')->nullable();
+            $table->integer('quota')->default(30);
+            $table->string('status', 50)->default('Open Registration')->index(); // 'Open Registration', 'Running', 'Closed'
+
+            // Schedule Timing, Dates & Hours
+            $table->date('start_date')->nullable()->index();
+            $table->date('end_date')->nullable()->index();
+            $table->date('finish_date')->nullable()->index();
+            $table->time('start_time')->default('08:00:00');
+            $table->time('end_time')->default('16:00:00');
             $table->unsignedBigInteger('duration_seconds')->nullable();
             $table->decimal('learning_hours', 10, 4)->nullable();
-            $table->date('finish_date')->nullable()->index();
+
+            // Syllabus & Educational Goals (Training Schedule)
+            $table->text('description')->nullable();
+            $table->text('learning_objectives')->nullable();
+            $table->json('syllabus')->nullable();
+
+            // Ownership & Timestamps
             $table->unsignedBigInteger('created_by')->nullable()->index();
             $table->timestamps();
             $table->softDeletes();
@@ -59,6 +71,7 @@ return new class extends Migration
                 ->on('users')
                 ->nullOnDelete();
 
+            $table->index(['start_date', 'finish_date']);
             $table->index(['start_date', 'end_date']);
         });
 

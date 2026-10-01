@@ -71,28 +71,40 @@ class OfflineTraining extends Model
     protected static function booted(): void
     {
         static::saving(function ($model) {
-            if (empty($model->course_name) && !empty($model->title)) {
+            // Course Name <-> Title
+            if (blank($model->course_name) && filled($model->title)) {
                 $model->course_name = $model->title;
             }
-            if (empty($model->title) && !empty($model->course_name)) {
+            if (blank($model->title) && filled($model->course_name)) {
                 $model->title = $model->course_name;
             }
-            if (empty($model->venue) && !empty($model->location)) {
+
+            // Venue <-> Location
+            if (blank($model->venue) && filled($model->location)) {
                 $model->venue = $model->location;
             }
-            if (empty($model->location) && !empty($model->venue)) {
+            if (blank($model->location) && filled($model->venue)) {
                 $model->location = $model->venue;
             }
-            if (empty($model->finish_date)) {
-                $model->finish_date = $model->end_date ?? $model->start_date;
+
+            // Dates: Finish Date <-> End Date (Fallback to Start Date)
+            if (blank($model->finish_date) && filled($model->end_date)) {
+                $model->finish_date = $model->end_date;
+            } elseif (blank($model->finish_date) && filled($model->start_date)) {
+                $model->finish_date = $model->start_date;
             }
-            if (empty($model->end_date) && !empty($model->finish_date)) {
+
+            if (blank($model->end_date) && filled($model->finish_date)) {
                 $model->end_date = $model->finish_date;
+            } elseif (blank($model->end_date) && filled($model->start_date)) {
+                $model->end_date = $model->start_date;
             }
-            if (empty($model->batch) && !empty($model->training_code)) {
+
+            // Batch <-> Training Code
+            if (blank($model->batch) && filled($model->training_code)) {
                 $model->batch = $model->training_code;
             }
-            if (empty($model->training_code) && !empty($model->batch)) {
+            if (blank($model->training_code) && filled($model->batch)) {
                 $model->training_code = $model->batch;
             }
         });
@@ -103,14 +115,39 @@ class OfflineTraining extends Model
         return $value ?? $this->attributes['title'] ?? null;
     }
 
+    public function getTitleAttribute($value): ?string
+    {
+        return $value ?? $this->attributes['course_name'] ?? null;
+    }
+
     public function getVenueAttribute($value): ?string
     {
         return $value ?? $this->attributes['location'] ?? null;
     }
 
+    public function getLocationAttribute($value): ?string
+    {
+        return $value ?? $this->attributes['venue'] ?? null;
+    }
+
     public function getFinishDateAttribute($value)
     {
         return $value ?? ($this->attributes['end_date'] ?? $this->attributes['start_date'] ?? null);
+    }
+
+    public function getEndDateAttribute($value)
+    {
+        return $value ?? ($this->attributes['finish_date'] ?? $this->attributes['start_date'] ?? null);
+    }
+
+    public function getBatchAttribute($value): ?string
+    {
+        return $value ?? $this->attributes['training_code'] ?? null;
+    }
+
+    public function getTrainingCodeAttribute($value): ?string
+    {
+        return $value ?? $this->attributes['batch'] ?? null;
     }
 
     public function creator(): BelongsTo
@@ -158,5 +195,72 @@ class OfflineTraining extends Model
         }
 
         return $query;
+    }
+
+    /**
+     * Scope query to Training Schedule records only.
+     */
+    public function scopeForSchedule($query)
+    {
+        return self::applyScheduleScope($query);
+    }
+
+    /**
+     * Scope query to Non KP OWL / Manage Record records only.
+     */
+    public function scopeForRecord($query)
+    {
+        return self::applyRecordScope($query);
+    }
+
+    /**
+     * Alias for scopeForSchedule.
+     */
+    public function scopeSchedule($query)
+    {
+        return self::applyScheduleScope($query);
+    }
+
+    /**
+     * Alias for scopeForRecord.
+     */
+    public function scopeRecord($query)
+    {
+        return self::applyRecordScope($query);
+    }
+
+    /**
+     * Apply Training Schedule structural constraint to an Eloquent or Query Builder query.
+     */
+    public static function applyScheduleScope($query, string $tablePrefix = '')
+    {
+        $p = $tablePrefix !== '' ? rtrim($tablePrefix, '.') . '.' : '';
+
+        return $query->where(function ($q) use ($p) {
+            $q->whereNotNull("{$p}target_employee")
+              ->orWhereNotNull("{$p}syllabus")
+              ->orWhereNotNull("{$p}prerequisites")
+              ->orWhere(function ($sub) use ($p) {
+                  $sub->whereNull("{$p}delivery_method")
+                      ->whereNull("{$p}provider")
+                      ->whereNull("{$p}type");
+              });
+        })->whereNull("{$p}delivery_method")
+          ->whereNull("{$p}provider");
+    }
+
+    /**
+     * Apply Non KP OWL / Manage Record structural constraint to an Eloquent or Query Builder query.
+     */
+    public static function applyRecordScope($query, string $tablePrefix = '')
+    {
+        $p = $tablePrefix !== '' ? rtrim($tablePrefix, '.') . '.' : '';
+
+        return $query->where(function ($q) use ($p) {
+            $q->whereNotNull("{$p}type")
+              ->orWhereNotNull("{$p}delivery_method")
+              ->orWhereNotNull("{$p}provider");
+        })->whereNull("{$p}target_employee")
+          ->whereNull("{$p}syllabus");
     }
 }
