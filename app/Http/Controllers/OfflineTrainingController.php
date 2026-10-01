@@ -136,6 +136,116 @@ class OfflineTrainingController extends Controller
     }
 
     /**
+     * Show the form for editing an existing training schedule.
+     */
+    public function edit($trainingId)
+    {
+        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+
+        return view('main.manage-training-schedule.edit', compact('training'));
+    }
+
+    /**
+     * Update the specified training schedule in offline_trainings table.
+     */
+    public function update(Request $request, $trainingId)
+    {
+        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+
+        $validated = $request->validate([
+            'title'               => ['required', 'string', 'max:255'],
+            'category'            => ['required', 'string', 'max:100'],
+            'code'                => ['nullable', 'string', 'max:100'],
+            'training_code'       => ['nullable', 'string', 'max:100'],
+            'instructor'          => ['required', 'string', 'max:255'],
+            'location'            => ['required', 'string', 'max:255'],
+            'target_employee'     => ['nullable', 'string', 'max:255'],
+            'prerequisites'       => ['nullable', 'string', 'max:255'],
+            'quota'               => ['required', 'integer', 'min:1'],
+            'status'              => ['required', 'string', 'in:Open Registration,Running,Closed'],
+            'start_date'          => ['required', 'date'],
+            'end_date'            => ['nullable', 'date'],
+            'start_time'          => ['required'],
+            'end_time'            => ['required'],
+            'description'         => ['nullable', 'string'],
+            'objectives'          => ['nullable', 'string'],
+            'learning_objectives' => ['nullable', 'string'],
+            'syllabus_title'      => ['nullable', 'array'],
+            'syllabus_desc'       => ['nullable', 'array'],
+        ]);
+
+        // Process dynamic syllabus array
+        $syllabus = [];
+        $titles = $request->input('syllabus_title', []);
+        $descs = $request->input('syllabus_desc', []);
+
+        if (is_array($titles)) {
+            foreach ($titles as $idx => $t) {
+                $topic = trim((string)$t);
+                $desc = trim((string)($descs[$idx] ?? ''));
+                if ($topic !== '' || $desc !== '') {
+                    $syllabus[] = [
+                        'topic'       => $topic,
+                        'description' => $desc,
+                    ];
+                }
+            }
+        }
+
+        $trainingCode = $request->filled('code') ? $request->input('code') : $request->input('training_code');
+        $objectives = $request->filled('objectives') ? $request->input('objectives') : $request->input('learning_objectives');
+        $endDate = $request->filled('end_date') ? $request->input('end_date') : $request->input('start_date');
+
+        $training->update([
+            'title'               => $request->input('title'),
+            'category'            => $request->input('category'),
+            'training_code'       => $trainingCode,
+            'instructor'          => $request->input('instructor'),
+            'location'            => $request->input('location'),
+            'target_employee'     => $request->input('target_employee'),
+            'prerequisites'       => $request->input('prerequisites'),
+            'quota'               => (int) $request->input('quota'),
+            'status'              => $request->input('status', 'Open Registration'),
+            'start_date'          => $request->input('start_date'),
+            'end_date'            => $endDate,
+            'start_time'          => $request->input('start_time'),
+            'end_time'            => $request->input('end_time'),
+            'description'         => $request->input('description'),
+            'learning_objectives' => $objectives,
+            'syllabus'            => $syllabus,
+        ]);
+
+        return redirect()->route('manage.training-schedule.index')
+            ->with('success', 'Training schedule updated successfully.');
+    }
+
+    /**
+     * Remove the specified training schedule from storage with safety checks.
+     */
+    public function destroy($trainingId)
+    {
+        $training = OfflineTraining::forSchedule()->findOrFail($trainingId);
+
+        // 1. Check if participant registrations exist
+        if ($training->registrations()->exists()) {
+            return redirect()->route('manage.training-schedule.index')
+                ->with('warning', 'Training schedule cannot be deleted because participant registrations already exist.');
+        }
+
+        // 2. Check if participant learning history exists in offline_training_users
+        if (OfflineTrainingUser::where('offline_training_id', $training->id)->exists()) {
+            return redirect()->route('manage.training-schedule.index')
+                ->with('warning', 'Training schedule cannot be deleted because participant learning history already exists.');
+        }
+
+        // 3. Safe deletion
+        $training->delete();
+
+        return redirect()->route('manage.training-schedule.index')
+            ->with('success', 'Training schedule deleted successfully.');
+    }
+
+    /**
      * Route handler for Participant Action button:
      * Prepares view and redirects to Participant Tracking & Approvals tab for the selected training.
      */

@@ -102,31 +102,28 @@
                                 {{ $item->status }}
                             </span>
                         </td>
-                        <td>
+                        <td class="text-center py-3">
                             <div class="d-flex align-items-center justify-content-center gap-1">
-                                <button type="button" class="btn btn-sm btn-icon btn-outline-secondary rounded-3 btn-view-syllabus" 
-                                        title="View Syllabus" data-bs-toggle="modal" data-bs-target="#syllabusModal" 
-                                        data-id="{{ $item->id }}" 
-                                        data-title="{{ $item->title }}" 
-                                        data-category="{{ $item->category }}" 
-                                        data-instructor="{{ $item->instructor }}"
-                                        data-duration="{{ $startTime }} - {{ $endTime }} WIB"
-                                        data-description="{{ $item->description ?? '' }}"
-                                        data-objectives="{{ $item->learning_objectives ?? '' }}"
-                                        data-syllabus="{{ json_encode($item->syllabus ?? []) }}">
-                                    <i class="ti ti-list-check fs-2"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-edit-schedule" 
-                                        title="Edit Schedule" data-id="{{ $item->id }}" data-title="{{ $item->title }}">
+                                <a href="{{ route('manage.training-schedule.edit', $item->id) }}" 
+                                   class="btn btn-sm btn-icon btn-outline-primary rounded-3 btn-view-edit-schedule" 
+                                   title="View/Edit Schedule">
                                     <i class="ti ti-edit fs-2"></i>
-                                </button>
+                                </a>
                                 <a href="{{ route('manage.training-schedule.participants', $item->id) }}" class="btn btn-sm btn-icon btn-outline-info rounded-3 btn-participants-schedule" 
                                         title="View Participants" 
                                         data-id="{{ $item->id }}" data-title="{{ $item->title }}">
                                     <i class="ti ti-users fs-2"></i>
                                 </a>
-                                <button type="button" class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
-                                        title="Delete Schedule" data-id="{{ $item->id }}" data-title="{{ $item->title }}">
+                                <button type="button" 
+                                        class="btn btn-sm btn-icon btn-outline-danger rounded-3 btn-delete-schedule" 
+                                        title="Delete Schedule" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteScheduleModal"
+                                        data-training-id="{{ $item->id }}" 
+                                        data-training-title="{{ $item->title }}" 
+                                        data-training-code="{{ $item->training_code ?? 'PTKP-TR-' . $item->id }}" 
+                                        data-training-date="{{ $startDate->format('d M Y') }}" 
+                                        data-delete-url="{{ route('manage.training-schedule.destroy', $item->id) }}">
                                     <i class="ti ti-trash fs-2"></i>
                                 </button>
                             </div>

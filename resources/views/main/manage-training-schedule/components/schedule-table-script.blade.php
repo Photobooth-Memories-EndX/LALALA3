@@ -310,30 +310,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     showConfirmButton: false
                 });
             } else {
-                alert(`Training "${title}" successfully created!`);
+                console.log(`Training "${title}" successfully created!`);
             }
         });
     }
 
-    // --- Action Button Handlers (Edit, Participants, Delete) ---
+    // --- Action Button Handlers (Participants) ---
     document.addEventListener('click', function (e) {
-        // Edit Schedule
-        const editBtn = e.target.closest('.btn-edit-schedule');
-        if (editBtn) {
-            const title = editBtn.getAttribute('data-title') || 'this training';
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Edit Schedule',
-                    text: `Editing details for "${title}". Full edit form will be available in Stage 2.`,
-                    confirmButtonColor: '#003b6d'
-                });
-            } else {
-                alert(`Editing details for "${title}".`);
-            }
-            return;
-        }
-
         // View Participants -> Switch to Inline Participant Tracking Tab
         const partBtn = e.target.closest('.btn-participants-schedule');
         if (partBtn) {
@@ -371,51 +354,30 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             return;
         }
-
-        // Delete Schedule
-        const delBtn = e.target.closest('.btn-delete-schedule');
-        if (delBtn) {
-            const row = delBtn.closest('tr.schedule-table-row');
-            const title = delBtn.getAttribute('data-title') || 'this training';
-
-            const executeDelete = () => {
-                if (row) {
-                    row.remove();
-                    filterScheduleTable();
-                }
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Deleted!',
-                        text: `"${title}" has been removed from the schedule.`,
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                }
-            };
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Delete Training Schedule?',
-                    text: `Are you sure you want to remove "${title}"? This cannot be undone.`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Yes, Delete',
-                    cancelButtonText: 'Cancel'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        executeDelete();
-                    }
-                });
-            } else {
-                if (confirm(`Are you sure you want to delete "${title}"?`)) {
-                    executeDelete();
-                }
-            }
-        }
     });
+
+    // --- Delete Confirmation Modal Dynamic Setup ---
+    const deleteModal = document.getElementById('deleteScheduleModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (e) {
+            const btn = e.relatedTarget;
+            if (!btn) return;
+            const title = btn.getAttribute('data-training-title') || '-';
+            const code = btn.getAttribute('data-training-code') || '-';
+            const date = btn.getAttribute('data-training-date') || '-';
+            const deleteUrl = btn.getAttribute('data-delete-url') || '';
+
+            const titleEl = document.getElementById('deleteModalTrainingTitle');
+            const codeEl = document.getElementById('deleteModalTrainingCode');
+            const dateEl = document.getElementById('deleteModalTrainingDate');
+            const formEl = document.getElementById('deleteScheduleForm');
+
+            if (titleEl) titleEl.textContent = title;
+            if (codeEl) codeEl.textContent = code;
+            if (dateEl) dateEl.textContent = date;
+            if (formEl) formEl.action = deleteUrl;
+        });
+    }
 
     // --- Dynamic Syllabus Builder in Add Training Modal ---
     const btnAddSyllabus = document.getElementById('btnAddSyllabusRow');

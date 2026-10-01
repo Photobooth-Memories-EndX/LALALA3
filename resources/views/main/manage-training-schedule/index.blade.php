@@ -16,6 +16,26 @@
             </div>
         @endif
 
+        @if (session('warning'))
+            <div class="alert alert-warning alert-dismissible rounded-4 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-alert-triangle fs-2 text-warning"></i>
+                    <div class="fw-semibold">{{ session('warning') }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible rounded-4 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="ti ti-alert-circle fs-2 text-danger"></i>
+                    <div class="fw-semibold">{{ session('error') }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         {{-- Top Navigation Toggle Pills --}}
         <div class="mb-4">
             <ul class="nav nav-pills gap-2 bg-white p-1-5 rounded-4 shadow-sm border border-light-subtle d-inline-flex" id="scheduleMainTabs" role="tablist">
@@ -58,6 +78,9 @@
 
         {{-- Syllabus Details Modal --}}
         @include('main.manage-training-schedule.modals.syllabus-modal')
+
+        {{-- Delete Confirmation Modal --}}
+        @include('main.manage-training-schedule.modals.delete-confirm-modal')
     </div>
 </div>
 @endsection

@@ -283,6 +283,9 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
     Route::get('/training-schedule', [OfflineTrainingController::class, 'index'])->name('manage.training-schedule.index');
     Route::get('/training-schedule/create', [OfflineTrainingController::class, 'create'])->name('manage.training-schedule.create');
     Route::post('/training-schedule', [OfflineTrainingController::class, 'store'])->name('manage.training-schedule.store');
+    Route::get('/training-schedule/{training}/edit', [OfflineTrainingController::class, 'edit'])->name('manage.training-schedule.edit');
+    Route::put('/training-schedule/{training}', [OfflineTrainingController::class, 'update'])->name('manage.training-schedule.update');
+    Route::delete('/training-schedule/{training}', [OfflineTrainingController::class, 'destroy'])->name('manage.training-schedule.destroy');
     Route::get('/training-schedule/{training}/participants', [OfflineTrainingController::class, 'participants'])->name('manage.training-schedule.participants');
     Route::patch('/training-schedule/registrations/{registration}/status', [OfflineTrainingController::class, 'updateRegistrationStatus'])->name('manage.training-schedule.registrations.status');
     Route::post('/training-schedule/registrations/{registration}/complete', [OfflineTrainingController::class, 'completeRegistration'])->name('manage.training-schedule.registrations.complete');
