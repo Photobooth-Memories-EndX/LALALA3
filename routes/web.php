@@ -487,6 +487,13 @@ Route::group(['prefix' => 'manage', 'middleware' => 'auth'], function () {
             Route::get('offline/classification/{classification}', [RecordOfflineController::class, 'classification'])->name('offline.classification');
             Route::get('offline/classification/{classification}/datatable', [RecordOfflineController::class, 'classificationDatatable'])->name('offline.classification.datatable');
             Route::get('offline/classification/{classification}/download', [RecordOfflineController::class, 'classificationDownload'])->name('offline.classification.download');
+            Route::get('offline/participant/{identifier}', [RecordOfflineController::class, 'participantDetail'])->name('offline.participant');
+            Route::get('offline/participant/{identifier}/datatable', [RecordOfflineController::class, 'participantDatatable'])->name('offline.participant.datatable');
+            Route::get('offline/participant/{identifier}/export/excel', [RecordOfflineController::class, 'participantExportExcel'])->name('offline.participant.export.excel');
+            Route::get('offline/participant/{identifier}/export/csv', [RecordOfflineController::class, 'participantExportCsv'])->name('offline.participant.export.csv');
+            Route::get('offline/participant/{identifier}/export/pdf', [RecordOfflineController::class, 'participantExportPdf'])->name('offline.participant.export.pdf');
+            Route::get('offline/course/{training}', [RecordOfflineController::class, 'courseDetail'])->name('offline.course');
+            Route::get('offline/course/{training}/datatable', [RecordOfflineController::class, 'courseDatatable'])->name('offline.course.datatable');
             Route::get('offline/datatable', [RecordOfflineController::class, 'datatable'])->name('offline.datatable');
             Route::get('offline/options', [OfflineTrainingOptionController::class, 'index'])->name('offline.options.index');
             Route::post('offline/options', [OfflineTrainingOptionController::class, 'store'])->name('offline.options.store');

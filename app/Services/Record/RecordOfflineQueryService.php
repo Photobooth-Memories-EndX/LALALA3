@@ -4,6 +4,7 @@ namespace App\Services\Record;
 
 use App\Http\Controllers\Manage\Record\RecordOfflineController;
 use App\Models\OfflineTraining;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -296,6 +297,65 @@ class RecordOfflineQueryService
             $query->where('otu.learning_hours', '<=', (float) $hoursMax);
         }
 
+        // 13. More Filter: Category
+        $categoryParam = trim((string) ($filters['category'] ?? 'all'));
+        if (filled($categoryParam) && $categoryParam !== 'all') {
+            $query->where('ot.category', $categoryParam);
+        }
+
+        // 14. More Filter: Certificate
+        $certParam = strtolower(trim((string) ($filters['certificate'] ?? 'all')));
+        if (filled($certParam) && $certParam !== 'all') {
+            if ($certParam === 'yes' || $certParam === 'available' || $certParam === '1') {
+                $query->whereNotNull('otu.certificate')->where('otu.certificate', '!=', '')->where('otu.certificate', '!=', 'No');
+            } elseif ($certParam === 'no' || $certParam === '0') {
+                $query->where(function ($q) {
+                    $q->whereNull('otu.certificate')
+                      ->orWhere('otu.certificate', '')
+                      ->orWhere('otu.certificate', 'No');
+                });
+            }
+        }
+
+        // 15. More Filter: Corporate KPI
+        $kpiParam = strtolower(trim((string) ($filters['corporate_kpi'] ?? ($filters['counted_corporate_kpi'] ?? 'all'))));
+        if (filled($kpiParam) && $kpiParam !== 'all') {
+            if ($kpiParam === 'yes' || $kpiParam === '1') {
+                $query->where('ot.counted_corporate_kpi', true);
+            } elseif ($kpiParam === 'no' || $kpiParam === '0') {
+                $query->where(function ($q) {
+                    $q->where('ot.counted_corporate_kpi', false)
+                      ->orWhereNull('ot.counted_corporate_kpi');
+                });
+            }
+        }
+
+        // 16. More Filter: Bond Status
+        $bondParam = strtolower(trim((string) ($filters['bond_status'] ?? 'all')));
+        if (filled($bondParam) && $bondParam !== 'all') {
+            if ($bondParam === 'yes' || $bondParam === '1') {
+                $query->whereNotNull('otu.bond_status')->where('otu.bond_status', '!=', 'No')->where('otu.bond_status', '!=', '');
+            } elseif ($bondParam === 'no' || $bondParam === '0') {
+                $query->where(function ($q) {
+                    $q->whereNull('otu.bond_status')
+                      ->orWhere('otu.bond_status', 'No')
+                      ->orWhere('otu.bond_status', '');
+                });
+            }
+        }
+
+        // 17. More Filter: Provider
+        $providerParam = trim((string) ($filters['provider'] ?? 'all'));
+        if (filled($providerParam) && $providerParam !== 'all') {
+            $query->where('ot.provider', $providerParam);
+        }
+
+        // 18. More Filter: Delivery Method
+        $deliveryParam = trim((string) ($filters['delivery_method'] ?? 'all'));
+        if (filled($deliveryParam) && $deliveryParam !== 'all') {
+            $query->where('ot.delivery_method', $deliveryParam);
+        }
+
         return $query;
     }
 
@@ -333,5 +393,602 @@ class RecordOfflineQueryService
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * Resolve a participant identity from user_id, employee_id/NIP, or matching User record.
+     *
+     * @param string $identifier
+     * @return array|null
+     */
+    public static function resolveParticipant(string $identifier): ?array
+    {
+        $identifier = trim($identifier);
+        if ($identifier === '') {
+            return null;
+        }
+
+        $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
+        if (!$hasTables) {
+            return null;
+        }
+
+        $user = null;
+        $userId = null;
+        $employeeId = null;
+
+        // Check if identifier matches a User ID
+        if (is_numeric($identifier) && (int) $identifier > 0) {
+            $user = User::whereNull('deleted_at')->find((int) $identifier);
+            if ($user) {
+                $userId = (int) $user->id;
+                $employeeId = $user->id_emp ?: null;
+            }
+        }
+
+        // If no user by ID, check if identifier matches User id_emp (NIP)
+        if (!$user) {
+            $user = User::whereNull('deleted_at')->where('id_emp', $identifier)->first();
+            if ($user) {
+                $userId = (int) $user->id;
+                $employeeId = $user->id_emp;
+            }
+        }
+
+        // Query active offline training records matching this participant
+        $recordQuery = DB::table('offline_training_users as otu')
+            ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
+            ->whereNull('otu.deleted_at')
+            ->whereNull('ot.deleted_at');
+        OfflineTraining::applyRecordScope($recordQuery, 'ot');
+
+        $recordQuery->where(function ($q) use ($userId, $employeeId, $identifier) {
+            if ($userId) {
+                $q->where('otu.user_id', $userId);
+                if ($employeeId) {
+                    $q->orWhere('otu.employee_id', $employeeId);
+                }
+            } else {
+                if (is_numeric($identifier)) {
+                    $q->where('otu.user_id', (int) $identifier)
+                      ->orWhere('otu.employee_id', $identifier);
+                } else {
+                    $q->where('otu.employee_id', $identifier);
+                }
+            }
+        });
+
+        $latestRecord = (clone $recordQuery)
+            ->orderByDesc('otu.id')
+            ->first();
+
+        // If no active training records found for this participant, return null
+        if (!$latestRecord) {
+            return null;
+        }
+
+        // Backfill user if not resolved earlier
+        if (!$user && !empty($latestRecord->user_id)) {
+            $user = User::whereNull('deleted_at')->find($latestRecord->user_id);
+        }
+        if (!$user && !empty($latestRecord->employee_id)) {
+            $user = User::whereNull('deleted_at')->where('id_emp', $latestRecord->employee_id)->first();
+        }
+
+        $finalUserId = $latestRecord->user_id ?: ($user?->id);
+        $finalEmployeeId = $latestRecord->employee_id ?: ($user?->id_emp);
+        $finalName = $latestRecord->name ?: ($user?->name ?: 'Participant');
+
+        return [
+            'user'           => $user,
+            'user_id'        => $finalUserId,
+            'employee_id'    => $finalEmployeeId,
+            'name'           => $finalName,
+            'grade'          => $latestRecord->grade ?? '',
+            'job_position'   => $latestRecord->job_position ?? '',
+            'team'           => $latestRecord->team ?? ($user?->team ?? ''),
+            'department'     => $latestRecord->department ?? ($user?->department ?? ''),
+            'company'        => $latestRecord->company ?? 'PT Krakatau Posco',
+            'raw_identifier' => $identifier,
+        ];
+    }
+
+    /**
+     * Build query for a participant's training history.
+     *
+     * @param array $participantInfo
+     * @param array $filters
+     * @return Builder
+     */
+    public static function buildParticipantQuery(array $participantInfo, array $filters = []): Builder
+    {
+        $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
+        if (!$hasTables) {
+            return DB::table('offline_training_users as otu')->whereRaw('1 = 0');
+        }
+
+        $userId = $participantInfo['user_id'] ?? null;
+        $employeeId = $participantInfo['employee_id'] ?? null;
+
+        $query = DB::table('offline_training_users as otu')
+            ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
+            ->leftJoin('users as u', 'u.id', '=', 'otu.user_id')
+            ->whereNull('otu.deleted_at')
+            ->whereNull('ot.deleted_at');
+
+        OfflineTraining::applyRecordScope($query, 'ot');
+
+        // Strictly scope to this participant
+        $query->where(function ($q) use ($userId, $employeeId) {
+            if ($userId && $employeeId) {
+                $q->where('otu.user_id', $userId)
+                  ->orWhere('otu.employee_id', $employeeId);
+            } elseif ($userId) {
+                $q->where('otu.user_id', $userId);
+            } elseif ($employeeId) {
+                $q->where('otu.employee_id', $employeeId);
+            } else {
+                $q->whereRaw('1 = 0');
+            }
+        });
+
+        $query->select([
+            'otu.id',
+            'otu.offline_training_id',
+            'otu.user_id',
+            'otu.employee_id',
+            'otu.name as participant_name',
+            'otu.grade',
+            'otu.job_position',
+            'otu.team',
+            'otu.department',
+            'otu.company',
+            'otu.learning_hours',
+            'otu.progress',
+            'otu.assessment_score',
+            'otu.certificate',
+            'otu.attendance',
+            'otu.attendance_reason',
+            'otu.bond_status',
+            'otu.bond_end_date',
+            'otu.bond_amount',
+            'otu.l1_program',
+            'otu.l2_numerical',
+            'otu.l2_verbal',
+            'otu.l3_numerical',
+            'otu.l3_verbal',
+            'otu.pic',
+            'otu.created_at',
+            'ot.id as training_id',
+            'ot.course_name',
+            'ot.sub_course_name',
+            'ot.type',
+            'ot.category',
+            'ot.level',
+            'ot.batch',
+            'ot.main_classification',
+            'ot.sub_classification',
+            'ot.counted_corporate_kpi',
+            'ot.sub_corporate_kpi',
+            'ot.corporate_kpi_year',
+            'ot.delivery_method',
+            'ot.sub_delivery_method',
+            'ot.provider',
+            'ot.sub_provider',
+            'ot.provider_name',
+            'ot.venue',
+            'ot.instructor',
+            'ot.duration_seconds',
+            'ot.learning_hours as course_learning_hours',
+            'ot.start_date',
+            'ot.finish_date',
+            'u.name as user_name',
+        ]);
+
+        // Filter: Course Name / Title (Safe string extraction)
+        $courseParam = '';
+        if (isset($filters['course_name']) && is_string($filters['course_name'])) {
+            $courseParam = trim($filters['course_name']);
+        } elseif (isset($filters['title']) && is_string($filters['title'])) {
+            $courseParam = trim($filters['title']);
+        } elseif (isset($filters['learning_title']) && is_string($filters['learning_title'])) {
+            $courseParam = trim($filters['learning_title']);
+        } elseif (isset($filters['q']) && is_string($filters['q'])) {
+            $courseParam = trim($filters['q']);
+        }
+        if ($courseParam !== '') {
+            $query->where(function ($q) use ($courseParam) {
+                $q->where('ot.course_name', 'like', "%{$courseParam}%")
+                  ->orWhere('ot.sub_course_name', 'like', "%{$courseParam}%");
+            });
+        }
+
+        // Filter: Type
+        $typeParam = trim((string) ($filters['type'] ?? ($filters['training_type'] ?? 'all')));
+        if ($typeParam !== '' && $typeParam !== 'all') {
+            $query->where('ot.type', $typeParam);
+        }
+
+        // Filter: Status
+        $statusParam = strtolower(trim((string) ($filters['status'] ?? 'all')));
+        if ($statusParam !== '' && $statusParam !== 'all') {
+            if ($statusParam === 'finished' || $statusParam === '1' || $statusParam === 'finish') {
+                $query->where('otu.progress', '>=', 100);
+            } elseif ($statusParam === 'ongoing' || $statusParam === '0') {
+                $query->where('otu.progress', '>', 0)
+                      ->where('otu.progress', '<', 100);
+            } elseif ($statusParam === 'not_started' || $statusParam === 'not-started') {
+                $query->where(function ($q) {
+                    $q->where('otu.progress', '<=', 0)
+                      ->orWhereNull('otu.progress');
+                });
+            }
+        }
+
+        // Filter: Year
+        $yearParam = trim((string) ($filters['year'] ?? 'all'));
+        if ($yearParam !== '' && $yearParam !== 'all') {
+            $yearInt = (int) $yearParam;
+            $query->where(function ($q) use ($yearInt) {
+                $q->whereYear('ot.finish_date', $yearInt)
+                  ->orWhere(function ($q2) use ($yearInt) {
+                      $q2->whereNull('ot.finish_date')->whereYear('ot.start_date', $yearInt);
+                  });
+            });
+        }
+
+        // More Filter: Date Range (from_date & to_date)
+        $fromDateRaw = $filters['from_date'] ?? ($filters['date_from'] ?? null);
+        $toDateRaw = $filters['to_date'] ?? ($filters['date_to'] ?? null);
+        $fromDate = self::parseDate(is_string($fromDateRaw) ? $fromDateRaw : null);
+        $toDate = self::parseDate(is_string($toDateRaw) ? $toDateRaw : null);
+
+        if ($fromDate && $toDate) {
+            $query->where(function ($q) use ($fromDate, $toDate) {
+                $q->where(function ($sub) use ($fromDate, $toDate) {
+                    $sub->whereNotNull('ot.start_date')
+                        ->whereBetween('ot.start_date', [$fromDate, $toDate]);
+                })->orWhere(function ($sub) use ($fromDate, $toDate) {
+                    $sub->whereNull('ot.start_date')
+                        ->whereNotNull('ot.finish_date')
+                        ->whereBetween('ot.finish_date', [$fromDate, $toDate]);
+                });
+            });
+        } elseif ($fromDate) {
+            $query->where(function ($q) use ($fromDate) {
+                $q->where(function ($sub) use ($fromDate) {
+                    $sub->whereNotNull('ot.start_date')
+                        ->where('ot.start_date', '>=', $fromDate);
+                })->orWhere(function ($sub) use ($fromDate) {
+                    $sub->whereNull('ot.start_date')
+                        ->whereNotNull('ot.finish_date')
+                        ->where('ot.finish_date', '>=', $fromDate);
+                });
+            });
+        } elseif ($toDate) {
+            $query->where(function ($q) use ($toDate) {
+                $q->where(function ($sub) use ($toDate) {
+                    $sub->whereNotNull('ot.start_date')
+                        ->where('ot.start_date', '<=', $toDate);
+                })->orWhere(function ($sub) use ($toDate) {
+                    $sub->whereNull('ot.start_date')
+                        ->whereNotNull('ot.finish_date')
+                        ->where('ot.finish_date', '<=', $toDate);
+                });
+            });
+        }
+
+        // More Filter: Progress Range
+        $progressRange = $filters['progress_range'] ?? null;
+        if (filled($progressRange) && $progressRange !== 'all') {
+            $val = str_replace([' ', '%'], '', (string) $progressRange);
+            switch ($val) {
+                case '0':
+                    $query->where(function ($q) {
+                        $q->where('otu.progress', '<=', 0)
+                          ->orWhereNull('otu.progress');
+                    });
+                    break;
+                case '1-25':
+                    $query->where('otu.progress', '>', 0)
+                          ->where('otu.progress', '<=', 25);
+                    break;
+                case '26-50':
+                    $query->where('otu.progress', '>', 25)
+                          ->where('otu.progress', '<=', 50);
+                    break;
+                case '51-75':
+                    $query->where('otu.progress', '>', 50)
+                          ->where('otu.progress', '<=', 75);
+                    break;
+                case '76-99':
+                    $query->where('otu.progress', '>', 75)
+                          ->where('otu.progress', '<', 100);
+                    break;
+                case '100':
+                    $query->where('otu.progress', '>=', 100);
+                    break;
+            }
+        }
+
+        // More Filter: Duration Range
+        $durationParam = strtolower(trim((string) ($filters['duration'] ?? ($filters['duration_range'] ?? 'all'))));
+        if (filled($durationParam) && $durationParam !== 'all') {
+            switch ($durationParam) {
+                case 'lt10':
+                case 'under_10':
+                case '< 10 minutes':
+                case '<10min':
+                case '<10':
+                    $query->where('ot.duration_seconds', '<', 600);
+                    break;
+                case '10-30':
+                case '10_30':
+                case '10 - 30 minutes':
+                case '10-30min':
+                    $query->where('ot.duration_seconds', '>=', 600)
+                          ->where('ot.duration_seconds', '<=', 1800);
+                    break;
+                case '30-60':
+                case '30_60':
+                case '30 - 60 minutes':
+                case '30-60min':
+                    $query->where('ot.duration_seconds', '>', 1800)
+                          ->where('ot.duration_seconds', '<=', 3600);
+                    break;
+                case 'gt60':
+                case 'above_60':
+                case '> 1 hour':
+                case '>1hour':
+                case '>60':
+                case '>60min':
+                    $query->where('ot.duration_seconds', '>', 3600);
+                    break;
+            }
+        }
+
+        // More Filter: Attendance (Present / Absent)
+        $attendanceParam = strtolower(trim((string) ($filters['attendance'] ?? 'all')));
+        if (filled($attendanceParam) && $attendanceParam !== 'all') {
+            if ($attendanceParam === 'present' || $attendanceParam === '1' || $attendanceParam === 'yes') {
+                $query->where('otu.attendance', true);
+            } elseif ($attendanceParam === 'absent' || $attendanceParam === '0' || $attendanceParam === 'no') {
+                $query->where('otu.attendance', false);
+            }
+        }
+
+        // More Filter: Assessment Score
+        $scoreMin = $filters['score_min'] ?? ($filters['assessment_score_min'] ?? null);
+        $scoreMax = $filters['score_max'] ?? ($filters['assessment_score_max'] ?? null);
+        if (filled($scoreMin) && is_numeric($scoreMin)) {
+            $query->where('otu.assessment_score', '>=', (float) $scoreMin);
+        }
+        if (filled($scoreMax) && is_numeric($scoreMax)) {
+            $query->where('otu.assessment_score', '<=', (float) $scoreMax);
+        }
+
+        // More Filter: Learning Hours
+        $hoursMin = $filters['learning_hours_min'] ?? ($filters['hours_min'] ?? null);
+        $hoursMax = $filters['learning_hours_max'] ?? ($filters['hours_max'] ?? null);
+        if (filled($hoursMin) && is_numeric($hoursMin)) {
+            $query->where('otu.learning_hours', '>=', (float) $hoursMin);
+        }
+        if (filled($hoursMax) && is_numeric($hoursMax)) {
+            $query->where('otu.learning_hours', '<=', (float) $hoursMax);
+        }
+
+        // More Filter: Main Classification (Strictly from More Filters explicitly, NEVER from back-button navigation context)
+        $classParam = trim((string) ($filters['filter_classification'] ?? ($filters['main_classification'] ?? '')));
+        if ($classParam !== '' && $classParam !== 'all') {
+            $resolved = RecordOfflineController::resolveClassification($classParam);
+            if ($resolved['is_unclassified']) {
+                $query->where(function ($q) {
+                    $q->whereNull('ot.main_classification')
+                      ->orWhere('ot.main_classification', '');
+                });
+            } else {
+                $query->where('ot.main_classification', $resolved['name']);
+            }
+        }
+
+        // More Filter: Category
+        $categoryParam = trim((string) ($filters['category'] ?? 'all'));
+        if (filled($categoryParam) && $categoryParam !== 'all') {
+            $query->where('ot.category', $categoryParam);
+        }
+
+        // More Filter: Certificate
+        $certParam = strtolower(trim((string) ($filters['certificate'] ?? 'all')));
+        if (filled($certParam) && $certParam !== 'all') {
+            if ($certParam === 'yes' || $certParam === 'available' || $certParam === '1') {
+                $query->whereNotNull('otu.certificate')->where('otu.certificate', '!=', '')->where('otu.certificate', '!=', 'No');
+            } elseif ($certParam === 'no' || $certParam === '0') {
+                $query->where(function ($q) {
+                    $q->whereNull('otu.certificate')
+                      ->orWhere('otu.certificate', '')
+                      ->orWhere('otu.certificate', 'No');
+                });
+            }
+        }
+
+        // More Filter: Corporate KPI
+        $kpiParam = strtolower(trim((string) ($filters['corporate_kpi'] ?? ($filters['counted_corporate_kpi'] ?? 'all'))));
+        if (filled($kpiParam) && $kpiParam !== 'all') {
+            if ($kpiParam === 'yes' || $kpiParam === '1') {
+                $query->where('ot.counted_corporate_kpi', true);
+            } elseif ($kpiParam === 'no' || $kpiParam === '0') {
+                $query->where(function ($q) {
+                    $q->where('ot.counted_corporate_kpi', false)
+                      ->orWhereNull('ot.counted_corporate_kpi');
+                });
+            }
+        }
+
+        // More Filter: Bond Status
+        $bondParam = strtolower(trim((string) ($filters['bond_status'] ?? 'all')));
+        if (filled($bondParam) && $bondParam !== 'all') {
+            if ($bondParam === 'yes' || $bondParam === '1') {
+                $query->whereNotNull('otu.bond_status')->where('otu.bond_status', '!=', 'No')->where('otu.bond_status', '!=', '');
+            } elseif ($bondParam === 'no' || $bondParam === '0') {
+                $query->where(function ($q) {
+                    $q->whereNull('otu.bond_status')
+                      ->orWhere('otu.bond_status', 'No')
+                      ->orWhere('otu.bond_status', '');
+                });
+            }
+        }
+
+        // More Filter: Provider
+        $providerParam = trim((string) ($filters['provider'] ?? 'all'));
+        if (filled($providerParam) && $providerParam !== 'all') {
+            $query->where('ot.provider', $providerParam);
+        }
+
+        // More Filter: Delivery Method
+        $deliveryParam = trim((string) ($filters['delivery_method'] ?? 'all'));
+        if (filled($deliveryParam) && $deliveryParam !== 'all') {
+            $query->where('ot.delivery_method', $deliveryParam);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Get summary metrics strictly scoped to a participant.
+     *
+     * @param array $participantInfo
+     * @return array
+     */
+    public static function getParticipantSummary(array $participantInfo): array
+    {
+        $baseQuery = self::buildParticipantQuery($participantInfo);
+
+        $totalTraining = (int) (clone $baseQuery)->count();
+        $finished = (int) (clone $baseQuery)->where('otu.progress', '>=', 100)->count();
+        $ongoing = (int) (clone $baseQuery)->where(function ($q) {
+            $q->where('otu.progress', '<', 100)
+              ->orWhereNull('otu.progress');
+        })->count();
+        $learningHours = (float) (clone $baseQuery)->sum('otu.learning_hours');
+
+        return [
+            'total_training' => $totalTraining,
+            'finished'       => $finished,
+            'ongoing'        => $ongoing,
+            'learning_hours' => round($learningHours, 2),
+        ];
+    }
+
+    /**
+     * Build query for participants enrolled in a specific offline training event.
+     *
+     * @param int $trainingId
+     * @param array $filters
+     * @return Builder
+     */
+    public static function buildCourseQuery(int $trainingId, array $filters = []): Builder
+    {
+        $hasTables = Schema::hasTable('offline_trainings') && Schema::hasTable('offline_training_users');
+        if (!$hasTables) {
+            return DB::table('offline_training_users as otu')->whereRaw('1 = 0');
+        }
+
+        $query = DB::table('offline_training_users as otu')
+            ->join('offline_trainings as ot', 'ot.id', '=', 'otu.offline_training_id')
+            ->leftJoin('users as u', 'u.id', '=', 'otu.user_id')
+            ->where('otu.offline_training_id', $trainingId)
+            ->whereNull('otu.deleted_at')
+            ->whereNull('ot.deleted_at');
+
+        OfflineTraining::applyRecordScope($query, 'ot');
+
+        $query->select([
+            'otu.id',
+            'otu.offline_training_id',
+            'otu.user_id',
+            'otu.employee_id',
+            'otu.name as participant_name',
+            'otu.grade',
+            'otu.job_position',
+            'otu.team',
+            'otu.department',
+            'otu.company',
+            'otu.learning_hours',
+            'otu.progress',
+            'otu.assessment_score',
+            'otu.certificate',
+            'otu.attendance',
+            'otu.attendance_reason',
+            'u.name as user_name',
+            'ot.id as training_id',
+            'ot.course_name',
+        ]);
+
+        // Filter: Participant Search / NIP (Safe string extraction, avoids array to string conversion)
+        $searchParam = '';
+        if (isset($filters['participant']) && is_string($filters['participant'])) {
+            $searchParam = trim($filters['participant']);
+        } elseif (isset($filters['employee_id']) && is_string($filters['employee_id'])) {
+            $searchParam = trim($filters['employee_id']);
+        } elseif (isset($filters['search']) && is_string($filters['search'])) {
+            $searchParam = trim($filters['search']);
+        } elseif (isset($filters['search']['value']) && is_string($filters['search']['value'])) {
+            $searchParam = trim($filters['search']['value']);
+        }
+
+        if ($searchParam !== '') {
+            $query->where(function ($q) use ($searchParam) {
+                $q->where('otu.employee_id', 'like', "%{$searchParam}%")
+                  ->orWhere('otu.name', 'like', "%{$searchParam}%")
+                  ->orWhere('u.name', 'like', "%{$searchParam}%");
+            });
+        }
+
+        // Filter: Status
+        $statusParam = strtolower(trim((string) ($filters['status'] ?? 'all')));
+        if ($statusParam !== '' && $statusParam !== 'all') {
+            if ($statusParam === 'finished' || $statusParam === '1' || $statusParam === 'finish') {
+                $query->where('otu.progress', '>=', 100);
+            } elseif ($statusParam === 'ongoing' || $statusParam === '0') {
+                $query->where('otu.progress', '>', 0)
+                      ->where('otu.progress', '<', 100);
+            } elseif ($statusParam === 'not_started' || $statusParam === 'not-started') {
+                $query->where(function ($q) {
+                    $q->where('otu.progress', '<=', 0)
+                      ->orWhereNull('otu.progress');
+                });
+            }
+        }
+
+        return $query;
+    }
+
+    /**
+     * Get summary metrics strictly scoped to an offline training event.
+     *
+     * @param int $trainingId
+     * @param OfflineTraining $training
+     * @return array
+     */
+    public static function getCourseSummary(int $trainingId, OfflineTraining $training): array
+    {
+        $baseQuery = self::buildCourseQuery($trainingId);
+
+        $totalParticipants = (int) (clone $baseQuery)->count();
+        $finished = (int) (clone $baseQuery)->where('otu.progress', '>=', 100)->count();
+        $ongoing = (int) (clone $baseQuery)->where(function ($q) {
+            $q->where('otu.progress', '<', 100)
+              ->orWhereNull('otu.progress');
+        })->count();
+        $avgProgress = (float) ((clone $baseQuery)->avg('otu.progress') ?? 0);
+        $learningHours = (float) ($training->learning_hours ?? 0);
+
+        return [
+            'total_participants' => $totalParticipants,
+            'finished'           => $finished,
+            'ongoing'            => $ongoing,
+            'avg_progress'       => round($avgProgress, 1),
+            'learning_hours'     => round($learningHours, 2),
+        ];
     }
 }
